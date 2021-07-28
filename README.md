@@ -1,4 +1,4 @@
-## Hi there 👋
+## 👋 Hi there 
 - Pronouns: He
 - I’m a:
   - App developer by day
@@ -18,7 +18,7 @@
   - 🇺🇸 C1
   - 🇯🇵 N2
 
-## My tool box 🛠
+## 🛠 My tool box 
 
 |  | 🎮 Game Development | 📱 App Development |
 |---|---|---|
