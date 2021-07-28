@@ -1,4 +1,5 @@
-![](https://user-images.githubusercontent.com/15852849/127307504-a1f127f9-878b-4b13-9354-d66789533140.png)
+![](https://user-images.githubusercontent.com/15852849/127308028-46abe21a-26f8-4842-b16c-0217cd78c471.jpg)
+
 ## 👋 Hi there 
 - Pronouns: He
 - I’m a:
