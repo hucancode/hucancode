@@ -17,8 +17,7 @@
   - Languages
 - I speak:
   - 🇻🇳 Native
-  - 🇺🇸 C1!
-
+  - 🇺🇸 C1
   - 🇯🇵 N2
 
 ## 🛠 My tool box 
