@@ -1,3 +1,4 @@
+![](https://user-images.githubusercontent.com/15852849/127307504-a1f127f9-878b-4b13-9354-d66789533140.png)
 ## 👋 Hi there 
 - Pronouns: He
 - I’m a:
@@ -15,7 +16,8 @@
   - Languages
 - I speak:
   - 🇻🇳 Native
-  - 🇺🇸 C1
+  - 🇺🇸 C1!
+
   - 🇯🇵 N2
 
 ## 🛠 My tool box 
