@@ -5,12 +5,13 @@
   - Game developer by night
 - I’m currently learning: 
   - React
-  - Flutter
   - Linux
   - 3D animations
+  - Japanese
 - Ask me about: 
-  - Coding
+  - Computer
   - Games
+  - Languages
 - I speak:
   - 🇻🇳 Native
   - 🇺🇸 C1
