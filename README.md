@@ -3,6 +3,7 @@
 - I’m a:
   - App developer by day
   - Game developer by night
+  - Funny guy at all time
 - I’m currently learning: 
   - React
   - Linux
