@@ -19,6 +19,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "publish:bash": "react-scripts build && rm -rf docs && mv build docs",
+    "publish:cmd": "react-scripts build && (if exist docs rmdir docs /s /q ) && rename build docs",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
