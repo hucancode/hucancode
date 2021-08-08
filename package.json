@@ -30,6 +30,9 @@
       "react-app/jest"
     ]
   },
+  "eslintIgnore": [
+    "fflate.module.js"
+  ],
   "browserslist": {
     "production": [
       ">0.2%",
