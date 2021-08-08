@@ -1,11 +1,12 @@
-import logo from './logo.svg';
+import React from "react";
 import './App.css';
+import SaborScene from "./components/saborScene";
 
-function App() {
+export default function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+        <SaborScene />
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
@@ -19,7 +20,5 @@ function App() {
         </a>
       </header>
     </div>
-  );
+  )
 }
-
-export default App;
