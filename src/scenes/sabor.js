@@ -18,11 +18,12 @@ export function init() {
     let h = window.innerHeight*0.8;
     
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-    camera.position.set( 100, 200, 300 );
+    camera.position.set( 100, 350, 300 );
+    camera.lookAt(0,100,0);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0xa0a0a0 );
-    scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
+    scene.background = new THREE.Color( 0x282c34 );
+    scene.fog = new THREE.Fog( 0xa0a0a0, 100, 2000 );
 
     const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
     hemiLight.position.set( 0, 200, 0 );
@@ -40,33 +41,41 @@ export function init() {
     // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
     // ground
-    const mesh = new THREE.Mesh( new THREE.PlaneGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+    const mesh = new THREE.Mesh( new THREE.PlaneGeometry( 20000, 20000 ), new THREE.MeshPhongMaterial( { color: 0x282c34, depthWrite: false } ) );
     mesh.rotation.x = - Math.PI / 2;
     mesh.receiveShadow = true;
+    mesh.material.opacity = 0.2;
+    mesh.material.transparent = true;
     scene.add( mesh );
 
-    const grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
-    grid.material.opacity = 0.2;
-    grid.material.transparent = true;
-    scene.add( grid );
+    //const grid = new THREE.GridHelper( 200, 10, 0x000000, 0x000000 );
+    //grid.material.opacity = 0.2;
+    //grid.material.transparent = true;
+    //scene.add( grid );
 
     // model
+    
     const loader = new FBXLoader();
-    loader.load( 'assets/fbx/SarborV2.fbx', function ( object ) {
+    loader.setPath('assets/fbx/');
+    loader.setResourcePath('assets/textures/');
+    loader.load( 'SarborV2.fbx', function ( object ) {
         mixer = new THREE.AnimationMixer( object );
         object.animations.forEach((e) => {
             console.log(e.name);
         });
-        const action = mixer.clipAction( object.animations[object.animations.length - 1] );
+        const action = mixer.clipAction(object.animations.find(e => e.name === 'idle'));
         action.play();
-        object.traverse( function ( child ) {
-            if ( child.isMesh ) {
-                child.castShadow = true;
-                child.receiveShadow = true;
+        object.traverse(child => {
+            if (!child.isMesh) {
+                return;
             }
-        } );
+            child.castShadow = true;
+            child.receiveShadow = false;
+            child.material.vertexColors = false;
+        });
         scene.add( object );
     } );
+
     renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( w, h );
