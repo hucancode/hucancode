@@ -8,7 +8,7 @@ export default function App() {
       <header className="App-header">
         <SaborScene />
         <p>
-          Site is under constructions. <br/>Create with <code>React.js</code> and <code>Three.js</code>
+          Site is under constructions. <br/>Made with <code>React.js</code> and <code>Three.js</code>
         </p>
       </header>
     </div>
