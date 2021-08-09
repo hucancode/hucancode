@@ -72,6 +72,7 @@ export function init() {
             child.castShadow = true;
             child.receiveShadow = false;
             child.material.vertexColors = false;
+            child.material.shininess = child.material.name==='body'?1.0:10.0;
         });
         scene.add( object );
     } );
