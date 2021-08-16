@@ -22,7 +22,7 @@ export function init() {
     camera.lookAt(0, 100, 0);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x282c34);
+    scene.background = null;//new THREE.Color(0x282c34);
     //scene.fog = new THREE.Fog(0xa0a0a0, 100, 2000);
 
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
@@ -70,7 +70,8 @@ export function init() {
         scene.add(object);
     });
 
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0); // the default
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
     renderer.shadowMap.enabled = true;
