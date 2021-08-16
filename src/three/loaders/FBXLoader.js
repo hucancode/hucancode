@@ -605,30 +605,31 @@ class FBXTreeParser {
 		return modelMap;
 	}
 	buildSkeleton(relationships, skeletons, id, name) {
-		let rootBone = null;
-		relationships.parents.forEach(function (parent) {
+		let ret = relationships.parents.reduce(function (root, parent) {
 			for (const ID in skeletons) {
 				const skeleton = skeletons[ID];
-				skeleton.rawBones.forEach(function (bone, i) {
+				root = skeleton.rawBones.reduce(function (skeletonRoot, bone, i) {
 					if (bone.ID !== parent.ID) {
-						return;
+						return skeletonRoot;
 					}
-					const child = rootBone;
-					rootBone = new Bone();
-					rootBone.matrixWorld.copy(bone.transformLink);
+					const child = skeletonRoot;
+					skeletonRoot = new Bone();
+					skeletonRoot.matrixWorld.copy(bone.transformLink);
 					// set name and id here - otherwise in cases where "child" is created it will not have a name / id
-					rootBone.name = name ? PropertyBinding.sanitizeNodeName(name) : '';
-					rootBone.ID = id;
-					skeleton.bones[i] = rootBone;
+					skeletonRoot.name = name ? PropertyBinding.sanitizeNodeName(name) : '';
+					skeletonRoot.ID = id;
+					skeleton.bones[i] = skeletonRoot;
 					// In cases where a bone is shared between multiple meshes
 					// duplicate the bone here and and it as a child of the first bone
 					if (child !== null) {
-						rootBone.add(child);
+						skeletonRoot.add(child);
 					}
-				});
+					return skeletonRoot;
+				}, root);
 			}
-		});
-		return rootBone;
+			return root;
+		}, null);
+		return ret;
 	}
 	// create a PerspectiveCamera or OrthographicCamera
 	createCamera(relationships) {
@@ -841,18 +842,21 @@ class FBXTreeParser {
 		for (const ID in skeletons) {
 			const skeleton = skeletons[ID];
 			const parents = connections.get(parseInt(skeleton.ID)).parents;
-			parents.forEach(function (parent) {
-				if (geometryMap.has(parent.ID)) {
-					const geoID = parent.ID;
-					const geoRelationships = connections.get(geoID);
-					geoRelationships.parents.forEach(function (geoConnParent) {
-						if (modelMap.has(geoConnParent.ID)) {
-							const model = modelMap.get(geoConnParent.ID);
-							model.bind(new Skeleton(skeleton.bones), bindMatrices[geoConnParent.ID]);
-						}
-					});
+			for(const parent of parents)
+			{
+				if (!parent || !geometryMap.has(parent.ID)) {
+					continue;
 				}
-			});
+				const parents = connections.get(parent.ID).parents;
+				for(const parent of parents)
+				{
+					if (!parent || !modelMap.has(parent.ID)) {
+						continue;
+					}
+					const model = modelMap.get(parent.ID);
+					model.bind(new Skeleton(skeleton.bones), bindMatrices[parent.ID]);
+				}
+			}
 		}
 	}
 	parsePoseNodes() {
@@ -1485,63 +1489,73 @@ class AnimationParser {
 			if (connection !== undefined) {
 				// all the animationCurveNodes used in the layer
 				const children = connection.children;
-				children.forEach(function (child, i) {
-					if (curveNodesMap.has(child.ID)) {
-						const curveNode = curveNodesMap.get(child.ID);
-						// check that the curves are defined for at least one axis, otherwise ignore the curveNode
-						if (curveNode.curves.x !== undefined || curveNode.curves.y !== undefined || curveNode.curves.z !== undefined) {
-							if (layerCurveNodes[i] === undefined) {
-								const modelID = connections.get(child.ID).parents.filter(function (parent) {
-									return parent.relationship !== undefined;
-								})[0].ID;
-								if (modelID !== undefined) {
-									const rawModel = fbxTree.Objects.Model[modelID.toString()];
-									if (rawModel === undefined) {
-										console.warn('THREE.FBXLoader: Encountered a unused curve.', child);
-										return;
-									}
-									const node = {
-										modelName: rawModel.attrName ? PropertyBinding.sanitizeNodeName(rawModel.attrName) : '',
-										ID: rawModel.id,
-										initialPosition: [0, 0, 0],
-										initialRotation: [0, 0, 0],
-										initialScale: [1, 1, 1],
-									};
-									sceneGraph.traverse(function (child) {
-										if (child.ID === rawModel.id) {
-											node.transform = child.matrix;
-											if (child.userData.transformData) node.eulerOrder = child.userData.transformData.eulerOrder;
-										}
-									});
-									if (!node.transform) node.transform = new Matrix4();
-									// if the animated model is pre rotated, we'll have to apply the pre rotations to every
-									// animation value as well
-									if ('PreRotation' in rawModel) node.preRotation = rawModel.PreRotation.value;
-									if ('PostRotation' in rawModel) node.postRotation = rawModel.PostRotation.value;
-									layerCurveNodes[i] = node;
+				for (let i = 0; i < children.length; i++) {
+					let child = children[i];
+					if (!curveNodesMap.has(child.ID)) {
+						continue;
+					}
+					const curveNode = curveNodesMap.get(child.ID);
+					// check that the curves are defined for at least one axis, otherwise ignore the curveNode
+					if (curveNode.curves.x !== undefined || curveNode.curves.y !== undefined || curveNode.curves.z !== undefined) {
+						if (layerCurveNodes[i] === undefined) {
+							const modelID = connections.get(child.ID).parents.filter(function (parent) {
+								return parent.relationship !== undefined;
+							})[0].ID;
+							if (modelID !== undefined) {
+								const rawModel = fbxTree.Objects.Model[modelID.toString()];
+								if (rawModel === undefined) {
+									console.warn('THREE.FBXLoader: Encountered a unused curve.', child);
+									return;
 								}
-							}
-							if (layerCurveNodes[i]) layerCurveNodes[i][curveNode.attr] = curveNode;
-						} else if (curveNode.curves.morph !== undefined) {
-							if (layerCurveNodes[i] === undefined) {
-								const deformerID = connections.get(child.ID).parents.filter(function (parent) {
-									return parent.relationship !== undefined;
-								})[0].ID;
-								const morpherID = connections.get(deformerID).parents[0].ID;
-								const geoID = connections.get(morpherID).parents[0].ID;
-								// assuming geometry is not used in more than one model
-								const modelID = connections.get(geoID).parents[0].ID;
-								const rawModel = fbxTree.Objects.Model[modelID];
 								const node = {
 									modelName: rawModel.attrName ? PropertyBinding.sanitizeNodeName(rawModel.attrName) : '',
-									morphName: fbxTree.Objects.Deformer[deformerID].attrName,
+									ID: rawModel.id,
+									initialPosition: [0, 0, 0],
+									initialRotation: [0, 0, 0],
+									initialScale: [1, 1, 1],
 								};
+								sceneGraph.traverse(function (child) {
+									if (child.ID === rawModel.id) {
+										node.transform = child.matrix;
+										if (child.userData.transformData) node.eulerOrder = child.userData.transformData.eulerOrder;
+									}
+								});
+								if (!node.transform) {
+									node.transform = new Matrix4();
+								}
+								// if the animated model is pre rotated, we'll have to apply the pre rotations to every
+								// animation value as well
+								if ('PreRotation' in rawModel) {
+									node.preRotation = rawModel.PreRotation.value;
+								}
+								if ('PostRotation' in rawModel) {
+									node.postRotation = rawModel.PostRotation.value;
+								}
 								layerCurveNodes[i] = node;
 							}
+						}
+						if (layerCurveNodes[i]) {
 							layerCurveNodes[i][curveNode.attr] = curveNode;
 						}
+					} else if (curveNode.curves.morph !== undefined) {
+						if (layerCurveNodes[i] === undefined) {
+							const deformerID = connections.get(child.ID).parents.filter(function (parent) {
+								return parent.relationship !== undefined;
+							})[0].ID;
+							const morpherID = connections.get(deformerID).parents[0].ID;
+							const geoID = connections.get(morpherID).parents[0].ID;
+							// assuming geometry is not used in more than one model
+							const modelID = connections.get(geoID).parents[0].ID;
+							const rawModel = fbxTree.Objects.Model[modelID];
+							const node = {
+								modelName: rawModel.attrName ? PropertyBinding.sanitizeNodeName(rawModel.attrName) : '',
+								morphName: fbxTree.Objects.Deformer[deformerID].attrName,
+							};
+							layerCurveNodes[i] = node;
+						}
+						layerCurveNodes[i][curveNode.attr] = curveNode;
 					}
-				});
+				}
 				layersMap.set(parseInt(nodeID), layerCurveNodes);
 			}
 		}
