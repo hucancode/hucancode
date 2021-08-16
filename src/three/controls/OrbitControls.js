@@ -382,6 +382,8 @@ class OrbitControls extends EventDispatcher {
 					pan( - scope.keyPanSpeed, 0 );
 					needsUpdate = true;
 					break;
+				default:
+					break;
 			}
 			if ( needsUpdate ) {
 				// prevent the browser from scrolling on cursor keys
@@ -422,7 +424,7 @@ class OrbitControls extends EventDispatcher {
 			if ( scope.enableRotate ) handleTouchStartRotate();
 		}
 		function handleTouchMoveRotate( event ) {
-			if ( pointers.length == 1 ) {
+			if ( pointers.length === 1 ) {
 				rotateEnd.set( event.pageX, event.pageY );
 			} else {
 				const position = getSecondPointerPosition( event );
@@ -579,6 +581,8 @@ class OrbitControls extends EventDispatcher {
 					if ( scope.enablePan === false ) return;
 					handleMouseMovePan( event );
 					break;
+				default:
+					break;
 			}
 		}
 		function onMouseUp( event ) {
@@ -681,7 +685,7 @@ class OrbitControls extends EventDispatcher {
 		function removePointer( event ) {
 			delete pointerPositions[ event.pointerId ];
 			for ( let i = 0; i < pointers.length; i ++ ) {
-				if ( pointers[ i ].pointerId == event.pointerId ) {
+				if ( pointers[ i ].pointerId === event.pointerId ) {
 					pointers.splice( i, 1 );
 					return;
 				}

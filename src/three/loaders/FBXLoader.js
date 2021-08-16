@@ -439,11 +439,11 @@ class FBXTreeParser {
 		}
 		const texture = textureMap.get(id);
 		return texture;
-		if (texture.image !== undefined) {
-			return texture;
-		} else {
-			return undefined;
-		}
+		// if (texture.image !== undefined) {
+		// 	return texture;
+		// } else {
+		// 	return undefined;
+		// }
 	}
 	// Parse nodes in FBXTree.Objects.Deformer
 	// Deformer node can contain skinning or Vertex Cache animation data, however only skinning is supported here
@@ -605,29 +605,30 @@ class FBXTreeParser {
 		return modelMap;
 	}
 	buildSkeleton(relationships, skeletons, id, name) {
-		let bone = null;
+		let rootBone = null;
 		relationships.parents.forEach(function (parent) {
 			for (const ID in skeletons) {
 				const skeleton = skeletons[ID];
-				skeleton.rawBones.forEach(function (rawBone, i) {
-					if (rawBone.ID === parent.ID) {
-						const subBone = bone;
-						bone = new Bone();
-						bone.matrixWorld.copy(rawBone.transformLink);
-						// set name and id here - otherwise in cases where "subBone" is created it will not have a name / id
-						bone.name = name ? PropertyBinding.sanitizeNodeName(name) : '';
-						bone.ID = id;
-						skeleton.bones[i] = bone;
-						// In cases where a bone is shared between multiple meshes
-						// duplicate the bone here and and it as a child of the first bone
-						if (subBone !== null) {
-							bone.add(subBone);
-						}
+				skeleton.rawBones.forEach(function (bone, i) {
+					if (bone.ID !== parent.ID) {
+						return;
+					}
+					const child = rootBone;
+					rootBone = new Bone();
+					rootBone.matrixWorld.copy(bone.transformLink);
+					// set name and id here - otherwise in cases where "child" is created it will not have a name / id
+					rootBone.name = name ? PropertyBinding.sanitizeNodeName(name) : '';
+					rootBone.ID = id;
+					skeleton.bones[i] = rootBone;
+					// In cases where a bone is shared between multiple meshes
+					// duplicate the bone here and and it as a child of the first bone
+					if (child !== null) {
+						rootBone.add(child);
 					}
 				});
 			}
 		});
-		return bone;
+		return rootBone;
 	}
 	// create a PerspectiveCamera or OrthographicCamera
 	createCamera(relationships) {
@@ -907,10 +908,10 @@ class GeometryParser {
 		switch (geoNode.attrType) {
 			case 'Mesh':
 				return this.parseMeshGeometry(relationships, geoNode, deformers);
-				break;
 			case 'NurbsCurve':
 				return this.parseNurbsGeometry(geoNode);
-				break;
+			default:
+				throw new Error('THREE.FBXLoader: Unknown geoNode type ' + geoNode.attrType);
 		}
 	}
 	// Parse single node mesh geometry in FBXTree.Objects.Geometry
@@ -1912,7 +1913,7 @@ class TextParser {
 		// into array like below
 		// ["Lcl Scaling", "Lcl Scaling", "", "A", "1,1,1" ]
 		const props = propValue.split('",').map(function (prop) {
-			return prop.trim().replace(/^\"/, '').replace(/\s/, '_');
+			return prop.trim().replace(/^"/, '').replace(/\s/, '_');
 		});
 		const innerPropName = props[0];
 		const innerPropType1 = props[1];
@@ -1937,6 +1938,8 @@ class TextParser {
 			case 'Lcl_Rotation':
 			case 'Lcl_Scaling':
 				innerPropValue = parseNumberArray(innerPropValue);
+				break;
+			default:
 				break;
 		}
 		// CAUTION: these props must append to parent's parent
@@ -2125,6 +2128,8 @@ class BinaryParser {
 							return reader.getInt32Array(arrayLength);
 						case 'l':
 							return reader.getInt64Array(arrayLength);
+						default:
+							throw new Error('THREE.FBXLoader: Unknown property type ' + type);
 					}
 				}
 				if (typeof fflate === 'undefined') {
@@ -2144,6 +2149,8 @@ class BinaryParser {
 						return reader2.getInt32Array(arrayLength);
 					case 'l':
 						return reader2.getInt64Array(arrayLength);
+					default:
+						throw new Error('THREE.FBXLoader: Unknown property type ' + type);
 				}
 			default:
 				throw new Error('THREE.FBXLoader: Unknown property type ' + type);
