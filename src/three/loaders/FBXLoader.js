@@ -424,7 +424,7 @@ class FBXTreeParser {
 				case 'SpecularFactor': // AKA specularLevel
 				case 'VectorDisplacementColor': // NOTE: Seems to be a copy of DisplacementColor
 				default:
-					console.warn('THREE.FBXLoader: %s map is not supported in three.js, skipping texture.', type);
+					//console.warn('THREE.FBXLoader: %s map is not supported in three.js, skipping texture.', type);
 					break;
 			}
 		});
@@ -1099,7 +1099,7 @@ class GeometryParser {
 				}
 				if (weights.length > 4) {
 					if (!displayedWeightsWarning) {
-						console.warn('THREE.FBXLoader: Vertex has more than 4 skinning weights assigned to vertex. Deleting additional weights.');
+						//console.warn(`THREE.FBXLoader: Vertex has more than 4 skinning weights assigned to vertex (${weights.length}). Deleting additional weights.`);
 						displayedWeightsWarning = true;
 					}
 					const wIndex = [0, 0, 0, 0];

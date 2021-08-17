@@ -4,22 +4,25 @@ import { OrbitControls } from "../three/controls/OrbitControls";
 
 let camera, scene, renderer, animator;
 const clock = new THREE.Clock();
-const USE_CAMERA_CONTROL = false
+const USE_CAMERA_CONTROL = false;
+const ASPECT_RATIO = 0.95;
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    let canvas = document.getElementById('renderer');
+    let w = canvas.clientWidth;
+    let h = w*ASPECT_RATIO;
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
+    renderer.setSize(w, h);
+    console.log('onWindowResize');
 }
 export function init() {
     let canvas = document.getElementById('renderer');
-    let w = window.innerWidth * 0.8;
-    let h = window.innerHeight * 0.8;
-
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
-    camera.position.set(400, 220, 400);
-    camera.lookAt(0, 100, 0);
+    let w = canvas.clientWidth;
+    let h = w*ASPECT_RATIO;
+    camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
+    camera.position.set(330, 200, 330);
+    camera.lookAt(0, 80, 0);
 
     scene = new THREE.Scene();
     scene.background = null;//new THREE.Color(0x282c34);
@@ -71,7 +74,7 @@ export function init() {
     });
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    renderer.setClearColor(0x000000, 0); // the default
+    renderer.setClearColor(0x000000,0); // the default
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
     renderer.shadowMap.enabled = true;
