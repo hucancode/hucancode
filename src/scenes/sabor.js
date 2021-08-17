@@ -46,7 +46,7 @@ export function init() {
     // ground
     const ground = new THREE.Mesh(
         new THREE.CircleGeometry(200, 50, 0, Math.PI * 2),
-        new THREE.MeshPhongMaterial({ color: 0x282c34, depthWrite: false }));
+        new THREE.MeshPhongMaterial({ color: 0x000000, depthWrite: false }));
     ground.rotation.x = - Math.PI / 2;
     ground.receiveShadow = true;
     ground.material.opacity = 0.2;

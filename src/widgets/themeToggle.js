@@ -57,6 +57,7 @@ class ThemeToggleWidget extends React.Component {
       if(this.state.isNightMode)
       {
         this.controller.play();
+        document.querySelector('html').classList.add('dark');
       }
   }
 
@@ -66,6 +67,12 @@ class ThemeToggleWidget extends React.Component {
       this.controller.reverse();
     }
     this.controller.play();
+    let htmlClasses = document.querySelector('html').classList;
+    if(this.state.isNightMode) {
+        htmlClasses.add('dark');
+    } else {
+        htmlClasses.remove('dark');
+    }
   }
 
   render() {

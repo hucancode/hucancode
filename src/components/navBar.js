@@ -34,7 +34,8 @@ const NavItems = styled.ul`
 const NavItem = styled.li`
     ${tw`
         text-xl
-        text-gray-300
+        dark:text-gray-300
+        text-gray-900
         font-medium
         mr-3
         md:mr-5
@@ -43,6 +44,7 @@ const NavItem = styled.li`
         duration-300
         ease-in-out
         hover:text-gray-500
+        dark:hover:text-gray-100
     `}
     ${(props) => `
         ${props.mobile && tw`
