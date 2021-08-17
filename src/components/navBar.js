@@ -100,7 +100,6 @@ function buildMenuStyle(isDarkMode)
 }
 
 export default function Navbar() {
-    console.log('nav');
     const isMobile = useMediaQuery( {maxWidth: SCREENS.sm});
     let isDarkMode = document.querySelector('html').classList.contains("dark");
     const menuStyle = buildMenuStyle(isDarkMode);

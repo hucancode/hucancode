@@ -14,7 +14,6 @@ function onWindowResize() {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
-    console.log('onWindowResize');
 }
 export function init() {
     let canvas = document.getElementById('renderer');
@@ -70,7 +69,7 @@ export function init() {
             child.material.vertexColors = false;
             child.material.shininess = child.material.name === 'body' ? 1.0 : 10.0;
         });
-        //scene.add(object);
+        scene.add(object);
     });
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
