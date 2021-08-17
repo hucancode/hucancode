@@ -7,11 +7,11 @@ import ThemeToggle from "../widgets/themeToggle";
 import {SCREENS} from "./screens"
 
 const Container = styled.div`
-    height: 60px;
     ${tw`
         container
         box-border
         w-full
+        h-14
         max-w-screen-2xl
         flex
         flex-row
