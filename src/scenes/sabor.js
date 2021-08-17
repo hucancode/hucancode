@@ -70,7 +70,7 @@ export function init() {
             child.material.vertexColors = false;
             child.material.shininess = child.material.name === 'body' ? 1.0 : 10.0;
         });
-        scene.add(object);
+        //scene.add(object);
     });
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
