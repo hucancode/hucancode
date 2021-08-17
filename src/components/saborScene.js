@@ -25,7 +25,8 @@ const About = styled.div`
   ${tw`
     md:relative
     md:left-0
-    w-1/2
+    md:w-1/2
+    w-full
   `}
 `;
 

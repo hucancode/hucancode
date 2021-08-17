@@ -56,48 +56,54 @@ const NavItem = styled.li`
     `}
 `;
 
-const burgerMenuStyle = {
-    bmBurgerButton: {
-        position: "relative",
-        width: "20px",
-        height: "20px",
-    },
-    bmBurgerBars: {
-        background: "#373a47",
-    },
-    bmBurgerBarsHover: {
-        background: "#a90000",
-    },
-    bmCrossButton: {
-        height: "24px",
-        width: "24px",
-    },
-    bmCross: {
-        background: "#bdc3c7",
-    },
-    bmMenuWrap: {
-        position: "fixed",
-        width: "60%",
-        height: "100%",
-        top: "0px",
-        left: "0px",
-    },
-    bmMenu: {
-        background: "#373a47",
-        fontSize: "1.15em",
-    },
-    bmItemList: {
-        padding: "1em",
-    },
-    bmOverlay: {
-        background: "rgba(0, 0, 0, 0.3)",
-        top: "0px",
-        left: "0px",
-    },
-};
+function buildMenuStyle(isDarkMode)
+{
+    return {
+        bmBurgerButton: {
+            position: "relative",
+            width: "20px",
+            height: "20px",
+        },
+        bmBurgerBars: {
+            background: "#000000",
+        },
+        bmBurgerBarsHover: {
+            background: "#222222",
+        },
+        bmCrossButton: {
+            height: "24px",
+            width: "24px",
+        },
+        bmCross: {
+            background: "#cccccc",
+        },
+        bmMenuWrap: {
+            position: "fixed",
+            width: "60%",
+            height: "100%",
+            top: "0px",
+            left: "0px",
+        },
+        bmMenu: {
+            background: "#4b5563",
+            fontSize: "1.15em",
+        },
+        bmItemList: {
+            padding: "1em",
+        },
+        bmOverlay: {
+            background: "rgba(0, 0, 0, 0.3)",
+            top: "0px",
+            left: "0px",
+        },
+    }
+}
 
 export default function Navbar() {
+    console.log('nav');
     const isMobile = useMediaQuery( {maxWidth: SCREENS.sm});
+    let isDarkMode = document.querySelector('html').classList.contains("dark");
+    const menuStyle = buildMenuStyle(isDarkMode);
     const navItems = <NavItems mobile={isMobile}>
         <NavItem mobile={isMobile}>
             <a href='#'>Game</a>
@@ -109,11 +115,11 @@ export default function Navbar() {
             <a href='#'>Contact</a>
         </NavItem>
     </NavItems>
-    const menuNav = <Menu left styles={burgerMenuStyle}>
+    const menuNav = <Menu left styles={menuStyle}>
         {navItems}
     </Menu>
     return <Container>
         {isMobile?menuNav:navItems}
-        <ThemeToggle />
+        <ThemeToggle/>
     </Container>
 }

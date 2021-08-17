@@ -1,8 +1,13 @@
 import React from "react";
 import anime from "animejs";
 
-class ThemeToggleWidget extends React.Component {
-  state = { isNightMode: true };
+export default class ThemeToggle extends React.Component {
+  constructor(props)
+  {
+    super(props);
+  }
+
+  state = { isDarkMode: true };
 
   sunMoon = React.createRef();
   sun = React.createRef();
@@ -54,7 +59,7 @@ class ThemeToggleWidget extends React.Component {
         duration: ANIMATION_TIME,
         easing: "easeInOutExpo"
       }, 0);
-      if(this.state.isNightMode)
+      if(this.state.isDarkMode)
       {
         this.controller.play();
         document.querySelector('html').classList.add('dark');
@@ -62,13 +67,13 @@ class ThemeToggleWidget extends React.Component {
   }
 
   componentDidUpdate() {
-    let shouldReverse = this.state.isNightMode === this.controller.reversed;
+    let shouldReverse = this.state.isDarkMode === this.controller.reversed;
     if (shouldReverse) {
       this.controller.reverse();
     }
     this.controller.play();
     let htmlClasses = document.querySelector('html').classList;
-    if(this.state.isNightMode) {
+    if(this.state.isDarkMode) {
         htmlClasses.add('dark');
     } else {
         htmlClasses.remove('dark');
@@ -77,7 +82,7 @@ class ThemeToggleWidget extends React.Component {
 
   render() {
     const switchNightMode = () => {
-      this.setState({ isNightMode: !this.state.isNightMode });
+      this.setState({ isDarkMode: !this.state.isDarkMode });
     };
     return (
       <svg viewBox="0 0 100 45" height="60%" onClick={switchNightMode}>
@@ -145,8 +150,4 @@ class ThemeToggleWidget extends React.Component {
         </g>
       </svg>);
   }
-}
-
-export default function ThemeToggle() {
-  return <ThemeToggleWidget />;
 }
