@@ -68,10 +68,14 @@ export default class ThemeToggle extends React.Component {
 
   componentDidUpdate() {
     let shouldReverse = this.state.isDarkMode === this.controller.reversed;
+    let shouldPlay = shouldReverse || !this.controller.finished;
     if (shouldReverse) {
       this.controller.reverse();
     }
-    this.controller.play();
+    if(shouldPlay)
+    {
+      this.controller.play();
+    }
     let htmlClasses = document.querySelector('html').classList;
     if(this.state.isDarkMode) {
         htmlClasses.add('dark');
