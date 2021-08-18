@@ -9,6 +9,7 @@ const ASPECT_RATIO = 0.95;
 
 function onWindowResize() {
     let canvas = document.getElementById('renderer');
+    canvas.style = "";
     let w = canvas.clientWidth;
     let h = w*ASPECT_RATIO;
     camera.aspect = w / h;
