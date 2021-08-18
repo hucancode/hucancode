@@ -15,7 +15,7 @@ const Container = styled.div`
         bg-blue-200
         dark:bg-gray-900
         border-blue-300
-        dark:border-gray-400
+        dark:border-blue-200
     `}
 `;
 
@@ -23,7 +23,7 @@ const LogoIcon = styled.svg`
     ${tw`
         w-full
         fill-current
-        text-black
+        text-gray-900
         dark:text-blue-300
     `}
 `;
