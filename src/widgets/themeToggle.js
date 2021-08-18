@@ -85,7 +85,7 @@ export default class ThemeToggle extends React.Component {
       this.setState({ isDarkMode: !this.state.isDarkMode });
     };
     return (
-      <svg viewBox="0 0 100 45" onClick={switchNightMode}>
+      <svg viewBox="0 0 100 45" height="100%" onClick={switchNightMode}>
         <defs>
           <rect id="background" x="0" y="0" width="90" height="40" rx="20" />
           <clipPath id="clip">
