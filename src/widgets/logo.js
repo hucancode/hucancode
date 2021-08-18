@@ -12,9 +12,9 @@ const Container = styled.div`
         overflow-hidden
         rounded-full
         border-2
-        bg-blue-200
+        bg-gray-800
         dark:bg-gray-900
-        border-blue-300
+        border-white
         dark:border-blue-200
     `}
 `;
@@ -23,7 +23,7 @@ const LogoIcon = styled.svg`
     ${tw`
         w-full
         fill-current
-        text-gray-900
+        text-white
         dark:text-blue-300
     `}
 `;
