@@ -2,7 +2,24 @@ module.exports = {
     purge: ['./src/**/*.{js,jsx,ts,tsx}', './public/index.html'],
     darkMode: 'class',
     theme: {
-      extend: {},
+      extend: {
+        zIndex: {
+          '-10': '-10',
+          '10': '10',
+        },
+        skew: {
+          '20': '20deg',
+          '-20': '-20deg',
+          '45': '45deg',
+          '60': '60deg',
+          '80': '80deg',
+          '-80': '-80deg',
+         },
+         width: {
+          '3/2': '150%',
+          '5/2': '250%',
+        },
+      },
       screens: {
         sm: "640px",
         md: "768px",

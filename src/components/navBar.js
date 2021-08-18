@@ -12,7 +12,7 @@ const Container = styled.div`
         container
         box-border
         w-full
-        h-14
+        h-16
         max-w-screen-2xl
         flex
         flex-row
@@ -69,6 +69,34 @@ const NavItem = styled.li`
     `}
 `;
 
+const ThemeContainer = styled.div`
+    ${tw`
+        flex
+        items-center
+        border-none
+        outline-none
+        cursor-pointer
+        w-16
+        h-12
+        bg-transparent
+        select-none
+    `}
+`;
+const HamburgerContainer = styled.button`
+    ${tw`
+        relative
+        block
+        md:hidden
+        border-none
+        outline-none
+        cursor-pointer
+        w-8
+        h-12
+        mr-8
+        select-none
+`}
+`;
+
 export default function Navbar() {
     const isMobile = useMediaQuery( {maxWidth: SCREENS.md});
     const [isDrawerOpen, setDrawerOpen] = useState(false);
@@ -98,10 +126,15 @@ export default function Navbar() {
             <a href='#'>Contact</a>
         </NavItem>
     </NavItems>
+    
     return <Container>
-        <HamburgerButton onClick={() => setDrawerOpen(true)} />
+        <HamburgerContainer onClick={() => setDrawerOpen(true)}>
+            <HamburgerButton/>
+        </HamburgerContainer>
         <Logo/>
         {navItems}
-        <ThemeToggle/>
+        <ThemeContainer>
+            <ThemeToggle/>
+        </ThemeContainer>
     </Container>
 }

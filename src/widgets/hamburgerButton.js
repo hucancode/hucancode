@@ -2,20 +2,6 @@ import React from "react";
 import styled from "styled-components";
 import tw from "twin.macro";
 
-const Container = styled.button`
-    ${tw`
-        relative
-        block
-        md:hidden
-        border-none
-        bg-transparent
-        outline-none
-        cursor-pointer
-        w-12
-        h-12
-        text-base
-    `}
-`;
 const LineX3 = styled.div`
     ${tw`
         top-1/2
@@ -36,7 +22,5 @@ const LineX3 = styled.div`
 `;
 
 export default function HamburgerButton(props) {
-    return <Container onClick={props.onClick}>
-        <LineX3 />
-    </Container>
+    return <LineX3 />
 }

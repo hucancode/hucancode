@@ -7,6 +7,9 @@ import LandingSection from "./components/landingSection";
 
 const AppContainer = styled.div`
   ${tw`
+    flex
+    flex-col
+    items-center
     w-full
     text-3xl
     bg-gray-200
