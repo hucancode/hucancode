@@ -69,6 +69,15 @@ const NavItem = styled.li`
     `}
 `;
 
+const LogoContainer = styled.div`
+    ${tw`
+        w-12
+        h-12
+        bg-transparent
+        select-none
+    `}
+`;
+
 const ThemeContainer = styled.div`
     ${tw`
         flex
@@ -98,7 +107,7 @@ const HamburgerContainer = styled.button`
 `;
 
 export default function Navbar() {
-    const isMobile = useMediaQuery( {maxWidth: SCREENS.md});
+    const isDesktop = useMediaQuery( {minWidth: SCREENS.md});
     const [isDrawerOpen, setDrawerOpen] = useState(false);
     const drawerRef = useRef(null);
 
@@ -113,9 +122,9 @@ export default function Navbar() {
         };
         document.addEventListener("mousedown", closeDrawer);
         return () => document.removeEventListener("mousedown", closeDrawer);
-    }, [isDrawerOpen, isMobile]);
+    }, [isDrawerOpen]);
 
-    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || !isMobile}>
+    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || isDesktop}>
         <NavItem>
             <a href='#'>Game</a>
         </NavItem>
@@ -131,7 +140,9 @@ export default function Navbar() {
         <HamburgerContainer onClick={() => setDrawerOpen(true)}>
             <HamburgerButton/>
         </HamburgerContainer>
-        <Logo/>
+        <LogoContainer>
+            <Logo/>
+        </LogoContainer>
         {navItems}
         <ThemeContainer>
             <ThemeToggle/>
