@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { init, animate } from "../scenes/sabor";
@@ -49,7 +49,7 @@ const Canvas = styled.canvas`
     `}
 `;
 
-class SaborSceneComponent extends Component {
+class SaborScene extends React.Component {
   componentDidMount() {
     init();
     animate();
@@ -61,13 +61,13 @@ class SaborSceneComponent extends Component {
   }
 }
 
-export default function SaborScene() {
+export default function LandingSection() {
   return <Container>
     <About>
       <p>
         Site is under constructions. <br />Made with <code>React.js</code> and <code>Three.js</code>
       </p>
     </About>
-    <SaborSceneComponent />
+    <SaborScene />
   </Container>
 }

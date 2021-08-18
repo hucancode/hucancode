@@ -1,10 +1,11 @@
-import React from "react";
-import {useMediaQuery} from 'react-responsive';
+import React, {useState, useEffect, useRef} from "react";
+import { useMediaQuery } from 'react-responsive';
 import styled from "styled-components";
 import tw from "twin.macro";
-import { slide as Menu } from 'react-burger-menu';
+import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
-import {SCREENS} from "./screens"
+import Logo from "../widgets/logo";
+import { SCREENS } from './screens';
 
 const Container = styled.div`
     ${tw`
@@ -27,8 +28,28 @@ const Container = styled.div`
 const NavItems = styled.ul`
     ${tw`
         flex
+        flex-col
+        z-40
         list-none
-    `};
+        fixed
+        md:static
+        left-0
+        top-0
+        ease-out
+        duration-200
+        px-8
+        py-4
+        transform
+        h-screen
+        md:h-full
+        dark:md:h-full
+        bg-gray-300
+        dark:bg-gray-900
+        md:flex-row
+        md:bg-transparent
+        dark:md:bg-transparent
+    `}
+    ${props => props.open ? `transform: translateX(0);`: `transform: translateX(-100%);`}
 `;
 
 const NavItem = styled.li`
@@ -46,79 +67,41 @@ const NavItem = styled.li`
         hover:text-gray-500
         dark:hover:text-gray-100
     `}
-    ${(props) => `
-        ${props.mobile && tw`
-            text-white
-            mb-3
-            focus:text-gray-300
-            hover:text-gray-300
-        `}
-    `}
 `;
 
-function buildMenuStyle(isDarkMode)
-{
-    return {
-        bmBurgerButton: {
-            position: "relative",
-            width: "20px",
-            height: "20px",
-        },
-        bmBurgerBars: {
-            background: "#000000",
-        },
-        bmBurgerBarsHover: {
-            background: "#222222",
-        },
-        bmCrossButton: {
-            height: "24px",
-            width: "24px",
-        },
-        bmCross: {
-            background: "#cccccc",
-        },
-        bmMenuWrap: {
-            position: "fixed",
-            width: "60%",
-            height: "100%",
-            top: "0px",
-            left: "0px",
-        },
-        bmMenu: {
-            background: "#4b5563",
-            fontSize: "1.15em",
-        },
-        bmItemList: {
-            padding: "1em",
-        },
-        bmOverlay: {
-            background: "rgba(0, 0, 0, 0.3)",
-            top: "0px",
-            left: "0px",
-        },
-    }
-}
-
 export default function Navbar() {
-    const isMobile = useMediaQuery( {maxWidth: SCREENS.sm});
-    let isDarkMode = document.querySelector('html').classList.contains("dark");
-    const menuStyle = buildMenuStyle(isDarkMode);
-    const navItems = <NavItems mobile={isMobile}>
-        <NavItem mobile={isMobile}>
+    const isMobile = useMediaQuery( {maxWidth: SCREENS.md});
+    const [isDrawerOpen, setDrawerOpen] = useState(false);
+    const drawerRef = useRef(null);
+
+    useEffect(() => {
+        const closeDrawer = event => {
+            if (drawerRef.current && drawerRef.current.contains(event.target)) {
+                return;
+            }
+            if(isDrawerOpen) {
+                setDrawerOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", closeDrawer);
+        return () => document.removeEventListener("mousedown", closeDrawer);
+    }, [isDrawerOpen, isMobile]);
+
+    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || !isMobile}>
+        <NavItem>
             <a href='#'>Game</a>
         </NavItem>
-        <NavItem mobile={isMobile}>
+        <NavItem>
             <a href='#'>Mobile</a>
         </NavItem>
-        <NavItem mobile={isMobile}>
+        <NavItem>
             <a href='#'>Contact</a>
         </NavItem>
     </NavItems>
-    const menuNav = <Menu left styles={menuStyle}>
-        {navItems}
-    </Menu>
     return <Container>
-        {isMobile?menuNav:navItems}
+        <HamburgerButton onClick={() => setDrawerOpen(true)} />
+        <Logo/>
+        {navItems}
         <ThemeToggle/>
     </Container>
 }

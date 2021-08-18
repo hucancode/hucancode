@@ -3,7 +3,7 @@ import styled from "styled-components";
 import tw from 'twin.macro';
 import './App.css';
 import Navbar from "./components/navBar";
-import SaborScene from "./components/saborScene";
+import LandingSection from "./components/landingSection";
 
 const AppContainer = styled.div`
   ${tw`
@@ -20,7 +20,7 @@ export default function App() {
   return (
     <AppContainer>
         <Navbar />
-        <SaborScene />
+        <LandingSection />
     </AppContainer>
   )
 }
