@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import './App.css';
 import Navbar from "./components/navBar";
 import LandingSection from "./components/landingSection";
+import FootNote from "./components/footNote";
 
 const AppContainer = styled.div`
   ${tw`
@@ -11,10 +12,10 @@ const AppContainer = styled.div`
     flex-col
     items-center
     w-full
-    text-3xl
-    bg-gray-200
+    min-h-full
+    bg-gray-300
     text-black
-    dark:bg-gray-600
+    dark:bg-gray-900
     dark:text-white
   `}
 `;
@@ -24,6 +25,7 @@ export default function App() {
     <AppContainer>
         <Navbar />
         <LandingSection />
+        <FootNote />
     </AppContainer>
   )
 }

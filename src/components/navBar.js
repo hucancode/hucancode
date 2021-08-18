@@ -13,14 +13,9 @@ const Container = styled.div`
         box-border
         w-full
         h-16
-        max-w-screen-2xl
         flex
         flex-row
         items-center
-        lg:pl-12
-        lg:pr-12
-        pl-3
-        pr-3
         justify-between
     `}
 `;
@@ -43,8 +38,8 @@ const NavItems = styled.ul`
         h-screen
         md:h-full
         dark:md:h-full
-        bg-gray-300
-        dark:bg-gray-900
+        bg-gray-100
+        dark:bg-black
         md:flex-row
         md:bg-transparent
         dark:md:bg-transparent

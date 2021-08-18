@@ -12,8 +12,7 @@ const Container = styled.div`
         flex-col
         md:flex-row
         max-w-screen-lg
-        min-w-full
-        h-screen
+        w-full
         items-center
         justify-around
         overflow-x-hidden
@@ -27,6 +26,21 @@ const About = styled.div`
     md:left-0
     md:w-1/2
     w-full
+    pt-10
+    pb-10
+  `}
+`;
+
+const Title = styled.h1`
+  ${tw`
+    text-4xl
+    mb-3
+  `}
+`;
+
+const Description = styled.p`
+  ${tw`
+    text-lg
   `}
 `;
 
@@ -38,6 +52,7 @@ const CanvasContainer = styled.div`
     right-0
     md:w-2/3
     lg:w-1/2
+    xl:w-2/5
     w-full
     object-contain
   `}
@@ -64,9 +79,11 @@ class SaborScene extends React.Component {
 export default function LandingSection() {
   return <Container>
     <About>
-      <p>
-        Site is under constructions. <br />Made with <code>React.js</code> and <code>Three.js</code>
-      </p>
+      <Title>Hello! 👋</Title>
+      <Description>
+        I'm Bang. I'm a passionate Front End Software Engineer.<br/>
+        I build mobile applications and games for a living.
+      </Description>
     </About>
     <SaborScene />
   </Container>
