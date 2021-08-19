@@ -2,7 +2,7 @@
   "name": "react-threejs",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "http://hucancode.github.io/",
   "dependencies": {
     "@craco/craco": "^6.2.0",
     "@testing-library/jest-dom": "^5.14.1",
@@ -19,6 +19,8 @@
     "web-vitals": "^1.1.2"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d docs",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
@@ -52,6 +54,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^9.8.6",
+    "gh-pages": "^3.2.3",
     "postcss": "^7.0.36",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.7"
   }
