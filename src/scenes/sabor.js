@@ -65,10 +65,10 @@ async function buildScene() {
     // ground
     const ground = new THREE.Mesh(
         new THREE.CircleGeometry(200, 50, 0, Math.PI * 2),
-        new THREE.MeshPhongMaterial({ color: 0x000000, depthWrite: false }));
+        new THREE.MeshPhongMaterial({ color: 0x11111f, depthWrite: false }));
     ground.rotation.x = - Math.PI / 2;
     ground.receiveShadow = true;
-    ground.material.opacity = 0.2;
+    ground.material.opacity = 0.4;
     ground.material.transparent = true;
     scene.add(ground);
 
@@ -88,6 +88,7 @@ async function buildScene() {
             child.material.vertexColors = false;
             child.material.shininess = child.material.name === 'body' ? 1.0 : 10.0;
         });
+        object.position.z = 30;
         scene.add(object);
     });
 }
