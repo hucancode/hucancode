@@ -16,6 +16,7 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
 }
+
 export function init() {
     let canvas = document.getElementById('renderer');
     let w = canvas.clientWidth;
@@ -24,6 +25,21 @@ export function init() {
     camera.position.set(330, 200, 330);
     camera.lookAt(0, 80, 0);
 
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setClearColor(0x000000,0); // the default
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(w, h);
+    renderer.shadowMap.enabled = true;
+    if (USE_CAMERA_CONTROL) {
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 100, 0);
+        controls.update();
+    }
+    window.addEventListener('resize', onWindowResize);
+    buildScene();
+}
+
+async function buildScene() {
     scene = new THREE.Scene();
     scene.background = null;//new THREE.Color(0x282c34);
     //scene.fog = new THREE.Fog(0xa0a0a0, 100, 2000);
@@ -42,7 +58,7 @@ export function init() {
     scene.add(dirLight);
 
     // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
-
+    
     // ground
     const ground = new THREE.Mesh(
         new THREE.CircleGeometry(200, 50, 0, Math.PI * 2),
@@ -53,7 +69,6 @@ export function init() {
     ground.material.transparent = true;
     scene.add(ground);
 
-    // model
     const loader = new FBXLoader();
     loader.setPath('assets/fbx/');
     loader.setResourcePath('assets/textures/');
@@ -72,18 +87,6 @@ export function init() {
         });
         scene.add(object);
     });
-
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    renderer.setClearColor(0x000000,0); // the default
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(w, h);
-    renderer.shadowMap.enabled = true;
-    if (USE_CAMERA_CONTROL) {
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 100, 0);
-        controls.update();
-    }
-    window.addEventListener('resize', onWindowResize);
 }
 
 export function animate() {
@@ -92,5 +95,7 @@ export function animate() {
     if (animator) {
         animator.update(delta);
     }
-    renderer.render(scene, camera);
+    if(scene) {
+        renderer.render(scene, camera);
+    }
 }
