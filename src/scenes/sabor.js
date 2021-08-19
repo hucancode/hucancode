@@ -2,7 +2,9 @@ import * as THREE from "three";
 import { FBXLoader } from "../three/loaders/FBXLoader";
 import { OrbitControls } from "../three/controls/OrbitControls";
 
-let camera, scene, renderer, animator;
+var camera, scene, renderer, animator;
+var sabor;
+var activeAction, previousAction;
 const clock = new THREE.Clock();
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.95;
@@ -51,8 +53,14 @@ async function buildScene() {
     hemiLight.position.set(0, 200, 0);
     scene.add(hemiLight);
 
+    const backLight = new THREE.PointLight( 0xffffff, 1, 600 );
+    //backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 15, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
+    backLight.position.set(0, 250, -70);
+    scene.add( backLight );
+
     const dirLight = new THREE.DirectionalLight(0xffffff);
-    dirLight.position.set(0, 200, 100);
+    dirLight.intensity = 1;
+    dirLight.position.set(0, 220, 150);
     dirLight.castShadow = true;
     dirLight.shadow.camera.top = 180;
     dirLight.shadow.camera.bottom = - 100;
@@ -60,7 +68,7 @@ async function buildScene() {
     dirLight.shadow.camera.right = 120;
     scene.add(dirLight);
 
-    // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
+    //scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
     // ground
     const ground = new THREE.Mesh(
@@ -77,8 +85,6 @@ async function buildScene() {
     loader.setResourcePath('assets/textures/');
     loader.load('SarborV2.fbx', function (object) {
         animator = new THREE.AnimationMixer(object);
-        const action = animator.clipAction(object.animations.find(e => e.name === 'idle'));
-        action.play();
         object.traverse(child => {
             if (!child.isMesh) {
                 return;
@@ -88,8 +94,11 @@ async function buildScene() {
             child.material.vertexColors = false;
             child.material.shininess = child.material.name === 'body' ? 1.0 : 10.0;
         });
-        object.position.z = 30;
+        object.position.z = 40;
         scene.add(object);
+        sabor = object;
+        fadeToAction('idle', 0.0 );
+        window.setTimeout(playIntro, 0);
     });
 }
 
@@ -102,4 +111,29 @@ export function animate() {
     if (scene) {
         renderer.render(scene, camera);
     }
+}
+
+function playIntro() {
+    fadeToAction('walk', 0.2 );
+    activeAction.clampWhenFinished = true;
+    activeAction.setLoop(THREE.LoopRepeat, 2);
+    animator.addEventListener( 'finished', returnToIdle );
+}
+
+function returnToIdle() {
+    animator.removeEventListener( 'finished', returnToIdle );
+    fadeToAction('idle', 0.25);
+}
+
+function fadeToAction( name, duration ) {
+    previousAction = activeAction;
+    activeAction = animator.clipAction(sabor.animations.find(e => e.name === name));
+    if( previousAction === activeAction) {
+        return;
+    }
+    if (previousAction) {
+        previousAction.fadeOut(duration);
+    }
+    activeAction.reset().fadeIn(duration).play();
+
 }
