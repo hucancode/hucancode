@@ -17,6 +17,8 @@ const Container = styled.div`
         justify-around
         overflow-x-hidden
         overflow-y-hidden
+        mt-10
+        mb-10
     `}
 `;
 
@@ -26,7 +28,6 @@ const About = styled.div`
     md:left-0
     md:w-1/2
     w-full
-    pt-10
     pb-10
   `}
 `;

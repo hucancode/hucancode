@@ -4,7 +4,7 @@ import { OrbitControls } from "../three/controls/OrbitControls";
 
 let camera, scene, renderer, animator;
 const clock = new THREE.Clock();
-const USE_CAMERA_CONTROL = false;
+const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.95;
 
 function onWindowResize() {
@@ -32,8 +32,11 @@ export function init() {
     renderer.shadowMap.enabled = true;
     if (USE_CAMERA_CONTROL) {
         const controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 100, 0);
+        controls.target.set(0, 80, 0);
         controls.update();
+        controls.enableRotateY = false;
+        controls.enablePan = false;
+        controls.enableZoom = false;
     }
     window.addEventListener('resize', onWindowResize);
     buildScene();

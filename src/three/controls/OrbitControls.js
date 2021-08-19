@@ -52,6 +52,8 @@ class OrbitControls extends EventDispatcher {
 		this.zoomSpeed = 1.0;
 		// Set to false to disable rotating
 		this.enableRotate = true;
+		this.enableRotateX = true;
+		this.enableRotateY = false;
 		this.rotateSpeed = 1.0;
 		// Set to false to disable panning
 		this.enablePan = true;
@@ -237,9 +239,15 @@ class OrbitControls extends EventDispatcher {
 			return Math.pow( 0.95, scope.zoomSpeed );
 		}
 		function rotateLeft( angle ) {
+			if(scope.enableRotateX !== true) {
+				return;
+			}
 			sphericalDelta.theta -= angle;
 		}
 		function rotateUp( angle ) {
+			if(scope.enableRotateY !== true) {
+				return;
+			}
 			sphericalDelta.phi -= angle;
 		}
 		const panLeft = function () {
