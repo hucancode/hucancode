@@ -109,7 +109,7 @@ const HamburgerContainer = styled.button`
         h-12
         mr-8
         select-none
-`}
+    `}
 `;
 
 export default function Navbar() {
