@@ -2,19 +2,13 @@
 
 
 ## 👋 Hi there 
-- Pronouns: He
 - I’m a:
-  - App developer by day
-  - Game developer by night
-  - Funny guy at all time
+  - Front End Software Engineer
+  - Funny guy
 - I’m currently learning: 
-  - React
+  - React, Redux
   - 3D animations
   - Japanese
-- Ask me about: 
-  - Computer
-  - Games
-  - Languages
 - I speak:
   - 🇻🇳 Native
   - 🇺🇸 C1
