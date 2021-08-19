@@ -22,8 +22,6 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
-    "publish:bash": "craco build && rm -rf docs && mv build docs",
-    "publish:cmd": "craco build && (if exist docs rmdir docs /s /q ) && rename build docs",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
