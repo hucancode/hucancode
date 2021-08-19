@@ -26,7 +26,7 @@ export function init() {
     camera.lookAt(0, 80, 0);
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    renderer.setClearColor(0x000000,0); // the default
+    renderer.setClearColor(0x000000,0);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
     renderer.shadowMap.enabled = true;
