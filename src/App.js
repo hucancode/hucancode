@@ -21,11 +21,11 @@ const AppContainer = styled.div`
 `;
 
 export default function App() {
-  return (
-    <AppContainer>
-        <Navbar />
-        <LandingSection />
-        <FootNote />
-    </AppContainer>
-  )
+    return (
+        <AppContainer>
+            <Navbar />
+            <LandingSection />
+            <FootNote />
+        </AppContainer>
+    )
 }

@@ -11,7 +11,7 @@ function onWindowResize() {
     let canvas = document.getElementById('renderer');
     canvas.style = "";
     let w = canvas.clientWidth;
-    let h = w*ASPECT_RATIO;
+    let h = w * ASPECT_RATIO;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
@@ -20,13 +20,13 @@ function onWindowResize() {
 export function init() {
     let canvas = document.getElementById('renderer');
     let w = canvas.clientWidth;
-    let h = w*ASPECT_RATIO;
+    let h = w * ASPECT_RATIO;
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     camera.position.set(330, 200, 330);
     camera.lookAt(0, 80, 0);
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    renderer.setClearColor(0x000000,0);
+    renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
     renderer.shadowMap.enabled = true;
@@ -61,7 +61,7 @@ async function buildScene() {
     scene.add(dirLight);
 
     // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
-    
+
     // ground
     const ground = new THREE.Mesh(
         new THREE.CircleGeometry(200, 50, 0, Math.PI * 2),
@@ -99,7 +99,7 @@ export function animate() {
     if (animator) {
         animator.update(delta);
     }
-    if(scene) {
+    if (scene) {
         renderer.render(scene, camera);
     }
 }

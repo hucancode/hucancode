@@ -1,6 +1,6 @@
-import React, {useState, useEffect, useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from 'react-responsive';
-import styled, {keyframes} from "styled-components";
+import styled, { keyframes } from "styled-components";
 import tw from "twin.macro";
 import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
@@ -44,7 +44,7 @@ const NavItems = styled.ul`
         md:bg-transparent
         dark:md:bg-transparent
     `}
-    ${props => props.open ? `transform: translateX(0);`: `transform: translateX(-100%);`}
+    ${props => props.open ? `transform: translateX(0);` : `transform: translateX(-100%);`}
 `;
 
 const NavItem = styled.li`
@@ -113,7 +113,7 @@ const HamburgerContainer = styled.button`
 `;
 
 export default function Navbar() {
-    const isDesktop = useMediaQuery( {minWidth: SCREENS.md});
+    const isDesktop = useMediaQuery({ minWidth: SCREENS.md });
     const [isDrawerOpen, setDrawerOpen] = useState(false);
     const drawerRef = useRef(null);
 
@@ -122,7 +122,7 @@ export default function Navbar() {
             if (drawerRef.current && drawerRef.current.contains(event.target)) {
                 return;
             }
-            if(isDrawerOpen) {
+            if (isDrawerOpen) {
                 setDrawerOpen(false);
             }
         };
@@ -141,17 +141,17 @@ export default function Navbar() {
             <a href='#'>Contact</a>
         </NavItem>
     </NavItems>
-    
+
     return <Container>
         <HamburgerContainer onClick={() => setDrawerOpen(true)}>
-            <HamburgerButton/>
+            <HamburgerButton />
         </HamburgerContainer>
         <LogoContainer>
-            <Logo/>
+            <Logo />
         </LogoContainer>
         {navItems}
         <ThemeContainer>
-            <ThemeToggle/>
+            <ThemeToggle />
         </ThemeContainer>
     </Container>
 }

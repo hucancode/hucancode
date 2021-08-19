@@ -25,7 +25,7 @@ const Container = styled.div`
 export default function FootNote() {
     return <Container>
         <p>
-          Site is under constructions. <br />Made with <code>React.js</code> and <code>Three.js</code>
+            Site is under constructions. <br />Made with <code>React.js</code> and <code>Three.js</code>
         </p>
     </Container>
-  }
+}
