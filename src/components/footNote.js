@@ -6,7 +6,6 @@ const Container = styled.div`
     ${tw`
         container
         box-border
-        pt-20
         pb-5
         relative
         flex
@@ -18,6 +17,8 @@ const Container = styled.div`
         overflow-y-hidden
         text-xs
         text-center
+        bg-gray-200
+        dark:bg-black
     `}
 `;
 
