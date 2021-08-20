@@ -4,7 +4,6 @@ import { OrbitControls } from "../three/controls/OrbitControls";
 
 var camera, scene, renderer, animator;
 var sabor;
-var activeAction, previousAction;
 const clock = new THREE.Clock();
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.95;
@@ -97,7 +96,6 @@ async function buildScene() {
         object.position.z = 40;
         scene.add(object);
         sabor = object;
-        fadeToAction('idle', 0.0 );
         window.setTimeout(playIntro, 0);
     });
 }
@@ -114,9 +112,9 @@ export function animate() {
 }
 
 function playIntro() {
-    fadeToAction('intro', 0.2 );
-    activeAction.clampWhenFinished = true;
-    activeAction.setLoop(THREE.LoopOnce);
+    const animation = fadeToAction('intro', 0.0 );
+    animation.clampWhenFinished = true;
+    animation.setLoop(THREE.LoopOnce);
     animator.addEventListener( 'finished', returnToIdle );
 }
 
@@ -126,14 +124,6 @@ function returnToIdle() {
 }
 
 function fadeToAction( name, duration ) {
-    previousAction = activeAction;
-    activeAction = animator.clipAction(sabor.animations.find(e => e.name === name));
-    if( previousAction === activeAction) {
-        return;
-    }
-    if (previousAction) {
-        previousAction.fadeOut(duration);
-    }
-    activeAction.reset().fadeIn(duration).play();
-
+    const animation = animator.clipAction(sabor.animations.find(e => e.name === name));
+    return animation.reset().fadeIn(duration).play();
 }
