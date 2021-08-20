@@ -114,9 +114,9 @@ export function animate() {
 }
 
 function playIntro() {
-    fadeToAction('walk', 0.2 );
+    fadeToAction('intro', 0.2 );
     activeAction.clampWhenFinished = true;
-    activeAction.setLoop(THREE.LoopRepeat, 2);
+    activeAction.setLoop(THREE.LoopOnce);
     animator.addEventListener( 'finished', returnToIdle );
 }
 
