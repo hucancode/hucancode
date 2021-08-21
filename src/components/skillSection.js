@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -277,14 +277,13 @@ function SkillSVG(props) {
 
 
 export default function SkillSection() {
-    var switchRef = useRef(null);
     var [activeSet, setActiveSet] = useState(false);
     
     return <Container>
         <SectionTitle>Tools and languages I use</SectionTitle>
         <SkillSwitchContainer>
             <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>Game Development</SwitchLabel>
-            <SwitchButton id="switch" type="checkbox" checked={activeSet} ref={switchRef} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic for="switch"/>
+            <SwitchButton id="switch" type="checkbox" checked={activeSet} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic for="switch"/>
             <SwitchLabel active={activeSet} onClick={() => setActiveSet(true)}>Application Development</SwitchLabel>
         </SkillSwitchContainer>
         <SkillSet active={!activeSet}>
