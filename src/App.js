@@ -5,8 +5,8 @@ import './App.css';
 import Navbar from "./components/navBar";
 import LandingSection from "./components/landingSection";
 import SkillSection from "./components/skillSection";
-import ExperienceSection from "./components/experienceSection";
-import WorkSection from "./components/workSection";
+// import ExperienceSection from "./components/experienceSection";
+// import WorkSection from "./components/workSection";
 import FootNote from "./components/footNote";
 import FooterSection from "./components/footerSection";
 
@@ -30,8 +30,8 @@ export default function App() {
             <Navbar />
             <LandingSection />
             <SkillSection />
-            <ExperienceSection />
-            <WorkSection />
+            {/* <ExperienceSection />
+            <WorkSection /> */}
             <FooterSection />
             <FootNote />
         </AppContainer>

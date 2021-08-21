@@ -23,7 +23,6 @@ const Avatar = styled.div`
         w-40
         h-40
         rounded-full
-        bg-red-500
         flex
         items-center
         justify-center
@@ -31,7 +30,14 @@ const Avatar = styled.div`
         text-base
         mr-2
         overflow-hidden
+        bg-cover
+        duration-500
     `}
+    background-image: url('./assets/profile.jpg');
+    &:hover {
+        background-image: url('./assets/profile-secret.jpg');
+    }
+    
 `;
 
 const ContactContainer = styled.div`
@@ -99,8 +105,6 @@ export default function FooterSection() {
             <p>hucancode@gmail.com</p>
             <p>Download my resume</p>
         </ContactContainer>
-        <Avatar>
-            <img src="./assets/sol.jpg" width="100%" height="100%" />
-        </Avatar>
+        <Avatar/>
     </Container>
 }

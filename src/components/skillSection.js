@@ -1,9 +1,8 @@
-import React from "react";
-import styled from 'styled-components';
+import React, { useState, useRef } from "react";
+import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAndroid, faApple, faChrome, faDocker, faJs, faNode, faReact } from "@fortawesome/free-brands-svg-icons";
-import { faDesktop } from "@fortawesome/free-solid-svg-icons";
+import { faDocker, faJs, faNode, faReact } from "@fortawesome/free-brands-svg-icons";
 
 const Container = styled.section`
     ${tw`
@@ -15,29 +14,104 @@ const Container = styled.section`
         dark:bg-black
         p-10
         text-center
+        overflow-hidden
     `}
 `;
 
-const SkillSet = styled.div`
+const SkillSwitchContainer = styled.div`
     ${tw`
+        w-full
         flex
-        flex-wrap
-        mt-5
-        mb-5
         items-center
         justify-center
     `}
 `;
 
-const SkillContainer = styled.div`
+const SwitchButton = styled.input`
+    height: 0;
+    width: 0;
+    visibility: hidden;
+`;
+const SwitchLabel = styled.h1`
+    ${tw`
+        w-1/3
+        cursor-pointer
+        select-none
+        duration-300
+    `}
+    ${props => props.active ?  
+        css`${tw`
+            text-blue-500
+        `}` :
+        css`${tw`
+            text-gray-400
+            hover:text-blue-500
+        `}`
+    }
+`;
+const SwitchButtonGraphic = styled.label`
+    ${tw`
+        bg-blue-300
+        w-24
+        h-8
+        rounded-2xl
+        cursor-pointer
+        block
+    `}
+    position: relative;
+    margin: 1rem;
+        
+    &:after {
+        content: '';
+        ${tw`
+            absolute
+            duration-300
+            bg-white
+            top-1
+            left-1
+            w-6
+            h-6
+            rounded-full
+        `}
+    }
+
+    input:checked + & {
+        ${tw`
+            bg-green-300
+        `}
+    }
+    input:checked + &:after {
+        left: calc(100% - 0.2rem);
+        transform: translateX(-100%);
+    }
+    &:active:after {
+        width: 60%;
+    }
+`;
+
+const SkillSet = styled.ul`
+    ${tw`
+        flex
+        flex-wrap
+        mt-3
+        mb-3
+        items-center
+        justify-center
+        duration-300
+        origin-top
+        overflow-hidden
+    `}
+    ${props => props.active ? `height: auto;transform: scaleY(1);` : `height: 0; display:hidden;transform: scaleY(0.0);`}
+`;
+
+const SkillContainer = styled.li`
     ${tw`
         w-12
         h-16
         flex
         flex-col
         items-center
-        m-2
-
+        m-3
     `}
 `;
 
@@ -69,6 +143,15 @@ const SVGIconHollow = styled.svg`
         stroke-current
         text-gray-700
         dark:text-gray-400
+    `}
+`;
+
+
+const SkillName = styled.p`
+    ${tw`
+        text-xs
+        font-mono
+        text-center
     `}
 `;
 
@@ -163,7 +246,7 @@ function Skill(props) {
 function SkillHollowSVG(props) {
     return <SkillContainer>
         <SkillIconContainer>
-            <SVGIconHollow viewBox={props.viewBox} strokeWidth="5">
+            <SVGIconHollow viewBox={props.viewBox} fill="none" strokeWidth="5">
                 {props.paths.map(path =><path d={path} />)}
             </SVGIconHollow>
         </SkillIconContainer>
@@ -186,23 +269,18 @@ function SkillSVG(props) {
     </SkillContainer>
 }
 
-const SkillName = styled.p`
-    ${tw`
-        text-xs
-        font-mono
-        text-center
-    `}
-`;
 
 export default function SkillSection() {
+    var switchRef = useRef(null);
+    var [activeSet, setActiveSet] = useState(false);
+    
     return <Container>
-        <h1>Game Development</h1>
-        <SkillSet>
-            <Skill name="PC" icon={faDesktop}/>
-            <Skill name="Android" icon={faAndroid}/>
-            <Skill name="iOS" icon={faApple}/>
-        </SkillSet>
-        <SkillSet>
+        <SkillSwitchContainer>
+            <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>Game Development</SwitchLabel>
+            <SwitchButton id="switch" type="checkbox" checked={activeSet} ref={switchRef} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic for="switch"/>
+            <SwitchLabel active={activeSet} onClick={() => setActiveSet(true)}>Application Development</SwitchLabel>
+        </SkillSwitchContainer>
+        <SkillSet active={!activeSet}>
             <SkillSVG name="C++" viewBox={CPPViewBox} paths={CPPSVGPath}/>
             <SkillSVG name="C#" viewBox={CSViewBox} paths={CSSVGPath}/>
             <SkillSVG name="OpenGL" viewBox={OpenGLViewBox} paths={OpenGLSVGPath}/>
@@ -210,14 +288,7 @@ export default function SkillSection() {
             <SkillSVG name="Unreal Engine" viewBox={UnrealViewBox} paths={UnrealSVGPath}/>
             <SkillHollowSVG name="ThreeJS" viewBox={ThreeViewBox} paths={ThreeSVGPath}/>
         </SkillSet>
-        <br/>
-        <h1>Mobile Application Development</h1>
-        <SkillSet>
-            <Skill name="Android" icon={faAndroid}/>
-            <Skill name="iOS" icon={faApple}/>
-            <Skill name="Web" icon={faChrome}/>
-        </SkillSet>
-        <SkillSet>
+        <SkillSet active={activeSet}>
             <Skill name="Javascript" icon={faJs}/>
             <Skill name="React" icon={faReact}/>
             <SkillSVG name="Nest" viewBox={NestViewBox} paths={NestSVGPath} />
