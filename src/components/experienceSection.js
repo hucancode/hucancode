@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
-import { ReactComponent as ConstructionIllustration } from "../assets/pixeltrue-web-development.svg";
+import { ReactComponent as ConstructionIllustration } from "../assets/gummy-canvas.svg";
 
 const Container = styled.div`
     ${tw`
@@ -110,10 +110,16 @@ const UnderConstruction = styled(ConstructionIllustration)`
 `;
 
 export default function ExperienceSection() {
-    var [activeSet, setActiveSet] = useState(0);
     return <Container>
         <SectionTitle>Where I’ve worked</SectionTitle>
         <UnderConstruction/>
+    </Container>
+}
+
+export function ExperienceSectionWIP() {
+    var [activeSet, setActiveSet] = useState(0);
+    return <Container>
+        <SectionTitle>Where I’ve worked</SectionTitle>
         <HistoryContainer style={{display:"none"}}>
             <HistoryNavigator>
                 <HistoryButton onClick={() => setActiveSet(0)} active={activeSet===0}>
