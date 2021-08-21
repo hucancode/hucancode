@@ -123,15 +123,14 @@ const UnderConstruction = styled(ConstructionIllustration)`
     `}
 `;
 
-export default function ExperienceSection() {
-    return ExperienceSectionWIP();
-    return <Container id='experiences'>
-        <SectionTitle>Where I’ve worked</SectionTitle>
-        <UnderConstruction/>
-    </Container>
-}
+// export default function ExperienceSection() {
+//     return <Container id='experiences'>
+//         <SectionTitle>Where I’ve worked</SectionTitle>
+//         <UnderConstruction/>
+//     </Container>
+// }
 
-export function ExperienceSectionWIP() {
+export default function ExperienceSection() {
     var [activeSet, setActiveSet] = useState(0);
     return <Container id='experiences'>
         <SectionTitle>Where I’ve worked</SectionTitle>
@@ -193,7 +192,7 @@ export function ExperienceSectionWIP() {
                 <Title>Senior Game Programmer <sup>@</sup> <em>Gameloft Hanoi</em></Title>
                 <Time>March 2014 - March 2016, June 2018 - November 2018</Time>
                 <Description>
-                    To be updated
+                    <UnderConstruction/>
                     {/* Developed and shipped high quality games using C++, OpenGL and in-house engine */}
                 </Description>
             </ContentContainer>
@@ -201,7 +200,7 @@ export function ExperienceSectionWIP() {
                 <Title>Senior Software Developer <sup>@</sup> <em>FPT Software</em></Title>
                 <Time>June 2016 - June 2018</Time>
                 <Description>
-                    To be updated
+                    <UnderConstruction/>
                     {/* Take part in the industry-standard software development process and delivered high quality C++ code. */}
                 </Description>
             </ContentContainer>
