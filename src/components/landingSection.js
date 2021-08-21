@@ -3,7 +3,7 @@ import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
 import { init, animate } from "../scenes/sabor";
 
-const Container = styled.div`
+const Container = styled.section`
     ${tw`
         container
         box-border

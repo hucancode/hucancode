@@ -79,9 +79,9 @@ const LogoContainer = styled.div`
         bg-transparent
         select-none
     `}
-    &:hover {
-        animation: ${SpinAnimation} 5s  ease-in-out infinite;
-    }
+    // &:hover {
+    //     animation: ${SpinAnimation} 5s  ease-in-out infinite;
+    // }
 `;
 
 const ThemeContainer = styled.div`
@@ -133,9 +133,6 @@ export default function Navbar() {
     const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || isDesktop}>
         <NavItem>
             <a href='#'>Skill</a>
-        </NavItem>
-        <NavItem>
-            <a href='#'>Education</a>
         </NavItem>
         <NavItem>
             <a href='#'>Experience</a>

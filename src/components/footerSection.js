@@ -5,7 +5,7 @@ import { faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArtstation, faFacebook, faGithub } from "@fortawesome/free-brands-svg-icons";
 
-const Container = styled.div`
+const Container = styled.section`
     ${tw`
         container
         flex
@@ -15,8 +15,6 @@ const Container = styled.div`
         justify-between
         p-10
         md:flex-row
-        bg-gray-200
-        dark:bg-black
     `}
 `;
 
@@ -59,7 +57,7 @@ const SocialContainer = styled.div`
     `}
 `;
 
-const RedIcon = styled.span`
+const RoundIcon = styled.span`
     ${tw`
         w-9
         h-9
@@ -83,15 +81,15 @@ export default function FooterSection() {
             <br/>
             <SocialContainer><FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: '0.5rem'}} size="lg"></FontAwesomeIcon><p>Marugame, Kagawa, Japan</p></SocialContainer>
             <SocialContainer>
-                <RedIcon>
+                <RoundIcon>
                     <FontAwesomeIcon icon={faGithub} size="lg"></FontAwesomeIcon>
-                </RedIcon>
-                <RedIcon>
+                </RoundIcon>
+                <RoundIcon>
                     <FontAwesomeIcon icon={faArtstation} size="lg"></FontAwesomeIcon>
-                </RedIcon>
-                <RedIcon>
+                </RoundIcon>
+                <RoundIcon>
                     <FontAwesomeIcon icon={faFacebook} size="lg"></FontAwesomeIcon>
-                </RedIcon>
+                </RoundIcon>
             </SocialContainer>
         </ContactContainer>
         <ContactContainer>

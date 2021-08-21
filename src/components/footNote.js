@@ -17,8 +17,6 @@ const Container = styled.div`
         overflow-y-hidden
         text-xs
         text-center
-        bg-gray-200
-        dark:bg-black
     `}
 `;
 

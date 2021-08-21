@@ -5,7 +5,6 @@ import './App.css';
 import Navbar from "./components/navBar";
 import LandingSection from "./components/landingSection";
 import SkillSection from "./components/skillSection";
-import EducationSection from "./components/educationSection";
 import ExperienceSection from "./components/experienceSection";
 import WorkSection from "./components/workSection";
 import FootNote from "./components/footNote";
@@ -31,7 +30,6 @@ export default function App() {
             <Navbar />
             <LandingSection />
             <SkillSection />
-            <EducationSection />
             <ExperienceSection />
             <WorkSection />
             <FooterSection />
