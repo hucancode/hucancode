@@ -118,8 +118,8 @@ const Description = styled.p`
 
 const UnderConstruction = styled(ConstructionIllustration)`
     ${tw`
-        w-80
-        h-80
+        w-60
+        h-60
     `}
 `;
 
