@@ -43,6 +43,8 @@ const SwitchLabel = styled.h3`
         w-1/3
         cursor-pointer
         select-none
+        text-xs
+        md:text-base
         duration-300
     `}
     ${props => props.active ?  
@@ -58,7 +60,7 @@ const SwitchLabel = styled.h3`
 const SwitchButtonGraphic = styled.label`
     ${tw`
         bg-blue-300
-        w-24
+        w-20
         h-8
         rounded-2xl
         cursor-pointer

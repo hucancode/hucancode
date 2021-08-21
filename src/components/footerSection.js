@@ -119,6 +119,7 @@ export default function FooterSection() {
             <br/>
             <p>(+81) 070-8311-3362</p>
             <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
+            <br />
             <a href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">Download my resume</a>
         </ContactContainer>
         <Avatar/>
