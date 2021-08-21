@@ -37,6 +37,10 @@ const Avatar = styled.div`
     &:hover {
         background-image: url('./assets/profile-secret.jpg');
     }
+    &:after {
+        display: none;
+        content: url('./assets/profile-secret.jpg');
+    }
     
 `;
 
