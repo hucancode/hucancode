@@ -104,8 +104,8 @@ const Description = styled.p`
 
 const UnderConstruction = styled(ConstructionIllustration)`
     ${tw`
-        w-60
-        h-60
+        w-80
+        h-80
     `}
 `;
 
