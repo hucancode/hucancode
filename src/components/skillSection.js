@@ -204,6 +204,10 @@ const GraphQLSVGPath = [
     "M200,395.8 C180.7,395.8 165.1,380.2 165.1,360.9 C165.1,341.6 180.7,326 200,326 C219.3,326 234.9,341.6 234.9,360.9 C234.9,380.1 219.3,395.8 200,395.8",
     "M200,74 C180.7,74 165.1,58.4 165.1,39.1 C165.1,19.8 180.7,4.2 200,4.2 C219.3,4.2 234.9,19.8 234.9,39.1 C234.9,58.4 219.3,74 200,74"
 ];
+const FirebaseViewBox = "0 0 128 128";
+const FirebaseSVGPath = [
+    "M27.35 80.52l10.68-68.44c.37-2.33 3.5-2.89 4.6-.8l11.48 21.48-26.76 47.76zm75.94 16.63L93.1 34.11c-.31-1.96-2.76-2.76-4.17-1.35L24.71 97.15l35.54 19.95a7.447 7.447 0 007.18 0l35.86-19.95zm-28.85-55L66.21 26.5c-.92-1.78-3.44-1.78-4.36 0L25.7 90.95l48.74-48.8z"
+];
 const CPPViewBox = "-32 -32 192 192";
 const CPPSVGPath = [
     "M117.5 33.5l.3-.2c-.6-1.1-1.5-2.1-2.4-2.6L67.1 2.9c-.8-.5-1.9-.7-3.1-.7-1.2 0-2.3.3-3.1.7l-48 27.9c-1.7 1-2.9 3.5-2.9 5.4v55.7c0 1.1.2 2.3.9 3.4l-.2.1c.5.8 1.2 1.5 1.9 1.9l48.2 27.9c.8.5 1.9.7 3.1.7 1.2 0 2.3-.3 3.1-.7l48-27.9c1.7-1 2.9-3.5 2.9-5.4V36.1c.1-.8 0-1.7-.4-2.6zM82 66v-4h5v-5h5v5h5v4h-5v5h-5v-5h-5zm3.3-14C81.1 44.5 73.1 39.5 64 39.5c-13.5 0-24.5 11-24.5 24.5s11 24.5 24.5 24.5c9.1 0 17.1-5 21.3-12.4l12.9 7.6c-6.8 11.8-19.6 19.8-34.2 19.8-21.8 0-39.5-17.7-39.5-39.5S42.2 24.5 64 24.5c14.7 0 27.5 8.1 34.3 20l-13 7.5zM115 66h-5v5h-4v-5h-6v-4h6v-5h4v5h5v4z"
@@ -302,11 +306,12 @@ export default function SkillSection() {
             <SkillSVG name="Nest" viewBox={NestViewBox} paths={NestSVGPath} />
             <SkillSVG name="Express" viewBox={ExpressViewBox} paths={ExpressSVGPath} />
             <SkillSVG name="Flutter" viewBox={FlutterViewBox} paths={FlutterSVGPath} />
-            <SkillSVG name="Dart" viewBox={DartViewBox} paths={DartSVGPath} />
+            <div style={{display:'none'}}><SkillSVG name="Dart" viewBox={DartViewBox} paths={DartSVGPath} /></div>
             <SkillSVG name="MySQL" viewBox={MySQLViewBox} paths={MySQLSVGPath} />
             <SkillSVG name="GraphQL" viewBox={GraphQLViewBox} paths={GraphQLSVGPath} />
             <Skill name="NodeJS" icon={faNode}/>
             <Skill name="Docker" icon={faDocker}/>
+            <SkillSVG name="Firebase" viewBox={FirebaseViewBox} paths={FirebaseSVGPath} />
         </SkillSet>
     </Container>
 }
