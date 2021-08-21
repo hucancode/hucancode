@@ -17,6 +17,12 @@ const Container = styled.section`
         overflow-hidden
     `}
 `;
+const SectionTitle = styled.h1`
+    ${tw`
+        text-2xl
+        mb-5
+    `}
+`;
 
 const SkillSwitchContainer = styled.div`
     ${tw`
@@ -32,7 +38,7 @@ const SwitchButton = styled.input`
     width: 0;
     visibility: hidden;
 `;
-const SwitchLabel = styled.h1`
+const SwitchLabel = styled.h3`
     ${tw`
         w-1/3
         cursor-pointer
@@ -275,6 +281,7 @@ export default function SkillSection() {
     var [activeSet, setActiveSet] = useState(false);
     
     return <Container>
+        <SectionTitle>Tools and languages I use</SectionTitle>
         <SkillSwitchContainer>
             <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>Game Development</SwitchLabel>
             <SwitchButton id="switch" type="checkbox" checked={activeSet} ref={switchRef} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic for="switch"/>
