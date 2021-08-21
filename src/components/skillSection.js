@@ -279,7 +279,7 @@ function SkillSVG(props) {
 export default function SkillSection() {
     var [activeSet, setActiveSet] = useState(false);
     
-    return <Container>
+    return <Container id='skill'>
         <SectionTitle>Tools and languages I use</SectionTitle>
         <SkillSwitchContainer>
             <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>Game Development</SwitchLabel>

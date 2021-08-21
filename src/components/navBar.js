@@ -132,16 +132,16 @@ export default function Navbar() {
 
     const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || isDesktop}>
         <NavItem>
-            <a href='#'>Skill</a>
+            <a href='#skill'>Skill</a>
         </NavItem>
         <NavItem>
-            <a href='#'>Experience</a>
+            <a href='#experiences'>Experiences</a>
         </NavItem>
         <NavItem>
-            <a href='#'>Works</a>
+            <a href='#works'>Works</a>
         </NavItem>
         <NavItem>
-            <a href='#'>Contact</a>
+            <a href='#contact'>Contact</a>
         </NavItem>
     </NavItems>
 

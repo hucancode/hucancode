@@ -53,6 +53,12 @@ const ContactContainer = styled.div`
         items-center
         md:items-start
     `}
+    & a:hover {
+        ${tw`
+            text-blue-900
+            dark:text-blue-300
+        `}
+    }
 `;
 
 const Title = styled.h1`
@@ -85,29 +91,35 @@ const RoundIcon = styled.span`
 `;
 
 export default function FooterSection() {
-    return <Container>
+    return <Container id='contact'>
         <ContactContainer>
             <Title>Reach out to me!</Title>
             <br/>
             <SocialContainer><FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: '0.5rem'}} size="lg"></FontAwesomeIcon><p>Marugame, Kagawa, Japan</p></SocialContainer>
             <SocialContainer>
+                <a href="https://github.com/hucancode">
                 <RoundIcon>
                     <FontAwesomeIcon icon={faGithub} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
+                </a>
+                <a href="https://www.artstation.com/hucancode">
                 <RoundIcon>
                     <FontAwesomeIcon icon={faArtstation} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
+                </a>
+                <a href="https://www.facebook.com/LeeSoooYoung">
                 <RoundIcon>
                     <FontAwesomeIcon icon={faFacebook} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
+                </a>
             </SocialContainer>
         </ContactContainer>
         <ContactContainer>
             <Title>Contact</Title>
             <br/>
-            <p>(+81)070-8311-3362</p>
-            <p>hucancode@gmail.com</p>
-            <p>Download my resume</p>
+            <p>(+81) 070-8311-3362</p>
+            <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
+            <a href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">Download my resume</a>
         </ContactContainer>
         <Avatar/>
     </Container>

@@ -41,7 +41,7 @@ const UnderConstruction = styled(ConstructionIllustration)`
 `;
 
 export default function WorkSection() {
-    return <Container>
+    return <Container id='works'>
         <SectionTitle>Something I've built</SectionTitle>
         <ProjectContainer>
             <UnderConstruction/>
