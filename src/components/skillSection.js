@@ -63,6 +63,15 @@ const SVGIcon = styled.svg`
     `}
 `;
 
+const SVGIconHollow = styled.svg`
+    ${tw`
+        w-full
+        stroke-current
+        text-gray-700
+        dark:text-gray-400
+    `}
+`;
+
 const FlutterViewBox = "0 0 237.9 238";
 const FlutterSVGPath = [
     "M 126.8,205.6 126.7,205.6 80.1,159 106.7,132.3 179.9,205.6 z",
@@ -124,6 +133,15 @@ const BlenderSVGPath = [
 // const VisualStudioSVGPath = [
 //     "M95 2.3l30.5 12.3v98.7l-30.7 12.4-49-48.7-31 24.1-12.3-6.2V33.1l12.3-5.9 31 24.3zM14.8 45.7v37.5l18.5-19zm48.1 18.5l31.9 25.1V39z"
 // ];
+const ThreeViewBox = "-8.964 -4.2527 226.77 226.77";
+const ThreeSVGPath = [
+    "m63.02 200.61-43.213-174.94 173.23 49.874z",
+    "m106.39 50.612 21.591 87.496-86.567-24.945z",
+    "m84.91 125.03-10.724-43.465 43.008 12.346z",
+    "m63.458 38.153 10.724 43.465-43.008-12.346z",
+    "m149.47 62.93 10.724 43.465-43.008-12.346z",
+    "m84.915 125.06 10.724 43.465-43.008-12.346z"
+];
 const UnrealViewBox = "-32 -32 400 400";
 const UnrealSVGPath = [
     "M264.11,191.3h0c-2.79,13.44-15.19,47.94-54.74,66.62l-15.88-17.86L166.69,267a98.9,98.9,0,0,1-78.22-40.12,38.53,38.53,0,0,0,8.76,1.65c4.39.08,9.14-1.53,9.14-8.9v-72.7a12,12,0,0,0-15.05-12C78.91,137.79,69,168.75,69,168.75a98.44,98.44,0,0,1,34.07-75.44,99.85,99.85,0,0,1,50.27-23.19c-13.55,7.72-21.16,20.31-21.16,30.87,0,17,10.24,14.94,13.27,12.44v98.12a15.6,15.6,0,0,0,2,3.45,14.49,14.49,0,0,0,11.85,6c10.25,0,23.55-11.7,23.55-11.7V129.88c0-8.08-6.09-17.84-12.19-21.19,0,0,11.29-2,20,4.67h0a74.63,74.63,0,0,1,5.21-5.73C216.2,87.68,235.35,82,251.3,79.16h0s-29,22.79-29,53.37c0,22.74.59,78.2.59,78.2C233.65,221.12,249.65,206.11,264.11,191.3Z",
@@ -141,6 +159,20 @@ function Skill(props) {
         </SkillName>
     </SkillContainer>
 }
+
+function SkillHollowSVG(props) {
+    return <SkillContainer>
+        <SkillIconContainer>
+            <SVGIconHollow viewBox={props.viewBox} strokeWidth="5">
+                {props.paths.map(path =><path d={path} />)}
+            </SVGIconHollow>
+        </SkillIconContainer>
+        <SkillName>
+            {props.name}
+        </SkillName>
+    </SkillContainer>
+}
+
 function SkillSVG(props) {
     return <SkillContainer>
         <SkillIconContainer>
@@ -176,6 +208,7 @@ export default function SkillSection() {
             <SkillSVG name="OpenGL" viewBox={OpenGLViewBox} paths={OpenGLSVGPath}/>
             <SkillSVG name="Blender" viewBox={BlenderViewBox} paths={BlenderSVGPath}/>
             <SkillSVG name="Unreal Engine" viewBox={UnrealViewBox} paths={UnrealSVGPath}/>
+            <SkillHollowSVG name="ThreeJS" viewBox={ThreeViewBox} paths={ThreeSVGPath}/>
         </SkillSet>
         <br/>
         <h1>Mobile Application Development</h1>
