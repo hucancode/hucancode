@@ -1,7 +1,7 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { ReactComponent as ConstructionIllustration } from "../assets/gummy-blackboard.svg";
+import { ReactComponent as ConstructionIllustration } from "../assets/gummy-canvas.svg";
 
 const Container = styled.section`
     ${tw`
@@ -40,9 +40,9 @@ const UnderConstruction = styled(ConstructionIllustration)`
     `}
 `;
 
-export default function WorkSection() {
+export default function ProjectSection() {
     return <Container id='works'>
-        <SectionTitle>Something I've built</SectionTitle>
+        <SectionTitle>Something I've helped building</SectionTitle>
         <ProjectContainer>
             <UnderConstruction/>
         </ProjectContainer>

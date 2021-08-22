@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
-import { ReactComponent as ConstructionIllustration } from "../assets/gummy-canvas.svg";
 
 const Container = styled.div`
     ${tw`
@@ -97,6 +96,7 @@ const Time = styled.p`
 
 const Description = styled.p`
     ${tw`
+        w-full
         text-sm
         text-left
         mt-5
@@ -114,13 +114,6 @@ const Description = styled.p`
             left-0
         `}
     }
-`;
-
-const UnderConstruction = styled(ConstructionIllustration)`
-    ${tw`
-        w-60
-        h-60
-    `}
 `;
 
 // export default function ExperienceSection() {
@@ -192,7 +185,7 @@ export default function ExperienceSection() {
                 <Title>Senior Game Programmer <sup>@</sup> <em>Gameloft Hanoi</em></Title>
                 <Time>March 2014 - March 2016, June 2018 - November 2018</Time>
                 <Description>
-                    <UnderConstruction/>
+                    Updating...
                     {/* Developed and shipped high quality games using C++, OpenGL and in-house engine */}
                 </Description>
             </ContentContainer>
@@ -200,7 +193,7 @@ export default function ExperienceSection() {
                 <Title>Senior Software Developer <sup>@</sup> <em>FPT Software</em></Title>
                 <Time>June 2016 - June 2018</Time>
                 <Description>
-                    <UnderConstruction/>
+                    Updating...
                     {/* Take part in the industry-standard software development process and delivered high quality C++ code. */}
                 </Description>
             </ContentContainer>
