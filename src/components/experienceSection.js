@@ -179,7 +179,7 @@ export default function ExperienceSection() {
                         I took 2-years course, but I graduated early, only study there for 1 year.
                     </li>
                     <li>
-                        I started with almost zero Japanese and was able to pass JLPT N3 before graduation.
+                        I started with almost zero Japanese and was able to pass JLPT N3 before graduation. One year later I passed JLPT N2.
                     </li>
                     <li>
                         I finished all JLPT N2 programs offered by the school. I can communicate in Japanese at conversation level without difficulty.

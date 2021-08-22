@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from 'react-responsive';
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import tw from "twin.macro";
 import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
 import Logo from "../widgets/logo";
 import { SCREENS } from './screens';
 
-const Container = styled.div`
+const Container = styled.nav`
     ${tw`
         container
         box-border
@@ -64,14 +64,6 @@ const NavItem = styled.li`
     `}
 `;
 
-const SpinAnimation = keyframes`
-  0% { transform: rotate( 0.0deg) }
-  10% { transform: rotate( -120.0deg) }
-  70% { transform: rotate( 3630.0deg) }
-  80% { transform: rotate( 3600.0deg) }
-  100% { transform: rotate( 3600.0deg) }
-`;
-
 const LogoContainer = styled.div`
     ${tw`
         w-12
@@ -79,9 +71,6 @@ const LogoContainer = styled.div`
         bg-transparent
         select-none
     `}
-    // &:hover {
-    //     animation: ${SpinAnimation} 5s  ease-in-out infinite;
-    // }
 `;
 
 const ThemeContainer = styled.div`
