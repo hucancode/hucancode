@@ -1,7 +1,7 @@
 import React from "react";
 import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
-import { init, animate } from "../scenes/sabor";
+import { init, animate } from "../scenes/dragon";
 
 const Container = styled.section`
     ${tw`

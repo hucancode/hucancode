@@ -16,13 +16,19 @@ export function init() {
     renderer.setSize(w, h);
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     scene = new THREE.Scene();
-    camera.position.set(200, 200, 400);
+    camera.position.set(100, 100, 200);
     camera.lookAt(scene.position);
+    const ALPHA = -50;
+    const ENTROPI = 100;
     const initialPoints = [
-        { x: 100, y: 0, z: - 100 },
-        { x: 100, y: 0, z: 100 },
-        { x: - 100, y: 0, z: 100 },
-        { x: - 100, y: 0, z: - 100 },
+        { x: 50, y: 30, z: - 50 },
+        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
+        { x: 50, y: 0, z: 50 },
+        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
+        { x: -50, y: 50, z: 50 },
+        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
+        { x: -50, y: 20, z: - 50 },
+        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
     ];
     const boxGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
     const boxMaterial = new THREE.MeshBasicMaterial();
@@ -64,35 +70,35 @@ export function init() {
         obj.traverse(function (child) {
             //if (child.isMesh) child.material.map = texture;
         });
-        obj.rotation.y = Math.PI*0.5;
+        console.log('loaded dragon_body.obj');
+        //obj.rotation.y = Math.PI*0.5;
+        obj.material = new THREE.MeshBasicMaterial();
         dragonBody = new Flow(obj);
         dragonBody.updateCurve(0, curve);
         scene.add(dragonBody.object3D);
-        scene.add(obj);
     });
 
     loader.load('assets/obj/dragon_head.obj', function (obj) {
         obj.traverse(function (child) {
             //if (child.isMesh) child.material.map = texture;
         });
-        obj.rotation.y = Math.PI*0.5;
+        //obj.rotation.y = Math.PI*0.5;
         dragonHead = new Flow(obj);
         dragonHead.updateCurve(0, curve);
         scene.add(dragonHead.object3D);
-        scene.add(obj);
     });
 
 
-    // loader.load('assets/obj/dragon_legs.obj', function (obj) {
-    //     obj.traverse(function (child) {
-    //         //if (child.isMesh) child.material.map = texture;
-    //     });
-    //     obj.rotation.y = Math.PI*0.5;
-    //     dragonLegs = new Flow(obj);
-    //     dragonLegs.updateCurve(0, curve);
-    //     scene.add(dragonLegs.object3D);
-    //     scene.add(obj);
-    // });
+    loader.load('assets/obj/dragon_legs.obj', function (obj) {
+        obj.traverse(function (child) {
+            //if (child.isMesh) child.material.map = texture;
+        });
+        console.log('loaded dragon_legs.obj');
+        //obj.rotation.y = Math.PI*0.5;
+        dragonLegs = new Flow(obj);
+        dragonLegs.updateCurve(0, curve);
+        scene.add(dragonLegs.object3D);
+    });
 
     window.addEventListener('resize', onWindowResize);
 }
@@ -110,13 +116,13 @@ function onWindowResize() {
 export function animate() {
     requestAnimationFrame(animate);
     if (dragonBody) {
-        dragonBody.moveAlongCurve(0.001);
+        dragonBody.moveAlongCurve(0.002);
     }
     if (dragonHead) {
-        dragonHead.moveAlongCurve(0.001);
+        dragonHead.moveAlongCurve(0.002);
     }
     if (dragonLegs) {
-        dragonLegs.moveAlongCurve(0.001);
+        dragonLegs.moveAlongCurve(0.002);
     }
     renderer.render(scene, camera);
 }
