@@ -3,11 +3,14 @@ import { Flow } from '../three/modifiers/CurveModifier.js';
 import { OBJLoader } from '../three/loaders/OBJLoader.js';
 import { GLTFLoader } from '../three/loaders/GLTFLoader.js';
 
-const curveHandles = [];
 let scene, camera, renderer, dragon;
+let clock = new THREE.Clock();
+var time = 0;
+let curve, curveObject;
 const ASPECT_RATIO = 0.75;
 const DRAW_PATH = false;
 const USE_OBJ = false;
+const ANIMATE_CURVE = false;
 
 export function init() {
     let canvas = document.getElementById('dragon');
@@ -25,40 +28,32 @@ export function init() {
     const VAR_X = 100;
     const MIN_Y = -50;
     const VAR_Y = 100;
-    const MIN_Z = -150;
-    const VAR_Z = 300;
-    const initialPoints = [
-        { x: 50, y: 30, z: -150 },
+    const MIN_Z = -100;
+    const VAR_Z = 200;
+    const points = [
+        { x: 50, y: 0, z: 100 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
-        { x: 50, y: 0, z: 150 },
+        { x: -50, y: 50, z: 100 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
-        { x: -50, y: 50, z: 150 },
+        { x: -50, y: 20, z: -100 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
-        { x: -50, y: 20, z: -150 },
+        { x: 50, y: 30, z: -100 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
     ];
-    const boxGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-    const boxMaterial = new THREE.MeshBasicMaterial();
-    for (const handlePos of initialPoints) {
-        const handle = new THREE.Mesh(boxGeometry, boxMaterial);
-        handle.position.copy(handlePos);
-        curveHandles.push(handle);
-        scene.add(handle);
-    }
-
-    const curve = new THREE.CatmullRomCurve3(
-        curveHandles.map((handle) => handle.position)
-   );
+    
+    curve = new THREE.CatmullRomCurve3(
+        points.map((e) => new THREE.Vector3(e.x, e.y, e.z))
+    );
     curve.curveType = 'centripetal';
     curve.closed = true;
     if(DRAW_PATH)
     {
-        const points = curve.getPoints(50);
-        const line = new THREE.LineLoop(
-            new THREE.BufferGeometry().setFromPoints(points),
+        curveObject = new THREE.LineLoop(
+            new THREE.BufferGeometry().setFromPoints(curve.getPoints(50)),
             new THREE.LineBasicMaterial({ color: 0x00ff00 })
         );
-        scene.add(line);
+        curveObject.rotation.y = Math.PI*0.5;
+        scene.add(curveObject);
     }
 
     //
@@ -114,8 +109,26 @@ function onWindowResize() {
 
 export function animate() {
     requestAnimationFrame(animate);
+    if(ANIMATE_CURVE)
+    {
+        time += clock.getDelta();
+        curve.points[0].y = 20*Math.sin(time*0.9);
+        curve.points[2].y = 50+20*Math.sin(time*0.7);
+        curve.points[4].y = 20+20*Math.sin(time*0.3);
+        curve.points[6].y = 30+20*Math.sin(time*0.2);
+        if(DRAW_PATH)
+        {
+            curveObject.geometry.dispose();
+            curveObject.geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(50));
+        }
+        if (dragon) {
+            dragon.updateCurve(0, curve);
+        }
+    }
     if (dragon) {
+        dragon.updateCurve(0, curve);
         dragon.moveAlongCurve(0.002);
     }
     renderer.render(scene, camera);
+    
 }
