@@ -94,7 +94,7 @@ const Time = styled.p`
     `}
 `;
 
-const Description = styled.p`
+const Description = styled.div`
     ${tw`
         w-full
         text-sm

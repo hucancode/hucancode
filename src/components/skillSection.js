@@ -259,7 +259,7 @@ function SkillHollowSVG(props) {
     return <SkillContainer>
         <SkillIconContainer>
             <SVGIconHollow viewBox={props.viewBox} fill="none" strokeWidth="5">
-                {props.paths.map(path =><path d={path} />)}
+            {props.paths.map((path,i) =><path key={i} d={path} />)}
             </SVGIconHollow>
         </SkillIconContainer>
         <SkillName>
@@ -272,7 +272,7 @@ function SkillSVG(props) {
     return <SkillContainer>
         <SkillIconContainer>
             <SVGIcon viewBox={props.viewBox}>
-                {props.paths.map(path =><path d={path} />)}
+                {props.paths.map((path,i) =><path key={i} d={path} />)}
             </SVGIcon>
         </SkillIconContainer>
         <SkillName>
@@ -289,7 +289,7 @@ export default function SkillSection() {
         <SectionTitle>Tools and languages I use</SectionTitle>
         <SkillSwitchContainer>
             <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>Game Development</SwitchLabel>
-            <SwitchButton id="switch" type="checkbox" checked={activeSet} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic for="switch"/>
+            <SwitchButton id="switch" type="checkbox" checked={activeSet} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic htmlFor="switch"/>
             <SwitchLabel active={activeSet} onClick={() => setActiveSet(true)}>Application Development</SwitchLabel>
         </SkillSwitchContainer>
         <SkillSet active={!activeSet}>
