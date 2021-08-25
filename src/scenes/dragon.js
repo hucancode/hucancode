@@ -22,22 +22,26 @@ export function init() {
     renderer.setSize(w, h);
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     scene = new THREE.Scene();
-    camera.position.set(0, 200, 200);
+    camera.position.set(0, 20, 200);
     camera.lookAt(scene.position);
-    const MIN_X = -50;
-    const VAR_X = 100;
-    const MIN_Y = -50;
-    const VAR_Y = 100;
-    const MIN_Z = -100;
-    const VAR_Z = 200;
+    const MIN_X = -40;
+    const VAR_X = 80;
+    const MIN_Y = -40;
+    const VAR_Y = 80;
+    const MIN_Z = -80;
+    const VAR_Z = 160;
     const points = [
-        { x: 50, y: 0, z: 100 },
+        { x: 40, y: 0, z: 50 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
-        { x: -50, y: 50, z: 100 },
+        { x: -40, y: -40, z: 50 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
-        { x: -50, y: 20, z: -100 },
+        { x: -40, y: 10, z: -50 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
-        { x: 50, y: 30, z: -100 },
+        { x: 40, y: 30, z: -50 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: -40, y: 10, z: -50 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: -40, y: -40, z: 50 },
         { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
     ];
     
