@@ -1,7 +1,8 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { ReactComponent as ConstructionIllustration } from "../assets/gummy-blackboard.svg";
+import { init, animate } from "../scenes/dragon";
+//import { ReactComponent as ConstructionIllustration } from "../assets/gummy-blackboard.svg";
 
 const Container = styled.section`
     ${tw`
@@ -21,7 +22,7 @@ const SectionTitle = styled.h1`
     `}
 `;
 
-const ProjectContainer = styled.div`
+const ShowcaseContainer = styled.div`
     ${tw`
         w-full
         flex
@@ -31,18 +32,69 @@ const ProjectContainer = styled.div`
     `}
 `;
 
-const UnderConstruction = styled(ConstructionIllustration)`
+
+const ProjectContainer = styled.div`
     ${tw`
-        w-80
-        h-80
+        flex
+        justify-center
+        items-center
+        flex-wrap
+        text-center
+        md:w-1/3
+        lg:w-1/2
+        xl:w-3/5
+        w-full
     `}
 `;
+
+// const UnderConstruction = styled(ConstructionIllustration)`
+//     ${tw`
+//         w-80
+//         h-80
+//     `}
+// `;
+
+const CanvasContainer = styled.div`
+  ${tw`
+    flex
+    items-center
+    relative
+    right-0
+    // md:w-2/3
+    // lg:w-1/2
+    // xl:w-2/5
+    w-full
+    max-w-screen-md
+    object-contain
+  `}
+`;
+
+const Canvas = styled.canvas`
+    ${tw`
+      w-full
+    `}
+`;
+
+class DragonScene extends React.Component {
+    componentDidMount() {
+        init();
+        animate();
+    }
+    render() {
+        return <CanvasContainer>
+            <Canvas id='dragon' />
+        </CanvasContainer>
+    }
+}
 
 export default function ChallengeSection() {
     return <Container id='works'>
         <SectionTitle>Some coding challenge I've done</SectionTitle>
-        <ProjectContainer>
-            <UnderConstruction/>
-        </ProjectContainer>
+        <h1>Under Construction</h1>
+        <ShowcaseContainer>
+            <DragonScene/>
+            <ProjectContainer>
+            </ProjectContainer>
+        </ShowcaseContainer>
     </Container>
 }

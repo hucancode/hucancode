@@ -42,7 +42,8 @@ const UnderConstruction = styled(ConstructionIllustration)`
 
 export default function ProjectSection() {
     return <Container id='works'>
-        <SectionTitle>Something I've helped building</SectionTitle>
+        <SectionTitle>Something I've built</SectionTitle>
+        Under Construction
         <ProjectContainer>
             <UnderConstruction/>
         </ProjectContainer>

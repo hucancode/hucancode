@@ -92,7 +92,7 @@ function setTextureValue( texture, index, x, y, z, o ) {
  *
  * @param { DataTexture } Texture which holds the curve description
  */
-export function getUniforms(splineTexture) {
+export function getUniforms(splineTexture, shouldFlow = true) {
 
 	const uniforms = {
 		spineTexture: { value: splineTexture },
@@ -100,7 +100,7 @@ export function getUniforms(splineTexture) {
 		pathSegment: { type: 'f', value: 1 }, // fractional length of path
 		spineOffset: { type: 'f', value: 161 },
 		spineLength: { type: 'f', value: 400 },
-		flow: { type: 'i', value: 1 },
+		flow: { type: 'i', value: shouldFlow?1:0 },
 	};
 	return uniforms;
 
@@ -191,11 +191,11 @@ export class Flow {
 	 * @param {Mesh} mesh The mesh to clone and modify to bend around the curve
 	 * @param {number} numberOfCurves The amount of space that should preallocated for additional curves
 	 */
-	constructor( mesh, numberOfCurves = 1) {
+	constructor( mesh, shouldFlow = true, numberOfCurves = 1) {
 
 		const obj3D = mesh.clone();
 		const splineTexure = initSplineTexture( numberOfCurves );
-		const uniforms = getUniforms(splineTexure);
+		const uniforms = getUniforms(splineTexure, shouldFlow);
 		obj3D.traverse( function ( child ) {
 
 			if (

@@ -9,7 +9,11 @@ const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.95;
 
 function onWindowResize() {
-    let canvas = document.getElementById('renderer');
+    let canvas = document.getElementById('sabor');
+    if(!canvas)
+    {
+        return;
+    }
     canvas.style = "";
     let w = canvas.clientWidth;
     let h = w * ASPECT_RATIO;
@@ -19,7 +23,7 @@ function onWindowResize() {
 }
 
 export function init() {
-    let canvas = document.getElementById('renderer');
+    let canvas = document.getElementById('sabor');
     let w = canvas.clientWidth;
     let h = w * ASPECT_RATIO;
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);

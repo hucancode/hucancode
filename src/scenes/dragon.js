@@ -1,13 +1,16 @@
 import * as THREE from 'three';
 import { Flow } from '../three/modifiers/CurveModifier.js';
 import { OBJLoader } from '../three/loaders/OBJLoader.js';
+import { GLTFLoader } from '../three/loaders/GLTFLoader.js';
 
 const curveHandles = [];
-let scene, camera, renderer, dragonBody, dragonHead, dragonLegs;
-const ASPECT_RATIO = 0.95;
+let scene, camera, renderer, dragon;
+const ASPECT_RATIO = 0.75;
+const DRAW_PATH = false;
+const USE_OBJ = false;
 
 export function init() {
-    let canvas = document.getElementById('renderer');
+    let canvas = document.getElementById('dragon');
     let w = canvas.clientWidth;
     let h = w * ASPECT_RATIO;
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
@@ -16,19 +19,23 @@ export function init() {
     renderer.setSize(w, h);
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     scene = new THREE.Scene();
-    camera.position.set(100, 100, 200);
+    camera.position.set(0, 200, 200);
     camera.lookAt(scene.position);
-    const ALPHA = -50;
-    const ENTROPI = 100;
+    const MIN_X = -50;
+    const VAR_X = 100;
+    const MIN_Y = -50;
+    const VAR_Y = 100;
+    const MIN_Z = -150;
+    const VAR_Z = 300;
     const initialPoints = [
-        { x: 50, y: 30, z: - 50 },
-        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
-        { x: 50, y: 0, z: 50 },
-        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
-        { x: -50, y: 50, z: 50 },
-        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
-        { x: -50, y: 20, z: - 50 },
-        { x: Math.random()*ENTROPI+ALPHA, y: Math.random()*ENTROPI+ALPHA, z: Math.random()*ENTROPI+ALPHA },
+        { x: 50, y: 30, z: -150 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: 50, y: 0, z: 150 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: -50, y: 50, z: 150 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: -50, y: 20, z: -150 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
     ];
     const boxGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
     const boxMaterial = new THREE.MeshBasicMaterial();
@@ -44,13 +51,15 @@ export function init() {
    );
     curve.curveType = 'centripetal';
     curve.closed = true;
-    const points = curve.getPoints(50);
-    const line = new THREE.LineLoop(
-        new THREE.BufferGeometry().setFromPoints(points),
-        new THREE.LineBasicMaterial({ color: 0x00ff00 })
-   );
-
-    scene.add(line);
+    if(DRAW_PATH)
+    {
+        const points = curve.getPoints(50);
+        const line = new THREE.LineLoop(
+            new THREE.BufferGeometry().setFromPoints(points),
+            new THREE.LineBasicMaterial({ color: 0x00ff00 })
+        );
+        scene.add(line);
+    }
 
     //
 
@@ -64,47 +73,37 @@ export function init() {
     scene.add(light2);
 
     //
-    
-    const loader = new OBJLoader();
-    loader.load('assets/obj/dragon_body.obj', function (obj) {
-        obj.traverse(function (child) {
-            //if (child.isMesh) child.material.map = texture;
+    if(USE_OBJ)
+    {    
+        const loader = new OBJLoader();
+        loader.load('assets/obj/dragon.obj', function (obj) {
+            obj.traverse(function (child) {
+                //if (child.isMesh) child.material.map = texture;
+            });
+            console.log('loaded dragon.obj');
+            dragon = new Flow(obj);
+            dragon.updateCurve(0, curve);
+            scene.add(dragon.object3D);
         });
-        console.log('loaded dragon_body.obj');
-        //obj.rotation.y = Math.PI*0.5;
-        obj.material = new THREE.MeshBasicMaterial();
-        dragonBody = new Flow(obj);
-        dragonBody.updateCurve(0, curve);
-        scene.add(dragonBody.object3D);
-    });
-
-    loader.load('assets/obj/dragon_head.obj', function (obj) {
-        obj.traverse(function (child) {
-            //if (child.isMesh) child.material.map = texture;
+    }
+    else
+    {
+        const loader = new GLTFLoader();
+        loader.load( 'assets/gltf/dragon.gltf', function ( gltf ) {
+            dragon = new Flow(gltf.scene);
+            dragon.updateCurve(0, curve);
+            scene.add(dragon.object3D);
         });
-        //obj.rotation.y = Math.PI*0.5;
-        dragonHead = new Flow(obj);
-        dragonHead.updateCurve(0, curve);
-        scene.add(dragonHead.object3D);
-    });
-
-
-    loader.load('assets/obj/dragon_legs.obj', function (obj) {
-        obj.traverse(function (child) {
-            //if (child.isMesh) child.material.map = texture;
-        });
-        console.log('loaded dragon_legs.obj');
-        //obj.rotation.y = Math.PI*0.5;
-        dragonLegs = new Flow(obj);
-        dragonLegs.updateCurve(0, curve);
-        scene.add(dragonLegs.object3D);
-    });
-
+    }
     window.addEventListener('resize', onWindowResize);
 }
 
 function onWindowResize() {
-    let canvas = document.getElementById('renderer');
+    let canvas = document.getElementById('dragon');
+    if(!canvas)
+    {
+        return;
+    }
     canvas.style = "";
     let w = canvas.clientWidth;
     let h = w * ASPECT_RATIO;
@@ -115,14 +114,8 @@ function onWindowResize() {
 
 export function animate() {
     requestAnimationFrame(animate);
-    if (dragonBody) {
-        dragonBody.moveAlongCurve(0.002);
-    }
-    if (dragonHead) {
-        dragonHead.moveAlongCurve(0.002);
-    }
-    if (dragonLegs) {
-        dragonLegs.moveAlongCurve(0.002);
+    if (dragon) {
+        dragon.moveAlongCurve(0.002);
     }
     renderer.render(scene, camera);
 }

@@ -92,7 +92,7 @@ class SaborScene extends React.Component {
     }
     render() {
         return <CanvasContainer>
-            <Canvas id='renderer' />
+            <Canvas id='sabor' />
         </CanvasContainer>
     }
 }
