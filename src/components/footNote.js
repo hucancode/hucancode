@@ -24,7 +24,9 @@ const Container = styled.div`
 export default function FootNote() {
     return <Container>
         <p>
-            Site is under constructions. <br />Made with <code>React.js</code> and <code>Three.js</code> and 30+ other tools
+            Made with <code>React.js</code> and <code>Three.js</code> and 10+ other tools<br/>
+            <small>Dragon model by <a href="https://sketchfab.com/3d-models/chinese-dragon-fa05f2a6596041938152a84a956212e0">youmeowmeow</a></small>
         </p>
+        
     </Container>
 }

@@ -31,15 +31,19 @@ const Avatar = styled.div`
         mr-2
         overflow-hidden
         bg-cover
-        duration-500
+        duration-300
     `}
-    background-image: url('./assets/profile.jpg');
-    &:hover {
-        background-image: url('./assets/profile-secret.jpg');
+    background-image: url('./assets/profile-secret.jpg');
+    &:hover:after {
+        display:none;
     }
     &:after {
-        display: none;
-        content: url('./assets/profile-secret.jpg');
+        background-image: url('./assets/profile.jpg');
+        background-size: cover;
+        width: 100%;
+        height: 100%;
+        transition-duration: 200ms;
+        content:"";
     }
     
 `;
