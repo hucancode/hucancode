@@ -185,16 +185,67 @@ export default function ExperienceSection() {
                 <Title>Senior Game Programmer <sup>@</sup> <em>Gameloft Hanoi</em></Title>
                 <Time>March 2014 - March 2016, June 2018 - November 2018</Time>
                 <Description>
-                    Updating...
-                    {/* Developed and shipped high quality games using C++, OpenGL and in-house engine */}
+                    <ul>
+                        <li>
+                            I have taken part in Gameloft AI Contest 2013, I finished at Quater Final (rank #4~8).
+                            I soon joined Gameloft later on March 2014.
+                        </li>
+                        <li>
+                            Deeply immersed in international environment, my English ability improved significantly. 
+                            Thanks to that, earlier in 2021, I took the TOEIC English test and achieved 945/990 points.
+                        </li>
+                        <li>
+                            Started out as a C++ Game Programmer, I developed my interest in Computer Graphics.
+                            I'm in charge of gameplay programming and graphics optimization for games. 
+                            I'm well trained in OpenGL, shader programming and various graphics debugging tools.
+                        </li>
+                        <li>
+                            I was in charge of gameplay programming and graphics optimization in the following games (all based on C++ and OpenGL):
+                            <ul>
+                                <li>
+                                    Sharkdash, built using 2D in-house engine.
+                                </li>
+                                <li>
+                                    Ice Age Adventures, built using in-house 3D engine. 
+                                </li>
+                                <li>
+                                    Brothers in Arms 3, built using Irrlicht-based in-house engine (3D).
+                                </li>
+                                <li>
+                                    Order and Chaos 2, 3D MMORPG, built using in-house engine.
+                                </li>
+                                <li>
+                                    Disney Magic Kingdom, built using Irrlicht-based in-house engine (3D).
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
                 </Description>
             </ContentContainer>
             <ContentContainer active={activeSet===3}>
                 <Title>Senior Software Developer <sup>@</sup> <em>FPT Software</em></Title>
                 <Time>June 2016 - June 2018</Time>
                 <Description>
-                    Updating...
-                    {/* Take part in the industry-standard software development process and delivered high quality C++ code. */}
+                    <ul>
+                        <li>
+                            I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with 2 millions lines of code.
+                            That was a migration project, bringing an old 32-bit based system to 64-bit. 
+                            I was in charge of building custom developement tools (CLI) for the team. 
+                            I did review other member's code to ensure source code quality.
+                        </li>
+                        <li>
+                            I developed application for an entertainment system running on Automobile devices (in parnership with LG).
+                            That was media playing application, built with Qt. 
+                            I'm in charge of feature implementation and overall performance optimization.
+                        </li>
+                        <li>
+                            Over the course of 2 years at FPT Software, I have received various training on Project Management. 
+                            I learned how to manage a small team and was pretty successful at it.
+                        </li>
+                        <li>
+                            I was received honorable mention as Best Rookie of The Year 2016.
+                        </li>
+                    </ul>
                 </Description>
             </ContentContainer>
             <ContentContainer active={activeSet===4}>
