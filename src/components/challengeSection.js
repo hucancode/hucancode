@@ -1,7 +1,7 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { init, animate } from "../scenes/dragon";
+import DragonScene from "../scenes/dragon";
 //import { ReactComponent as ConstructionIllustration } from "../assets/gummy-blackboard.svg";
 
 const Container = styled.section`
@@ -69,30 +69,14 @@ const CanvasContainer = styled.div`
   `}
 `;
 
-const Canvas = styled.canvas`
-    ${tw`
-      w-full
-    `}
-`;
-
-class DragonScene extends React.Component {
-    componentDidMount() {
-        init();
-        animate();
-    }
-    render() {
-        return <CanvasContainer>
-            <Canvas id='dragon' />
-        </CanvasContainer>
-    }
-}
-
 export default function ChallengeSection() {
     return <Container id='works'>
         <SectionTitle>Some coding challenge I've done</SectionTitle>
         <h1>Under Construction</h1>
         <ShowcaseContainer>
-            <DragonScene/>
+            <CanvasContainer>
+                <DragonScene/>
+            </CanvasContainer>
             <ProjectContainer>
             </ProjectContainer>
         </ShowcaseContainer>

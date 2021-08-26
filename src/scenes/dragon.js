@@ -2,18 +2,20 @@ import * as THREE from 'three';
 import { Flow } from '../three/modifiers/CurveModifier.js';
 import { OBJLoader } from '../three/loaders/OBJLoader.js';
 import { GLTFLoader } from '../three/loaders/GLTFLoader.js';
+import Canvas3D from './canvas3D'
 
 let scene, camera, renderer, dragon;
 let clock = new THREE.Clock();
 var time = 0;
 let curve, curveObject;
+const CANVAS_ID = 'dragon';
 const ASPECT_RATIO = 0.75;
 const DRAW_PATH = false;
 const USE_OBJ = false;
 const ANIMATE_CURVE = false;
 
-export function init() {
-    let canvas = document.getElementById('dragon');
+function init() {
+    let canvas = document.getElementById(CANVAS_ID);
     let w = canvas.clientWidth;
     let h = w * ASPECT_RATIO;
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
@@ -98,7 +100,7 @@ export function init() {
 }
 
 function onWindowResize() {
-    let canvas = document.getElementById('dragon');
+    let canvas = document.getElementById(CANVAS_ID);
     if(!canvas)
     {
         return;
@@ -111,8 +113,8 @@ function onWindowResize() {
     renderer.setSize(w, h);
 }
 
-export function animate() {
-    requestAnimationFrame(animate);
+function animate() {
+    //requestAnimationFrame(animate);
     if(ANIMATE_CURVE)
     {
         time += clock.getDelta();
@@ -134,5 +136,13 @@ export function animate() {
         dragon.moveAlongCurve(0.002);
     }
     renderer.render(scene, camera);
-    
+}
+
+export default class DragonScene extends Canvas3D {
+    constructor(props) {
+        super(props);
+        this.canvasID = CANVAS_ID;
+        this.init = init;
+        this.animate = animate;
+    }
 }

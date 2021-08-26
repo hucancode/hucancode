@@ -1,7 +1,7 @@
 import React from "react";
 import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
-import { init, animate } from "../scenes/sabor";
+import SaborScene from "../scenes/sabor";
 
 const Container = styled.section`
     ${tw`
@@ -79,24 +79,6 @@ const CanvasContainer = styled.div`
   `}
 `;
 
-const Canvas = styled.canvas`
-    ${tw`
-      w-full
-    `}
-`;
-
-class SaborScene extends React.Component {
-    componentDidMount() {
-        init();
-        animate();
-    }
-    render() {
-        return <CanvasContainer>
-            <Canvas id='sabor' />
-        </CanvasContainer>
-    }
-}
-
 export default function LandingSection() {
     return <Container>
         <About>
@@ -106,6 +88,8 @@ export default function LandingSection() {
                 I build mobile applications and games for a living.
             </Description>
         </About>
-        <SaborScene />
+        <CanvasContainer>
+            <SaborScene />
+        </CanvasContainer>
     </Container>
 }

@@ -1,3 +1,4 @@
+import Canvas3D from './canvas3D'
 import * as THREE from "three";
 import { FBXLoader } from "../three/loaders/FBXLoader";
 import { OrbitControls } from "../three/controls/OrbitControls";
@@ -5,11 +6,12 @@ import { OrbitControls } from "../three/controls/OrbitControls";
 var camera, scene, renderer, animator;
 var sabor;
 const clock = new THREE.Clock();
+const CANVAS_ID = 'sabor';
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.95;
 
 function onWindowResize() {
-    let canvas = document.getElementById('sabor');
+    let canvas = document.getElementById(CANVAS_ID);
     if(!canvas)
     {
         return;
@@ -22,8 +24,8 @@ function onWindowResize() {
     renderer.setSize(w, h);
 }
 
-export function init() {
-    let canvas = document.getElementById('sabor');
+function init() {
+    let canvas = document.getElementById(CANVAS_ID);
     let w = canvas.clientWidth;
     let h = w * ASPECT_RATIO;
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
@@ -104,8 +106,8 @@ async function buildScene() {
     });
 }
 
-export function animate() {
-    requestAnimationFrame(animate);
+function animate() {
+    //requestAnimationFrame(animate);
     const delta = clock.getDelta();
     if (animator) {
         animator.update(delta);
@@ -130,4 +132,13 @@ function returnToIdle() {
 function fadeToAction( name, duration ) {
     const animation = animator.clipAction(sabor.animations.find(e => e.name === name));
     return animation.reset().fadeIn(duration).play();
+}
+
+export default class SaborScene extends Canvas3D {
+    constructor(props) {
+        super(props);
+        this.canvasID = CANVAS_ID;
+        this.init = init;
+        this.animate = animate;
+    }
 }
