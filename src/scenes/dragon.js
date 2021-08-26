@@ -90,7 +90,8 @@ function init() {
     else
     {
         const loader = new GLTFLoader();
-        loader.load( 'assets/gltf/dragon.gltf', function ( gltf ) {
+        loader.setPath('assets/gltf/');
+        loader.load( 'dragon.glb', function ( gltf ) {
             dragon = new Flow(gltf.scene);
             dragon.updateCurve(0, curve);
             scene.add(dragon.object3D);

@@ -1,6 +1,7 @@
 import Canvas3D from './canvas3D'
 import * as THREE from "three";
 import { FBXLoader } from "../three/loaders/FBXLoader";
+import { GLTFLoader } from '../three/loaders/GLTFLoader.js';
 import { OrbitControls } from "../three/controls/OrbitControls";
 
 var camera, scene, renderer, animator;
@@ -9,6 +10,7 @@ const clock = new THREE.Clock();
 const CANVAS_ID = 'sabor';
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.95;
+const USE_FBX = false;
 
 function onWindowResize() {
     let canvas = document.getElementById(CANVAS_ID);
@@ -85,25 +87,48 @@ async function buildScene() {
     ground.material.transparent = true;
     scene.add(ground);
 
-    const loader = new FBXLoader();
-    loader.setPath('assets/fbx/');
-    loader.setResourcePath('assets/textures/');
-    loader.load('SarborV2.fbx', function (object) {
-        animator = new THREE.AnimationMixer(object);
-        object.traverse(child => {
-            if (!child.isMesh) {
-                return;
-            }
-            child.castShadow = true;
-            child.receiveShadow = false;
-            child.material.vertexColors = false;
-            child.material.shininess = child.material.name === 'body' ? 1.0 : 10.0;
+    if(USE_FBX)
+    {
+        const loader = new FBXLoader();
+        loader.setPath('assets/fbx/');
+        loader.setResourcePath('assets/textures/');
+        loader.load('SarborV2.fbx', function (object) {
+            animator = new THREE.AnimationMixer(object);
+            object.traverse(child => {
+                if (!child.isMesh) {
+                    return;
+                }
+                child.castShadow = true;
+                child.receiveShadow = false;
+                child.material.vertexColors = false;
+                child.material.shininess = child.material.name === 'body' ? 1.0 : 10.0;
+            });
+            object.position.z = 40;
+            scene.add(object);
+            sabor = object;
+            window.setTimeout(playIntro, 0);
         });
-        object.position.z = 40;
-        scene.add(object);
-        sabor = object;
-        window.setTimeout(playIntro, 0);
-    });
+    }
+    else
+    {
+        const loader = new GLTFLoader();
+        loader.setPath('assets/gltf/');
+        loader.load( 'sabor.glb', function ( gltf ) {
+            animator = new THREE.AnimationMixer(gltf.scene);
+            gltf.scene.traverse(child => {
+                if (!child.isMesh) {
+                    return;
+                }
+                child.castShadow = true;
+                child.receiveShadow = false;
+            });
+            gltf.scene.scale.setScalar(100);
+            gltf.scene.position.z = 40;
+            scene.add(gltf.scene);
+            sabor = gltf;
+            window.setTimeout(playIntro, 0);
+        });
+    }
 }
 
 function animate() {
