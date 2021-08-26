@@ -126,7 +126,7 @@ const Description = styled.div`
 export default function ExperienceSection() {
     var [activeSet, setActiveSet] = useState(0);
     return <Container id='experiences'>
-        <SectionTitle>Where I’ve worked</SectionTitle>
+        <SectionTitle>Where I’ve been</SectionTitle>
         <HistoryContainer>
             <HistoryNavigator>
                 <HistoryButton onClick={() => setActiveSet(0)} active={activeSet===0}>
