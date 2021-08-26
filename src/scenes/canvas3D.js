@@ -1,5 +1,11 @@
 
 import React from "react";
+import styled from 'styled-components';
+
+const Canvas = styled.canvas`
+    width: 100%;
+`;
+
 export default class Canvas3D extends React.Component {
     constructor(props) {
         super(props);
@@ -34,6 +40,6 @@ export default class Canvas3D extends React.Component {
         }
     }
     render() {
-        return <canvas style={{width:"100%"}} id={this.canvasID} ref={this.canvasRef} />
+        return <Canvas id={this.canvasID} ref={this.canvasRef} />
     }
 }
