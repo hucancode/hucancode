@@ -22,6 +22,7 @@ const Avatar = styled.div`
     ${tw`
         w-40
         h-40
+        relative
         rounded-full
         flex
         items-center
@@ -35,9 +36,11 @@ const Avatar = styled.div`
     `}
     background-image: url('./assets/profile-secret.jpg');
     &:hover:after {
-        display:none;
+        left: 100%;
     }
     &:after {
+        position: relative;
+        left: 0;
         background-image: url('./assets/profile.jpg');
         background-size: cover;
         width: 100%;
