@@ -132,7 +132,6 @@ async function buildScene() {
 }
 
 function animate() {
-    //requestAnimationFrame(animate);
     const delta = clock.getDelta();
     if (animator) {
         animator.update(delta);

@@ -7,7 +7,7 @@ import Canvas3D from './canvas3D'
 let scene, camera, renderer, dragon;
 let clock = new THREE.Clock();
 var time = 0;
-let curve, curveObject;
+let curve, curveObject, dynamicLight, ambientLight;
 const CANVAS_ID = 'dragon';
 const ASPECT_RATIO = 0.75;
 const DRAW_PATH = false;
@@ -62,16 +62,12 @@ function init() {
         scene.add(curveObject);
     }
 
-    //
+    ambientLight = new THREE.AmbientLight(0x003973);
+    scene.add(ambientLight);
 
-    const light = new THREE.DirectionalLight(0xffaa33);
-    light.position.set(- 10, 10, 10);
-    light.intensity = 1.0;
-    scene.add(light);
-
-    const light2 = new THREE.AmbientLight(0x003973);
-    light2.intensity = 1.0;
-    scene.add(light2);
+    dynamicLight = new THREE.PointLight(0xffffff);
+    dynamicLight.add( new THREE.Mesh( new THREE.SphereGeometry( 2, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
+    scene.add(dynamicLight);
 
     //
     if(USE_OBJ)
@@ -115,10 +111,9 @@ function onWindowResize() {
 }
 
 function animate() {
-    //requestAnimationFrame(animate);
+    time += clock.getDelta();
     if(ANIMATE_CURVE)
     {
-        time += clock.getDelta();
         curve.points[0].y = 20*Math.sin(time*0.9);
         curve.points[2].y = 50+20*Math.sin(time*0.7);
         curve.points[4].y = 20+20*Math.sin(time*0.3);
@@ -135,6 +130,19 @@ function animate() {
     if (dragon) {
         dragon.updateCurve(0, curve);
         dragon.moveAlongCurve(0.002);
+    }
+    if(dynamicLight) {
+        dynamicLight.position.x = Math.sin( time * 0.7 ) * 30+20;
+        dynamicLight.position.y = Math.cos( time * 0.5 ) * 40;
+        dynamicLight.position.z = Math.cos( time * 0.3 ) * 30+20;
+        dynamicLight.color.r = (Math.sin(time*0.3)+1.0)*0.5;
+        dynamicLight.color.g = (Math.sin(time*0.7)+1.0)*0.5;
+        dynamicLight.color.b = (Math.sin(time*0.2)+1.0)*0.5;
+    }
+    if(ambientLight) {
+        ambientLight.color.r = (Math.sin(time*0.1)+1.0)*0.5;
+        ambientLight.color.g = (Math.sin(time*0.07)+1.0)*0.5;
+        ambientLight.color.b = (Math.sin(time*0.03)+1.0)*0.5;
     }
     renderer.render(scene, camera);
 }
