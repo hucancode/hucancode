@@ -67,6 +67,7 @@ const CanvasContainer = styled.div`
     max-w-screen-md
     object-contain
   `}
+  background: radial-gradient(closest-side, rgba(83, 91, 99, 0.3), rgba(17, 24, 39, 0));
 `;
 
 export default function ChallengeSection() {
