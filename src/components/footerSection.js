@@ -36,17 +36,21 @@ const Avatar = styled.div`
     `}
     background-image: url('./assets/profile-secret.jpg');
     &:hover:after {
-        left: 100%;
+        ${tw`
+            left-full
+        `}
     }
     &:after {
-        position: relative;
-        left: 0;
         background-image: url('./assets/profile.jpg');
-        background-size: cover;
-        width: 100%;
-        height: 100%;
-        transition-duration: 200ms;
         content:"";
+        ${tw`
+            relative
+            left-0
+            bg-cover
+            w-full
+            h-full
+            duration-200
+        `}
     }
     
 `;
