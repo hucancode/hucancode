@@ -101,6 +101,12 @@ const Description = styled.div`
         text-left
         mt-5
     `}
+    & em {
+        ${tw`
+            text-purple-900
+            dark:text-yellow-100
+        `}
+    }
     & ul li {
         ${tw`
             relative
@@ -172,11 +178,15 @@ export default function ExperienceSection() {
                         I took 2-years course, but I graduated early, only study there for 1 year.
                     </li>
                     <li>
-                        I started with almost zero Japanese and was able to pass JLPT N3 before graduation. One year later I passed JLPT N2.
+                        I started with almost zero Japanese and was able to pass <em>JLPT N3</em> before graduation. Two year later I passed <em>JLPT N2</em>.
                     </li>
                     <li>
-                        I finished all JLPT N2 programs offered by the school. I can communicate in Japanese at conversation level without difficulty.
-                        Within my major field, I can communicate in Japanese at business level.
+                        I can communicate in Japanese at business level. 
+                        I am able to discuss technical topic in Japanese with minimal difficulty. 
+                    </li>
+                    <li>
+                        I can act as English-Japanese-Vietnamese interpreter at conversational level.<br/>
+                        I can interpret business Japanese to some degree.
                     </li>
                 </ul>
                 </Description>
@@ -187,12 +197,12 @@ export default function ExperienceSection() {
                 <Description>
                     <ul>
                         <li>
-                            I have taken part in Gameloft AI Contest 2013, I finished at Quater Final (rank #4~8).
+                            I have taken part in Gameloft AI Contest 2013, I finished at <em>Quater Final (rank #4~8)</em>.
                             I soon joined Gameloft later on March 2014.
                         </li>
                         <li>
                             Deeply immersed in international environment, my English ability improved significantly. 
-                            Thanks to that, earlier in 2021, I took the TOEIC English test and achieved 945/990 points.
+                            Thanks to that, earlier in 2021, I took the TOEIC English test and achieved <em>945/990 points</em>.
                         </li>
                         <li>
                             Started out as a C++ Game Programmer, I developed my interest in Computer Graphics.
@@ -228,7 +238,7 @@ export default function ExperienceSection() {
                 <Description>
                     <ul>
                         <li>
-                            I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with 2 millions lines of code.
+                            I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>.
                             That was a migration project, bringing an old 32-bit based system to 64-bit. 
                             I was in charge of building custom developement tools (CLI) for the team. 
                             I did review other member's code to ensure source code quality.
@@ -236,14 +246,14 @@ export default function ExperienceSection() {
                         <li>
                             I developed application for an entertainment system running on Automobile devices (in parnership with LG).
                             That was media playing application, built with Qt. 
-                            I'm in charge of feature implementation and overall performance optimization.
+                            I'm in charge of feature implementation and <em>overall performance optimization</em>.
                         </li>
                         <li>
                             Over the course of 2 years at FPT Software, I have received various training on Project Management. 
                             I learned how to manage a small team and was pretty successful at it.
                         </li>
                         <li>
-                            I was received honorable mention as Best Rookie of The Year 2016.
+                            I was received honorable mention as <em>Best Rookie of The Year 2016</em>.
                         </li>
                     </ul>
                 </Description>
@@ -255,7 +265,8 @@ export default function ExperienceSection() {
                     <ul>
                         <li>
                             My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>. 
-                            I got perfect mark (10/10) in Computer Programming, almost perfect (9/10) in Data Structure and Algorithm. All major subject with Very Good grade (8+/10).
+                            I got perfect mark <em>(10/10)</em> in Computer Programming, 
+                            almost perfect <em>(9/10)</em> in Data Structure and Algorithm. All major subject with Very Good grade <em>(8+/10)</em>.
                         </li>
                         <li>
                             I aced an university programming contest. Both as an individual and as a team.
