@@ -132,7 +132,7 @@ const Description = styled.div`
 export default function ExperienceSection() {
     var [activeSet, setActiveSet] = useState(0);
     return <Container id='experiences'>
-        <SectionTitle>Where I’ve been</SectionTitle>
+        <SectionTitle>Where have I been</SectionTitle>
         <HistoryContainer>
             <HistoryNavigator>
                 <HistoryButton onClick={() => setActiveSet(0)} active={activeSet===0}>
@@ -157,14 +157,14 @@ export default function ExperienceSection() {
                 <Description>
                     <ul>
                         <li>
-                            The position title may be confusing. I'm in charge of software engineering department in my GoodCreate.
-                            I discuss the requirement, provide technical advice, propose high level solutions.
+                            The position title may be confusing. I am in charge of software engineering department in GoodCreate.
+                            I discuss the requirement, provide technical advices, propose high level solutions.
                         </li>
                         <li>
                             Developed and shipped highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>
                         </li>
                         <li>
-                            I'm in charge of an app building system. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
+                            I am in charge of an app building system. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
                         </li>
                         <li>
                             I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.
@@ -182,7 +182,7 @@ export default function ExperienceSection() {
                         I took 2-years course, but I graduated early, only study there for 1 year.
                     </li>
                     <li>
-                        I started with almost zero Japanese and was able to pass <em>JLPT N3</em> before graduation. Two year later I passed <em>JLPT N2</em>.
+                        I started with almost zero Japanese and was able to pass <em>JLPT N3</em> before graduation. Two years later I passed <em>JLPT N2</em>.
                     </li>
                     <li>
                         I can communicate in Japanese at business level. 
@@ -210,8 +210,8 @@ export default function ExperienceSection() {
                         </li>
                         <li>
                             Started out as a C++ Game Programmer, I developed my interest in Computer Graphics.
-                            I'm in charge of gameplay programming and graphics optimization for games. 
-                            I'm well trained in OpenGL, shader programming and various graphics debugging tools.
+                            I am in charge of gameplay programming and graphics optimization for games. 
+                            I am well trained in OpenGL, shader programming and various graphics debugging tools.
                         </li>
                         <li>
                             I was in charge of gameplay programming and graphics optimization in the following games (all based on C++ and OpenGL):
@@ -250,7 +250,7 @@ export default function ExperienceSection() {
                         <li>
                             I developed application for an entertainment system running on Automobile devices (in parnership with LG).
                             That was media playing application, built with Qt. 
-                            I'm in charge of feature implementation and <em>overall performance optimization</em>.
+                            I am in charge of feature implementation and <em>overall performance optimization</em>.
                         </li>
                         <li>
                             Over the course of 2 years at FPT Software, I have received various training on Project Management. 

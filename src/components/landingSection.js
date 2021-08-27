@@ -84,7 +84,7 @@ export default function LandingSection() {
         <About>
             <Title>Hello! <WavingHand>👋</WavingHand></Title>
             <Description>
-                I'm Bang, a passionate Front End Software Engineer.<br />
+                I am Bang, a passionate Front End Software Engineer.<br />
                 I build mobile applications and games for a living.
             </Description>
         </About>
