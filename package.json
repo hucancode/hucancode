@@ -20,6 +20,7 @@
     "react-scripts": "4.0.3",
     "styled-components": "^5.3.0",
     "three": "^0.131.3",
+    "three-ik": "^0.1.0",
     "twin.macro": "^2.6.2",
     "web-vitals": "^1.1.2"
   },
