@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800;900&family=Kaisei+HarunoUmi&family=Noto+Sans+JP:wght@100&family=Megrim&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800;900&family=Kaisei+HarunoUmi&family=Noto+Sans+JP:wght@300;400;500;700;900&family=Megrim&display=swap");
 
 html,
 body,
@@ -16,7 +16,7 @@ body,
 }
 body {
     margin: 0;
-    font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
     "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;

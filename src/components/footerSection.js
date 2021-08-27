@@ -75,6 +75,7 @@ const ContactContainer = styled.div`
 const Title = styled.h1`
     ${tw`
         text-2xl
+        font-bold
     `}
 `;
 const SocialContainer = styled.div`

@@ -19,6 +19,7 @@ const SectionTitle = styled.h1`
     ${tw`
         text-2xl
         mb-5
+        font-bold
     `}
 `;
 

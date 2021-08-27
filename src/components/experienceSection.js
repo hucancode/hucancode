@@ -18,6 +18,7 @@ const SectionTitle = styled.h1`
     ${tw`
         text-2xl
         mb-5
+        font-bold
     `}
 `;
 
@@ -98,6 +99,7 @@ const Description = styled.div`
     ${tw`
         w-full
         text-sm
+        font-light
         text-left
         mt-5
     `}

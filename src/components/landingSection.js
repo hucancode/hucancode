@@ -35,6 +35,7 @@ const About = styled.div`
 const Title = styled.h1`
   ${tw`
     text-4xl
+    font-bold
     mb-3
     select-none
   `}
