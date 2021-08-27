@@ -152,18 +152,22 @@ export default function ExperienceSection() {
                 </HistoryButton>
             </HistoryNavigator>
             <ContentContainer active={activeSet===0}>
-                <Title>Engineer Manager <sup>@</sup> <em>GoodCreate</em></Title>
+                <Title>Engineering Manager <sup>@</sup> <em>GoodCreate</em></Title>
                 <Time>July 2020 - Present</Time>
                 <Description>
                     <ul>
                         <li>
+                            The position title may be confusing. I'm in charge of software engineering department in my GoodCreate.
+                            I discuss the requirement, provide technical advice, propose high level solutions.
+                        </li>
+                        <li>
                             Developed and shipped highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>
                         </li>
                         <li>
-                            Developed an app building system. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
+                            I'm in charge of an app building system. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
                         </li>
                         <li>
-                            In charge of research and development activity. Explore potential use of <code>Flutter</code> in future projects.
+                            I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.
                         </li>
                         <li>Developed various E-commerce website using <code>Wordpress</code></li>
                     </ul>
