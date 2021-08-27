@@ -101,6 +101,7 @@ const Description = styled.div`
         text-left
         mt-5
     `}
+    font-family: "Noto Sans JP";
     & em {
         ${tw`
             text-purple-900
@@ -169,7 +170,7 @@ export default function ExperienceSection() {
                         <li>
                             I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.
                         </li>
-                        <li>Developed various E-commerce website using <code>Wordpress</code></li>
+                        <li>I developed an E-commerce website using <code>Wordpress</code> and <code>Welcart</code></li>
                     </ul>
                 </Description>
             </ContentContainer>
