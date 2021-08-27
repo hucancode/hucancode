@@ -164,15 +164,15 @@ export default function ExperienceSection() {
                             I discuss the requirement, provide technical advices, propose high level solutions.
                         </li>
                         <li>
-                            Developed and shipped highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>
+                            I developed highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>
                         </li>
                         <li>
-                            I am in charge of an app building system. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
+                            I am in charge of an <a href="https://at-creator.net/">app building system</a>. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
                         </li>
                         <li>
                             I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.
                         </li>
-                        <li>I developed an E-commerce website using <code>Wordpress</code> and <code>Welcart</code></li>
+                        <li>I developed an <a href="https://www.ramen-ichidai.shop/">E-commerce website</a> using <code>Wordpress</code> and <code>Welcart</code></li>
                     </ul>
                 </Description>
             </ContentContainer>
