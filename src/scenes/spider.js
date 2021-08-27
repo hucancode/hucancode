@@ -4,10 +4,45 @@ import Canvas3D from './canvas3D'
 
 let scene, camera, renderer;
 let clock = new THREE.Clock();
-let body, leg;
+let body, legFrontL, legFrontR, legMidL, legMidR, legRearL, legRearR;
 var time = 0;
 const CANVAS_ID = 'spider';
 const ASPECT_RATIO = 0.75;
+const LEG_STEP_FREQUENCY = 0.4;
+const LEG_STEP_DURATION = 0.2;
+
+class Leg {
+    constructor(parent, position, mesh, syncOffset = 0.0) {
+        this.isMoving = false;
+        this.movementTime = 0.0;
+        this.time = syncOffset;
+        this.sourcePosition = new THREE.Vector3();
+        this.targetPosition = new THREE.Vector3();
+        this.mesh = mesh;
+        this.parent = parent;
+        this.position = position;
+        mesh.position.copy(parent.position.clone().add(position));
+    }
+    update(deltaTime) {
+        this.time += deltaTime;
+        if(this.isMoving) {
+            this.movementTime += deltaTime;
+            this.mesh.position.lerpVectors(this.sourcePosition, this.targetPosition, this.movementTime/LEG_STEP_DURATION);
+            if(this.movementTime >= LEG_STEP_DURATION)
+            {
+                this.isMoving = false;
+            }
+        }
+        if(this.time > LEG_STEP_FREQUENCY)
+        {
+            this.time -= LEG_STEP_FREQUENCY;
+            this.movementTime = 0;
+            this.sourcePosition.copy(this.mesh.position);
+            this.targetPosition.copy(this.parent.position.clone().add(this.position));
+            this.isMoving = true;
+        }
+    }
+  }
 
 function init() {
     let canvas = document.getElementById(CANVAS_ID);
@@ -19,7 +54,7 @@ function init() {
     renderer.setSize(w, h);
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     scene = new THREE.Scene();
-    camera.position.set(0, 20, 200);
+    camera.position.set(100, 100, 200);
     camera.lookAt(scene.position);
     window.addEventListener('resize', onWindowResize);
     const bigSphere = new THREE.SphereGeometry( 5, 16, 8 );
@@ -28,10 +63,37 @@ function init() {
     const unlitAzure = new THREE.MeshBasicMaterial( { color: 0x0077ff } );
     body = new THREE.Mesh(bigSphere, unlitWhite);
     body.position.set(0, 0, 0);
-    leg = new THREE.Mesh(smallSphere, unlitAzure);
-    leg.position.set(0, 0, 0);
+
+    legFrontL = new Leg(body, 
+        new THREE.Vector3(5,0,5),
+        new THREE.Mesh(smallSphere, unlitAzure),
+        0.4);
+    legFrontR = new Leg(body, 
+        new THREE.Vector3(5,0,-5),
+        new THREE.Mesh(smallSphere, unlitAzure));
+    legMidL = new Leg(body, 
+        new THREE.Vector3(0,0,7),
+        new THREE.Mesh(smallSphere, unlitAzure),
+        -0.3);
+    legMidR = new Leg(body, 
+        new THREE.Vector3(0,0,-7),
+        new THREE.Mesh(smallSphere, unlitAzure),
+        -0.3);
+    legRearL = new Leg(body, 
+        new THREE.Vector3(-5,0,5),
+        new THREE.Mesh(smallSphere, unlitAzure));
+    legRearR = new Leg(body, 
+        new THREE.Vector3(-5,0,-5),
+        new THREE.Mesh(smallSphere, unlitAzure),
+        0.4);
+    
     scene.add(body);
-    scene.add(leg);
+    scene.add(legFrontL.mesh);
+    scene.add(legFrontR.mesh);
+    scene.add(legMidL.mesh);
+    scene.add(legMidR.mesh);
+    scene.add(legRearL.mesh);
+    scene.add(legRearR.mesh);
 }
 
 function onWindowResize() {
@@ -48,37 +110,16 @@ function onWindowResize() {
     renderer.setSize(w, h);
 }
 
-let isLegMoving = false;
-let legMovementTime = 0.0;
-let legMovementDuration = 0.5;
-let legMovementDistance = 6.0;
-let sourceLegPosition = new THREE.Vector3();
-let targetLegPosition = new THREE.Vector3();
-
 function animate() {
     const delta = clock.getDelta();
     time += delta;
-    body.position.setX(Math.sin(time)*100);
-    if(isLegMoving)
-    {
-        legMovementTime = legMovementTime + delta;
-        if(legMovementTime >= legMovementDuration)
-        {
-            isLegMoving = false;
-        }
-        leg.position.lerpVectors(sourceLegPosition, targetLegPosition, legMovementTime/legMovementDuration);
-    }
-    else
-    {
-        targetLegPosition.set(body.position.x + 5, body.position.y, body.position.z);
-        const distance = leg.position.distanceTo(targetLegPosition);
-        if(distance > legMovementDistance)
-        {
-            legMovementTime = 0.0;
-            sourceLegPosition = leg.position;
-            isLegMoving = true;
-        }
-    }
+    body.position.setX(Math.sin(time*0.3)*100);
+    legFrontL.update(delta);
+    legFrontR.update(delta);
+    legMidL.update(delta);
+    legMidR.update(delta);
+    legRearL.update(delta);
+    legRearR.update(delta);
     renderer.render(scene, camera);
 }
 
