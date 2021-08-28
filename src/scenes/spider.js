@@ -1,33 +1,40 @@
 import * as THREE from 'three';
-// import { GLTFLoader } from '../three/loaders/GLTFLoader.js';
+import { CCDIKSolver,  CCDIKHelper} from '../three/IK/CCDIKSolver';
+import { GLTFLoader } from '../three/loaders/GLTFLoader.js';
 import Canvas3D from './canvas3D'
+import { OrbitControls } from "../three/controls/OrbitControls";
 
 let scene, camera, renderer;
+let ikSolver;// = new CCDIKSolver();
 let clock = new THREE.Clock();
-let body, legFrontL, legFrontR, legMidL, legMidR, legRearL, legRearR;
+let root, body;
+let legIKAnimator = [];
 var time = 0;
 const CANVAS_ID = 'spider';
 const ASPECT_RATIO = 0.75;
 const LEG_STEP_FREQUENCY = 0.4;
 const LEG_STEP_DURATION = 0.2;
+const STEP_HEIGHT = 2;
 
 class Leg {
-    constructor(parent, position, mesh, syncOffset = 0.0) {
+    constructor(root, position, bone, syncOffset = 0.0) {
         this.isMoving = false;
         this.movementTime = 0.0;
         this.time = syncOffset;
         this.sourcePosition = new THREE.Vector3();
         this.targetPosition = new THREE.Vector3();
-        this.mesh = mesh;
-        this.parent = parent;
+        this.bone = bone;
+        this.root = root;
         this.position = position;
-        mesh.position.copy(parent.position.clone().add(position));
+        bone.position.copy(root.position.clone().add(position));
     }
     update(deltaTime) {
         this.time += deltaTime;
         if(this.isMoving) {
             this.movementTime += deltaTime;
-            this.mesh.position.lerpVectors(this.sourcePosition, this.targetPosition, this.movementTime/LEG_STEP_DURATION);
+            const movementPercent = this.movementTime/LEG_STEP_DURATION;
+            this.bone.position.lerpVectors(this.sourcePosition, this.targetPosition, movementPercent);
+            this.bone.position.y = (1 - Math.abs(movementPercent - 0.5)*2) * STEP_HEIGHT;
             if(this.movementTime >= LEG_STEP_DURATION)
             {
                 this.isMoving = false;
@@ -37,12 +44,12 @@ class Leg {
         {
             this.time -= LEG_STEP_FREQUENCY;
             this.movementTime = 0;
-            this.sourcePosition.copy(this.mesh.position);
-            this.targetPosition.copy(this.parent.position.clone().add(this.position));
+            this.sourcePosition.copy(this.bone.position);
+            this.targetPosition.copy(this.root.position.clone().add(this.position));
             this.isMoving = true;
         }
     }
-  }
+}
 
 function init() {
     let canvas = document.getElementById(CANVAS_ID);
@@ -54,46 +61,77 @@ function init() {
     renderer.setSize(w, h);
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     scene = new THREE.Scene();
-    camera.position.set(100, 100, 200);
+    camera.position.set(10, 10, 20);
+    //camera.position.set(4, 4, 8);
     camera.lookAt(scene.position);
     window.addEventListener('resize', onWindowResize);
-    const bigSphere = new THREE.SphereGeometry( 5, 16, 8 );
-    const smallSphere = new THREE.SphereGeometry( 1, 16, 8 );
     const unlitWhite = new THREE.MeshBasicMaterial( { color: 0xffffff } );
-    const unlitAzure = new THREE.MeshBasicMaterial( { color: 0x0077ff } );
-    body = new THREE.Mesh(bigSphere, unlitWhite);
-    body.position.set(0, 0, 0);
+    const loader = new GLTFLoader();
+    loader.setPath('assets/gltf/');
+    loader.load( 'spider.gltf', function ( gltf ) {
+        scene.add(gltf.scene);
+        root = gltf.scene;
+        gltf.scene.traverse(child => {
+            let isSkinnedMesh = child instanceof THREE.SkinnedMesh;
+            if(isSkinnedMesh)
+            {
+                body = child;
+                let skeletonHelper = new THREE.SkeletonHelper( child );
+				skeletonHelper.material.linewidth = 5;
+				scene.add(skeletonHelper);
+            }
+            if (!child.isMesh) {
+                return;
+            }
+            child.castShadow = true;
+            child.receiveShadow = false;
+            child.material = unlitWhite;
+        });
+        initIKSolver();
+    });
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.update();
+}
 
-    legFrontL = new Leg(body, 
-        new THREE.Vector3(5,0,5),
-        new THREE.Mesh(smallSphere, unlitAzure),
-        0.4);
-    legFrontR = new Leg(body, 
-        new THREE.Vector3(5,0,-5),
-        new THREE.Mesh(smallSphere, unlitAzure));
-    legMidL = new Leg(body, 
-        new THREE.Vector3(0,0,7),
-        new THREE.Mesh(smallSphere, unlitAzure),
-        -0.3);
-    legMidR = new Leg(body, 
-        new THREE.Vector3(0,0,-7),
-        new THREE.Mesh(smallSphere, unlitAzure),
-        -0.3);
-    legRearL = new Leg(body, 
-        new THREE.Vector3(-5,0,5),
-        new THREE.Mesh(smallSphere, unlitAzure));
-    legRearR = new Leg(body, 
-        new THREE.Vector3(-5,0,-5),
-        new THREE.Mesh(smallSphere, unlitAzure),
-        0.4);
-    
-    scene.add(body);
-    scene.add(legFrontL.mesh);
-    scene.add(legFrontR.mesh);
-    scene.add(legMidL.mesh);
-    scene.add(legMidR.mesh);
-    scene.add(legRearL.mesh);
-    scene.add(legRearR.mesh);
+function initIKSolver()
+{
+    let iks = [];
+    body.skeleton.bones.forEach((bone, index) => {
+        if(!bone.name.startsWith('leg')) {
+            return; 
+        }
+        console.log(`bone ${index} ${bone.name}`);
+        if(!bone.name.endsWith('L') && !bone.name.endsWith('R')) {
+            return;
+        }
+        let ikBoneIndex = body.skeleton.bones.findIndex(e => e.name === "IK_"+bone.name);
+        let ikBone = body.skeleton.bones[ikBoneIndex];
+        console.log(`create IK with ${ikBone.name}, effector = ${body.skeleton.bones[index + 2].name}`);
+        iks.push({
+            target: ikBoneIndex,
+            effector: index + 3,
+            links: [
+                { index: index + 2 }, 
+                { index: index + 1, limitation: new THREE.Vector3( 0, 0, 0 ) }, 
+                { index : index} ],
+            iteration: 5,
+            minAngle: 0.0,
+            maxAngle: 1.0,
+        });
+        let position = new THREE.Vector3();
+        ikBone.getWorldPosition(position);
+        const leg = new Leg(root, 
+            position,
+            ikBone,
+            Math.random()*0.5);
+        legIKAnimator.push(leg);
+
+        
+    });
+    ikSolver = new CCDIKSolver(body, iks);
+    let helper = new CCDIKHelper(body, iks );
+    scene.add( helper );
 }
 
 function onWindowResize() {
@@ -113,13 +151,17 @@ function onWindowResize() {
 function animate() {
     const delta = clock.getDelta();
     time += delta;
-    body.position.setX(Math.sin(time*0.3)*100);
-    legFrontL.update(delta);
-    legFrontR.update(delta);
-    legMidL.update(delta);
-    legMidR.update(delta);
-    legRearL.update(delta);
-    legRearR.update(delta);
+    if(root)
+    {
+        root.position.setZ(Math.sin(time*0.3)*20);
+    }
+    legIKAnimator.forEach((leg) => {
+        leg.update(delta);
+    });
+    if(ikSolver)
+    {
+        ikSolver.update();
+    }
     renderer.render(scene, camera);
 }
 
