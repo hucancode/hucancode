@@ -45,7 +45,9 @@ class Leg {
             this.time -= LEG_STEP_FREQUENCY;
             this.movementTime = 0;
             this.sourcePosition.copy(this.bone.position);
-            this.targetPosition.copy(this.root.position.clone().add(this.position));
+            const rootWorldPosition = new THREE.Vector3();
+            this.root.getWorldPosition(rootWorldPosition);
+            this.targetPosition.copy(rootWorldPosition.add(this.position));
             this.isMoving = true;
         }
     }
@@ -70,8 +72,12 @@ function init() {
     loader.setPath('assets/gltf/');
     loader.load( 'spider.gltf', function ( gltf ) {
         scene.add(gltf.scene);
-        root = gltf.scene;
         gltf.scene.traverse(child => {
+            let isRootBone = child instanceof THREE.Bone && child.name==='root';
+            if(isRootBone) {
+                root = child;
+                return; 
+            }
             let isSkinnedMesh = child instanceof THREE.SkinnedMesh;
             if(isSkinnedMesh)
             {
@@ -98,6 +104,10 @@ function initIKSolver()
 {
     let iks = [];
     body.skeleton.bones.forEach((bone, index) => {
+        if(!bone.name==='root') {
+            root = bone;
+            return; 
+        }
         if(!bone.name.startsWith('leg')) {
             return; 
         }
