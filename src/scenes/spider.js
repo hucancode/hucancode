@@ -12,9 +12,11 @@ let legIKAnimator = [];
 var time = 0;
 const CANVAS_ID = 'spider';
 const ASPECT_RATIO = 0.75;
-const LEG_STEP_FREQUENCY = 0.4;
+const LEG_STEP_FREQUENCY = 0.5;
 const LEG_STEP_DURATION = 0.2;
-const STEP_HEIGHT = 2;
+const VISUALIZE_IK = false;
+const MAX_SPEED = 3;
+var speed = MAX_SPEED;
 
 class Leg {
     constructor(root, position, bone, syncOffset = 0.0) {
@@ -34,7 +36,12 @@ class Leg {
             this.movementTime += deltaTime;
             const movementPercent = this.movementTime/LEG_STEP_DURATION;
             this.bone.position.lerpVectors(this.sourcePosition, this.targetPosition, movementPercent);
-            this.bone.position.y = (1 - Math.abs(movementPercent - 0.5)*2) * STEP_HEIGHT;
+            let stepHeight = this.targetPosition.distanceTo(this.sourcePosition) * 0.4;
+            if(stepHeight < 0.1)
+            {
+                stepHeight = 0;
+            }
+            this.bone.position.y = (1 - Math.abs(movementPercent - 0.5)*2) * stepHeight;
             if(this.movementTime >= LEG_STEP_DURATION)
             {
                 this.isMoving = false;
@@ -47,7 +54,15 @@ class Leg {
             this.sourcePosition.copy(this.bone.position);
             const rootWorldPosition = new THREE.Vector3();
             this.root.getWorldPosition(rootWorldPosition);
-            this.targetPosition.copy(rootWorldPosition.add(this.position));
+            const offset = speed * LEG_STEP_FREQUENCY/2;
+            var angle = root.rotation.y;
+            const localTarget = this.position.clone();
+            localTarget.add(new THREE.Vector3(0, 0, offset)).applyAxisAngle(this.root.up, angle);
+            this.targetPosition.copy(rootWorldPosition.add(localTarget));
+            if(this.targetPosition.distanceTo(this.sourcePosition) < 0.5)
+            {
+                return;
+            }
             this.isMoving = true;
         }
     }
@@ -63,8 +78,7 @@ function init() {
     renderer.setSize(w, h);
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     scene = new THREE.Scene();
-    camera.position.set(10, 10, 20);
-    //camera.position.set(4, 4, 8);
+    camera.position.set(20, 20, 40);
     camera.lookAt(scene.position);
     window.addEventListener('resize', onWindowResize);
     const unlitWhite = new THREE.MeshBasicMaterial( { color: 0xffffff } );
@@ -118,30 +132,92 @@ function initIKSolver()
         let ikBoneIndex = body.skeleton.bones.findIndex(e => e.name === "IK_"+bone.name);
         let ikBone = body.skeleton.bones[ikBoneIndex];
         console.log(`create IK with ${ikBone.name}, effector = ${body.skeleton.bones[index + 2].name}`);
+        const links = [];
+        {
+            const i = index + 2;
+            //const range = new THREE.Vector3(Math.PI*0.5, 0, Math.PI*0.5);
+            const range = new THREE.Vector3(0, Math.PI*0.2, Math.PI*0.3);
+            const rotationMin = body.skeleton.bones[i].rotation.clone();
+            rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
+            const rotationMax = body.skeleton.bones[i].rotation.clone();
+            rotationMax.setFromVector3(rotationMax.toVector3().add(range));
+            console.log(`rotation min max = `);
+            console.log(rotationMin);
+            console.log(rotationMax);
+            links.push({
+                index: i, 
+                rotationMin: rotationMin, 
+                rotationMax: rotationMax
+            });
+        }
+        {
+            const i = index + 1;
+            const range = new THREE.Vector3(Math.PI*0.1, 0, 0);
+            const rotationMin = body.skeleton.bones[i].rotation.clone();
+            rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
+            const rotationMax = body.skeleton.bones[i].rotation.clone();
+            rotationMax.setFromVector3(rotationMax.toVector3().add(range));
+            links.push({
+                index: i, 
+                rotationMin: rotationMin, 
+                rotationMax: rotationMax
+            });
+        }
+        {
+            const i = index;
+            const range = new THREE.Vector3(0, 0, Math.PI*0.5);
+            const rotationMin = body.skeleton.bones[i].rotation.clone();
+            rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
+            const rotationMax = body.skeleton.bones[i].rotation.clone();
+            rotationMax.setFromVector3(rotationMax.toVector3().add(range));
+            links.push({
+                index: i, 
+                rotationMin: rotationMin, 
+                rotationMax: rotationMax
+            });
+        }
         iks.push({
             target: ikBoneIndex,
             effector: index + 3,
-            links: [
-                { index: index + 2 }, 
-                { index: index + 1, limitation: new THREE.Vector3( 0, 0, 0 ) }, 
-                { index : index} ],
+            links: links,
             iteration: 5,
             minAngle: 0.0,
-            maxAngle: 1.0,
+            maxAngle: 0.01,
         });
         let position = new THREE.Vector3();
         ikBone.getWorldPosition(position);
+        var offset = 0;
+        if(ikBone.name.indexOf('L') !== -1)
+        {
+            offset += LEG_STEP_FREQUENCY/2;
+        }
+        if(ikBone.name.indexOf('b') !== -1)
+        {
+            offset += LEG_STEP_FREQUENCY/8;
+        }
+        if(ikBone.name.indexOf('c') !== -1)
+        {
+            offset += LEG_STEP_FREQUENCY/4;
+        }
+        if(ikBone.name.indexOf('d') !== -1)
+        {
+            offset += LEG_STEP_FREQUENCY/2;
+        }
         const leg = new Leg(root, 
             position,
             ikBone,
-            Math.random()*0.5);
+            offset);
         legIKAnimator.push(leg);
 
         
     });
     ikSolver = new CCDIKSolver(body, iks);
-    let helper = new CCDIKHelper(body, iks );
-    scene.add( helper );
+    if(VISUALIZE_IK)
+    {
+        let helper = new CCDIKHelper(body, iks );
+        scene.add( helper );
+    }
+    
 }
 
 function onWindowResize() {
@@ -163,7 +239,10 @@ function animate() {
     time += delta;
     if(root)
     {
-        root.position.setZ(Math.sin(time*0.3)*20);
+        root.rotation.y = Math.sin(time*0.1)*Math.PI*2;
+        speed = Math.abs(Math.sin(time*0.2)*MAX_SPEED);
+        const localVelocity = new THREE.Vector3(0,0, speed*delta);
+        root.position.add(localVelocity.applyAxisAngle(root.up, root.rotation.y));
     }
     legIKAnimator.forEach((leg) => {
         leg.update(delta);
