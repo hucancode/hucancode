@@ -9,14 +9,19 @@ let ikSolver;// = new CCDIKSolver();
 let clock = new THREE.Clock();
 let root, body;
 let legIKAnimator = [];
-var time = 0;
+let curve, curveObject;
+let path;
+let currentPathNode = 0;
+let nextPathNode = 1;
+let nodeTravelTime = 0;
+let nodeTravelDuration = 1.2;
 const CANVAS_ID = 'spider';
+const DRAW_PATH = true;
 const ASPECT_RATIO = 0.75;
 const LEG_STEP_FREQUENCY = 0.5;
 const LEG_STEP_DURATION = 0.2;
-const VISUALIZE_IK = false;
-const MAX_SPEED = 3;
-var speed = MAX_SPEED;
+const VISUALIZE_IK = true;
+var speed = 3;
 
 class Leg {
     constructor(root, position, bone, syncOffset = 0.0) {
@@ -112,6 +117,39 @@ function init() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
     controls.update();
+    const MIN_X = -10;
+    const VAR_X = 20;
+    const MIN_Y = 0;
+    const VAR_Y = 0;
+    const MIN_Z = -20;
+    const VAR_Z = 40;
+    const points = [
+        { x: -10, y: 0, z: -15 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: -10, y: 0, z: 15 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: -10, y: 0, z: -15 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        { x: 10, y: 0, z: -15 },
+        { x: Math.random()*VAR_X+MIN_X, y: Math.random()*VAR_Y+MIN_Y, z: Math.random()*VAR_Z+MIN_Z },
+        
+    ];
+    
+    curve = new THREE.CatmullRomCurve3(
+        points.map((e) => new THREE.Vector3(e.x, e.y, e.z))
+    );
+    curve.curveType = 'centripetal';
+    curve.closed = true;
+    path = curve.getPoints(100);
+    if(DRAW_PATH)
+    {
+        curveObject = new THREE.LineLoop(
+            new THREE.BufferGeometry().setFromPoints(path),
+            new THREE.LineBasicMaterial({ color: 0x00ff00 })
+        );
+        //curveObject.rotation.y = Math.PI*0.5;
+        scene.add(curveObject);
+    }
 }
 
 function initIKSolver()
@@ -180,7 +218,7 @@ function initIKSolver()
             target: ikBoneIndex,
             effector: index + 3,
             links: links,
-            iteration: 5,
+            iteration: 10,
             minAngle: 0.0,
             maxAngle: 0.01,
         });
@@ -236,13 +274,24 @@ function onWindowResize() {
 
 function animate() {
     const delta = clock.getDelta();
-    time += delta;
     if(root)
     {
-        root.rotation.y = Math.sin(time*0.1)*Math.PI*2;
-        speed = Math.abs(Math.sin(time*0.2)*MAX_SPEED);
-        const localVelocity = new THREE.Vector3(0,0, speed*delta);
-        root.position.add(localVelocity.applyAxisAngle(root.up, root.rotation.y));
+        nodeTravelTime += delta;
+        var progress = nodeTravelTime/nodeTravelDuration;
+        if(progress >= 1.0)
+        {
+            currentPathNode = (currentPathNode+1)%path.length;
+            nextPathNode = (currentPathNode+1)%path.length;
+            const distance = path[currentPathNode].distanceTo(path[nextPathNode]);
+            nodeTravelTime = 0;
+            nodeTravelDuration = distance/speed;
+            progress = 0;
+            root.lookAt(path[nextPathNode]);
+        }
+        root.lookAt(path[nextPathNode]);
+        root.rotation.x = 0;
+        root.rotation.z = 0;
+        root.position.lerpVectors(path[currentPathNode], path[nextPathNode], progress);
     }
     legIKAnimator.forEach((leg) => {
         leg.update(delta);
