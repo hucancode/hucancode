@@ -2,7 +2,6 @@ import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import DragonScene from "../scenes/dragon";
-//import { ReactComponent as ConstructionIllustration } from "../assets/gummy-blackboard.svg";
 
 const Container = styled.section`
     ${tw`
@@ -58,6 +57,7 @@ const ProjectContainer = styled.div`
 const CanvasContainer = styled.div`
   ${tw`
     flex
+    flex-col
     items-center
     relative
     right-0
@@ -78,6 +78,7 @@ export default function ChallengeSection() {
         <ShowcaseContainer>
             <CanvasContainer>
                 <DragonScene/>
+                <small>Dragon animations are procedurally generated </small>
             </CanvasContainer>
             <ProjectContainer>
             </ProjectContainer>

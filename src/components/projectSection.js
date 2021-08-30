@@ -1,7 +1,7 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { ReactComponent as ConstructionIllustration } from "../assets/gummy-canvas.svg";
+import SpiderScene from "../scenes/spider";
 
 const Container = styled.section`
     ${tw`
@@ -34,11 +34,21 @@ const ProjectContainer = styled.div`
     `}
 `;
 
-const UnderConstruction = styled(ConstructionIllustration)`
-    ${tw`
-        w-80
-        h-80
-    `}
+const CanvasContainer = styled.div`
+  ${tw`
+    flex
+    flex-col
+    items-center
+    relative
+    right-0
+    // md:w-2/3
+    // lg:w-1/2
+    // xl:w-2/5
+    w-full
+    max-w-screen-md
+    object-contain
+  `}
+  background: radial-gradient(closest-side, rgba(83, 91, 99, 0.3), rgba(17, 24, 39, 0));
 `;
 
 export default function ProjectSection() {
@@ -46,7 +56,10 @@ export default function ProjectSection() {
         <SectionTitle>Something I've built</SectionTitle>
         Under Construction
         <ProjectContainer>
-            <UnderConstruction/>
+            <CanvasContainer>
+                <SpiderScene/>
+                <small>Spider animations are procedurally generated </small>
+            </CanvasContainer>
         </ProjectContainer>
     </Container>
 }

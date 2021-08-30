@@ -317,11 +317,11 @@ function init() {
     grid.material.transparent = true;
     scene.add( grid );
 
-    const litGray = new THREE.MeshPhongMaterial( { color: 0x333333, depthWrite: false } )
     const loader = new GLTFLoader();
     loader.setPath('assets/gltf/');
-    for(var i=0;i<SPIDER_COUNT;i++)
+    for(let i=0;i<SPIDER_COUNT;i++)
     {
+        // eslint-disable-next-line
         loader.load( 'spider.gltf', function ( gltf ) {
             const spider = new Spider(gltf);
             scene.add(gltf.scene);
