@@ -1,9 +1,9 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
+import { faCube, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArtstation, faFacebook, faGithub } from "@fortawesome/free-brands-svg-icons";
+import { faFacebook, faGithub } from "@fortawesome/free-brands-svg-icons";
 
 const Container = styled.section`
     ${tw`
@@ -114,9 +114,9 @@ export default function FooterSection() {
                     <FontAwesomeIcon icon={faGithub} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
                 </a>
-                <a href="https://www.artstation.com/hucancode">
+                <a href="https://sketchfab.com/hucancode">
                 <RoundIcon>
-                    <FontAwesomeIcon icon={faArtstation} size="lg"></FontAwesomeIcon>
+                    <FontAwesomeIcon icon={faCube} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
                 </a>
                 <a href="https://www.facebook.com/LeeSoooYoung">

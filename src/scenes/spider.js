@@ -290,8 +290,8 @@ function init() {
     renderer.setSize(w, h);
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-    camera.position.set(35, 30, 35);
-    camera.lookAt(scene.position);
+    camera.position.set(30, 22, 30);
+    camera.lookAt(new THREE.Vector3(7, 0, 7));
     window.addEventListener('resize', onWindowResize);
 
     // lights
@@ -301,10 +301,10 @@ function init() {
     const dirLight = new THREE.DirectionalLight( 0xffffff );
     dirLight.position.set( 0, 20, 10 );
     dirLight.castShadow = true;
-    dirLight.shadow.camera.top = 180;
-    dirLight.shadow.camera.bottom = - 100;
-    dirLight.shadow.camera.left = - 120;
-    dirLight.shadow.camera.right = 120;
+    dirLight.shadow.camera.top = 18;
+    dirLight.shadow.camera.bottom = -10;
+    dirLight.shadow.camera.left = - 12;
+    dirLight.shadow.camera.right = 12;
     scene.add( dirLight );
 
     // ground
