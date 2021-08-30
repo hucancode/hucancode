@@ -72,7 +72,7 @@ const CanvasContainer = styled.div`
 `;
 
 export default function ChallengeSection() {
-    return <Container id='works'>
+    return <Container id='challenge'>
         <SectionTitle>Something interesting I have challenged</SectionTitle>
         <h1>Under Construction</h1>
         <ShowcaseContainer>
