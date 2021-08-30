@@ -58,7 +58,7 @@ export default function ProjectSection() {
         <ProjectContainer>
             <CanvasContainer>
                 <SpiderScene/>
-                <small>Spider animations are procedurally generated </small>
+                <small>Spider animations are procedurally generated using Inverse Kinematics</small>
             </CanvasContainer>
         </ProjectContainer>
     </Container>

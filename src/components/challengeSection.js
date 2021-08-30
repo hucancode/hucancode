@@ -78,7 +78,7 @@ export default function ChallengeSection() {
         <ShowcaseContainer>
             <CanvasContainer>
                 <DragonScene/>
-                <small>Dragon animations are procedurally generated </small>
+                <small>Dragon animations are procedurally generated using shader</small>
             </CanvasContainer>
             <ProjectContainer>
             </ProjectContainer>
