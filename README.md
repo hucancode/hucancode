@@ -6,7 +6,7 @@
   - Front End Software Engineer
   - Funny guy
 - I’m currently learning: 
-  - React, Redux
+  - Reactive Programming
   - 3D animations
   - Japanese
 - I speak:
