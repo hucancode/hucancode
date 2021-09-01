@@ -272,8 +272,8 @@ export default function ExperienceSection() {
                     <ul>
                         <li>
                             My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>. 
-                            I got perfect mark <em>(10/10)</em> in Computer Programming, 
-                            almost perfect <em>(9/10)</em> in Data Structure and Algorithm. All major subject with Very Good grade <em>(8+/10)</em>.
+                            I got perfect mark <em>(10/10)</em> in Computer Programming, Semester Project #4.
+                            I have most major subjects above A grade <em>(8.0+/10)</em>, with A+ in Graduation Project <em>(9.2/10)</em>.
                         </li>
                         <li>
                             I aced an university programming contest. Both as an individual and as a team.
