@@ -50,15 +50,29 @@ const HistoryButton = styled.button`
         h-16
         md:h-10
         flex
+        md:flex-row
+        flex-col
+        items-center
         pl-4
         pr-4
-        pt-2
-        pb-2
+        pt-1
+        pb-1
+        md:pt-2
+        md:pb-2
         m-1
         duration-300
         text-white
+        text-xs
+        md:text-base
         dark:text-gray-300
     `}
+    h2 {
+        ${tw`
+            mb-1
+            md:mr-2
+            md:mb-0
+        `}
+    }
     ${props => props.active ? 
         css`${tw`
             bg-black
@@ -86,6 +100,12 @@ const Title = styled.h3`
         text-base
         text-left
     `}
+    & em {
+        ${tw`
+            text-purple-900
+            dark:text-yellow-100
+        `}
+    }
 `;
 
 const Time = styled.p`
@@ -139,23 +159,23 @@ export default function ExperienceSection() {
         <HistoryContainer>
             <HistoryNavigator>
                 <HistoryButton onClick={() => setActiveSet(0)} active={activeSet===0}>
-                    GoodCreate
+                <h2>💼</h2><h3>GoodCreate</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(1)} active={activeSet===1}>
-                    Japanese School
+                <h2>🎓</h2><h3>Japanese School</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(2)} active={activeSet===2}>
-                    Gameloft
+                <h2>💼</h2><h3>Gameloft Hanoi</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(3)} active={activeSet===3}>
-                    FPT Software
+                <h2>💼</h2><h3>FPT Software</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(4)} active={activeSet===4}>
-                    University
+                <h2>🎓</h2><h3>University</h3>
                 </HistoryButton>
             </HistoryNavigator>
             <ContentContainer active={activeSet===0}>
-                <Title>Engineering Manager <sup>@</sup> <em>GoodCreate</em></Title>
+                <Title>Engineering Manager <sup>@</sup> <a href="https://gc-c.co.jp/"><em>GoodCreate</em></a></Title>
                 <Time>July 2020 - Present</Time>
                 <Description>
                     <ul>
@@ -177,7 +197,7 @@ export default function ExperienceSection() {
                 </Description>
             </ContentContainer>
             <ContentContainer active={activeSet===1}>
-                <Title>Student <sup>@</sup> <em>Mizuno International Language School</em></Title>
+                <Title>Student <sup>@</sup> <a href="http://mizunogaigogakuin.com/"><em>Mizuno International Language School</em></a></Title>
                 <Time>April 2019 - April 2020</Time>
                 <Description>
                 <ul>
@@ -199,7 +219,7 @@ export default function ExperienceSection() {
                 </Description>
             </ContentContainer>
             <ContentContainer active={activeSet===2}>
-                <Title>Senior Game Programmer <sup>@</sup> <em>Gameloft Hanoi</em></Title>
+                <Title>Senior Game Programmer <sup>@</sup> <a href="https://www.gameloft.com/"><em>Gameloft Hanoi</em></a></Title>
                 <Time>March 2014 - March 2016, June 2018 - November 2018</Time>
                 <Description>
                     <ul>
@@ -240,7 +260,7 @@ export default function ExperienceSection() {
                 </Description>
             </ContentContainer>
             <ContentContainer active={activeSet===3}>
-                <Title>Senior Software Developer <sup>@</sup> <em>FPT Software</em></Title>
+                <Title>Senior Software Developer <sup>@</sup> <a href="https://www.fpt-software.com/"><em>FPT Software</em></a></Title>
                 <Time>June 2016 - June 2018</Time>
                 <Description>
                     <ul>
@@ -266,7 +286,7 @@ export default function ExperienceSection() {
                 </Description>
             </ContentContainer>
             <ContentContainer active={activeSet===4}>
-                <Title>Bachelor Degree <sup>@</sup> <em>Hung Yen University of Technology and Education</em></Title>
+                <Title>Bachelor Degree <sup>@</sup> <a href="http://utehy.edu.vn/"><em>Hung Yen University of Technology and Education</em></a></Title>
                 <Time>September 2010 - June 2014</Time>
                 <Description>
                     <ul>
