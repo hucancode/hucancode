@@ -46,7 +46,6 @@ const ProjectContainer = styled.div`
         text-center
         shadow-lg
         rounded-lg
-        bg-gray-900
         w-full
         overflow-hidden
         mb-10
