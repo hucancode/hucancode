@@ -127,7 +127,7 @@ export default function Navbar() {
             <a href='#experiences'>Experiences</a>
         </NavItem>
         <NavItem>
-            <a href='#works'>Works</a>
+            <a href='#challenge'>Works</a>
         </NavItem>
         <NavItem>
             <a href='#contact'>Contact</a>
