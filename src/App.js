@@ -6,7 +6,7 @@ import Navbar from "./components/navBar";
 import LandingSection from "./components/landingSection";
 import SkillSection from "./components/skillSection";
 import ExperienceSection from "./components/experienceSection";
-import ProjectSection from "./components/projectSection";
+// import ProjectSection from "./components/projectSection";
 import ChallengeSection from "./components/challengeSection";
 import FootNote from "./components/footNote";
 import FooterSection from "./components/footerSection";
@@ -32,7 +32,7 @@ export default function App() {
             <LandingSection />
             <SkillSection />
             <ExperienceSection />
-            <ProjectSection />
+            {/* <ProjectSection /> */}
             <ChallengeSection />
             <FooterSection />
             <FootNote />
