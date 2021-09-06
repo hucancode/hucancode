@@ -7,9 +7,7 @@
     },
     "landing": {
         "hello": "Hello!",
-        "about": "I am Bang, a passionate Front End Software Engineer. <br/>I build mobile applications and games for a living.",
-        "languageGuide": "Tap here to change language",
-        "languageGuide2": "言語変更には、ここをタップ"
+        "about": "I am Bang, a passionate Front End Software Engineer. <br/>I build mobile applications and games for a living."
     },
     "tools": {
         "title": "Tools and languages I use",
