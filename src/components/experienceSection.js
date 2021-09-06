@@ -184,8 +184,8 @@ export default function ExperienceSection() {
                 <Description><Trans i18nKey="experience.desc.gc">
                     <ul>
                         <li>
-                            The position title may be confusing. I am in charge of software engineering department in GoodCreate.
-                            I discuss the requirement, provide technical advices, propose high level solutions.
+                            I am in charge of software engineering department in GoodCreate.
+                            I discuss the requirements, provide technical advices, propose high level solutions.
                         </li>
                         <li>
                             I developed highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>
