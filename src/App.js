@@ -28,10 +28,12 @@ const AppContainer = styled.div`
 
 export default function App() {
     return (
-        <Suspense fallback="loading">
+        
         <AppContainer>
             <Navbar />
-            <LandingSection />
+            <Suspense fallback="loading">
+                <LandingSection />
+            </Suspense>
             <SkillSection />
             <ExperienceSection />
             {/* <ProjectSection /> */}
@@ -39,6 +41,6 @@ export default function App() {
             <FooterSection />
             <FootNote />
         </AppContainer>
-        </Suspense>
+        
     )
 }
