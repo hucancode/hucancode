@@ -3,6 +3,7 @@ import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDocker, faJs, faNode, faReact } from "@fortawesome/free-brands-svg-icons";
+import { useTranslation } from 'react-i18next';
 
 const Container = styled.section`
     ${tw`
@@ -285,13 +286,14 @@ function SkillSVG(props) {
 
 export default function SkillSection() {
     var [activeSet, setActiveSet] = useState(false);
+    const { t } = useTranslation();
     
     return <Container id='skill'>
-        <SectionTitle>Tools and languages I use</SectionTitle>
+        <SectionTitle>{t('tools.title')}</SectionTitle>
         <SkillSwitchContainer>
-            <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>Game Development</SwitchLabel>
+            <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>{t('tools.game')}</SwitchLabel>
             <SwitchButton id="switch" type="checkbox" checked={activeSet} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic htmlFor="switch"/>
-            <SwitchLabel active={activeSet} onClick={() => setActiveSet(true)}>Application Development</SwitchLabel>
+            <SwitchLabel active={activeSet} onClick={() => setActiveSet(true)}>{t('tools.app')}</SwitchLabel>
         </SkillSwitchContainer>
         <SkillSet active={!activeSet}>
             <SkillSVG name="C++" viewBox={CPPViewBox} paths={CPPSVGPath}/>

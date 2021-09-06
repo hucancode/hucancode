@@ -1,4 +1,64 @@
 {
-    "hello": "こにちわ!",
-    "about": "バンと申します、熱心なフロントエンドソフトエンジニアです。<br/>暮らしのため、モバイルアプリケーションとゲームを構築します。<br/>言語変更はこちら <5>🇺🇸</5>・<7>🇯🇵</7>。"
+    "nav": {
+        "skill": "能力",
+        "exp": "経験",
+        "works": "作品",
+        "contact": "連絡"
+    },
+    "landing": {
+        "hello": "こにちわ!",
+        "about": "バンと申します、熱心なフロントエンドソフトエンジニアです。<br/>暮らしのため、モバイルアプリケーションとゲームを構築します。<br/>言語変更はこちら <5>🇺🇸</5>・<7>🇯🇵</7>。"
+    },
+    "tools": {
+        "title": "利用しているツール・言語",
+        "game": "ゲーム開発",
+        "app": "アプリ開発"
+    },
+    "experience": {
+        "title": "私がどこに行ったのか？",
+        "nav": {
+            "gc": "GoodCreate",
+            "jpschool": "日本語学校",
+            "glhan": "Gameloft Hanoi",
+            "fpt": "FPT Software",
+            "university": "大学"
+        }, 
+        "position": {
+            "gc": "Engineering Manager <sup>@</sup> <3><em>GoodCreate</em></3>",
+            "jpschool": "Student <sup>@</sup> <3><em>Mizuno International Language School</em></3>",
+            "glhan": "Senior Game Programmer <sup>@</sup> <3><em>Gameloft Hanoi</em></3>",
+            "fpt": "Senior Software Developer <sup>@</sup> <3><em>FPT Software</em></3>",
+            "university": "Bachelor Degree <sup>@</sup> <3><em>Hung Yen University of Technology and Education</em></3>"
+        },
+        "time": {
+            "gc": "2020年7月〜現在",
+            "jpschool": "2019年4月〜2020年4月",
+            "glhan": "2014年3月〜2016年3月、2018年6月〜2018年11月",
+            "fpt": "2016年6月〜2018年6月",
+            "university": "2010年9月〜2014年6月"
+        },
+        "desc": {
+            "gc": "<0><0>The position title may be confusing. I am in charge of software engineering department in GoodCreate. I discuss the requirement, provide technical advices, propose high level solutions.</0><1>I developed highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code></1><2>I am in charge of an <1>app building system</1>. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code></2><3>I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.</3><4>I developed an <1>E-commerce website</1> using <code>Wordpress</code> and <code>Welcart</code></4></0>",
+            "jpschool": "<0><0>I took 2-years course, but I graduated early, only study there for 1 year.</0><1>I started with almost zero Japanese and was able to pass <em>JLPT N3</em> before graduation. Two years later I passed <em>JLPT N2</em>.</1><2>I can communicate in Japanese at business level. I am able to discuss technical topic in Japanese with minimal difficulty. </2><3>I can act as English-Japanese-Vietnamese interpreter at conversational level.<br/>I can interpret business Japanese to some degree.</3></0>",
+            "glhan": "<0><0>I have taken part in Gameloft AI Contest 2013, I finished at <em>Quater Final (rank #4~8)</em>.I soon joined Gameloft later on March 2014.</0><1>Deeply immersed in international environment, my English ability improved significantly. Thanks to that, earlier in 2021, I took the TOEIC English test and achieved <em>945/990 points</em>.</1><2>Started out as a C++ Game Programmer, I developed my interest in Computer Graphics. I am in charge of gameplay programming and graphics optimization for games. I am well trained in OpenGL, shader programming and various graphics debugging tools.</2><3>I was in charge of gameplay programming and graphics optimization in the following games (all based on C++ and OpenGL):<1><0>Sharkdash, built using 2D in-house engine.</0><1>Ice Age Adventures, built using in-house 3D engine. </1><2>Brothers in Arms 3, built using Irrlicht-based in-house engine (3D).</2><3>Order and Chaos 2, 3D MMORPG, built using in-house engine.</3><4>Disney Magic Kingdom, built using Irrlicht-based in-house engine (3D).</4></1></3></0>",
+            "fpt": "<0><0>I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>.That was a migration project, bringing an old 32-bit based system to 64-bit. I was in charge of building custom developement tools (CLI) for the team. I did review other member's code to ensure source code quality.</0><1>I developed application for an entertainment system running on Automobile devices (in parnership with LG).That was media playing application, built with Qt. I am in charge of feature implementation and <em>overall performance optimization</em>.</1><2>Over the course of 2 years at FPT Software, I have received various training on Project Management. I learned how to manage a small team and was pretty successful at it.</2><3>I was received honorable mention as <em>Best Rookie of The Year 2016</em>.</3></0>",
+            "university": "<0><0>My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>. I got perfect mark <em>(10/10)</em> in Computer Programming, Semester Project #4.I have most major subjects above A grade <em>(8.0+/10)</em>, with A+ in Graduation Project <em>(9.2/10)</em>.</0><1>I aced an university programming contest. Both as an individual and as a team.</1><2>I represented my university taking part in National Olympiad of Informatics. I got an incentive prize.</2><3>My team represented my university taking part in ACM/ICPC.</3></0>"
+        }
+    },
+    "challenge": {
+        "title": "面白くてチャレンジしてみたもの",
+        "dragon": "<0>手続き型生成竜</0><1>🛠 ThreeJS, Vertex Shader</1><2>Dragon animations are procedurally generated with following steps:</2><3><0>Load static dragon mesh. Posed in a straight line</0><1>Build a curve using THREE.CatmullRomCurve3</1><2>Pass curve data down to GPU via a texture</2><3>Inside vertex shader, read texture data and set vertex position accordingly</3></3>",
+        "spider": "<0>手続き型生成蜘蛛</0><1>🛠 ThreeJS, Inverse Kinematics</1><2>Spider animations are procedurally generated using Inverse Kinematics</2>",
+        "wm": "<0>武器達人</0><1>🛠 Unreal Engine, Gameplay Abilities System</1><2>Small RPG made with Unreal Engine, featuring 10+ switchable weapons.</2><3><0>Each weapon has unique skill set. Weapon has it's own animation logic and completely independent from character logic.</0><1>Full locomotion animation. Dashing, Jumping, Sprinting, Flying.</1><2>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</2><3>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</3></3>",
+        "doll": "<0>銃と人形</0><1>🛠 Unity3D</1><2>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome \"monster\".</2>"
+    },
+    "contact": {
+        "social": "友達にしようか!",
+        "contact": "連絡先",
+        "download-resume": "経歴書をダウンロード"
+    },
+    "foot-note": {
+        "made-with": "Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br/>",
+        "asset-credit": "<small>Dragon model by <1>youmeowmeow</1></small>. <small>Spider model by <1>volkanongun</1></small>"
+    }
 }

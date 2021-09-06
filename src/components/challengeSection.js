@@ -1,8 +1,9 @@
-import React from "react";
+import React, { Suspense } from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import DragonScene from "../scenes/dragon";
 import SpiderScene from "../scenes/spider";
+import { useTranslation, Trans } from 'react-i18next';
 
 const Container = styled.section`
     ${tw`
@@ -162,14 +163,16 @@ function YoutubeVideo(props) {
 }
 
 export default function ChallengeSection() {
+    const { t } = useTranslation();
     return <Container id='challenge'>
-        <SectionTitle>Something interesting I have challenged</SectionTitle>
+        <SectionTitle>{t('challenge.title')}</SectionTitle>
         <ShowcaseContainer>
             <ProjectContainer>
                 <CanvasContainer>
                     <DragonScene/>
                 </CanvasContainer>
-                <DetailContainer>
+                
+                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.dragon">
                     <h2>Procedural Dragon</h2>
                     <small>🛠 ThreeJS, Vertex Shader</small>
                     <p>Dragon animations are procedurally generated with following steps:</p>
@@ -179,23 +182,23 @@ export default function ChallengeSection() {
                         <li>Pass curve data down to GPU via a texture</li>
                         <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
                     </ul>
-                </DetailContainer>
+                </Trans> </Suspense> </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>
                     <SpiderScene/>
                 </CanvasContainer>
-                <DetailContainer>
+                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.spider">
                     <h2>Procedural Spider</h2>
                     <small>🛠 ThreeJS, Inverse Kinematics</small>
                     <p>Spider animations are procedurally generated using Inverse Kinematics</p>
-                </DetailContainer>
+                </Trans> </Suspense> </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>
                     <YoutubeVideo videoId='9RCqafaFMcY'/>
                 </CanvasContainer>
-                <DetailContainer>
+                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.wm">
                     <h2>Weapon Master</h2>
                     <small>🛠 Unreal Engine, Gameplay Abilities System</small>
                     <p>Small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
@@ -205,18 +208,17 @@ export default function ChallengeSection() {
                         <li>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</li>
                         <li>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</li>
                     </ul>
-                </DetailContainer>
+                </Trans> </Suspense> </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>
                     <YoutubeVideo videoId='xvNHCHPUz8A'/>
                 </CanvasContainer>
-                <DetailContainer>
+                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.doll">
                     <h2>Gun and Doll</h2>
                     <small>🛠 Unity3D</small>
-                    <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome "monster".<br/>
-                    </p>
-                </DetailContainer>
+                    <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome "monster".</p>
+                </Trans> </Suspense> </DetailContainer>
             </ProjectContainer>
         </ShowcaseContainer>
     </Container>

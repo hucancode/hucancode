@@ -6,6 +6,7 @@ import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
 import Logo from "../widgets/logo";
 import { SCREENS } from './screens';
+import { useTranslation } from 'react-i18next';
 
 const Container = styled.nav`
     ${tw`
@@ -105,6 +106,7 @@ export default function Navbar() {
     const isDesktop = useMediaQuery({ minWidth: SCREENS.md });
     const [isDrawerOpen, setDrawerOpen] = useState(false);
     const drawerRef = useRef(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const closeDrawer = event => {
@@ -121,16 +123,16 @@ export default function Navbar() {
 
     const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || isDesktop}>
         <NavItem>
-            <a href='#skill'>Skill</a>
+            <a href='#skill'>{t('nav.skill')}</a>
         </NavItem>
         <NavItem>
-            <a href='#experiences'>Experiences</a>
+            <a href='#experiences'>{t('nav.exp')}</a>
         </NavItem>
         <NavItem>
-            <a href='#challenge'>Works</a>
+            <a href='#challenge'>{t('nav.works')}</a>
         </NavItem>
         <NavItem>
-            <a href='#contact'>Contact</a>
+            <a href='#contact'>{t('nav.contact')}</a>
         </NavItem>
     </NavItems>
 

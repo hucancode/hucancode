@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import { faCube, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebook, faGithub } from "@fortawesome/free-brands-svg-icons";
+import { useTranslation } from 'react-i18next';
 
 const Container = styled.section`
     ${tw`
@@ -103,9 +104,10 @@ const RoundIcon = styled.span`
 `;
 
 export default function FooterSection() {
+    const { t } = useTranslation();
     return <Container id='contact'>
         <ContactContainer>
-            <Title>Reach out to me!</Title>
+            <Title>{t('contact.social')}</Title>
             <br/>
             <SocialContainer><FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: '0.5rem'}} size="lg"></FontAwesomeIcon><p>Marugame, Kagawa, Japan</p></SocialContainer>
             <SocialContainer>
@@ -127,7 +129,7 @@ export default function FooterSection() {
             </SocialContainer>
         </ContactContainer>
         <ContactContainer>
-            <Title>Contact</Title>
+            <Title>{t('contact.contact')}</Title>
             <br/>
             <p>(+81) 070-8311-3362</p>
             <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>

@@ -2,8 +2,7 @@ import React from "react";
 import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
 import SaborScene from "../scenes/sabor";
-import { useTranslation } from 'react-i18next';
-import { Trans } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 
 const Container = styled.section`
     ${tw`
@@ -94,9 +93,9 @@ export default function LandingSection() {
 
     return <Container>
         <About>
-            <Title>{t('hello')} <WavingHand>👋</WavingHand></Title>
+            <Title>{t('landing.hello')} <WavingHand>👋</WavingHand></Title>
             
-            <Description><Trans i18nKey="about">
+            <Description><Trans i18nKey="landing.about">
                 I am Bang, a passionate Front End Software Engineer. <br/>
                 I build mobile applications and games for a living. <br/>
                 This page is available in 

@@ -30,16 +30,16 @@ export default function App() {
     return (
         
         <AppContainer>
-            <Navbar />
             <Suspense fallback="loading">
+                <Navbar />
                 <LandingSection />
+                <SkillSection />
+                <ExperienceSection />
+                {/* <ProjectSection /> */}
+                <ChallengeSection />
+                <FooterSection />
+                <FootNote />
             </Suspense>
-            <SkillSection />
-            <ExperienceSection />
-            {/* <ProjectSection /> */}
-            <ChallengeSection />
-            <FooterSection />
-            <FootNote />
         </AppContainer>
         
     )
