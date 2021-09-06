@@ -7,7 +7,9 @@
     },
     "landing": {
         "hello": "こにちわ!",
-        "about": "バンと申します、熱心なフロントエンドソフトエンジニアです。<br/>暮らしのため、モバイルアプリケーションとゲームを構築します。<br/>言語変更はこちら <5>🇺🇸</5>・<7>🇯🇵</7>。"
+        "about": "バンと申します、熱心なフロントエンドソフトエンジニアです。<br/>暮らしのため、モバイルアプリケーションとゲームを構築します。",
+        "languageGuide": "Tap here to change language",
+        "languageGuide2": "言語変更には、ここをタップ"
     },
     "tools": {
         "title": "利用しているツール・言語",
@@ -38,18 +40,18 @@
             "university": "2010年9月〜2014年6月"
         },
         "desc": {
-            "gc": "<0><0>グッドクリエイト社のソフトウェアエンジニアリング部門を担当しています。 要件について話し合い、技術的なアドバイスを提供し、高レベルのソリューションを提案します。</0><1><code>Swift</code>と<code>Kotlin</code>を使用して高度にインタラクティブなモバイルアプリケーションを開発しました。</1><2><1>アプリ構築システム</1>を担当しています。 ユーザーがプログラミングの知識がなくても独自のモバイルアプリケーションを構築できるようにします。 <code>ReactNative</code>を搭載します。</2><3>私は研究開発活動を行っています。将来のプロジェクトでの<code>Flutter</code>の潜在的な使用法を探ります。</3><4><code>Wordpress</code>と<code>Welcart</code>を使用して<1>EコマースWebサイト</1>を開発しました</4></0>",
-            "jpschool": "<0><0>I took 2-years course, but I graduated early, only study there for 1 year.</0><1>I started with almost zero Japanese and was able to pass <em>JLPT N3</em> before graduation. Two years later I passed <em>JLPT N2</em>.</1><2>I can communicate in Japanese at business level. I am able to discuss technical topic in Japanese with minimal difficulty. </2><3>I can act as English-Japanese-Vietnamese interpreter at conversational level.<br/>I can interpret business Japanese to some degree.</3></0>",
-            "glhan": "<0><0>I have taken part in Gameloft AI Contest 2013, I finished at <em>Quater Final (rank #4~8)</em>.I soon joined Gameloft later on March 2014.</0><1>Deeply immersed in international environment, my English ability improved significantly. Thanks to that, earlier in 2021, I took the TOEIC English test and achieved <em>945/990 points</em>.</1><2>Started out as a C++ Game Programmer, I developed my interest in Computer Graphics. I am in charge of gameplay programming and graphics optimization for games. I am well trained in OpenGL, shader programming and various graphics debugging tools.</2><3>I was in charge of gameplay programming and graphics optimization in the following games (all based on C++ and OpenGL):<1><0>Sharkdash, built using 2D in-house engine.</0><1>Ice Age Adventures, built using in-house 3D engine. </1><2>Brothers in Arms 3, built using Irrlicht-based in-house engine (3D).</2><3>Order and Chaos 2, 3D MMORPG, built using in-house engine.</3><4>Disney Magic Kingdom, built using Irrlicht-based in-house engine (3D).</4></1></3></0>",
-            "fpt": "<0><0>I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>.That was a migration project, bringing an old 32-bit based system to 64-bit. I was in charge of building custom developement tools (CLI) for the team. I did review other member's code to ensure source code quality.</0><1>I developed application for an entertainment system running on Automobile devices (in parnership with LG).That was media playing application, built with Qt. I am in charge of feature implementation and <em>overall performance optimization</em>.</1><2>Over the course of 2 years at FPT Software, I have received various training on Project Management. I learned how to manage a small team and was pretty successful at it.</2><3>I was received honorable mention as <em>Best Rookie of The Year 2016</em>.</3></0>",
-            "university": "<0><0>My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>. I got perfect mark <em>(10/10)</em> in Computer Programming, Semester Project #4.I have most major subjects above A grade <em>(8.0+/10)</em>, with A+ in Graduation Project <em>(9.2/10)</em>.</0><1>I aced an university programming contest. Both as an individual and as a team.</1><2>I represented my university taking part in National Olympiad of Informatics. I got an incentive prize.</2><3>My team represented my university taking part in ACM/ICPC.</3></0>"
+            "gc": "<0><0>グッドクリエイト社のソフトウェアエンジニアリング部門を担当しています。要件について話し合い、技術的なアドバイスを提供し、高レベルのソリューションを提案します。</0><1><code>Swift</code>と<code>Kotlin</code>を使用して高度にインタラクティブなモバイルアプリケーションを開発しました。</1><2><1>アプリ構築システム</1>を担当しています。ユーザーがプログラミングの知識がなくても独自のモバイルアプリケーションを構築できるようにします。<code>ReactNative</code>を搭載します。</2><3>私は研究開発活動を行っています。将来のプロジェクトでの<code>Flutter</code>の潜在的な使用法を探ります。</3><4><code>Wordpress</code>と<code>Welcart</code>を使用して<1>EコマースWebサイト</1>を開発しました</4></0>",
+            "jpschool": "<0><0>私は2年間のコースを受講しましたが、早く卒業し、そこで1年間だけ勉強しました。</0><1>私はほとんどゼロの日本語から始めました、卒業前に<em>JLPT N3</em>を取りました。1年半後<em>JLPT N2</em>をとりました。</1><2>私はビジネスレベルで日本語でコミュニケーションをとることができます。技術的なトピックについては、最小限の難しさで日本語で話し合うことができます。</2><3>私は日常会話レベルで英語・日本語・ベトナム語の通訳することができます。<br/>ビジネス日本語はある程度通訳できます。</3></0>",
+            "glhan": "<0><0>Gameloft AI 2013年コンテストに参加しました, <em>準々決勝（ランク＃4〜8）</em>で終了しました。その後すぐに2014年3月にGameloftに入社しました。</0><1>国際的な環境に深く浸り、私の英語力は大幅に向上しました。そのおかげで、2021年の初めにTOEIC英語テストを受けて<em>945/990ポイント</em>を獲得しました。</1><2>C ++ゲームプログラマーとして始めた私は、コンピューターグラフィックスに興味を持ちました。私はゲームプレイプログラミングとゲームのグラフィック最適化を担当しています。私はOpenGL、シェーダープログラミング、およびさまざまなグラフィックスデバッグツールのトレーニングを受けています。</2><3>私は次のゲーム（すべてC ++とOpenGLに基づく）でゲームプレイプログラミングとグラフィックスの最適化を担当していました：<1><0>Sharkdash、2D社内エンジンを使用して構築された。</0><1>Ice Age Adventures, 3D社内エンジンを使用して構築された。</1><2>Brothers in Arms 3, 社内Irrlichtに基づく3Dエンジンを使用して構築された。</2><3>Order and Chaos 2, 3D MMORPG, 3D社内エンジンを使用して構築された。</3><4>Disney Magic Kingdom, 社内Irrlichtに基づく3Dエンジンを使用して構築された。</4></1></3></0>",
+            "fpt": "<0><0>私は2016年6月にFPT Softwareに参加し、<em>200万行のコード</em>でC++プロジェクトに挑戦する5人のチームを率いています。これは移行プロジェクトであり、古い32ビットベースのシステムを64ビットに移行しました。私はチームのカスタム開発ツール（CLI）の構築を担当していました。ソースコードの品質を確認するために、他のメンバーのコードを確認しました。</0><1>自動車機器で動作するエンターテインメントシステムのアプリケーションを開発しました（LGとの提携）。それはQtで構築されたメディア再生アプリケーションでした。私は機能の実装と<em>全体的なパフォーマンスの最適化</em>を担当しています。</1><2>FPT Softwareでの2年間、私はプロジェクト管理に関するさまざまなトレーニングを受けました。私は小さなチームを管理する方法を学び、それでかなり成功しました。</2><3><em>2016年の新人王</em>として名誉ある賞を受賞しました。</3></0>",
+            "university": "<0><0>私の専攻は<code>ソフトウェアエンジニアリング</code>でした。4年間で、私は<code>C/C++、C＃</code>のトレーニングを受けました。コンピュータプログラミング、学期プロジェクト＃4で満点<em>（10/10）</em>を取得しました。Aグレード<em>（8.0+/10）</em>を超える主要な科目が最も多く、卒業プロジェクトがA+<em>（9.2/10）</em>を取りました。</0><1>大学のプログラミングコンテストで優勝しました。個人としてもチームとしても両方勝ちました。</1><2>私は大学を代表して、全国情報技術オリンピックに参加しました。インセンティブ賞をもらいました。</2><3>私のチームは、大学の代表としてACM/ICPCコンテストに参加しました。</3></0>"
         }
     },
     "challenge": {
         "title": "面白くてチャレンジしてみたもの",
-        "dragon": "<0>手続き型生成竜</0><1>🛠 ThreeJS, Vertex Shader</1><2>ドラゴンアニメーションは、次の手順で手続き的に生成されます：</2><3><0>静的ドラゴンメッシュを読み込みます。 まっすぐにポーズ状態になります。</0><1>THREE.CatmullRomCurve3を使って曲線を作成します。</1><2>曲線をTexture経由でGPUに渡します。</2><3>Vertex shaderに、Textureデータを読んでVertexの適用に位置を調整します。</3></3>",
+        "dragon": "<0>手続き型生成竜</0><1>🛠 ThreeJS, Vertex Shader</1><2>ドラゴンアニメーションは、次の手順で手続き的に生成されます：</2><3><0>静的ドラゴンメッシュを読み込みます。まっすぐにポーズ状態になります。</0><1>THREE.CatmullRomCurve3を使って曲線を作成します。</1><2>曲線をTexture経由でGPUに渡します。</2><3>Vertex shaderに、Textureデータを読んでVertexの適用に位置を調整します。</3></3>",
         "spider": "<0>手続き型生成蜘蛛</0><1>🛠 ThreeJS, 逆運動学</1><2>蜘蛛のアニメーションは、逆運動学（Inverse Kinematics）を使用して手続き的に生成されます</2>",
-        "wm": "<0>武器達人</0><1>🛠 Unreal Engine, Gameplay Abilities System</1><2>Unreal Engineで作られた小さなRPGで、10以上の切り替え可能な武器が特徴です。</2><3><0>各武器には固有のスキルセットがあります。 武器には独自のアニメーションロジックがあり、キャラクターロジックから完全に独立しています。</0><1>完全な移動アニメーションができます。 ダッシュ、ジャンプ、スプリント、フライング。</1><2>一部のスキルは、移動状態と相互作用します。空中で剣を振ったり、ダッシュしながらすばやく叩いたりしてみてください。</2><3>ヒットリアクションシステムを搭載。 プレイヤーはヒットすると唖然とします。 ハイインパクトスキルは、ラグドール物理学を使用して敵を劇的にノックダウンします。</3></3>",
+        "wm": "<0>武器達人</0><1>🛠 Unreal Engine, Gameplay Abilities System</1><2>Unreal Engineで作られた小さなRPGで、10以上の切り替え可能な武器が特徴です。</2><3><0>各武器には固有のスキルセットがあります。武器には独自のアニメーションロジックがあり、キャラクターロジックから完全に独立しています。</0><1>完全な移動アニメーションができます。ダッシュ、ジャンプ、スプリント、フライング。</1><2>一部のスキルは、移動状態と相互作用します。空中で剣を振ったり、ダッシュしながらすばやく叩いたりしてみてください。</2><3>ヒットリアクションシステムを搭載。プレイヤーはヒットすると唖然とします。ハイインパクトスキルは、ラグドール物理学を使用して敵を劇的にノックダウンします。</3></3>",
         "doll": "<0>銃と人形</0><1>🛠 Unity3D</1><2>Unityで作られた小さなトップダウンシューティングゲームで、レーザー銃とたくさんの恐ろしい\"モンスター\"に会えします。</2>"
     },
     "contact": {
@@ -58,7 +60,7 @@
         "downloadResume": "経歴書をダウンロード"
     },
     "note": {
-        "madeWith": "<code>React.js</code>、<code>Three.js</code> または10つ以上他のツールで作成された。<br/>",
+        "madeWith": "<code>React.js</code>、<code>Three.js</code> または10つ以上他のツールで作成されました。<br/>",
         "assetCredit": "<0>竜モデルは<1>youmeowmeow</1>からもらいます</0>。<2>蜘蛛モデルは<1>volkanongun</1>からもらいます。</2>"
     }
 }

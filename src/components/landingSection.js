@@ -33,15 +33,56 @@ const About = styled.div`
   `}
 `;
 
+const Greetings = styled.div`
+    ${tw`
+        flex
+        flex-col
+        justify-start
+        mb-10
+        cursor-pointer
+        overflow-hidden
+        max-w-max
+    `}
+`;
+const LanguageGuideAnimation = keyframes`
+    0% {
+        content: "Tap here to change language";
+    }
+    30% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    70% {
+        opacity: 1;
+    }
+    100% {
+        content: "言語変更には、ここをタップ";
+    }
+`;
+
 const Title = styled.h1`
   ${tw`
     text-4xl
     font-bold
-    mb-3
     select-none
   `}
 `;
 
+const Subtitle = styled.h2`
+    &, &:after {
+        ${tw`
+            text-sm
+            font-thin
+            select-none
+            dark:text-white
+            text-black
+        `}
+        animation: ${LanguageGuideAnimation} 5s linear alternate infinite;
+        content: "Tap here to change language";
+    }
+`;
 
 const WAVE_STRENGTH = 20.0;
 const WaveAnimation = keyframes`
@@ -66,13 +107,7 @@ const Description = styled.p`
     text-lg
   `}
 `;
-const LanguageButton = styled.button`
-    ${tw`
-        text-lg
-        mr-2
-        ml-2
-    `}
-`
+
 
 const CanvasContainer = styled.div`
   ${tw`
@@ -93,15 +128,18 @@ export default function LandingSection() {
 
     return <Container>
         <About>
-            <Title>{t('landing.hello')} <WavingHand>👋</WavingHand></Title>
+            <Greetings onClick={() => i18n.changeLanguage(i18n.language==='en'?'jp':'en')}>
+                <Title>{t('landing.hello')} <WavingHand>👋</WavingHand></Title>
+                <Subtitle/>
+            </Greetings>
+            <Description>
+                <Trans i18nKey="landing.about">
+                    I am Bang, a passionate Front End Software Engineer. <br/>
+                    I build mobile applications and games for a living.
+                </Trans>
+            </Description>
             
-            <Description><Trans i18nKey="landing.about">
-                I am Bang, a passionate Front End Software Engineer. <br/>
-                I build mobile applications and games for a living. <br/>
-                This page is available in 
-                <LanguageButton onClick={() => i18n.changeLanguage('en')}>🇺🇸</LanguageButton> and 
-                <LanguageButton onClick={() => i18n.changeLanguage('jp')}>🇯🇵</LanguageButton>.
-            </Trans></Description>
+            
         </About>
         <CanvasContainer>
             <SaborScene />

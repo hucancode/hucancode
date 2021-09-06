@@ -67,6 +67,7 @@ const HistoryButton = styled.button`
         md:text-base
         dark:text-gray-300
     `}
+    min-width: 7.5rem;
     h2 {
         ${tw`
             mb-1
@@ -213,7 +214,7 @@ export default function ExperienceSection() {
                         I took 2-years course, but I graduated early, only study there for 1 year.
                     </li>
                     <li>
-                        I started with almost zero Japanese and was able to pass <em>JLPT N3</em> before graduation. Two years later I passed <em>JLPT N2</em>.
+                        Started with almost zero Japanese, I was able to pass <em>JLPT N3</em> before graduation. One and a half year later I passed <em>JLPT N2</em>. 
                     </li>
                     <li>
                         I can communicate in Japanese at business level. 
@@ -235,7 +236,7 @@ export default function ExperienceSection() {
                     <ul>
                         <li>
                             I have taken part in Gameloft AI Contest 2013, I finished at <em>Quater Final (rank #4~8)</em>.
-                            I soon joined Gameloft later on March 2014.
+                            I then soon joined Gameloft later on March 2014.
                         </li>
                         <li>
                             Deeply immersed in international environment, my English ability improved significantly. 
