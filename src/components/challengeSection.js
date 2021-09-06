@@ -201,7 +201,7 @@ export default function ChallengeSection() {
                 <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.wm">
                     <h2>Weapon Master</h2>
                     <small>🛠 Unreal Engine, Gameplay Abilities System</small>
-                    <p>Small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
+                    <p>This is small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
                     <ul>
                         <li>Each weapon has unique skill set. Weapon has it's own animation logic and completely independent from character logic.</li>
                         <li>Full locomotion animation. Dashing, Jumping, Sprinting, Flying.</li>
