@@ -138,8 +138,6 @@ export default function LandingSection() {
                     I build mobile applications and games for a living.
                 </Trans>
             </Description>
-            
-            
         </About>
         <CanvasContainer>
             <SaborScene />
