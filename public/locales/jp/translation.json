@@ -59,6 +59,6 @@
     },
     "note": {
         "madeWith": "<code>React.js</code>、<code>Three.js</code> または10つ以上他のツールで作成された。<br/>",
-        "assetCredit": "<small>竜モデルは<1>youmeowmeow</1>からもらいます</small>。<small>蜘蛛モデルは<1>volkanongun</1>からもらいます。</small>"
+        "assetCredit": "<0>竜モデルは<1>youmeowmeow</1>からもらいます</0>。<2>蜘蛛モデルは<1>volkanongun</1>からもらいます。</2>"
     }
 }

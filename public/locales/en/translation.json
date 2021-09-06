@@ -59,6 +59,6 @@
     },
     "note": {
         "madeWith": "Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br/>",
-        "assetCredit": "<small>Dragon model by <1>youmeowmeow</1></small>. <small>Spider model by <1>volkanongun</1></small>"
+        "assetCredit": "<0>Dragon model by <1>youmeowmeow</1></0>. <2>Spider model by <1>volkanongun</1></2>"
     }
 }
