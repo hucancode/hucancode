@@ -2,6 +2,8 @@ import React from "react";
 import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
 import SaborScene from "../scenes/sabor";
+import { useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 
 const Container = styled.section`
     ${tw`
@@ -65,6 +67,13 @@ const Description = styled.p`
     text-lg
   `}
 `;
+const LanguageButton = styled.button`
+    ${tw`
+        text-lg
+        mr-2
+        ml-2
+    `}
+`
 
 const CanvasContainer = styled.div`
   ${tw`
@@ -81,13 +90,19 @@ const CanvasContainer = styled.div`
 `;
 
 export default function LandingSection() {
+    const { t, i18n } = useTranslation();
+
     return <Container>
         <About>
-            <Title>Hello! <WavingHand>👋</WavingHand></Title>
-            <Description>
-                I am Bang, a passionate Front End Software Engineer.<br />
-                I build mobile applications and games for a living.
-            </Description>
+            <Title>{t('hello')} <WavingHand>👋</WavingHand></Title>
+            
+            <Description><Trans i18nKey="about">
+                I am Bang, a passionate Front End Software Engineer. <br/>
+                I build mobile applications and games for a living. <br/>
+                This page is available in 
+                <LanguageButton onClick={() => i18n.changeLanguage('en')}>🇺🇸</LanguageButton> and 
+                <LanguageButton onClick={() => i18n.changeLanguage('jp')}>🇯🇵</LanguageButton>.
+            </Trans></Description>
         </About>
         <CanvasContainer>
             <SaborScene />

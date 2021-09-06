@@ -1,6 +1,7 @@
-import React from "react";
+import React, { Suspense } from "react";
 import styled from "styled-components";
 import tw from 'twin.macro';
+import './i18n';
 import './App.css';
 import Navbar from "./components/navBar";
 import LandingSection from "./components/landingSection";
@@ -27,6 +28,7 @@ const AppContainer = styled.div`
 
 export default function App() {
     return (
+        <Suspense fallback="loading">
         <AppContainer>
             <Navbar />
             <LandingSection />
@@ -37,5 +39,6 @@ export default function App() {
             <FooterSection />
             <FootNote />
         </AppContainer>
+        </Suspense>
     )
 }
