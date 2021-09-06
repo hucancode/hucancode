@@ -102,7 +102,7 @@ const DetailContainer = styled.div`
             text-black
         `}
     }
-    p {
+    p, ul {
         ${tw`
             font-normal
             text-sm
@@ -172,14 +172,13 @@ export default function ChallengeSection() {
                 <DetailContainer>
                     <h2>Procedural Dragon</h2>
                     <small>🛠 ThreeJS, Vertex Shader</small>
-                    <p>Dragon animations are procedurally generated with following steps:<br/>
-                        <ul>
-                            <li>Load static dragon mesh. Posed in a straight line</li>
-                            <li>Build a curve using THREE.CatmullRomCurve3</li>
-                            <li>Pass curve data down to GPU via a texture</li>
-                            <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
-                        </ul>
-                    </p>
+                    <p>Dragon animations are procedurally generated with following steps:</p>
+                    <ul>
+                        <li>Load static dragon mesh. Posed in a straight line</li>
+                        <li>Build a curve using THREE.CatmullRomCurve3</li>
+                        <li>Pass curve data down to GPU via a texture</li>
+                        <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
+                    </ul>
                 </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
@@ -199,14 +198,13 @@ export default function ChallengeSection() {
                 <DetailContainer>
                     <h2>Weapon Master</h2>
                     <small>🛠 Unreal Engine, Gameplay Abilities System</small>
-                    <p>Small RPG made with Unreal Engine, featuring 10+ switchable weapons. <br/>
+                    <p>Small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
                     <ul>
                         <li>Each weapon has unique skill set. Weapon has it's own animation logic and completely independent from character logic.</li>
                         <li>Full locomotion animation. Dashing, Jumping, Sprinting, Flying.</li>
                         <li>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</li>
                         <li>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</li>
                     </ul>
-                    </p>
                 </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
