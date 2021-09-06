@@ -55,10 +55,10 @@
     "contact": {
         "social": "Reach out to me!",
         "contact": "Contact",
-        "download-resume": "Download my resume"
+        "downloadResume": "Download my resume"
     },
-    "foot-note": {
-        "made-with": "Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br/>",
-        "asset-credit": "<small>Dragon model by <1>youmeowmeow</1></small>. <small>Spider model by <1>volkanongun</1></small>"
+    "note": {
+        "madeWith": "Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br/>",
+        "assetCredit": "<small>Dragon model by <1>youmeowmeow</1></small>. <small>Spider model by <1>volkanongun</1></small>"
     }
 }

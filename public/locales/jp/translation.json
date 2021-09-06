@@ -17,18 +17,18 @@
     "experience": {
         "title": "私がどこに行ったのか？",
         "nav": {
-            "gc": "GoodCreate",
+            "gc": "グッドクリエイト",
             "jpschool": "日本語学校",
             "glhan": "Gameloft Hanoi",
             "fpt": "FPT Software",
             "university": "大学"
         }, 
         "position": {
-            "gc": "Engineering Manager <sup>@</sup> <3><em>GoodCreate</em></3>",
-            "jpschool": "Student <sup>@</sup> <3><em>Mizuno International Language School</em></3>",
-            "glhan": "Senior Game Programmer <sup>@</sup> <3><em>Gameloft Hanoi</em></3>",
-            "fpt": "Senior Software Developer <sup>@</sup> <3><em>FPT Software</em></3>",
-            "university": "Bachelor Degree <sup>@</sup> <3><em>Hung Yen University of Technology and Education</em></3>"
+            "gc": "エンジニアマネジャー <sup>@</sup> <3><em>グッドクリエイト</em></3>",
+            "jpschool": "学生 <sup>@</sup> <3><em>水野外語学院</em></3>",
+            "glhan": "シニアゲームプログラマ <sup>@</sup> <3><em>Gameloft Hanoi</em></3>",
+            "fpt": "シニアソフト開発者 <sup>@</sup> <3><em>FPT Software</em></3>",
+            "university": "学士号 <sup>@</sup> <3><em>Hung Yen 技術師範大学</em></3>"
         },
         "time": {
             "gc": "2020年7月〜現在",
@@ -55,10 +55,10 @@
     "contact": {
         "social": "友達にしようか!",
         "contact": "連絡先",
-        "download-resume": "経歴書をダウンロード"
+        "downloadResume": "経歴書をダウンロード"
     },
-    "foot-note": {
-        "made-with": "Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br/>",
-        "asset-credit": "<small>Dragon model by <1>youmeowmeow</1></small>. <small>Spider model by <1>volkanongun</1></small>"
+    "note": {
+        "madeWith": "<code>React.js</code>、<code>Three.js</code> または10つ以上他のツールで作成された。<br/>",
+        "assetCredit": "<small>竜モデルは<1>youmeowmeow</1>からもらいます</small>。<small>蜘蛛モデルは<1>volkanongun</1>からもらいます。</small>"
     }
 }
