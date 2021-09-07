@@ -158,7 +158,7 @@ export default function LandingSection() {
                     I am Bang, a passionate Front End Software Engineer. <br/>
                     I build mobile applications and games for a living.
                 </Trans>
-                <ResumeDownload href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
+                <ResumeDownload target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
                     <FontAwesomeIcon icon={faFileDownload} size="lg"/>
                     <span>{t('contact.downloadResume')}</span>
                 </ResumeDownload>

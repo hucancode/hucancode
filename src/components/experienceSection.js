@@ -179,7 +179,7 @@ export default function ExperienceSection() {
             </HistoryNavigator>
             <ContentContainer active={activeSet===0}>
                 <Title><Trans i18nKey="experience.position.gc">
-                    Engineering Manager <sup>@</sup> <a href="https://gc-c.co.jp/"><em>GoodCreate</em></a>
+                    Engineering Manager <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://gc-c.co.jp/"><em>GoodCreate</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.gc')}</Time>
                 <Description><Trans i18nKey="experience.desc.gc">
@@ -192,20 +192,20 @@ export default function ExperienceSection() {
                             I developed highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>
                         </li>
                         <li>
-                            I am in charge of an <a href="https://at-creator.net/">app building system</a>. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
+                            I am in charge of an <a target="_blank" rel="noreferrer" href="https://at-creator.net/">app building system</a>. Allow user to build their own mobile application without programming knowledge. Powered by <code>ReactNative</code>
                         </li>
                         <li>
                             I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.
                         </li>
                         <li>
-                            I developed an <a href="https://www.ramen-ichidai.shop/">E-commerce website</a> using <code>Wordpress</code> and <code>Welcart</code>
+                            I developed an <a target="_blank" rel="noreferrer" href="https://www.ramen-ichidai.shop/">E-commerce website</a> using <code>Wordpress</code> and <code>Welcart</code>
                         </li>
                     </ul>
                 </Trans></Description>
             </ContentContainer>
             <ContentContainer active={activeSet===1}>
                 <Title><Trans i18nKey="experience.position.jpschool">
-                    Student <sup>@</sup> <a href="http://mizunogaigogakuin.com/"><em>Mizuno International Language School</em></a>
+                    Student <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://mizunogaigogakuin.com/"><em>Mizuno International Language School</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.jpschool')}</Time>
                 <Description><Trans i18nKey="experience.desc.jpschool">
@@ -229,7 +229,7 @@ export default function ExperienceSection() {
             </ContentContainer>
             <ContentContainer active={activeSet===2}>
                 <Title><Trans i18nKey="experience.position.glhan">
-                    Senior Game Programmer <sup>@</sup> <a href="https://www.gameloft.com/"><em>Gameloft Hanoi</em></a>
+                    Senior Game Programmer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.gameloft.com/"><em>Gameloft Hanoi</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.glhan')}</Time>
                 <Description><Trans i18nKey="experience.desc.glhan">
@@ -272,7 +272,7 @@ export default function ExperienceSection() {
             </ContentContainer>
             <ContentContainer active={activeSet===3}>
                 <Title><Trans i18nKey="experience.position.fpt">
-                    Senior Software Developer <sup>@</sup> <a href="https://www.fpt-software.com/"><em>FPT Software</em></a>
+                    Senior Software Developer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.fpt-software.com/"><em>FPT Software</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.fpt')}</Time>
                 <Description><Trans i18nKey="experience.desc.fpt">
@@ -300,7 +300,7 @@ export default function ExperienceSection() {
             </ContentContainer>
             <ContentContainer active={activeSet===4}>
                 <Title><Trans i18nKey="experience.position.university">
-                    Bachelor Degree <sup>@</sup> <a href="http://utehy.edu.vn/"><em>Hung Yen University of Technology and Education</em></a>
+                    Bachelor Degree <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://utehy.edu.vn/"><em>Hung Yen University of Technology and Education</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.university')}</Time>
                 <Description><Trans i18nKey="experience.desc.university">

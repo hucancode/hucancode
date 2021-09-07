@@ -111,17 +111,17 @@ export default function FooterSection() {
             <br/>
             <SocialContainer><FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: '0.5rem'}} size="lg"></FontAwesomeIcon><p>Marugame, Kagawa, Japan</p></SocialContainer>
             <SocialContainer>
-                <a href="https://github.com/hucancode">
+                <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
                 <RoundIcon>
                     <FontAwesomeIcon icon={faGithub} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
                 </a>
-                <a href="https://sketchfab.com/hucancode">
+                <a target="_blank" rel="noreferrer" href="https://sketchfab.com/hucancode">
                 <RoundIcon>
                     <FontAwesomeIcon icon={faCube} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
                 </a>
-                <a href="https://www.facebook.com/LeeSoooYoung">
+                <a target="_blank" rel="noreferrer" href="https://www.facebook.com/LeeSoooYoung">
                 <RoundIcon>
                     <FontAwesomeIcon icon={faFacebook} size="lg"></FontAwesomeIcon>
                 </RoundIcon>
@@ -134,7 +134,7 @@ export default function FooterSection() {
             <p>(+81) 070-8311-3362</p>
             <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
             <br />
-            <a href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">{t('contact.downloadResume')}</a>
+            <a target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">{t('contact.downloadResume')}</a>
         </ContactContainer>
         <Avatar/>
     </Container>
