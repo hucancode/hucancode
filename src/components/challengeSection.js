@@ -13,6 +13,8 @@ const Container = styled.section`
         items-center
         text-center
         p-10
+        //bg-gray-200
+        //dark:bg-black
     `}
 `;
 
