@@ -9,7 +9,7 @@ import reportWebVitals from './reportWebVitals';
 const GlobalStyle = createGlobalStyle`
   body {
       ${tw`
-        bg-gray-300
+        bg-indigo-300
         dark:bg-gray-900
       `}
   }

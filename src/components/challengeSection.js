@@ -89,8 +89,8 @@ const DetailContainer = styled.div`
         md:w-1/3
         md:h-full
         w-full
-        bg-gray-200
-        text-gray-900
+        bg-indigo-100
+        text-gray-600
         dark:bg-gray-600
         dark:text-gray-100
         max-w-screen-md
@@ -114,6 +114,7 @@ const DetailContainer = styled.div`
     small {
         ${tw`
             font-thin
+            text-gray-500
             mb-3
         `}
     }

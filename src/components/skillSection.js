@@ -11,7 +11,7 @@ const Container = styled.section`
         flex
         flex-col
         items-center
-        bg-gray-200
+        bg-indigo-100
         dark:bg-black
         p-10
         text-center

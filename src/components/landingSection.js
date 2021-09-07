@@ -3,6 +3,8 @@ import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
 import SaborScene from "../scenes/sabor";
 import { useTranslation, Trans } from 'react-i18next';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFileDownload } from "@fortawesome/free-solid-svg-icons";
 
 const Container = styled.section`
     ${tw`
@@ -108,6 +110,25 @@ const Description = styled.p`
   `}
 `;
 
+const ResumeDownload = styled.a`
+    ${tw`
+        flex
+        text-sm
+        uppercase
+        bg-gray-600
+        text-white
+        hover:text-blue-200
+        cursor-pointer
+        mt-10
+        p-3
+        max-w-max
+    `}
+    span {
+        ${tw`
+            ml-3
+        `}
+    }
+`;
 
 const CanvasContainer = styled.div`
   ${tw`
@@ -137,6 +158,10 @@ export default function LandingSection() {
                     I am Bang, a passionate Front End Software Engineer. <br/>
                     I build mobile applications and games for a living.
                 </Trans>
+                <ResumeDownload href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
+                    <FontAwesomeIcon icon={faFileDownload} size="lg"/>
+                    <span>{t('contact.downloadResume')}</span>
+                </ResumeDownload>
             </Description>
         </About>
         <CanvasContainer>

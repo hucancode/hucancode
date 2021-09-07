@@ -20,8 +20,8 @@ const AppContainer = styled.div`
     items-center
     w-full
     min-h-full
-    bg-gray-300
-    text-black
+    bg-indigo-200
+    text-gray-600
     dark:bg-gray-900
     dark:text-white
   `}
