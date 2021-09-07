@@ -101,7 +101,7 @@ const DetailContainer = styled.div`
     h2 {
         ${tw`
             font-black
-            dark:text-white
+            dark:text-indigo-100
             text-black
         `}
     }
@@ -115,6 +115,7 @@ const DetailContainer = styled.div`
         ${tw`
             font-thin
             text-gray-500
+            dark:text-gray-300
             mb-3
         `}
     }
