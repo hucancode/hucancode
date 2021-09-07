@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import DragonScene from "../scenes/dragon";
@@ -172,7 +172,7 @@ export default function ChallengeSection() {
                     <DragonScene/>
                 </CanvasContainer>
                 
-                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.dragon">
+                <DetailContainer> <Trans i18nKey="challenge.dragon">
                     <h2>Procedural Dragon</h2>
                     <small>🛠 ThreeJS, Vertex Shader</small>
                     <p>Dragon animations are procedurally generated with following steps:</p>
@@ -182,23 +182,23 @@ export default function ChallengeSection() {
                         <li>Pass curve data down to GPU via a texture</li>
                         <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
                     </ul>
-                </Trans> </Suspense> </DetailContainer>
+                </Trans> </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>
                     <SpiderScene/>
                 </CanvasContainer>
-                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.spider">
+                <DetailContainer> <Trans i18nKey="challenge.spider">
                     <h2>Procedural Spider</h2>
                     <small>🛠 ThreeJS, Inverse Kinematics</small>
                     <p>Spider animations are procedurally generated using Inverse Kinematics</p>
-                </Trans> </Suspense> </DetailContainer>
+                </Trans> </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>
                     <YoutubeVideo videoId='9RCqafaFMcY'/>
                 </CanvasContainer>
-                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.wm">
+                <DetailContainer> <Trans i18nKey="challenge.wm">
                     <h2>Weapon Master</h2>
                     <small>🛠 Unreal Engine, Gameplay Abilities System</small>
                     <p>This is small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
@@ -208,17 +208,17 @@ export default function ChallengeSection() {
                         <li>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</li>
                         <li>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</li>
                     </ul>
-                </Trans> </Suspense> </DetailContainer>
+                </Trans> </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>
                     <YoutubeVideo videoId='xvNHCHPUz8A'/>
                 </CanvasContainer>
-                <DetailContainer> <Suspense fallback="loading"> <Trans i18nKey="challenge.doll">
+                <DetailContainer> <Trans i18nKey="challenge.doll">
                     <h2>Gun and Doll</h2>
                     <small>🛠 Unity3D</small>
                     <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome "monster".</p>
-                </Trans> </Suspense> </DetailContainer>
+                </Trans> </DetailContainer>
             </ProjectContainer>
         </ShowcaseContainer>
     </Container>

@@ -11,6 +11,7 @@ import ExperienceSection from "./components/experienceSection";
 import ChallengeSection from "./components/challengeSection";
 import FootNote from "./components/footNote";
 import FooterSection from "./components/footerSection";
+import {LoadingIcon} from "./widgets/loading"
 
 const AppContainer = styled.div`
   ${tw`
@@ -26,11 +27,27 @@ const AppContainer = styled.div`
   `}
 `;
 
+const LoadingContainer = styled.div`
+    ${tw`
+        flex
+        items-center
+        justify-center
+        w-screen
+        h-screen
+        overflow-hidden
+    `}
+`;
+
+function Loading() {
+    return <LoadingContainer>
+        <LoadingIcon />
+    </LoadingContainer>
+}
+
 export default function App() {
     return (
-        
         <AppContainer>
-            <Suspense fallback="loading">
+            <Suspense fallback={<Loading />}>
                 <Navbar />
                 <LandingSection />
                 <SkillSection />
@@ -41,6 +58,5 @@ export default function App() {
                 <FootNote />
             </Suspense>
         </AppContainer>
-        
     )
 }
