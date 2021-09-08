@@ -311,7 +311,7 @@ export default function ExperienceSection() {
                             I have most major subjects above A grade <em>(8.0+/10)</em>, with A+ in Graduation Project <em>(9.2/10)</em>.
                         </li>
                         <li>
-                            I aced an university programming contest. Both as an individual and as a team.
+                            I won an university programming contest. Both as an individual and as a team.
                         </li>
                         <li>
                             I represented my university taking part in National Olympiad of Informatics. I got an incentive prize.

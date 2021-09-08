@@ -60,7 +60,7 @@ const LanguageGuideAnimation = keyframes`
         opacity: 1;
     }
     100% {
-        content: "言語変更には、ここをタップ";
+        content: "言語変更には、ここにタップ";
     }
 `;
 
@@ -73,7 +73,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.h2`
-    &, &:after {
+    &:after {
         ${tw`
             text-sm
             font-thin
@@ -131,22 +131,21 @@ const ResumeDownload = styled.a`
 `;
 
 const CanvasContainer = styled.div`
-  ${tw`
-    flex
-    items-center
-    relative
-    right-0
-    md:w-2/3
-    lg:w-1/2
-    xl:w-2/5
-    w-full
-    object-contain
-  `}
+    ${tw`
+        flex
+        items-center
+        relative
+        right-0
+        md:w-2/3
+        lg:w-1/2
+        xl:w-2/5
+        w-full
+        object-contain
+    `}
 `;
 
 export default function LandingSection() {
     const { t, i18n } = useTranslation();
-
     return <Container>
         <About>
             <Greetings onClick={() => i18n.changeLanguage(i18n.language==='en'?'jp':'en')}>
