@@ -27,6 +27,10 @@ const Container = styled.section`
 
 const About = styled.div`
   ${tw`
+    flex
+    flex-col
+    items-center
+    md:items-start
     md:relative
     md:left-0
     md:w-1/2
@@ -39,7 +43,8 @@ const Greetings = styled.div`
     ${tw`
         flex
         flex-col
-        justify-start
+        items-center
+        md:items-start
         mb-10
         cursor-pointer
         overflow-hidden
@@ -113,6 +118,8 @@ const Description = styled.p`
 const ResumeDownload = styled.a`
     ${tw`
         flex
+        items-center
+        justify-center
         text-sm
         uppercase
         bg-gray-600
@@ -121,7 +128,7 @@ const ResumeDownload = styled.a`
         cursor-pointer
         mt-10
         p-3
-        max-w-max
+        w-full
     `}
     span {
         ${tw`
