@@ -6,12 +6,13 @@
   - Front End Software Engineer
   - Funny guy
 - I’m currently learning: 
+  - Reactive Programming
   - Functional Programming
   - 3D Animations
 - I speak:
   - 🇻🇳 Native
-  - 🇺🇸 C1
-  - 🇯🇵 N2
+  - 🇺🇸 Business (C1)
+  - 🇯🇵 Business (N2)
 
 ## 🛠 My tool box 
 
