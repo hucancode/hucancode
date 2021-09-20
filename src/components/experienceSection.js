@@ -12,6 +12,8 @@ const Container = styled.div`
         p-10
         text-center
         overflow-hidden
+        bg-indigo-100
+        dark:bg-black
     `}
 `;
 

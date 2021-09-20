@@ -13,7 +13,9 @@ const Container = styled.section`
         items-center
         bg-indigo-100
         dark:bg-black
-        p-10
+        pt-10
+        pb-10
+        md:p-10
         text-center
         overflow-hidden
     `}
@@ -103,8 +105,6 @@ const SkillSet = styled.ul`
     ${tw`
         flex
         flex-wrap
-        mt-3
-        mb-3
         items-center
         justify-center
         duration-300
@@ -282,7 +282,6 @@ function SkillSVG(props) {
         </SkillName>
     </SkillContainer>
 }
-
 
 export default function SkillSection() {
     var [activeSet, setActiveSet] = useState(false);

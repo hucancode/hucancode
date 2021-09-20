@@ -14,6 +14,11 @@
         "game": "Game Development",
         "app": "Application Development"
     },
+    "languages": {
+        "title": "Language abilities",
+        "english": "English",
+        "japanese": "Japanese"
+    },
     "experience": {
         "title": "Where have I been?",
         "nav": {

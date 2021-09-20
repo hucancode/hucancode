@@ -14,6 +14,11 @@
         "game": "ゲーム開発",
         "app": "アプリ開発"
     },
+    "languages": {
+        "title": "言語能力",
+        "english": "英語",
+        "japanese": "日本語"
+    },
     "experience": {
         "title": "私がどこに行ったのか？",
         "nav": {
