@@ -109,21 +109,24 @@ export default function FooterSection() {
         <ContactContainer>
             <Title>{t('contact.social')}</Title>
             <br/>
-            <SocialContainer><FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: '0.5rem'}} size="lg"></FontAwesomeIcon><p>Marugame, Kagawa, Japan</p></SocialContainer>
+            <SocialContainer>
+                <FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: '0.5rem'}} size="lg" />
+                <p>{t('contact.address')}</p>
+            </SocialContainer>
             <SocialContainer>
                 <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
                 <RoundIcon>
-                    <FontAwesomeIcon icon={faGithub} size="lg"></FontAwesomeIcon>
+                    <FontAwesomeIcon icon={faGithub} size="lg"/>
                 </RoundIcon>
                 </a>
                 <a target="_blank" rel="noreferrer" href="https://sketchfab.com/hucancode">
                 <RoundIcon>
-                    <FontAwesomeIcon icon={faCube} size="lg"></FontAwesomeIcon>
+                    <FontAwesomeIcon icon={faCube} size="lg"/>
                 </RoundIcon>
                 </a>
                 <a target="_blank" rel="noreferrer" href="https://www.facebook.com/LeeSoooYoung">
                 <RoundIcon>
-                    <FontAwesomeIcon icon={faFacebook} size="lg"></FontAwesomeIcon>
+                    <FontAwesomeIcon icon={faFacebook} size="lg"/>
                 </RoundIcon>
                 </a>
             </SocialContainer>
