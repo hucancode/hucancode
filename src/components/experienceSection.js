@@ -108,6 +108,12 @@ const Title = styled.h3`
             dark:text-yellow-100
         `}
     }
+    & em:hover {
+        ${tw`
+            text-purple-600
+            dark:text-yellow-400
+        `}
+    }
 `;
 
 const Time = styled.p`
@@ -124,6 +130,8 @@ const Description = styled.div`
         font-light
         text-left
         mt-5
+        text-black
+        dark:text-white
     `}
     font-family: "Noto Sans JP";
     & em {

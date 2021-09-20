@@ -40,12 +40,17 @@ function init() {
     renderer.setSize(w, h);
     renderer.shadowMap.enabled = true;
     if (USE_CAMERA_CONTROL) {
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 80, 0);
-        controls.update();
-        controls.enableRotateY = false;
-        controls.enablePan = false;
-        controls.enableZoom = false;
+        const isTouchDevice =  (('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.msMaxTouchPoints > 0));
+        if(!isTouchDevice) {
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 80, 0);
+            controls.enableRotateY = false;
+            controls.enablePan = false;
+            controls.enableZoom = false;
+            controls.update();
+        }
     }
     window.addEventListener('resize', onWindowResize);
     buildScene();
@@ -58,6 +63,7 @@ async function buildScene() {
 
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
     hemiLight.position.set(0, 200, 0);
+    hemiLight.intensity = 2;
     scene.add(hemiLight);
 
     const backLight = new THREE.PointLight( 0xffffff, 1, 600 );
@@ -73,7 +79,7 @@ async function buildScene() {
     dirLight.shadow.camera.bottom = - 100;
     dirLight.shadow.camera.left = - 120;
     dirLight.shadow.camera.right = 120;
-    scene.add(dirLight);
+    //scene.add(dirLight);
 
     //scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
@@ -119,6 +125,7 @@ async function buildScene() {
                 if (!child.isMesh) {
                     return;
                 }
+                child.material.doubleSided = false;
                 child.castShadow = true;
                 child.receiveShadow = false;
             });
