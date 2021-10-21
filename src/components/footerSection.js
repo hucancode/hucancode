@@ -134,7 +134,7 @@ export default function FooterSection() {
         <ContactContainer>
             <Title>{t('contact.contact')}</Title>
             <br/>
-            <p>(+81) 070-8311-3362</p>
+            <p>(+81) 080-768-66019</p>
             <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
             <br />
             <a target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">{t('contact.downloadResume')}</a>
