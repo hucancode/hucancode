@@ -1,5 +1,5 @@
 {
-  "name": "react-threejs",
+  "name": "hucancode-portfolio",
   "version": "0.1.0",
   "private": true,
   "homepage": "http://hucancode.github.io/",
@@ -21,7 +21,7 @@
     "react-dom": "^17.0.2",
     "react-i18next": "^11.11.4",
     "react-responsive": "^9.0.0-beta.3",
-    "react-scripts": "4.0.3",
+    "react-scripts": "^4.0.3",
     "styled-components": "^5.3.0",
     "three": "^0.131.3",
     "twin.macro": "^2.6.2",
