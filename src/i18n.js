@@ -21,7 +21,11 @@ i18n
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
     fallbackLng: 'en',
-    debug: true,
+    debug: process.env.NODE_ENV === 'development',
+    backend: {
+      // for all available options read the backend's repository readme file
+      loadPath: `${process.env.PUBLIC_URL}/locales/{{lng}}/{{ns}}.json`
+    },
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
