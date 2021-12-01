@@ -41,8 +41,25 @@ const Icon = styled.div`
         animation-delay: -0.15s;
     }
 `;
-export function LoadingIcon() {
+export default function LoadingIcon() {
     return <Icon>
         <div/><div/><div/><div/>
     </Icon>
+}
+
+const LoadingContainer = styled.div`
+    ${tw`
+        flex
+        items-center
+        justify-center
+        w-screen
+        h-screen
+        overflow-hidden
+    `}
+`;
+
+export function Loading() {
+    return <LoadingContainer>
+        <LoadingIcon />
+    </LoadingContainer>
 }
