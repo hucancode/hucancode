@@ -12,15 +12,12 @@ import {
     UnrealViewBox, UnrealSVGPath,
     ThreeViewBox, ThreeSVGPath,
     NestViewBox, NestSVGPath,
-    ExpressViewBox, ExpressSVGPath,
     FlutterViewBox, FlutterSVGPath,
     MySQLViewBox, MySQLSVGPath,
     GraphQLViewBox, GraphQLSVGPath,
     FirebaseViewBox, FirebaseSVGPath, 
     CircleViewBox, CircleSVGPath, 
-    GCViewBox, GCSVGPath, 
     AWSViewBox, AWSSVGPath, 
-    AzureViewBox, AzureSVGPath, 
     GitlabViewBox, GitlabSVGPath, 
     KtViewBox, KtSVGPath, 
     SwiftViewBox, SwiftSVGPath
@@ -248,7 +245,6 @@ export default function SkillSection() {
             <Skill name="Javascript" icon={faJs}/>
             <Skill name="React" icon={faReact}/>
             <SkillSVG name="Nest" viewBox={NestViewBox} paths={NestSVGPath} />
-            <SkillSVG name="Express" viewBox={ExpressViewBox} paths={ExpressSVGPath} />
             <SkillSVG name="Flutter" viewBox={FlutterViewBox} paths={FlutterSVGPath} />
             <SkillSVG name="MySQL" viewBox={MySQLViewBox} paths={MySQLSVGPath} />
             <SkillSVG name="GraphQL" viewBox={GraphQLViewBox} paths={GraphQLSVGPath} />
@@ -257,9 +253,7 @@ export default function SkillSection() {
         <SkillSet active>
             <Skill name="Docker" icon={faDocker}/>
             <SkillSVG name="Firebase" viewBox={FirebaseViewBox} paths={FirebaseSVGPath} />
-            <SkillSVG name="Google Cloud" viewBox={GCViewBox} paths={GCSVGPath} />
             <SkillSVG name="AWS" viewBox={AWSViewBox} paths={AWSSVGPath} />
-            <SkillSVG name="Azure" viewBox={AzureViewBox} paths={AzureSVGPath} />
             <SkillSVG name="Circle CI" viewBox={CircleViewBox} paths={CircleSVGPath} />
             <SkillSVG name="Gitlab CI" viewBox={GitlabViewBox} paths={GitlabSVGPath} />
         </SkillSet>
