@@ -31,7 +31,7 @@ const AppContainer = styled.div`
     w-full
     min-h-full
     bg-indigo-200
-    text-gray-600
+    text-gray-800
     dark:bg-gray-900
     dark:text-white
   `}
