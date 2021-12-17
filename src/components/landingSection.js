@@ -101,6 +101,8 @@ const WaveAnimation = keyframes`
     50% { transform: rotate( 0.0deg) }  /* Reset for the last half to pause */
 `;
 
+const GradientAnimation = keyframes`to{transform:translateX(-50%)}`;
+
 const WavingHand = styled.span`
   &:hover {
     animation: ${WaveAnimation} 2.5s infinite;
@@ -112,7 +114,36 @@ const WavingHand = styled.span`
 const Description = styled.p`
   ${tw`
     text-lg
+    text-center
+    md:text-left
   `}
+`;
+
+const ResumeDownloadContainer = styled.div`
+    ${tw`
+        relative
+        rounded-lg
+        mt-10
+        p-1
+        z-0
+        w-full
+        rounded-lg
+        overflow-hidden
+    `}
+    &:before {
+        width: 200%;
+        height: 100%;
+        z-index: -1;
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b);
+        background-size: 50% 100%;
+    }
+    &:hover:before {
+        animation: ${GradientAnimation} 1.5s linear infinite;
+    }
 `;
 
 const ResumeDownload = styled.a`
@@ -122,13 +153,13 @@ const ResumeDownload = styled.a`
         justify-center
         text-sm
         uppercase
-        bg-gray-600
-        text-white
-        hover:text-blue-200
         cursor-pointer
-        mt-10
-        p-3
         w-full
+        h-full
+        rounded-lg
+        p-5
+        bg-green-100 dark:bg-black
+        text-gray-800 dark:text-white
     `}
     span {
         ${tw`
@@ -164,10 +195,13 @@ export default function LandingSection() {
                     I am Bang, a passionate Front End Software Engineer. <br/>
                     I build mobile applications and games for a living.
                 </Trans>
-                <ResumeDownload target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
-                    <FontAwesomeIcon icon={faFileDownload} size="lg"/>
-                    <span>{t('contact.downloadResume')}</span>
-                </ResumeDownload>
+                <ResumeDownloadContainer>
+                    <ResumeDownload
+                    target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
+                        <FontAwesomeIcon icon={faFileDownload} size="lg"/>
+                        <span>{t('contact.downloadResume')}</span>
+                    </ResumeDownload>
+                </ResumeDownloadContainer>
             </Description>
         </About>
         <CanvasContainer>
