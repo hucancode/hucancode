@@ -124,7 +124,7 @@ const ResumeDownloadContainer = styled.div`
         relative
         rounded-lg
         mt-10
-        p-1
+        p-0.5
         z-0
         w-full
         rounded-lg
