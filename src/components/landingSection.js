@@ -122,12 +122,11 @@ const Description = styled.p`
 const ResumeDownloadContainer = styled.div`
     ${tw`
         relative
-        rounded-lg
+        rounded-md
         mt-10
         p-0.5
         z-0
         w-full
-        rounded-lg
         overflow-hidden
     `}
     &:before {
@@ -156,7 +155,7 @@ const ResumeDownload = styled.a`
         cursor-pointer
         w-full
         h-full
-        rounded-lg
+        rounded-md
         p-5
         bg-green-100 dark:bg-black
         text-gray-800 dark:text-white
