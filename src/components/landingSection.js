@@ -94,14 +94,14 @@ const Subtitle = styled.h2`
 const WAVE_STRENGTH = 20.0;
 const WaveAnimation = keyframes`
     0% { transform: rotate( 0.0deg) }
-    10% { transform: rotate(${WAVE_STRENGTH}deg) }  /* The following five values can be played with to make the waving more or less extreme */
+    10% { transform: rotate(${WAVE_STRENGTH}deg) }
     20% { transform: rotate(-${WAVE_STRENGTH * 0.5}deg) }
-    30% { transform: rotate(${WAVE_STRENGTH * 0.5}.0deg) }
-    40% { transform: rotate(-${WAVE_STRENGTH * 0.5}.0deg) }
-    50% { transform: rotate( 0.0deg) }  /* Reset for the last half to pause */
+    30% { transform: rotate(${WAVE_STRENGTH * 0.5}deg) }
+    40% { transform: rotate(-${WAVE_STRENGTH * 0.5}deg) }
+    50% { transform: rotate( 0.0deg) }
 `;
 
-const GradientAnimation = keyframes`to{transform:translateX(-50%)}`;
+const GradientAnimation = keyframes`to{ transform:translateX(-50%) }`;
 
 const WavingHand = styled.span`
   &:hover {

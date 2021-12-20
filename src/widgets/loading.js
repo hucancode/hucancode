@@ -25,11 +25,12 @@ const Icon = styled.div`
             w-32
             h-32
             m-4
+            border-solid
+            rounded-[50%]
+            border-[1.5rem]
+            border-t-white border-r-transparent border-b-transparent border-l-transparent
         `}
-        border: 1.5rem solid #fff;
-        border-radius: 50%;
         animation: ${LoadingAnimation} 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-        border-color: #fff transparent transparent transparent;
     }
     & div:nth-child(1) {
         animation-delay: -0.45s;
