@@ -4,16 +4,16 @@ import tw from 'twin.macro';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 // import '../src/i18n';
-import Navbar from "../components/navBar";
+import Navbar from "../components/navigation-bar";
 
-import LandingSection from "../components/landingSection";
-import SkillSection from "../components/skillSection";
-import LanguageSection from "../components/languageSection";
-import ExperienceSection from "../components/experienceSection";
+import LandingSection from "../components/landing-section";
+import SkillSection from "../components/skill-section";
+import LanguageSection from "../components/language-section";
+import ExperienceSection from "../components/experience-section";
 // import ProjectSection from "../components/projectSection";
-import ChallengeSection from "../components/challengeSection";
-import FootNote from "../components/footNote";
-import FooterSection from "../components/footerSection";
+import ChallengeSection from "../components/challenge-section";
+import FootNote from "../components/foot-note";
+import FooterSection from "../components/footer-section";
 
 
 const AppContainer = styled.div`

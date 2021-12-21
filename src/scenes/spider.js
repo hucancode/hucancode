@@ -318,7 +318,7 @@ function init() {
     scene.add( grid );
 
     const loader = new GLTFLoader();
-    loader.setPath('assets/gltf/');
+    loader.setPath('/assets/gltf/');
     for(let i=0;i<SPIDER_COUNT;i++)
     {
         // eslint-disable-next-line

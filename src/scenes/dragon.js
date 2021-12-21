@@ -73,7 +73,7 @@ function init() {
     if(USE_OBJ)
     {    
         const loader = new OBJLoader();
-        loader.load('assets/obj/dragon.obj', function (obj) {
+        loader.load('/assets/obj/dragon.obj', function (obj) {
             obj.traverse(function (child) {
                 //if (child.isMesh) child.material.map = texture;
             });
@@ -86,7 +86,7 @@ function init() {
     else
     {
         const loader = new GLTFLoader();
-        loader.setPath('assets/gltf/');
+        loader.setPath('/assets/gltf/');
         loader.load( 'dragon.glb', function ( gltf ) {
             dragon = new Flow(gltf.scene);
             dragon.updateCurve(0, curve);

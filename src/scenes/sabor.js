@@ -96,8 +96,8 @@ async function buildScene() {
     if(USE_FBX)
     {
         const loader = new FBXLoader();
-        loader.setPath('assets/fbx/');
-        loader.setResourcePath('assets/textures/');
+        loader.setPath('/assets/fbx/');
+        loader.setResourcePath('/assets/textures/');
         loader.load('SarborV2.fbx', function (object) {
             animator = new THREE.AnimationMixer(object);
             object.traverse(child => {
@@ -118,7 +118,7 @@ async function buildScene() {
     else
     {
         const loader = new GLTFLoader();
-        loader.setPath('assets/gltf/');
+        loader.setPath('/assets/gltf/');
         loader.load( 'sabor.glb', function ( gltf ) {
             animator = new THREE.AnimationMixer(gltf.scene);
             gltf.scene.traverse(child => {

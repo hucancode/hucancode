@@ -21,7 +21,7 @@ import {
     GitlabViewBox, GitlabSVGPath, 
     KtViewBox, KtSVGPath, 
     SwiftViewBox, SwiftSVGPath
-} from '../assets/svgData';
+} from '../assets/svg-data';
 import SwitchButton from "../widgets/switchButton";
 
 const Container = styled.section`
