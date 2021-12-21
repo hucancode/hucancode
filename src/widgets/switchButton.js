@@ -83,6 +83,6 @@ export default function SwitchButton(props) {
             <Label active={!value} onClick={() => {setValue(false); props.onChange(false);}}>{props.labelA}</Label>
             <Button id={props.inputId} type="checkbox" checked={value} onChange={() => {setValue(!value); props.onChange(!value);}} />
             <Graphic htmlFor={props.inputId}/>
-            <Label active={value} onClick={() => {setValue(false); props.onChange(true);}}>{props.labelB}</Label>
+            <Label active={value} onClick={() => {setValue(true); props.onChange(true);}}>{props.labelB}</Label>
     </Container>
 }
