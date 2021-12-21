@@ -96,7 +96,7 @@ export default function ProceduralDragon() {
                     <DragonScene/>
                 </CanvasContainer>
                 
-                <DetailContainer> <Trans i18nKey="challenge.dragon">
+                <DetailContainer> <Trans i18nKey="challenge.dragon-full">
                     <h2>Procedural Dragon</h2>
                     <small>🛠 ThreeJS, Vertex Shader</small>
                     <p>Dragon animations are procedurally generated with following steps:</p>

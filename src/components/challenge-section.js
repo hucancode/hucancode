@@ -1,8 +1,7 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import DragonScene from "../scenes/dragon";
-import SpiderScene from "../scenes/spider";
+//import Link from 'next/link'
 import { useTranslation, Trans } from 'next-i18next';
 
 const Container = styled.section`
@@ -29,9 +28,7 @@ const SectionTitle = styled.h1`
 const ShowcaseContainer = styled.div`
     ${tw`
         w-full
-        flex
-        justify-center
-        flex-wrap
+        grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 lg:gap-8
         text-center
         w-full
         max-w-screen-lg
@@ -41,17 +38,11 @@ const ShowcaseContainer = styled.div`
 
 const ProjectContainer = styled.div`
     ${tw`
-        flex
-        justify-center
-        items-center
-        flex-col
-        md:flex-row
+        flex flex-col justify-center items-center
         text-center
         shadow-lg
         rounded-lg
-        w-full
         overflow-hidden
-        mb-10
     `}
 `;
 
@@ -65,12 +56,8 @@ const ProjectContainer = styled.div`
 const CanvasContainer = styled.div`
   ${tw`
     flex
-    flex-col
     items-center
-    relative
-    right-0
     w-full
-    md:w-2/3
     max-w-screen-md
     object-contain
   `}
@@ -86,8 +73,6 @@ const DetailContainer = styled.div`
         text-left
         relative
         right-0
-        md:w-1/3
-        md:h-full
         w-full
         bg-indigo-100
         text-gray-600
@@ -169,30 +154,23 @@ export default function ChallengeSection() {
         <ShowcaseContainer>
             <ProjectContainer>
                 <CanvasContainer>
-                    <DragonScene/>
+                    <video autoPlay muted src='/assets/video/dragon-20s.webm'/>
                 </CanvasContainer>
-                
                 <DetailContainer> <Trans i18nKey="challenge.dragon">
                     <h2>Procedural Dragon</h2>
                     <small>🛠 ThreeJS, Vertex Shader</small>
-                    <p>Dragon animations are procedurally generated with following steps:</p>
-                    <ul>
-                        <li>Load static dragon mesh. Posed in a straight line</li>
-                        <li>Build a curve using THREE.CatmullRomCurve3</li>
-                        <li>Pass curve data down to GPU via a texture</li>
-                        <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
-                    </ul>
+                    <a href="dragon">See more</a>
                 </Trans> </DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>
-                    <SpiderScene/>
+                    <video autoPlay muted src='/assets/video/spider-20s.webm'/>
                 </CanvasContainer>
                 <DetailContainer> <Trans i18nKey="challenge.spider">
                     <h2>Procedural Spider</h2>
                     <small>🛠 ThreeJS, Inverse Kinematics</small>
-                    <p>Spider animations are procedurally generated using Inverse Kinematics</p>
-                </Trans> </DetailContainer>
+                    <a href="spider">See more</a>
+                </Trans></DetailContainer>
             </ProjectContainer>
             <ProjectContainer>
                 <CanvasContainer>

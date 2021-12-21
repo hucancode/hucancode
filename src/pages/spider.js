@@ -1,7 +1,7 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import SpiderScene from "../../scenes/spider";
+import SpiderScene from "../scenes/spider";
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
@@ -96,7 +96,7 @@ export default function ProceduralSpider() {
                     <SpiderScene/>
                 </CanvasContainer>
                 
-                <DetailContainer> <Trans i18nKey="challenge.spider">
+                <DetailContainer> <Trans i18nKey="challenge.spider-full">
                     <h2>Procedural Spider</h2>
                     <small>🛠 ThreeJS, Inverse Kinematics</small>
                     <p>Spider animations are procedurally generated using Inverse Kinematics</p>

@@ -23,12 +23,10 @@ const Container = styled.nav`
 
 const NavItems = styled.ul`
     ${tw`
-        flex
-        flex-col
+        flex flex-col md:flex-row
         z-40
         list-none
-        fixed
-        md:static
+        fixed md:static 
         left-0
         top-0
         ease-out
@@ -41,7 +39,6 @@ const NavItems = styled.ul`
         dark:md:h-full
         bg-gray-100
         dark:bg-black
-        md:flex-row
         md:bg-transparent
         dark:md:bg-transparent
     `}
