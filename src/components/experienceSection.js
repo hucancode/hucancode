@@ -135,7 +135,7 @@ const Description = styled.div`
         text-black
         dark:text-white
     `}
-    font-family: "Noto Sans JP";
+    font-family: "Noto Sans JP", sans-serif;
     & em {
         ${tw`
             text-purple-900
