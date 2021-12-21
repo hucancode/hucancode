@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import DragonScene from "../scenes/dragon";
 import SpiderScene from "../scenes/spider";
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation, Trans } from 'next-i18next';
 
 const Container = styled.section`
     ${tw`

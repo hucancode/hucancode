@@ -1,8 +1,9 @@
 import React from "react";
+import Link from 'next/link'
 import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
 import SaborScene from "../scenes/sabor";
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation, Trans } from 'next-i18next';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileDownload } from "@fortawesome/free-solid-svg-icons";
 
@@ -111,7 +112,7 @@ const WavingHand = styled.span`
   }
 `;
 
-const Description = styled.p`
+const Description = styled.div`
   ${tw`
     text-lg
     text-center
@@ -185,19 +186,21 @@ export default function LandingSection() {
     const { t, i18n } = useTranslation();
     return <Container>
         <About>
-            <Greetings onClick={() => i18n.changeLanguage(i18n.language==='en'?'jp':'en')}>
-                <Title>{t('landing.hello')} <WavingHand>👋</WavingHand></Title>
-                <Subtitle/>
-            </Greetings>
+            <Link href='/' locale={i18n.language === 'en' ? 'jp' : 'en'}>
+                <Greetings>
+                    <Title>{t('landing.hello')} <WavingHand>👋</WavingHand></Title>
+                    <Subtitle />
+                </Greetings>
+            </Link>
             <Description>
                 <Trans i18nKey="landing.about">
-                    I am Bang, a passionate Front End Software Engineer. <br/>
+                    I am Bang, a passionate Front End Software Engineer. <br />
                     I build mobile applications and games for a living.
                 </Trans>
                 <ResumeDownloadContainer>
                     <ResumeDownload
-                    target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
-                        <FontAwesomeIcon icon={faFileDownload} size="lg"/>
+                        target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
+                        <FontAwesomeIcon icon={faFileDownload} size="lg" />
                         <span>{t('contact.downloadResume')}</span>
                     </ResumeDownload>
                 </ResumeDownloadContainer>

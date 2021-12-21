@@ -4,18 +4,16 @@ import anime from "animejs";
 export default class ThemeToggle extends React.Component {
     constructor(props) {
         super(props);
+        this.state = { isDarkMode: true };
+        this.sunMoon = React.createRef();
+        this.sun = React.createRef();
+        this.moon = React.createRef();
+        this.darkBackground = React.createRef();
+        this.lightBackground = React.createRef();
     }
 
-    state = { isDarkMode: true };
-
-    sunMoon = React.createRef();
-    sun = React.createRef();
-    moon = React.createRef();
-    darkBackground = React.createRef();
-    lightBackground = React.createRef();
-    controller = anime.timeline({ autoplay: false });
-
     componentDidMount() {
+        this.controller = anime.timeline({ autoplay: false });
         const ANIMATION_TIME = 700;
         const BG_ANIMATION_DELAY = 300;
         const BUTTON_ROTATION = [0, 100];

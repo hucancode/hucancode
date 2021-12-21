@@ -3,7 +3,7 @@ import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDocker, faJs, faNode, faReact } from "@fortawesome/free-brands-svg-icons";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import {
     CPPViewBox, CPPSVGPath,
     CSViewBox, CSSVGPath,
