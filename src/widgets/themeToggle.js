@@ -13,6 +13,14 @@ export default class ThemeToggle extends React.Component {
     }
 
     componentDidMount() {
+        if (localStorage.theme === 'dark' || 
+            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            this.setState(state => {return {...state, isDarkMode: true };});
+            document.documentElement.classList.add('dark');
+        } else {
+            this.setState(state => {return {...state, isDarkMode: false };});
+            document.documentElement.classList.remove('dark');
+        }
         this.controller = anime.timeline({ autoplay: false });
         const ANIMATION_TIME = 700;
         const BG_ANIMATION_DELAY = 300;
@@ -81,7 +89,9 @@ export default class ThemeToggle extends React.Component {
 
     render() {
         const switchNightMode = () => {
-            this.setState({ isDarkMode: !this.state.isDarkMode });
+            this.setState(state => {return {...state, isDarkMode: !this.state.isDarkMode };});
+            let theme = this.state.isDarkMode ? 'light' : 'dark';
+            localStorage.theme = theme;
         };
         return (
             <svg viewBox="0 0 100 45" height="100%" onClick={switchNightMode}>
