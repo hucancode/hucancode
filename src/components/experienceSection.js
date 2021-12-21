@@ -68,8 +68,8 @@ const HistoryButton = styled.button`
         text-xs
         md:text-base
         dark:text-gray-300
+        min-w-[7.5rem]
     `}
-    min-width: 7.5rem;
     h2 {
         ${tw`
             mb-1
@@ -108,12 +108,8 @@ const Title = styled.h3`
         ${tw`
             text-purple-900
             dark:text-yellow-100
-        `}
-    }
-    & em:hover {
-        ${tw`
-            text-purple-600
-            dark:text-yellow-400
+            hover:text-purple-600
+            hover:dark:text-yellow-400
         `}
     }
 `;
@@ -146,13 +142,9 @@ const Description = styled.div`
         ${tw`
             relative
             pl-5
-        `}
-    }
-    & ul li::before {
-        content: "▸";
-        ${tw`
-            absolute
-            left-0
+            before:content-["▸"]
+            before:absolute
+            before:left-0
         `}
     }
 `;

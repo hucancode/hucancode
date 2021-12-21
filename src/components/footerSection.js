@@ -34,26 +34,18 @@ const Avatar = styled.div`
         overflow-hidden
         bg-cover
         duration-300
+        hover:after:left-full
+        after:relative
+        after:left-0
+        after:bg-cover
+        after:w-full
+        after:h-full
+        after:duration-200
     `}
-    background-image: url('./assets/profile-secret.jpg');
-    &:hover:after {
-        ${tw`
-            left-full
-        `}
-    }
+    background-image:url('./assets/profile-secret.jpg');
     &:after {
-        background-image: url('./assets/profile.jpg');
-        content:"";
-        ${tw`
-            relative
-            left-0
-            bg-cover
-            w-full
-            h-full
-            duration-200
-        `}
+        background-image:url('./assets/profile.jpg');
     }
-    
 `;
 
 const ContactContainer = styled.div`
@@ -65,10 +57,10 @@ const ContactContainer = styled.div`
         items-center
         md:items-start
     `}
-    & a:hover {
+    & a {
         ${tw`
-            text-blue-900
-            dark:text-blue-300
+            hover:text-blue-900
+            hover:dark:text-blue-300
         `}
     }
 `;

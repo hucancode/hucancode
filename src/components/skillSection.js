@@ -22,6 +22,7 @@ import {
     KtViewBox, KtSVGPath, 
     SwiftViewBox, SwiftSVGPath
 } from '../assets/svgData';
+import SwitchButton from "../widgets/switchButton";
 
 const Container = styled.section`
     ${tw`
@@ -44,79 +45,6 @@ const SectionTitle = styled.h1`
         mb-5
         font-bold
     `}
-`;
-
-const SkillSwitchContainer = styled.div`
-    ${tw`
-        w-full
-        flex
-        items-center
-        justify-center
-    `}
-`;
-
-const SwitchButton = styled.input`
-    height: 0;
-    width: 0;
-    visibility: hidden;
-`;
-const SwitchLabel = styled.h3`
-    ${tw`
-        w-1/3
-        cursor-pointer
-        select-none
-        text-xs
-        md:text-base
-        duration-300
-    `}
-    ${props => props.active ?  
-        css`${tw`
-            text-blue-500
-        `}` :
-        css`${tw`
-            text-gray-400
-            hover:text-blue-500
-        `}`
-    }
-`;
-const SwitchButtonGraphic = styled.label`
-    ${tw`
-        bg-blue-300
-        w-20
-        h-8
-        rounded-2xl
-        cursor-pointer
-        block
-    `}
-    position: relative;
-    margin: 1rem;
-        
-    &:after {
-        content: '';
-        ${tw`
-            absolute
-            duration-300
-            bg-white
-            top-1
-            left-1
-            w-6
-            h-6
-            rounded-full
-        `}
-    }
-
-    input:checked + & {
-        ${tw`
-            bg-green-300
-        `}
-    }
-    input:checked + &:after {
-        left: calc(100% - 0.2rem);
-        transform: translateX(-100%);
-    }
-    &:active:after {
-        width: 60%;
-    }
 `;
 
 const SkillSet = styled.ul`
@@ -226,11 +154,12 @@ export default function SkillSection() {
     
     return <Container id='skill'>
         <SectionTitle>{t('tools.title')}</SectionTitle>
-        <SkillSwitchContainer>
-            <SwitchLabel active={!activeSet} onClick={() => setActiveSet(false)}>{t('tools.game')}</SwitchLabel>
-            <SwitchButton id="switch" type="checkbox" checked={activeSet} onChange={() => setActiveSet(!activeSet)} /><SwitchButtonGraphic htmlFor="switch"/>
-            <SwitchLabel active={activeSet} onClick={() => setActiveSet(true)}>{t('tools.app')}</SwitchLabel>
-        </SkillSwitchContainer>
+        <SwitchButton 
+            inputId="switchSkill"
+            labelA={t('tools.game')}
+            labelB={t('tools.app')}
+            onChange={(value) => setActiveSet(value)}>
+        </SwitchButton>
         <SkillSet active={!activeSet}>
             <SkillSVG name="C++" viewBox={CPPViewBox} paths={CPPSVGPath}/>
             <SkillSVG name="C#" viewBox={CSViewBox} paths={CSSVGPath}/>

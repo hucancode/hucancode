@@ -123,13 +123,9 @@ const DetailContainer = styled.div`
         ${tw`
             relative
             pl-5
-        `}
-    }
-    & ul li::before {
-        content: "▸";
-        ${tw`
-            absolute
-            left-0
+            before:content-["▸"]
+            before:absolute
+            before:left-0
         `}
     }
 `;

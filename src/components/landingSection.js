@@ -129,17 +129,16 @@ const ResumeDownloadContainer = styled.div`
         z-0
         w-full
         overflow-hidden
+        before:absolute
+        before:top-0
+        before:left-0
+        before:w-[200%]
+        before:h-full
+        before:-z-10
     `}
     &:before {
-        width: 200%;
-        height: 100%;
-        z-index: -1;
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        background: linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b);
         background-size: 50% 100%;
+        background: linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b);
     }
     &:hover:before {
         animation: ${GradientAnimation} 1.5s linear infinite;
