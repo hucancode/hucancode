@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { faBook, faHeadphones, faStar, faStarHalfAlt } from "@fortawesome/free-solid-svg-icons";
 import { faStar as faStarEmpty }  from "@fortawesome/free-regular-svg-icons";
+import SwitchButton from "../widgets/switchButton";
 
 const Container = styled.section`
     ${tw`
@@ -25,79 +26,6 @@ const SectionTitle = styled.h1`
         mb-5
         font-bold
     `}
-`;
-
-const SkillSwitchContainer = styled.div`
-    ${tw`
-        w-full
-        flex
-        items-center
-        justify-center
-    `}
-`;
-
-const SwitchButton = styled.input`
-    height: 0;
-    width: 0;
-    visibility: hidden;
-`;
-const SwitchLabel = styled.h3`
-    ${tw`
-        w-1/3
-        cursor-pointer
-        select-none
-        text-xs
-        md:text-base
-        duration-300
-    `}
-    ${props => props.active ?  
-        css`${tw`
-            text-blue-500
-        `}` :
-        css`${tw`
-            text-gray-400
-            hover:text-blue-500
-        `}`
-    }
-`;
-const SwitchButtonGraphic = styled.label`
-    ${tw`
-        bg-blue-300
-        w-20
-        h-8
-        rounded-2xl
-        cursor-pointer
-        block
-    `}
-    position: relative;
-    margin: 1rem;
-        
-    &:after {
-        content: '';
-        ${tw`
-            absolute
-            duration-300
-            bg-white
-            top-1
-            left-1
-            w-6
-            h-6
-            rounded-full
-        `}
-    }
-
-    input:checked + & {
-        ${tw`
-            bg-green-300
-        `}
-    }
-    input:checked + &:after {
-        left: calc(100% - 0.2rem);
-        transform: translateX(-100%);
-    }
-    &:active:after {
-        width: 60%;
-    }
 `;
 
 const LanguageContainer = styled.div`
@@ -176,11 +104,12 @@ export default function LanguageSection() {
     
     return <Container id='language'>
         <SectionTitle>{t('languages.title')}</SectionTitle>
-        <SkillSwitchContainer>
-            <SwitchLabel active={!activeLanguage} onClick={() => setActiveLanguage(false)}>{t('languages.english')}</SwitchLabel>
-            <SwitchButton id="switchLang" type="checkbox" checked={activeLanguage} onChange={() => setActiveLanguage(!activeLanguage)} /><SwitchButtonGraphic htmlFor="switchLang"/>
-            <SwitchLabel active={activeLanguage} onClick={() => setActiveLanguage(true)}>{t('languages.japanese')}</SwitchLabel>
-        </SkillSwitchContainer>
+        <SwitchButton 
+            inputId="switchLang"
+            labelA={t('languages.english')}
+            labelB={t('languages.japanese')}
+            onChange={(value) => setActiveLanguage(value)}>
+        </SwitchButton>
         <LanguageContainer active={!activeLanguage}>
             <LanguageScoreMain>
                 <h3>

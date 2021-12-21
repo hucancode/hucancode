@@ -53,7 +53,7 @@ const CanvasContainer = styled.div`
 
 export default function ProjectSection() {
     return <Container id='works'>
-        <SectionTitle>Something I've built</SectionTitle>
+        <SectionTitle>Something I&apos;ve built</SectionTitle>
         Under Construction
         <ProjectContainer>
             <CanvasContainer>

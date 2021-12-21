@@ -12,14 +12,14 @@ export default class Canvas3D extends React.Component {
         this.state = {isInCamera: false};
         this.canvasRef = React.createRef();
         this.frameID = 0;
+      }
+    componentDidMount() {
+        this.init();
         this.observer = new IntersectionObserver(
             ([entry]) => {
                 this.setState({isInCamera: entry.isIntersecting});
             }
         )
-      }
-    componentDidMount() {
-        this.init();
         if(this.canvasRef.current) {
             this.observer.observe(this.canvasRef.current);
         }

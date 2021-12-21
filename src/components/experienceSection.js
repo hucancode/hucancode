@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation, Trans } from 'next-i18next';
 
 const Container = styled.div`
     ${tw`
@@ -68,8 +68,8 @@ const HistoryButton = styled.button`
         text-xs
         md:text-base
         dark:text-gray-300
+        min-w-[7.5rem]
     `}
-    min-width: 7.5rem;
     h2 {
         ${tw`
             mb-1
@@ -108,12 +108,8 @@ const Title = styled.h3`
         ${tw`
             text-purple-900
             dark:text-yellow-100
-        `}
-    }
-    & em:hover {
-        ${tw`
-            text-purple-600
-            dark:text-yellow-400
+            hover:text-purple-600
+            hover:dark:text-yellow-400
         `}
     }
 `;
@@ -135,7 +131,7 @@ const Description = styled.div`
         text-black
         dark:text-white
     `}
-    font-family: "Noto Sans JP";
+    font-family: "Noto Sans JP", sans-serif;
     & em {
         ${tw`
             text-purple-900
@@ -146,13 +142,9 @@ const Description = styled.div`
         ${tw`
             relative
             pl-5
-        `}
-    }
-    & ul li::before {
-        content: "▸";
-        ${tw`
-            absolute
-            left-0
+            before:content-["▸"]
+            before:absolute
+            before:left-0
         `}
     }
 `;
@@ -291,7 +283,7 @@ export default function ExperienceSection() {
                             I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>.
                             That was a migration project, bringing an old 32-bit based system to 64-bit. 
                             I was in charge of building custom developement tools (CLI) for the team. 
-                            I did review other member's code to ensure source code quality.
+                            I did review other member&apos;s code to ensure source code quality.
                         </li>
                         <li>
                             I developed application for an entertainment system running on Automobile devices (in parnership with LG).

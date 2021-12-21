@@ -1,7 +1,7 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Trans, useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'next-i18next';
 
 const Container = styled.div`
     ${tw`

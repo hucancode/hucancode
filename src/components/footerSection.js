@@ -4,7 +4,7 @@ import tw from 'twin.macro';
 import { faCube, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebook, faGithub } from "@fortawesome/free-brands-svg-icons";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 const Container = styled.section`
     ${tw`
@@ -34,26 +34,18 @@ const Avatar = styled.div`
         overflow-hidden
         bg-cover
         duration-300
+        hover:after:left-full
+        after:relative
+        after:left-0
+        after:bg-cover
+        after:w-full
+        after:h-full
+        after:duration-200
     `}
-    background-image: url('./assets/profile-secret.jpg');
-    &:hover:after {
-        ${tw`
-            left-full
-        `}
-    }
+    background-image:url('./assets/profile-secret.jpg');
     &:after {
-        background-image: url('./assets/profile.jpg');
-        content:"";
-        ${tw`
-            relative
-            left-0
-            bg-cover
-            w-full
-            h-full
-            duration-200
-        `}
+        background-image:url('./assets/profile.jpg');
     }
-    
 `;
 
 const ContactContainer = styled.div`
@@ -65,10 +57,10 @@ const ContactContainer = styled.div`
         items-center
         md:items-start
     `}
-    & a:hover {
+    & a {
         ${tw`
-            text-blue-900
-            dark:text-blue-300
+            hover:text-blue-900
+            hover:dark:text-blue-300
         `}
     }
 `;

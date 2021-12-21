@@ -6,7 +6,7 @@ import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
 import Logo from "../widgets/logo";
 import { SCREENS } from './screens';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 const Container = styled.nav`
     ${tw`

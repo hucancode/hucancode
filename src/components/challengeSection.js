@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import DragonScene from "../scenes/dragon";
 import SpiderScene from "../scenes/spider";
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation, Trans } from 'next-i18next';
 
 const Container = styled.section`
     ${tw`
@@ -123,13 +123,9 @@ const DetailContainer = styled.div`
         ${tw`
             relative
             pl-5
-        `}
-    }
-    & ul li::before {
-        content: "▸";
-        ${tw`
-            absolute
-            left-0
+            before:content-["▸"]
+            before:absolute
+            before:left-0
         `}
     }
 `;
@@ -207,7 +203,7 @@ export default function ChallengeSection() {
                     <small>🛠 Unreal Engine, Gameplay Abilities System</small>
                     <p>This is small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
                     <ul>
-                        <li>Each weapon has unique skill set. Weapon has it's own animation logic and completely independent from character logic.</li>
+                        <li>Each weapon has unique skill set. Weapon has it&apos;s own animation logic and completely independent from character logic.</li>
                         <li>Full locomotion animation. Dashing, Jumping, Sprinting, Flying.</li>
                         <li>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</li>
                         <li>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</li>
@@ -221,7 +217,7 @@ export default function ChallengeSection() {
                 <DetailContainer> <Trans i18nKey="challenge.doll">
                     <h2>Gun and Doll</h2>
                     <small>🛠 Unity3D</small>
-                    <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome "monster".</p>
+                    <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome &quot;monster&quot;.</p>
                 </Trans> </DetailContainer>
             </ProjectContainer>
         </ShowcaseContainer>
