@@ -5,6 +5,7 @@ import tw from 'twin.macro';
 import SaborScene from "../scenes/sabor";
 import { useTranslation, Trans } from 'next-i18next';
 import { FcDownload } from "react-icons/fc";
+import { useRouter } from "next/router";
 
 const Container = styled.section`
     ${tw`
@@ -182,6 +183,10 @@ const CanvasContainer = styled.div`
 
 export default function LandingSection() {
     const { t, i18n } = useTranslation("home");
+    const router = useRouter();
+    let resumeUrl = router.locale == 'en'?
+        "https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing":
+        "https://docs.google.com/document/d/1r7z6yY6IXzcgwkhEgzqlLIi6ythl60zVPnxkyPIo8Gs/edit?usp=sharing";
     return <Container>
         <About>
             <Link href='/' locale={i18n.language === 'en' ? 'jp' : 'en'} passHref>
@@ -197,7 +202,7 @@ export default function LandingSection() {
                 </Trans>
                 <ResumeDownloadContainer>
                     <ResumeDownload
-                        target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
+                        target="_blank" rel="noreferrer" href={resumeUrl}>
                         <FcDownload size="2em" />
                         <span>{t('common:contact.downloadResume')}</span>
                     </ResumeDownload>

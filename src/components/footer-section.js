@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { SiGithub, SiSketchfab, SiFacebook } from 'react-icons/si';
 import { useTranslation } from 'next-i18next';
+import { useRouter } from "next/router";
 
 const Container = styled.section`
     ${tw`
@@ -96,6 +97,10 @@ const RoundIcon = styled.span`
 
 export default function FooterSection(props) {
     const { t } = useTranslation();
+    const router = useRouter();
+    let resumeUrl = router.locale == 'en'?
+        "https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing":
+        "https://docs.google.com/document/d/1r7z6yY6IXzcgwkhEgzqlLIi6ythl60zVPnxkyPIo8Gs/edit?usp=sharing";
     return <Container id='contact'>
         <ContactContainer>
             <Title>{t('contact.social')}</Title>
@@ -128,7 +133,7 @@ export default function FooterSection(props) {
             <p>(+81) 080-768-66019</p>
             <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
             <br />
-            <a target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">{t('contact.downloadResume')}</a>
+            <a target="_blank" rel="noreferrer" href={resumeUrl}>{t('contact.downloadResume')}</a>
         </ContactContainer>
         {!props.hideAvatar &&
             <Avatar />
