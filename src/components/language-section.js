@@ -101,7 +101,7 @@ const LanguageScoreDetail = styled.div`
 
 export default function LanguageSection() {
     var [activeLanguage, setActiveLanguage] = useState(false);
-    const { t } = useTranslation();
+    const { t } = useTranslation("home");
 
     return <Container id='language'>
         <SectionTitle>{t('languages.title')}</SectionTitle>

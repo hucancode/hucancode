@@ -7,6 +7,7 @@ import Head from 'next/head'
 import { SiCsharp, SiUnity } from "react-icons/si";
 import Navbar from "../components/navigation-bar";
 import YoutubeVideo from "../widgets/youtube";
+import FootNote from "../components/foot-note";
 
 const Container = styled.div`
     ${tw`
@@ -14,6 +15,8 @@ const Container = styled.div`
         lg:w-screen lg:h-screen
         py-10
         px-5
+        bg-indigo-200 dark:bg-gray-900
+        text-gray-800 dark:text-white
     `}
 `;
 const ProjectContainer = styled.div`
@@ -86,7 +89,7 @@ const DetailContainer = styled.div`
 `;
 
 export default function ProceduralDragon() {
-    const { t } = useTranslation("challenge");
+    const { t } = useTranslation('challenge');
     return <Container>
         <Head>
             <title>{t("doll.title")}</title>
@@ -103,18 +106,19 @@ export default function ProceduralDragon() {
             <DetailContainer>
                 <h2>{t("doll.title")}</h2>
                 <span><SiUnity size="1.5em" /><SiCsharp size="1.5em" /></span>
-                <Trans i18nKey="doll.description">
+                <Trans i18nKey="challenge:doll.description">
                     <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome &quot;monster&quot;.</p>
                 </Trans>
             </DetailContainer>
         </ProjectContainer>
+        <FootNote />
     </Container>
 }
 
 export async function getStaticProps({ locale }) {
     return {
         props: {
-            ...(await serverSideTranslations(locale, ['translation'])),
+            ...(await serverSideTranslations(locale, ['common', 'challenge'])),
             // Will be passed to the page component as props
         },
     };

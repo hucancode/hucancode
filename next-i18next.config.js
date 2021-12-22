@@ -1,5 +1,6 @@
 module.exports = {
-    defaultNS: "translation",
+    ns: ['common','home','challenge'],
+    defaultNS: "common",
     i18n: {
         defaultLocale: 'en',
         locales: ['en', 'jp'],

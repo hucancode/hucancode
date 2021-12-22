@@ -6,6 +6,19 @@ import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
+import Navbar from "../components/navigation-bar";
+import FootNote from "../components/foot-note";
+
+const Container = styled.div`
+    ${tw`
+        flex flex-col justify-start items-center gap-4
+        lg:w-screen lg:h-screen
+        py-10
+        px-5
+        bg-indigo-200 dark:bg-gray-900
+        text-gray-800 dark:text-white
+    `}
+`;
 
 const ProjectContainer = styled.div`
     ${tw`
@@ -82,27 +95,34 @@ const DetailContainer = styled.div`
 
 export default function Sabor() {
     const { t } = useTranslation("challenge");
-    return <ProjectContainer>
+    return <Container>
         <Head>
-            <title>{t("sabor.title")}</title>
+            <title>{t("weapon-master.title")}</title>
         </Head>
-        <CanvasContainer>
-            <SaborScene />
-        </CanvasContainer>
-        <DetailContainer>
-            <h2>{t("sabor.title")}</h2>
-            <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
-            <Trans i18nKey="sabor.description">
-                <p>This is a game-ready character. Rigged and animated using Blender</p>
-            </Trans>
-        </DetailContainer>
-    </ProjectContainer>
+        <Navbar />
+        <ProjectContainer>
+            <Head>
+                <title>{t("sabor.title")}</title>
+            </Head>
+            <CanvasContainer>
+                <SaborScene />
+            </CanvasContainer>
+            <DetailContainer>
+                <h2>{t("sabor.title")}</h2>
+                <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
+                <Trans i18nKey="challenge:sabor.description">
+                    <p>This is a game-ready character. Rigged and animated using Blender</p>
+                </Trans>
+            </DetailContainer>
+        </ProjectContainer>
+        <FootNote />
+    </Container>
 }
 
 export async function getStaticProps({ locale }) {
     return {
         props: {
-            ...(await serverSideTranslations(locale, ['translation'])),
+            ...(await serverSideTranslations(locale, ['common', 'challenge'])),
             // Will be passed to the page component as props
         },
     };

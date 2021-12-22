@@ -1,0 +1,18 @@
+{
+    "nav": {
+        "skill": "能力",
+        "exp": "経験",
+        "works": "作品",
+        "contact": "連絡"
+    },
+    "contact": {
+        "address": "日本、香川県、高松市",
+        "social": "話しましょう!",
+        "contact": "連絡先",
+        "downloadResume": "経歴書をダウンロード"
+    },
+    "note": {
+        "madeWith": "<code>React.js</code>、<code>Three.js</code> または10つ以上他のツールで作成されました。<br/>",
+        "assetCredit": "<0>竜モデルは<1>youmeowmeow</1>からもらいます</0>。<2>蜘蛛モデルは<1>volkanongun</1>からもらいます。</2>"
+    }
+}

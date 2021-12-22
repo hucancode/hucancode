@@ -130,7 +130,7 @@ function YoutubeVideo(props) {
 }
 
 export default function ChallengeSection() {
-    const { t } = useTranslation();
+    const { t } = useTranslation("home");
     return <Container id='challenge'>
         <SectionTitle>{t('challenge.title')}</SectionTitle>
         <ShowcaseContainer>

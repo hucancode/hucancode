@@ -181,7 +181,7 @@ const CanvasContainer = styled.div`
 `;
 
 export default function LandingSection() {
-    const { t, i18n } = useTranslation();
+    const { t, i18n } = useTranslation("home");
     return <Container>
         <About>
             <Link href='/' locale={i18n.language === 'en' ? 'jp' : 'en'} passHref>
@@ -191,7 +191,7 @@ export default function LandingSection() {
                 </Greetings>
             </Link>
             <Description>
-                <Trans i18nKey="landing.about">
+                <Trans i18nKey="home:landing.about">
                     I am Bang, a passionate Front End Software Engineer. <br />
                     I build mobile applications and games for a living.
                 </Trans>
@@ -199,7 +199,7 @@ export default function LandingSection() {
                     <ResumeDownload
                         target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
                         <FcDownload size="2em" />
-                        <span>{t('contact.downloadResume')}</span>
+                        <span>{t('common:contact.downloadResume')}</span>
                     </ResumeDownload>
                 </ResumeDownloadContainer>
             </Description>

@@ -16,15 +16,10 @@ import FooterSection from "../components/footer-section";
 
 const AppContainer = styled.div`
   ${tw`
-    flex
-    flex-col
-    items-center
-    w-full
-    min-h-full
-    bg-indigo-200
-    text-gray-800
-    dark:bg-gray-900
-    dark:text-white
+    flex flex-col items-center
+    w-full min-h-full
+    bg-indigo-200 dark:bg-gray-900
+    text-gray-800 dark:text-white
   `}
 `;
 
@@ -48,7 +43,7 @@ export default function Home() {
 export async function getStaticProps({ locale }) {
     return {
       props: {
-        ...(await serverSideTranslations(locale, ['translation'])),
+        ...(await serverSideTranslations(locale, ['common', 'home'])),
         // Will be passed to the page component as props
       },
     };

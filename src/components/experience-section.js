@@ -159,7 +159,7 @@ const Description = styled.div`
 
 export default function ExperienceSection() {
     var [activeSet, setActiveSet] = useState(0);
-    const { t } = useTranslation();
+    const { t } = useTranslation("home");
     return <Container id='experiences'>
         <SectionTitle>{t('experience.title')}</SectionTitle>
         <HistoryContainer>
@@ -181,11 +181,11 @@ export default function ExperienceSection() {
                 </HistoryButton>
             </HistoryNavigator>
             <ContentContainer active={activeSet === 0}>
-                <Title><Trans i18nKey="experience.position.gc">
+                <Title><Trans i18nKey="home:experience.position.gc">
                     Engineering Manager <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://gc-c.co.jp/"><em>GoodCreate</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.gc')}</Time>
-                <Description><Trans i18nKey="experience.desc.gc">
+                <Description><Trans i18nKey="home:experience.desc.gc">
                     <ul>
                         <li>
                             I am in charge of software engineering department in GoodCreate.
@@ -207,11 +207,11 @@ export default function ExperienceSection() {
                 </Trans></Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 1}>
-                <Title><Trans i18nKey="experience.position.jpschool">
+                <Title><Trans i18nKey="home:experience.position.jpschool">
                     Student <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://mizunogaigogakuin.com/"><em>Mizuno International Language School</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.jpschool')}</Time>
-                <Description><Trans i18nKey="experience.desc.jpschool">
+                <Description><Trans i18nKey="home:experience.desc.jpschool">
                     <ul>
                         <li>
                             I took 2-years course, but I graduated early, only study there for 1 year.
@@ -231,11 +231,11 @@ export default function ExperienceSection() {
                 </Trans></Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 2}>
-                <Title><Trans i18nKey="experience.position.glhan">
+                <Title><Trans i18nKey="home:experience.position.glhan">
                     Senior Game Programmer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.gameloft.com/"><em>Gameloft Hanoi</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.glhan')}</Time>
-                <Description><Trans i18nKey="experience.desc.glhan">
+                <Description><Trans i18nKey="home:experience.desc.glhan">
                     <ul>
                         <li>
                             I have taken part in Gameloft AI Contest 2013, I finished at <em>Quater Final (rank #4~8)</em>.
@@ -274,11 +274,11 @@ export default function ExperienceSection() {
                 </Trans></Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 3}>
-                <Title><Trans i18nKey="experience.position.fpt">
+                <Title><Trans i18nKey="home:experience.position.fpt">
                     Senior Software Developer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.fpt-software.com/"><em>FPT Software</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.fpt')}</Time>
-                <Description><Trans i18nKey="experience.desc.fpt">
+                <Description><Trans i18nKey="home:experience.desc.fpt">
                     <ul>
                         <li>
                             I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>.
@@ -302,11 +302,11 @@ export default function ExperienceSection() {
                 </Trans></Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 4}>
-                <Title><Trans i18nKey="experience.position.university">
+                <Title><Trans i18nKey="home:experience.position.university">
                     Bachelor Degree <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://utehy.edu.vn/"><em>Hung Yen University of Technology and Education</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.university')}</Time>
-                <Description><Trans i18nKey="experience.desc.university">
+                <Description><Trans i18nKey="home:experience.desc.university">
                     <ul>
                         <li>
                             My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>.

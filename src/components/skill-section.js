@@ -126,7 +126,7 @@ function Skill(props) {
 
 export default function SkillSection() {
     var [activeSet, setActiveSet] = useState(false);
-    const { t } = useTranslation();
+    const { t } = useTranslation("home");
 
     return <Container id='skill'>
         <SectionTitle>{t('tools.title')}</SectionTitle>

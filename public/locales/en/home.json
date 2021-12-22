@@ -1,10 +1,4 @@
 {
-    "nav": {
-        "skill": "Skill",
-        "exp": "Experience",
-        "works": "Works",
-        "contact": "Contact"
-    },
     "landing": {
         "hello": "Hello!",
         "about": "I am Bang, a passionate Front End Software Engineer. <br/>I build mobile applications and games for a living."
@@ -56,15 +50,5 @@
         "spider": "Procedural Spider",
         "weapon-master": "Weapon Master",
         "doll": "Gun and Doll"
-    },
-    "contact": {
-        "address": "Takamatsu, Kagawa, Japan",
-        "social": "Reach out to me!",
-        "contact": "Contact",
-        "downloadResume": "Download my resume"
-    },
-    "note": {
-        "madeWith": "Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br/>",
-        "assetCredit": "<0>Dragon model by <1>youmeowmeow</1></0>. <2>Spider model by <1>volkanongun</1></2>"
     }
 }
