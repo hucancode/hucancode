@@ -35,6 +35,7 @@ const ProjectCard = styled.div`
         rounded-lg
         w-full max-w-screen-md
         overflow-hidden
+        mb-20
     `}
     flex-grow: 1;
 `;
@@ -115,6 +116,7 @@ export default function ProceduralSpider() {
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
                     <Trans i18nKey="challenge:spider.description">
                         <p>Spider animations are procedurally generated using Inverse Kinematics</p>
+                        <small>Spider model by <a href="https://sketchfab.com/3d-models/low-poly-spider-walk-cycle-e4d2c40b66554b10be20f61bb0610774">volkanongun</a></small>
                     </Trans>
                 </ProjectDetail>
             </ProjectCard>

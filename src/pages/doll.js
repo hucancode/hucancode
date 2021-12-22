@@ -34,6 +34,7 @@ const ProjectCard = styled.div`
         rounded-lg
         w-full max-w-screen-md
         overflow-hidden
+        mb-20
     `}
     flex-grow: 1;
 `;

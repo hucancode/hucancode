@@ -35,6 +35,7 @@ const ProjectCard = styled.div`
         rounded-lg
         w-full max-w-screen-md
         overflow-hidden
+        mb-20
     `}
     flex-grow: 1;
 `;
@@ -120,6 +121,7 @@ export default function ProceduralDragon() {
                             <li>Pass curve data down to GPU via a texture</li>
                             <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
                         </ul>
+                        <small>Dragon model by <a href="https://sketchfab.com/3d-models/chinese-dragon-fa05f2a6596041938152a84a956212e0">youmeowmeow</a></small>.
                     </Trans>
                 </ProjectDetail>
             </ProjectCard>

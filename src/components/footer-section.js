@@ -12,7 +12,7 @@ const Container = styled.section`
         flex-col
         items-center
         md:items-start
-        justify-between
+        justify-around
         p-10
         md:flex-row
     `}
@@ -94,7 +94,7 @@ const RoundIcon = styled.span`
     `}
 `;
 
-export default function FooterSection() {
+export default function FooterSection(props) {
     const { t } = useTranslation();
     return <Container id='contact'>
         <ContactContainer>
@@ -130,6 +130,8 @@ export default function FooterSection() {
             <br />
             <a target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">{t('contact.downloadResume')}</a>
         </ContactContainer>
-        <Avatar />
+        {!props.hideAvatar &&
+            <Avatar />
+        }
     </Container>
 }

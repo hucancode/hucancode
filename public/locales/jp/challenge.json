@@ -1,11 +1,11 @@
 {
     "dragon": {
         "title": "手続き型生成竜",
-        "description": "<0>ドラゴンアニメーションは、次の手順で手続き的に生成されます：</0><1><0>静的ドラゴンメッシュを読み込みます。まっすぐにポーズ状態になります。</0><1>THREE.CatmullRomCurve3を使って曲線を作成します。</1><2>曲線をTexture経由でGPUに渡します。</2><3>Vertex shaderに、Textureデータを読んでVertexの適用に位置を調整します。</3></1>"
+        "description": "<0>ドラゴンアニメーションは、次の手順で手続き的に生成されます：</0><1><0>静的ドラゴンメッシュを読み込みます。まっすぐにポーズ状態になります。</0><1>THREE.CatmullRomCurve3を使って曲線を作成します。</1><2>曲線をTexture経由でGPUに渡します。</2><3>Vertex shaderに、Textureデータを読んでVertexの適用に位置を調整します。</3></1><2>竜モデルは<1>youmeowmeow</1>からもらいます。</2>"
     },
     "spider": {
         "title": "手続き型生成蜘蛛",
-        "description": "<0>蜘蛛のアニメーションは、逆運動学（Inverse Kinematics）を使用して手続き的に生成されます。</0>"
+        "description": "<0>蜘蛛のアニメーションは、逆運動学（Inverse Kinematics）を使用して手続き的に生成されます。</0><1>蜘蛛モデルは<1>volkanongun</1>からもらいます。</1>"
     },
     "sabor": {
         "title": "Saborゲームキャラクター",
