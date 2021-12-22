@@ -12,42 +12,50 @@ import FootNote from "../components/foot-note";
 const Container = styled.div`
     ${tw`
         flex flex-col justify-start items-center gap-4
-        lg:w-screen lg:h-screen
-        py-10
-        px-5
+        w-screen md:h-full min-h-screen
         bg-indigo-200 dark:bg-gray-900
         text-gray-800 dark:text-white
     `}
 `;
-const ProjectContainer = styled.div`
+const Main = styled.main`
     ${tw`
-        flex flex-col md:flex-row justify-center items-center
+        flex justify-center items-stretch
+        w-full 
+        py-2
+        px-5
+    `}
+    flex-grow: 1;
+`;
+const ProjectCard = styled.div`
+    ${tw`
+        flex flex-col md:flex-row justify-start items-center
         text-center
         shadow-lg
         rounded-lg
         w-full max-w-screen-lg
         overflow-hidden
     `}
+    flex-grow: 1;
 `;
 
 const YoutubeFrame = styled.div`
   ${tw`
-    flex flex-col items-center justify-center
+    flex items-center justify-center
     relative
     right-0
-    w-full h-full
+    w-full md:w-2/3 h-full
     object-contain
   `}
   background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
 `;
 
-const DetailContainer = styled.div`
+const ProjectDetail = styled.div`
     ${tw`
         flex flex-col justify-start items-start gap-4
         text-left
         relative
         right-0
-        w-full md:w-1/3 max-w-screen-md md:h-full 
+        w-full md:w-1/3 md:h-full 
         bg-indigo-100 dark:bg-gray-600
         text-gray-600 dark:text-gray-100
         object-contain
@@ -95,22 +103,23 @@ export default function ProceduralDragon() {
             <title>{t("doll.title")}</title>
         </Head>
         <Navbar />
-        <ProjectContainer>
-            <Head>
-                <title>{t("doll.title")}</title>
-            </Head>
-            <YoutubeFrame>
-                <YoutubeVideo videoId='xvNHCHPUz8A'/>
-            </YoutubeFrame>
-
-            <DetailContainer>
-                <h2>{t("doll.title")}</h2>
-                <span><SiUnity size="1.5em" /><SiCsharp size="1.5em" /></span>
-                <Trans i18nKey="challenge:doll.description">
-                    <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome &quot;monster&quot;.</p>
-                </Trans>
-            </DetailContainer>
-        </ProjectContainer>
+        <Main>
+            <ProjectCard>
+                <Head>
+                    <title>{t("doll.title")}</title>
+                </Head>
+                <YoutubeFrame>
+                    <YoutubeVideo videoId='xvNHCHPUz8A' />
+                </YoutubeFrame>
+                <ProjectDetail>
+                    <h2>{t("doll.title")}</h2>
+                    <span><SiUnity size="1.5em" /><SiCsharp size="1.5em" /></span>
+                    <Trans i18nKey="challenge:doll.description">
+                        <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome &quot;monster&quot;.</p>
+                    </Trans>
+                </ProjectDetail>
+            </ProjectCard>
+        </Main>
         <FootNote />
     </Container>
 }

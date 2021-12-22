@@ -136,8 +136,8 @@ const ResumeDownloadContainer = styled.div`
         before:-z-10
     `}
     &:before {
-        background-size: 50% 100%;
         background: linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b);
+        background-size: 50% 100%;
     }
     &:hover:before {
         animation: ${GradientAnimation} 1.5s linear infinite;

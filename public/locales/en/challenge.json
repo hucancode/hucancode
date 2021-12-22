@@ -1,7 +1,7 @@
 {
     "dragon": {
         "title": "Procedural Dragon",
-        "description": "<0>Dragon animations are procedurally generated with following steps:</1><1><0>Load static dragon mesh. Posed in a straight line</0><1>Build a curve using THREE.CatmullRomCurve3</1><2>Pass curve data down to GPU via a texture</2><3>Inside vertex shader, read texture data and set vertex position accordingly</3></1>"
+        "description": "<0>Dragon animations are procedurally generated with following steps:</0><1><0>Load static dragon mesh. Posed in a straight line</0><1>Build a curve using THREE.CatmullRomCurve3</1><2>Pass curve data down to GPU via a texture</2><3>Inside vertex shader, read texture data and set vertex position accordingly</3></1>"
     },
     "spider": {
         "title": "Procedural Spider",
