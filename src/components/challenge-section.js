@@ -68,18 +68,13 @@ const ProjectMedia = styled.div`
 
 const ProjectDetail = styled.div`
     ${tw`
-        flex
-        justify-between
-        items-center
+        flex justify-between items-center gap-4
         text-left
         relative
         right-0
-        w-full
-        bg-indigo-100
-        text-gray-600
-        dark:bg-gray-600
-        dark:text-gray-100
-        max-w-screen-md
+        w-full max-w-screen-md
+        bg-indigo-100 dark:bg-gray-600
+        text-gray-600 dark:text-gray-100
         object-contain
         px-4
         py-6
@@ -90,6 +85,11 @@ const ProjectDetail = styled.div`
             dark:text-indigo-100
             text-black
             cursor-pointer
+        `}
+    }
+    p {
+        ${tw`
+            text-sm
         `}
     }
     span {
@@ -142,7 +142,10 @@ export default function ChallengeSection() {
                     <video autoPlay muted loop src='/assets/video/dragon-20s.webm' />
                 </ProjectMedia>
                 <ProjectDetail>
-                    <Link href="dragon"><h2>{t("challenge.dragon")}</h2></Link>
+                    <div>
+                        <Link href="dragon"><h2>{t("challenge.dragon")}</h2></Link>
+                        <p>{t("challenge.dragon-sub")}</p>
+                    </div>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
                 </ProjectDetail>
             </ProjectCard>
@@ -151,7 +154,10 @@ export default function ChallengeSection() {
                     <video autoPlay muted loop src='/assets/video/spider-20s.webm' />
                 </ProjectMedia>
                 <ProjectDetail>
-                    <Link href="spider"><h2>{t("challenge.spider")}</h2></Link>
+                    <div>
+                        <Link href="spider"><h2>{t("challenge.spider")}</h2></Link>
+                        <p>{t("challenge.spider-sub")}</p>
+                    </div>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
                 </ProjectDetail>
             </ProjectCard>
@@ -160,7 +166,10 @@ export default function ChallengeSection() {
                     <video autoPlay muted loop src='/assets/video/sabor-20s.webm' />
                 </ProjectMedia>
                 <ProjectDetail>
-                    <Link href="sabor"><h2>{t("challenge.sabor")}</h2></Link>
+                    <div>
+                        <Link href="sabor"><h2>{t("challenge.sabor")}</h2></Link>
+                        <p>{t("challenge.sabor-sub")}</p>
+                    </div>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><GiPuppet size="1.5em"/></span>
                 </ProjectDetail>
             </ProjectCard>
@@ -169,7 +178,10 @@ export default function ChallengeSection() {
                     <YoutubeVideo videoId='9RCqafaFMcY' />
                 </ProjectMedia>
                 <ProjectDetail>
-                    <Link href="weapon-master"><h2>{t("challenge.weapon-master")}</h2></Link>
+                    <div>
+                        <Link href="weapon-master"><h2>{t("challenge.weapon-master")}</h2></Link>
+                        <p>{t("challenge.weapon-master-sub")}</p>
+                    </div>
                     <span><SiUnrealengine size="1.5em" /><SiBlender size="1.5em" /></span>
                 </ProjectDetail>
             </ProjectCard>
@@ -178,7 +190,10 @@ export default function ChallengeSection() {
                     <YoutubeVideo videoId='xvNHCHPUz8A' />
                 </ProjectMedia>
                 <ProjectDetail>
-                    <Link href="doll"><h2>{t("challenge.doll")}</h2></Link>
+                    <div>
+                        <Link href="doll"><h2>{t("challenge.doll")}</h2></Link>
+                        <p>{t("challenge.doll-sub")}</p>
+                    </div>
                     <span><SiUnity size="1.5em" /></span>
                 </ProjectDetail>
             </ProjectCard>

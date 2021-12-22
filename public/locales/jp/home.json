@@ -47,9 +47,14 @@
     "challenge": {
         "title": "面白くてチャレンジしてみたもの",
         "dragon": "手続き型生成竜",
+        "dragon-sub": "3D手続き型アニメーション実験",
         "spider": "手続き型生成蜘蛛",
+        "spider-sub": "3D手続き型アニメーション実験",
         "sabor": "Saborゲームキャラクター",
+        "sabor-sub": "ゲーム対応キャラクター",
         "weapon-master": "武器達人",
-        "doll": "銃と人形"
+        "weapon-master-sub": "Unreal Engine4で作成された小さなデモゲーム",
+        "doll": "銃と人形",
+        "doll-sub": "Unityで作られた小さなゲーム"
     }
 }

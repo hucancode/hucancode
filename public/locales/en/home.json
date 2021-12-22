@@ -47,9 +47,14 @@
     "challenge": {
         "title": "Something interesting I have challenged",
         "dragon": "Procedural Dragon",
+        "dragon-sub": "3D procedural animation experiment",
         "spider": "Procedural Spider",
+        "spider-sub": "3D procedural animation experiment",
         "sabor": "Sabor Game Character",
+        "sabor-sub": "Game-ready character",
         "weapon-master": "Weapon Master",
-        "doll": "Gun and Doll"
+        "weapon-master-sub": "Small demo game made with Unreal Engine 4",
+        "doll": "Gun and Doll",
+        "doll-sub": "Small game made with Unity"
     }
 }
