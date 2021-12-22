@@ -1,27 +1,26 @@
 import React, { useState } from "react";
 import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDocker, faJs, faNode, faReact } from "@fortawesome/free-brands-svg-icons";
+import { SiAmazonaws, SiBlender, 
+    SiCircleci, 
+    SiCplusplus, 
+    SiCsharp, 
+    SiDocker, 
+    SiFirebase, 
+    SiFlutter, 
+    SiGitlab, 
+    SiGraphql, 
+    SiJavascript, 
+    SiKotlin, 
+    SiNestjs, 
+    SiOpengl, 
+    SiReact, 
+    SiSwift, 
+    SiThreedotjs, 
+    SiUnrealengine } from 'react-icons/si';
+import { GrMysql } from "react-icons/gr";
+import { DiNodejs } from "react-icons/di";
 import { useTranslation } from 'next-i18next';
-import {
-    CPPViewBox, CPPSVGPath,
-    CSViewBox, CSSVGPath,
-    OpenGLViewBox, OpenGLSVGPath,
-    BlenderViewBox, BlenderSVGPath,
-    UnrealViewBox, UnrealSVGPath,
-    ThreeViewBox, ThreeSVGPath,
-    NestViewBox, NestSVGPath,
-    FlutterViewBox, FlutterSVGPath,
-    MySQLViewBox, MySQLSVGPath,
-    GraphQLViewBox, GraphQLSVGPath,
-    FirebaseViewBox, FirebaseSVGPath, 
-    CircleViewBox, CircleSVGPath, 
-    AWSViewBox, AWSSVGPath, 
-    GitlabViewBox, GitlabSVGPath, 
-    KtViewBox, KtSVGPath, 
-    SwiftViewBox, SwiftSVGPath
-} from '../assets/svg-data';
 import SwitchButton from "../widgets/switchButton";
 
 const Container = styled.section`
@@ -37,6 +36,7 @@ const Container = styled.section`
         md:p-10
         text-center
         overflow-hidden
+        max-w-screen-lg
     `}
 `;
 const SectionTitle = styled.h1`
@@ -114,33 +114,7 @@ const SkillName = styled.p`
 function Skill(props) {
     return <SkillContainer>
         <SkillIconContainer>
-            <FontAwesomeIcon icon={props.icon} size="2x"></FontAwesomeIcon>
-        </SkillIconContainer>
-        <SkillName>
-            {props.name}
-        </SkillName>
-    </SkillContainer>
-}
-
-function SkillHollowSVG(props) {
-    return <SkillContainer>
-        <SkillIconContainer>
-            <SVGIconHollow viewBox={props.viewBox} fill="none" strokeWidth="5">
-            {props.paths.map((path,i) =><path key={i} d={path} />)}
-            </SVGIconHollow>
-        </SkillIconContainer>
-        <SkillName>
-            {props.name}
-        </SkillName>
-    </SkillContainer>
-}
-
-function SkillSVG(props) {
-    return <SkillContainer>
-        <SkillIconContainer>
-            <SVGIcon viewBox={props.viewBox}>
-                {props.paths.map((path,i) =><path key={i} d={path} />)}
-            </SVGIcon>
+            {props.icon}
         </SkillIconContainer>
         <SkillName>
             {props.name}
@@ -161,30 +135,30 @@ export default function SkillSection() {
             onChange={(value) => setActiveSet(value)}>
         </SwitchButton>
         <SkillSet active={!activeSet}>
-            <SkillSVG name="C++" viewBox={CPPViewBox} paths={CPPSVGPath}/>
-            <SkillSVG name="C#" viewBox={CSViewBox} paths={CSSVGPath}/>
-            <SkillSVG name="OpenGL" viewBox={OpenGLViewBox} paths={OpenGLSVGPath}/>
-            <SkillSVG name="Blender" viewBox={BlenderViewBox} paths={BlenderSVGPath}/>
-            <SkillSVG name="Unreal Engine" viewBox={UnrealViewBox} paths={UnrealSVGPath}/>
-            <SkillHollowSVG name="ThreeJS" viewBox={ThreeViewBox} paths={ThreeSVGPath}/>
+            <Skill name="C++" icon={<SiCplusplus size="2em" />}/>
+            <Skill name="C#" icon={<SiCsharp size="2em" />}/>
+            <Skill name="OpenGL" icon={<SiOpengl size="2em" />}/>
+            <Skill name="Blender" icon={<SiBlender size="2em" />}/>
+            <Skill name="Unreal" icon={<SiUnrealengine size="2em" />}/>
+            <Skill name="ThreeJS" icon={<SiThreedotjs size="2em" />}/>
         </SkillSet>
         <SkillSet active={activeSet}>
-            <SkillSVG name="Kotlin" viewBox={KtViewBox} paths={KtSVGPath} />
-            <SkillSVG name="Swift" viewBox={SwiftViewBox} paths={SwiftSVGPath} />
-            <Skill name="Javascript" icon={faJs}/>
-            <Skill name="React" icon={faReact}/>
-            <SkillSVG name="Nest" viewBox={NestViewBox} paths={NestSVGPath} />
-            <SkillSVG name="Flutter" viewBox={FlutterViewBox} paths={FlutterSVGPath} />
-            <SkillSVG name="MySQL" viewBox={MySQLViewBox} paths={MySQLSVGPath} />
-            <SkillSVG name="GraphQL" viewBox={GraphQLViewBox} paths={GraphQLSVGPath} />
-            <Skill name="NodeJS" icon={faNode}/>
+            <Skill name="Kotlin" icon={<SiKotlin size="2em" />}/>
+            <Skill name="Swift" icon={<SiSwift size="2em" />}/>
+            <Skill name="Javascript" icon={<SiJavascript size="2em" />}/>
+            <Skill name="React" icon={<SiReact size="2em" />}/>
+            <Skill name="Nest" icon={<SiNestjs size="2em" />}/>
+            <Skill name="Flutter" icon={<SiFlutter size="2em" />}/>
+            <Skill name="MySQL" icon={<GrMysql size="2em" />}/>
+            <Skill name="GraphQL" icon={<SiGraphql size="2em" />}/>
+            <Skill name="NodeJS" icon={<DiNodejs size="3em" />}/>
         </SkillSet>
         <SkillSet active>
-            <Skill name="Docker" icon={faDocker}/>
-            <SkillSVG name="Firebase" viewBox={FirebaseViewBox} paths={FirebaseSVGPath} />
-            <SkillSVG name="AWS" viewBox={AWSViewBox} paths={AWSSVGPath} />
-            <SkillSVG name="Circle CI" viewBox={CircleViewBox} paths={CircleSVGPath} />
-            <SkillSVG name="Gitlab CI" viewBox={GitlabViewBox} paths={GitlabSVGPath} />
+            <Skill name="Docker" icon={<SiDocker size="2em" />}/>
+            <Skill name="Firebase" icon={<SiFirebase size="2em" />}/>
+            <Skill name="AWS" icon={<SiAmazonaws size="2em" />}/>
+            <Skill name="CircleCI" icon={<SiCircleci size="2em" />}/>
+            <Skill name="GitlabCI" icon={<SiGitlab size="2em" />}/>
         </SkillSet>
     </Container>
 }

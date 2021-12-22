@@ -36,7 +36,7 @@ const ShowcaseContainer = styled.div`
 `;
 
 
-const ProjectContainer = styled.div`
+const ProjectCard = styled.div`
     ${tw`
         flex flex-col justify-center items-center
         text-center
@@ -152,27 +152,27 @@ export default function ChallengeSection() {
     return <Container id='challenge'>
         <SectionTitle>{t('challenge.title')}</SectionTitle>
         <ShowcaseContainer>
-            <ProjectContainer>
+            <ProjectCard>
                 <CanvasContainer>
-                    <video autoPlay muted src='/assets/video/dragon-20s.webm'/>
+                    <video autoPlay muted loop src='/assets/video/dragon-20s.webm'/>
                 </CanvasContainer>
                 <DetailContainer> <Trans i18nKey="challenge.dragon">
                     <h2>Procedural Dragon</h2>
                     <small>🛠 ThreeJS, Vertex Shader</small>
                     <a href="dragon">See more</a>
                 </Trans> </DetailContainer>
-            </ProjectContainer>
-            <ProjectContainer>
+            </ProjectCard>
+            <ProjectCard>
                 <CanvasContainer>
-                    <video autoPlay muted src='/assets/video/spider-20s.webm'/>
+                    <video autoPlay muted loop src='/assets/video/spider-20s.webm'/>
                 </CanvasContainer>
                 <DetailContainer> <Trans i18nKey="challenge.spider">
                     <h2>Procedural Spider</h2>
                     <small>🛠 ThreeJS, Inverse Kinematics</small>
                     <a href="spider">See more</a>
                 </Trans></DetailContainer>
-            </ProjectContainer>
-            <ProjectContainer>
+            </ProjectCard>
+            <ProjectCard>
                 <CanvasContainer>
                     <YoutubeVideo videoId='9RCqafaFMcY'/>
                 </CanvasContainer>
@@ -187,8 +187,8 @@ export default function ChallengeSection() {
                         <li>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</li>
                     </ul>
                 </Trans> </DetailContainer>
-            </ProjectContainer>
-            <ProjectContainer>
+            </ProjectCard>
+            <ProjectCard>
                 <CanvasContainer>
                     <YoutubeVideo videoId='xvNHCHPUz8A'/>
                 </CanvasContainer>
@@ -197,7 +197,7 @@ export default function ChallengeSection() {
                     <small>🛠 Unity3D</small>
                     <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome &quot;monster&quot;.</p>
                 </Trans> </DetailContainer>
-            </ProjectContainer>
+            </ProjectCard>
         </ShowcaseContainer>
     </Container>
 }

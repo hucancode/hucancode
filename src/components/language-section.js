@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import styled, {css} from 'styled-components';
 import tw from 'twin.macro';
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useTranslation } from 'next-i18next';
-import { faBook, faHeadphones, faStar, faStarHalfAlt } from "@fortawesome/free-solid-svg-icons";
-import { faStar as faStarEmpty }  from "@fortawesome/free-regular-svg-icons";
 import SwitchButton from "../widgets/switchButton";
+import { FcReading, FcVoicePresentation } from "react-icons/fc";
+import { RiStarFill, RiStarHalfFill, RiStarLine } from "react-icons/ri";
 
 const Container = styled.section`
     ${tw`
@@ -92,6 +91,8 @@ const LanguageScoreDetail = styled.div`
     `}
     p {
         ${tw`
+            flex
+            flex-row
             text-sm
             font-bold
         `}
@@ -118,23 +119,23 @@ export default function LanguageSection() {
                 <p>TOEIC</p>
             </LanguageScoreMain>
             <LanguageScoreDetail>
-                <FontAwesomeIcon icon={faBook} size="2x"></FontAwesomeIcon>
+                <FcReading size="3em" />
                 <p>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStarHalfAlt} size="sm"></FontAwesomeIcon>
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarHalfFill size="1.5em" />
                 </p>
             </LanguageScoreDetail>
             <LanguageScoreDetail>
-                <FontAwesomeIcon icon={faHeadphones} size="2x"></FontAwesomeIcon>
+                <FcVoicePresentation size="3em" />
                 <p>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStarHalfAlt} size="sm"></FontAwesomeIcon>
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarLine size="1.5em" />
                 </p>
             </LanguageScoreDetail>
         </LanguageContainer>
@@ -146,23 +147,23 @@ export default function LanguageSection() {
                 <p>JLPT N2</p>
             </LanguageScoreMain>
             <LanguageScoreDetail>
-                <FontAwesomeIcon icon={faBook} size="2x"></FontAwesomeIcon>
+                <FcReading size="3em" />
                 <p>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStarEmpty} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStarEmpty} size="sm"></FontAwesomeIcon>
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarLine size="1.5em" />
+                    <RiStarLine size="1.5em" />
                 </p>
             </LanguageScoreDetail>
             <LanguageScoreDetail>
-                <FontAwesomeIcon icon={faHeadphones} size="2x"></FontAwesomeIcon>
+                <FcVoicePresentation size="3em" />
                 <p>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStar} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStarHalfAlt} size="sm"></FontAwesomeIcon>
-                    <FontAwesomeIcon icon={faStarEmpty} size="sm"></FontAwesomeIcon>
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarFill size="1.5em" />
+                    <RiStarHalfFill size="1.5em" />
+                    <RiStarLine size="1.5em" />
                 </p>
             </LanguageScoreDetail>
         </LanguageContainer>

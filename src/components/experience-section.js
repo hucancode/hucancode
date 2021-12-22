@@ -32,6 +32,7 @@ const HistoryContainer = styled.div`
         flex-col
         md:flex-row
         justify-start
+        max-w-screen-lg
     `}
 `;
 

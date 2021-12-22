@@ -4,8 +4,7 @@ import styled, { keyframes } from 'styled-components';
 import tw from 'twin.macro';
 import SaborScene from "../scenes/sabor";
 import { useTranslation, Trans } from 'next-i18next';
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileDownload } from "@fortawesome/free-solid-svg-icons";
+import { FcDownload } from "react-icons/fc";
 
 const Container = styled.section`
     ${tw`
@@ -199,7 +198,7 @@ export default function LandingSection() {
                 <ResumeDownloadContainer>
                     <ResumeDownload
                         target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">
-                        <FontAwesomeIcon icon={faFileDownload} size="lg" />
+                        <FcDownload size="2em" />
                         <span>{t('contact.downloadResume')}</span>
                     </ResumeDownload>
                 </ResumeDownloadContainer>

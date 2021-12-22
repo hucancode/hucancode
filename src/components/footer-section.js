@@ -1,9 +1,8 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { faCube, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFacebook, faGithub } from "@fortawesome/free-brands-svg-icons";
+import { FaMapMarkerAlt } from 'react-icons/fa';
+import { SiGithub, SiSketchfab, SiFacebook } from 'react-icons/si';
 import { useTranslation } from 'next-i18next';
 
 const Container = styled.section`
@@ -102,23 +101,23 @@ export default function FooterSection() {
             <Title>{t('contact.social')}</Title>
             <br/>
             <SocialContainer>
-                <FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: '0.5rem'}} size="lg" />
+                <FaMapMarkerAlt size="1.5em" style={{marginRight: "0.5em"}} />
                 <p>{t('contact.address')}</p>
             </SocialContainer>
             <SocialContainer>
                 <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
                 <RoundIcon>
-                    <FontAwesomeIcon icon={faGithub} size="lg"/>
+                    <SiGithub size="1.5em" />
                 </RoundIcon>
                 </a>
                 <a target="_blank" rel="noreferrer" href="https://sketchfab.com/hucancode">
                 <RoundIcon>
-                    <FontAwesomeIcon icon={faCube} size="lg"/>
+                    <SiSketchfab size="1.5em" />
                 </RoundIcon>
                 </a>
                 <a target="_blank" rel="noreferrer" href="https://www.facebook.com/LeeSoooYoung">
                 <RoundIcon>
-                    <FontAwesomeIcon icon={faFacebook} size="lg"/>
+                    <SiFacebook size="1.5em" />
                 </RoundIcon>
                 </a>
             </SocialContainer>
