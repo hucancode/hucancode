@@ -64,6 +64,11 @@ const ProjectMedia = styled.div`
   `}
   flex-grow: 1;
   background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
+  video {
+    ${tw`
+        p-2
+    `}
+  }
 `;
 
 const ProjectDetail = styled.div`
