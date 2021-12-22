@@ -41,9 +41,9 @@ const Avatar = styled.div`
         after:h-full
         after:duration-200
     `}
-    background-image:url('./assets/profile-secret.jpg');
+    background-image:url('/assets/profile-secret.jpg');
     &:after {
-        background-image:url('./assets/profile.jpg');
+        background-image:url('/assets/profile.jpg');
     }
 `;
 
