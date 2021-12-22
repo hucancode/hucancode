@@ -146,7 +146,7 @@ export default function ChallengeSection() {
                         <Link href="dragon" passHref><h2>{t("challenge.dragon")}</h2></Link>
                         <p>{t("challenge.dragon-sub")}</p>
                     </div>
-                    <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
+                    <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
                 </ProjectDetail>
             </ProjectCard>
             <ProjectCard>
@@ -158,7 +158,7 @@ export default function ChallengeSection() {
                         <Link href="spider" passHref><h2>{t("challenge.spider")}</h2></Link>
                         <p>{t("challenge.spider-sub")}</p>
                     </div>
-                    <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
+                    <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
                 </ProjectDetail>
             </ProjectCard>
             <ProjectCard>
@@ -182,7 +182,7 @@ export default function ChallengeSection() {
                         <Link href="weapon-master" passHref><h2>{t("challenge.weapon-master")}</h2></Link>
                         <p>{t("challenge.weapon-master-sub")}</p>
                     </div>
-                    <span><SiUnrealengine size="1.5em" /><SiBlender size="1.5em" /></span>
+                    <span><SiUnrealengine size="1.5em" /></span>
                 </ProjectDetail>
             </ProjectCard>
             <ProjectCard>
