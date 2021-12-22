@@ -17,7 +17,7 @@ const ANIMATE_CURVE = false;
 function init() {
     let canvas = document.getElementById(CANVAS_ID);
     let w = canvas.clientWidth;
-    let h = w * ASPECT_RATIO;
+    let h = canvas.clientHeight;//w * ASPECT_RATIO;
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -100,7 +100,7 @@ function onWindowResize() {
     }
     canvas.style = "";
     let w = canvas.clientWidth;
-    let h = w * ASPECT_RATIO;
+    let h = canvas.clientHeight;//w * ASPECT_RATIO;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);

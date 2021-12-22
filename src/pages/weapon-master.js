@@ -1,12 +1,12 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import SpiderScene from "../scenes/spider";
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import Head from 'next/head';
-import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
+import Head from 'next/head'
+import { SiBlender, SiCplusplus, SiUnrealengine } from "react-icons/si";
 import Navbar from "../components/navigation-bar";
+import YoutubeVideo from "../widgets/youtube";
 
 const Container = styled.div`
     ${tw`
@@ -18,21 +18,24 @@ const Container = styled.div`
 `;
 const ProjectContainer = styled.div`
     ${tw`
-        flex flex-col md:flex-row justify-center items-stretch
+        flex flex-col md:flex-row justify-center items-center
         text-center
         shadow-lg
         rounded-lg
         w-full max-w-screen-lg
-        h-auto md:max-h-screen
         overflow-hidden
     `}
-    flex-grow: 1;
-    canvas {
-        ${tw`
-            w-full md:w-2/3 h-full
-        `}
-        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
-      }
+`;
+
+const YoutubeFrame = styled.div`
+  ${tw`
+    flex flex-col items-center justify-center
+    relative
+    right-0
+    w-full h-full
+    object-contain
+  `}
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
 `;
 
 const DetailContainer = styled.div`
@@ -50,8 +53,7 @@ const DetailContainer = styled.div`
     h2 {
         ${tw`
             font-black
-            dark:text-indigo-100
-            text-black
+            dark:text-indigo-100 text-black
         `}
     }
     p, ul {
@@ -63,7 +65,7 @@ const DetailContainer = styled.div`
     small {
         ${tw`
             font-thin
-            dark:text-gray-300 text-gray-500
+            text-gray-500 dark:text-gray-300
             mb-3
         `}
     }
@@ -83,20 +85,32 @@ const DetailContainer = styled.div`
     }
 `;
 
-export default function ProceduralSpider() {
+export default function ProceduralDragon() {
     const { t } = useTranslation("challenge");
     return <Container>
         <Head>
-            <title>{t("spider.title")}</title>
+            <title>{t("weapon-master.title")}</title>
         </Head>
         <Navbar />
         <ProjectContainer>
-            <SpiderScene />
+            <Head>
+                <title>{t("weapon-master.title")}</title>
+            </Head>
+            <YoutubeFrame>
+                <YoutubeVideo videoId='9RCqafaFMcY' />
+            </YoutubeFrame>
+
             <DetailContainer>
-                <h2>{t("spider.title")}</h2>
-                <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
-                <Trans i18nKey="spider.description">
-                    <p>Spider animations are procedurally generated using Inverse Kinematics</p>
+                <h2>{t("weapon-master.title")}</h2>
+                <span><SiUnrealengine size="1.5em" /><SiBlender size="1.5em" /><SiCplusplus size="1.5em" /></span>
+                <Trans i18nKey="weapon-master.description">
+                    <p>This is small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
+                    <ul>
+                        <li>Each weapon has unique skill set. Weapon has it&apos;s own animation logic and completely independent from character logic.</li>
+                        <li>Full locomotion animation. Dashing, Jumping, Sprinting, Flying.</li>
+                        <li>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</li>
+                        <li>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</li>
+                    </ul>
                 </Trans>
             </DetailContainer>
         </ProjectContainer>

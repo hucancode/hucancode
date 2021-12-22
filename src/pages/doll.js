@@ -1,33 +1,38 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import SaborScene from "../scenes/sabor";
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import Head from 'next/head';
-import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
+import Head from 'next/head'
+import { SiCsharp, SiUnity } from "react-icons/si";
+import Navbar from "../components/navigation-bar";
+import YoutubeVideo from "../widgets/youtube";
 
+const Container = styled.div`
+    ${tw`
+        flex flex-col justify-start items-center gap-4
+        lg:w-screen lg:h-screen
+        py-10
+        px-5
+    `}
+`;
 const ProjectContainer = styled.div`
     ${tw`
         flex flex-col md:flex-row justify-center items-center
         text-center
         shadow-lg
         rounded-lg
-        w-screen h-screen
+        w-full max-w-screen-lg
         overflow-hidden
     `}
 `;
 
-const CanvasContainer = styled.div`
+const YoutubeFrame = styled.div`
   ${tw`
-    flex
-    flex-col
-    items-center
-    justify-center
+    flex flex-col items-center justify-center
     relative
     right-0
-    w-full
-    h-full
+    w-full h-full
     object-contain
   `}
   background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
@@ -48,7 +53,7 @@ const DetailContainer = styled.div`
     h2 {
         ${tw`
             font-black
-            text-black dark:text-indigo-100
+            dark:text-indigo-100 text-black
         `}
     }
     p, ul {
@@ -80,23 +85,30 @@ const DetailContainer = styled.div`
     }
 `;
 
-export default function Sabor() {
+export default function ProceduralDragon() {
     const { t } = useTranslation("challenge");
-    return <ProjectContainer>
+    return <Container>
         <Head>
-            <title>{t("sabor.title")}</title>
+            <title>{t("doll.title")}</title>
         </Head>
-        <CanvasContainer>
-            <SaborScene />
-        </CanvasContainer>
-        <DetailContainer>
-            <h2>{t("sabor.title")}</h2>
-            <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
-            <Trans i18nKey="sabor.description">
-                <p>This is a game-ready character. Rigged and animated using Blender</p>
-            </Trans>
-        </DetailContainer>
-    </ProjectContainer>
+        <Navbar />
+        <ProjectContainer>
+            <Head>
+                <title>{t("doll.title")}</title>
+            </Head>
+            <YoutubeFrame>
+                <YoutubeVideo videoId='xvNHCHPUz8A'/>
+            </YoutubeFrame>
+
+            <DetailContainer>
+                <h2>{t("doll.title")}</h2>
+                <span><SiUnity size="1.5em" /><SiCsharp size="1.5em" /></span>
+                <Trans i18nKey="doll.description">
+                    <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome &quot;monster&quot;.</p>
+                </Trans>
+            </DetailContainer>
+        </ProjectContainer>
+    </Container>
 }
 
 export async function getStaticProps({ locale }) {

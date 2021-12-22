@@ -1,8 +1,9 @@
 import React from "react";
 import styled from 'styled-components';
 import tw from 'twin.macro';
-//import Link from 'next/link'
-import { useTranslation, Trans } from 'next-i18next';
+import Link from 'next/link'
+import { useTranslation } from 'next-i18next';
+import { SiThreedotjs, SiUnrealengine, SiUnity, SiBlender, SiOpengl } from "react-icons/si";
 
 const Container = styled.section`
     ${tw`
@@ -28,13 +29,12 @@ const SectionTitle = styled.h1`
 const ShowcaseContainer = styled.div`
     ${tw`
         w-full
-        grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 lg:gap-8
+        grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10
         text-center
         w-full
         max-w-screen-lg
     `}
 `;
-
 
 const ProjectCard = styled.div`
     ${tw`
@@ -53,7 +53,7 @@ const ProjectCard = styled.div`
 //     `}
 // `;
 
-const CanvasContainer = styled.div`
+const ProjectMedia = styled.div`
   ${tw`
     flex
     items-center
@@ -64,12 +64,11 @@ const CanvasContainer = styled.div`
   background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
 `;
 
-const DetailContainer = styled.div`
+const ProjectDetail = styled.div`
     ${tw`
         flex
-        flex-col
-        justify-start
-        items-start
+        justify-between
+        items-center
         text-left
         relative
         right-0
@@ -80,8 +79,8 @@ const DetailContainer = styled.div`
         dark:text-gray-100
         max-w-screen-md
         object-contain
-        p-4
-        pb-5
+        px-4
+        py-6
     `}
     h2 {
         ${tw`
@@ -90,27 +89,10 @@ const DetailContainer = styled.div`
             text-black
         `}
     }
-    p, ul {
+    span {
         ${tw`
-            font-normal
-            text-sm
-        `}
-    }
-    small {
-        ${tw`
-            font-thin
-            text-gray-500
-            dark:text-gray-300
-            mb-3
-        `}
-    }
-    & ul li {
-        ${tw`
-            relative
-            pl-5
-            before:content-["▸"]
-            before:absolute
-            before:left-0
+            flex
+            gap-2
         `}
     }
 `;
@@ -153,50 +135,40 @@ export default function ChallengeSection() {
         <SectionTitle>{t('challenge.title')}</SectionTitle>
         <ShowcaseContainer>
             <ProjectCard>
-                <CanvasContainer>
+                <ProjectMedia>
                     <video autoPlay muted loop src='/assets/video/dragon-20s.webm' />
-                </CanvasContainer>
-                <DetailContainer> <Trans i18nKey="challenge.dragon">
-                    <h2>Procedural Dragon</h2>
-                    <small>🛠 ThreeJS, Vertex Shader</small>
-                    <a href="dragon">See more</a>
-                </Trans> </DetailContainer>
+                </ProjectMedia>
+                <ProjectDetail>
+                    <Link href="dragon"><h2>{t("challenge.dragon")}</h2></Link>
+                    <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
+                </ProjectDetail>
             </ProjectCard>
             <ProjectCard>
-                <CanvasContainer>
+                <ProjectMedia>
                     <video autoPlay muted loop src='/assets/video/spider-20s.webm' />
-                </CanvasContainer>
-                <DetailContainer> <Trans i18nKey="challenge.spider">
-                    <h2>Procedural Spider</h2>
-                    <small>🛠 ThreeJS, Inverse Kinematics</small>
-                    <a href="spider">See more</a>
-                </Trans></DetailContainer>
+                </ProjectMedia>
+                <ProjectDetail>
+                    <Link href="spider"><h2>{t("challenge.spider")}</h2></Link>
+                    <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
+                </ProjectDetail>
             </ProjectCard>
             <ProjectCard>
-                <CanvasContainer>
+                <ProjectMedia>
                     <YoutubeVideo videoId='9RCqafaFMcY' />
-                </CanvasContainer>
-                <DetailContainer> <Trans i18nKey="challenge.wm">
-                    <h2>Weapon Master</h2>
-                    <small>🛠 Unreal Engine, Gameplay Abilities System</small>
-                    <p>This is small RPG made with Unreal Engine, featuring 10+ switchable weapons.</p>
-                    <ul>
-                        <li>Each weapon has unique skill set. Weapon has it&apos;s own animation logic and completely independent from character logic.</li>
-                        <li>Full locomotion animation. Dashing, Jumping, Sprinting, Flying.</li>
-                        <li>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</li>
-                        <li>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</li>
-                    </ul>
-                </Trans> </DetailContainer>
+                </ProjectMedia>
+                <ProjectDetail>
+                    <Link href="weapon-master"><h2>{t("challenge.weapon-master")}</h2></Link>
+                    <span><SiUnrealengine size="1.5em" /><SiBlender size="1.5em" /></span>
+                </ProjectDetail>
             </ProjectCard>
             <ProjectCard>
-                <CanvasContainer>
+                <ProjectMedia>
                     <YoutubeVideo videoId='xvNHCHPUz8A' />
-                </CanvasContainer>
-                <DetailContainer> <Trans i18nKey="challenge.doll">
-                    <h2>Gun and Doll</h2>
-                    <small>🛠 Unity3D</small>
-                    <p>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome &quot;monster&quot;.</p>
-                </Trans> </DetailContainer>
+                </ProjectMedia>
+                <ProjectDetail>
+                    <Link href="doll"><h2>{t("challenge.doll")}</h2></Link>
+                    <span><SiUnity size="1.5em" /></span>
+                </ProjectDetail>
             </ProjectCard>
         </ShowcaseContainer>
     </Container>

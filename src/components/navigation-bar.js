@@ -5,6 +5,7 @@ import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
 import Logo from "../widgets/logo";
 import { useTranslation } from 'next-i18next';
+import Link from "next/link";
 
 const Container = styled.nav`
     ${tw`
@@ -99,14 +100,12 @@ const HamburgerContainer = styled.button`
 
 export default function Navbar() {
     const [isDrawerOpen, setDrawerOpen] = useState(false);
-    const [isTouchDevice, setIsTouchDevice] = useState(false);
+    const [isMdOrUp, setIsMdOrUp] = useState(false);
     const drawerRef = useRef(null);
     const { t } = useTranslation();
 
     useEffect(() => {
-        setIsTouchDevice((('ontouchstart' in window) ||
-            (navigator.maxTouchPoints > 0) ||
-            (navigator.msMaxTouchPoints > 0)));
+        setIsMdOrUp(window.matchMedia("(min-width: 768px)").matches);
         const closeDrawer = event => {
             if (drawerRef.current && drawerRef.current.contains(event.target)) {
                 return;
@@ -119,18 +118,18 @@ export default function Navbar() {
         return () => document.removeEventListener("mousedown", closeDrawer);
     }, [isDrawerOpen]);
 
-    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || !isTouchDevice}>
+    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || isMdOrUp}>
         <NavItem>
-            <a href='#skill'>{t('nav.skill')}</a>
+            <Link href='/#skill'>{t('nav.skill')}</Link>
         </NavItem>
         <NavItem>
-            <a href='#experiences'>{t('nav.exp')}</a>
+            <Link href='/#experiences'>{t('nav.exp')}</Link>
         </NavItem>
         <NavItem>
-            <a href='#challenge'>{t('nav.works')}</a>
+            <Link href='/#challenge'>{t('nav.works')}</Link>
         </NavItem>
         <NavItem>
-            <a href='#contact'>{t('nav.contact')}</a>
+            <Link href='/#contact'>{t('nav.contact')}</Link>
         </NavItem>
     </NavItems>
 
@@ -138,9 +137,11 @@ export default function Navbar() {
         <HamburgerContainer onClick={() => setDrawerOpen(true)}>
             <HamburgerButton />
         </HamburgerContainer>
-        <LogoContainer>
-            <Logo />
-        </LogoContainer>
+        <Link href='/'>
+            <LogoContainer>
+                <Logo />
+            </LogoContainer>
+        </Link>
         {navItems}
         <ThemeContainer>
             <ThemeToggle />
