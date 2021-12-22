@@ -99,37 +99,37 @@ export default function FooterSection() {
     return <Container id='contact'>
         <ContactContainer>
             <Title>{t('contact.social')}</Title>
-            <br/>
+            <br />
             <SocialContainer>
-                <FaMapMarkerAlt size="1.5em" style={{marginRight: "0.5em"}} />
+                <FaMapMarkerAlt size="1.5em" style={{ marginRight: "0.5em" }} />
                 <p>{t('contact.address')}</p>
             </SocialContainer>
             <SocialContainer>
                 <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
-                <RoundIcon>
-                    <SiGithub size="1.5em" />
-                </RoundIcon>
+                    <RoundIcon>
+                        <SiGithub size="1.5em" />
+                    </RoundIcon>
                 </a>
                 <a target="_blank" rel="noreferrer" href="https://sketchfab.com/hucancode">
-                <RoundIcon>
-                    <SiSketchfab size="1.5em" />
-                </RoundIcon>
+                    <RoundIcon>
+                        <SiSketchfab size="1.5em" />
+                    </RoundIcon>
                 </a>
                 <a target="_blank" rel="noreferrer" href="https://www.facebook.com/LeeSoooYoung">
-                <RoundIcon>
-                    <SiFacebook size="1.5em" />
-                </RoundIcon>
+                    <RoundIcon>
+                        <SiFacebook size="1.5em" />
+                    </RoundIcon>
                 </a>
             </SocialContainer>
         </ContactContainer>
         <ContactContainer>
             <Title>{t('contact.contact')}</Title>
-            <br/>
+            <br />
             <p>(+81) 080-768-66019</p>
             <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
             <br />
             <a target="_blank" rel="noreferrer" href="https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing">{t('contact.downloadResume')}</a>
         </ContactContainer>
-        <Avatar/>
+        <Avatar />
     </Container>
 }

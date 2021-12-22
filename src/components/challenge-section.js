@@ -139,11 +139,11 @@ function YoutubeVideo(props) {
     return <YoutubeContainer> <iframe
         width="853"
         height="480"
-      src={`https://www.youtube.com/embed/${props.videoId}`}
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-      title="Embedded youtube"
+        src={`https://www.youtube.com/embed/${props.videoId}`}
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        title="Embedded youtube"
     /></YoutubeContainer>
 }
 
@@ -154,7 +154,7 @@ export default function ChallengeSection() {
         <ShowcaseContainer>
             <ProjectCard>
                 <CanvasContainer>
-                    <video autoPlay muted loop src='/assets/video/dragon-20s.webm'/>
+                    <video autoPlay muted loop src='/assets/video/dragon-20s.webm' />
                 </CanvasContainer>
                 <DetailContainer> <Trans i18nKey="challenge.dragon">
                     <h2>Procedural Dragon</h2>
@@ -164,7 +164,7 @@ export default function ChallengeSection() {
             </ProjectCard>
             <ProjectCard>
                 <CanvasContainer>
-                    <video autoPlay muted loop src='/assets/video/spider-20s.webm'/>
+                    <video autoPlay muted loop src='/assets/video/spider-20s.webm' />
                 </CanvasContainer>
                 <DetailContainer> <Trans i18nKey="challenge.spider">
                     <h2>Procedural Spider</h2>
@@ -174,7 +174,7 @@ export default function ChallengeSection() {
             </ProjectCard>
             <ProjectCard>
                 <CanvasContainer>
-                    <YoutubeVideo videoId='9RCqafaFMcY'/>
+                    <YoutubeVideo videoId='9RCqafaFMcY' />
                 </CanvasContainer>
                 <DetailContainer> <Trans i18nKey="challenge.wm">
                     <h2>Weapon Master</h2>
@@ -190,7 +190,7 @@ export default function ChallengeSection() {
             </ProjectCard>
             <ProjectCard>
                 <CanvasContainer>
-                    <YoutubeVideo videoId='xvNHCHPUz8A'/>
+                    <YoutubeVideo videoId='xvNHCHPUz8A' />
                 </CanvasContainer>
                 <DetailContainer> <Trans i18nKey="challenge.doll">
                     <h2>Gun and Doll</h2>

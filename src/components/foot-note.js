@@ -27,13 +27,12 @@ export default function FootNote() {
     return <Container>
         <p>
             <Trans i18nKey="note.madeWith">
-                Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br/>
+                Made with <code>React.js</code>, <code>Three.js</code> and 10+ other tools<br />
             </Trans>
             <Trans i18nKey="note.assetCredit">
-                <small>Dragon model by <a href="https://sketchfab.com/3d-models/chinese-dragon-fa05f2a6596041938152a84a956212e0">youmeowmeow</a></small>. 
+                <small>Dragon model by <a href="https://sketchfab.com/3d-models/chinese-dragon-fa05f2a6596041938152a84a956212e0">youmeowmeow</a></small>.
                 <small>Spider model by <a href="https://sketchfab.com/3d-models/low-poly-spider-walk-cycle-e4d2c40b66554b10be20f61bb0610774">volkanongun</a></small>
             </Trans>
         </p>
-        
     </Container>
 }

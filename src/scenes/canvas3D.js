@@ -9,18 +9,18 @@ const Canvas = styled.canvas`
 export default class Canvas3D extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {isInCamera: false};
+        this.state = { isInCamera: false };
         this.canvasRef = React.createRef();
         this.frameID = 0;
-      }
+    }
     componentDidMount() {
         this.init();
         this.observer = new IntersectionObserver(
             ([entry]) => {
-                this.setState({isInCamera: entry.isIntersecting});
+                this.setState({ isInCamera: entry.isIntersecting });
             }
         )
-        if(this.canvasRef.current) {
+        if (this.canvasRef.current) {
             this.observer.observe(this.canvasRef.current);
         }
     }
@@ -30,7 +30,7 @@ export default class Canvas3D extends React.Component {
     componentDidUpdate() {
         if (this.state.isInCamera) {
             const scope = this;
-            const renderLoop = function() {
+            const renderLoop = function () {
                 scope.frameID = requestAnimationFrame(renderLoop);
                 scope.animate();
             };

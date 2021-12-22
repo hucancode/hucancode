@@ -44,7 +44,7 @@ const Icon = styled.div`
 `;
 export default function LoadingIcon() {
     return <Icon>
-        <div/><div/><div/><div/>
+        <div /><div /><div /><div />
     </Icon>
 }
 

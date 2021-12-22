@@ -2,10 +2,8 @@ import React from 'react';
 import styled from "styled-components";
 import tw from 'twin.macro';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-// import '../src/i18n';
+import Head from 'next/head'
 import Navbar from "../components/navigation-bar";
-
 import LandingSection from "../components/landing-section";
 import SkillSection from "../components/skill-section";
 import LanguageSection from "../components/language-section";
@@ -32,6 +30,9 @@ const AppContainer = styled.div`
 
 export default function Home() {
   return <AppContainer>
+        <Head>
+          <title>hucancode</title>
+        </Head>
         <Navbar />
         <LandingSection />
         <SkillSection />

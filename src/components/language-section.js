@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styled, {css} from 'styled-components';
+import styled, { css } from 'styled-components';
 import tw from 'twin.macro';
 import { useTranslation } from 'next-i18next';
 import SwitchButton from "../widgets/switchButton";
@@ -102,10 +102,10 @@ const LanguageScoreDetail = styled.div`
 export default function LanguageSection() {
     var [activeLanguage, setActiveLanguage] = useState(false);
     const { t } = useTranslation();
-    
+
     return <Container id='language'>
         <SectionTitle>{t('languages.title')}</SectionTitle>
-        <SwitchButton 
+        <SwitchButton
             inputId="switchLang"
             labelA={t('languages.english')}
             labelB={t('languages.japanese')}

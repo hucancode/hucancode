@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import SpiderScene from "../scenes/spider";
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import Head from 'next/head'
 
 const ProjectContainer = styled.div`
     ${tw`
@@ -92,23 +93,26 @@ const DetailContainer = styled.div`
 export default function ProceduralSpider() {
     useTranslation();
     return <ProjectContainer>
-                <CanvasContainer>
-                    <SpiderScene/>
-                </CanvasContainer>
-                
-                <DetailContainer> <Trans i18nKey="challenge.spider-full">
-                    <h2>Procedural Spider</h2>
-                    <small>🛠 ThreeJS, Inverse Kinematics</small>
-                    <p>Spider animations are procedurally generated using Inverse Kinematics</p>
-                </Trans> </DetailContainer>
-            </ProjectContainer>
+        <Head>
+            <title>Procedural Spider</title>
+        </Head>
+        <CanvasContainer>
+            <SpiderScene />
+        </CanvasContainer>
+
+        <DetailContainer> <Trans i18nKey="challenge.spider-full">
+            <h2>Procedural Spider</h2>
+            <small>🛠 ThreeJS, Inverse Kinematics</small>
+            <p>Spider animations are procedurally generated using Inverse Kinematics</p>
+        </Trans> </DetailContainer>
+    </ProjectContainer>
 }
 
 export async function getStaticProps({ locale }) {
     return {
-      props: {
-        ...(await serverSideTranslations(locale, ['translation'])),
-        // Will be passed to the page component as props
-      },
+        props: {
+            ...(await serverSideTranslations(locale, ['translation'])),
+            // Will be passed to the page component as props
+        },
     };
-  }
+}

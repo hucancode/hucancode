@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styled, {css} from 'styled-components';
+import styled, { css } from 'styled-components';
 import tw from 'twin.macro';
 import { useTranslation, Trans } from 'next-i18next';
 
@@ -78,10 +78,10 @@ const HistoryButton = styled.button`
             md:mb-0
         `}
     }
-    ${props => props.active ? 
+    ${props => props.active ?
         css`${tw`
             bg-black
-        `}` : 
+        `}` :
         css`${tw`
             bg-gray-500
         `}`
@@ -164,23 +164,23 @@ export default function ExperienceSection() {
         <SectionTitle>{t('experience.title')}</SectionTitle>
         <HistoryContainer>
             <HistoryNavigator>
-                <HistoryButton onClick={() => setActiveSet(0)} active={activeSet===0}>
-                <h2>💼</h2><h3>{t('experience.nav.gc')}</h3>
+                <HistoryButton onClick={() => setActiveSet(0)} active={activeSet === 0}>
+                    <h2>💼</h2><h3>{t('experience.nav.gc')}</h3>
                 </HistoryButton>
-                <HistoryButton onClick={() => setActiveSet(1)} active={activeSet===1}>
-                <h2>🎓</h2><h3>{t('experience.nav.jpschool')}</h3>
+                <HistoryButton onClick={() => setActiveSet(1)} active={activeSet === 1}>
+                    <h2>🎓</h2><h3>{t('experience.nav.jpschool')}</h3>
                 </HistoryButton>
-                <HistoryButton onClick={() => setActiveSet(2)} active={activeSet===2}>
-                <h2>💼</h2><h3>{t('experience.nav.glhan')}</h3>
+                <HistoryButton onClick={() => setActiveSet(2)} active={activeSet === 2}>
+                    <h2>💼</h2><h3>{t('experience.nav.glhan')}</h3>
                 </HistoryButton>
-                <HistoryButton onClick={() => setActiveSet(3)} active={activeSet===3}>
-                <h2>💼</h2><h3>{t('experience.nav.fpt')}</h3>
+                <HistoryButton onClick={() => setActiveSet(3)} active={activeSet === 3}>
+                    <h2>💼</h2><h3>{t('experience.nav.fpt')}</h3>
                 </HistoryButton>
-                <HistoryButton onClick={() => setActiveSet(4)} active={activeSet===4}>
-                <h2>🎓</h2><h3>{t('experience.nav.university')}</h3>
+                <HistoryButton onClick={() => setActiveSet(4)} active={activeSet === 4}>
+                    <h2>🎓</h2><h3>{t('experience.nav.university')}</h3>
                 </HistoryButton>
             </HistoryNavigator>
-            <ContentContainer active={activeSet===0}>
+            <ContentContainer active={activeSet === 0}>
                 <Title><Trans i18nKey="experience.position.gc">
                     Engineering Manager <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://gc-c.co.jp/"><em>GoodCreate</em></a>
                 </Trans></Title>
@@ -195,8 +195,8 @@ export default function ExperienceSection() {
                             I developed highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>.
                         </li>
                         <li>
-                            I am in charge of an <a target="_blank" rel="noreferrer" href="https://at-creator.net/">mobile app building system</a>. 
-                            Allowing user to build their own mobile application without programming knowledge. 
+                            I am in charge of an <a target="_blank" rel="noreferrer" href="https://at-creator.net/">mobile app building system</a>.
+                            Allowing user to build their own mobile application without programming knowledge.
                             Featuring EC, CMS, customizable UI based on 9 templates (more on development).
                             Powered by <code>ReactNative, Azure, AWS</code>.
                         </li>
@@ -206,31 +206,31 @@ export default function ExperienceSection() {
                     </ul>
                 </Trans></Description>
             </ContentContainer>
-            <ContentContainer active={activeSet===1}>
+            <ContentContainer active={activeSet === 1}>
                 <Title><Trans i18nKey="experience.position.jpschool">
                     Student <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://mizunogaigogakuin.com/"><em>Mizuno International Language School</em></a>
                 </Trans></Title>
                 <Time>{t('experience.time.jpschool')}</Time>
                 <Description><Trans i18nKey="experience.desc.jpschool">
-                <ul>
-                    <li>
-                        I took 2-years course, but I graduated early, only study there for 1 year.
-                    </li>
-                    <li>
-                        Started with almost zero Japanese, I was able to pass <em>JLPT N3</em> before graduation. One and a half year later I passed <em>JLPT N2</em>. 
-                    </li>
-                    <li>
-                        I can communicate in Japanese at business level. 
-                        I am able to discuss technical topic in Japanese with minimal difficulty. 
-                    </li>
-                    <li>
-                        I can act as English-Japanese-Vietnamese interpreter at conversational level.<br/>
-                        I can interpret business Japanese to some degree.
-                    </li>
-                </ul>
+                    <ul>
+                        <li>
+                            I took 2-years course, but I graduated early, only study there for 1 year.
+                        </li>
+                        <li>
+                            Started with almost zero Japanese, I was able to pass <em>JLPT N3</em> before graduation. One and a half year later I passed <em>JLPT N2</em>.
+                        </li>
+                        <li>
+                            I can communicate in Japanese at business level.
+                            I am able to discuss technical topic in Japanese with minimal difficulty.
+                        </li>
+                        <li>
+                            I can act as English-Japanese-Vietnamese interpreter at conversational level.<br />
+                            I can interpret business Japanese to some degree.
+                        </li>
+                    </ul>
                 </Trans></Description>
             </ContentContainer>
-            <ContentContainer active={activeSet===2}>
+            <ContentContainer active={activeSet === 2}>
                 <Title><Trans i18nKey="experience.position.glhan">
                     Senior Game Programmer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.gameloft.com/"><em>Gameloft Hanoi</em></a>
                 </Trans></Title>
@@ -242,12 +242,12 @@ export default function ExperienceSection() {
                             I then soon joined Gameloft later on March 2014.
                         </li>
                         <li>
-                            Deeply immersed in international environment, my English ability improved significantly. 
+                            Deeply immersed in international environment, my English ability improved significantly.
                             Thanks to that, earlier in 2021, I took the TOEIC English test and achieved <em>945/990 points</em>.
                         </li>
                         <li>
                             Started out as a C++ Game Programmer, I developed my interest in Computer Graphics.
-                            I am in charge of gameplay programming and graphics optimization for games. 
+                            I am in charge of gameplay programming and graphics optimization for games.
                             I am well trained in OpenGL, shader programming and various graphics debugging tools.
                         </li>
                         <li>
@@ -257,7 +257,7 @@ export default function ExperienceSection() {
                                     Sharkdash, built using 2D in-house engine.
                                 </li>
                                 <li>
-                                    Ice Age Adventures, built using in-house 3D engine. 
+                                    Ice Age Adventures, built using in-house 3D engine.
                                 </li>
                                 <li>
                                     Brothers in Arms 3, built using Irrlicht-based in-house engine (3D).
@@ -273,7 +273,7 @@ export default function ExperienceSection() {
                     </ul>
                 </Trans></Description>
             </ContentContainer>
-            <ContentContainer active={activeSet===3}>
+            <ContentContainer active={activeSet === 3}>
                 <Title><Trans i18nKey="experience.position.fpt">
                     Senior Software Developer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.fpt-software.com/"><em>FPT Software</em></a>
                 </Trans></Title>
@@ -282,17 +282,17 @@ export default function ExperienceSection() {
                     <ul>
                         <li>
                             I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>.
-                            That was a migration project, bringing an old 32-bit based system to 64-bit. 
-                            I was in charge of building custom developement tools (CLI) for the team. 
+                            That was a migration project, bringing an old 32-bit based system to 64-bit.
+                            I was in charge of building custom developement tools (CLI) for the team.
                             I did review other member&apos;s code to ensure source code quality.
                         </li>
                         <li>
                             I developed application for an entertainment system running on Automobile devices (in parnership with LG).
-                            That was media playing application, built with Qt. 
+                            That was media playing application, built with Qt.
                             I am in charge of feature implementation and <em>overall performance optimization</em>.
                         </li>
                         <li>
-                            Over the course of 2 years at FPT Software, I have received various training on Project Management. 
+                            Over the course of 2 years at FPT Software, I have received various training on Project Management.
                             I learned how to manage a small team and was pretty successful at it.
                         </li>
                         <li>
@@ -301,7 +301,7 @@ export default function ExperienceSection() {
                     </ul>
                 </Trans></Description>
             </ContentContainer>
-            <ContentContainer active={activeSet===4}>
+            <ContentContainer active={activeSet === 4}>
                 <Title><Trans i18nKey="experience.position.university">
                     Bachelor Degree <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://utehy.edu.vn/"><em>Hung Yen University of Technology and Education</em></a>
                 </Trans></Title>
@@ -309,7 +309,7 @@ export default function ExperienceSection() {
                 <Description><Trans i18nKey="experience.desc.university">
                     <ul>
                         <li>
-                            My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>. 
+                            My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>.
                             I got perfect mark <em>(10/10)</em> in Computer Programming, Semester Project #4.
                             I have most major subjects above A grade <em>(8.0+/10)</em>, with A+ in Graduation Project <em>(9.2/10)</em>.
                         </li>

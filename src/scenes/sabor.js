@@ -14,8 +14,7 @@ const USE_FBX = false;
 
 function onWindowResize() {
     let canvas = document.getElementById(CANVAS_ID);
-    if(!canvas)
-    {
+    if (!canvas) {
         return;
     }
     canvas.style = "";
@@ -40,10 +39,10 @@ function init() {
     renderer.setSize(w, h);
     renderer.shadowMap.enabled = true;
     if (USE_CAMERA_CONTROL) {
-        const isTouchDevice =  (('ontouchstart' in window) ||
+        const isTouchDevice = (('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
             (navigator.msMaxTouchPoints > 0));
-        if(!isTouchDevice) {
+        if (!isTouchDevice) {
             const controls = new OrbitControls(camera, renderer.domElement);
             controls.target.set(0, 80, 0);
             controls.enableRotateY = false;
@@ -66,10 +65,10 @@ async function buildScene() {
     hemiLight.intensity = 2;
     scene.add(hemiLight);
 
-    const backLight = new THREE.PointLight( 0xffffff, 1, 600 );
+    const backLight = new THREE.PointLight(0xffffff, 1, 600);
     //backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 15, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
     backLight.position.set(0, 250, -70);
-    scene.add( backLight );
+    scene.add(backLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff);
     dirLight.intensity = 1;
@@ -93,8 +92,7 @@ async function buildScene() {
     ground.material.transparent = true;
     scene.add(ground);
 
-    if(USE_FBX)
-    {
+    if (USE_FBX) {
         const loader = new FBXLoader();
         loader.setPath('/assets/fbx/');
         loader.setResourcePath('/assets/textures/');
@@ -115,11 +113,10 @@ async function buildScene() {
             window.setTimeout(playIntro, 0);
         });
     }
-    else
-    {
+    else {
         const loader = new GLTFLoader();
         loader.setPath('/assets/gltf/');
-        loader.load( 'sabor.glb', function ( gltf ) {
+        loader.load('sabor.glb', function (gltf) {
             animator = new THREE.AnimationMixer(gltf.scene);
             gltf.scene.traverse(child => {
                 if (!child.isMesh) {
@@ -149,18 +146,18 @@ function animate() {
 }
 
 function playIntro() {
-    const animation = fadeToAction('intro', 0.0 );
+    const animation = fadeToAction('intro', 0.0);
     animation.clampWhenFinished = true;
     animation.setLoop(THREE.LoopOnce);
-    animator.addEventListener( 'finished', returnToIdle );
+    animator.addEventListener('finished', returnToIdle);
 }
 
 function returnToIdle() {
-    animator.removeEventListener( 'finished', returnToIdle );
+    animator.removeEventListener('finished', returnToIdle);
     fadeToAction('idle', 0.25);
 }
 
-function fadeToAction( name, duration ) {
+function fadeToAction(name, duration) {
     const animation = animator.clipAction(sabor.animations.find(e => e.name === name));
     return animation.reset().fadeIn(duration).play();
 }

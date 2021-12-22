@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styled, {css} from 'styled-components';
+import styled, { css } from 'styled-components';
 import tw from 'twin.macro';
 
 const Container = styled.div`
@@ -27,7 +27,7 @@ const Label = styled.h3`
         md:text-base
         duration-300
     `}
-    ${props => props.active ?  
+    ${props => props.active ?
         css`${tw`
             text-blue-500
         `}` :
@@ -80,9 +80,9 @@ const Graphic = styled.label`
 export default function SwitchButton(props) {
     var [value, setValue] = useState(false);
     return <Container>
-            <Label active={!value} onClick={() => {setValue(false); props.onChange(false);}}>{props.labelA}</Label>
-            <Button id={props.inputId} type="checkbox" checked={value} onChange={() => {setValue(!value); props.onChange(!value);}} />
-            <Graphic htmlFor={props.inputId}/>
-            <Label active={value} onClick={() => {setValue(true); props.onChange(true);}}>{props.labelB}</Label>
+        <Label active={!value} onClick={() => { setValue(false); props.onChange(false); }}>{props.labelA}</Label>
+        <Button id={props.inputId} type="checkbox" checked={value} onChange={() => { setValue(!value); props.onChange(!value); }} />
+        <Graphic htmlFor={props.inputId} />
+        <Label active={value} onClick={() => { setValue(true); props.onChange(true); }}>{props.labelB}</Label>
     </Container>
 }

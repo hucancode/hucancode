@@ -13,12 +13,12 @@ export default class ThemeToggle extends React.Component {
     }
 
     componentDidMount() {
-        if (localStorage.theme === 'dark' || 
+        if (localStorage.theme === 'dark' ||
             (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            this.setState(state => {return {...state, isDarkMode: true };});
+            this.setState(state => { return { ...state, isDarkMode: true }; });
             document.documentElement.classList.add('dark');
         } else {
-            this.setState(state => {return {...state, isDarkMode: false };});
+            this.setState(state => { return { ...state, isDarkMode: false }; });
             document.documentElement.classList.remove('dark');
         }
         this.controller = anime.timeline({ autoplay: false });
@@ -89,7 +89,7 @@ export default class ThemeToggle extends React.Component {
 
     render() {
         const switchNightMode = () => {
-            this.setState(state => {return {...state, isDarkMode: !this.state.isDarkMode };});
+            this.setState(state => { return { ...state, isDarkMode: !this.state.isDarkMode }; });
             let theme = this.state.isDarkMode ? 'light' : 'dark';
             localStorage.theme = theme;
         };

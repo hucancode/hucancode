@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import DragonScene from "../scenes/dragon";
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import Head from 'next/head'
 
 const ProjectContainer = styled.div`
     ${tw`
@@ -92,29 +93,32 @@ const DetailContainer = styled.div`
 export default function ProceduralDragon() {
     const { t } = useTranslation();
     return <ProjectContainer>
-                <CanvasContainer>
-                    <DragonScene/>
-                </CanvasContainer>
-                
-                <DetailContainer> <Trans i18nKey="challenge.dragon-full">
-                    <h2>Procedural Dragon</h2>
-                    <small>🛠 ThreeJS, Vertex Shader</small>
-                    <p>Dragon animations are procedurally generated with following steps:</p>
-                    <ul>
-                        <li>Load static dragon mesh. Posed in a straight line</li>
-                        <li>Build a curve using THREE.CatmullRomCurve3</li>
-                        <li>Pass curve data down to GPU via a texture</li>
-                        <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
-                    </ul>
-                </Trans> </DetailContainer>
-            </ProjectContainer>
+        <Head>
+            <title>Procedural Dragon</title>
+        </Head>
+        <CanvasContainer>
+            <DragonScene />
+        </CanvasContainer>
+
+        <DetailContainer> <Trans i18nKey="challenge.dragon-full">
+            <h2>Procedural Dragon</h2>
+            <small>🛠 ThreeJS, Vertex Shader</small>
+            <p>Dragon animations are procedurally generated with following steps:</p>
+            <ul>
+                <li>Load static dragon mesh. Posed in a straight line</li>
+                <li>Build a curve using THREE.CatmullRomCurve3</li>
+                <li>Pass curve data down to GPU via a texture</li>
+                <li>Inside vertex shader, read texture data and set vertex position accordingly</li>
+            </ul>
+        </Trans> </DetailContainer>
+    </ProjectContainer>
 }
 
 export async function getStaticProps({ locale }) {
     return {
-      props: {
-        ...(await serverSideTranslations(locale, ['translation'])),
-        // Will be passed to the page component as props
-      },
+        props: {
+            ...(await serverSideTranslations(locale, ['translation'])),
+            // Will be passed to the page component as props
+        },
     };
-  }
+}

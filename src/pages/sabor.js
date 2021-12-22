@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import SaborScene from "../scenes/sabor";
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import Head from 'next/head'
 
 const ProjectContainer = styled.div`
     ${tw`
@@ -92,23 +93,26 @@ const DetailContainer = styled.div`
 export default function Sabor() {
     const { t } = useTranslation();
     return <ProjectContainer>
-                <CanvasContainer>
-                    <SaborScene/>
-                </CanvasContainer>
-                
-                <DetailContainer> <Trans i18nKey="challenge.sabor">
-                    <h2>Sabor</h2>
-                    <small>🛠 ThreeJS, Blender</small>
-                    <p>This is a game-ready character. Rigged and animated using Blender</p>
-                </Trans> </DetailContainer>
-            </ProjectContainer>
+        <Head>
+            <title>Sabor Game Character</title>
+        </Head>
+        <CanvasContainer>
+            <SaborScene />
+        </CanvasContainer>
+
+        <DetailContainer> <Trans i18nKey="challenge.sabor">
+            <h2>Sabor</h2>
+            <small>🛠 ThreeJS, Blender</small>
+            <p>This is a game-ready character. Rigged and animated using Blender</p>
+        </Trans> </DetailContainer>
+    </ProjectContainer>
 }
 
 export async function getStaticProps({ locale }) {
     return {
-      props: {
-        ...(await serverSideTranslations(locale, ['translation'])),
-        // Will be passed to the page component as props
-      },
+        props: {
+            ...(await serverSideTranslations(locale, ['translation'])),
+            // Will be passed to the page component as props
+        },
     };
-  }
+}
