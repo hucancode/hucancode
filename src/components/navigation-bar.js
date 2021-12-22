@@ -138,7 +138,7 @@ export default function Navbar() {
         <HamburgerContainer onClick={() => setDrawerOpen(true)}>
             <HamburgerButton />
         </HamburgerContainer>
-        <Link href='/'>
+        <Link href='/' passHref>
             <LogoContainer>
                 <Logo />
             </LogoContainer>
