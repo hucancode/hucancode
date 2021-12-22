@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useMediaQuery } from 'react-responsive';
 import styled from "styled-components";
 import tw from "twin.macro";
 import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
 import Logo from "../widgets/logo";
-import { SCREENS } from './screens';
 import { useTranslation } from 'next-i18next';
 
 const Container = styled.nav`
@@ -100,12 +98,15 @@ const HamburgerContainer = styled.button`
 `;
 
 export default function Navbar() {
-    const isDesktop = useMediaQuery({ minWidth: SCREENS.md });
+    let isTouchDevice = false;
     const [isDrawerOpen, setDrawerOpen] = useState(false);
     const drawerRef = useRef(null);
     const { t } = useTranslation();
 
     useEffect(() => {
+        isTouchDevice = (('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.msMaxTouchPoints > 0));
         const closeDrawer = event => {
             if (drawerRef.current && drawerRef.current.contains(event.target)) {
                 return;
@@ -118,7 +119,7 @@ export default function Navbar() {
         return () => document.removeEventListener("mousedown", closeDrawer);
     }, [isDrawerOpen]);
 
-    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || isDesktop}>
+    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || !isTouchDevice}>
         <NavItem>
             <a href='#skill'>{t('nav.skill')}</a>
         </NavItem>
