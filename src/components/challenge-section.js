@@ -139,7 +139,7 @@ export default function ChallengeSection() {
         <ShowcaseContainer>
             <ProjectCard>
                 <ProjectMedia>
-                    <video autoPlay muted loop src='/assets/video/dragon-20s.webm' />
+                    <video autoPlay muted loop src="/assets/video/dragon-600-20s.webm" />
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
@@ -151,7 +151,7 @@ export default function ChallengeSection() {
             </ProjectCard>
             <ProjectCard>
                 <ProjectMedia>
-                    <video autoPlay muted loop src='/assets/video/spider-20s.webm' />
+                    <video autoPlay muted loop src='/assets/video/spider-600-20s.webm' />
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
@@ -163,7 +163,7 @@ export default function ChallengeSection() {
             </ProjectCard>
             <ProjectCard>
                 <ProjectMedia>
-                    <video autoPlay muted loop src='/assets/video/sabor-20s.webm' />
+                    <video autoPlay muted loop src='/assets/video/sabor-600-20s.webm' />
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
