@@ -33,17 +33,21 @@ const ProjectCard = styled.div`
         text-center
         shadow-lg
         rounded-lg
-        w-full max-w-screen-lg
+        w-full max-w-screen-md
         overflow-hidden
     `}
     flex-grow: 1;
-    canvas {
-        ${tw`
-            w-full md:w-2/3 h-full
-        `}
-        flex-grow: 1;
-        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
-      }
+`;
+
+const ProjectMedia = styled.div`
+    ${tw`
+        flex justify-start items-center
+        w-full md:w-2/3 h-full
+        p-4
+        overflow-hidden
+    `}
+    flex-grow: 1;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
 `;
 
 const ProjectDetail = styled.div`
@@ -99,10 +103,12 @@ export default function ProceduralDragon() {
         <Head>
             <title>{t("dragon.title")}</title>
         </Head>
-        <Navbar/>
+        <Navbar />
         <Main>
             <ProjectCard>
-                <DragonScene />
+                <ProjectMedia>
+                    <DragonScene />
+                </ProjectMedia>
                 <ProjectDetail>
                     <h2>{t("dragon.title")}</h2>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>

@@ -29,21 +29,25 @@ const Main = styled.main`
 
 const ProjectCard = styled.div`
     ${tw`
-        flex flex-col md:flex-row justify-start items-center
+        flex flex-col md:flex-row justify-start items-stretch
         text-center
         shadow-lg
         rounded-lg
-        w-full max-w-screen-lg
+        w-full max-w-screen-md
         overflow-hidden
     `}
     flex-grow: 1;
-    canvas {
-        ${tw`
-            w-full md:w-2/3 h-full
-        `}
-        flex-grow: 1;
-        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
-      }
+`;
+
+const ProjectMedia = styled.div`
+    ${tw`
+        flex justify-start items-center
+        w-full md:w-2/3 h-full
+        p-4
+        overflow-hidden
+    `}
+    flex-grow: 1;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
 `;
 
 const ProjectDetail = styled.div`
@@ -105,7 +109,9 @@ export default function Sabor() {
                 <Head>
                     <title>{t("sabor.title")}</title>
                 </Head>
-                <SaborScene />
+                <ProjectMedia>
+                    <SaborScene />
+                </ProjectMedia>
                 <ProjectDetail>
                     <h2>{t("sabor.title")}</h2>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>

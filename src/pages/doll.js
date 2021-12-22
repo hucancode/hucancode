@@ -32,7 +32,7 @@ const ProjectCard = styled.div`
         text-center
         shadow-lg
         rounded-lg
-        w-full max-w-screen-lg
+        w-full max-w-screen-md
         overflow-hidden
     `}
     flex-grow: 1;
