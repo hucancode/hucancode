@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next';
 import { SiThreedotjs, SiUnrealengine, SiUnity, SiBlender, SiOpengl } from "react-icons/si";
+import { GiPuppet } from 'react-icons/gi'
 
 const Container = styled.section`
     ${tw`
@@ -61,6 +62,7 @@ const ProjectMedia = styled.div`
     max-w-screen-md
     object-contain
   `}
+  flex-grow: 1;
   background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
 `;
 
@@ -87,6 +89,7 @@ const ProjectDetail = styled.div`
             font-black
             dark:text-indigo-100
             text-black
+            cursor-pointer
         `}
     }
     span {
@@ -150,6 +153,15 @@ export default function ChallengeSection() {
                 <ProjectDetail>
                     <Link href="spider"><h2>{t("challenge.spider")}</h2></Link>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
+                </ProjectDetail>
+            </ProjectCard>
+            <ProjectCard>
+                <ProjectMedia>
+                    <video autoPlay muted loop src='/assets/video/sabor-20s.webm' />
+                </ProjectMedia>
+                <ProjectDetail>
+                    <Link href="sabor"><h2>{t("challenge.sabor")}</h2></Link>
+                    <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><GiPuppet size="1.5em"/></span>
                 </ProjectDetail>
             </ProjectCard>
             <ProjectCard>

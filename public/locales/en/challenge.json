@@ -5,7 +5,11 @@
     },
     "spider": {
         "title": "Procedural Spider",
-        "description": "<0>Spider animations are procedurally generated using Inverse Kinematics</0>"
+        "description": "<0>Spider animations are procedurally generated using Inverse Kinematics.</0>"
+    },
+    "sabor": {
+        "title": "Sabor Game Character",
+        "description": "<0>This is a game-ready character. Rigged and animated using Blender.</0>"
     },
     "weapon-master": {
         "title": "Weapon Master",

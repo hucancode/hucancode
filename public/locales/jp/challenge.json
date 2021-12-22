@@ -5,7 +5,11 @@
     },
     "spider": {
         "title": "手続き型生成蜘蛛",
-        "description": "<0>蜘蛛のアニメーションは、逆運動学（Inverse Kinematics）を使用して手続き的に生成されます</0>"
+        "description": "<0>蜘蛛のアニメーションは、逆運動学（Inverse Kinematics）を使用して手続き的に生成されます。</0>"
+    },
+    "sabor": {
+        "title": "Saborゲームキャラクター",
+        "description": "<0>これはゲーム対応のキャラクターです。 Blenderを使用してリギングとアニメーションを作成しました。</0>"
     },
     "weapon-master": {
         "title": "武器達人",

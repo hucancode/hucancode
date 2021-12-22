@@ -26,24 +26,16 @@ const ProjectContainer = styled.div`
         text-center
         shadow-lg
         rounded-lg
-        w-screen h-screen
+        w-full max-w-screen-lg
         overflow-hidden
     `}
-`;
-
-const CanvasContainer = styled.div`
-  ${tw`
-    flex
-    flex-col
-    items-center
-    justify-center
-    relative
-    right-0
-    w-full
-    h-full
-    object-contain
-  `}
-  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
+    flex-grow: 1;
+    canvas {
+        ${tw`
+            w-full md:w-2/3 h-full
+        `}
+        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
+      }
 `;
 
 const DetailContainer = styled.div`
@@ -104,9 +96,7 @@ export default function Sabor() {
             <Head>
                 <title>{t("sabor.title")}</title>
             </Head>
-            <CanvasContainer>
-                <SaborScene />
-            </CanvasContainer>
+            <SaborScene />
             <DetailContainer>
                 <h2>{t("sabor.title")}</h2>
                 <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>

@@ -67,6 +67,7 @@ const LogoContainer = styled.div`
         h-12
         bg-transparent
         select-none
+        cursor-pointer
     `}
 `;
 
