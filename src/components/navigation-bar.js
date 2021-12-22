@@ -98,15 +98,15 @@ const HamburgerContainer = styled.button`
 `;
 
 export default function Navbar() {
-    let isTouchDevice = false;
     const [isDrawerOpen, setDrawerOpen] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
     const drawerRef = useRef(null);
     const { t } = useTranslation();
 
     useEffect(() => {
-        isTouchDevice = (('ontouchstart' in window) ||
+        setIsTouchDevice((('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
-            (navigator.msMaxTouchPoints > 0));
+            (navigator.msMaxTouchPoints > 0)));
         const closeDrawer = event => {
             if (drawerRef.current && drawerRef.current.contains(event.target)) {
                 return;
