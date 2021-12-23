@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from 'next-i18next';
-import SwitchButton from "../widgets/switchButton";
+import SwitchButton from "../widgets/switch-button";
 import { FcReading, FcVoicePresentation } from "react-icons/fc";
 import { RiStarFill, RiStarHalfFill, RiStarLine } from "react-icons/ri";
 

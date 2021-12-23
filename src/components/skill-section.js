@@ -21,7 +21,7 @@ import {
 import { GrMysql } from "react-icons/gr";
 import { DiNodejs } from "react-icons/di";
 import { useTranslation } from 'next-i18next';
-import SwitchButton from "../widgets/switchButton";
+import SwitchButton from "../widgets/switch-button";
 
 function Container(props) {
     return <section className="container 

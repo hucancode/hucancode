@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import HamburgerButton from "../widgets/hamburgerButton";
-import ThemeToggle from "../widgets/themeToggle";
+import HamburgerButton from "../widgets/hamburger-button";
+import ThemeToggle from "../widgets/theme-toggle";
 import Logo from "../widgets/logo";
 import { useTranslation } from 'next-i18next';
 import Link from "next/link";
