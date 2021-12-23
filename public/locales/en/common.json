@@ -12,6 +12,6 @@
         "downloadResume": "Download my resume"
     },
     "note": {
-        "madeWith": "Deployed with <code>Vercel</code> and <code>Github</code><br/>Made with <code>Next.js, Three.js, TailwindCSS, Styled-Components</code> and hundreds of other tools<br />"
+        "madeWith": "Deployed with <code>Vercel</code> and <code>Github</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and hundreds of other tools<br />"
     }
 }

@@ -21,7 +21,7 @@ export default function FootNote() {
     return <Container>
         <p>
             <Trans i18nKey="note.madeWith">
-                Deployed with <code>Vercel</code> and <code>Github</code><br/>Made with <code>Next.js, Three.js, TailwindCSS, Styled-Components</code> and hundreds of other tools<br />
+                Deployed with <code>Vercel</code> and <code>Github</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and hundreds of other tools<br />
             </Trans>
         </p>
     </Container>
