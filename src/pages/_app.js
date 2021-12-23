@@ -1,6 +1,6 @@
 import React from 'react';
 import { appWithTranslation } from 'next-i18next';
-import '../styles/index.css';
+import '../styles/global.css';
 import Head from 'next/head'
 
 function App({ Component, pageProps }) {

@@ -1,25 +1,10 @@
 import React from "react";
-import styled from 'styled-components';
-import tw from 'twin.macro';
 
-const Container = styled.div`
-    ${tw`
-        overflow-hidden
-        relative
-        h-0
-        w-full
-    `}
-    padding-bottom: 56.25%;
-    iframe {
-        ${tw`
-            absolute
-            left-0
-            top-0
-            w-full
-            h-full
-        `}
-    }
-`;
+function Container(props) {
+    return <div className="youtube-frame" >
+        {props.children}
+    </div>
+}
 
 export default function YoutubeVideo(props) {
     return <Container> <iframe

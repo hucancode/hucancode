@@ -1,161 +1,79 @@
 import React, { useState } from "react";
-import styled, { css } from 'styled-components';
-import tw from 'twin.macro';
 import { useTranslation, Trans } from 'next-i18next';
 
-const Container = styled.div`
-    ${tw`
-        container
-        flex
-        flex-col
-        items-center
+function Container(props)
+{
+    return <section className="container
+        flex flex-col items-center
         p-10
         text-center
         overflow-hidden
-        bg-indigo-100
-        dark:bg-black
-    `}
-`;
+        bg-indigo-100 dark:bg-black" id={props.id}>
+        {props.children}
+    </section>
+}
 
-const SectionTitle = styled.h1`
-    ${tw`
-        text-2xl
+function SectionTitle(props)
+{
+    return <h1 className="text-2xl
         mb-5
-        font-bold
-    `}
-`;
+        font-bold" >
+        {props.children}
+    </h1>
+}
 
-const HistoryContainer = styled.div`
-    ${tw`
-        w-full
-        flex
-        flex-col
-        md:flex-row
-        justify-start
-        max-w-screen-lg
-    `}
-`;
+function HistoryContainer(props)
+{
+    return <div className="w-full max-w-screen-lg
+        flex flex-col md:flex-row justify-start" >
+        {props.children}
+    </div>
+}
 
-const HistoryNavigator = styled.div`
-    ${tw`
-        flex
-        mb-5
-        md:flex-col
-        md:mb-0
-        md:mr-5
-        md:w-1/3
-        xl:w-1/5
-        overflow-y-auto	
-    `}
-`;
+function HistoryNavigator(props)
+{
+    return <div className="flex md:flex-col
+        mb-5 md:mb-0 md:mr-5
+        w-72 md:w-1/3 xl:w-1/5 max-w-screen-sm
+        overflow-x-auto" >
+        {props.children}
+    </div>
+}
 
-const HistoryButton = styled.button`
-    ${tw`
-        h-16
-        md:h-10
-        flex
-        md:flex-row
-        flex-col
-        items-center
-        pl-4
-        pr-4
-        pt-1
-        pb-1
-        md:pt-2
-        md:pb-2
-        m-1
-        duration-300
-        text-white
-        text-xs
-        md:text-base
-        dark:text-gray-300
-        min-w-[7.5rem]
-    `}
-    h2 {
-        ${tw`
-            mb-1
-            md:mr-2
-            md:mb-0
-        `}
-    }
-    ${props => props.active ?
-        css`${tw`
-            bg-black
-        `}` :
-        css`${tw`
-            bg-gray-500
-        `}`
-    }
-`;
+function HistoryButton(props)
+{
+    return <button className="history-button" onClick={props.onClick} active={props.active?'true':undefined}>
+        {props.children}
+    </button>
+}
 
-const ContentContainer = styled.div`
-    ${tw`
-        flex
-        flex-col
-        items-start
-        duration-300
-        md:w-2/3
-        xl:w-4/5
-    `}
-    ${props => props.active ? "" : "display:none;"}
-`;
+function ContentContainer(props)
+{
+    return <div className="history-content" active={props.active?'true':undefined} >
+        {props.children}
+    </div>
+}
 
-const Title = styled.h3`
-    ${tw`
-        text-base
-        text-left
-    `}
-    & em {
-        ${tw`
-            text-purple-900
-            dark:text-yellow-100
-            hover:text-purple-600
-            hover:dark:text-yellow-400
-        `}
-    }
-`;
+function Title(props)
+{
+    return <h3 className="history-title text-base text-left" >
+        {props.children}
+    </h3>
+}
 
-const Time = styled.p`
-    ${tw`
-        text-xs
-        text-left        
-    `}
-`;
+function Time(props)
+{
+    return <p className="text-xs text-left" >
+        {props.children}
+    </p>
+}
 
-const Description = styled.div`
-    ${tw`
-        w-full
-        text-sm
-        font-light
-        text-left
-        mt-5
-        text-black
-        dark:text-white
-    `}
-    font-family: "Noto Sans JP", sans-serif;
-    & em {
-        ${tw`
-            text-purple-900
-            dark:text-yellow-100
-        `}
-    }
-    & ul li {
-        ${tw`
-            relative
-            pl-5
-            before:content-["▸"]
-            before:absolute
-            before:left-0
-        `}
-    }
-`;
-
-// export default function ExperienceSection() {
-//     return <Container id='experiences'>
-//         <SectionTitle>Where I’ve worked</SectionTitle>
-//         <UnderConstruction/>
-//     </Container>
-// }
+function Description(props)
+{
+    return <div className="history-desc">
+        {props.children}
+    </div>
+}
 
 export default function ExperienceSection() {
     var [activeSet, setActiveSet] = useState(0);

@@ -1,9 +1,9 @@
 module.exports = {
     content: [
-        "./pages/**/*.{js,ts,jsx,tsx}",
-        "./components/**/*.{js,ts,jsx,tsx}",
-        "./widgets/**/*.{js,ts,jsx,tsx}",
-        "./styles/**/*.css",
+        "./src/pages/**/*.js",
+        "./src/components/**/*.js",
+        "./src/widgets/**/*.js",
+        "./src/styles/**/*.css",
     ],
     darkMode: 'class',
     theme: {
@@ -24,6 +24,32 @@ module.exports = {
                 '3/2': '150%',
                 '5/2': '250%',
             },
+            animation: {
+                'waving-hand': 'waving-hand 2.5s infinite',
+                'move-left': 'move-left 1.5s linear infinite',
+                'language-guide': 'language-guide 5s linear alternate infinite',
+            },
+            keyframes: {
+                'waving-hand': {
+                    '0%': { transform: 'rotate(0.0deg)' },
+                    '10%': { transform: 'rotate(20deg)' },
+                    '20%': { transform: 'rotate(-10deg)' },
+                    '30%': { transform: 'rotate(10deg)' },
+                    '40%': { transform: 'rotate(-10deg)' },
+                    '50%': { transform: 'rotate(0.0deg)'},
+                },
+                'move-left': {
+                    'to' : { transform: 'translateX(-50%)' }
+                },
+                'language-guide': {
+                    '0%': { opacity: '1', content: "\"Tap here to change language\""},
+                    '30%': { opacity: '1', content: "\"Tap here to change language\""},
+                    '50%': { opacity: '0', content: "\"Tap here to change language\""},
+                    '51%': { opacity: '0', content: "\"言語変更には、ここにタップ\""},
+                    '70%': {opacity: '1', content: "\"言語変更には、ここにタップ\""},
+                    '100%': {opacity: '1', content: "\"言語変更には、ここにタップ\""},
+                }
+            }
         },
         screens: {
             sm: "640px",

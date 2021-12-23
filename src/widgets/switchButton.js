@@ -1,88 +1,36 @@
 import React, { useState } from "react";
-import styled, { css } from 'styled-components';
-import tw from 'twin.macro';
 
-const Container = styled.div`
-    ${tw`
-        w-full
-        flex
-        items-center
-        justify-center
-    `}
-`;
+function Container(props) {
+    return <div className="switch-button">
+        {props.children}
+    </div>
+}
 
-const Button = styled.input`
-    ${tw`
-        w-0
-        h-0
-        invisible
-    `}
-`;
-const Label = styled.h3`
-    ${tw`
-        w-1/3
-        cursor-pointer
-        select-none
-        text-xs
-        md:text-base
-        duration-300
-    `}
-    ${props => props.active ?
-        css`${tw`
-            text-blue-500
-        `}` :
-        css`${tw`
-            text-gray-400
-            hover:text-blue-500
-        `}`
-    }
-`;
-const Graphic = styled.label`
-    ${tw`
-        bg-blue-300
-        w-20
-        h-8
-        rounded-2xl
-        cursor-pointer
-        block
-    `}
-    position: relative;
-    margin: 1rem;
-        
-    &:after {
-        content: '';
-        ${tw`
-            absolute
-            duration-300
-            bg-white
-            top-1
-            left-1
-            w-6
-            h-6
-            rounded-full
-        `}
-    }
+function ButtonGraphic(props) {
+    return <label htmlFor={props.htmlFor} className="bg-blue-300 peer-checked:bg-green-300
+        duration-500
+        peer-checked:after:-translate-x-full
+        peer-checked:after:left-[calc(100%-0.2rem)]" />
+}
 
-    input:checked + & {
-        ${tw`
-            bg-green-300
-        `}
-    }
-    input:checked + &:after {
-        left: calc(100% - 0.2rem);
-        transform: translateX(-100%);
-    }
-    &:active:after {
-        width: 60%;
-    }
-`;
+function ButtonLabelA(props) {
+    return <h3 onClick={props.onClick} className="text-blue-500 peer-checked:text-gray-400">
+        {props.children}
+    </h3>
+}
+
+function ButtonLabelB(props) {
+    return <h3 onClick={props.onClick} className="text-gray-400 peer-checked:text-blue-500">
+        {props.children}
+    </h3>
+}
 
 export default function SwitchButton(props) {
     var [value, setValue] = useState(false);
     return <Container>
-        <Label active={!value} onClick={() => { setValue(false); props.onChange(false); }}>{props.labelA}</Label>
-        <Button id={props.inputId} type="checkbox" checked={value} onChange={() => { setValue(!value); props.onChange(!value); }} />
-        <Graphic htmlFor={props.inputId} />
-        <Label active={value} onClick={() => { setValue(true); props.onChange(true); }}>{props.labelB}</Label>
+        <input id={props.inputId} type="checkbox" className="peer" onChange={() => { setValue(!value); props.onChange(!value); }} />
+        <ButtonLabelA onClick={() => { setValue(false); props.onChange(false); }}>{props.labelA}</ButtonLabelA>
+        <ButtonGraphic htmlFor={props.inputId} />
+        <ButtonLabelB onClick={() => { setValue(true); props.onChange(true); }}>{props.labelB}</ButtonLabelB>
     </Container>
 }

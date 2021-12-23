@@ -1,78 +1,69 @@
 import React from "react";
-import styled from 'styled-components';
-import tw from 'twin.macro';
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next';
 import { SiThreedotjs, SiUnrealengine, SiUnity, SiBlender, SiOpengl } from "react-icons/si";
 import { GiPuppet } from 'react-icons/gi'
 
-const Container = styled.section`
-    ${tw`
-        container
-        flex
-        flex-col
-        items-center
+function Container(props)
+{
+    return <section className="container
+        flex flex-col items-center
         text-center
-        p-10
-        //bg-gray-200
-        //dark:bg-black
-    `}
-`;
+        p-10" id={props.id}>
+        {props.children}
+    </section>
+}
 
-const SectionTitle = styled.h1`
-    ${tw`
+function SectionTitle(props)
+{
+    return <h1 className="
         text-2xl
         mb-5
-        font-bold
-    `}
-`;
+        font-bold">
+        {props.children}
+    </h1>
+}
 
-const ShowcaseContainer = styled.div`
-    ${tw`
+function ShowcaseContainer(props)
+{
+    return <div className="
         w-full
         grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10
         text-center
-        w-full
-        max-w-screen-lg
-    `}
-`;
+        max-w-screen-lg" >
+        {props.children}
+    </div>
+}
 
-const ProjectCard = styled.div`
-    ${tw`
+function ProjectCard(props)
+{
+    return <div className="
         flex flex-col justify-center items-center
         text-center
         shadow-lg
         rounded-lg
-        overflow-hidden
-    `}
-`;
+        overflow-hidden">
+        {props.children}
+    </div>
+}
 
-// const UnderConstruction = styled(ConstructionIllustration)`
-//     ${tw`
-//         w-80
-//         h-80
-//     `}
-// `;
+function ProjectMedia(props)
+{
+    return <div className="
+        project-media
+        flex
+        items-center
+        w-full
+        max-w-screen-md
+        object-contain">
+        {props.children}
+    </div>
+}
 
-const ProjectMedia = styled.div`
-  ${tw`
-    flex
-    items-center
-    w-full
-    max-w-screen-md
-    object-contain
-  `}
-  flex-grow: 1;
-  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
-  video {
-    ${tw`
-        p-2
-    `}
-  }
-`;
-
-const ProjectDetail = styled.div`
-    ${tw`
+function ProjectDetail(props)
+{
+    return <div className="
+        project-detail
         flex justify-between items-center gap-4
         text-left
         relative
@@ -82,51 +73,15 @@ const ProjectDetail = styled.div`
         text-gray-600 dark:text-gray-100
         object-contain
         px-4
-        py-6
-    `}
-    h2 {
-        ${tw`
-            font-black
-            dark:text-indigo-100
-            text-black
-            cursor-pointer
-        `}
-    }
-    p {
-        ${tw`
-            text-sm
-        `}
-    }
-    span {
-        ${tw`
-            flex
-            gap-2
-        `}
-    }
-`;
+        py-6">
+        {props.children}
+    </div>
+}
 
-
-const YoutubeContainer = styled.div`
-    ${tw`
-        overflow-hidden
-        relative
-        h-0
-        w-full
-    `}
-    padding-bottom: 56.25%;
-    iframe {
-        ${tw`
-            absolute
-            left-0
-            top-0
-            w-full
-            h-full
-        `}
-    }
-`;
 
 function YoutubeVideo(props) {
-    return <YoutubeContainer> <iframe
+    return <div className="youtube-frame">
+        <iframe 
         width="853"
         height="480"
         src={`https://www.youtube.com/embed/${props.videoId}`}
@@ -134,7 +89,7 @@ function YoutubeVideo(props) {
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
         title="Embedded youtube"
-    /></YoutubeContainer>
+    /></div>
 }
 
 export default function ChallengeSection() {
@@ -148,7 +103,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="dragon" passHref><h2>{t("challenge.dragon")}</h2></Link>
+                        <Link href="/dragon" passHref><a><h2>{t("challenge.dragon")}</h2></a></Link>
                         <p>{t("challenge.dragon-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
@@ -160,7 +115,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="spider" passHref><h2>{t("challenge.spider")}</h2></Link>
+                        <Link href="/spider" passHref><a><h2>{t("challenge.spider")}</h2></a></Link>
                         <p>{t("challenge.spider-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
@@ -172,7 +127,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="sabor" passHref><h2>{t("challenge.sabor")}</h2></Link>
+                        <Link href="/sabor" passHref><a><h2>{t("challenge.sabor")}</h2></a></Link>
                         <p>{t("challenge.sabor-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><GiPuppet size="1.5em"/></span>
@@ -184,7 +139,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="weapon-master" passHref><h2>{t("challenge.weapon-master")}</h2></Link>
+                        <Link href="/weapon-master" passHref><a><h2>{t("challenge.weapon-master")}</h2></a></Link>
                         <p>{t("challenge.weapon-master-sub")}</p>
                     </div>
                     <span><SiUnrealengine size="1.5em" /></span>
@@ -196,7 +151,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="doll" passHref><h2>{t("challenge.doll")}</h2></Link>
+                        <Link href="/doll" passHref><a><h2>{t("challenge.doll")}</h2></a></Link>
                         <p>{t("challenge.doll-sub")}</p>
                     </div>
                     <span><SiUnity size="1.5em" /></span>

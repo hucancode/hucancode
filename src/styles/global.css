@@ -1,0 +1,374 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap");
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+    html,
+    body,
+    #root {
+        @apply flex flex-col items-center
+            w-full min-h-screen
+            m-0 bg-indigo-300 dark:bg-gray-900
+            text-gray-800 dark:text-white antialiased;
+        font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+        "Helvetica Neue", sans-serif;
+    }
+    * {
+        -webkit-tap-highlight-color: rgba(0,0,0,0);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    code {
+        @apply font-mono;
+    }
+
+    nav {
+        @apply container
+        w-full h-16
+        flex flex-row items-center justify-between;
+        ul {
+            @apply flex flex-col md:flex-row
+                z-40
+                list-none
+                fixed md:static 
+                left-0
+                top-0
+                ease-out
+                duration-200
+                px-8
+                py-6
+                transform
+                w-3/4 md:w-auto
+                h-screen md:h-full
+                dark:md:h-full
+                bg-gray-100
+                dark:bg-black
+                md:bg-transparent
+                dark:md:bg-transparent
+                translate-x-0;
+            &:not([open]) {
+                @apply -translate-x-full;
+            }
+            li {
+                @apply text-3xl md:text-xl
+                    dark:text-gray-300
+                    text-gray-900
+                    font-medium
+                    mb-3
+                    md:mr-5
+                    cursor-pointer
+                    transition
+                    duration-300
+                    ease-in-out
+                    hover:text-gray-500
+                    dark:hover:text-gray-100;
+            }
+        }
+    }
+}
+
+@layer components {
+    .youtube-frame {
+        @apply overflow-hidden
+            relative
+            h-0 w-full;
+        padding-bottom: 56.25%;
+        iframe {
+            @apply absolute
+                left-0
+                top-0
+                w-full
+                h-full;
+        }
+    }
+
+    .switch-button {
+        @apply w-full
+            flex items-center justify-center;
+        input {
+            @apply hidden;
+        }
+        label {
+            @apply w-20 h-8
+                rounded-2xl
+                cursor-pointer
+                block 
+                relative
+                m-4
+                after:absolute
+                after:duration-300
+                after:bg-white
+                after:top-1
+                after:left-1
+                after:w-6
+                after:h-6
+                after:rounded-full
+                active:after:w-3/5;
+        }
+        h3 {
+            @apply w-1/3
+                cursor-pointer
+                select-none
+                text-xs
+                md:text-base
+                duration-300
+                hover:text-blue-500;
+        }
+    }
+    .waving-hand {
+        @apply before:content-['👋'] hover:before:animate-waving-hand before:inline-block before:origin-[70%_70%];
+    }
+
+    .resume-download-container {
+        @apply relative
+            rounded-md
+            mt-10
+            p-0.5
+            z-0
+            w-full
+            overflow-hidden
+            before:absolute
+            before:top-0
+            before:left-0
+            before:w-[200%]
+            before:h-full
+            before:-z-10
+            hover:before:animate-move-left
+            before:[background:linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b)]
+            before:[background-size:50%_100%];
+    }
+
+    .skill-set {
+        @apply flex flex-wrap items-center justify-center
+            h-auto scale-y-100
+            duration-300
+            origin-top
+            overflow-hidden;
+        &:not([active]) {
+            @apply h-0 scale-y-0;
+        }
+        li {
+            @apply w-12 h-16
+                flex flex-col items-center
+                m-3;
+            div {
+                @apply w-12 h-12
+                    flex items-center justify-center
+                    text-base
+                    text-gray-700 dark:text-gray-400;
+            }
+            p {
+                @apply text-xs font-mono text-center;
+            }
+        }
+    }
+
+    .language-container {
+        @apply w-full
+            relative
+            h-32
+            max-w-screen-md
+            flex
+            flex-wrap
+            items-center
+            justify-center
+            duration-300
+            origin-top
+            overflow-hidden;
+        &:not([active]) {
+            @apply h-0;
+        }
+    }
+
+    .language-score {
+        @apply w-1/3 h-full
+            flex flex-col items-center justify-between
+            bg-white dark:bg-gray-500
+            text-black dark:text-gray-100
+            p-5;
+        h3 {
+            @apply text-purple-800 dark:text-yellow-100
+            text-lg md:text-2xl
+            font-bold;
+        }
+        p {
+            @apply text-sm font-bold;
+        }
+    }
+
+    .language-rating {
+        @apply w-1/3
+            h-full
+            flex flex-col items-center justify-between
+            bg-blue-100 dark:bg-gray-700
+            text-gray-700 dark:text-gray-200
+            p-5;
+        p {
+            @apply flex text-sm font-bold;
+        }
+    }
+
+    .history-button {
+        @apply min-w-[7.5rem] h-16 md:h-10
+            flex md:flex-row flex-col items-center
+            px-4 py-1 md:py-2
+            m-1
+            bg-gray-500
+            duration-300
+            text-white dark:text-gray-300
+            text-xs md:text-base;
+        &[active] {
+            @apply bg-black;
+        }
+        h2 {
+            @apply mb-1 md:mr-2 md:mb-0;
+        }
+    }
+
+    .history-content {
+        @apply flex flex-col items-start
+            duration-300
+            md:w-2/3
+            xl:w-4/5;
+        &:not([active]) {
+            @apply hidden;
+        }
+    }
+
+    .history-title {
+        em {
+            @apply text-purple-900
+            dark:text-yellow-100
+            hover:text-purple-600
+            hover:dark:text-yellow-400;
+        }
+    }
+
+    .history-desc {
+        @apply w-full
+            text-sm
+            font-light
+            text-left
+            mt-5
+            text-black dark:text-white;
+        font-family: "Noto Sans JP", sans-serif;
+        em {
+            @apply text-purple-900 dark:text-yellow-100;
+        }
+        ul li {
+            @apply relative
+                pl-5
+                before:content-["▸"]
+                before:absolute
+                before:left-0;
+        }
+    }
+
+
+    .project-media {
+        flex-grow: 1;
+        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
+    }
+
+    .project-media  {
+        video {
+            @apply p-2;
+        }
+    }
+
+    .project-detail {
+        h2 {
+            @apply font-black
+            text-black dark:text-indigo-100
+            cursor-pointer;
+        }
+        p {
+            @apply text-sm;
+        }
+        span {
+            @apply flex gap-2;
+        }
+    }
+
+    .contact-container {
+        @apply flex flex-col md:items-start
+            mb-10
+            text-sm
+            items-center;
+        & a {
+            @apply hover:text-blue-900 hover:dark:text-blue-300;
+        }
+    }
+
+    .container-challenge {
+        @apply flex flex-col justify-start items-center gap-4
+            w-full md:h-full min-h-screen
+            bg-indigo-200 dark:bg-gray-900
+            text-gray-800 dark:text-white;
+        main {
+            @apply flex justify-center items-stretch
+                w-full grow
+                py-2 px-5;
+        }
+    }
+
+    .challenge-card {
+        @apply flex flex-col md:flex-row justify-start items-center
+            text-center
+            shadow-lg
+            rounded-lg
+            w-full max-w-screen-md grow
+            overflow-hidden
+            mb-20;
+        .media-3d {
+            @apply flex justify-start items-center
+                w-full md:w-2/3 h-full grow
+                p-4
+                overflow-hidden;
+            background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
+        }
+        .media {
+            @apply flex items-center justify-center
+            relative
+            right-0
+            w-full md:w-2/3 h-full
+            object-contain;
+            background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
+        }
+        .detail {
+            @apply flex flex-col justify-start items-start gap-4
+                text-left
+                relative
+                right-0
+                w-full md:w-1/3 md:h-full 
+                bg-indigo-100 dark:bg-gray-600
+                text-gray-600 dark:text-gray-100
+                object-contain
+                p-4;
+            h2 {
+                @apply font-black
+                    dark:text-indigo-100 text-black;
+            }
+            p, ul {
+                @apply font-normal text-sm;
+            }
+            small {
+                @apply font-thin
+                    text-gray-500 dark:text-gray-300
+                    mb-3;
+            }
+            ul li {
+                @apply relative
+                    pl-5
+                    before:content-["▸"]
+                    before:absolute
+                    before:left-0;
+            }
+            span {
+                @apply flex gap-2;
+            }
+        }
+    }
+}

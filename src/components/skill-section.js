@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import styled, { css } from 'styled-components';
-import tw from 'twin.macro';
 import {
     SiAmazonaws, SiBlender,
     SiCircleci,
@@ -25,103 +23,39 @@ import { DiNodejs } from "react-icons/di";
 import { useTranslation } from 'next-i18next';
 import SwitchButton from "../widgets/switchButton";
 
-const Container = styled.section`
-    ${tw`
-        container
-        flex
-        flex-col
-        items-center
-        bg-indigo-100
-        dark:bg-black
-        pt-10
-        pb-10
-        md:p-10
-        text-center
-        overflow-hidden
-        max-w-screen-lg
-    `}
-`;
-const SectionTitle = styled.h1`
-    ${tw`
-        text-2xl
-        mb-5
-        font-bold
-    `}
-`;
+function Container(props) {
+    return <section className="container 
+    flex flex-col items-center
+    bg-indigo-100 dark:bg-black
+    py-10 md:px-10
+    text-center
+    overflow-hidden
+    max-w-screen-lg" id={props.id}>
+        {props.children}
+    </section>
+}
 
-const SkillSet = styled.ul`
-    ${tw`
-        flex
-        flex-wrap
-        items-center
-        justify-center
-        duration-300
-        origin-top
-        overflow-hidden
-    `}
-    ${props => props.active ? `height: auto;transform: scaleY(1);` : `height: 0; display:hidden;transform: scaleY(0.0);`}
-`;
+function SectionTitle(props) {
+    return <h1 className="text-2xl mb-5 font-bold">
+        {props.children}
+    </h1>
+}
 
-const SkillContainer = styled.li`
-    ${tw`
-        w-12
-        h-16
-        flex
-        flex-col
-        items-center
-        m-3
-    `}
-`;
-
-const SkillIconContainer = styled.div`
-    ${tw`
-        w-12
-        h-12
-        flex
-        items-center
-        justify-center
-        text-base
-        text-gray-700
-        dark:text-gray-400
-    `}
-`;
-
-const SVGIcon = styled.svg`
-    ${tw`
-        w-full
-        fill-current
-        text-gray-700
-        dark:text-gray-400
-    `}
-`;
-
-const SVGIconHollow = styled.svg`
-    ${tw`
-        w-full
-        stroke-current
-        text-gray-700
-        dark:text-gray-400
-    `}
-`;
-
-
-const SkillName = styled.p`
-    ${tw`
-        text-xs
-        font-mono
-        text-center
-    `}
-`;
+function SkillSet(props) {
+    return <ul className="skill-set"  active={props.active?'true':undefined}>
+        {props.children}
+    </ul>
+}
 
 function Skill(props) {
-    return <SkillContainer>
-        <SkillIconContainer>
+    return <li>
+        <div>
             {props.icon}
-        </SkillIconContainer>
-        <SkillName>
+        </div>
+        <p>
             {props.name}
-        </SkillName>
-    </SkillContainer>
+        </p>
+    </li>
 }
 
 export default function SkillSection() {
