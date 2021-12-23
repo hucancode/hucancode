@@ -30,7 +30,7 @@ function Container(props) {
     py-10 md:px-10
     text-center
     overflow-hidden
-    max-w-screen-lg">
+    max-w-screen-lg" id={props.id}>
         {props.children}
     </section>
 }

@@ -13,7 +13,7 @@ function Container(props)
         md:items-start
         justify-around
         p-10
-        md:flex-row">
+        md:flex-row" id={props.id}>
         {props.children}
     </section>
 }

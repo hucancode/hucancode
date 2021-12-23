@@ -9,7 +9,7 @@ function Container(props) {
         flex flex-col items-center
         py-10 md:px-10
         text-center
-        overflow-hidden">
+        overflow-hidden" id={props.id}>
         {props.children}
     </section>
 }
@@ -60,21 +60,21 @@ export default function LanguageSection() {
             <LanguageRating>
                 <FcReading size="3em" />
                 <p>
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarHalfFill size="1.5em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarHalfFill size="1.4em" />
                 </p>
             </LanguageRating>
             <LanguageRating>
                 <FcVoicePresentation size="3em" />
                 <p>
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarLine size="1.5em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarLine size="1.4em" />
                 </p>
             </LanguageRating>
         </LanguageContainer>
@@ -88,21 +88,21 @@ export default function LanguageSection() {
             <LanguageRating>
                 <FcReading size="3em" />
                 <p>
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarLine size="1.5em" />
-                    <RiStarLine size="1.5em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarLine size="1.4em" />
+                    <RiStarLine size="1.4em" />
                 </p>
             </LanguageRating>
             <LanguageRating>
                 <FcVoicePresentation size="3em" />
                 <p>
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarFill size="1.5em" />
-                    <RiStarHalfFill size="1.5em" />
-                    <RiStarLine size="1.5em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarFill size="1.4em" />
+                    <RiStarHalfFill size="1.4em" />
+                    <RiStarLine size="1.4em" />
                 </p>
             </LanguageRating>
         </LanguageContainer>

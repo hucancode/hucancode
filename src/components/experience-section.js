@@ -4,14 +4,11 @@ import { useTranslation, Trans } from 'next-i18next';
 function Container(props)
 {
     return <section className="container
-        flex
-        flex-col
-        items-center
+        flex flex-col items-center
         p-10
         text-center
         overflow-hidden
-        bg-indigo-100
-        dark:bg-black">
+        bg-indigo-100 dark:bg-black" id={props.id}>
         {props.children}
     </section>
 }
@@ -36,11 +33,9 @@ function HistoryContainer(props)
 function HistoryNavigator(props)
 {
     return <div className="flex md:flex-col
-        mb-5
-        md:mb-0
-        md:mr-5
-        md:w-1/3 xl:w-1/5
-        overflow-y-auto" >
+        mb-5 md:mb-0 md:mr-5
+        w-72 md:w-1/3 xl:w-1/5 max-w-screen-sm
+        overflow-x-auto" >
         {props.children}
     </div>
 }

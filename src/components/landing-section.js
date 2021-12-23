@@ -11,7 +11,7 @@ function Container(props) {
         max-w-screen-lg w-full
         flex flex-col md:flex-row items-center justify-around
         overflow-hidden
-        my-10">
+        my-10" id={props.id}>
         {props.children}
     </section>
 }

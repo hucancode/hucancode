@@ -9,7 +9,7 @@ function Container(props)
     return <section className="container
         flex flex-col items-center
         text-center
-        p-10" >
+        p-10" id={props.id}>
         {props.children}
     </section>
 }

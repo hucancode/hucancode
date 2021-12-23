@@ -42,7 +42,7 @@ function HamburgerContainer(props) {
         cursor-pointer
         w-8 h-12
         mr-8
-        select-none">
+        select-none" onClick={props.onClick}>
         {props.children}
     </button>
 }
