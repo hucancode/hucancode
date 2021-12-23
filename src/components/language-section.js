@@ -21,7 +21,7 @@ function SectionTitle(props) {
 }
 
 function LanguageContainer(props) {
-    return <div className="language-container">
+    return <div className="language-container" active={props.active?"true":undefined}>
         {props.children}
     </div>
 }

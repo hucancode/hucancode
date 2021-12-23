@@ -2,17 +2,17 @@ import React from "react";
 
 function Container(props) {
     return <div className="h-full
-    flex
-    items-center
-    justify-center
-    p-1
-    overflow-hidden
-    rounded-full
-    border-2
-    bg-gray-800
-    dark:bg-gray-900
-    border-white
-    dark:border-blue-200">
+        flex
+        items-center
+        justify-center
+        p-1
+        overflow-hidden
+        rounded-full
+        border-2
+        bg-gray-800
+        dark:bg-gray-900
+        border-white
+        dark:border-blue-200">
         {props.children}
     </div>
 }

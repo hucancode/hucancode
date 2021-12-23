@@ -4,42 +4,50 @@ import { useTranslation } from 'next-i18next';
 import { SiThreedotjs, SiUnrealengine, SiUnity, SiBlender, SiOpengl } from "react-icons/si";
 import { GiPuppet } from 'react-icons/gi'
 
-function Container()
+function Container(props)
 {
     return <section className="container
         flex flex-col items-center
         text-center
-        p-10" />
+        p-10" >
+        {props.children}
+    </section>
 }
 
-function SectionTitle()
+function SectionTitle(props)
 {
     return <h1 className="
         text-2xl
         mb-5
-        font-bold"/>
+        font-bold">
+        {props.children}
+    </h1>
 }
 
-function ShowcaseContainer()
+function ShowcaseContainer(props)
 {
     return <div className="
         w-full
         grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10
         text-center
-        max-w-screen-lg" />
+        max-w-screen-lg" >
+        {props.children}
+    </div>
 }
 
-function ProjectCard()
+function ProjectCard(props)
 {
     return <div className="
         flex flex-col justify-center items-center
         text-center
         shadow-lg
         rounded-lg
-        overflow-hidden" />
+        overflow-hidden">
+        {props.children}
+    </div>
 }
 
-function ProjectMedia()
+function ProjectMedia(props)
 {
     return <div className="
         project-media
@@ -47,10 +55,12 @@ function ProjectMedia()
         items-center
         w-full
         max-w-screen-md
-        object-contain" />
+        object-contain">
+        {props.children}
+    </div>
 }
 
-function ProjectDetail()
+function ProjectDetail(props)
 {
     return <div className="
         project-detail
@@ -63,21 +73,15 @@ function ProjectDetail()
         text-gray-600 dark:text-gray-100
         object-contain
         px-4
-        py-6" />
+        py-6">
+        {props.children}
+    </div>
 }
 
 
 function YoutubeVideo(props) {
-    return <div className="
-        overflow-hidden
-        relative
-        h-0
-        w-full" style="padding-bottom: 56.25%;">
-        <iframe class="absolute
-        left-0
-        top-0
-        w-full
-        h-full" 
+    return <div className="youtube-frame">
+        <iframe 
         width="853"
         height="480"
         src={`https://www.youtube.com/embed/${props.videoId}`}
