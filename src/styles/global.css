@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap");
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
     html,
@@ -10,12 +10,10 @@
         @apply flex flex-col items-center
             w-full min-h-full
             m-0 bg-indigo-300 dark:bg-gray-900
-            text-gray-800 dark:text-white;
+            text-gray-800 dark:text-white antialiased;
         font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI",
         "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
         "Helvetica Neue", sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
     }
     * {
         -webkit-tap-highlight-color: rgba(0,0,0,0);
@@ -23,8 +21,7 @@
     }
 
     code {
-        font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-        monospace;
+        @apply font-mono;
     }
 
     nav {
@@ -50,10 +47,10 @@
                 bg-gray-100
                 dark:bg-black
                 md:bg-transparent
-                dark:md:bg-transparent;
-            transform: translateX(0);
+                dark:md:bg-transparent
+                translate-x-0;
             &:not([open]) {
-                transform: translateX(-100%);
+                @apply -translate-x-full;
             }
             li {
                 @apply text-xl
