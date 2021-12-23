@@ -261,6 +261,13 @@
         em {
             @apply text-purple-900 dark:text-yellow-100;
         }
+        ul li {
+            @apply relative
+                pl-5
+                before:content-["▸"]
+                before:absolute
+                before:left-0;
+        }
     }
 
 
