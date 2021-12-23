@@ -1,6 +1,4 @@
 import React from "react";
-import styled from 'styled-components';
-import tw from 'twin.macro';
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head'
@@ -8,95 +6,32 @@ import { SiBlender, SiCplusplus, SiUnrealengine } from "react-icons/si";
 import Navbar from "../components/navigation-bar";
 import YoutubeVideo from "../widgets/youtube";
 import FootNote from "../components/foot-note";
+import '../styles/challenge.css';
 
-const Container = styled.div`
-    ${tw`
-        flex flex-col justify-start items-center gap-4
-        w-screen md:h-full min-h-screen
-        bg-indigo-200 dark:bg-gray-900
-        text-gray-800 dark:text-white
-    `}
-`;
-const Main = styled.main`
-    ${tw`
-        flex justify-center items-stretch
-        w-full 
-        py-2
-        px-5
-    `}
-    flex-grow: 1;
-`;
+function Container(props) {
+    return <div className="container-challenge">
+        {props.children}
+    </div>
+}
 
-const ProjectCard = styled.div`
-    ${tw`
-        flex flex-col md:flex-row justify-start items-center
-        text-center
-        shadow-lg
-        rounded-lg
-        w-full max-w-screen-md
-        overflow-hidden
-        mb-20
-    `}
-    flex-grow: 1;
-`;
+function ProjectCard(props) {
+    return <div className="challenge-card">
+        {props.children}
+    </div>
+}
 
-const YoutubeFrame = styled.div`
-  ${tw`
-    flex items-center justify-center
-    relative
-    right-0
-    w-full md:w-2/3 h-full
-    object-contain
-  `}
-  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
-`;
+function YoutubeFrame(props) {
+    return <div className="media">
+        {props.children}
+    </div>
+}
 
-const ProjectDetail = styled.div`
-    ${tw`
-        flex flex-col justify-start items-start gap-4
-        text-left
-        relative
-        right-0
-        w-full md:w-1/3 md:h-full 
-        bg-indigo-100 dark:bg-gray-600
-        text-gray-600 dark:text-gray-100
-        object-contain
-        p-4
-    `}
-    h2 {
-        ${tw`
-            font-black
-            dark:text-indigo-100 text-black
-        `}
-    }
-    p, ul {
-        ${tw`
-            font-normal
-            text-sm
-        `}
-    }
-    small {
-        ${tw`
-            font-thin
-            text-gray-500 dark:text-gray-300
-            mb-3
-        `}
-    }
-    & ul li {
-        ${tw`
-            relative
-            pl-5
-            before:content-["▸"]
-            before:absolute
-            before:left-0
-        `}
-    }
-    span {
-        ${tw`
-            flex gap-2
-        `}
-    }
-`;
+function ProjectDetail(props) {
+    <div className="detail">
+        {props.children}
+    </div>
+}
+
 
 export default function ProceduralDragon() {
     const { t } = useTranslation("challenge");
@@ -105,7 +40,7 @@ export default function ProceduralDragon() {
             <title>{t("weapon-master.title")}</title>
         </Head>
         <Navbar />
-        <Main>
+        <main>
             <ProjectCard>
                 <Head>
                     <title>{t("weapon-master.title")}</title>
@@ -128,7 +63,7 @@ export default function ProceduralDragon() {
                     </Trans>
                 </ProjectDetail>
             </ProjectCard>
-        </Main>
+        </main>
         <FootNote />
     </Container>
 }

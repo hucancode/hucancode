@@ -1,103 +1,51 @@
 import React, { useState, useEffect, useRef } from "react";
-import styled from "styled-components";
-import tw from "twin.macro";
 import HamburgerButton from "../widgets/hamburgerButton";
 import ThemeToggle from "../widgets/themeToggle";
 import Logo from "../widgets/logo";
 import { useTranslation } from 'next-i18next';
 import Link from "next/link";
 
-const Container = styled.nav`
-    ${tw`
-        container
-        box-border
-        w-full
-        h-16
-        flex
-        flex-row
-        items-center
-        justify-between
-    `}
-`;
+function Container(props) {
+    return <nav>
+        {props.children}
+    </nav>
+}
 
-const NavItems = styled.ul`
-    ${tw`
-        flex flex-col md:flex-row
-        z-40
-        list-none
-        fixed md:static 
-        left-0
-        top-0
-        ease-out
-        duration-200
-        px-8
-        py-4
-        transform
-        h-screen
-        md:h-full
-        dark:md:h-full
-        bg-gray-100
-        dark:bg-black
-        md:bg-transparent
-        dark:md:bg-transparent
-    `}
-    ${props => props.open ? `transform: translateX(0);` : `transform: translateX(-100%);`}
-`;
-
-const NavItem = styled.li`
-    ${tw`
-        text-xl
-        dark:text-gray-300
-        text-gray-900
-        font-medium
-        mr-3
-        md:mr-5
-        cursor-pointer
-        transition
-        duration-300
-        ease-in-out
-        hover:text-gray-500
-        dark:hover:text-gray-100
-    `}
-`;
-
-const LogoContainer = styled.div`
-    ${tw`
-        w-12
+function LogoContainer(props) {
+    return <div className="w-12
         h-12
         bg-transparent
         select-none
-        cursor-pointer
-    `}
-`;
+        cursor-pointer">
+        {props.children}
+    </div>
+}
 
-const ThemeContainer = styled.div`
-    ${tw`
-        flex
-        items-center
+function ThemeContainer(props) {
+    return <div className="flex items-center
         border-none
         outline-none
         cursor-pointer
-        w-16
-        h-12
+        w-16 h-12
         bg-transparent
-        select-none
-    `}
-`;
-const HamburgerContainer = styled.button`
-    ${tw`
-        relative
+        select-none">
+        {props.children}
+    </div>
+}
+
+function HamburgerContainer(props) {
+    return <button className="relative
         block
         md:hidden
         border-none
         outline-none
         cursor-pointer
-        w-8
-        h-12
+        w-8 h-12
         mr-8
-        select-none
-    `}
-`;
+        select-none">
+        {props.children}
+    </button>
+}
 
 export default function Navbar() {
     const [isDrawerOpen, setDrawerOpen] = useState(false);
@@ -119,20 +67,20 @@ export default function Navbar() {
         return () => document.removeEventListener("mousedown", closeDrawer);
     }, [isDrawerOpen]);
 
-    const navItems = <NavItems ref={drawerRef} open={isDrawerOpen || isMdOrUp}>
-        <NavItem>
+    const navItems = <ul ref={drawerRef} open={isDrawerOpen || isMdOrUp}>
+        <li>
             <Link href='/#skill'>{t('nav.skill')}</Link>
-        </NavItem>
-        <NavItem>
+        </li>
+        <li>
             <Link href='/#experiences'>{t('nav.exp')}</Link>
-        </NavItem>
-        <NavItem>
+        </li>
+        <li>
             <Link href='/#challenge'>{t('nav.works')}</Link>
-        </NavItem>
-        <NavItem>
+        </li>
+        <li>
             <Link href='/#contact'>{t('nav.contact')}</Link>
-        </NavItem>
-    </NavItems>
+        </li>
+    </ul>
 
     return <Container>
         <HamburgerContainer onClick={() => setDrawerOpen(true)}>

@@ -1,101 +1,77 @@
 import React from "react";
-import styled from 'styled-components';
-import tw from 'twin.macro';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { SiGithub, SiSketchfab, SiFacebook } from 'react-icons/si';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from "next/router";
 
-const Container = styled.section`
-    ${tw`
-        container
+function Container(props)
+{
+    return <section className="container
         flex
         flex-col
         items-center
         md:items-start
         justify-around
         p-10
-        md:flex-row
-    `}
-`;
+        md:flex-row">
+        {props.children}
+    </section>
+}
 
-const Avatar = styled.div`
-    ${tw`
-        w-40
-        h-40
-        relative
+function Avatar() {
+    return <div className="w-40 h-40
+    relative
+    rounded-full
+    flex items-center justify-center
+    text-white
+    text-base
+    mr-2
+    overflow-hidden
+    bg-cover
+    duration-300
+    bg-[url('/assets/profile-secret.jpg')]
+    hover:after:left-full
+    after:relative
+    after:left-0
+    after:bg-cover
+    after:w-full
+    after:h-full
+    after:duration-200
+    after:bg-[url('/assets/profile.jpg')]" />
+}
+
+function ContactContainer(props) {
+    return <div className=".contact-container">
+        {props.children}
+    </div>
+}
+
+function Title(props) {
+    return <h1 className="text-2xl font-bold">
+        {props.children}
+    </h1>
+}
+
+function SocialContainer(props) {
+    return <div className="mt-5 flex">
+        {props.children}
+    </div>
+}
+
+function RoundIcon(props) {
+    return <span className="w-9 h-9
         rounded-full
-        flex
-        items-center
-        justify-center
+        bg-gray-700 hover:bg-black
+        duration-300
+        flex items-center justify-center
         text-white
         text-base
-        mr-2
-        overflow-hidden
-        bg-cover
-        duration-300
-        hover:after:left-full
-        after:relative
-        after:left-0
-        after:bg-cover
-        after:w-full
-        after:h-full
-        after:duration-200
-    `}
-    background-image:url('/assets/profile-secret.jpg');
-    &:after {
-        background-image:url('/assets/profile.jpg');
-    }
-`;
+        mr-2">
+        {props.children}
+    </span>
+}
 
-const ContactContainer = styled.div`
-    ${tw`
-        flex
-        flex-col
-        mb-10
-        text-sm
-        items-center
-        md:items-start
-    `}
-    & a {
-        ${tw`
-            hover:text-blue-900
-            hover:dark:text-blue-300
-        `}
-    }
-`;
-
-const Title = styled.h1`
-    ${tw`
-        text-2xl
-        font-bold
-    `}
-`;
-const SocialContainer = styled.div`
-    ${tw`
-        mt-5
-        flex
-    `}
-`;
-
-const RoundIcon = styled.span`
-    ${tw`
-        w-9
-        h-9
-        rounded-full
-        bg-gray-700
-        hover:bg-black
-        duration-300
-        flex
-        items-center
-        justify-center
-        text-white
-        text-base
-        mr-2
-    `}
-`;
-
-export default function FooterSection(props) {
+export default function FooterSection() {
     const { t } = useTranslation();
     const router = useRouter();
     let resumeUrl = router.locale == 'en'?
@@ -135,8 +111,6 @@ export default function FooterSection(props) {
             <br />
             <a target="_blank" rel="noreferrer" href={resumeUrl}>{t('contact.downloadResume')}</a>
         </ContactContainer>
-        {!props.hideAvatar &&
-            <Avatar />
-        }
+        <Avatar />
     </Container>
 }

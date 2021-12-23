@@ -1,25 +1,19 @@
 import React from "react";
-import styled from 'styled-components';
-import tw from 'twin.macro';
 import { Trans, useTranslation } from 'next-i18next';
 
-const Container = styled.div`
-    ${tw`
-        container
-        box-border
+function Container(props)
+{
+    return <div className="container
         pb-5
         relative
-        flex
-        items-center
-        justify-center
-        max-w-screen-lg
-        w-full
-        overflow-x-hidden
-        overflow-y-hidden
+        flex items-center justify-center
+        max-w-screen-lg w-full
+        overflow-hidden
         text-xs
-        text-center
-    `}
-`;
+        text-center">
+            {props.children}
+    </div>
+}
 
 
 export default function FootNote() {
