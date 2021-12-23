@@ -6,7 +6,6 @@ import { SiBlender, SiCplusplus, SiUnrealengine } from "react-icons/si";
 import Navbar from "../components/navigation-bar";
 import YoutubeVideo from "../widgets/youtube";
 import FootNote from "../components/foot-note";
-import '../styles/challenge.css';
 
 function Container(props) {
     return <div className="container-challenge">
@@ -27,7 +26,7 @@ function YoutubeFrame(props) {
 }
 
 function ProjectDetail(props) {
-    <div className="detail">
+    return <div className="detail">
         {props.children}
     </div>
 }
