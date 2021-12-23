@@ -28,7 +28,11 @@ function ButtonLabelB(props) {
 export default function SwitchButton(props) {
     var [value, setValue] = useState(false);
     return <Container>
-        <input id={props.inputId} type="checkbox" className="peer" onChange={() => { setValue(!value); props.onChange(!value); }} />
+        <input id={props.inputId} 
+            type="checkbox" 
+            className="peer" 
+            checked={value}
+            onChange={() => { setValue(!value); props.onChange(!value); }} />
         <ButtonLabelA onClick={() => { setValue(false); props.onChange(false); }}>{props.labelA}</ButtonLabelA>
         <ButtonGraphic htmlFor={props.inputId} />
         <ButtonLabelB onClick={() => { setValue(true); props.onChange(true); }}>{props.labelB}</ButtonLabelB>
