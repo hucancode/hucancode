@@ -9,6 +9,7 @@ function Container(props)
         flex items-center justify-center
         max-w-screen-lg w-full
         overflow-hidden
+        text-gray-500
         text-xs
         text-center">
             {props.children}

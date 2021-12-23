@@ -1,19 +1,14 @@
 import React from "react";
-import { FaMapMarkerAlt } from 'react-icons/fa';
-import { SiGithub, SiSketchfab, SiFacebook } from 'react-icons/si';
+import { FaMapMarkerAlt, FaPhoneAlt, FaFileDownload } from 'react-icons/fa';
+import { SiGithub, SiSketchfab, SiFacebook, SiMinutemailer } from 'react-icons/si';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from "next/router";
 
 function Container(props)
 {
     return <section className="container
-        flex
-        flex-col
-        items-center
-        md:items-start
-        justify-around
-        p-10
-        md:flex-row" id={props.id}>
+        flex flex-col md:flex-row items-center md:items-start justify-around gap-3
+        p-10" id={props.id}>
         {props.children}
     </section>
 }
@@ -41,19 +36,28 @@ function Avatar() {
 }
 
 function ContactContainer(props) {
-    return <div className=".contact-container">
+    return <div className="contact-container">
+        {props.children}
+    </div>
+}
+
+function ContactContainerLeft(props) {
+    return <div className="contact-container items-start">
         {props.children}
     </div>
 }
 
 function Title(props) {
-    return <h1 className="text-2xl font-bold">
+    return <h1 className="text-2xl
+    w-full
+    text-center md:text-left text-gray-800 dark:text-white
+    font-bold">
         {props.children}
     </h1>
 }
 
 function SocialContainer(props) {
-    return <div className="mt-5 flex">
+    return <div className="flex justify-center md:justify-start gap-2">
         {props.children}
     </div>
 }
@@ -65,8 +69,7 @@ function RoundIcon(props) {
         duration-300
         flex items-center justify-center
         text-white
-        text-base
-        mr-2">
+        text-base">
         {props.children}
     </span>
 }
@@ -80,11 +83,6 @@ export default function FooterSection() {
     return <Container id='contact'>
         <ContactContainer>
             <Title>{t('contact.social')}</Title>
-            <br />
-            <SocialContainer>
-                <FaMapMarkerAlt size="1.5em" style={{ marginRight: "0.5em" }} />
-                <p>{t('contact.address')}</p>
-            </SocialContainer>
             <SocialContainer>
                 <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
                     <RoundIcon>
@@ -103,14 +101,25 @@ export default function FooterSection() {
                 </a>
             </SocialContainer>
         </ContactContainer>
-        <ContactContainer>
+        <ContactContainerLeft>
             <Title>{t('contact.contact')}</Title>
-            <br />
-            <p>(+81) 080-768-66019</p>
-            <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
-            <br />
-            <a target="_blank" rel="noreferrer" href={resumeUrl}>{t('contact.downloadResume')}</a>
-        </ContactContainer>
+            <SocialContainer>
+                <FaMapMarkerAlt size="1.5em" style={{ marginRight: "0.5em" }} />
+                <p>{t('contact.address')}</p>
+            </SocialContainer>
+            <SocialContainer>
+                <FaPhoneAlt size="1.5em" style={{ marginRight: "0.5em" }} />
+                <p>(+81) 080-768-66019</p>
+            </SocialContainer>
+            <SocialContainer>
+                <SiMinutemailer size="1.5em" style={{ marginRight: "0.5em" }} />
+                <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
+            </SocialContainer>
+            <SocialContainer>
+                <FaFileDownload size="1.5em" style={{ marginRight: "0.5em" }} />
+                <a target="_blank" rel="noreferrer" href={resumeUrl}>{t('contact.downloadResume')}</a>
+            </SocialContainer>
+        </ContactContainerLeft>
         <Avatar />
     </Container>
 }
