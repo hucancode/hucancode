@@ -48,6 +48,7 @@ function Subtitle(props) {
         after:select-none
         after:dark:text-white
         after:text-black
+        after:content-['Tap here to change language']
         after:animate-language-guide">
         {props.children}
     </h2>
@@ -70,7 +71,7 @@ function ResumeDownloadContainer(props) {
 }
 
 function ResumeDownloadIcon() {
-    return <div className="animate-bounce">
+    return <div className="animate-bounce mr-3">
         <FcDownload size="2em" />
     </div>
 }
@@ -107,10 +108,12 @@ export default function LandingSection() {
     return <Container>
         <About>
             <Link href='/' locale={i18n.language === 'en' ? 'jp' : 'en'} passHref>
-                <Greetings>
-                    <Title>{t('landing.hello')} <WavingHand/></Title>
-                    <Subtitle />
-                </Greetings>
+                <a>
+                    <Greetings>
+                        <Title>{t('landing.hello')} <WavingHand/></Title>
+                        <Subtitle />
+                    </Greetings>
+                </a>
             </Link>
             <Description>
                 <Trans i18nKey="home:landing.about">

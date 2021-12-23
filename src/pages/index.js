@@ -9,7 +9,6 @@ import ExperienceSection from "../components/experience-section";
 import ChallengeSection from "../components/challenge-section";
 import FootNote from "../components/foot-note";
 import FooterSection from "../components/footer-section";
-import '../styles/index.css';
 
 export default function Home() {
   return <div>

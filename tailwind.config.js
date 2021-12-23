@@ -42,11 +42,12 @@ module.exports = {
                     'to' : { transform: 'translateX(-50%)' }
                 },
                 'language-guide': {
-                    '0%': { content: "Tap here to change language"},
-                    '30%': { opacity: '1'},
-                    '50%': { opacity: '0'},
-                    '70%': {opacity: '1'},
-                    '100%': {content: "言語変更には、ここにタップ"},
+                    '0%': { opacity: '1', content: "\"Tap here to change language\""},
+                    '30%': { opacity: '1', content: "\"Tap here to change language\""},
+                    '50%': { opacity: '0', content: "\"Tap here to change language\""},
+                    '51%': { opacity: '0', content: "\"言語変更には、ここにタップ\""},
+                    '70%': {opacity: '1', content: "\"言語変更には、ここにタップ\""},
+                    '100%': {opacity: '1', content: "\"言語変更には、ここにタップ\""},
                 }
             }
         },

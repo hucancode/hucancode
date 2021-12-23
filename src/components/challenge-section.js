@@ -103,7 +103,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="dragon" passHref><h2>{t("challenge.dragon")}</h2></Link>
+                        <Link href="/dragon" passHref><a><h2>{t("challenge.dragon")}</h2></a></Link>
                         <p>{t("challenge.dragon-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
@@ -115,7 +115,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="spider" passHref><h2>{t("challenge.spider")}</h2></Link>
+                        <Link href="/spider" passHref><a><h2>{t("challenge.spider")}</h2></a></Link>
                         <p>{t("challenge.spider-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
@@ -127,7 +127,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="sabor" passHref><h2>{t("challenge.sabor")}</h2></Link>
+                        <Link href="/sabor" passHref><a><h2>{t("challenge.sabor")}</h2></a></Link>
                         <p>{t("challenge.sabor-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><GiPuppet size="1.5em"/></span>
@@ -139,7 +139,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="weapon-master" passHref><h2>{t("challenge.weapon-master")}</h2></Link>
+                        <Link href="/weapon-master" passHref><a><h2>{t("challenge.weapon-master")}</h2></a></Link>
                         <p>{t("challenge.weapon-master-sub")}</p>
                     </div>
                     <span><SiUnrealengine size="1.5em" /></span>
@@ -151,7 +151,7 @@ export default function ChallengeSection() {
                 </ProjectMedia>
                 <ProjectDetail>
                     <div>
-                        <Link href="doll" passHref><h2>{t("challenge.doll")}</h2></Link>
+                        <Link href="/doll" passHref><a><h2>{t("challenge.doll")}</h2></a></Link>
                         <p>{t("challenge.doll-sub")}</p>
                     </div>
                     <span><SiUnity size="1.5em" /></span>

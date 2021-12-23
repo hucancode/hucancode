@@ -87,9 +87,11 @@ export default function Navbar() {
             <HamburgerButton />
         </HamburgerContainer>
         <Link href='/' passHref>
-            <LogoContainer>
-                <Logo />
-            </LogoContainer>
+            <a>
+                <LogoContainer>
+                    <Logo />
+                </LogoContainer>
+            </a>
         </Link>
         {navItems}
         <ThemeContainer>

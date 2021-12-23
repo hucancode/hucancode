@@ -35,6 +35,6 @@ export default class Canvas3D extends React.Component {
         }
     }
     render() {
-        return <canvas style={{width: '100%'}} id={this.canvasID} ref={this.canvasRef} />
+        return <canvas className="w-full" id={this.canvasID} ref={this.canvasRef} />
     }
 }
