@@ -34,7 +34,7 @@ function HistoryNavigator(props)
 {
     return <div className="flex md:flex-col
         mb-5 md:mb-0 md:mr-5
-        w-72 md:w-1/3 xl:w-1/5 max-w-screen-sm
+        w-full md:w-1/3 xl:w-1/5 max-w-screen-sm
         overflow-x-auto" >
         {props.children}
     </div>
