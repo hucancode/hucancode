@@ -90,7 +90,7 @@ function ResumeLink(props) {
 }
 
 function CanvasContainer(props) {
-    return <div className="flex items-center
+    return <div className="flex items-center justify-center
         relative
         right-0
         md:w-2/3 lg:w-1/2 xl:w-2/5 w-full
