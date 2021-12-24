@@ -1,12 +1,9 @@
 # Hello
 
-This repository served as source code for my [personal porfolio website](https://hucancode.github.io).</br>
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This repository served as source code for my [personal porfolio website](https://hucan.codes).</br>
+This project was bootstrapped with [NextJS](https://nextjs.org/).
 
 # Features
-
-### Github Actions
-Deployment are automated, changes on main branch go live after a couple of minutes.
 
 ### Three.Js
 `Three.Js` was utilized in the making of Landing section (3D warrior character), Challenge section (Procedural dragon, spider).</br>
@@ -17,7 +14,7 @@ Featuring Dark/Light switch button, which adapt every corner of the site to the 
 Switch button animation was done using svg and `anime.js`
 
 ### Responsiveness
-Site displays well on mobile thanks to `styled components` and `tailwindcss`.
+Site displays well on mobile thanks to `tailwindcss`.
 
 ### Localization
 English and Japanese are available. <br/>
@@ -25,7 +22,7 @@ Tap on the waving hand to switch language. Powered by `i18next`
 
 # Development
 
-### `npm run start`
+### `npm run dev`
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 ### `npm run build`
