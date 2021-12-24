@@ -8,21 +8,15 @@ module.exports = {
     darkMode: 'class',
     theme: {
         extend: {
-            zIndex: {
-                '-10': '-10',
-                '10': '10',
-            },
-            skew: {
-                '20': '20deg',
-                '-20': '-20deg',
-                '45': '45deg',
-                '60': '60deg',
-                '80': '80deg',
-                '-80': '-80deg',
-            },
             width: {
                 '3/2': '150%',
+                '2/1': '200%',
+                '4/2': '200%',
+                'double': '200%',
                 '5/2': '250%',
+            },
+            backgroundSize: {
+                'half-width': '50% 100%',
             },
             backgroundImage: {
                 'rainbow': "linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b)",

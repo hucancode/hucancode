@@ -138,12 +138,12 @@
             before:absolute
             before:top-0
             before:left-0
-            before:w-[200%]
+            before:w-double
             before:h-full
             before:-z-10
             hover:before:animate-move-left
             before:bg-rainbow
-            before:bg-[length:50%_100%];
+            before:bg-half-width;
     }
 
     .skill-set {
