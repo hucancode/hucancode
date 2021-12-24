@@ -9,21 +9,27 @@ import ExperienceSection from "../components/experience-section";
 import ChallengeSection from "../components/challenge-section";
 import FootNote from "../components/foot-note";
 import FooterSection from "../components/footer-section";
-
+function Container(props) {
+    return <div className='page-container'>
+        {props.children}
+    </div>
+}
 export default function Home() {
-  return <div>
+  return <Container>
         <Head>
           <title>hucancode</title>
         </Head>
         <Navbar />
-        <LandingSection />
-        <SkillSection />
-        <LanguageSection />
-        <ExperienceSection />
-        <ChallengeSection />
-        <FooterSection />
+        <main>
+            <LandingSection />
+            <SkillSection />
+            <LanguageSection />
+            <ExperienceSection />
+            <ChallengeSection />
+            <FooterSection />
+        </main>
         <FootNote />
-    </div>
+    </Container>
 }
 
 export async function getStaticProps({ locale }) {

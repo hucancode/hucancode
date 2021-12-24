@@ -8,7 +8,7 @@ import YoutubeVideo from "../widgets/youtube";
 import FootNote from "../components/foot-note";
 
 function Container(props) {
-    return <div className="container-challenge">
+    return <div className="page-container">
         {props.children}
     </div>
 }
@@ -47,7 +47,6 @@ export default function ProceduralDragon() {
                 <YoutubeFrame>
                     <YoutubeVideo videoId='9RCqafaFMcY' />
                 </YoutubeFrame>
-
                 <ProjectDetail>
                     <h2>{t("weapon-master.title")}</h2>
                     <span><SiUnrealengine size="1.5em" /><SiBlender size="1.5em" /><SiCplusplus size="1.5em" /></span>

@@ -24,6 +24,10 @@ module.exports = {
                 '3/2': '150%',
                 '5/2': '250%',
             },
+            backgroundImage: {
+                'rainbow': "linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b)",
+                'opaque-radial': 'radial-gradient(closest-side,#ffffff20,#00000032)'
+            },
             animation: {
                 'waving-hand': 'waving-hand 2.5s infinite',
                 'move-left': 'move-left 1.5s linear infinite',

@@ -8,7 +8,7 @@ import YoutubeVideo from "../widgets/youtube";
 import FootNote from "../components/foot-note";
 
 function Container(props) {
-    return <div className="container-challenge">
+    return <div className="page-container">
         {props.children}
     </div>
 }

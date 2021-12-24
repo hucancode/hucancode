@@ -35,45 +35,23 @@ function ShowcaseContainer(props)
     </div>
 }
 
-function ProjectCard(props)
+function ChallengeCard(props)
 {
-    return <div className="
-        flex flex-col justify-center items-center
-        text-center
-        shadow-lg
-        rounded-lg
-        overflow-hidden">
+    return <div className="challenge-card-small">
         {props.children}
     </div>
 }
 
-function ProjectMedia(props)
+function ChallengeMedia(props)
 {
-    return <div className="
-        project-media
-        flex
-        items-center
-        w-full
-        max-w-screen-md
-        object-contain">
+    return <div className="media">
         {props.children}
     </div>
 }
 
-function ProjectDetail(props)
+function ChallengeDetail(props)
 {
-    return <div className="
-        project-detail
-        flex justify-between items-center gap-4
-        text-left
-        relative
-        right-0
-        w-full max-w-screen-md
-        bg-indigo-100 dark:bg-gray-600
-        text-gray-600 dark:text-gray-100
-        object-contain
-        px-4
-        py-6">
+    return <div className="detail">
         {props.children}
     </div>
 }
@@ -82,14 +60,15 @@ function ProjectDetail(props)
 function YoutubeVideo(props) {
     return <div className="youtube-frame">
         <iframe 
-        width="853"
-        height="480"
-        src={`https://www.youtube.com/embed/${props.videoId}`}
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        title="Embedded youtube"
-    /></div>
+            width="853"
+            height="480"
+            src={`https://www.youtube.com/embed/${props.videoId}`}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title="Embedded youtube"
+        />
+    </div>
 }
 
 export default function ChallengeSection() {
@@ -97,66 +76,66 @@ export default function ChallengeSection() {
     return <Container id='challenge'>
         <SectionTitle>{t('challenge.title')}</SectionTitle>
         <ShowcaseContainer>
-            <ProjectCard>
-                <ProjectMedia>
+            <ChallengeCard>
+                <ChallengeMedia>
                     <video autoPlay muted loop src="/assets/video/dragon-600-20s.webm" />
-                </ProjectMedia>
-                <ProjectDetail>
+                </ChallengeMedia>
+                <ChallengeDetail>
                     <div>
                         <Link href="/dragon" passHref><a><h2>{t("challenge.dragon")}</h2></a></Link>
                         <p>{t("challenge.dragon-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
-                </ProjectDetail>
-            </ProjectCard>
-            <ProjectCard>
-                <ProjectMedia>
+                </ChallengeDetail>
+            </ChallengeCard>
+            <ChallengeCard>
+                <ChallengeMedia>
                     <video autoPlay muted loop src='/assets/video/spider-600-20s.webm' />
-                </ProjectMedia>
-                <ProjectDetail>
+                </ChallengeMedia>
+                <ChallengeDetail>
                     <div>
                         <Link href="/spider" passHref><a><h2>{t("challenge.spider")}</h2></a></Link>
                         <p>{t("challenge.spider-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
-                </ProjectDetail>
-            </ProjectCard>
-            <ProjectCard>
-                <ProjectMedia>
+                </ChallengeDetail>
+            </ChallengeCard>
+            <ChallengeCard>
+                <ChallengeMedia>
                     <video autoPlay muted loop src='/assets/video/sabor-600-20s.webm' />
-                </ProjectMedia>
-                <ProjectDetail>
+                </ChallengeMedia>
+                <ChallengeDetail>
                     <div>
                         <Link href="/sabor" passHref><a><h2>{t("challenge.sabor")}</h2></a></Link>
                         <p>{t("challenge.sabor-sub")}</p>
                     </div>
                     <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><GiPuppet size="1.5em"/></span>
-                </ProjectDetail>
-            </ProjectCard>
-            <ProjectCard>
-                <ProjectMedia>
+                </ChallengeDetail>
+            </ChallengeCard>
+            <ChallengeCard>
+                <ChallengeMedia>
                     <YoutubeVideo videoId='9RCqafaFMcY' />
-                </ProjectMedia>
-                <ProjectDetail>
+                </ChallengeMedia>
+                <ChallengeDetail>
                     <div>
                         <Link href="/weapon-master" passHref><a><h2>{t("challenge.weapon-master")}</h2></a></Link>
                         <p>{t("challenge.weapon-master-sub")}</p>
                     </div>
                     <span><SiUnrealengine size="1.5em" /></span>
-                </ProjectDetail>
-            </ProjectCard>
-            <ProjectCard>
-                <ProjectMedia>
+                </ChallengeDetail>
+            </ChallengeCard>
+            <ChallengeCard>
+                <ChallengeMedia>
                     <YoutubeVideo videoId='xvNHCHPUz8A' />
-                </ProjectMedia>
-                <ProjectDetail>
+                </ChallengeMedia>
+                <ChallengeDetail>
                     <div>
                         <Link href="/doll" passHref><a><h2>{t("challenge.doll")}</h2></a></Link>
                         <p>{t("challenge.doll-sub")}</p>
                     </div>
                     <span><SiUnity size="1.5em" /></span>
-                </ProjectDetail>
-            </ProjectCard>
+                </ChallengeDetail>
+            </ChallengeCard>
         </ShowcaseContainer>
     </Container>
 }

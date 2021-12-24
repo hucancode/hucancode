@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import HamburgerButton from "../widgets/hamburger-button";
+import { ImMenu } from "react-icons/im";
 import ThemeToggle from "../widgets/theme-toggle";
 import Logo from "../widgets/logo";
 import { useTranslation } from 'next-i18next';
@@ -84,7 +84,7 @@ export default function Navbar() {
 
     return <Container>
         <HamburgerContainer onClick={() => setDrawerOpen(true)}>
-            <HamburgerButton />
+            <ImMenu size="2.5em" />
         </HamburgerContainer>
         <Link href='/' passHref>
             <a>
