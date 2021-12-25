@@ -65,13 +65,13 @@ function Description(props) {
 }
 
 function ResumeDownloadContainer(props) {
-    return <div className="resume-download-container" >
+    return <div className="resume-download-container group" >
         {props.children}
     </div>
 }
 
 function ResumeDownloadIcon() {
-    return <div className="animate-bounce mr-3">
+    return <div className="group-hover:[animation-delay:-0.5s] group-hover:animate-bounce mr-3">
         <FcDownload size="2em" />
     </div>
 }
@@ -83,8 +83,8 @@ function ResumeLink(props) {
         w-full h-full
         rounded-md
         p-5
-        bg-green-100 dark:bg-black
-        text-gray-800 dark:text-white" >
+        bg-gray-900 dark:bg-black
+        text-white dark:text-white" >
         {props.children}
     </a>
 }
