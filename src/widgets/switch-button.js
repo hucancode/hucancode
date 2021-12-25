@@ -14,13 +14,13 @@ function ButtonGraphic(props) {
 }
 
 function ButtonLabelA(props) {
-    return <h3 onClick={props.onClick} className="text-blue-500 peer-checked:text-gray-400">
+    return <h3 onClick={props.onClick} className="text-blue-700 peer-checked:text-gray-700 dark:text-blue-500 dark:peer-checked:text-gray-400">
         {props.children}
     </h3>
 }
 
 function ButtonLabelB(props) {
-    return <h3 onClick={props.onClick} className="text-gray-400 peer-checked:text-blue-500">
+    return <h3 onClick={props.onClick} className="text-gray-700 peer-checked:text-blue-700 dark:text-gray-400 dark:peer-checked:text-blue-500">
         {props.children}
     </h3>
 }
