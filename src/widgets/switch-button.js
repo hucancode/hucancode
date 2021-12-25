@@ -7,7 +7,7 @@ function Container(props) {
 }
 
 function ButtonGraphic(props) {
-    return <label htmlFor={props.htmlFor} className="bg-blue-300 peer-checked:bg-green-300
+    return <label htmlFor={props.htmlFor} className="bg-blue-300 peer-checked:bg-green-500 peer-checked:dark:bg-green-300
         duration-500
         peer-checked:after:-translate-x-full
         peer-checked:after:left-[calc(100%-0.2rem)]" />
