@@ -11,7 +11,9 @@
     "languages": {
         "title": "言語能力",
         "english": "英語",
-        "japanese": "日本語"
+        "japanese": "日本語",
+        "rw" : "読解・作文",
+        "ls" : "聴解・会話"
     },
     "experience": {
         "title": "私がどこに行ったのか？",

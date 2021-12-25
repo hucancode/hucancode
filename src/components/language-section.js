@@ -59,23 +59,25 @@ export default function LanguageSection() {
             </LanguageScore>
             <LanguageRating>
                 <FcReading size="3em" />
-                <p>
+                <small>{t('languages.rw')}</small>
+                <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarHalfFill size="1.4em" />
-                </p>
+                </div>
             </LanguageRating>
             <LanguageRating>
                 <FcVoicePresentation size="3em" />
-                <p>
+                <small>{t('languages.ls')}</small>
+                <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarLine size="1.4em" />
-                </p>
+                </div>
             </LanguageRating>
         </LanguageContainer>
         <LanguageContainer active={activeLanguage}>
@@ -87,23 +89,25 @@ export default function LanguageSection() {
             </LanguageScore>
             <LanguageRating>
                 <FcReading size="3em" />
-                <p>
+                <small>{t('languages.rw')}</small>
+                <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarLine size="1.4em" />
                     <RiStarLine size="1.4em" />
-                </p>
+                </div>
             </LanguageRating>
             <LanguageRating>
                 <FcVoicePresentation size="3em" />
-                <p>
+                <small>{t('languages.ls')}</small>
+                <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
                     <RiStarHalfFill size="1.4em" />
                     <RiStarLine size="1.4em" />
-                </p>
+                </div>
             </LanguageRating>
         </LanguageContainer>
     </Container>

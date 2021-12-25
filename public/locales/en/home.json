@@ -11,7 +11,9 @@
     "languages": {
         "title": "Language abilities",
         "english": "English",
-        "japanese": "Japanese"
+        "japanese": "Japanese",
+        "rw" : "Reading/Writing",
+        "ls" : "Listening/Speaking"
     },
     "experience": {
         "title": "Where have I been?",
