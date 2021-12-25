@@ -77,14 +77,15 @@ function ResumeDownloadIcon() {
 }
 
 function ResumeLink(props) {
-    return <a href={props.href} className="flex items-center justify-center
-        text-sm uppercase
-        cursor-pointer
-        w-full h-full
-        rounded-md
-        p-5
-        bg-gray-900 dark:bg-black
-        text-white dark:text-white" >
+    return <a target="_blank" rel="noreferrer" 
+        href={props.href} className="flex items-center justify-center
+            text-sm uppercase
+            cursor-pointer
+            w-full h-full
+            rounded-md
+            p-5
+            bg-gray-900 dark:bg-black
+            text-white dark:text-white" >
         {props.children}
     </a>
 }
@@ -121,8 +122,7 @@ export default function LandingSection() {
                     I build mobile applications and games for a living.
                 </Trans>
                 <ResumeDownloadContainer>
-                    <ResumeLink
-                        target="_blank" rel="noreferrer" href={resumeUrl}>
+                    <ResumeLink href={resumeUrl}>
                         <ResumeDownloadIcon />
                         <span>{t('common:contact.downloadResume')}</span>
                     </ResumeLink>
