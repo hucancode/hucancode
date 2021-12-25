@@ -1,11 +1,11 @@
 import React from "react";
-import SpiderScene from "../scenes/spider";
+import SpiderScene from "scenes/spider";
 import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
-import Navbar from "../components/navigation-bar";
-import FootNote from "../components/foot-note";
+import Navbar from "components/navigation-bar";
+import FootNote from "components/foot-note";
 
 function Container(props) {
     return <div className="page-container">

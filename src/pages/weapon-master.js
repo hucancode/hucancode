@@ -3,9 +3,9 @@ import { useTranslation, Trans } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head'
 import { SiBlender, SiCplusplus, SiUnrealengine } from "react-icons/si";
-import Navbar from "../components/navigation-bar";
+import Navbar from "components/navigation-bar";
 import YoutubeVideo from "../widgets/youtube";
-import FootNote from "../components/foot-note";
+import FootNote from "components/foot-note";
 
 function Container(props) {
     return <div className="page-container">

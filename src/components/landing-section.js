@@ -1,6 +1,6 @@
 import React from "react";
 import Link from 'next/link'
-import SaborScene from "../scenes/sabor";
+import SaborScene from "scenes/sabor";
 import { useTranslation, Trans } from 'next-i18next';
 import { FcDownload } from "react-icons/fc";
 import { useRouter } from "next/router";
