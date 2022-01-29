@@ -30,8 +30,7 @@ function Container(props) {
     bg-indigo-100 dark:bg-black
     py-10 md:px-10
     text-center
-    overflow-hidden
-    max-w-screen-lg" id={props.id}>
+    overflow-hidden" id={props.id}>
         {props.children}
     </section>
 }
