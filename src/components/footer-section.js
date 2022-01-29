@@ -1,6 +1,6 @@
 import React from "react";
 import { FaMapMarkerAlt, FaPhoneAlt, FaFileDownload } from 'react-icons/fa';
-import { SiGithub, SiSketchfab, SiFacebook, SiMinutemailer } from 'react-icons/si';
+import { SiGithub, SiSketchfab, SiFacebook, SiMinutemailer, SiBuymeacoffee } from 'react-icons/si';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from "next/router";
 
@@ -100,6 +100,13 @@ export default function FooterSection() {
                     </RoundIcon>
                 </a>
             </SocialContainer>
+			<a target="_blank"
+				rel="noreferrer"
+				href="https://www.buymeacoffee.com/hucancode"
+				className="rounded-md bg-gray-200 dark:bg-gray-800 flex gap-2 items-center px-4 py-2 cursor-pointer">
+				<SiBuymeacoffee size="1.5em" />
+				{t('contact.buymeacoffee')}
+			</a>
         </ContactContainer>
         <ContactContainerLeft>
             <Title>{t('contact.contact')}</Title>

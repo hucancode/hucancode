@@ -9,9 +9,10 @@
         "address": "日本、香川県、高松市",
         "social": "話しましょう!",
         "contact": "連絡先",
+		"buymeacoffee": "私にコーヒーを買う",
         "downloadResume": "経歴書をダウンロード"
     },
     "note": {
-        "madeWith": "<code>Vercel</code> と <code>Github</code>で展開しました。<br/><code>Next.js, Three.js, TailwindCSS</code> または他１０つ以上のツールで作成されました。<br/>"
+        "madeWith": "<code>Vercel</code> と <code>Github</code>で展開しました。<br/><code>Next.js, Three.js, TailwindCSS</code> またいくつかのツールで作成されました。<br/>"
     }
 }
