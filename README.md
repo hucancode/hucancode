@@ -11,14 +11,12 @@
   - 🇻🇳 Native
   - 🇺🇸 Business (C1)
   - 🇯🇵 Business (N2)
-
-## 🛠 My tool box 
-- Development environment:
+- My development environment:
   - Manjaro Gnome
   - VS Code/Neovim
   - Github
 
-|Technologies|
+|🛠 My tool box|
 |---|
 |<p align="center">🎮</p>|
 |![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white)![GLSL](https://img.shields.io/badge/GLSL-%23FF0077.svg?style=for-the-badge&logo=opengl&logoColor=yellow)![Unreal Engine](https://img.shields.io/badge/unrealengine-%23313131.svg?style=for-the-badge&logo=unrealengine&logoColor=white)![Blender](https://img.shields.io/badge/blender-%23F5792A.svg?style=for-the-badge&logo=blender&logoColor=white)![Rx](https://img.shields.io/badge/reactivex-%23B7178C.svg?style=for-the-badge&logo=reactivex&logoColor=white)|
