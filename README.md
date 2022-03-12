@@ -12,7 +12,7 @@
   - 🇺🇸 Business (C1)
   - 🇯🇵 Business (N2)
 - My development environment:
-  - Manjaro Gnome
+  - Arch/Gnome
   - VS Code/Neovim
   - Github
 
