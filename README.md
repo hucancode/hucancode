@@ -12,14 +12,12 @@
   - 🇻🇳 Native
   - 🇺🇸 Business (C1)
   - 🇯🇵 Business (N2)
-- My development environment:
-  - Arch Linux (with Openbox)
-  - ZSH (with OhMyZsh/P10k)
-  - VS Code/Vim
-  - Github
 
 |🛠 My tool box|
 |---|
+|<p align="center">🖥️</p>|
+|![Arch](https://img.shields.io/badge/Arch%20Linux-1793D1?logo=arch-linux&logoColor=fff&style=for-the-badge)![Zsh](https://img.shields.io/badge/Zsh-ffffff?logo=windows-terminal&logoColor=000&style=for-the-badge)![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white)![Vim](https://img.shields.io/badge/VIM-%23224d1e.svg?style=for-the-badge&logo=vim&logoColor=white)|
+|<p align="center">📱</p>|
 |<p align="center">🎮</p>|
 |![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white)![GLSL](https://img.shields.io/badge/GLSL-%23FF0077.svg?style=for-the-badge&logo=opengl&logoColor=yellow)![Unreal Engine](https://img.shields.io/badge/unrealengine-%23313131.svg?style=for-the-badge&logo=unrealengine&logoColor=white)![Blender](https://img.shields.io/badge/blender-%23F5792A.svg?style=for-the-badge&logo=blender&logoColor=white)![Rx](https://img.shields.io/badge/reactivex-%23B7178C.svg?style=for-the-badge&logo=reactivex&logoColor=white)|
 |<p align="center">📱</p>|
