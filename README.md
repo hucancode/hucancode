@@ -6,6 +6,7 @@
   - Full Stack Software Engineer
 - I’m currently learning: 
   - Serverless Computing
+  - ReactiveX
   - UE5
 - I speak:
   - 🇻🇳 Native
@@ -13,6 +14,7 @@
   - 🇯🇵 Business (N2)
 - My development environment:
   - Arch/Openbox
+  - ZSH/OhMyZsh/P10k
   - VS Code/Vim
   - Github
 
