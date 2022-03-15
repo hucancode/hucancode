@@ -6,14 +6,14 @@
   - Full Stack Software Engineer
 - I’m currently learning: 
   - Serverless Computing
-  - Vim
+  - UE5
 - I speak:
   - 🇻🇳 Native
   - 🇺🇸 Business (C1)
   - 🇯🇵 Business (N2)
 - My development environment:
-  - Arch/Gnome
-  - VS Code/Neovim
+  - Arch/Openbox
+  - VS Code/Vim
   - Github
 
 |🛠 My tool box|
