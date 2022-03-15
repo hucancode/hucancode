@@ -13,8 +13,8 @@
   - 🇺🇸 Business (C1)
   - 🇯🇵 Business (N2)
 - My development environment:
-  - Arch/Openbox
-  - ZSH/OhMyZsh/P10k
+  - Arch Linux (with Openbox)
+  - ZSH (with OhMyZsh/P10k)
   - VS Code/Vim
   - Github
 
