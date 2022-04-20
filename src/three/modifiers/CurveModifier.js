@@ -1,7 +1,7 @@
 // Original src: https://github.com/zz85/threejs-path-flow
 import {
 	DataTexture,
-	RGBAFormat,
+	RGBFormat,
 	FloatType,
 	RepeatWrapping,
 	Mesh,
@@ -27,7 +27,7 @@ export function initSplineTexture( numberOfCurves = 1 ) {
 		dataArray,
 		TEXTURE_WIDTH,
 		TEXTURE_HEIGHT * numberOfCurves,
-		RGBAFormat,
+		RGBFormat,
 		FloatType
 	);
 
