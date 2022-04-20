@@ -5,7 +5,6 @@ import {
     SiCplusplus,
     SiCsharp,
     SiDocker,
-    SiFirebase,
     SiFlutter,
     SiGraphql,
     SiJavascript,
@@ -15,10 +14,9 @@ import {
     SiOpengl,
     SiReact,
     SiSwift,
-    SiThreedotjs,
     SiUnrealengine
 } from 'react-icons/si';
-import { RiGitlabFill } from 'react-icons/ri'
+import { RiGoogleFill } from 'react-icons/ri'
 import { GrMysql } from "react-icons/gr";
 import { DiNodejs } from "react-icons/di";
 import { useTranslation } from 'next-i18next';
@@ -76,7 +74,6 @@ export default function SkillSection() {
             <Skill name="OpenGL" icon={<SiOpengl size="2em" />} />
             <Skill name="Blender" icon={<SiBlender size="2em" />} />
             <Skill name="Unreal" icon={<SiUnrealengine size="2em" />} />
-            <Skill name="ThreeJS" icon={<SiThreedotjs size="2em" />} />
         </SkillSet>
         <SkillSet active={activeSet}>
             <Skill name="Kotlin" icon={<SiKotlin size="2em" />} />
@@ -92,10 +89,9 @@ export default function SkillSection() {
         </SkillSet>
         <SkillSet active>
             <Skill name="Docker" icon={<SiDocker size="2em" />} />
-            <Skill name="Firebase" icon={<SiFirebase size="2em" />} />
-            <Skill name="AWS" icon={<SiAmazonaws size="2em" />} />
+            <Skill name="GoogleCloud" icon={<RiGoogleFill size="2em" />} />
+			<Skill name="AWS" icon={<SiAmazonaws size="2em" />} />
             <Skill name="CircleCI" icon={<SiCircleci size="2em" />} />
-            <Skill name="GitlabCI" icon={<RiGitlabFill size="2em" />} />
         </SkillSet>
     </Container>
 }
