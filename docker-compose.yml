@@ -12,3 +12,4 @@ services:
       - .:/hucancode
       # ignore local node_modules, use container
       - /hucancode/node_modules
+      - /hucancode/.next
