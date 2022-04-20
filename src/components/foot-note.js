@@ -22,7 +22,7 @@ export default function FootNote() {
     return <Container>
         <p>
             <Trans i18nKey="note.madeWith">
-                Deployed with <code>Vercel</code> and <code>Github</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and some other tools<br />
+                Deployed with <code>Cloud Run</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and some other tools<br />
             </Trans>
         </p>
     </Container>

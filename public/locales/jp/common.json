@@ -13,6 +13,6 @@
         "downloadResume": "経歴書をダウンロード"
     },
     "note": {
-        "madeWith": "<code>Vercel</code> と <code>Github</code>で展開しました。<br/><code>Next.js, Three.js, TailwindCSS</code> またいくつかのツールで作成されました。<br/>"
+        "madeWith": "<code>Cloud Run</code>で展開しました。<br/><code>Next.js, Three.js, TailwindCSS</code> またいくつかのツールで作成されました。<br/>"
     }
 }
