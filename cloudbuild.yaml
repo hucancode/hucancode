@@ -5,6 +5,8 @@ steps:
       - '--no-cache'
       - '-t'
       - '$_GCR_HOSTNAME/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA'
+      - '-f'
+      - 'docker-production'
       - .
     id: Build
   - name: gcr.io/cloud-builders/docker
