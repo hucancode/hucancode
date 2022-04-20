@@ -1,8 +1,7 @@
 # Use the official lightweight Node.js 16 image.
 # https://hub.docker.com/_/node
-FROM node:16-slim
+FROM node:16-alpine
 WORKDIR /hucancode
 COPY . ./
-RUN npm ci
-RUN npm run build
+RUN npm ci && npm run build && npm prune --production
 CMD npm run start
