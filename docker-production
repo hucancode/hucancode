@@ -3,5 +3,5 @@
 FROM node:16-alpine
 WORKDIR /hucancode
 COPY . ./
-RUN npm ci && npm run build
+RUN npm ci && npm run build && npm prune --production
 CMD npm run start
