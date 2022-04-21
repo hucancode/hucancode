@@ -5,8 +5,6 @@
 - I’m a:
   - Full Stack Software Engineer
 - I’m currently learning: 
-  - Serverless Computing
-  - ReactiveX
   - UE5
 - I speak:
   - 🇻🇳 Native
@@ -22,4 +20,4 @@
 |<p align="center">📱 Mobile Technologies</p>|
 |![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)![SQL](https://img.shields.io/badge/mysql-%2307405e.svg?style=for-the-badge&logo=mysql&logoColor=white)![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)![Next](https://img.shields.io/badge/next-%23000000.svg?style=for-the-badge&logo=next.js&logoColor=%23ffffff)![TailwindCSS](https://img.shields.io/badge/tailwind-%232E7EEA.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)![Svelte](https://img.shields.io/badge/svelte-%23f1413d.svg?style=for-the-badge&logo=svelte&logoColor=white)![Strapi](https://img.shields.io/badge/strapi-%232E7EEA.svg?style=for-the-badge&logo=strapi&logoColor=white)![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white)|
 |<p align="center">🚀 DevOps Solutions</p>|
-|![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white)![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)![Fastlane](https://img.shields.io/badge/fastlane-%232671E5.svg?style=for-the-badge&logo=fastlane&logoColor=white)![CircleCI](https://img.shields.io/badge/CIRCLECI-%23161616.svg?style=for-the-badge&logo=circleci&logoColor=white)![GitHub Actions](https://img.shields.io/badge/github-%232671E5.svg?style=for-the-badge&logo=github&logoColor=white)![GitLab CI](https://img.shields.io/badge/GitLabCI-%23181717.svg?style=for-the-badge&logo=gitlab&logoColor=white)|
+|![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white)![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)![Fastlane](https://img.shields.io/badge/fastlane-%232671E5.svg?style=for-the-badge&logo=fastlane&logoColor=white)![CircleCI](https://img.shields.io/badge/CIRCLECI-%23161616.svg?style=for-the-badge&logo=circleci&logoColor=white)|
