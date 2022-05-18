@@ -113,12 +113,6 @@ export default function ExperienceSection() {
                             I developed highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code>.
                         </li>
                         <li>
-                            I am in charge of an <a target="_blank" rel="noreferrer" href="https://at-creator.net/">mobile app building system</a>.
-                            Allowing user to build their own mobile application without programming knowledge.
-                            Featuring EC, CMS, customizable UI based on 9 templates (more on development).
-                            Powered by <code>ReactNative, Azure, AWS</code>.
-                        </li>
-                        <li>
                             I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.
                         </li>
                     </ul>
