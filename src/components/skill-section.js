@@ -76,8 +76,6 @@ export default function SkillSection() {
             <Skill name="Unreal" icon={<SiUnrealengine size="2em" />} />
         </SkillSet>
         <SkillSet active={activeSet}>
-            <Skill name="Kotlin" icon={<SiKotlin size="2em" />} />
-            <Skill name="Swift" icon={<SiSwift size="2em" />} />
             <Skill name="Javascript" icon={<SiJavascript size="2em" />} />
             <Skill name="React" icon={<SiReact size="2em" />} />
             <Skill name="NextJS" icon={<SiNextdotjs size="2em" />} />
@@ -90,7 +88,6 @@ export default function SkillSection() {
         <SkillSet active>
             <Skill name="Docker" icon={<SiDocker size="2em" />} />
             <Skill name="GoogleCloud" icon={<RiGoogleFill size="2em" />} />
-			<Skill name="AWS" icon={<SiAmazonaws size="2em" />} />
             <Skill name="CircleCI" icon={<SiCircleci size="2em" />} />
         </SkillSet>
     </Container>

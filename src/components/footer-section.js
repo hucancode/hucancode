@@ -94,7 +94,7 @@ export default function FooterSection() {
                         <SiSketchfab size="1.5em" />
                     </RoundIcon>
                 </a>
-                <a target="_blank" rel="noreferrer" href="https://www.facebook.com/LeeSoooYoung">
+                <a target="_blank" rel="noreferrer" href="https://www.facebook.com/hucancode">
                     <RoundIcon>
                         <SiFacebook size="1.5em" />
                     </RoundIcon>
