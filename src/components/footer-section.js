@@ -78,8 +78,8 @@ export default function FooterSection() {
     const { t } = useTranslation();
     const router = useRouter();
     let resumeUrl = router.locale == 'en'?
-        "https://docs.google.com/document/d/13RuquH_8FjIR39k3a7dr5uJn5Ml93opzPl73DiKLRHs/edit?usp=sharing":
-        "https://docs.google.com/document/d/1r7z6yY6IXzcgwkhEgzqlLIi6ythl60zVPnxkyPIo8Gs/edit?usp=sharing";
+        "https://resume.hucanco.de":
+        "https://resume.hucanco.de/jp.html";
     return <Container id='contact'>
         <ContactContainer>
             <Title>{t('contact.social')}</Title>
