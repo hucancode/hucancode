@@ -105,7 +105,7 @@ export default function LandingSection() {
     const router = useRouter();
     let resumeUrl = router.locale == 'en'?
         "https://resume.hucanco.de":
-        "https://resume.hucanco.de/jp.html";
+        "https://resume.hucanco.de/jp";
     return <Container>
         <About>
             <Link href='/' locale={i18n.language === 'en' ? 'jp' : 'en'} passHref>

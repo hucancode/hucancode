@@ -79,7 +79,7 @@ export default function FooterSection() {
     const router = useRouter();
     let resumeUrl = router.locale == 'en'?
         "https://resume.hucanco.de":
-        "https://resume.hucanco.de/jp.html";
+        "https://resume.hucanco.de/jp";
     return <Container id='contact'>
         <ContactContainer>
             <Title>{t('contact.social')}</Title>
