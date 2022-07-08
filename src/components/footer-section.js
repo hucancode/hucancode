@@ -1,6 +1,6 @@
 import React from "react";
-import { FaMapMarkerAlt, FaPhoneAlt, FaFileDownload } from 'react-icons/fa';
-import { SiGithub, SiSketchfab, SiFacebook, SiMinutemailer, SiBuymeacoffee } from 'react-icons/si';
+import { FaMapMarkerAlt, FaPhoneAlt, FaFileDownload, FaHackerrank } from 'react-icons/fa';
+import { SiGithub, SiSketchfab, SiMinutemailer, SiBuymeacoffee } from 'react-icons/si';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from "next/router";
 
@@ -94,9 +94,9 @@ export default function FooterSection() {
                         <SiSketchfab size="1.5em" />
                     </RoundIcon>
                 </a>
-                <a target="_blank" rel="noreferrer" href="https://www.facebook.com/hucancode">
+                <a target="_blank" rel="noreferrer" href="https://www.hackerrank.com/hucancode">
                     <RoundIcon>
-                        <SiFacebook size="1.5em" />
+                        <FaHackerrank size="1.5em" />
                     </RoundIcon>
                 </a>
             </SocialContainer>
