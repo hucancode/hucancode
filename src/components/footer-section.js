@@ -24,7 +24,7 @@ function Avatar() {
     overflow-hidden
     bg-cover
     duration-300
-    bg-[url('/assets/profile-secret.jpg')]
+    bg-[url('/assets/profile.jpg')]
     hover:after:left-full
     after:relative
     after:left-0
@@ -32,7 +32,7 @@ function Avatar() {
     after:w-full
     after:h-full
     after:duration-200
-    after:bg-[url('/assets/profile.jpg')]" />
+    after:bg-[url('/assets/profile-3d.png')]" />
 }
 
 function ContactContainer(props) {
