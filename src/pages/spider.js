@@ -1,9 +1,9 @@
 import React from "react";
 import SpiderScene from "scenes/spider";
-import { useTranslation, Trans } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
-import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
+import { MdPlusOne } from "react-icons/md";
 import Navbar from "components/navigation-bar";
 import FootNote from "components/foot-note";
 
@@ -20,19 +20,20 @@ function ProjectCard(props) {
 }
 
 function ProjectMedia(props) {
-    return <div className="media-3d">
+    return <div className="media-3d w-full flex flex-col items-center">
         {props.children}
     </div>
 }
-
-function ProjectDetail(props) {
-    return <div className="detail">
-        {props.children}
-    </div>
+function ActionButton(props) {
+	return <button className="rounded-md bg-sky-300 dark:bg-gray-600 flex gap-2 items-center px-4 py-2 active:outline outline-2 outline-sky-700 cursor-pointer"
+		onClick={props.onClick}>
+			{props.children}
+	</button>
 }
 
 export default function ProceduralSpider() {
     const { t } = useTranslation("challenge");
+	const spider = React.useRef(null);
     return <Container>
         <Head>
             <title>{t("spider.title")}</title>
@@ -41,16 +42,12 @@ export default function ProceduralSpider() {
         <main>
             <ProjectCard>
                 <ProjectMedia>
-                    <SpiderScene />
+                    <SpiderScene  ref={spider} />
+					<ActionButton onClick={() => spider.current.generateSpider()}>
+						<MdPlusOne size="2.5em" />
+						{t('spider.addMore')}
+					</ActionButton>
                 </ProjectMedia>
-                <ProjectDetail>
-                    <h2>{t("spider.title")}</h2>
-                    <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><SiOpengl size="1.5em" /></span>
-                    <Trans i18nKey="challenge:spider.description">
-                        <p>Spider animations are procedurally generated using Inverse Kinematics</p>
-                        <small>Spider model by <a href="https://sketchfab.com/3d-models/low-poly-spider-walk-cycle-e4d2c40b66554b10be20f61bb0610774">volkanongun</a></small>
-                    </Trans>
-                </ProjectDetail>
             </ProjectCard>
         </main>
         <FootNote />

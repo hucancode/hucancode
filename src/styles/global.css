@@ -337,7 +337,7 @@
             overflow-hidden;
         .media-3d {
             @apply flex justify-start items-center
-                w-full grow md:w-2/3 md:grow-0
+                grow md:grow-0
                 rounded-t-lg
                 md:rounded-t-none
                 md:rounded-l-lg
@@ -345,6 +345,9 @@
                 overflow-hidden
                 bg-opaque-radial;
         }
+		.media-3d {
+			width: 100%;
+		}
         .media {
             @apply flex items-center justify-center
             relative

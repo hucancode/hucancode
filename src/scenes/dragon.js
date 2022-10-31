@@ -14,25 +14,28 @@ const DRAW_PATH = false;
 const USE_OBJ = false;
 const ANIMATE_CURVE = false;
 
-function init() {
-    let canvas = document.getElementById(CANVAS_ID);
-    let w = canvas.clientWidth;
-    let h = canvas.clientHeight;//w * ASPECT_RATIO;
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(w, h);
-    camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
+function setupCamera(w,h) {
+	camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
     scene = new THREE.Scene();
     camera.position.set(0, 20, 200);
     camera.lookAt(scene.position);
-    const MIN_X = -40;
+}
+
+function setupLightning() {
+	ambientLight = new THREE.AmbientLight(0x003973);
+    scene.add(ambientLight);
+    dynamicLight = new THREE.PointLight(0xffffff);
+    dynamicLight.add(new THREE.Mesh(new THREE.SphereGeometry(2, 16, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })));
+    scene.add(dynamicLight);
+}
+function generateNewCurve() {
+	const MIN_X = -40;
     const VAR_X = 80;
     const MIN_Y = -40;
     const VAR_Y = 80;
     const MIN_Z = -80;
     const VAR_Z = 160;
-    const points = [
+	const points = [
         { x: 40, y: 0, z: 50 },
         { x: Math.random() * VAR_X + MIN_X, y: Math.random() * VAR_Y + MIN_Y, z: Math.random() * VAR_Z + MIN_Z },
         { x: -40, y: -40, z: 50 },
@@ -53,6 +56,9 @@ function init() {
     curve.curveType = 'centripetal';
     curve.closed = true;
     if (DRAW_PATH) {
+		if(curveObject != null) {
+			scene.remove(curveObject);
+		}
         curveObject = new THREE.LineLoop(
             new THREE.BufferGeometry().setFromPoints(curve.getPoints(50)),
             new THREE.LineBasicMaterial({ color: 0x00ff00 })
@@ -60,16 +66,9 @@ function init() {
         curveObject.rotation.y = Math.PI * 0.5;
         scene.add(curveObject);
     }
-
-    ambientLight = new THREE.AmbientLight(0x003973);
-    scene.add(ambientLight);
-
-    dynamicLight = new THREE.PointLight(0xffffff);
-    dynamicLight.add(new THREE.Mesh(new THREE.SphereGeometry(2, 16, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })));
-    scene.add(dynamicLight);
-
-    //
-    if (USE_OBJ) {
+}
+function loadModel() {
+	if (USE_OBJ) {
         const loader = new OBJLoader();
         loader.load('/assets/obj/dragon.obj', function (obj) {
             obj.traverse(function (child) {
@@ -90,6 +89,21 @@ function init() {
             scene.add(dragon.object3D);
         });
     }
+}
+function init() {
+    let canvas = document.getElementById(CANVAS_ID);
+    let w = canvas.clientWidth;
+    let h = canvas.clientHeight;//w * ASPECT_RATIO;
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(w, h);
+    setupCamera(w, h);
+    generateNewCurve();
+    setupLightning();
+	loadModel();
+    //
+    
     window.addEventListener('resize', onWindowResize);
 }
 
@@ -148,4 +162,8 @@ export default class DragonScene extends Canvas3D {
         this.init = init;
         this.animate = animate;
     }
+
+	newFlyingPath() {
+		generateNewCurve();
+	}
 }

@@ -1,5 +1,5 @@
 module.exports = {
-    ns: ['common','home','challenge'],
+    ns: ['common','home','challenge', 'dragon'],
     defaultNS: "common",
     i18n: {
         defaultLocale: 'en',

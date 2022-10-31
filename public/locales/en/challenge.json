@@ -1,11 +1,13 @@
 {
     "dragon": {
         "title": "Procedural Dragon",
-        "description": "<0>Dragon animations are procedurally generated with following steps:</0><1><0>Load static dragon mesh. Posed in a straight line</0><1>Build a curve using THREE.CatmullRomCurve3</1><2>Pass curve data down to GPU via a texture</2><3>Inside vertex shader, read texture data and set vertex position accordingly</3></1><2>Dragon model by <1>youmeowmeow</1>.</2>"
+        "description": "<0>Dragon animations are procedurally generated with following steps:</0><1><0>Load static dragon mesh. Posed in a straight line</0><1>Build a curve using THREE.CatmullRomCurve3</1><2>Pass curve data down to GPU via a texture</2><3>Inside vertex shader, read texture data and set vertex position accordingly</3></1><2>Dragon model by <1>youmeowmeow</1>.</2>",
+		"refresh": "Generate new flying path"
     },
     "spider": {
         "title": "Procedural Spider",
-        "description": "<0>Spider animations are procedurally generated using Inverse Kinematics.</0><1>Spider model by <1>volkanongun</1>.</1>"
+        "description": "<0>Spider animations are procedurally generated using Inverse Kinematics.</0><1>Spider model by <1>volkanongun</1>.</1>",
+		"addMore": "Add more spider"
     },
     "sabor": {
         "title": "Sabor Game Character",
