@@ -320,6 +320,17 @@ function init() {
     }
 }
 
+function addSpider() {
+	const loader = new GLTFLoader();
+	loader.setPath('/assets/gltf/');
+	loader.load('spider.gltf', function (gltf) {
+		const spider = new Spider(gltf);
+		scene.add(gltf.scene);
+		spiders.push(spider);
+		spider.speed = Math.random() * 2 + 1.5;
+	});
+}
+
 function onWindowResize() {
     let canvas = document.getElementById(CANVAS_ID);
     if (!canvas) {
@@ -346,4 +357,7 @@ export default class SpiderScene extends Canvas3D {
         this.init = init;
         this.animate = animate;
     }
+	generateSpider() {
+		addSpider();
+	}
 }
