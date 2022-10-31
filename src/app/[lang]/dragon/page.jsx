@@ -1,17 +1,9 @@
+'use client';
 import React from "react";
 import DragonScene from "scenes/dragon";
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import Head from 'next/head';
 import { RiRefreshFill } from 'react-icons/ri';
-import Navbar from "components/navigation-bar";
-import FootNote from "components/foot-note";
 
-function Container(props) {
-    return <div className="page-container">
-        {props.children}
-    </div>
-}
+import useI18n from 'locales/use-i18n'
 
 function ProjectCard(props) {
     return <div className="challenge-card">
@@ -33,34 +25,18 @@ function ActionButton(props) {
 }
 
 export default function ProceduralDragon() {
-    const { t } = useTranslation("challenge");
 	const dragon = React.useRef(null);
-    return <Container>
-        <Head>
-            <title>{t("dragon.title")}</title>
-        </Head>
-        <Navbar />
-        <main>
+    const i18n = useI18n();
+    return <>
             <ProjectCard>
                 <ProjectMedia>
                     <DragonScene ref={dragon} />
 					<ActionButton
 						onClick={() => dragon.current.newFlyingPath()}>
 						<RiRefreshFill size="2.5em" />
-						{t('dragon.refresh')}
+						{i18n.t('challenge.dragon.refresh')}
 					</ActionButton>
                 </ProjectMedia>
             </ProjectCard>
-        </main>
-        <FootNote />
-    </Container>
-}
-
-export async function getStaticProps({ locale }) {
-    return {
-        props: {
-            ...(await serverSideTranslations(locale, ['common', 'challenge', 'dragon'])),
-            // Will be passed to the page component as props
-        },
-    };
+    </>
 }

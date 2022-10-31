@@ -1,7 +1,5 @@
 import React from "react";
 import SpiderScene from "scenes/spider";
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { MdPlusOne } from "react-icons/md";
 import Navbar from "components/navigation-bar";
@@ -32,11 +30,11 @@ function ActionButton(props) {
 }
 
 export default function ProceduralSpider() {
-    const { t } = useTranslation("challenge");
+    const i18n = useI18n();
 	const spider = React.useRef(null);
     return <Container>
         <Head>
-            <title>{t("spider.title")}</title>
+            <title>{i18n.t("challenge.spider.title")}</title>
         </Head>
         <Navbar />
         <main>
@@ -45,20 +43,11 @@ export default function ProceduralSpider() {
                     <SpiderScene  ref={spider} />
 					<ActionButton onClick={() => spider.current.generateSpider()}>
 						<MdPlusOne size="2.5em" />
-						{t('spider.addMore')}
+						{i18n.t('challenge.spider.addMore')}
 					</ActionButton>
                 </ProjectMedia>
             </ProjectCard>
         </main>
         <FootNote />
     </Container>
-}
-
-export async function getStaticProps({ locale }) {
-    return {
-        props: {
-            ...(await serverSideTranslations(locale, ['common', 'challenge'])),
-            // Will be passed to the page component as props
-        },
-    };
 }

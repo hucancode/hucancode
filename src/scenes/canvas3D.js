@@ -1,4 +1,3 @@
-
 import React from "react";
 
 export default class Canvas3D extends React.Component {

@@ -19,8 +19,8 @@ import {
 import { RiGoogleFill } from 'react-icons/ri'
 import { GrMysql } from "react-icons/gr";
 import { DiNodejs } from "react-icons/di";
-import { useTranslation } from 'next-i18next';
 import SwitchButton from "../widgets/switch-button";
+import useI18n from 'locales/use-i18n'
 
 function Container(props) {
     return <section className="container 
@@ -58,14 +58,13 @@ function Skill(props) {
 
 export default function SkillSection() {
     var [activeSet, setActiveSet] = useState(false);
-    const { t } = useTranslation("home");
-
+    const i18n = useI18n();
     return <Container id='skill'>
-        <SectionTitle>{t('tools.title')}</SectionTitle>
+        <SectionTitle>{i18n.t('home.tools.title')}</SectionTitle>
         <SwitchButton
             inputId="switchSkill"
-            labelA={t('tools.game')}
-            labelB={t('tools.app')}
+            labelA={i18n.t('home.tools.game')}
+            labelB={i18n.t('home.tools.app')}
             onChange={(value) => setActiveSet(value)}>
         </SwitchButton>
         <SkillSet active={!activeSet}>

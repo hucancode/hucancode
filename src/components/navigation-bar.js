@@ -1,8 +1,9 @@
+'use client';
 import React, { useState, useEffect, useRef } from "react";
 import { ImMenu } from "react-icons/im";
 import ThemeToggle from "../widgets/theme-toggle";
+import useI18n from 'locales/use-i18n'
 import Logo from "../widgets/logo";
-import { useTranslation } from 'next-i18next';
 import Link from "next/link";
 
 function Container(props) {
@@ -51,8 +52,8 @@ export default function Navbar() {
     const [isDrawerOpen, setDrawerOpen] = useState(false);
     const [isMdOrUp, setIsMdOrUp] = useState(false);
     const drawerRef = useRef(null);
-    const { t } = useTranslation();
 
+    const i18n = useI18n();
     useEffect(() => {
         setIsMdOrUp(window.matchMedia("(min-width: 768px)").matches);
         const closeDrawer = event => {
@@ -69,16 +70,16 @@ export default function Navbar() {
 
     const navItems = <ul ref={drawerRef} open={isDrawerOpen || isMdOrUp}>
         <li>
-            <Link href='/#skill'>{t('nav.skill')}</Link>
+            <Link href='/#skill'>{i18n.t('common.nav.skill')}</Link>
         </li>
         <li>
-            <Link href='/#experiences'>{t('nav.exp')}</Link>
+            <Link href='/#experiences'>{i18n.t('common.nav.exp')}</Link>
         </li>
         <li>
-            <Link href='/#challenge'>{t('nav.works')}</Link>
+            <Link href='/#challenge'>{i18n.t('common.nav.works')}</Link>
         </li>
         <li>
-            <Link href='/#contact'>{t('nav.contact')}</Link>
+            <Link href='/#contact'>{i18n.t('common.nav.contact')}</Link>
         </li>
     </ul>
 
@@ -86,12 +87,10 @@ export default function Navbar() {
         <HamburgerContainer onClick={() => setDrawerOpen(true)}>
             <ImMenu size="2.5em" />
         </HamburgerContainer>
-        <Link href='/' passHref>
-            <a>
-                <LogoContainer>
-                    <Logo />
-                </LogoContainer>
-            </a>
+        <Link href='/'>
+            <LogoContainer>
+                <Logo />
+            </LogoContainer>
         </Link>
         {navItems}
         <ThemeContainer>

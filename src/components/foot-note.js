@@ -1,5 +1,4 @@
 import React from "react";
-import { Trans, useTranslation } from 'next-i18next';
 
 function Container(props)
 {
@@ -18,12 +17,9 @@ function Container(props)
 
 
 export default function FootNote() {
-    useTranslation();
     return <Container>
         <p>
-            <Trans i18nKey="note.madeWith">
-                Deployed with <code>Cloud Run</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and some other tools<br />
-            </Trans>
+            Deployed with <code>Cloud Run</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and some other tools<br />
         </p>
     </Container>
 }

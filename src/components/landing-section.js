@@ -1,9 +1,8 @@
 import React from "react";
 import Link from 'next/link'
 import SaborScene from "scenes/sabor";
-import { useTranslation, Trans } from 'next-i18next';
+import useI18n from 'locales/use-i18n'
 import { FcDownload } from "react-icons/fc";
-import { useRouter } from "next/router";
 
 function Container(props) {
     return <section className="container
@@ -101,30 +100,24 @@ function CanvasContainer(props) {
 }
 
 export default function LandingSection() {
-    const { t, i18n } = useTranslation("home");
-    const router = useRouter();
-    let resumeUrl = router.locale == 'en'?
+    const i18n = useI18n();
+    let resumeUrl = i18n.activeLocale == 'en'?
         "https://resume.hucanco.de":
         "https://resume.hucanco.de/jp";
     return <Container>
         <About>
-            <Link href='/' locale={i18n.language === 'en' ? 'jp' : 'en'} passHref>
-                <a>
-                    <Greetings>
-                        <Title>{t('landing.hello')} <WavingHand/></Title>
-                        <Subtitle />
-                    </Greetings>
-                </a>
+            <Link href='/' locale={i18n.language === 'en' ? 'jp' : 'en'}>
+                <Greetings>
+                    <Title>{i18n.t('home.landing.hello')} <WavingHand/></Title>
+                    <Subtitle />
+                </Greetings>
             </Link>
             <Description>
-                <Trans i18nKey="home:landing.about">
-                    I am Bang, a passionate Front End Software Engineer. <br />
-                    I build mobile applications and games for a living.
-                </Trans>
+                {i18n.t('home.landing.about')}
                 <ResumeDownloadContainer>
                     <ResumeLink href={resumeUrl}>
                         <ResumeDownloadIcon />
-                        <span>{t('common:contact.downloadResume')}</span>
+                        <span>{i18n.t('common.contact.downloadResume')}</span>
                     </ResumeLink>
                 </ResumeDownloadContainer>
             </Description>

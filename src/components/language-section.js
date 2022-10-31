@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { useTranslation } from 'next-i18next';
 import SwitchButton from "../widgets/switch-button";
 import { FcReading, FcVoicePresentation } from "react-icons/fc";
 import { RiStarFill, RiStarHalfFill, RiStarLine } from "react-icons/ri";
 
+import useI18n from 'locales/use-i18n'
 function Container(props) {
     return <section className="container
         flex flex-col items-center
@@ -40,14 +40,13 @@ function LanguageRating(props) {
 
 export default function LanguageSection() {
     var [activeLanguage, setActiveLanguage] = useState(false);
-    const { t } = useTranslation("home");
-
+    const i18n = useI18n();
     return <Container id='language'>
-        <SectionTitle>{t('languages.title')}</SectionTitle>
+        <SectionTitle>{i18n.t('languages.title')}</SectionTitle>
         <SwitchButton
             inputId="switchLang"
-            labelA={t('languages.english')}
-            labelB={t('languages.japanese')}
+            labelA={i18n.t('languages.english')}
+            labelB={i18n.t('languages.japanese')}
             onChange={(value) => setActiveLanguage(value)}>
         </SwitchButton>
         <LanguageContainer active={!activeLanguage}>
@@ -59,7 +58,7 @@ export default function LanguageSection() {
             </LanguageScore>
             <LanguageRating>
                 <FcReading size="3em" />
-                <small>{t('languages.rw')}</small>
+                <small>{i18n.t('languages.rw')}</small>
                 <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
@@ -70,7 +69,7 @@ export default function LanguageSection() {
             </LanguageRating>
             <LanguageRating>
                 <FcVoicePresentation size="3em" />
-                <small>{t('languages.ls')}</small>
+                <small>{i18n.t('languages.ls')}</small>
                 <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
@@ -89,7 +88,7 @@ export default function LanguageSection() {
             </LanguageScore>
             <LanguageRating>
                 <FcReading size="3em" />
-                <small>{t('languages.rw')}</small>
+                <small>{i18n.t('languages.rw')}</small>
                 <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />
@@ -100,7 +99,7 @@ export default function LanguageSection() {
             </LanguageRating>
             <LanguageRating>
                 <FcVoicePresentation size="3em" />
-                <small>{t('languages.ls')}</small>
+                <small>{i18n.t('languages.ls')}</small>
                 <div>
                     <RiStarFill size="1.4em" />
                     <RiStarFill size="1.4em" />

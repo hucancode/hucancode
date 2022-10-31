@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation, Trans } from 'next-i18next';
+import useI18n from 'locales/use-i18n'
 
 function Container(props)
 {
@@ -77,33 +77,33 @@ function Description(props)
 
 export default function ExperienceSection() {
     var [activeSet, setActiveSet] = useState(0);
-    const { t } = useTranslation("home");
-    return <Container id='experiences'>
-        <SectionTitle>{t('experience.title')}</SectionTitle>
+    const i18n = useI18n();
+    return <Container id='home.experiences'>
+        <SectionTitle>{i18n.t('home.experience.title')}</SectionTitle>
         <HistoryContainer>
             <HistoryNavigator>
                 <HistoryButton onClick={() => setActiveSet(0)} active={activeSet === 0}>
-                    <h2>💼</h2><h3>{t('experience.nav.gc')}</h3>
+                    <h2>💼</h2><h3>{i18n.t('home.experience.nav.gc')}</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(1)} active={activeSet === 1}>
-                    <h2>🎓</h2><h3>{t('experience.nav.jpschool')}</h3>
+                    <h2>🎓</h2><h3>{i18n.t('home.experience.nav.jpschool')}</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(2)} active={activeSet === 2}>
-                    <h2>💼</h2><h3>{t('experience.nav.glhan')}</h3>
+                    <h2>💼</h2><h3>{i18n.t('home.experience.nav.glhan')}</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(3)} active={activeSet === 3}>
-                    <h2>💼</h2><h3>{t('experience.nav.fpt')}</h3>
+                    <h2>💼</h2><h3>{i18n.t('home.experience.nav.fpt')}</h3>
                 </HistoryButton>
                 <HistoryButton onClick={() => setActiveSet(4)} active={activeSet === 4}>
-                    <h2>🎓</h2><h3>{t('experience.nav.university')}</h3>
+                    <h2>🎓</h2><h3>{i18n.t('home.experience.nav.university')}</h3>
                 </HistoryButton>
             </HistoryNavigator>
             <ContentContainer active={activeSet === 0}>
-                <Title><Trans i18nKey="home:experience.position.gc">
+                <Title>
                     Engineering Manager <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://gc-c.co.jp/"><em>GoodCreate</em></a>
-                </Trans></Title>
-                <Time>{t('experience.time.gc')}</Time>
-                <Description><Trans i18nKey="home:experience.desc.gc">
+                </Title>
+                <Time>{i18n.t('home.experience.time.gc')}</Time>
+                <Description>
                     <ul>
                         <li>
                             I am in charge of software engineering department in GoodCreate.
@@ -116,14 +116,14 @@ export default function ExperienceSection() {
                             I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.
                         </li>
                     </ul>
-                </Trans></Description>
+                </Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 1}>
-                <Title><Trans i18nKey="home:experience.position.jpschool">
+                <Title>
                     Student <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://mizunogaigogakuin.com/"><em>Mizuno International Language School</em></a>
-                </Trans></Title>
-                <Time>{t('experience.time.jpschool')}</Time>
-                <Description><Trans i18nKey="home:experience.desc.jpschool">
+                </Title>
+                <Time>{i18n.t('home.experience.time.jpschool')}</Time>
+                <Description>
                     <ul>
                         <li>
                             I took 2-years course, but I graduated early, only study there for 1 year.
@@ -140,14 +140,14 @@ export default function ExperienceSection() {
                             I can interpret business Japanese to some degree.
                         </li>
                     </ul>
-                </Trans></Description>
+                </Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 2}>
-                <Title><Trans i18nKey="home:experience.position.glhan">
+                <Title>
                     Senior Game Programmer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.gameloft.com/"><em>Gameloft Hanoi</em></a>
-                </Trans></Title>
-                <Time>{t('experience.time.glhan')}</Time>
-                <Description><Trans i18nKey="home:experience.desc.glhan">
+                </Title>
+                <Time>{i18n.t('home.experience.time.glhan')}</Time>
+                <Description>
                     <ul>
                         <li>
                             I have taken part in Gameloft AI Contest 2013, I finished at <em>Quater Final (rank #4~8)</em>.
@@ -183,14 +183,14 @@ export default function ExperienceSection() {
                             </ul>
                         </li>
                     </ul>
-                </Trans></Description>
+                </Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 3}>
-                <Title><Trans i18nKey="home:experience.position.fpt">
+                <Title>
                     Senior Software Developer <sup>@</sup> <a target="_blank" rel="noreferrer" href="https://www.fpt-software.com/"><em>FPT Software</em></a>
-                </Trans></Title>
-                <Time>{t('experience.time.fpt')}</Time>
-                <Description><Trans i18nKey="home:experience.desc.fpt">
+                </Title>
+                <Time>{i18n.t('home.experience.time.fpt')}</Time>
+                <Description>
                     <ul>
                         <li>
                             I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>.
@@ -211,14 +211,14 @@ export default function ExperienceSection() {
                             I was received honorable mention as <em>Best Rookie of The Year 2016</em>.
                         </li>
                     </ul>
-                </Trans></Description>
+                </Description>
             </ContentContainer>
             <ContentContainer active={activeSet === 4}>
-                <Title><Trans i18nKey="home:experience.position.university">
+                <Title>
                     Bachelor Degree <sup>@</sup> <a target="_blank" rel="noreferrer" href="http://utehy.edu.vn/"><em>Hung Yen University of Technology and Education</em></a>
-                </Trans></Title>
-                <Time>{t('experience.time.university')}</Time>
-                <Description><Trans i18nKey="home:experience.desc.university">
+                </Title>
+                <Time>{i18n.t('home.experience.time.university')}</Time>
+                <Description>
                     <ul>
                         <li>
                             My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>.
@@ -235,7 +235,7 @@ export default function ExperienceSection() {
                             My team represented my university taking part in ACM/ICPC.
                         </li>
                     </ul>
-                </Trans></Description>
+                </Description>
             </ContentContainer>
         </HistoryContainer>
     </Container>

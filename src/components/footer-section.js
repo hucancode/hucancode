@@ -1,8 +1,7 @@
 import React from "react";
+import useI18n from 'locales/use-i18n'
 import { FaMapMarkerAlt, FaPhoneAlt, FaFileDownload, FaHackerrank } from 'react-icons/fa';
 import { SiGithub, SiLeetcode, SiSketchfab, SiMinutemailer, SiBuymeacoffee } from 'react-icons/si';
-import { useTranslation } from 'next-i18next';
-import { useRouter } from "next/router";
 
 function Container(props)
 {
@@ -75,14 +74,13 @@ function RoundIcon(props) {
 }
 
 export default function FooterSection() {
-    const { t } = useTranslation();
-    const router = useRouter();
-    let resumeUrl = router.locale == 'en'?
+    const i18n = useI18n();
+    let resumeUrl = i18n.activeLocale == 'en'?
         "https://resume.hucanco.de":
         "https://resume.hucanco.de/jp";
-    return <Container id='contact'>
+    return <Container id='common.contact'>
         <ContactContainer>
-            <Title>{t('contact.social')}</Title>
+            <Title>{i18n.t('common.contact.social')}</Title>
             <SocialContainer>
                 <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
                     <RoundIcon>
@@ -110,14 +108,14 @@ export default function FooterSection() {
 				href="https://www.buymeacoffee.com/hucancode"
 				className="rounded-md bg-gray-200 dark:bg-gray-800 flex gap-2 items-center px-4 py-2 cursor-pointer">
 				<SiBuymeacoffee size="1.5em" />
-				{t('contact.buymeacoffee')}
+				{i18n.t('common.contact.buymeacoffee')}
 			</a>
         </ContactContainer>
         <ContactContainerLeft>
-            <Title>{t('contact.contact')}</Title>
+            <Title>{i18n.t('common.contact.contact')}</Title>
             <SocialContainer>
                 <FaMapMarkerAlt size="1.5em" style={{ marginRight: "0.5em" }} />
-                <p>{t('contact.address')}</p>
+                <p>{i18n.t('common.contact.address')}</p>
             </SocialContainer>
             <SocialContainer>
                 <FaPhoneAlt size="1.5em" style={{ marginRight: "0.5em" }} />
@@ -129,7 +127,7 @@ export default function FooterSection() {
             </SocialContainer>
             <SocialContainer>
                 <FaFileDownload size="1.5em" style={{ marginRight: "0.5em" }} />
-                <a target="_blank" rel="noreferrer" href={resumeUrl}>{t('contact.downloadResume')}</a>
+                <a target="_blank" rel="noreferrer" href={resumeUrl}>{i18n.t('common.contact.downloadResume')}</a>
             </SocialContainer>
         </ContactContainerLeft>
         <Avatar />
