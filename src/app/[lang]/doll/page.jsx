@@ -2,7 +2,6 @@
 import React from "react";
 import { SiCsharp, SiUnity } from "react-icons/si";
 import YoutubeVideo from "widgets/youtube";
-
 import useI18n from "locales/use-i18n";
 
 function ProjectCard(props) {
