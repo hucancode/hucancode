@@ -1,6 +1,6 @@
 {
   "name": "hucancode",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "homepage": "https://hucanco.de/",
   "dependencies": {
@@ -36,6 +36,9 @@
   "devDependencies": {
     "autoprefixer": "^10.4.4",
     "eslint": "^8.13.0",
-    "eslint-config-next": "^13.0.0"
+    "eslint-config-next": "^13.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1"
   }
 }

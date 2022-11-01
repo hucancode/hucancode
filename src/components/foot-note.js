@@ -1,8 +1,9 @@
 import React from "react";
 
-function Container(props)
-{
-    return <div className="container
+function Container(props) {
+  return (
+    <div
+      className="container
         pb-5
         relative
         flex items-center justify-center
@@ -10,16 +11,23 @@ function Container(props)
         overflow-hidden
         text-gray-500
         text-xs
-        text-center">
-            {props.children}
+        text-center"
+    >
+      {props.children}
     </div>
+  );
 }
 
-
 export default function FootNote() {
-    return <Container>
-        <p>
-            Deployed with <code>Cloud Run</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and some other tools<br />
-        </p>
+  return (
+    <Container>
+      <p>
+        Deployed with <code>Cloud Run</code>
+        <br />
+        Made with <code>Next.js, Three.js, TailwindCSS</code> and some other
+        tools
+        <br />
+      </p>
     </Container>
+  );
 }
