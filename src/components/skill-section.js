@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import {
   SiAmazonaws,
@@ -21,7 +22,7 @@ import { RiGoogleFill } from "react-icons/ri";
 import { GrMysql } from "react-icons/gr";
 import { DiNodejs } from "react-icons/di";
 import SwitchButton from "widgets/switch-button";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 
 function Container(props) {
   return (

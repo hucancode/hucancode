@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from "react";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 
 function Container(props) {
   return (
@@ -91,7 +92,7 @@ export default function ExperienceSection() {
   var [activeSet, setActiveSet] = useState(0);
   const i18n = useI18n();
   return (
-    <Container id="home.experiences">
+    <Container id="experiences">
       <SectionTitle>{i18n.t("home.experience.title")}</SectionTitle>
       <HistoryContainer>
         <HistoryNavigator>

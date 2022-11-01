@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 import {
@@ -8,7 +9,7 @@ import {
   SiOpengl,
 } from "react-icons/si";
 import { GiPuppet } from "react-icons/gi";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 
 function Container(props) {
   return (
@@ -96,7 +97,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.activeLocale}/dragon`}>
+              <Link href={`${i18n.locale()}/dragon`}>
                 <h2>{i18n.t("home.challenge.dragon")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.dragon-sub")}</p>
@@ -118,7 +119,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.activeLocale}/spider`}>
+              <Link href={`${i18n.locale()}/spider`}>
                 <h2>{i18n.t("home.challenge.spider")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.spider-sub")}</p>
@@ -135,7 +136,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.activeLocale}/sabor`}>
+              <Link href={`${i18n.locale()}/sabor`}>
                 <h2>{i18n.t("home.challenge.sabor")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.sabor-sub")}</p>
@@ -153,7 +154,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.activeLocale}/weapon-master`}>
+              <Link href={`${i18n.locale()}/weapon-master`}>
                 <h2>{i18n.t("home.challenge.weapon-master")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.weapon-master-sub")}</p>
@@ -169,7 +170,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.activeLocale}/doll`}>
+              <Link href={`${i18n.locale()}/doll`}>
                 <h2>{i18n.t("home.challenge.doll")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.doll-sub")}</p>

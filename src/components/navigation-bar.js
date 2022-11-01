@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ImMenu } from "react-icons/im";
 import ThemeToggle from "widgets/theme-toggle";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 import Logo from "widgets/logo";
 import Link from "next/link";
 
@@ -60,11 +60,12 @@ function HamburgerContainer(props) {
 }
 
 export default function Navbar() {
+  const i18n = useI18n();
+  console.log(`render nav bar, current language = ${i18n.locale()}`);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [isMdOrUp, setIsMdOrUp] = useState(false);
   const drawerRef = useRef(null);
 
-  const i18n = useI18n();
   useEffect(() => {
     setIsMdOrUp(window.matchMedia("(min-width: 768px)").matches);
     const closeDrawer = (event) => {
@@ -82,16 +83,16 @@ export default function Navbar() {
   const navItems = (
     <ul ref={drawerRef} open={isDrawerOpen || isMdOrUp}>
       <li>
-        <Link href="/#skill">{i18n.t("common.nav.skill")}</Link>
+        <a href="#skill">{i18n.t("common.nav.skill")}</a>
       </li>
       <li>
-        <Link href="/#experiences">{i18n.t("common.nav.exp")}</Link>
+        <a href="#experiences">{i18n.t("common.nav.exp")}</a>
       </li>
       <li>
-        <Link href="/#challenge">{i18n.t("common.nav.works")}</Link>
+        <a href="#challenge">{i18n.t("common.nav.works")}</a>
       </li>
       <li>
-        <Link href="/#contact">{i18n.t("common.nav.contact")}</Link>
+        <a href="#contact">{i18n.t("common.nav.contact")}</a>
       </li>
     </ul>
   );
@@ -101,11 +102,11 @@ export default function Navbar() {
       <HamburgerContainer onClick={() => setDrawerOpen(true)}>
         <ImMenu size="2.5em" />
       </HamburgerContainer>
-      <Link href="/">
+      <a href="/">
         <LogoContainer>
           <Logo />
         </LogoContainer>
-      </Link>
+      </a>
       {navItems}
       <ThemeContainer>
         <ThemeToggle />

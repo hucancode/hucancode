@@ -130,6 +130,9 @@ function init() {
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
+  if (scene != null) {
+    return;
+  }
   setupCamera(w, h);
   generateNewCurve();
   setupLightning();

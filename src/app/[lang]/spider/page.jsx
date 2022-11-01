@@ -2,7 +2,7 @@
 import React from "react";
 import SpiderScene from "scenes/spider";
 import { MdPlusOne } from "react-icons/md";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 
 function ProjectCard(props) {
   return <div className="challenge-card">{props.children}</div>;

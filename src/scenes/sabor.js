@@ -1,3 +1,4 @@
+"use client";
 import Canvas3D from "./canvas3D";
 import * as THREE from "three";
 import { FBXLoader } from "../three/loaders/FBXLoader";
@@ -61,6 +62,10 @@ function init() {
 }
 
 async function buildScene() {
+  console.log(`sabor, build scene, ${scene}`);
+  if (scene != null) {
+    return;
+  }
   scene = new THREE.Scene();
   scene.background = null; //new THREE.Color(0x282c34);
   //scene.fog = new THREE.Fog(0xa0a0a0, 100, 2000);

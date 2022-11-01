@@ -1,5 +1,6 @@
+"use client";
 import React from "react";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 import {
   FaMapMarkerAlt,
   FaPhoneAlt,
@@ -101,7 +102,7 @@ function RoundIcon(props) {
 export default function FooterSection() {
   const i18n = useI18n();
   let resumeUrl =
-    i18n.activeLocale == "en"
+    i18n.locale() == "en"
       ? "https://resume.hucanco.de"
       : "https://resume.hucanco.de/jp";
   return (

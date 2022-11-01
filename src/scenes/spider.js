@@ -1,3 +1,4 @@
+"use client";
 import * as THREE from "three";
 import { CCDIKSolver, CCDIKHelper } from "../three/IK/CCDIKSolver";
 import { GLTFLoader } from "../three/loaders/GLTFLoader.js";
@@ -326,6 +327,9 @@ function init() {
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
+  if (scene != null) {
+    return;
+  }
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   camera.position.set(30, 22, 30);

@@ -2,7 +2,7 @@
 import React from "react";
 import DragonScene from "scenes/dragon";
 import { RiRefreshFill } from "react-icons/ri";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 
 function ProjectCard(props) {
   return <div className="challenge-card">{props.children}</div>;

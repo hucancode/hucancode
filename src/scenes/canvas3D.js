@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 
 export default class Canvas3D extends React.Component {
@@ -18,6 +19,7 @@ export default class Canvas3D extends React.Component {
   }
   componentWillUnmount() {
     this.observer.disconnect();
+    cancelAnimationFrame(this.frameID);
   }
   componentDidUpdate() {
     if (this.state.isInCamera) {

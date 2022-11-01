@@ -1,9 +1,9 @@
+"use client";
 import React, { useState } from "react";
 import SwitchButton from "widgets/switch-button";
 import { FcReading, FcVoicePresentation } from "react-icons/fc";
 import { RiStarFill, RiStarHalfFill, RiStarLine } from "react-icons/ri";
-
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 function Container(props) {
   return (
     <section

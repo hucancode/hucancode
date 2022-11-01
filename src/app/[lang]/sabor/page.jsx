@@ -1,9 +1,8 @@
 "use client";
 import React from "react";
 import SaborScene from "scenes/sabor";
-import Head from "next/head";
 import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
-import useI18n from "locales/use-i18n";
+import { useI18n } from "locales/i18n";
 
 function ProjectCard(props) {
   return <div className="challenge-card">{props.children}</div>;
@@ -21,9 +20,6 @@ export default function Sabor() {
   const i18n = useI18n();
   return (
     <ProjectCard>
-      <Head>
-        <title>{i18n.t("challenge.sabor.title")}</title>
-      </Head>
       <ProjectMedia>
         <SaborScene />
       </ProjectMedia>
