@@ -7,18 +7,24 @@ import ExperienceSection from "components/experience-section";
 import ChallengeSection from "components/challenge-section";
 import FooterSection from "components/footer-section";
 import useI18n from "locales/use-i18n";
-import EN from "locales/en.json";
-import JP from "locales/jp.json";
 
-export default function Home({ lang }) {
+async function setLanguage(lang, i18n) {
+  if (lang === "jp") {
+    const JP = await import("locales/jp.json");
+    i18n.locale("jp", JP);
+    console.log("set language to JP");
+  } else {
+    const EN = await import("locales/en.json");
+    i18n.locale("en", EN);
+    console.log("set language to EN");
+  }
+}
+export default function Home({ params }) {
+  const { lang } = params;
   const i18n = useI18n();
   useEffect(() => {
-    if (lang === "jp") {
-      i18n.locale("jp", JP);
-    } else {
-      i18n.locale("en", EN);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLanguage(lang, i18n);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <>
