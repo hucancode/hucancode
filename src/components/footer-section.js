@@ -14,6 +14,7 @@ import {
   SiMinutemailer,
   SiBuymeacoffee,
 } from "react-icons/si";
+import styles from "./footer-section.module.css";
 
 function Container(props) {
   return (
@@ -55,11 +56,12 @@ function Avatar() {
 }
 
 function ContactContainer(props) {
-  return <div className="contact-container">{props.children}</div>;
+  return <div className={styles["contact-container"]}>{props.children}</div>;
 }
 
 function ContactContainerLeft(props) {
-  return <div className="contact-container items-start">{props.children}</div>;
+  const className = `${styles["contact-container"]} items-start`;
+  return <div className={className}>{props.children}</div>;
 }
 
 function Title(props) {

@@ -3,6 +3,7 @@ import React from "react";
 import DragonScene from "scenes/dragon";
 import { RiRefreshFill } from "react-icons/ri";
 import { useI18n } from "locales/i18n";
+import "styles/challenge-card.css";
 
 function ProjectCard(props) {
   return <div className="challenge-card">{props.children}</div>;

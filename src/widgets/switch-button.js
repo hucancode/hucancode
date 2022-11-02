@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-
+import styles from "./switch-button.module.css";
 function Container(props) {
-  return <div className="switch-button">{props.children}</div>;
+  return <div className={styles["switch-button"]}>{props.children}</div>;
 }
 
 function ButtonGraphic(props) {

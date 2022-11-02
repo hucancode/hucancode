@@ -1,0 +1,10 @@
+  .youtube-frame {
+    @apply overflow-hidden
+            relative
+            h-0 w-full;
+    padding-bottom: 56.25%;
+    iframe {
+      @apply absolute left-0 top-0
+                w-full h-full;
+    }
+  }

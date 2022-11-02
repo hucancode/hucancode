@@ -1,0 +1,24 @@
+.skill-container {
+    @apply flex flex-wrap items-center justify-center
+            h-auto scale-y-100
+            duration-300
+            origin-top
+            overflow-hidden;
+    &:not([active]) {
+      @apply h-0 scale-y-0;
+    }
+    li {
+      @apply w-12 h-16
+                flex flex-col items-center
+                m-3;
+      div {
+        @apply w-12 h-12
+                    flex items-center justify-center
+                    text-base
+                    text-gray-700 dark:text-gray-400;
+      }
+      p {
+        @apply text-xs font-mono text-center;
+      }
+    }
+  }

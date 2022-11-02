@@ -1,12 +1,9 @@
 import React from "react";
-
-function Container(props) {
-  return <div className="youtube-frame">{props.children}</div>;
-}
+import styles from "./youtube.module.css";
 
 export default function YoutubeVideo(props) {
   return (
-    <Container>
+    <div className={styles["youtube-frame"]}>
       {" "}
       <iframe
         width="853"
@@ -17,6 +14,6 @@ export default function YoutubeVideo(props) {
         allowFullScreen
         title="Embedded youtube"
       />
-    </Container>
+    </div>
   );
 }

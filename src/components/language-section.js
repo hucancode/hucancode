@@ -4,6 +4,8 @@ import SwitchButton from "widgets/switch-button";
 import { FcReading, FcVoicePresentation } from "react-icons/fc";
 import { RiStarFill, RiStarHalfFill, RiStarLine } from "react-icons/ri";
 import { useI18n } from "locales/i18n";
+import styles from "./language-section.module.css";
+
 function Container(props) {
   return (
     <section
@@ -26,7 +28,7 @@ function SectionTitle(props) {
 function LanguageContainer(props) {
   return (
     <div
-      className="language-container"
+      className={styles["language-container"]}
       active={props.active ? "true" : undefined}
     >
       {props.children}
@@ -35,11 +37,11 @@ function LanguageContainer(props) {
 }
 
 function LanguageScore(props) {
-  return <div className="language-score">{props.children}</div>;
+  return <div className={styles["language-score"]}>{props.children}</div>;
 }
 
 function LanguageRating(props) {
-  return <div className="language-rating">{props.children}</div>;
+  return <div className={styles["language-rating"]}>{props.children}</div>;
 }
 
 export default function LanguageSection() {

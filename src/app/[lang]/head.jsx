@@ -1,5 +1,5 @@
 "use client";
-import { contentLanguageMap } from "locales/i18n";
+import { contentLanguageMap } from "locales/supported-languages";
 
 export default function Head({ lang }) {
   return (

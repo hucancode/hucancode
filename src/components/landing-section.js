@@ -4,6 +4,7 @@ import Link from "next/link";
 import SaborScene from "scenes/sabor";
 import { useI18n } from "locales/i18n";
 import { FcDownload } from "react-icons/fc";
+import styles from "./landing-section.module.css";
 
 function Container(props) {
   return (
@@ -70,19 +71,18 @@ function Subtitle(props) {
 }
 
 function WavingHand() {
-  return <span className="waving-hand" />;
+  return <span className={styles["waving-hand"]} />;
 }
 
 function Description(props) {
   return (
-    <div className="text-lg text-centermd:text-left">{props.children}</div>
+    <div className="text-lg text-center md:text-left">{props.children}</div>
   );
 }
 
 function ResumeDownloadContainer(props) {
-  return (
-    <div className="resume-download-container group">{props.children}</div>
-  );
+  const className = `${styles["resume-download-container"]} group`;
+  return <button className={className}>{props.children}</button>;
 }
 
 function ResumeDownloadIcon() {

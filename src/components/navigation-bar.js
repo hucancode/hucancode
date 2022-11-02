@@ -5,9 +5,10 @@ import ThemeToggle from "widgets/theme-toggle";
 import { useI18n } from "locales/i18n";
 import Logo from "widgets/logo";
 import Link from "next/link";
+import styles from "./navigation-bar.module.css";
 
 function Container(props) {
-  return <nav>{props.children}</nav>;
+  return <nav className={styles["nav-container"]}>{props.children}</nav>;
 }
 
 function LogoContainer(props) {

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import {
   SiThreedotjs,
   SiUnrealengine,
@@ -8,9 +8,16 @@ import {
   SiBlender,
   SiOpengl,
 } from "react-icons/si";
+import YoutubeVideo from "widgets/youtube";
 import { GiPuppet } from "react-icons/gi";
 import { useI18n } from "locales/i18n";
+import styles from "./challenge-section.module.css";
 
+function Link(props) {
+	return <a href={props.href}>
+		{props.children}
+	</a>
+}
 function Container(props) {
   return (
     <section
@@ -53,31 +60,15 @@ function ShowcaseContainer(props) {
 }
 
 function ChallengeCard(props) {
-  return <div className="challenge-card-small">{props.children}</div>;
+  return <div className={styles["challenge-card-small"]}>{props.children}</div>;
 }
 
 function ChallengeMedia(props) {
-  return <div className="media">{props.children}</div>;
+  return <div className={styles["media"]}>{props.children}</div>;
 }
 
 function ChallengeDetail(props) {
-  return <div className="detail">{props.children}</div>;
-}
-
-function YoutubeVideo(props) {
-  return (
-    <div className="youtube-frame">
-      <iframe
-        width="853"
-        height="480"
-        src={`https://www.youtube.com/embed/${props.videoId}`}
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        title="Embedded youtube"
-      />
-    </div>
-  );
+  return <div className={styles["detail"]}>{props.children}</div>;
 }
 
 export default function ChallengeSection() {

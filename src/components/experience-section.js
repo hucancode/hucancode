@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useI18n } from "locales/i18n";
+import styles from "./experience-section.module.css";
 
 function Container(props) {
   return (
@@ -57,7 +58,7 @@ function HistoryNavigator(props) {
 function HistoryButton(props) {
   return (
     <button
-      className="history-button"
+      className={styles["history-button"]}
       onClick={props.onClick}
       active={props.active ? "true" : undefined}
     >
@@ -68,16 +69,18 @@ function HistoryButton(props) {
 
 function ContentContainer(props) {
   return (
-    <div className="history-content" active={props.active ? "true" : undefined}>
+    <div
+      className={styles["history-content"]}
+      active={props.active ? "true" : undefined}
+    >
       {props.children}
     </div>
   );
 }
 
 function Title(props) {
-  return (
-    <h3 className="history-title text-base text-left">{props.children}</h3>
-  );
+  const className = `${styles["history-title"]} text-base text-left`;
+  return <h3 className={className}>{props.children}</h3>;
 }
 
 function Time(props) {
@@ -85,7 +88,7 @@ function Time(props) {
 }
 
 function Description(props) {
-  return <div className="history-desc">{props.children}</div>;
+  return <div className={styles["history-desc"]}>{props.children}</div>;
 }
 
 export default function ExperienceSection() {

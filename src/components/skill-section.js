@@ -23,6 +23,7 @@ import { GrMysql } from "react-icons/gr";
 import { DiNodejs } from "react-icons/di";
 import SwitchButton from "widgets/switch-button";
 import { useI18n } from "locales/i18n";
+import styles from "./skill-section.module.css";
 
 function Container(props) {
   return (
@@ -46,7 +47,10 @@ function SectionTitle(props) {
 
 function SkillSet(props) {
   return (
-    <ul className="skill-set" active={props.active ? "true" : undefined}>
+    <ul
+      className={styles["skill-container"]}
+      active={props.active ? "true" : undefined}
+    >
       {props.children}
     </ul>
   );

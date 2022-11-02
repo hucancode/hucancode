@@ -1,3 +1,4 @@
+"use client";
 import * as THREE from "three";
 import { Flow } from "../three/modifiers/CurveModifier.js";
 import { OBJLoader } from "../three/loaders/OBJLoader.js";

@@ -3,6 +3,7 @@ import React from "react";
 import SaborScene from "scenes/sabor";
 import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
 import { useI18n } from "locales/i18n";
+import "styles/challenge-card.css";
 
 function ProjectCard(props) {
   return <div className="challenge-card">{props.children}</div>;
