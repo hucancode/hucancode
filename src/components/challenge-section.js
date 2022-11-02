@@ -89,7 +89,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.locale()}/dragon`}>
+              <Link href={`/dragon`}>
                 <h2>{i18n.t("home.challenge.dragon")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.dragon-sub")}</p>
@@ -111,7 +111,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.locale()}/spider`}>
+              <Link href={`/spider`}>
                 <h2>{i18n.t("home.challenge.spider")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.spider-sub")}</p>
@@ -128,7 +128,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.locale()}/sabor`}>
+              <Link href={`/sabor`}>
                 <h2>{i18n.t("home.challenge.sabor")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.sabor-sub")}</p>
@@ -146,7 +146,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.locale()}/weapon-master`}>
+              <Link href={`/weapon-master`}>
                 <h2>{i18n.t("home.challenge.weapon-master")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.weapon-master-sub")}</p>
@@ -162,7 +162,7 @@ export default function ChallengeSection() {
           </ChallengeMedia>
           <ChallengeDetail>
             <div>
-              <Link href={`${i18n.locale()}/doll`}>
+              <Link href={`/doll`}>
                 <h2>{i18n.t("home.challenge.doll")}</h2>
               </Link>
               <p>{i18n.t("home.challenge.doll-sub")}</p>

@@ -4,7 +4,7 @@
     @apply flex flex-col md:flex-row justify-start items-stretch
             text-center
             rounded-lg
-            w-full max-w-screen-md grow
+            w-full max-w-screen-md
             py-2 px-5
             overflow-hidden;
     .media-3d {
