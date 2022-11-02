@@ -104,7 +104,7 @@ function ResumeLink(props) {
             cursor-pointer
             w-full h-full
             p-5
-            bg-gray-900 dark:bg-black
+            bg-gray-800 dark:bg-black
             text-white dark:text-white"
     >
       {props.children}

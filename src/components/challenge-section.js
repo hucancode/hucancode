@@ -23,6 +23,7 @@ function Container(props) {
     <section
       className="container
         flex flex-col items-center
+        max-w-screen-lg
         text-center
         p-10"
       id={props.id}
