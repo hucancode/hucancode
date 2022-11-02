@@ -27,6 +27,7 @@ function Container(props) {
         p-10"
       id={props.id}
     >
+    <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
       {props.children}
     </section>
   );

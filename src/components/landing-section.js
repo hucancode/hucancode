@@ -103,7 +103,6 @@ function ResumeLink(props) {
             text-sm uppercase
             cursor-pointer
             w-full h-full
-            rounded-md
             p-5
             bg-gray-900 dark:bg-black
             text-white dark:text-white"

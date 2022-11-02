@@ -21,7 +21,7 @@ import {
 import { RiGoogleFill } from "react-icons/ri";
 import { GrMysql } from "react-icons/gr";
 import { DiNodejs } from "react-icons/di";
-import SwitchButton from "widgets/switch-button";
+import SlideButton from "widgets/slide-button";
 import { useI18n } from "locales/i18n";
 import styles from "./skill-section.module.css";
 
@@ -30,12 +30,13 @@ function Container(props) {
     <section
       className="container 
     flex flex-col items-center
-    bg-indigo-100 dark:bg-black
     py-10 md:px-10
     text-center
     overflow-hidden"
       id={props.id}
     >
+    <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
+
       {props.children}
     </section>
   );
@@ -71,12 +72,12 @@ export default function SkillSection() {
   return (
     <Container id="skill">
       <SectionTitle>{i18n.t("home.tools.title")}</SectionTitle>
-      <SwitchButton
+      <SlideButton
         inputId="switchSkill"
         labelA={i18n.t("home.tools.game")}
         labelB={i18n.t("home.tools.app")}
         onChange={(value) => setActiveSet(value)}
-      ></SwitchButton>
+      ></SlideButton>
       <SkillSet active={!activeSet}>
         <Skill name="C++" icon={<SiCplusplus size="2em" />} />
         <Skill name="C#" icon={<SiCsharp size="2em" />} />

@@ -1,9 +1,0 @@
-  .contact-container {
-    @apply flex flex-col md:items-start items-center justify-start gap-3
-            mb-10
-            text-sm
-            text-gray-800 dark:text-gray-400;
-    a {
-      @apply hover:text-blue-900 hover:dark:text-blue-300;
-    }
-  }

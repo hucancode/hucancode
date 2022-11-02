@@ -12,8 +12,6 @@ export default function Home() {
     <>
       <LandingSection />
       <SkillSection />
-      <LanguageSection />
-      <ExperienceSection />
       <ChallengeSection />
       <FooterSection />
     </>

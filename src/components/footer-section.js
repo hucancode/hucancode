@@ -14,7 +14,6 @@ import {
   SiMinutemailer,
   SiBuymeacoffee,
 } from "react-icons/si";
-import styles from "./footer-section.module.css";
 
 function Container(props) {
   return (
@@ -56,12 +55,11 @@ function Avatar() {
 }
 
 function ContactContainer(props) {
-  return <div className={styles["contact-container"]}>{props.children}</div>;
+  return <div className="flex flex-col md:items-start items-center justify-start gap-3 mb-10 text-sm text-gray-800 dark:text-gray-400">{props.children}</div>;
 }
 
 function ContactContainerLeft(props) {
-  const className = `${styles["contact-container"]} items-start`;
-  return <div className={className}>{props.children}</div>;
+  return <div className="flex flex-col md:items-start items-center justify-start gap-3 mb-10 text-sm text-gray-800 dark:text-gray-400 items-start">{props.children}</div>;
 }
 
 function Title(props) {
@@ -175,7 +173,7 @@ export default function FooterSection() {
         </SocialContainer>
         <SocialContainer>
           <FaFileDownload size="1.5em" style={{ marginRight: "0.5em" }} />
-          <a target="_blank" rel="noreferrer" href={resumeUrl}>
+          <a className="hover:text-blue-900 hover:dark:text-blue-300" target="_blank" rel="noreferrer" href={resumeUrl}>
             {i18n.t("common.contact.downloadResume")}
           </a>
         </SocialContainer>
