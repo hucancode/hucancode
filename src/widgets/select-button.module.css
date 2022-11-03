@@ -1,0 +1,23 @@
+.select-button {
+@apply flex items-center justify-center relative overflow-hidden max-w-lg;
+input {
+  @apply hidden;
+}
+label {
+  @apply h-full w-[150%]
+      left-0
+			rounded-2xl
+			cursor-pointer
+			absolute;
+}
+h3 {
+  @apply w-1/2
+  px-4 py-2
+			cursor-pointer
+			select-none
+			text-xs
+			md:text-base
+			duration-300
+			z-10;
+}
+}

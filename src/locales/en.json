@@ -1,0 +1,106 @@
+{
+  "common": {
+    "nav": {
+      "skill": "Skill",
+      "exp": "Experience",
+      "works": "Works",
+      "contact": "Contact"
+    },
+    "contact": {
+      "address": "Gifu City, Gifu, Japan",
+      "social": "See more from me!",
+      "contact": "Contact",
+      "buymeacoffee": "Buy me a coffee",
+      "downloadResume": "Download my resume"
+    },
+    "note": {
+      "madeWith": "Deployed with <code>Cloud Run</code><br/>Made with <code>Next.js, Three.js, TailwindCSS</code> and some other tools<br />"
+    }
+  },
+  "home": {
+    "landing": {
+      "hello": "Hello!",
+      "about": "I am Bang, a passionate Front End Software Engineer. I build mobile applications and games for a living."
+    },
+    "tools": {
+      "title": "Tools I use",
+      "game": "Game Development",
+      "app": "Application Development"
+    },
+    "languages": {
+      "title": "Language abilities",
+      "english": "English",
+      "japanese": "Japanese",
+      "rw": "Reading/Writing",
+      "ls": "Listening/Speaking"
+    },
+    "experience": {
+      "title": "Where have I been?",
+      "nav": {
+        "gc": "GoodCreate",
+        "jpschool": "Japanese School",
+        "glhan": "Gameloft",
+        "fpt": "FPT Software",
+        "university": "University"
+      },
+      "position": {
+        "gc": "Engineering Manager <sup>@</sup> <3><em>GoodCreate</em></3>",
+        "jpschool": "Student <sup>@</sup> <3><em>Mizuno International Language School</em></3>",
+        "glhan": "Senior Game Programmer <sup>@</sup> <3><em>Gameloft Hanoi</em></3>",
+        "fpt": "Senior Software Developer <sup>@</sup> <3><em>FPT Software</em></3>",
+        "university": "Bachelor Degree <sup>@</sup> <3><em>Hung Yen University of Technology and Education</em></3>"
+      },
+      "time": {
+        "gc": "July 2020 - July 2022",
+        "jpschool": "April 2019 - April 2020",
+        "glhan": "March 2014 - March 2016, June 2018 - November 2018",
+        "fpt": "June 2016 - June 2018",
+        "university": "September 2010 - June 2014"
+      },
+      "desc": {
+        "gc": "<0><0>I am in charge of software engineering department in GoodCreate. I discuss the requirements, provide technical advices, propose high level solutions.</0><1>I developed highly interactive mobile applications using <code>Swift</code> and <code>Kotlin</code></1><2>I do research and development activity. Explore potential use of <code>Flutter</code> in future projects.</2></0>",
+        "jpschool": "<0><0>I took 2-years course, but I graduated early, only study there for 1 year.</0><1>Started with almost zero Japanese, I was able to pass <em>JLPT N3</em> before graduation. One and a half year later I passed <em>JLPT N2</em>. </1><2>I can communicate in Japanese at business level. I am able to discuss technical topic in Japanese with minimal difficulty. </2><3>I can act as English-Japanese-Vietnamese interpreter at conversational level.<br/>I can interpret business Japanese to some degree.</3></0>",
+        "glhan": "<0><0>I have taken part in Gameloft AI Contest 2013, I finished at <em>Quater Final (rank #4~8)</em>. I then soon joined Gameloft later on March 2014.</0><1>Deeply immersed in international environment, my English ability improved significantly. Thanks to that, earlier in 2021, I took the TOEIC English test and achieved <em>945/990 points</em>.</1><2>Started out as a C++ Game Programmer, I developed my interest in Computer Graphics. I am in charge of gameplay programming and graphics optimization for games. I am well trained in OpenGL, shader programming and various graphics debugging tools.</2><3>I was in charge of gameplay programming and graphics optimization in the following games (all based on C++ and OpenGL):<1><0>Sharkdash, built using 2D in-house engine.</0><1>Ice Age Adventures, built using in-house 3D engine. </1><2>Brothers in Arms 3, built using Irrlicht-based in-house engine (3D).</2><3>Order and Chaos 2, 3D MMORPG, built using in-house engine.</3><4>Disney Magic Kingdom, built using Irrlicht-based in-house engine (3D).</4></1></3></0>",
+        "fpt": "<0><0>I joined FPT Software on June 2016 and lead a team of 5 challenging a C++ project with <em>2 millions lines of code</em>. That was a migration project, bringing an old 32-bit based system to 64-bit. I was in charge of building custom developement tools (CLI) for the team. I did review other member's code to ensure source code quality.</0><1>I developed application for an entertainment system running on Automobile devices (in parnership with LG). That was media playing application, built with Qt. I am in charge of feature implementation and <em>overall performance optimization</em>.</1><2>Over the course of 2 years at FPT Software, I have received various training on Project Management. I learned how to manage a small team and was pretty successful at it.</2><3>I was received honorable mention as <em>Best Rookie of The Year 2016</em>.</3></0>",
+        "university": "<0><0>My major was <code>Software Engineering</code>. Over the course of 4 years, I was well trained with <code>C/C++, C#</code>. I got perfect mark <em>(10/10)</em> in Computer Programming, Semester Project #4. I have most major subjects above A grade <em>(8.0+/10)</em>, with A+ in Graduation Project <em>(9.2/10)</em>.</0><1> I won an university programming contest. Both as an individual and as a team.</1><2>I represented my university taking part in National Olympiad of Informatics. I got an incentive prize.</2><3>My team represented my university taking part in ACM/ICPC.</3></0>"
+      }
+    },
+    "challenge": {
+      "title": "Something I have made",
+      "dragon": "Procedural Dragon",
+      "dragon-sub": "3D procedural animation experiment",
+      "spider": "Procedural Spider",
+      "spider-sub": "3D procedural animation experiment",
+      "sabor": "Sabor Game Character",
+      "sabor-sub": "Game-ready character. Rigged and animated using Blender",
+      "weapon-master": "Weapon Master",
+      "weapon-master-sub": "Small demo game made with Unreal Engine 4",
+      "doll": "Gun and Doll",
+      "doll-sub": "Small game made with Unity"
+    }
+  },
+  "challenge": {
+    "dragon": {
+      "title": "Procedural Dragon",
+      "description": "<0>Dragon animations are procedurally generated with following steps:</0><1><0>Load static dragon mesh. Posed in a straight line</0><1>Build a curve using THREE.CatmullRomCurve3</1><2>Pass curve data down to GPU via a texture</2><3>Inside vertex shader, read texture data and set vertex position accordingly</3></1><2>Dragon model by <1>youmeowmeow</1>.</2>",
+      "refresh": "Generate new flying path"
+    },
+    "spider": {
+      "title": "Procedural Spider",
+      "description": "<0>Spider animations are procedurally generated using Inverse Kinematics.</0><1>Spider model by <1>volkanongun</1>.</1>",
+      "addMore": "Add more spider"
+    },
+    "sabor": {
+      "title": "Sabor Game Character",
+      "description": "<0>This is a game-ready character. Rigged and animated using Blender.</0>"
+    },
+    "weapon-master": {
+      "title": "Weapon Master",
+      "description": "<0>This is small RPG made with Unreal Engine, featuring 10+ switchable weapons.</0><1><0>Each weapon has unique skill set. Weapon has it's own animation logic and completely independent from character logic.</0><1>Full locomotion animation. Dashing, Jumping, Sprinting, Flying.</1><2>Some skill has interaction with locomotion state, try swing a sword while in air or quickly hit while dashing.</2><3>Featuring hit react system. Player get stunned when hit. High impact skill knocks down enemy dramatically using ragdoll physics.</3></1>"
+    },
+    "doll": {
+      "title": "Gun and Doll",
+      "description": "<0>Small top down shooter game made with Unity, featuring a laser gun and alot of fearsome \"monster\".</0>"
+    }
+  }
+}

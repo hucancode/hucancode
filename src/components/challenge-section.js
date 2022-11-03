@@ -1,141 +1,220 @@
-import React from "react";
-import Link from 'next/link'
-import { useTranslation } from 'next-i18next';
-import { SiThreedotjs, SiUnrealengine, SiUnity, SiBlender, SiOpengl } from "react-icons/si";
-import { GiPuppet } from 'react-icons/gi'
+"use client";
+import React, { useState } from "react";
+import { useI18n } from "locales/i18n";
+import styles from "./challenge-section.module.css";
+import YoutubeVideo from "widgets/youtube";
+import { BsArrowBarDown } from "react-icons/bs";
+import Link from "next/link";
 
-function Container(props)
-{
-    return <section className="container
-        flex flex-col items-center
+function Container(props) {
+  return (
+    <section
+      className="container w-full flex flex-col items-center
+        py-10 md:px-10
         text-center
-        p-10" id={props.id}>
-        {props.children}
+        overflow-hidden"
+      id={props.id}
+    >
+      <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
+      {props.children}
     </section>
+  );
 }
 
-function SectionTitle(props)
-{
-    return <h1 className="
-        text-2xl
+function SectionTitle(props) {
+  return (
+    <h1
+      className="text-2xl
         mb-5
-        font-bold">
-        {props.children}
+        font-bold"
+    >
+      {props.children}
     </h1>
+  );
 }
 
-function ShowcaseContainer(props)
-{
-    return <div className="
-        w-full
-        grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10
-        text-center
-        max-w-screen-lg" >
-        {props.children}
+function SectionExpandButton(props) {
+  if (!props.active) {
+    return <></>;
+  }
+  return (
+    <button onClick={props.onClick}>
+      <div className="animate-bounce">
+        <BsArrowBarDown size="2em" />
+      </div>
+    </button>
+  );
+}
+function HistoryContainer(props) {
+  if (!props.active) {
+    return <></>;
+  }
+  return (
+    <div
+      className="w-full max-w-screen-lg bg-black/10 p-2
+	  overflow-hidden
+        flex flex-col md:flex-row justify-start md:aspect-[21/9]"
+    >
+      {props.children}
     </div>
+  );
 }
 
-function ChallengeCard(props)
-{
-    return <div className="challenge-card-small">
-        {props.children}
+function HistoryNavigator(props) {
+  return (
+    <div
+      className="flex md:flex-col
+        mb-5 md:mb-0
+        w-full md:w-1/3 xl:w-1/5 max-w-screen-sm
+        overflow-x-auto"
+    >
+      {props.children}
     </div>
+  );
 }
 
-function ChallengeMedia(props)
-{
-    return <div className="media">
-        {props.children}
-    </div>
+function HistoryButton(props) {
+  return (
+    <button
+      className={styles["history-button"]}
+      onClick={props.onClick}
+      active={props.active ? "true" : undefined}
+    >
+      {props.children}
+    </button>
+  );
 }
 
-function ChallengeDetail(props)
-{
-    return <div className="detail">
-        {props.children}
+function ContentContainer(props) {
+  return (
+    <div
+      className={styles["history-content"]}
+      active={props.active ? "true" : undefined}
+    >
+      {props.children}
     </div>
+  );
 }
 
-
-function YoutubeVideo(props) {
-    return <div className="youtube-frame">
-        <iframe 
-            width="853"
-            height="480"
-            src={`https://www.youtube.com/embed/${props.videoId}`}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            title="Embedded youtube"
-        />
+function Title(props) {
+  return (
+    <div className="flex flex-col items-start absolute bottom-0 left-0 bg-white/20 p-4">
+      {props.children}
     </div>
+  );
+}
+
+function Time(props) {
+  return <p className="text-xs text-left">{props.children}</p>;
+}
+
+function Description(props) {
+  return <div className={styles["history-desc"]}>{props.children}</div>;
 }
 
 export default function ChallengeSection() {
-    const { t } = useTranslation("home");
-    return <Container id='challenge'>
-        <SectionTitle>{t('challenge.title')}</SectionTitle>
-        <ShowcaseContainer>
-            <ChallengeCard>
-                <ChallengeMedia>
-                    <video autoPlay muted loop src="/assets/video/dragon-600-20s.webm" />
-                </ChallengeMedia>
-                <ChallengeDetail>
-                    <div>
-                        <Link href="/dragon" passHref><a><h2>{t("challenge.dragon")}</h2></a></Link>
-                        <p>{t("challenge.dragon-sub")}</p>
-                    </div>
-                    <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
-                </ChallengeDetail>
-            </ChallengeCard>
-            <ChallengeCard>
-                <ChallengeMedia>
-                    <video autoPlay muted loop src='/assets/video/spider-600-20s.webm' />
-                </ChallengeMedia>
-                <ChallengeDetail>
-                    <div>
-                        <Link href="/spider" passHref><a><h2>{t("challenge.spider")}</h2></a></Link>
-                        <p>{t("challenge.spider-sub")}</p>
-                    </div>
-                    <span><SiThreedotjs size="1.5em" /><SiOpengl size="1.5em" /></span>
-                </ChallengeDetail>
-            </ChallengeCard>
-            <ChallengeCard>
-                <ChallengeMedia>
-                    <video autoPlay muted loop src='/assets/video/sabor-600-20s.webm' />
-                </ChallengeMedia>
-                <ChallengeDetail>
-                    <div>
-                        <Link href="/sabor" passHref><a><h2>{t("challenge.sabor")}</h2></a></Link>
-                        <p>{t("challenge.sabor-sub")}</p>
-                    </div>
-                    <span><SiThreedotjs size="1.5em" /><SiBlender size="1.5em" /><GiPuppet size="1.5em"/></span>
-                </ChallengeDetail>
-            </ChallengeCard>
-            <ChallengeCard>
-                <ChallengeMedia>
-                    <YoutubeVideo videoId='9RCqafaFMcY' />
-                </ChallengeMedia>
-                <ChallengeDetail>
-                    <div>
-                        <Link href="/weapon-master" passHref><a><h2>{t("challenge.weapon-master")}</h2></a></Link>
-                        <p>{t("challenge.weapon-master-sub")}</p>
-                    </div>
-                    <span><SiUnrealengine size="1.5em" /></span>
-                </ChallengeDetail>
-            </ChallengeCard>
-            <ChallengeCard>
-                <ChallengeMedia>
-                    <YoutubeVideo videoId='xvNHCHPUz8A' />
-                </ChallengeMedia>
-                <ChallengeDetail>
-                    <div>
-                        <Link href="/doll" passHref><a><h2>{t("challenge.doll")}</h2></a></Link>
-                        <p>{t("challenge.doll-sub")}</p>
-                    </div>
-                    <span><SiUnity size="1.5em" /></span>
-                </ChallengeDetail>
-            </ChallengeCard>
-        </ShowcaseContainer>
+  var [activeSet, setActiveSet] = useState(0);
+  var [isHidden, setHidden] = useState(true);
+  const i18n = useI18n();
+  return (
+    <Container>
+      <SectionTitle>{i18n.t("home.challenge.title")}</SectionTitle>
+      <SectionExpandButton active={isHidden} onClick={() => setHidden(false)} />
+      <HistoryContainer active={!isHidden}>
+        <HistoryNavigator>
+          <HistoryButton
+            onClick={() => setActiveSet(0)}
+            active={activeSet === 0}
+          >
+            <h3>{i18n.t("home.challenge.dragon")}</h3>
+          </HistoryButton>
+          <HistoryButton
+            onClick={() => setActiveSet(1)}
+            active={activeSet === 1}
+          >
+            <h3>{i18n.t("home.challenge.sabor")}</h3>
+          </HistoryButton>
+          <HistoryButton
+            onClick={() => setActiveSet(2)}
+            active={activeSet === 2}
+          >
+            <h3>{i18n.t("home.challenge.spider")}</h3>
+          </HistoryButton>
+          <HistoryButton
+            onClick={() => setActiveSet(3)}
+            active={activeSet === 3}
+          >
+            <h3>{i18n.t("home.challenge.weapon-master")}</h3>
+          </HistoryButton>
+          <HistoryButton
+            onClick={() => setActiveSet(4)}
+            active={activeSet === 4}
+          >
+            <h3>{i18n.t("home.challenge.doll")}</h3>
+          </HistoryButton>
+        </HistoryNavigator>
+        <ContentContainer active={activeSet === 0}>
+          <Description>
+            <video
+              className="aspect-[4/3] h-full"
+              autoPlay
+              muted
+              loop
+              src="/assets/video/dragon-600-20s.webm"
+            />
+          </Description>
+          <Title>
+            <Link href="/dragon">
+              <h3>{i18n.t("home.challenge.dragon")}</h3>
+            </Link>
+            <small>{i18n.t("home.challenge.dragon-sub")}</small>
+          </Title>
+        </ContentContainer>
+        <ContentContainer active={activeSet === 1}>
+          <Description>
+            <video
+              className="aspect-[4/3] h-full"
+              autoPlay
+              muted
+              loop
+              src="/assets/video/sabor-600-20s.webm"
+            />
+          </Description>
+          <Title>
+            <Link href="/sabor">
+              <h3>{i18n.t("home.challenge.sabor")}</h3>
+            </Link>
+            <small>{i18n.t("home.challenge.sabor-sub")}</small>
+          </Title>
+        </ContentContainer>
+        <ContentContainer active={activeSet === 2}>
+          <Description>
+            <video
+              className="aspect-[4/3] h-full"
+              autoPlay
+              muted
+              loop
+              src="/assets/video/spider-600-20s.webm"
+            />
+          </Description>
+          <Title>
+            <Link href="/spider">
+              <h3>{i18n.t("home.challenge.spider")}</h3>
+            </Link>
+            <small>{i18n.t("home.challenge.spider-sub")}</small>
+          </Title>
+        </ContentContainer>
+        <ContentContainer active={activeSet === 3}>
+          <Description>
+            <YoutubeVideo videoId="9RCqafaFMcY" />
+          </Description>
+        </ContentContainer>
+        <ContentContainer active={activeSet === 4}>
+          <Description>
+            <YoutubeVideo videoId="xvNHCHPUz8A" />
+          </Description>
+        </ContentContainer>
+      </HistoryContainer>
     </Container>
+  );
 }
