@@ -31,14 +31,13 @@ export default function ProceduralSpider() {
   const i18n = useI18n();
   const spider = React.useRef(null);
   return (
-    <ProjectCard>
-      <ProjectMedia>
-        <SpiderScene ref={spider} />
+	<div className="container max-w-screen-lg flex flex-col items-center">        
+	<SpiderScene ref={spider} />
         <ActionButton onClick={() => spider.current.generateSpider()}>
           <MdPlusOne size="2.5em" />
           {i18n.t("challenge.spider.addMore")}
         </ActionButton>
-      </ProjectMedia>
-    </ProjectCard>
+		</div>
+
   );
 }

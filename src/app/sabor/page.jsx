@@ -20,19 +20,8 @@ function ProjectDetail(props) {
 export default function Sabor() {
   const i18n = useI18n();
   return (
-    <ProjectCard>
-      <ProjectMedia>
+	<div className="w-full max-w-screen-sm px-10 flex flex-col items-center">        
         <SaborScene />
-      </ProjectMedia>
-      <ProjectDetail>
-        <h2>{i18n.t("challenge.sabor.title")}</h2>
-        <span>
-          <SiThreedotjs size="1.5em" />
-          <SiBlender size="1.5em" />
-          <SiOpengl size="1.5em" />
-        </span>
-        <p>This is a game-ready character. Rigged and animated using Blender</p>
-      </ProjectDetail>
-    </ProjectCard>
+	</div>
   );
 }

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useI18n } from "locales/i18n";
 import styles from "./challenge-section.module.css";
 import YoutubeVideo from "widgets/youtube";
+import { BsArrowBarDown } from "react-icons/bs";
 
 function Container(props) {
   return (
@@ -31,10 +32,25 @@ function SectionTitle(props) {
   );
 }
 
+function SectionExpandButton(props) {
+
+	if(!props.active) {
+		return <></>
+	}
+	  return <button onClick={props.onClick}>
+		<div className="animate-bounce">
+			<BsArrowBarDown size="2em" />
+		</div>
+	  </button>
+}
 function HistoryContainer(props) {
+	if(!props.active) {
+		return <></>
+	}
   return (
     <div
       className="w-full max-w-screen-lg bg-black/10 p-2
+	  overflow-hidden
         flex flex-col md:flex-row justify-start md:aspect-[21/9]"
     >
       {props.children}
@@ -92,13 +108,15 @@ function Description(props) {
   return <div className={styles["history-desc"]}>{props.children}</div>;
 }
 
-export default function ExperienceSection() {
+export default function ChallengeSection() {
   var [activeSet, setActiveSet] = useState(0);
+  var [isHidden, setHidden] = useState(true);
   const i18n = useI18n();
   return (
-    <Container id="experiences">
+    <Container>
       <SectionTitle>{i18n.t("home.challenge.title")}</SectionTitle>
-      <HistoryContainer>
+	  <SectionExpandButton active={isHidden} onClick={() => setHidden(false)}/>
+      <HistoryContainer active={!isHidden}>
         <HistoryNavigator>
           <HistoryButton
             onClick={() => setActiveSet(0)}
