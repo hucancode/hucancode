@@ -35,7 +35,7 @@ function Container(props) {
     overflow-hidden"
       id={props.id}
     >
-    <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
+      <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
 
       {props.children}
     </section>
@@ -63,13 +63,19 @@ function SkillSet(props) {
 
 function Skill(props) {
   return (
-    <li className="w-12 h-16
+    <li
+      className="w-12 h-16
                 flex flex-col items-center
-                m-3">
-      <div className="w-12 h-12
+                m-3"
+    >
+      <div
+        className="w-12 h-12
                     flex items-center justify-center
                     text-base
-                    text-gray-700 dark:text-gray-400">{props.icon}</div>
+                    text-gray-700 dark:text-gray-400"
+      >
+        {props.icon}
+      </div>
       <p className="text-xs font-mono text-center">{props.name}</p>
     </li>
   );

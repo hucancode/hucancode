@@ -20,8 +20,8 @@ function ProjectDetail(props) {
 export default function Sabor() {
   const i18n = useI18n();
   return (
-	<div className="w-full max-w-screen-sm px-10 flex flex-col items-center">        
-        <SaborScene />
-	</div>
+    <div className="w-full max-w-screen-sm px-10 flex flex-col items-center">
+      <SaborScene />
+    </div>
   );
 }

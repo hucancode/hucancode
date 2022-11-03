@@ -8,7 +8,11 @@ import Link from "next/link";
 import SelectButton from "widgets/select-button";
 
 function Container(props) {
-  return <nav className="container max-w-screen-lg w-full h-16 flex flex-row items-center justify-between">{props.children}</nav>;
+  return (
+    <nav className="container max-w-screen-lg w-full h-16 flex flex-row items-center justify-between">
+      {props.children}
+    </nav>
+  );
 }
 
 function LogoContainer(props) {
@@ -47,25 +51,23 @@ export default function Navbar() {
 
   return (
     <Container>
-      <a href="/">
+      <Link href="/">
         <LogoContainer>
           <Logo />
         </LogoContainer>
-      </a>
-	  <SelectButton 
+      </Link>
+      <SelectButton
         inputId="switchLanguage"
         labelA="🇺🇸"
         labelB="🇯🇵"
         onChange={(value) => {
-			if(value) {
-				i18n.locale("jp");
-			} else {
-				i18n.locale("en");
-			}
-		}}
-	  >
-
-	  </SelectButton>
+          if (value) {
+            i18n.locale("jp");
+          } else {
+            i18n.locale("en");
+          }
+        }}
+      ></SelectButton>
       <ThemeContainer>
         <ThemeToggle />
       </ThemeContainer>

@@ -13,8 +13,8 @@ function ButtonGraphic(props) {
         translate-x-[1.5%]
         peer-checked:translate-x-[-35%]"
     >
-    <div className="-skew-x-12 bg-cyan-400 w-1/3 h-full"></div>
-    <div className="-skew-x-12 bg-cyan-400 w-1/3 h-full"></div>
+      <div className="-skew-x-12 bg-cyan-400 w-1/3 h-full"></div>
+      <div className="-skew-x-12 bg-cyan-400 w-1/3 h-full"></div>
     </label>
   );
 }
@@ -75,4 +75,3 @@ export default function SlideButton(props) {
     </Container>
   );
 }
-

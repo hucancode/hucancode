@@ -135,14 +135,12 @@ export default function LandingSection() {
   return (
     <Container>
       <About>
-		<Greetings>
-			<Title>
-				{i18n.t("home.landing.hello")} <WavingHand />
-			</Title>
-		</Greetings>
-        <Description>
-          {i18n.t("home.landing.about")}
-        </Description>
+        <Greetings>
+          <Title>
+            {i18n.t("home.landing.hello")} <WavingHand />
+          </Title>
+        </Greetings>
+        <Description>{i18n.t("home.landing.about")}</Description>
       </About>
       <CanvasContainer>
         <DragonScene />

@@ -4,6 +4,7 @@ import { useI18n } from "locales/i18n";
 import styles from "./challenge-section.module.css";
 import YoutubeVideo from "widgets/youtube";
 import { BsArrowBarDown } from "react-icons/bs";
+import Link from "next/link";
 
 function Container(props) {
   return (
@@ -14,7 +15,7 @@ function Container(props) {
         overflow-hidden"
       id={props.id}
     >
-    <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
+      <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
       {props.children}
     </section>
   );
@@ -33,20 +34,21 @@ function SectionTitle(props) {
 }
 
 function SectionExpandButton(props) {
-
-	if(!props.active) {
-		return <></>
-	}
-	  return <button onClick={props.onClick}>
-		<div className="animate-bounce">
-			<BsArrowBarDown size="2em" />
-		</div>
-	  </button>
+  if (!props.active) {
+    return <></>;
+  }
+  return (
+    <button onClick={props.onClick}>
+      <div className="animate-bounce">
+        <BsArrowBarDown size="2em" />
+      </div>
+    </button>
+  );
 }
 function HistoryContainer(props) {
-	if(!props.active) {
-		return <></>
-	}
+  if (!props.active) {
+    return <></>;
+  }
   return (
     <div
       className="w-full max-w-screen-lg bg-black/10 p-2
@@ -95,9 +97,11 @@ function ContentContainer(props) {
 }
 
 function Title(props) {
-  return <div className="flex flex-col items-start absolute bottom-0 left-0 bg-white/20 p-4">
-	{props.children}
-  </div>
+  return (
+    <div className="flex flex-col items-start absolute bottom-0 left-0 bg-white/20 p-4">
+      {props.children}
+    </div>
+  );
 }
 
 function Time(props) {
@@ -115,7 +119,7 @@ export default function ChallengeSection() {
   return (
     <Container>
       <SectionTitle>{i18n.t("home.challenge.title")}</SectionTitle>
-	  <SectionExpandButton active={isHidden} onClick={() => setHidden(false)}/>
+      <SectionExpandButton active={isHidden} onClick={() => setHidden(false)} />
       <HistoryContainer active={!isHidden}>
         <HistoryNavigator>
           <HistoryButton
@@ -152,53 +156,53 @@ export default function ChallengeSection() {
         <ContentContainer active={activeSet === 0}>
           <Description>
             <video
-				className="aspect-[4/3] h-full"
+              className="aspect-[4/3] h-full"
               autoPlay
               muted
               loop
               src="/assets/video/dragon-600-20s.webm"
             />
           </Description>
-			<Title>
-				<a href="/dragon">
-					<h3>{i18n.t("home.challenge.dragon")}</h3>
-				</a>
-				<small>{i18n.t("home.challenge.dragon-sub")}</small>
-			</Title>
+          <Title>
+            <Link href="/dragon">
+              <h3>{i18n.t("home.challenge.dragon")}</h3>
+            </Link>
+            <small>{i18n.t("home.challenge.dragon-sub")}</small>
+          </Title>
         </ContentContainer>
         <ContentContainer active={activeSet === 1}>
           <Description>
             <video
-				className="aspect-[4/3] h-full"
+              className="aspect-[4/3] h-full"
               autoPlay
               muted
               loop
               src="/assets/video/sabor-600-20s.webm"
             />
           </Description>
-			<Title>
-				<a href="/sabor">
-				<h3>{i18n.t("home.challenge.sabor")}</h3>
-				</a>
-				<small>{i18n.t("home.challenge.sabor-sub")}</small>
-			</Title>
+          <Title>
+            <Link href="/sabor">
+              <h3>{i18n.t("home.challenge.sabor")}</h3>
+            </Link>
+            <small>{i18n.t("home.challenge.sabor-sub")}</small>
+          </Title>
         </ContentContainer>
         <ContentContainer active={activeSet === 2}>
           <Description>
             <video
-				className="aspect-[4/3] h-full"
+              className="aspect-[4/3] h-full"
               autoPlay
               muted
               loop
               src="/assets/video/spider-600-20s.webm"
             />
           </Description>
-			<Title>
-				<a href="/spider">
-					<h3>{i18n.t("home.challenge.spider")}</h3>
-				</a>
-				<small>{i18n.t("home.challenge.spider-sub")}</small>
-			</Title>
+          <Title>
+            <Link href="/spider">
+              <h3>{i18n.t("home.challenge.spider")}</h3>
+            </Link>
+            <small>{i18n.t("home.challenge.spider-sub")}</small>
+          </Title>
         </ContentContainer>
         <ContentContainer active={activeSet === 3}>
           <Description>

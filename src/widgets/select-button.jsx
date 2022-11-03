@@ -13,8 +13,8 @@ function ButtonGraphic(props) {
 		bg-white/10
 		peer-checked:-translate-x-1/3"
     >
-    <div className="bg-black w-1/3 h-full"></div>
-    <div className="bg-black w-1/3 h-full"></div>
+      <div className="bg-black w-1/3 h-full"></div>
+      <div className="bg-black w-1/3 h-full"></div>
     </label>
   );
 }
@@ -75,4 +75,3 @@ export default function SelectButton(props) {
     </Container>
   );
 }
-

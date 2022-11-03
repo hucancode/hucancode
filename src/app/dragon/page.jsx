@@ -32,12 +32,12 @@ export default function ProceduralDragon() {
   const dragon = React.useRef(null);
   const i18n = useI18n();
   return (
-	<div className="container max-w-screen-lg flex flex-col items-center">        
-        <DragonScene ref={dragon} />
-        <ActionButton onClick={() => dragon.current.newFlyingPath()}>
-          <RiRefreshFill size="2.5em" />
-          {i18n.t("challenge.dragon.refresh")}
-        </ActionButton>
-</div>
+    <div className="container max-w-screen-lg flex flex-col items-center">
+      <DragonScene ref={dragon} />
+      <ActionButton onClick={() => dragon.current.newFlyingPath()}>
+        <RiRefreshFill size="2.5em" />
+        {i18n.t("challenge.dragon.refresh")}
+      </ActionButton>
+    </div>
   );
 }
