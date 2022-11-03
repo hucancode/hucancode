@@ -8,7 +8,7 @@
     },
     "contact": {
       "address": "Gifu City, Gifu, Japan",
-      "social": "Reach out to me!",
+      "social": "See more from me!",
       "contact": "Contact",
       "buymeacoffee": "Buy me a coffee",
       "downloadResume": "Download my resume"
@@ -23,7 +23,7 @@
       "about": "I am Bang, a passionate Front End Software Engineer. I build mobile applications and games for a living."
     },
     "tools": {
-      "title": "Tools and languages I use",
+      "title": "Tools I use",
       "game": "Game Development",
       "app": "Application Development"
     },
@@ -66,7 +66,7 @@
       }
     },
     "challenge": {
-      "title": "Something interesting I have challenged",
+      "title": "Something I have made",
       "dragon": "Procedural Dragon",
       "dragon-sub": "3D procedural animation experiment",
       "spider": "Procedural Spider",

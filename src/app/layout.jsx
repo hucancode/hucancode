@@ -13,7 +13,6 @@ export default async function RootLayout({ params, children }) {
         <I18n>
           <Navbar />
           <main>{children}</main>
-          <FootNote />
         </I18n>
       </body>
     </html>

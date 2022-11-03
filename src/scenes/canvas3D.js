@@ -22,6 +22,7 @@ export default class Canvas3D extends React.Component {
     cancelAnimationFrame(this.frameID);
   }
   componentDidUpdate() {
+    cancelAnimationFrame(this.frameID);
     if (this.state.isInCamera) {
       const scope = this;
       const renderLoop = function () {
@@ -29,8 +30,6 @@ export default class Canvas3D extends React.Component {
         scope.animate();
       };
       renderLoop();
-    } else {
-      cancelAnimationFrame(this.frameID);
     }
   }
   render() {

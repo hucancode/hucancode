@@ -1,6 +1,5 @@
-.slide-button {
-@apply w-full
-		flex items-center justify-center relative overflow-hidden max-w-lg;
+.select-button {
+@apply flex items-center justify-center relative overflow-hidden max-w-lg;
 input {
   @apply hidden;
 }
@@ -13,7 +12,7 @@ label {
 }
 h3 {
   @apply w-1/2
-  p-4
+  px-4 py-2
 			cursor-pointer
 			select-none
 			text-xs

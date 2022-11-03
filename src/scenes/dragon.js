@@ -139,7 +139,6 @@ function init() {
   setupLightning();
   loadModel();
   //
-
   window.addEventListener("resize", onWindowResize);
 }
 

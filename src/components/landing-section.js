@@ -5,6 +5,7 @@ import SaborScene from "scenes/sabor";
 import { useI18n } from "locales/i18n";
 import { FcDownload } from "react-icons/fc";
 import styles from "./landing-section.module.css";
+import DragonScene from "scenes/dragon";
 
 function Container(props) {
   return (
@@ -41,8 +42,6 @@ function Greetings(props) {
     <div
       className="flex flex-col items-center md:items-start
         mb-10
-        cursor-pointer
-        overflow-hidden
         max-w-max"
     >
       {props.children}
@@ -136,26 +135,17 @@ export default function LandingSection() {
   return (
     <Container>
       <About>
-        <Link href={i18n.locale() === "en" ? "/jp" : "/en"}>
-          <Greetings>
-            <Title>
-              {i18n.t("home.landing.hello")} <WavingHand />
-            </Title>
-            <Subtitle />
-          </Greetings>
-        </Link>
+		<Greetings>
+			<Title>
+				{i18n.t("home.landing.hello")} <WavingHand />
+			</Title>
+		</Greetings>
         <Description>
           {i18n.t("home.landing.about")}
-          <ResumeDownloadContainer>
-            <ResumeLink href={resumeUrl}>
-              <ResumeDownloadIcon />
-              <span>{i18n.t("common.contact.downloadResume")}</span>
-            </ResumeLink>
-          </ResumeDownloadContainer>
         </Description>
       </About>
       <CanvasContainer>
-        <SaborScene />
+        <DragonScene />
       </CanvasContainer>
     </Container>
   );

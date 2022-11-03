@@ -107,6 +107,19 @@ export default function FooterSection() {
       : "https://resume.hucanco.de/jp";
   return (
     <Container id="contact">
+      <ContactContainerLeft>
+        <Title>{i18n.t("common.contact.contact")}</Title>
+        <SocialContainer>
+          <SiMinutemailer size="1.5em" style={{ marginRight: "0.5em" }} />
+          <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
+        </SocialContainer>
+        <SocialContainer>
+          <FaFileDownload size="1.5em" style={{ marginRight: "0.5em" }} />
+          <a className="hover:text-blue-900 hover:dark:text-blue-300" target="_blank" rel="noreferrer" href={resumeUrl}>
+            {i18n.t("common.contact.downloadResume")}
+          </a>
+        </SocialContainer>
+      </ContactContainerLeft>
       <ContactContainer>
         <Title>{i18n.t("common.contact.social")}</Title>
         <SocialContainer>
@@ -122,24 +135,6 @@ export default function FooterSection() {
           <a
             target="_blank"
             rel="noreferrer"
-            href="https://sketchfab.com/hucancode"
-          >
-            <RoundIcon>
-              <SiSketchfab size="1.5em" />
-            </RoundIcon>
-          </a>
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href="https://www.hackerrank.com/hucancode"
-          >
-            <RoundIcon>
-              <FaHackerrank size="1.5em" />
-            </RoundIcon>
-          </a>
-          <a
-            target="_blank"
-            rel="noreferrer"
             href="https://leetcode.com/hucancode/"
           >
             <RoundIcon>
@@ -147,37 +142,7 @@ export default function FooterSection() {
             </RoundIcon>
           </a>
         </SocialContainer>
-        <a
-          target="_blank"
-          rel="noreferrer"
-          href="https://www.buymeacoffee.com/hucancode"
-          className="rounded-md bg-gray-200 dark:bg-gray-800 flex gap-2 items-center px-4 py-2 cursor-pointer"
-        >
-          <SiBuymeacoffee size="1.5em" />
-          {i18n.t("common.contact.buymeacoffee")}
-        </a>
       </ContactContainer>
-      <ContactContainerLeft>
-        <Title>{i18n.t("common.contact.contact")}</Title>
-        <SocialContainer>
-          <FaMapMarkerAlt size="1.5em" style={{ marginRight: "0.5em" }} />
-          <p>{i18n.t("common.contact.address")}</p>
-        </SocialContainer>
-        <SocialContainer>
-          <FaPhoneAlt size="1.5em" style={{ marginRight: "0.5em" }} />
-          <p>(+81) 080-768-66019</p>
-        </SocialContainer>
-        <SocialContainer>
-          <SiMinutemailer size="1.5em" style={{ marginRight: "0.5em" }} />
-          <a href="mailto:hucancode@gmail.com">hucancode@gmail.com</a>
-        </SocialContainer>
-        <SocialContainer>
-          <FaFileDownload size="1.5em" style={{ marginRight: "0.5em" }} />
-          <a className="hover:text-blue-900 hover:dark:text-blue-300" target="_blank" rel="noreferrer" href={resumeUrl}>
-            {i18n.t("common.contact.downloadResume")}
-          </a>
-        </SocialContainer>
-      </ContactContainerLeft>
       <Avatar />
     </Container>
   );

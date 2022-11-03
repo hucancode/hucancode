@@ -7,7 +7,7 @@
   html,
   body,
   #root {
-    @apply bg-indigo-300 dark:bg-gray-900
+    @apply bg-sky-100 dark:bg-gray-900
             text-gray-800 dark:text-white antialiased;
     font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI",
       "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
