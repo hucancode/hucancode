@@ -9,7 +9,7 @@ import SelectButton from "widgets/select-button";
 
 function Container(props) {
   return (
-    <nav className="container max-w-screen-lg w-full h-16 flex flex-row items-center justify-between">
+    <nav className="px-10 max-w-screen-lg w-full h-16 flex flex-row items-center justify-between">
       {props.children}
     </nav>
   );

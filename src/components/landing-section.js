@@ -11,11 +11,11 @@ import RubikScene from "scenes/rubik";
 function Container(props) {
   return (
     <section
-      className="container
-        relative
+      className="relative
         max-w-screen-lg w-full
         flex flex-col md:flex-row items-center justify-around
         overflow-hidden
+        px-10
         my-10"
       id={props.id}
     >

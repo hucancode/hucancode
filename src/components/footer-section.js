@@ -18,7 +18,7 @@ import {
 function Container(props) {
   return (
     <section
-      className="container
+      className="max-w-screen-lg w-full
         flex flex-col md:flex-row items-center md:items-start justify-around gap-3
         p-10"
       id={props.id}
