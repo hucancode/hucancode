@@ -1,0 +1,24 @@
+  .waving-hand {
+    @apply before:content-['👋'] 
+            hover:before:animate-waving-hand 
+            before:inline-block 
+            before:origin-[70%_70%];
+  }
+
+  .resume-download-container {
+    @apply relative
+            mt-10
+            p-0.5
+            z-0
+            w-full
+            overflow-hidden
+            before:absolute
+            before:top-0
+            before:left-0
+            before:w-double
+            before:h-full
+            before:-z-10
+            hover:before:animate-move-left
+            before:bg-rainbow
+            before:bg-half-width;
+  }

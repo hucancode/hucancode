@@ -7,7 +7,7 @@ RUN npm ci && npm run build && npm prune --production
 
 FROM gcr.io/distroless/nodejs:16
 WORKDIR /hucancode
-COPY package.json next-i18next.config.js next.config.js ./
+COPY package.json next.config.js ./
 COPY --from=build-env /hucancode/.next ./.next
 COPY --from=build-env /hucancode/node_modules ./node_modules
 COPY --from=build-env /hucancode/public ./public
