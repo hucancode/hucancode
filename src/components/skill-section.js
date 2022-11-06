@@ -27,8 +27,7 @@ import { useI18n } from "locales/i18n";
 function Container(props) {
   return (
     <section
-      className="container 
-    max-w-screen-lg
+      className="max-w-screen-lg w-full
     flex flex-col items-center
     py-10 md:px-10
     text-center

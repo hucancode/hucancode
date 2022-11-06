@@ -5,16 +5,17 @@ import SaborScene from "scenes/sabor";
 import { useI18n } from "locales/i18n";
 import { FcDownload } from "react-icons/fc";
 import styles from "./landing-section.module.css";
-import DragonScene from "scenes/dragon";
+//import DragonScene from "scenes/dragon";
+import RubikScene from "scenes/rubik";
 
 function Container(props) {
   return (
     <section
-      className="container
-        relative
+      className="relative
         max-w-screen-lg w-full
         flex flex-col md:flex-row items-center justify-around
         overflow-hidden
+        px-10
         my-10"
       id={props.id}
     >
@@ -29,7 +30,7 @@ function About(props) {
       className="flex
     flex-col items-center md:items-start
     md:relative md:left-0
-    md:w-1/2 w-full
+    md:w-1/3 w-full
     pb-10"
     >
       {props.children}
@@ -75,7 +76,7 @@ function WavingHand() {
 
 function Description(props) {
   return (
-    <div className="text-lg text-center md:text-left">{props.children}</div>
+    <div className="text-center md:text-left">{props.children}</div>
   );
 }
 
@@ -117,7 +118,7 @@ function CanvasContainer(props) {
       className="flex items-center justify-center
         relative
         right-0
-        md:w-2/3 lg:w-1/2 xl:w-2/5 w-full
+        md:w-2/3 w-full
         object-contain"
     >
       {props.children}
@@ -140,10 +141,14 @@ export default function LandingSection() {
             {i18n.t("home.landing.hello")} <WavingHand />
           </Title>
         </Greetings>
-        <Description>{i18n.t("home.landing.about")}</Description>
+        <Description>
+            {i18n.t("home.landing.about1")}
+            <br/>
+            {i18n.t("home.landing.about2")}
+        </Description>
       </About>
       <CanvasContainer>
-        <DragonScene />
+        <RubikScene />
       </CanvasContainer>
     </Container>
   );
