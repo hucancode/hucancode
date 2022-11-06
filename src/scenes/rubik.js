@@ -1,7 +1,6 @@
 "use client";
 import * as THREE from "three";
 import anime from 'animejs';
-import { GLTFLoader } from "../three/loaders/GLTFLoader.js";
 import { OrbitControls } from "../three/controls/OrbitControls";
 import Canvas3D from "./canvas3D";
 
@@ -107,6 +106,7 @@ function makeRubik() {
   pivot.position.z = (CUBE_NUM - 1)/2*(1+CUBE_MARGIN);
   scene.add(pivot);
   camera.lookAt(pivot.position);
+  controls.target.set(pivot.position.x, pivot.position.y, pivot.position.z);
   //addDebugArrow(pivot);
 }
 
@@ -117,7 +117,6 @@ function setupCamera(w, h) {
   camera.lookAt(scene.position);
   if (USE_CAMERA_CONTROL) {
       controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(1, 1, 1);
       //controls.enablePan = false;
       controls.maxPolarAngle =  Math.PI/2; // prevent the camera from going under the ground
       controls.minDistance = 4; // the minimum distance the camera must have from center
@@ -146,9 +145,7 @@ function init() {
   }
   setupCamera(w, h);
   makeRubik();
-  //startMove(FACE_TOP);
   startMove(Math.floor(Math.random()*5), Math.floor(Math.random()*5)-2);
-  //
   window.addEventListener("resize", onWindowResize);
 }
 
@@ -180,9 +177,6 @@ function addDebugArrow(object) {
 }
 
 function startMove(face, magnitude) {
-  pivot.rotation.x = 0;
-  pivot.rotation.y = 0;
-  pivot.rotation.z = 0;
   for(let x = 0;x<CUBE_NUM;x++) {
     for(let y = 0;y<CUBE_NUM;y++) {
       for(let z = 0;z<CUBE_NUM;z++) {
@@ -197,11 +191,11 @@ function startMove(face, magnitude) {
   let targetY = pivot.rotation.y;
   let targetZ = pivot.rotation.z;
   if(face == FACE_LEFT || face == FACE_RIGHT) {
-    targetX = targetX + Math.PI/2*magnitude;
+    targetX += Math.PI/2*magnitude;
   } else if(face == FACE_TOP || face == FACE_BOTTOM) {
-    targetY = targetY + Math.PI/2*magnitude;
+    targetY += Math.PI/2*magnitude;
   } else if(face == FACE_FRONT || face == FACE_BACK) {
-    targetZ = targetZ + Math.PI/2*magnitude;
+    targetZ += Math.PI/2*magnitude;
   }
   anime({
     targets: pivot.rotation,
@@ -237,8 +231,6 @@ function cleanUpAfterMove() {
   }
   cubes = newCubes;
   pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
-  pivot.clear();
-  //startMove(FACE_TOP);
   startMove(Math.floor(Math.random() * 5), Math.floor(Math.random()*5) - 2);
 }
 
