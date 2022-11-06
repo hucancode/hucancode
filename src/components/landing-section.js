@@ -5,7 +5,8 @@ import SaborScene from "scenes/sabor";
 import { useI18n } from "locales/i18n";
 import { FcDownload } from "react-icons/fc";
 import styles from "./landing-section.module.css";
-import DragonScene from "scenes/dragon";
+//import DragonScene from "scenes/dragon";
+import RubikScene from "scenes/rubik";
 
 function Container(props) {
   return (
@@ -147,7 +148,7 @@ export default function LandingSection() {
         </Description>
       </About>
       <CanvasContainer>
-        <DragonScene />
+        <RubikScene />
       </CanvasContainer>
     </Container>
   );
