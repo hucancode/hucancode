@@ -116,11 +116,6 @@ function setupCamera(w, h) {
   camera.position.set(0, 5, 8);
   camera.lookAt(scene.position);
   if (USE_CAMERA_CONTROL) {
-    const isTouchDevice =
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0 ||
-      navigator.msMaxTouchPoints > 0;
-    if (!isTouchDevice) {
       controls = new OrbitControls(camera, renderer.domElement);
       controls.target.set(1, 1, 1);
       //controls.enablePan = false;
@@ -131,7 +126,6 @@ function setupCamera(w, h) {
       controls.rotateSpeed = 0.3; // control the rotate speed
       //controls.update();
       controls.autoRotate = true;
-    }
   }
 }
 
