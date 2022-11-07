@@ -75,9 +75,7 @@ function WavingHand() {
 }
 
 function Description(props) {
-  return (
-    <div className="text-center md:text-left">{props.children}</div>
-  );
+  return <div className="text-center md:text-left">{props.children}</div>;
 }
 
 function ResumeDownloadContainer(props) {
@@ -137,9 +135,9 @@ export default function LandingSection() {
           </Title>
         </Greetings>
         <Description>
-            {i18n.t("home.landing.about1")}
-            <br/>
-            {i18n.t("home.landing.about2")}
+          {i18n.t("home.landing.about1")}
+          <br />
+          {i18n.t("home.landing.about2")}
         </Description>
       </About>
       <CanvasContainer>
