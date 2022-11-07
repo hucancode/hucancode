@@ -36,14 +36,14 @@ function isInFace(x, y, z, face) {
 }
 function getColor(x, y, z, face) {
   const FACE_TO_COLOR = [
-    0x22c55e, //right - green
-    0xa855f7, //left - purple
+    0x40a02b, //right - green
+    0x1e66f5, //left - purple
     0xfde047, //top - yellow
     0xf8fafc, //bottom - white
     0xef4444, //front - red
-    0xea580c, //back - orange
+    0x16a34a, //back - orange
   ];
-  const BLACK = 0x000000;
+  const BLACK = 0x181825;
 
   if (isInFace(x, y, z, face)) {
     return FACE_TO_COLOR[face];
