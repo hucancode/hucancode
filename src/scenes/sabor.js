@@ -62,7 +62,6 @@ function init() {
 }
 
 async function buildScene() {
-  console.log(`sabor, build scene, ${scene}`);
   if (scene != null) {
     return;
   }
