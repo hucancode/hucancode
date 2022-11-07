@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import Link from "next/link";
-import SaborScene from "scenes/sabor";
+// import Link from "next/link";
+// import SaborScene from "scenes/sabor";
 import { useI18n } from "locales/i18n";
 import { FcDownload } from "react-icons/fc";
 import styles from "./landing-section.module.css";
@@ -75,9 +75,7 @@ function WavingHand() {
 }
 
 function Description(props) {
-  return (
-    <div className="text-center md:text-left">{props.children}</div>
-  );
+  return <div className="text-center md:text-left">{props.children}</div>;
 }
 
 function ResumeDownloadContainer(props) {
@@ -128,11 +126,6 @@ function CanvasContainer(props) {
 
 export default function LandingSection() {
   const i18n = useI18n();
-  console.log("render Landing Section");
-  let resumeUrl =
-    i18n.locale() == "en"
-      ? "https://resume.hucanco.de"
-      : "https://resume.hucanco.de/jp";
   return (
     <Container>
       <About>
@@ -142,9 +135,9 @@ export default function LandingSection() {
           </Title>
         </Greetings>
         <Description>
-            {i18n.t("home.landing.about1")}
-            <br/>
-            {i18n.t("home.landing.about2")}
+          {i18n.t("home.landing.about1")}
+          <br />
+          {i18n.t("home.landing.about2")}
         </Description>
       </About>
       <CanvasContainer>

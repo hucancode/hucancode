@@ -52,7 +52,7 @@ function SkillSet(props) {
             h-0 scale-y-0 aria-expanded:h-auto aria-expanded:scale-y-100
             duration-300
             origin-top
-            overflow-hidden"
+            overflow-hidden aria-expanded:overflow-visible"
       aria-expanded={props["aria-expanded"]}
     >
       {props.children}
@@ -75,7 +75,7 @@ function Skill(props) {
       >
         {props.icon}
       </div>
-      <p className="text-xs font-mono text-center">{props.name}</p>
+      <p className="w-24 text-xs font-mono text-center">{props.name}</p>
     </li>
   );
 }
@@ -100,17 +100,14 @@ export default function SkillSection() {
         <Skill name="Unreal" icon={<SiUnrealengine size="2em" />} />
       </SkillSet>
       <SkillSet aria-expanded={activeSet}>
-        <Skill name="Javascript" icon={<SiJavascript size="2em" />} />
         <Skill name="React" icon={<SiReact size="2em" />} />
         <Skill name="NextJS" icon={<SiNextdotjs size="2em" />} />
         <Skill name="NestJS" icon={<SiNestjs size="2em" />} />
         <Skill name="Flutter" icon={<SiFlutter size="2em" />} />
         <Skill name="MySQL" icon={<GrMysql size="2em" />} />
         <Skill name="GraphQL" icon={<SiGraphql size="2em" />} />
-        <Skill name="NodeJS" icon={<DiNodejs size="3em" />} />
         <Skill name="Docker" icon={<SiDocker size="2em" />} />
-        <Skill name="GoogleCloud" icon={<RiGoogleFill size="2em" />} />
-        <Skill name="CircleCI" icon={<SiCircleci size="2em" />} />
+        <Skill name="Google Cloud" icon={<RiGoogleFill size="2em" />} />
       </SkillSet>
     </Container>
   );

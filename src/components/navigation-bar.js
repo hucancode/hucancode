@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { ImMenu } from "react-icons/im";
 import ThemeToggle from "widgets/theme-toggle";
 import { useI18n } from "locales/i18n";
 import Logo from "widgets/logo";
@@ -47,8 +46,6 @@ function ThemeContainer(props) {
 
 export default function Navbar() {
   const i18n = useI18n();
-  console.log(`render nav bar, current language = ${i18n.locale()}`);
-
   return (
     <Container>
       <Link href="/">
