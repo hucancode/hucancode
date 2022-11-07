@@ -9,13 +9,13 @@ import Link from "next/link";
 function Container(props) {
   return (
     <section
-      className="container w-full flex flex-col items-center
-        py-10 md:px-10
+      className="flex w-full max-w-screen-lg flex-col items-center
+        overflow-hidden py-10 px-4
         text-center
-        overflow-hidden"
+        md:px-10"
       id={props.id}
     >
-      <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
+      <div className="mb-6 h-1 w-full max-w-sm bg-gray-900/10 dark:bg-white/10" />
       {props.children}
     </section>
   );
@@ -24,8 +24,8 @@ function Container(props) {
 function SectionTitle(props) {
   return (
     <h1
-      className="text-2xl
-        mb-5
+      className="mb-5
+        text-2xl
         font-bold"
     >
       {props.children}
@@ -51,9 +51,9 @@ function HistoryContainer(props) {
   }
   return (
     <div
-      className="w-full max-w-screen-lg bg-black/10 p-2
-	  overflow-hidden
-        flex flex-col md:flex-row justify-start md:aspect-[21/9]"
+      className="flex w-full max-w-screen-lg flex-col
+	  justify-start
+        overflow-hidden bg-black/10 p-2 md:aspect-[21/9] md:flex-row"
     >
       {props.children}
     </div>
@@ -63,10 +63,10 @@ function HistoryContainer(props) {
 function HistoryNavigator(props) {
   return (
     <div
-      className="flex md:flex-col
-        mb-5 md:mb-0
-        w-full
-        overflow-x-auto"
+      className="mb-5 flex
+        w-full overflow-x-auto
+        md:mb-0
+        md:flex-col"
     >
       {props.children}
     </div>
@@ -98,14 +98,14 @@ function ContentContainer(props) {
 
 function Title(props) {
   return (
-    <div className="flex flex-col items-start absolute bottom-0 left-0 bg-white/20 p-4">
+    <div className="absolute bottom-0 left-0 flex flex-col items-start bg-white/20 p-4">
       {props.children}
     </div>
   );
 }
 
 function Time(props) {
-  return <p className="text-xs text-left">{props.children}</p>;
+  return <p className="text-left text-xs">{props.children}</p>;
 }
 
 function Description(props) {

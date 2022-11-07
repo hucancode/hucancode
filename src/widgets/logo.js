@@ -3,14 +3,14 @@ import React from "react";
 function Container(props) {
   return (
     <div
-      className="h-full
-        flex items-center justify-center
-        p-1
+      className="flex
+        h-full items-center justify-center
         overflow-hidden
         rounded-full
         border-2
-        bg-gray-800 dark:bg-gray-900
-        border-white dark:border-blue-200"
+        border-white
+        bg-gray-800 p-1
+        dark:border-blue-200 dark:bg-gray-900"
     >
       {props.children}
     </div>

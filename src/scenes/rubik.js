@@ -16,18 +16,19 @@ const FACE_TOP = 2;
 const FACE_BOTTOM = 3;
 const FACE_FRONT = 4;
 const FACE_BACK = 5;
-const CUBE_NUM = 3;
+const CUBE_NUM_DEFAULT = 3;
+let cubeNum = CUBE_NUM_DEFAULT;
 const CUBE_MARGIN = 0.1;
 let lastMove = -1;
 
 function isInFace(x, y, z, face) {
   if (
-    (face == FACE_TOP && y == CUBE_NUM - 1) ||
+    (face == FACE_TOP && y == cubeNum - 1) ||
     (face == FACE_BOTTOM && y == 0) ||
-    (face == FACE_FRONT && z == CUBE_NUM - 1) ||
+    (face == FACE_FRONT && z == cubeNum - 1) ||
     (face == FACE_BACK && z == 0) ||
     (face == FACE_LEFT && x == 0) ||
-    (face == FACE_RIGHT && x == CUBE_NUM - 1)
+    (face == FACE_RIGHT && x == cubeNum - 1)
   ) {
     return true;
   }
@@ -80,16 +81,16 @@ function makeRubik() {
   const material = new THREE.MeshBasicMaterial({
     vertexColors: true,
   });
-  cubes = new Array(CUBE_NUM);
-  for (let x = 0; x < CUBE_NUM; x++) {
-    cubes[x] = new Array(CUBE_NUM);
-    for (let y = 0; y < CUBE_NUM; y++) {
-      cubes[x][y] = new Array(CUBE_NUM);
+  cubes = new Array(cubeNum);
+  for (let x = 0; x < cubeNum; x++) {
+    cubes[x] = new Array(cubeNum);
+    for (let y = 0; y < cubeNum; y++) {
+      cubes[x][y] = new Array(cubeNum);
     }
   }
-  for (let x = 0; x < CUBE_NUM; x++) {
-    for (let y = 0; y < CUBE_NUM; y++) {
-      for (let z = 0; z < CUBE_NUM; z++) {
+  for (let x = 0; x < cubeNum; x++) {
+    for (let y = 0; y < cubeNum; y++) {
+      for (let z = 0; z < cubeNum; z++) {
         const geometry = makeSingleCube(x, y, z);
         const cube = new THREE.Mesh(geometry, material);
         cube.position.x = x * (1 + CUBE_MARGIN);
@@ -102,7 +103,7 @@ function makeRubik() {
     }
   }
   pivot = new THREE.Object3D();
-  const k = ((CUBE_NUM - 1) / 2) * (1 + CUBE_MARGIN);
+  const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   pivot.position.x = k;
   pivot.position.y = k;
   pivot.position.z = k;
@@ -120,17 +121,18 @@ function setupCamera(w, h) {
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
     //controls.enablePan = false;
-    controls.maxPolarAngle = Math.PI / 2; // prevent the camera from going under the ground
     controls.minDistance = 4; // the minimum distance the camera must have from center
     controls.maxDistance = 10; // the maximum distance the camera must have from center
-    controls.zoomSpeed = 0.3; // control the zoomIn and zoomOut speed
-    controls.rotateSpeed = 0.3; // control the rotate speed
     //controls.update();
+    controls.enableRotate = true;
     controls.autoRotate = true;
   }
 }
 
-function init() {
+function init(n) {
+  if (!isNaN(n)) {
+    cubeNum = n;
+  }
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
@@ -179,9 +181,9 @@ function addDebugArrow(object) {
 }
 
 function startMove(face, magnitude) {
-  for (let x = 0; x < CUBE_NUM; x++) {
-    for (let y = 0; y < CUBE_NUM; y++) {
-      for (let z = 0; z < CUBE_NUM; z++) {
+  for (let x = 0; x < cubeNum; x++) {
+    for (let y = 0; y < cubeNum; y++) {
+      for (let z = 0; z < cubeNum; z++) {
         if (!isInFace(x, y, z, face)) {
           continue;
         }
@@ -262,7 +264,7 @@ function cleanUpAfterMove() {
     return Math.min(r, Math.max(l, n));
   };
   const posToIndex = function (n) {
-    return clamp(Math.round(n / (1 + CUBE_MARGIN)), 0, CUBE_NUM - 1);
+    return clamp(Math.round(n / (1 + CUBE_MARGIN)), 0, cubeNum - 1);
   };
   let newCubes = cubes;
   for (let i = pivot.children.length - 1; i >= 0; i--) {
@@ -294,7 +296,7 @@ export default class RubikScene extends Canvas3D {
   constructor(props) {
     super(props);
     this.canvasID = CANVAS_ID;
-    this.init = init;
+    this.init = () => init(props.cubeNum);
     this.animate = animate;
   }
 }

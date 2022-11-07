@@ -27,14 +27,14 @@ import { useI18n } from "locales/i18n";
 function Container(props) {
   return (
     <section
-      className="max-w-screen-lg w-full
-    flex flex-col items-center
-    py-10 md:px-10
+      className="flex w-full
+    max-w-screen-lg flex-col items-center
+    overflow-hidden py-10 px-4
     text-center
-    overflow-hidden"
+    md:px-10"
       id={props.id}
     >
-      <div className="h-1 w-full max-w-sm mb-6 dark:bg-white/10 bg-gray-900/10" />
+      <div className="mb-6 h-1 w-full max-w-sm bg-gray-900/10 dark:bg-white/10" />
 
       {props.children}
     </section>
@@ -42,17 +42,17 @@ function Container(props) {
 }
 
 function SectionTitle(props) {
-  return <h1 className="text-2xl mb-5 font-bold">{props.children}</h1>;
+  return <h1 className="mb-5 text-2xl font-bold">{props.children}</h1>;
 }
 
 function SkillSet(props) {
   return (
     <ul
-      className="flex flex-wrap items-center justify-center
-            h-0 scale-y-0 aria-expanded:h-auto aria-expanded:scale-y-100
+      className="flex h-0 origin-top scale-y-0
+            flex-wrap items-center justify-center overflow-hidden
             duration-300
-            origin-top
-            overflow-hidden aria-expanded:overflow-visible"
+            aria-expanded:h-auto
+            aria-expanded:scale-y-100 aria-expanded:overflow-visible"
       aria-expanded={props["aria-expanded"]}
     >
       {props.children}
@@ -63,19 +63,19 @@ function SkillSet(props) {
 function Skill(props) {
   return (
     <li
-      className="w-12 h-16
-                flex flex-col items-center
-                m-3"
+      className="m-3 flex
+                h-16 w-12 flex-col
+                items-center"
     >
       <div
-        className="w-12 h-12
-                    flex items-center justify-center
+        className="flex h-12
+                    w-12 items-center justify-center
                     text-base
                     text-gray-700 dark:text-gray-400"
       >
         {props.icon}
       </div>
-      <p className="w-24 text-xs font-mono text-center">{props.name}</p>
+      <p className="w-24 text-center font-mono text-xs">{props.name}</p>
     </li>
   );
 }

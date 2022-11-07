@@ -9,12 +9,12 @@ function ButtonGraphic(props) {
     <label
       htmlFor={props.htmlFor}
       className="absolute flex justify-between
-        duration-100
-		bg-white/10
+        bg-white/10
+		duration-100
 		peer-checked:-translate-x-1/3"
     >
-      <div className="bg-black w-1/3 h-full"></div>
-      <div className="bg-black w-1/3 h-full"></div>
+      <div className="h-full w-1/3 bg-black"></div>
+      <div className="h-full w-1/3 bg-black"></div>
     </label>
   );
 }

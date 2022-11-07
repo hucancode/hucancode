@@ -11,9 +11,9 @@ function Container(props) {
     <section
       className="container
         flex flex-col items-center
-        py-10 md:px-10
+        overflow-hidden py-10
         text-center
-        overflow-hidden"
+        md:px-10"
       id={props.id}
     >
       {props.children}
@@ -22,7 +22,7 @@ function Container(props) {
 }
 
 function SectionTitle(props) {
-  return <h1 className="text-2xl mb-5 font-bold">{props.children}</h1>;
+  return <h1 className="mb-5 text-2xl font-bold">{props.children}</h1>;
 }
 
 function LanguageContainer(props) {

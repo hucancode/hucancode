@@ -8,10 +8,10 @@ function Container(props) {
     <section
       className="container
         flex flex-col items-center
-        p-10
-        text-center
         overflow-hidden
-        bg-indigo-100 dark:bg-black"
+        bg-indigo-100
+        p-10
+        text-center dark:bg-black"
       id={props.id}
     >
       {props.children}
@@ -22,8 +22,8 @@ function Container(props) {
 function SectionTitle(props) {
   return (
     <h1
-      className="text-2xl
-        mb-5
+      className="mb-5
+        text-2xl
         font-bold"
     >
       {props.children}
@@ -34,8 +34,8 @@ function SectionTitle(props) {
 function HistoryContainer(props) {
   return (
     <div
-      className="w-full max-w-screen-lg
-        flex flex-col md:flex-row justify-start"
+      className="flex w-full
+        max-w-screen-lg flex-col justify-start md:flex-row"
     >
       {props.children}
     </div>
@@ -45,10 +45,10 @@ function HistoryContainer(props) {
 function HistoryNavigator(props) {
   return (
     <div
-      className="flex md:flex-col
-        mb-5 md:mb-0 md:mr-5
-        w-full md:w-1/3 xl:w-1/5 max-w-screen-sm
-        overflow-x-auto"
+      className="mb-5 flex
+        w-full max-w-screen-sm overflow-x-auto
+        md:mb-0 md:mr-5 md:w-1/3 md:flex-col
+        xl:w-1/5"
     >
       {props.children}
     </div>
@@ -84,7 +84,7 @@ function Title(props) {
 }
 
 function Time(props) {
-  return <p className="text-xs text-left">{props.children}</p>;
+  return <p className="text-left text-xs">{props.children}</p>;
 }
 
 function Description(props) {
