@@ -101,12 +101,13 @@ function makeRubik() {
     }
   }
   pivot = new THREE.Object3D();
-  pivot.position.x = (CUBE_NUM - 1)/2*(1+CUBE_MARGIN);
-  pivot.position.y = (CUBE_NUM - 1)/2*(1+CUBE_MARGIN);
-  pivot.position.z = (CUBE_NUM - 1)/2*(1+CUBE_MARGIN);
+  const k = (CUBE_NUM - 1)/2*(1+CUBE_MARGIN);
+  pivot.position.x = k;
+  pivot.position.y = k;
+  pivot.position.z = k;
   scene.add(pivot);
   camera.lookAt(pivot.position);
-  controls.target.set(pivot.position.x, pivot.position.y, pivot.position.z);
+  controls.target.set(k,k,k);
   //addDebugArrow(pivot);
 }
 
@@ -197,6 +198,49 @@ function startMove(face, magnitude) {
   } else if(face == FACE_FRONT || face == FACE_BACK) {
     targetZ += Math.PI/2*magnitude;
   }
+  const easingFunctions = [
+	'easeInElastic',
+	'easeOutElastic',
+	'easeInOutElastic',
+	'easeOutInElastic',
+	'easeInQuad',
+	'easeInCubic',
+	'easeInQuart',
+	'easeInQuint',
+	'easeInSine',
+	'easeInExpo',
+	'easeInCirc',
+	'easeInBack',
+	'easeOutQuad',
+	'easeOutCubic',
+	'easeOutQuart',
+	'easeOutQuint',
+	'easeOutSine',
+	'easeOutExpo',
+	'easeOutCirc',
+	'easeOutBack',
+	'easeInBounce',
+	'easeInOutQuad',
+	'easeInOutCubic',
+	'easeInOutQuart',
+	'easeInOutQuint',
+	'easeInOutSine',
+	'easeInOutExpo',
+	'easeInOutCirc',
+	'easeInOutBack',
+	'easeInOutBounce',
+	'easeOutBounce',
+	'easeOutInQuad',
+	'easeOutInCubic',
+	'easeOutInQuart',
+	'easeOutInQuint',
+	'easeOutInSine',
+	'easeOutInExpo',
+	'easeOutInCirc',
+	'easeOutInBack',
+	'easeOutInBounce',
+  ];
+  const easing = easingFunctions[Math.floor(Math.random()*easingFunctions.length)];
   anime({
     targets: pivot.rotation,
     x: targetX,
@@ -205,7 +249,7 @@ function startMove(face, magnitude) {
     duration: 600*Math.abs(magnitude),
     round: 100,
     delay: 200,
-    easing: 'easeOutElastic',
+    easing: easing,
     complete: cleanUpAfterMove
   });
   lastMove = face;

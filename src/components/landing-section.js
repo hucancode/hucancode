@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import Link from "next/link";
-import SaborScene from "scenes/sabor";
+// import Link from "next/link";
+// import SaborScene from "scenes/sabor";
 import { useI18n } from "locales/i18n";
 import { FcDownload } from "react-icons/fc";
 import styles from "./landing-section.module.css";
@@ -128,11 +128,6 @@ function CanvasContainer(props) {
 
 export default function LandingSection() {
   const i18n = useI18n();
-  console.log("render Landing Section");
-  let resumeUrl =
-    i18n.locale() == "en"
-      ? "https://resume.hucanco.de"
-      : "https://resume.hucanco.de/jp";
   return (
     <Container>
       <About>
