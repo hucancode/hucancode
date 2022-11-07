@@ -38,13 +38,13 @@ export default class Canvas3D extends React.Component {
   }
   render() {
     return (
-      <div className="w-full h-full relative">
+      <div className="relative h-full w-full">
         <div
           ref={this.loadingRef}
-          className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         >
           <svg
-            className="animate-spin h-10 w-10 dark:text-white text-black"
+            className="h-10 w-10 animate-spin text-black dark:text-white"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

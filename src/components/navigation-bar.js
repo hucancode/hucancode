@@ -8,7 +8,7 @@ import SelectButton from "widgets/select-button";
 
 function Container(props) {
   return (
-    <nav className="px-10 max-w-screen-lg w-full h-16 flex flex-row items-center justify-between">
+    <nav className="flex h-16 w-full max-w-screen-lg flex-row items-center justify-between px-4 md:px-10">
       {props.children}
     </nav>
   );
@@ -17,11 +17,11 @@ function Container(props) {
 function LogoContainer(props) {
   return (
     <div
-      className="w-12
-        h-12
-        bg-transparent
+      className="h-12
+        w-12
+        cursor-pointer
         select-none
-        cursor-pointer"
+        bg-transparent"
     >
       {props.children}
     </div>
@@ -31,13 +31,13 @@ function LogoContainer(props) {
 function ThemeContainer(props) {
   return (
     <div
-      className="flex items-center
-        border-none
-        outline-none
+      className="flex h-12
+        w-16
         cursor-pointer
-        w-16 h-12
+        select-none
+        items-center border-none
         bg-transparent
-        select-none"
+        outline-none"
     >
       {props.children}
     </div>

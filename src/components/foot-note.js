@@ -4,14 +4,14 @@ function Container(props) {
   return (
     <div
       className="container
-        pb-5
         relative
-        flex items-center justify-center
-        max-w-screen-lg w-full
-        overflow-hidden
-        text-gray-500
+        flex
+        w-full max-w-screen-lg items-center
+        justify-center overflow-hidden
+        pb-5
+        text-center
         text-xs
-        text-center"
+        text-gray-500"
     >
       {props.children}
     </div>

@@ -8,13 +8,13 @@ function ButtonGraphic(props) {
   return (
     <label
       htmlFor={props.htmlFor}
-      className="absolute flex justify-between
+      className="absolute flex translate-x-[1.5%]
+        justify-between
         duration-500
-        translate-x-[1.5%]
         peer-checked:translate-x-[-35%]"
     >
-      <div className="-skew-x-12 bg-cyan-400 w-1/3 h-full"></div>
-      <div className="-skew-x-12 bg-cyan-400 w-1/3 h-full"></div>
+      <div className="h-full w-1/3 -skew-x-12 bg-cyan-400"></div>
+      <div className="h-full w-1/3 -skew-x-12 bg-cyan-400"></div>
     </label>
   );
 }

@@ -12,11 +12,11 @@ function Container(props) {
   return (
     <section
       className="relative
-        max-w-screen-lg w-full
-        flex flex-col md:flex-row items-center justify-around
+        my-10 flex
+        w-full max-w-screen-lg flex-col items-center justify-around
         overflow-hidden
         px-10
-        my-10"
+        md:flex-row"
       id={props.id}
     >
       {props.children}
@@ -28,10 +28,10 @@ function About(props) {
   return (
     <div
       className="flex
-    flex-col items-center md:items-start
-    md:relative md:left-0
-    md:w-1/3 w-full
-    pb-10"
+    w-full flex-col items-center
+    pb-10 md:relative
+    md:left-0 md:w-1/3
+    md:items-start"
     >
       {props.children}
     </div>
@@ -41,9 +41,9 @@ function About(props) {
 function Greetings(props) {
   return (
     <div
-      className="flex flex-col items-center md:items-start
-        mb-10
-        max-w-max"
+      className="mb-10 flex max-w-max flex-col
+        items-center
+        md:items-start"
     >
       {props.children}
     </div>
@@ -51,19 +51,19 @@ function Greetings(props) {
 }
 
 function Title(props) {
-  return <h1 className="text-4xl font-bold select-none">{props.children}</h1>;
+  return <h1 className="select-none text-4xl font-bold">{props.children}</h1>;
 }
 
 function Subtitle(props) {
   return (
     <h2
-      className="after:text-sm
-        after:font-thin
-        after:select-none
-        after:dark:text-white
-        after:text-black
-        after:content-['Tap here to change language']
-        after:animate-language-guide"
+      className="after:content-['Tap
+        here
+        to
+        change
+        language']
+        after:animate-language-guide after:select-none after:text-sm after:font-thin after:text-black
+        after:dark:text-white"
     >
       {props.children}
     </h2>
@@ -85,7 +85,7 @@ function ResumeDownloadContainer(props) {
 
 function ResumeDownloadIcon() {
   return (
-    <div className="group-hover:[animation-delay:-0.5s] group-hover:animate-bounce mr-3">
+    <div className="mr-3 group-hover:animate-bounce group-hover:[animation-delay:-0.5s]">
       <FcDownload size="2em" />
     </div>
   );
@@ -97,13 +97,13 @@ function ResumeLink(props) {
       target="_blank"
       rel="noreferrer"
       href={props.href}
-      className="flex items-center justify-center
-            text-sm uppercase
-            cursor-pointer
-            w-full h-full
-            p-5
-            bg-gray-800 dark:bg-black
-            text-white dark:text-white"
+      className="flex h-full w-full
+            cursor-pointer items-center
+            justify-center
+            bg-gray-800 p-5
+            text-sm
+            uppercase text-white
+            dark:bg-black dark:text-white"
     >
       {props.children}
     </a>
@@ -113,11 +113,11 @@ function ResumeLink(props) {
 function CanvasContainer(props) {
   return (
     <div
-      className="flex items-center justify-center
-        relative
-        right-0
-        md:w-2/3 w-full
-        object-contain"
+      className="relative right-0 flex
+        w-full
+        items-center
+        justify-center object-contain
+        md:w-2/3"
     >
       {props.children}
     </div>

@@ -18,9 +18,9 @@ import {
 function Container(props) {
   return (
     <section
-      className="max-w-screen-lg w-full
-        flex flex-col md:flex-row items-center md:items-start justify-around gap-3
-        p-10"
+      className="flex w-full
+        max-w-screen-lg flex-col items-center justify-around gap-3 px-4 py-10
+        md:flex-row md:items-start md:px-10"
       id={props.id}
     >
       {props.children}
@@ -31,32 +31,32 @@ function Container(props) {
 function Avatar() {
   return (
     <div
-      className="w-40 h-40
-    relative
-    rounded-full
-    flex items-center justify-center
-    text-white
-    text-base
-    mr-2
+      className="relative mr-2
+    flex
+    h-40
+    w-40 items-center justify-center
     overflow-hidden
-    bg-cover
-    duration-300
+    rounded-full
     bg-[url('/assets/profile.jpg')]
-    hover:after:left-full
+    bg-cover
+    text-base
+    text-white
+    duration-300
     after:relative
     after:left-0
-    after:bg-cover
-    after:w-full
     after:h-full
+    after:w-full
+    after:bg-[url('/assets/profile-3d.png')]
+    after:bg-cover
     after:duration-200
-    after:bg-[url('/assets/profile-3d.png')]"
+    hover:after:left-full"
     />
   );
 }
 
 function ContactContainer(props) {
   return (
-    <div className="flex flex-col md:items-start items-center justify-start gap-3 mb-10 text-sm text-gray-800 dark:text-gray-400">
+    <div className="mb-10 flex flex-col items-center justify-start gap-3 text-sm text-gray-800 dark:text-gray-400 md:items-start">
       {props.children}
     </div>
   );
@@ -64,7 +64,7 @@ function ContactContainer(props) {
 
 function ContactContainerLeft(props) {
   return (
-    <div className="flex flex-col md:items-start items-center justify-start gap-3 mb-10 text-sm text-gray-800 dark:text-gray-400 items-start">
+    <div className="mb-10 flex flex-col items-start items-center justify-start gap-3 text-sm text-gray-800 dark:text-gray-400 md:items-start">
       {props.children}
     </div>
   );
@@ -73,10 +73,10 @@ function ContactContainerLeft(props) {
 function Title(props) {
   return (
     <h1
-      className="text-2xl
-    w-full
-    text-center md:text-left text-gray-800 dark:text-white
-    font-bold"
+      className="w-full
+    text-center
+    text-2xl font-bold text-gray-800 dark:text-white
+    md:text-left"
     >
       {props.children}
     </h1>
@@ -85,7 +85,7 @@ function Title(props) {
 
 function SocialContainer(props) {
   return (
-    <div className="flex justify-center md:justify-start gap-2">
+    <div className="flex justify-center gap-2 md:justify-start">
       {props.children}
     </div>
   );
@@ -94,13 +94,13 @@ function SocialContainer(props) {
 function RoundIcon(props) {
   return (
     <span
-      className="w-9 h-9
+      className="flex h-9
+        w-9
+        items-center justify-center
         rounded-full
-        bg-gray-700 hover:bg-black
+        bg-gray-700 text-base text-white
         duration-300
-        flex items-center justify-center
-        text-white
-        text-base"
+        hover:bg-black"
     >
       {props.children}
     </span>
