@@ -111,8 +111,8 @@ export default function FooterSection() {
   const i18n = useI18n();
   let resumeUrl =
     i18n.locale() == "en"
-      ? "https://resume.hucanco.de"
-      : "https://resume.hucanco.de/jp";
+      ? "/resume.pdf"
+      : "/resume-jp.pdf";
   return (
     <Container id="contact">
       <ContactContainerLeft>
