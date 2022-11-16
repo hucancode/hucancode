@@ -14,18 +14,25 @@ module.exports = {
       },
       backgroundSize: {
         "half-width": "50% 100%",
+        "double-width": "200% 100%",
       },
       backgroundImage: {
         rainbow:
           "linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b)",
+        rainbow2:
+          "linear-gradient(141.27deg,#ff904e 0%,#ff5982 20%,#ec68f4 40%,#79e2ff 80%)",
         "opaque-radial": "radial-gradient(closest-side,#ffffff20,#00000032)",
       },
       animation: {
         "waving-hand": "waving-hand 2.5s infinite",
         "move-left": "move-left 1.5s linear infinite",
         "language-guide": "language-guide 5s linear alternate infinite",
+        "bg-pingpong": "bg-pingpong 5s ease infinite alternate",
       },
       keyframes: {
+		"bg-pingpong": {
+			to: { "background-position-x": "50%"},
+		},
         "waving-hand": {
           "0%": { transform: "rotate(0.0deg)" },
           "10%": { transform: "rotate(20deg)" },

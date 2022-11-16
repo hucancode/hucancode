@@ -17,6 +17,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+	.text-fill-none {
+	-webkit-text-fill-color: transparent;
+	}
   .page-container {
     @apply flex flex-col justify-start items-center gap-4
             w-full min-h-screen;
