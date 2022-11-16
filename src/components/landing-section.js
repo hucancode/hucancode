@@ -39,19 +39,14 @@ function About(props) {
 }
 
 function Greetings(props) {
-  return (
-    <div
-      className="mb-10 flex max-w-max flex-col
-        items-center
-        md:items-start"
-    >
-      {props.children}
-    </div>
-  );
+  const className = `select-none text-4xl font-bold mb-4`;
+  return <h1 className={className}>{props.children}</h1>;
 }
 
-function Title(props) {
-  return <h1 className="select-none text-4xl font-bold">{props.children}</h1>;
+function Hello(props) {
+  const className =
+    "text-fill-none bg-clip-text bg-double-width bg-rainbow2 animate-bg-pingpong";
+  return <span className={className}>{props.children}</span>;
 }
 
 function Subtitle(props) {
@@ -130,14 +125,13 @@ export default function LandingSection() {
     <Container>
       <About>
         <Greetings>
-          <Title>
-            {i18n.t("home.landing.hello")} <WavingHand />
-          </Title>
+          <Hello>{i18n.t("home.landing.hello")}</Hello>
+          <WavingHand />
         </Greetings>
         <Description>
           {i18n.t("home.landing.about1")}
           <br />
-          {i18n.t("home.landing.about2")}
+          {/*i18n.t("home.landing.about2")*/}
         </Description>
       </About>
       <CanvasContainer>

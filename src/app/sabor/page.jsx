@@ -4,7 +4,6 @@ import SaborScene from "scenes/sabor";
 import { useI18n } from "locales/i18n";
 import "styles/challenge-card.css";
 
-
 export default function Sabor() {
   const i18n = useI18n();
   return (
