@@ -28,11 +28,13 @@ module.exports = {
         "move-left": "move-left 1.5s linear infinite",
         "language-guide": "language-guide 5s linear alternate infinite",
         "bg-pingpong": "bg-pingpong 5s ease infinite alternate",
+        "marquee": "move-left-full 60s infinite linear",
+        "marquee-reverse": "move-right-full 60s infinite linear",
       },
       keyframes: {
-		"bg-pingpong": {
-			to: { "background-position-x": "50%"},
-		},
+        "bg-pingpong": {
+          to: { "background-position-x": "50%"},
+        },
         "waving-hand": {
           "0%": { transform: "rotate(0.0deg)" },
           "10%": { transform: "rotate(20deg)" },
@@ -40,6 +42,13 @@ module.exports = {
           "30%": { transform: "rotate(10deg)" },
           "40%": { transform: "rotate(-10deg)" },
           "50%": { transform: "rotate(0.0deg)" },
+        },
+        "move-right-full": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(0%)" },
+        },
+        "move-left-full": {
+          to: { transform: "translateX(-100%)" },
         },
         "move-left": {
           to: { transform: "translateX(-50%)" },

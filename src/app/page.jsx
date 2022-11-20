@@ -10,9 +10,7 @@ export default function Home() {
   return (
     <>
       <LandingSection />
-      <SkillSection />
-      <ChallengeSection />
-      <FooterSection />
+    {/*<SkillSection />*/}
     </>
   );
 }

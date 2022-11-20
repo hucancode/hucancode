@@ -48,11 +48,6 @@ export default function Navbar() {
   const i18n = useI18n();
   return (
     <Container>
-      <Link href="/">
-        <LogoContainer>
-          <Logo />
-        </LogoContainer>
-      </Link>
       <SelectButton
         inputId="switchLanguage"
         labelA="🇺🇸"
