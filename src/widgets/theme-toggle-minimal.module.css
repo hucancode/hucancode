@@ -1,0 +1,24 @@
+.switch-button {
+@apply w-full
+		flex items-center justify-center;
+input {
+  @apply hidden;
+}
+label {
+  @apply aspect-[2] h-8
+			rounded-2xl
+			cursor-pointer
+			block 
+			relative
+			m-4
+			after:absolute
+			after:duration-300
+			after:bg-white
+			after:top-1
+			after:left-1
+			after:w-6
+			after:h-6
+			after:rounded-full
+			active:after:w-3/5;
+}
+}
