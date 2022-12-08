@@ -46,7 +46,7 @@ export default function ThemeToggleMinimal(props) {
         className="peer"
         checked={isDarkMode}
         onChange={() => {
-			setIsDarkMode(!isDarkMode);
+          setIsDarkMode(!isDarkMode);
         }}
       />
       <ButtonGraphic htmlFor={props.inputId} />

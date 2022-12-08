@@ -37,7 +37,7 @@ function HistoryNavigator(props) {
 function HistoryButton(props) {
   return (
     <button
-      className="p-4 aria-checked:bg-black aria-checked:text-white"
+      className="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
       onClick={props.onClick}
       aria-checked={props.active ? "true" : undefined}
     >
