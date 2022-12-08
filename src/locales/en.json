@@ -20,7 +20,8 @@
     },
     "stats": {
       "title": "Tech I love",
-      "lcRating": "My Leetcode Rating"
+      "lcRating": "Current Leetcode rating",
+      "topPercentage": "Top"
     }
   },
   "challenge": {

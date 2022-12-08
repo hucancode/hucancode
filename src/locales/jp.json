@@ -20,7 +20,8 @@
     },
     "stats": {
       "title": "お気に入りテック",
-      "lcRating": "私のLeetcode考課"
+      "lcRating": "最新Leetcode考課",
+	"topPercentage": "トップ"
     }
   },
   "challenge": {

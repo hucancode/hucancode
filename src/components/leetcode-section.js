@@ -60,11 +60,15 @@ export default async function LeetcodeSection() {
   return (
     <Container>
       <div className="flex aspect-square w-full flex-col items-center md:aspect-[4/3] lg:aspect-[30/9] lg:flex-row lg:items-start">
-        <div className="flex h-full w-full flex-col rounded-md md:w-2/3 lg:w-1/2">
+        <div className="flex w-full flex-col rounded-md md:w-2/3 lg:w-1/2">
           <SkillWidget />
         </div>
-        <div className="h-full w-full p-5 md:w-2/3 lg:w-1/2">
-          <LineChart data={data.userContestRankingHistory} />
+        <div className="flex h-full w-full flex-col items-center p-5 md:w-2/3 lg:w-1/2">
+          <LineChart
+            rating={data.userContestRanking.rating}
+            topPercentage={data.userContestRanking.topPercentage}
+            data={data.userContestRankingHistory}
+          />
         </div>
       </div>
     </Container>

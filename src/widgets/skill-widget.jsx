@@ -29,9 +29,8 @@ function Container(props) {
     <section
       className="flex w-full
     max-w-screen-lg flex-col items-center
-    overflow-hidden py-10 px-4
-    text-center
-    md:px-10"
+    overflow-hidden py-4 px-6
+    text-center"
       id={props.id}
     >
       {props.children}
