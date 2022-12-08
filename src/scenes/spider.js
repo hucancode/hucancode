@@ -125,12 +125,12 @@ class Spider {
       let ikBoneIndex = this.body.skeleton.bones.findIndex(
         (e) => e.name === "IK_" + bone.name
       );
-    if(bone.name != "legaR") {
-                return;
-            }
-    console.log(bone.name);
+      if (bone.name != "legaR") {
+        return;
+      }
+      console.log(bone.name);
       let ikBone = this.body.skeleton.bones[ikBoneIndex];
-        const pi2 = Math.PI*2;
+      const pi2 = Math.PI * 2;
       const links = [];
       {
         const i = index + 2;
@@ -212,11 +212,11 @@ class Spider {
     const MIN_Z = -10;
     const VAR_Z = 20;
     const points = [
-              { x: MIN_X, y: MIN_Y, z: MIN_Z },
-              { x: MIN_X+VAR_X, y: MIN_Y, z: MIN_Z },
-              { x: MIN_X+VAR_X, y: MIN_Y, z: MIN_Z+VAR_Z },
-              { x: MIN_X, y: MIN_Y, z: MIN_Z+VAR_Z },
-        ];
+      { x: MIN_X, y: MIN_Y, z: MIN_Z },
+      { x: MIN_X + VAR_X, y: MIN_Y, z: MIN_Z },
+      { x: MIN_X + VAR_X, y: MIN_Y, z: MIN_Z + VAR_Z },
+      { x: MIN_X, y: MIN_Y, z: MIN_Z + VAR_Z },
+    ];
     const points_ = [
       {
         x: Math.random() * VAR_X + MIN_X,

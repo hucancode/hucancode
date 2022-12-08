@@ -8,7 +8,7 @@ import RubikScene from "scenes/rubik";
 export default function Rubik() {
   const i18n = useI18n();
   return (
-    <div className="flex w-full md:aspect-video aspect-square max-w-screen-lg flex-col items-center px-10">
+    <div className="flex aspect-square w-full max-w-screen-lg flex-col items-center px-10 md:aspect-video">
       <RubikScene cubeNum={3} />
     </div>
   );

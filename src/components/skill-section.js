@@ -51,29 +51,29 @@ function SectionTitle(props) {
 
 export function SkillSet(props) {
   return (
-    <ul
-      className="flex min-w-max items-center justify-center overflow-hidden animate-marquee"
-    >
-        <Skill name="Blender" icon={<SiBlender size="2em" />} />
-        <Skill name="C++" icon={<SiCplusplus size="2em" />} />
-        <Skill name="OpenGL" icon={<SiOpengl size="2em" />} />
-        <Skill name="Unreal" icon={<SiUnrealengine size="2em" />} />
-        <Skill name="RX" icon={<SiReactivex size="2em" />} />
-        <Skill name="ThreeJs" icon={<SiThreedotjs size="2em" />} />
-        <Skill name="React" icon={<SiReact size="2em" />} />
-        <Skill name="NextJS" icon={<SiNextdotjs size="2em" />} />
-        <Skill name="Flutter" icon={<SiFlutter size="2em" />} />
-        <Skill name="MySQL" icon={<GrMysql size="2em" />} />
-        <Skill name="GraphQL" icon={<SiGraphql size="2em" />} />
-        <Skill name="Docker" icon={<SiDocker size="2em" />} />
-        <Skill name="NestJS" icon={<SiNestjs size="2em" />} />
+    <ul className="flex min-w-max animate-marquee items-center justify-center overflow-hidden">
+      <Skill name="Blender" icon={<SiBlender size="2em" />} />
+      <Skill name="C++" icon={<SiCplusplus size="2em" />} />
+      <Skill name="OpenGL" icon={<SiOpengl size="2em" />} />
+      <Skill name="Unreal" icon={<SiUnrealengine size="2em" />} />
+      <Skill name="RX" icon={<SiReactivex size="2em" />} />
+      <Skill name="ThreeJs" icon={<SiThreedotjs size="2em" />} />
+      <Skill name="React" icon={<SiReact size="2em" />} />
+      <Skill name="NextJS" icon={<SiNextdotjs size="2em" />} />
+      <Skill name="Flutter" icon={<SiFlutter size="2em" />} />
+      <Skill name="MySQL" icon={<GrMysql size="2em" />} />
+      <Skill name="GraphQL" icon={<SiGraphql size="2em" />} />
+      <Skill name="Docker" icon={<SiDocker size="2em" />} />
+      <Skill name="NestJS" icon={<SiNestjs size="2em" />} />
     </ul>
   );
 }
 
 export function Marquee(props) {
   return (
-    <div className={`${styles.marquee} w-full flex items-center justify-start relative overflow-hidden`}>
+    <div
+      className={`${styles.marquee} relative flex w-full items-center justify-start overflow-hidden`}
+    >
       {props.children}
     </div>
   );
@@ -83,8 +83,8 @@ function Skill(props) {
     <li
       className="m-3 flex
                 h-16 w-12 flex-col
-                text-gray-500 dark:text-gray-500
-                items-center"
+                items-center text-gray-500
+                dark:text-gray-500"
     >
       <div
         className="flex h-12
@@ -101,9 +101,9 @@ function Skill(props) {
 export default function SkillSection() {
   return (
     <Container id="skill">
-    <Marquee>
-      <SkillSet />
-    </Marquee>
+      <Marquee>
+        <SkillSet />
+      </Marquee>
     </Container>
   );
 }

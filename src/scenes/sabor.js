@@ -20,7 +20,7 @@ function onWindowResize() {
   }
   canvas.style = "";
   let w = canvas.clientWidth;
-  let h = canvas.clientHeight;//w * ASPECT_RATIO;
+  let h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
@@ -29,7 +29,7 @@ function onWindowResize() {
 function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
-  let h = canvas.clientHeight;//w * ASPECT_RATIO;
+  let h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   camera.position.set(330, 200, 330);
   camera.lookAt(0, 80, 0);

@@ -41,11 +41,11 @@ function setupLightning() {
   scene.add(dynamicLight);
 }
 function loadModel() {
-    const loader = new GLTFLoader();
-    loader.setPath("/assets/gltf/");
-    loader.load("tileL.glb", function (gltf) {
-      scene.add(gltf.scene);
-    });
+  const loader = new GLTFLoader();
+  loader.setPath("/assets/gltf/");
+  loader.load("tileL.glb", function (gltf) {
+    scene.add(gltf.scene);
+  });
 }
 function init() {
   let canvas = document.getElementById(CANVAS_ID);
@@ -95,4 +95,3 @@ export default class ForestScene extends Canvas3D {
     this.animate = animate;
   }
 }
-

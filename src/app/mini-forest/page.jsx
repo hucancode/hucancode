@@ -8,9 +8,8 @@ import ForestScene from "scenes/miniForest";
 export default function Forest() {
   const i18n = useI18n();
   return (
-    <div className="w-full max-w-screen-sm px-10 flex flex-col items-center">
+    <div className="flex w-full max-w-screen-sm flex-col items-center px-10">
       <ForestScene />
     </div>
   );
 }
-

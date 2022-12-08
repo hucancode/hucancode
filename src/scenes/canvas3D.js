@@ -65,7 +65,7 @@ export default class Canvas3D extends React.Component {
           </svg>
         </div>
         <canvas
-          className="absolute w-full h-full"
+          className="absolute h-full w-full"
           id={this.canvasID}
           ref={this.canvasRef}
         ></canvas>

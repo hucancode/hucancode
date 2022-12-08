@@ -20,7 +20,7 @@ export default function ProceduralDragon() {
   const dragon = React.useRef(null);
   const i18n = useI18n();
   return (
-    <div className="flex w-full md:aspect-video aspect-square max-w-screen-lg flex-col items-center">
+    <div className="flex aspect-square w-full max-w-screen-lg flex-col items-center md:aspect-video">
       <DragonScene ref={dragon} />
       <ActionButton onClick={() => dragon.current.newFlyingPath()}>
         <RiRefreshFill size="2.5em" />
