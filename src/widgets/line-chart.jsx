@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
 import { useI18n } from "locales/i18n";
 import DualTag from "./dual-tag";
+import { SiLeetcode } from "react-icons/si";
 
 export default function LineChart(props) {
   let canvas = useRef(null);
@@ -30,7 +31,7 @@ export default function LineChart(props) {
         labels: labels,
         datasets: [
           {
-            label: i18n.t("home.stats.lcRating"),
+            label: i18n.t("home.stats.rating"),
             data: data,
           },
         ],
@@ -49,9 +50,16 @@ export default function LineChart(props) {
   }, [canvas, props.data]);
   return (
     <div className="h-full w-full">
-      <div className="mb-4 flex justify-center gap-2">
+      <div
+        data-tooltip={i18n.t("home.stats.lcRating")}
+        className="mb-4 flex items-center justify-center gap-2"
+      >
+        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+          <SiLeetcode size="1.5em" />
+          <span className="">Leetcode</span>
+        </div>
         <DualTag
-          title={i18n.t("home.stats.lcRating")}
+          title={i18n.t("home.stats.rating")}
           value={Math.round(props.rating)}
         />
         <DualTag
