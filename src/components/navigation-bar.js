@@ -5,6 +5,7 @@ import { useI18n } from "locales/i18n";
 import Logo from "widgets/logo";
 import Link from "next/link";
 import SelectButton from "widgets/select-button";
+import ThemeToggleMinimal from "widgets/theme-toggle-minimal";
 
 function Container(props) {
   return (
@@ -61,7 +62,7 @@ export default function Navbar() {
         }}
       ></SelectButton>
       <ThemeContainer>
-        <ThemeToggle />
+        <ThemeToggleMinimal inputId="dark-mode-toggle" />
       </ThemeContainer>
     </Container>
   );
