@@ -4,7 +4,7 @@ export default function DualTag(props) {
   let title = props.title;
   let value = props.value;
   return (
-    <div>
+    <div className="flex flex-col md:flex-row">
       <span className="bg-sky-200 px-2 py-1 pr-4 text-gray-700 dark:bg-gray-700 dark:text-gray-100">
         {title}
       </span>

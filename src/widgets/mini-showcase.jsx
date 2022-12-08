@@ -62,7 +62,6 @@ export default function MiniShowcase() {
         </HistoryButton>
       </HistoryNavigator>
       {(() => {
-        console.log(`active set = ${activeSet}`);
         switch (activeSet) {
           case 0:
             return <RubikScene />;
