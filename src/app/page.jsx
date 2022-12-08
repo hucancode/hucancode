@@ -1,18 +1,16 @@
 import React from "react";
 import LandingSection from "components/landing-section";
-import SkillSection from "components/skill-section";
-// import LanguageSection from "components/language-section";
-// import ExperienceSection from "components/experience-section";
-import ChallengeSection from "components/challenge-section";
 import FooterSection from "components/footer-section";
+import LeetcodeSection from "components/leetcode-section";
+import FootNote from "components/foot-note";
 
 export default function Home() {
   return (
     <>
       <LandingSection />
-      <SkillSection />
-      <ChallengeSection />
+      <LeetcodeSection />
       <FooterSection />
+      <FootNote />
     </>
   );
 }

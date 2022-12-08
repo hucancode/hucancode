@@ -1,4 +1,6 @@
+"use client";
 import React from "react";
+import { useI18n } from "locales/i18n";
 
 function Container(props) {
   return (
@@ -19,15 +21,10 @@ function Container(props) {
 }
 
 export default function FootNote() {
+  const i18n = useI18n();
   return (
     <Container>
-      <p>
-        Deployed with <code>Cloud Run</code>
-        <br />
-        Made with <code>Next.js, Three.js, TailwindCSS</code> and some other
-        tools
-        <br />
-      </p>
+      <p>{i18n.t("common.note.madeWith")}</p>
     </Container>
   );
 }

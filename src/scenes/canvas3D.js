@@ -18,7 +18,7 @@ export default class Canvas3D extends React.Component {
       this.observer.observe(this.canvasRef.current);
     }
     if (this.loadingRef.current) {
-      this.loadingRef.current.classList.add("hidden");
+      this.loadingRef.current.classList.add("invisible");
     }
   }
   componentWillUnmount() {
@@ -65,7 +65,7 @@ export default class Canvas3D extends React.Component {
           </svg>
         </div>
         <canvas
-          className="w-full"
+          className="absolute h-full w-full"
           id={this.canvasID}
           ref={this.canvasRef}
         ></canvas>

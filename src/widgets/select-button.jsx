@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import styles from "./select-button.module.css";
 function Container(props) {
-  return <div className={styles["select-button"]}>{props.children}</div>;
+  return (
+    <div
+      className={`${styles["select-button"]} outline outline-1 outline-gray-900/10 dark:outline-white/10`}
+    >
+      {props.children}
+    </div>
+  );
 }
 
 function ButtonGraphic(props) {
@@ -9,9 +15,9 @@ function ButtonGraphic(props) {
     <label
       htmlFor={props.htmlFor}
       className="absolute flex justify-between
-        bg-white/10
-		duration-100
-		peer-checked:-translate-x-1/3"
+        bg-sky-200 duration-100
+		peer-checked:-translate-x-1/3
+		dark:bg-gray-700"
     >
       <div className="h-full w-1/3 bg-black"></div>
       <div className="h-full w-1/3 bg-black"></div>

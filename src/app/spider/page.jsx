@@ -20,7 +20,7 @@ export default function ProceduralSpider() {
   const i18n = useI18n();
   const spider = React.useRef(null);
   return (
-    <div className="container flex max-w-screen-lg flex-col items-center">
+    <div className="flex aspect-square w-full max-w-screen-lg flex-col items-center md:aspect-video">
       <SpiderScene ref={spider} />
       <ActionButton onClick={() => spider.current.generateSpider()}>
         <MdPlusOne size="2.5em" />

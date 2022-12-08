@@ -3,13 +3,13 @@ import React from "react";
 import { SiThreedotjs, SiBlender, SiOpengl } from "react-icons/si";
 import { useI18n } from "locales/i18n";
 import "styles/challenge-card.css";
-import RubikScene from "scenes/rubik";
+import ForestScene from "scenes/miniForest";
 
-export default function Rubik() {
+export default function Forest() {
   const i18n = useI18n();
   return (
-    <div className="flex aspect-square w-full max-w-screen-lg flex-col items-center px-10 md:aspect-video">
-      <RubikScene cubeNum={3} />
+    <div className="flex w-full max-w-screen-sm flex-col items-center px-10">
+      <ForestScene />
     </div>
   );
 }

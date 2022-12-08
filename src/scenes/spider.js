@@ -9,14 +9,14 @@ let spiders = [];
 let scene, camera, renderer;
 let clock = new THREE.Clock();
 const CANVAS_ID = "spider";
-const DRAW_PATH = false;
+const DRAW_PATH = true;
 const ASPECT_RATIO = 0.75;
-const LEG_STEP_FREQUENCY = 0.5;
-const LEG_STEP_DURATION = 0.2;
-const VISUALIZE_IK = false;
+const LEG_STEP_FREQUENCY = 2;
+const LEG_STEP_DURATION = 0.3;
+const VISUALIZE_IK = true;
 const USE_ORBIT_CONTROL = false;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
-const SPIDER_COUNT = 4;
+const SPIDER_COUNT = 1;
 
 function lerp(a, b, n) {
   return (1 - n) * a + n * b;
@@ -125,11 +125,16 @@ class Spider {
       let ikBoneIndex = this.body.skeleton.bones.findIndex(
         (e) => e.name === "IK_" + bone.name
       );
+      if (bone.name != "legaR") {
+        return;
+      }
+      console.log(bone.name);
       let ikBone = this.body.skeleton.bones[ikBoneIndex];
+      const pi2 = Math.PI * 2;
       const links = [];
       {
         const i = index + 2;
-        const range = new THREE.Vector3(0, Math.PI * 0.2, Math.PI * 0.3);
+        const range = new THREE.Vector3(pi2, pi2, pi2);
         const rotationMin = this.body.skeleton.bones[i].rotation.clone();
         rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
         const rotationMax = this.body.skeleton.bones[i].rotation.clone();
@@ -142,7 +147,7 @@ class Spider {
       }
       {
         const i = index + 1;
-        const range = new THREE.Vector3(Math.PI * 0.1, 0, 0);
+        const range = new THREE.Vector3(pi2, pi2, pi2);
         const rotationMin = this.body.skeleton.bones[i].rotation.clone();
         rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
         const rotationMax = this.body.skeleton.bones[i].rotation.clone();
@@ -155,7 +160,7 @@ class Spider {
       }
       {
         const i = index;
-        const range = new THREE.Vector3(0, 0, Math.PI * 0.5);
+        const range = new THREE.Vector3(pi2, pi2, pi2);
         const rotationMin = this.body.skeleton.bones[i].rotation.clone();
         rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
         const rotationMax = this.body.skeleton.bones[i].rotation.clone();
@@ -207,18 +212,24 @@ class Spider {
     const MIN_Z = -10;
     const VAR_Z = 20;
     const points = [
+      { x: MIN_X, y: MIN_Y, z: MIN_Z },
+      { x: MIN_X + VAR_X, y: MIN_Y, z: MIN_Z },
+      { x: MIN_X + VAR_X, y: MIN_Y, z: MIN_Z + VAR_Z },
+      { x: MIN_X, y: MIN_Y, z: MIN_Z + VAR_Z },
+    ];
+    const points_ = [
       {
         x: Math.random() * VAR_X + MIN_X,
         y: Math.random() * VAR_Y + MIN_Y,
         z: Math.random() * VAR_Z + MIN_Z,
       },
-      { x: -10, y: 0, z: -10 },
+      { x: MIN_X, y: MIN_Y, z: MIN_Z },
       {
         x: Math.random() * VAR_X + MIN_X,
         y: Math.random() * VAR_Y + MIN_Y,
         z: Math.random() * VAR_Z + MIN_Z,
       },
-      { x: -10, y: 0, z: 10 },
+      { x: MIN_X, y: MIN_Y, z: MIN_Z + VAR_Z },
       {
         x: Math.random() * VAR_X + MIN_X,
         y: Math.random() * VAR_Y + MIN_Y,
@@ -242,7 +253,7 @@ class Spider {
         y: Math.random() * VAR_Y + MIN_Y,
         z: Math.random() * VAR_Z + MIN_Z,
       },
-      { x: -10, y: 0, z: 10 },
+      { x: MIN_X, y: MIN_Y, z: MIN_Z + VAR_Z },
       {
         x: Math.random() * VAR_X + MIN_X,
         y: Math.random() * VAR_Y + MIN_Y,

@@ -5,6 +5,7 @@
   "homepage": "https://hucanco.de/",
   "dependencies": {
     "animejs": "^3.2.1",
+    "chart.js": "^4.0.1",
     "next": "^13.0.1",
     "postcss": "^8.4.12",
     "react": "^18.2.0",
