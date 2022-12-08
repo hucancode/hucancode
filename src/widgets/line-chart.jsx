@@ -34,13 +34,17 @@ export default function LineChart(props) {
           },
         ],
       },
-	  options: {
+      options: {
         plugins: {
-            legend: {
-                display: false,
-			},
-		},
-		},
+          legend: {
+            display: false,
+          },
+          title: {
+            display: true,
+            text: i18n.t("home.stats.lcRating"),
+          },
+        },
+      },
     });
     return () => {
       chart.destroy();
