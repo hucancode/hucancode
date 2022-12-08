@@ -1,5 +1,4 @@
-"use client";
-import React, { useState } from "react";
+import React from "react";
 import {
   SiAmazonaws,
   SiBlender,
@@ -29,7 +28,6 @@ import { DiNodejs } from "react-icons/di";
 import SlideButton from "widgets/slide-button";
 import { useI18n } from "locales/i18n";
 import styles from "./skill-section.module.css";
-
 function Container(props) {
   return (
     <section

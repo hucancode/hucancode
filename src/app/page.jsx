@@ -5,11 +5,15 @@ import SkillSection from "components/skill-section";
 // import ExperienceSection from "components/experience-section";
 import ChallengeSection from "components/challenge-section";
 import FooterSection from "components/footer-section";
+import LeetcodeSection, { loadContestStats } from "components/leetcode-section";
 
-export default function Home() {
+export default async function Home() {
+	//console.log(loadContestStats);
+	let data = await loadContestStats();
   return (
     <>
       <LandingSection />
+	  <LeetcodeSection />
     {/*<SkillSection />*/}
     </>
   );
