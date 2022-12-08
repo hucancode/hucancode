@@ -46,7 +46,7 @@ export default function LineChart(props) {
     return () => {
       chart.destroy();
     };
-  }, [canvas, props.data, i18n]);
+  }, [canvas, props.data]);
   return (
     <div className="h-full w-full">
       <div className="mb-4 flex justify-center gap-2">
