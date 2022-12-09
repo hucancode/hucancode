@@ -9,14 +9,15 @@ export default function LineChart(props) {
   let canvas = useRef(null);
   let i18n = useI18n();
   useEffect(() => {
+	let language = i18n.locale();
+	let format = { year: "numeric", month: "short" };
     let labels = props.data.map((e) => {
-      let format = { year: "numeric", month: "short" };
       let date = new Date(e.contest.startTime * 1000);
-      return date.toLocaleDateString("en", format);
+      return date.toLocaleDateString(language, format);
     });
     if (props.data.length != 0) {
       let lastLabel = labels[0];
-      for (let i = 1; i < labels.length; i++) {
+      for (let i = 1; i < labels.length-1; i++) {
         if (labels[i] == lastLabel) {
           labels[i] = "";
         } else {
@@ -47,7 +48,7 @@ export default function LineChart(props) {
     return () => {
       chart.destroy();
     };
-  }, [canvas, props.data]);
+  }, [canvas, props.data, i18n]);
   return (
     <div className="h-full w-full">
       <div
