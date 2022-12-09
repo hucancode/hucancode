@@ -3,19 +3,21 @@ import React, { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
 import { useI18n } from "locales/i18n";
 import DualTag from "./dual-tag";
+import { SiLeetcode } from "react-icons/si";
 
 export default function LineChart(props) {
   let canvas = useRef(null);
   let i18n = useI18n();
   useEffect(() => {
+	let language = i18n.locale();
+	let format = { year: "numeric", month: "short" };
     let labels = props.data.map((e) => {
-      let format = { year: "numeric", month: "short" };
       let date = new Date(e.contest.startTime * 1000);
-      return date.toLocaleDateString("en", format);
+      return date.toLocaleDateString(language, format);
     });
     if (props.data.length != 0) {
       let lastLabel = labels[0];
-      for (let i = 1; i < labels.length; i++) {
+      for (let i = 1; i < labels.length-1; i++) {
         if (labels[i] == lastLabel) {
           labels[i] = "";
         } else {
@@ -30,7 +32,7 @@ export default function LineChart(props) {
         labels: labels,
         datasets: [
           {
-            label: i18n.t("home.stats.lcRating"),
+            label: i18n.t("home.stats.rating"),
             data: data,
           },
         ],
@@ -49,9 +51,16 @@ export default function LineChart(props) {
   }, [canvas, props.data, i18n]);
   return (
     <div className="h-full w-full">
-      <div className="mb-4 flex justify-center gap-2">
+      <div
+        data-tooltip={i18n.t("home.stats.lcRating")}
+        className="mb-4 flex items-center justify-center gap-2"
+      >
+        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+          <SiLeetcode size="1.5em" />
+          <span className="">Leetcode</span>
+        </div>
         <DualTag
-          title={i18n.t("home.stats.lcRating")}
+          title={i18n.t("home.stats.rating")}
           value={Math.round(props.rating)}
         />
         <DualTag

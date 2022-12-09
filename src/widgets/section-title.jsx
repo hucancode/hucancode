@@ -4,7 +4,5 @@ import React from "react";
 
 export default function SectionTitle(props) {
   const i18n = useI18n();
-  return (
-    <h1 className="mb-5 text-2xl font-bold uppercase">{i18n.t(props.text)}</h1>
-  );
+  return <h1 className="mb-5 text-2xl font-bold">{i18n.t(props.text)}</h1>;
 }

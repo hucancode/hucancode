@@ -21,6 +21,7 @@
     "stats": {
       "title": "Tech I love",
       "lcRating": "Current Leetcode rating",
+      "rating": "Rating",
       "topPercentage": "Top"
     }
   },

@@ -7,7 +7,7 @@ import JP from "locales/jp.json";
 export const I18nContext = createContext();
 const i18n = rosetta();
 i18n.set("en", EN);
-i18n.set("jp", JP);
+i18n.set("ja", JP);
 i18n.locale("en");
 export default function I18n({ children }) {
   const [, setTick] = useState(0);

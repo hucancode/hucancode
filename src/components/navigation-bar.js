@@ -55,7 +55,7 @@ export default function Navbar() {
         labelB="🇯🇵"
         onChange={(value) => {
           if (value) {
-            i18n.locale("jp");
+            i18n.locale("ja");
           } else {
             i18n.locale("en");
           }

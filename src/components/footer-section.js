@@ -3,7 +3,7 @@ import React from "react";
 import { useI18n } from "locales/i18n";
 import { FaFileDownload } from "react-icons/fa";
 import { SiGithub, SiMinutemailer } from "react-icons/si";
-import { FcSportsMode } from "react-icons/fc";
+import { RiFireFill } from "react-icons/ri";
 
 function Container(props) {
   return (
@@ -97,7 +97,7 @@ export default function FooterSection() {
           </a>
         </SocialContainer>
         <SocialContainer>
-          <FcSportsMode size="1.5em" style={{ marginRight: "0.5em" }} />
+          <RiFireFill size="1.5em" style={{ marginRight: "0.5em" }} />
           <a
             className="hover:text-blue-900 hover:dark:text-blue-300"
             target="_blank"

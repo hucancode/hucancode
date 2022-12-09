@@ -1,4 +1,4 @@
-const languages = ["jp", "en"];
+const languages = ["ja", "en"];
 export default languages;
 export const contentLanguageMap = {
   jp: "ja-JP",

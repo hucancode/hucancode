@@ -1,22 +1,22 @@
 "use client";
 import React, { useState } from "react";
 import {
-  SiAmazonaws,
+  SiArchlinux,
   SiBlender,
-  SiCircleci,
   SiCplusplus,
-  SiCsharp,
   SiDocker,
+  SiFastlane,
   SiFlutter,
+  SiGithub,
   SiGraphql,
-  SiJavascript,
-  SiKotlin,
   SiNestjs,
   SiNextdotjs,
   SiOpengl,
   SiReact,
-  SiSwift,
+  SiReactivex,
+  SiTailwindcss,
   SiUnrealengine,
+  SiVim,
 } from "react-icons/si";
 import { RiGoogleFill } from "react-icons/ri";
 import { GrMysql } from "react-icons/gr";
@@ -77,18 +77,24 @@ export default function SkillWidget() {
   return (
     <Container>
       <SkillSet aria-expanded={true}>
+        <Skill name="Arch Linux" icon={<SiArchlinux size="2em" />} />
+        <Skill name="Vim" icon={<SiVim size="2em" />} />
         <Skill name="C++" icon={<SiCplusplus size="2em" />} />
         <Skill name="OpenGL" icon={<SiOpengl size="2em" />} />
         <Skill name="Blender" icon={<SiBlender size="2em" />} />
         <Skill name="Unreal" icon={<SiUnrealengine size="2em" />} />
+        <Skill name="RX" icon={<SiReactivex size="2em" />} />
         <Skill name="React" icon={<SiReact size="2em" />} />
+        <Skill name="Tailwind" icon={<SiTailwindcss size="2em" />} />
         <Skill name="NextJS" icon={<SiNextdotjs size="2em" />} />
         <Skill name="NestJS" icon={<SiNestjs size="2em" />} />
         <Skill name="Flutter" icon={<SiFlutter size="2em" />} />
         <Skill name="MySQL" icon={<GrMysql size="2em" />} />
         <Skill name="GraphQL" icon={<SiGraphql size="2em" />} />
         <Skill name="Docker" icon={<SiDocker size="2em" />} />
+        <Skill name="Fastlane" icon={<SiFastlane size="2em" />} />
         <Skill name="Google Cloud" icon={<RiGoogleFill size="2em" />} />
+        <Skill name="Github" icon={<SiGithub size="2em" />} />
       </SkillSet>
     </Container>
   );
