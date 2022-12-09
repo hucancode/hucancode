@@ -16,6 +16,7 @@ import {
   SiReactivex,
   SiTailwindcss,
   SiUnrealengine,
+  SiVim,
 } from "react-icons/si";
 import { RiGoogleFill } from "react-icons/ri";
 import { GrMysql } from "react-icons/gr";
@@ -77,6 +78,7 @@ export default function SkillWidget() {
     <Container>
       <SkillSet aria-expanded={true}>
         <Skill name="Arch Linux" icon={<SiArchlinux size="2em" />} />
+        <Skill name="Vim" icon={<SiVim size="2em" />} />
         <Skill name="C++" icon={<SiCplusplus size="2em" />} />
         <Skill name="OpenGL" icon={<SiOpengl size="2em" />} />
         <Skill name="Blender" icon={<SiBlender size="2em" />} />
