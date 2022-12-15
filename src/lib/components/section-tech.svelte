@@ -24,7 +24,7 @@
   import WavingHand from "~icons/twemoji/waving-hand";
 </script>
 
-<ul>
+<ul class="text-gray-700 dark:text-gray-300">
   <li>
     <CPP />
     <span>CPP</span>
@@ -110,7 +110,6 @@
     @apply m-3 flex text-4xl
                 h-16 w-14 flex-col
                 items-center;
-    @apply text-gray-700 dark:text-gray-100;
   }
   span {
     @apply w-24 mt-2 text-center text-xs;

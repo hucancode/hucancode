@@ -5,7 +5,7 @@ const defaultLocale = "en";
 
 export default async function init() {
   register("en", () => import("$lib/locales/en.json"));
-  register("jp", () => import("$lib/locales/jp.json"));
+  register("ja", () => import("$lib/locales/ja.json"));
   let initialLocale = defaultLocale;
   if (browser) {
     const params = new URLSearchParams(window.location.search);

@@ -11,8 +11,8 @@
     id="switchLanguage"
     labelA="🇺🇸"
     labelB="🇯🇵"
-    on:change={(value) => {
-      if (value) {
+    on:change={(event) => {
+      if (event.detail.value) {
         locale.set("ja");
       } else {
         locale.set("en");

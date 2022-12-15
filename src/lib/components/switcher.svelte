@@ -26,7 +26,7 @@
   }
 </script>
 
-<div>
+<div class="outline-gray-900/10 dark:outline-white/10">
   <input
     {id}
     type="checkbox"
@@ -40,7 +40,8 @@
   >
     {labelA}
   </h3>
-  <label for={id}>
+  <label for={id} class="peer-checked:-translate-x-1/3
+		dark:bg-gray-700">
     <span />
     <span />
   </label>
@@ -54,7 +55,7 @@
 
 <style lang="postcss">
   div {
-    @apply flex items-center justify-center relative overflow-hidden max-w-lg outline outline-1 outline-gray-900/10 dark:outline-white/10;
+    @apply flex items-center justify-center relative overflow-hidden max-w-lg outline outline-1 ;
   }
   input {
     @apply hidden;
@@ -66,8 +67,7 @@
 			w-[150%]
 			cursor-pointer justify-between rounded-2xl
         bg-sky-200 duration-100
-		peer-checked:-translate-x-1/3
-		dark:bg-gray-700;
+		;
   }
   span {
     @apply h-full w-1/3 bg-black;
