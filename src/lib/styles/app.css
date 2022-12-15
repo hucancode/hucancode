@@ -1,0 +1,48 @@
+@import url("https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .flex-col-center {
+    @apply flex flex-col items-center justify-center;
+  }
+  .flex-center,
+  .flex-row-center {
+    @apply flex items-center justify-center;
+  }
+
+  html,
+  body,
+  #root {
+    @apply bg-sky-100 dark:bg-gray-900 duration-500
+            text-gray-800 dark:text-white antialiased;
+    font-family: "Poppins","Noto Sans JP", sans-serif;
+    @apply flex flex-col justify-start items-center gap-4
+            w-full min-h-screen;
+    main {
+      @apply flex flex-col justify-start items-center
+                w-full grow;
+    }
+  }
+
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+	.text-fill-none {
+	-webkit-text-fill-color: transparent;
+	}
+
+  code {
+    @apply font-mono;
+  }
+  small {
+    @apply font-thin;
+  }
+  [data-nextjs-scroll-focus-boundary] {
+    display: contents;
+  }
+}
