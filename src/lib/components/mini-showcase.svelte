@@ -2,8 +2,14 @@
   import RubikIcon from "~icons/arcticons/cubesolver";
   import DragonIcon from "~icons/game-icons/sea-dragon";
   import SwordIcon from "~icons/ri/sword-fill";
+  import MagicIcon from "~icons/fa-solid/hand-sparkles";
+
   let selected = 0;
+  let sceneInstance;
   let Scene;
+  function performMagic() {
+    sceneInstance.performMagic();
+  }
   async function select(value) {
     selected = value;
     switch (selected) {
@@ -29,9 +35,15 @@
         md:flex-row-reverse"
 >
   <div
-    class="flex w-full justify-center
-        md:w-auto md:flex-col text-2xl"
+    class="flex w-full justify-center gap-2
+        text-2xl md:w-auto md:flex-col"
   >
+    <button
+      class="rounded-full bg-sky-600/20 p-4 text-gray-800 dark:text-white"
+      on:click={performMagic}
+    >
+      <MagicIcon class="animate-waving-hand" />
+    </button>
     <button
       class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
       aria-checked={selected == 0}
@@ -54,5 +66,5 @@
       <SwordIcon />
     </button>
   </div>
-  <svelte:component this={Scene} />
+  <svelte:component this={Scene} bind:this={sceneInstance} />
 </div>

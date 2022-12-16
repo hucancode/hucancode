@@ -4,6 +4,11 @@ import { OrbitControls } from "../three/controls/OrbitControls";
 
 let scene, camera, renderer, controls;
 let clock = new THREE.Clock();
+const material = new THREE.MeshBasicMaterial({
+  vertexColors: true,
+});
+let cameraTarget;
+let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik";
 const USE_CAMERA_CONTROL = true;
@@ -76,9 +81,6 @@ let cubes = null;
 let pivot = null;
 
 function makeRubik() {
-  const material = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-  });
   cubes = new Array(cubeNum);
   for (let x = 0; x < cubeNum; x++) {
     cubes[x] = new Array(cubeNum);
@@ -108,19 +110,30 @@ function makeRubik() {
   scene.add(pivot);
   camera.lookAt(pivot.position);
   controls.target.set(k, k, k);
+  controls.enableRotate = false;
+  controls.autoRotate = false;
+  cameraTarget.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
+  isInIntro = true;
   //addDebugArrow(pivot);
+}
+
+function remakeRubik(n) {
+  scene.clear();
+  cubeNum = n;
+  makeRubik();
 }
 
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
-  camera.position.set(0, 5, 8);
+  camera.position.set(0, 0, 0);
+  cameraTarget = new THREE.Vector3(0, 0, 0);
   camera.lookAt(scene.position);
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
     //controls.enablePan = false;
     controls.minDistance = 4; // the minimum distance the camera must have from center
-    controls.maxDistance = 10; // the maximum distance the camera must have from center
+    controls.maxDistance = 30; // the maximum distance the camera must have from center
     //controls.update();
     controls.enableRotate = true;
     controls.autoRotate = true;
@@ -282,12 +295,20 @@ function cleanUpAfterMove() {
 
 function render() {
   time += clock.getDelta();
-  if (renderer != null) {
+  if (renderer) {
     renderer.render(scene, camera);
   }
-  if (controls != null) {
+  if (controls) {
     controls.update();
+  }
+  if (isInIntro && camera) {
+    camera.position.lerp(cameraTarget, 0.1);
+    if (camera.position.distanceTo(cameraTarget) < 0.01) {
+      isInIntro = false;
+      controls.enableRotate = true;
+      controls.autoRotate = true;
+    }
   }
 }
 
-export { CANVAS_ID, init, render };
+export { CANVAS_ID, init, render, remakeRubik };

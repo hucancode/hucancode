@@ -12,7 +12,6 @@
         max-w-screen-lg flex-col items-center justify-around gap-3 px-4 py-10
         md:flex-row md:items-start md:px-10"
 >
-
   <div
     class="mb-10 flex flex-col items-center justify-start gap-3 text-sm text-gray-800 dark:text-gray-400 md:items-start"
   >

@@ -171,4 +171,4 @@ function fadeToAction(name, duration) {
   return animation.reset().fadeIn(duration).play();
 }
 
-export { CANVAS_ID, init, render };
+export { CANVAS_ID, init, render, playIntro };
