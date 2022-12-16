@@ -30,7 +30,7 @@
 >
   <div
     class="flex w-full justify-center
-        md:w-auto md:flex-col"
+        md:w-auto md:flex-col text-2xl"
   >
     <button
       class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"

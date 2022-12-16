@@ -31,6 +31,3 @@
   </div>
   <MiniShowcase />
 </section>
-
-<style>
-</style>
