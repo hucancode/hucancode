@@ -4,10 +4,11 @@
   import Skills from "$lib/components/skills.svelte";
   import Footer from "$lib/components/footer.svelte";
   import Copyright from "$lib/components/copyright.svelte";
+export let data;
 </script>
 
 <Nav />
 <Landing />
-<Skills />
+<Skills {data} />
 <Footer />
 <Copyright />

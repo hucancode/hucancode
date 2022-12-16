@@ -4,51 +4,7 @@
   import Leetcode from "$lib/components/leetcode-chart.svelte";
   import Tech from "$lib/components/section-tech.svelte";
 
-  let data = {
-    userContestRanking: {
-      rating: 1600,
-      globalRanking: 0,
-      topPercentage: 0,
-    },
-    userContestRankingHistory: []
-  };
-  const GQL_CONTEST_QUERY = `
-{
-  userContestRanking(username: "hucancode") {
-    rating
-    globalRanking
-    topPercentage
-  }
-  userContestRankingHistory(username: "hucancode") {
-    attended
-    rating
-	contest {
-      startTime
-    }
-  }
-}
-`;
-  const LEETCODE_GQL_ENDPOINT = "https://leetcode.com/graphql";
-
-  async function loadContestStats() {
-    const res = await fetch(LEETCODE_GQL_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ GQL_CONTEST_QUERY }),
-    });
-    if (!res.ok) {
-      return null;
-    }
-    const json = await res.json();
-    const i = json.data.userContestRankingHistory.findIndex((e) => e.attended);
-    json.data.userContestRankingHistory =
-      json.data.userContestRankingHistory.slice(i);
-    return json.data;
-  }
-
-  onMount(async () => {
-    data = await loadContestStats();
-  });
+  export let data;
 </script>
 
 <section
