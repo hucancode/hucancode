@@ -9,6 +9,12 @@
     "lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. ."
   },
+  "dependencies": {
+    "animejs": "^3.2.1",
+    "axios": "^1.2.1",
+    "chart.js": "^4.0.1",
+    "three": "^0.147.0"
+  },
   "devDependencies": {
     "@iconify/json": "^2.1.152",
     "@sveltejs/adapter-auto": "^1.0.0",
@@ -30,11 +36,5 @@
     "unplugin-icons": "^0.14.15",
     "vite": "^4.0.0"
   },
-  "type": "module",
-  "dependencies": {
-    "animejs": "^3.2.1",
-    "axios": "^1.2.1",
-    "chart.js": "^4.0.1",
-    "three": "^0.147.0"
-  }
+  "type": "module"
 }
