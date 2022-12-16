@@ -1,0 +1,47 @@
+{
+  "common": {
+    "contact": {
+      "social": "もっと見る",
+      "contact": "連絡先",
+      "github": "Github",
+      "blog": "ブログ",
+      "sendMail": "私にメールを送る",
+      "downloadResume": "経歴書をダウンロード"
+    },
+    "note": {
+      "madeWith": "愛を込めてSvelte、Three.js、TailwindCSSで作りました"
+    }
+  },
+  "home": {
+    "landing": {
+      "hello": "こんにちは!",
+      "about1": "バンと申します、視覚的なデザインセンスがある問題解決者です",
+      "about2": "暮らしのため、モバイルアプリケーションとゲームを構築します。"
+    },
+    "stats": {
+      "title": "お気に入りテック",
+      "rating": "考課",
+      "lcRating": "最新Leetcode考課",
+      "topPercentage": "トップ"
+    }
+  },
+  "challenge": {
+    "dragon": {
+      "title": "手続き型生成竜",
+      "refresh": "飛ぶ路線を再作成"
+    },
+    "spider": {
+      "title": "手続き型生成蜘蛛",
+      "addMore": "蜘蛛をもう1匹追加"
+    },
+    "sabor": {
+      "title": "Saborゲームキャラクター"
+    },
+    "weapon-master": {
+      "title": "武器達人"
+    },
+    "doll": {
+      "title": "銃と人形"
+    }
+  }
+}
