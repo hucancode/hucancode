@@ -1,0 +1,57 @@
+import axios from "axios";
+import { json } from "@sveltejs/kit";
+// import defaultData from "$lib/components/leetcode-data.json";
+let defaultData = {
+  userContestRanking: {
+    rating: -1,
+    topPercentage: 0,
+  },
+  userContestRankingHistory: [],
+};
+const LEETCODE_GQL_ENDPOINT = "https://leetcode.com/graphql";
+const LEETCODE_PAYLOAD = {
+  query: `query userContestRankingInfo($username: String!) {
+  userContestRanking(username: $username) {
+    rating
+    topPercentage
+  }
+  userContestRankingHistory(username: $username) {
+    attended
+    rating
+    contest {
+      title
+      startTime
+    }
+  }
+}`,
+  variables: { username: "hucancode" },
+};
+
+async function requestAxios() {
+  let options = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept-Encoding": "gzip,deflate,compress",
+    },
+    proxy: {
+      protocol: "https",
+      host: "leetcode.com",
+    },
+    data: JSON.stringify(LEETCODE_PAYLOAD),
+  };
+  return await axios(LEETCODE_GQL_ENDPOINT, options);
+}
+
+export async function GET() {
+  try {
+    const res = await requestAxios();
+    const data = res.data.data;
+    const i = data.userContestRankingHistory.findIndex((e) => e.attended);
+    data.userContestRankingHistory = data.userContestRankingHistory.slice(i);
+    return json(data);
+  } catch (e) {
+    console.error(e);
+    return json(defaultData);
+  }
+}

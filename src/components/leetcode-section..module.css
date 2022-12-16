@@ -1,9 +1,0 @@
-.marquee {
-  mask-image: linear-gradient(
-    to right,
-    hsl(0 0% 0% / 0),
-    hsl(0 0% 0% / 1) 15%,
-    hsl(0 0% 0% / 1) 85%,
-    hsl(0 0% 0% / 0)
-  );
-}
