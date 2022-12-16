@@ -1,7 +1,13 @@
 <script>
   import { onMount } from "svelte";
   import Canvas3D from "./canvas3d.svelte";
-  import { CANVAS_ID, init, render, clearDragon, makeDragon } from "$lib/scenes/dragon.js";
+  import {
+    CANVAS_ID,
+    init,
+    render,
+    clearDragon,
+    makeDragon,
+  } from "$lib/scenes/dragon.js";
 
   onMount(() => {
     init();
@@ -11,7 +17,7 @@
   let MAX_DRAGON = 8;
 
   export function performMagic() {
-    if(dragonCount <= MAX_DRAGON) {
+    if (dragonCount <= MAX_DRAGON) {
       dragonCount++;
     } else {
       dragonCount = 1;

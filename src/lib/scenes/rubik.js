@@ -8,6 +8,7 @@ const material = new THREE.MeshBasicMaterial({
   vertexColors: true,
 });
 let cameraTarget;
+let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik";
 const USE_CAMERA_CONTROL = true;
@@ -109,7 +110,10 @@ function makeRubik() {
   scene.add(pivot);
   camera.lookAt(pivot.position);
   controls.target.set(k, k, k);
-  cameraTarget.set(0, 2+cubeNum*2, 5+cubeNum*2);
+  controls.enableRotate = false;
+  controls.autoRotate = false;
+  cameraTarget.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
+  isInIntro = true;
   //addDebugArrow(pivot);
 }
 
@@ -122,14 +126,14 @@ function remakeRubik(n) {
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
-  camera.position.set(0, 6, 9);
-  cameraTarget = new THREE.Vector3(0,6,9);
+  camera.position.set(0, 0, 0);
+  cameraTarget = new THREE.Vector3(0, 0, 0);
   camera.lookAt(scene.position);
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
     //controls.enablePan = false;
     controls.minDistance = 4; // the minimum distance the camera must have from center
-    controls.maxDistance = 20; // the maximum distance the camera must have from center
+    controls.maxDistance = 30; // the maximum distance the camera must have from center
     //controls.update();
     controls.enableRotate = true;
     controls.autoRotate = true;
@@ -297,8 +301,13 @@ function render() {
   if (controls) {
     controls.update();
   }
-  if(camera) {
+  if (isInIntro && camera) {
     camera.position.lerp(cameraTarget, 0.1);
+    if (camera.position.distanceTo(cameraTarget) < 0.01) {
+      isInIntro = false;
+      controls.enableRotate = true;
+      controls.autoRotate = true;
+    }
   }
 }
 

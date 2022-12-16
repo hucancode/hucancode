@@ -41,13 +41,13 @@ function loadModel(url) {
 }
 
 function clearDragon() {
-  dragons.forEach(dragon => scene.remove(dragon.object3D));
+  dragons.forEach((dragon) => scene.remove(dragon.object3D));
   dragons = [];
   curves = [];
 }
 
 function makeDragon() {
-  if(!model) {
+  if (!model) {
     return;
   }
   const MIN_X = -40;

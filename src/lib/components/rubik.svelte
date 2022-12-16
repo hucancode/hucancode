@@ -10,7 +10,7 @@
   });
 
   export function performMagic() {
-    size = Math.max(1,(size+1)%MAX_SIZE);
+    size = Math.max(1, (size + 1) % MAX_SIZE);
     remakeRubik(size);
   }
 </script>
