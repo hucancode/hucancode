@@ -18,10 +18,6 @@
   import GCP from "~icons/simple-icons/googlecloud";
   import Tailwind from "~icons/simple-icons/tailwindcss";
   import Svelte from "~icons/simple-icons/svelte";
-  import Leetcode from "~icons/simple-icons/leetcode";
-  import FlagJP from "~icons/twemoji/flag-japan";
-  import FlagEN from "~icons/twemoji/flag-united-kingdom";
-  import WavingHand from "~icons/twemoji/waving-hand";
 </script>
 
 <ul class="text-gray-700 dark:text-gray-300">
@@ -101,17 +97,17 @@
 
 <style>
   ul {
-    @apply flex flex-wrap w-full
-    max-w-screen-lg items-center justify-center
+    @apply flex w-full max-w-screen-lg
+    flex-wrap items-center justify-center
     overflow-hidden py-4 px-6
     text-center;
   }
   li {
-    @apply m-3 flex text-4xl
-                h-16 w-14 flex-col
-                items-center;
+    @apply m-3 flex h-16
+                w-14 flex-col items-center
+                text-4xl;
   }
   span {
-    @apply w-24 mt-2 text-center text-xs;
+    @apply mt-2 w-24 text-center text-xs;
   }
 </style>

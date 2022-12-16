@@ -19,7 +19,8 @@
     class="flex w-full justify-center
         md:w-auto md:flex-col"
   >
-    <button class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
+    <button
+      class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
       aria-checked={selected == 0}
       on:click={() => {
         selected = 0;
@@ -27,7 +28,8 @@
     >
       <RubikIcon />
     </button>
-    <button class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
+    <button
+      class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
       aria-checked={selected == 1}
       on:click={() => {
         selected = 1;
@@ -35,7 +37,8 @@
     >
       <DragonIcon />
     </button>
-    <button class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
+    <button
+      class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"
       aria-checked={selected == 2}
       on:click={() => {
         selected = 2;
@@ -52,4 +55,3 @@
     <Sabor />
   {/if}
 </div>
-

@@ -5,13 +5,13 @@ import Icons from "unplugin-icons/vite";
 const config = {
   plugins: [
     sveltekit(),
-        Icons({
-        compiler: "svelte",
-      }),
-],
-    server: {
-		cors: false
-	},
+    Icons({
+      compiler: "svelte",
+    }),
+  ],
+  server: {
+    cors: false,
+  },
 };
 
 export default config;

@@ -1,5 +1,7 @@
 <script>
   import { locale } from "svelte-i18n";
+  import FlagJP from "~icons/twemoji/flag-japan";
+  import FlagEN from "~icons/twemoji/flag-united-kingdom";
   import Switcher from "$lib/components/switcher.svelte";
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
 </script>
@@ -9,8 +11,6 @@
 >
   <Switcher
     id="switchLanguage"
-    labelA="🇺🇸"
-    labelB="🇯🇵"
     on:change={(event) => {
       if (event.detail.value) {
         locale.set("ja");
@@ -18,7 +18,10 @@
         locale.set("en");
       }
     }}
-  />
+  >
+    <FlagEN slot="label-a" />
+    <FlagJP slot="label-b" />
+  </Switcher>
   <div
     class="flex h-12
         w-16

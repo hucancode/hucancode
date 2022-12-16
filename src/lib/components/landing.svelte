@@ -19,7 +19,7 @@
     md:left-0 md:w-2/5
     md:items-start"
   >
-    <div class="mb-4 select-none text-4xl font-bold flex gap-4 items-center">
+    <div class="mb-4 flex select-none items-center gap-4 text-4xl font-bold">
       <h1
         class="text-fill-none animate-bg-pingpong bg-rainbow2 bg-double-width bg-clip-text"
       >

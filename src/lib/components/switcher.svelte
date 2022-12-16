@@ -3,8 +3,6 @@
   const dispatch = createEventDispatcher();
 
   export let id = "switcher";
-  export let labelA;
-  export let labelB;
   export let value = false;
 
   function notify() {
@@ -38,10 +36,13 @@
     class="text-red-600 peer-checked:text-gray-700 dark:peer-checked:text-gray-400"
     on:click={selectA}
   >
-    {labelA}
+    <slot name="label-a">Label A</slot>
   </h3>
-  <label for={id} class="peer-checked:-translate-x-1/3
-		dark:bg-gray-700">
+  <label
+    for={id}
+    class="peer-checked:-translate-x-1/3
+		dark:bg-gray-700"
+  >
     <span />
     <span />
   </label>
@@ -49,13 +50,13 @@
     class="text-gray-700 peer-checked:text-red-600 dark:text-gray-400"
     on:click={selectB}
   >
-    {labelB}
+    <slot name="label-b">Label B</slot>
   </h3>
 </div>
 
 <style lang="postcss">
   div {
-    @apply flex items-center justify-center relative overflow-hidden max-w-lg outline outline-1 ;
+    @apply relative flex max-w-lg items-center justify-center overflow-hidden outline outline-1;
   }
   input {
     @apply hidden;
@@ -66,8 +67,7 @@
 			h-full
 			w-[150%]
 			cursor-pointer justify-between rounded-2xl
-        bg-sky-200 duration-100
-		;
+        bg-sky-200 duration-100;
   }
   span {
     @apply h-full w-1/3 bg-black;

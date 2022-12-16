@@ -1,7 +1,8 @@
 <script>
-  import { _ } from "svelte-i18n";
+  import { _, locale } from "svelte-i18n";
   import { onMount } from "svelte";
   import Chart from "chart.js/auto";
+  import Leetcode from "~icons/simple-icons/leetcode";
   import DualTag from "$lib/components/dual-tag.svelte";
   let canvas;
   export let data;
@@ -12,7 +13,7 @@
     let labels = data.map((e) => {
       let format = { year: "numeric", month: "short" };
       let date = new Date(e.contest.startTime * 1000);
-      return date.toLocaleDateString("en", format);
+      return date.toLocaleDateString($locale, format);
     });
     if (data.length != 0) {
       let lastLabel = labels[0];
@@ -52,7 +53,11 @@
 
 <div class="h-full w-full">
   <div class="mb-4 flex justify-center gap-2">
-    <DualTag title={$_("home.stats.lcRating")} value={Math.round(rating)} />
+    <div class="flex flex-col items-center justify-center gap-2 md:flex-row">
+      <Leetcode class="text-lg" />
+      <span>Leetcode</span>
+    </div>
+    <DualTag title={$_("home.stats.rating")} value={Math.round(rating)} />
     <DualTag
       title={$_("home.stats.topPercentage")}
       value={topPercentage + "%"}
