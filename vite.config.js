@@ -9,9 +9,6 @@ const config = {
       compiler: "svelte",
     }),
   ],
-  server: {
-    cors: false,
-  },
 };
 
 export default config;

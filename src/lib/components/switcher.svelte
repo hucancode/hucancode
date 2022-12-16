@@ -32,12 +32,12 @@
     checked={value}
     on:change={switchAB}
   />
-  <h3
+  <button
     class="text-red-600 peer-checked:text-gray-700 dark:peer-checked:text-gray-400"
     on:click={selectA}
   >
     <slot name="label-a">Label A</slot>
-  </h3>
+  </button>
   <label
     for={id}
     class="peer-checked:-translate-x-1/3
@@ -46,12 +46,12 @@
     <span />
     <span />
   </label>
-  <h3
+  <button
     class="text-gray-700 peer-checked:text-red-600 dark:text-gray-400"
     on:click={selectB}
   >
     <slot name="label-b">Label B</slot>
-  </h3>
+  </button>
 </div>
 
 <style lang="postcss">
@@ -72,7 +72,7 @@
   span {
     @apply h-full w-1/3 bg-black;
   }
-  h3 {
+  button {
     @apply z-10
   w-1/2 cursor-pointer
 			select-none

@@ -1,6 +1,4 @@
 <script>
-  let className;
-  export { className as class };
   export let value;
   export let title;
 </script>
