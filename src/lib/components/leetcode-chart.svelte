@@ -32,7 +32,7 @@
         labels: labels,
         datasets: [
           {
-            label: $_("home.stats.lcRating"),
+            label: $_("home.stats.rating"),
             data: ratingData,
           },
         ],
