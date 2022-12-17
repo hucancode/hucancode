@@ -5,6 +5,7 @@
     CANVAS_ID,
     init,
     render,
+    getCurrentDragonCount,
     clearDragon,
     makeDragon,
   } from "$lib/scenes/dragon.js";
@@ -13,14 +14,10 @@
     init();
   });
 
-  let dragonCount = 1;
-  let MAX_DRAGON = 8;
+  let MAX_DRAGON = 5;
 
   export function performMagic() {
-    if (dragonCount <= MAX_DRAGON) {
-      dragonCount++;
-    } else {
-      dragonCount = 1;
+    if (getCurrentDragonCount() > MAX_DRAGON) {
       clearDragon();
     }
     makeDragon();
