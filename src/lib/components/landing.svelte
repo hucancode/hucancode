@@ -25,7 +25,7 @@
       >
         {$_("home.landing.hello")}
       </h1>
-      <WavingHand class="origin-[70%_70%] animate-waving-hand" />
+      <WavingHand class="origin-[70%_70%] hover:animate-waving-hand" />
     </div>
     <p class="mb-4 text-center md:text-left">{$_("home.landing.about1")}</p>
   </div>

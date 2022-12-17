@@ -2,7 +2,7 @@
   import RubikIcon from "~icons/arcticons/cubesolver";
   import DragonIcon from "~icons/game-icons/sea-dragon";
   import SwordIcon from "~icons/ri/sword-fill";
-  import MagicIcon from "~icons/fa-solid/hand-sparkles";
+  import BoringIcon from "~icons/twemoji/face-with-rolling-eyes";
 
   let selected = 0;
   let sceneInstance;
@@ -39,10 +39,10 @@
         text-2xl md:w-auto md:flex-col"
   >
     <button
-      class="rounded-full bg-sky-600/20 p-4 text-gray-800 dark:text-white"
+      class="rounded-full bg-gray-700 p-4 text-gray-800 dark:text-white"
       on:click={performMagic}
     >
-      <MagicIcon class="animate-waving-hand" />
+      <BoringIcon class="animate-waving-hand" />
     </button>
     <button
       class="p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:aria-checked:bg-gray-300 dark:aria-checked:text-gray-800"

@@ -49,12 +49,12 @@ function init() {
   renderer.setSize(w, h);
   renderer.shadowMap.enabled = true;
   if (USE_CAMERA_CONTROL) {
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 80, 0);
-      controls.minDistance = 200; // the minimum distance the camera must have from center
-      controls.maxDistance = 700; // the maximum distance the camera must have from center
-      controls.enableRotateY = false;
-      controls.enablePan = false;
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 80, 0);
+    controls.minDistance = 200; // the minimum distance the camera must have from center
+    controls.maxDistance = 700; // the maximum distance the camera must have from center
+    controls.enableRotateY = false;
+    controls.enablePan = false;
     const isTouchDevice =
       "ontouchstart" in window ||
       navigator.maxTouchPoints > 0 ||

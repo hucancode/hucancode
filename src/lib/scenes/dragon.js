@@ -12,6 +12,9 @@ let dynamicLight, ambientLight;
 const CANVAS_ID = "dragon";
 const ASPECT_RATIO = 0.75;
 
+function getCurrentDragonCount() {
+  return dragons.length;
+}
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
@@ -132,4 +135,11 @@ function render() {
   renderer.render(scene, camera);
 }
 
-export { CANVAS_ID, init, render, clearDragon, makeDragon };
+export {
+  CANVAS_ID,
+  init,
+  render,
+  getCurrentDragonCount,
+  clearDragon,
+  makeDragon,
+};

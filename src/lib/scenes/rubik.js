@@ -54,6 +54,10 @@ function getColor(x, y, z, face) {
   return BLACK;
 }
 
+function getCurrentSize() {
+  return cubeNum;
+}
+
 function makeSingleCube(x, y, z) {
   const piece = new THREE.BoxGeometry(1, 1, 1).toNonIndexed();
   const positionAttribute = piece.getAttribute("position");
@@ -318,4 +322,4 @@ function render() {
   }
 }
 
-export { CANVAS_ID, init, render, remakeRubik };
+export { CANVAS_ID, init, render, getCurrentSize, remakeRubik };

@@ -1,17 +1,23 @@
 <script>
   import { onMount } from "svelte";
   import Canvas3D from "./canvas3d.svelte";
-  import { CANVAS_ID, init, render, remakeRubik } from "$lib/scenes/rubik.js";
+  import {
+    CANVAS_ID,
+    init,
+    render,
+    getCurrentSize,
+    remakeRubik,
+  } from "$lib/scenes/rubik.js";
 
-  let size = 3;
-  let MAX_SIZE = 8;
+  let size = getCurrentSize() - 1;
+  let MAX_SIZE = 6;
   onMount(() => {
     init();
   });
 
   export function performMagic() {
-    size = Math.max(1, (size + 1) % MAX_SIZE);
-    remakeRubik(size);
+    size = (size + 1) % MAX_SIZE;
+    remakeRubik(size + 1);
   }
 </script>
 
