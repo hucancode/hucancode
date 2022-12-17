@@ -3,7 +3,7 @@ import { FBXLoader } from "../three/loaders/FBXLoader";
 import { GLTFLoader } from "../three/loaders/GLTFLoader.js";
 import { OrbitControls } from "../three/controls/OrbitControls";
 
-var camera, scene, renderer, animator;
+var camera, scene, renderer, animator, controls;
 var sabor;
 const clock = new THREE.Clock();
 const CANVAS_ID = "sabor";
@@ -34,10 +34,10 @@ function init() {
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   cameraPositionNear = new THREE.Vector3(330, 200, 330);
-  cameraPositionFar = new THREE.Vector3(400, 360, 400);
+  cameraPositionFar = new THREE.Vector3(430, 580, 430);
   isZoomingIn = false;
   isZoomingOut = false;
-  camera.position.set(330, 200, 330);
+  camera.position.copy(cameraPositionFar);
   camera.lookAt(0, 80, 0);
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
@@ -54,7 +54,7 @@ function init() {
       navigator.maxTouchPoints > 0 ||
       navigator.msMaxTouchPoints > 0;
     if (!isTouchDevice) {
-      const controls = new OrbitControls(camera, renderer.domElement);
+      controls = new OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 80, 0);
       controls.enableRotateY = false;
       controls.enablePan = false;
@@ -157,6 +157,9 @@ function render() {
   if (scene) {
     renderer.render(scene, camera);
   }
+  if (controls) {
+    controls.update();
+  }
   if (isZoomingOut) {
     camera.position.lerp(cameraPositionFar, 0.1);
     if (camera.position.distanceTo(cameraPositionFar) < 0.01) {
@@ -179,14 +182,17 @@ function playIntro() {
 }
 
 function playAction() {
-  animator.stopAllAction();
-  const actions = ["jump", "jump_lick"];
-  let action = "jump_lick"; //actions[Math.floor(Math.random() * actions.length)];
-  const animation = fadeToAction(action, 0.0);
-  animation.clampWhenFinished = true;
-  animation.setLoop(THREE.LoopOnce);
-  animator.addEventListener("finished", returnToIdle);
   isZoomingOut = true;
+  setTimeout(() => {
+    controls.enableRotate = false;
+    animator.stopAllAction();
+    const actions = ["jump", "jump_lick"];
+    let action = "jump_lick"; //actions[Math.floor(Math.random() * actions.length)];
+    const animation = fadeToAction(action, 0.0);
+    animation.clampWhenFinished = true;
+    animation.setLoop(THREE.LoopOnce);
+    animator.addEventListener("finished", returnToIdle);
+  }, 250);
 }
 
 function returnToIdle() {
@@ -194,6 +200,10 @@ function returnToIdle() {
   fadeToAction("idle", 0.25);
   isZoomingOut = false;
   isZoomingIn = true;
+  controls.enableRotate = true;
+  setTimeout(() => {
+    isZoomingIn = false;
+  }, 500);
 }
 
 function fadeToAction(name, duration) {
