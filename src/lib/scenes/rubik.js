@@ -24,14 +24,14 @@ let cubeNum = CUBE_NUM_DEFAULT;
 const CUBE_MARGIN = 0.1;
 let lastMove = -1;
 
-function isInFace(x, y, z, face) {
+function isInFace(x, y, z, face, depth) {
   if (
-    (face == FACE_TOP && y == cubeNum - 1) ||
-    (face == FACE_BOTTOM && y == 0) ||
-    (face == FACE_FRONT && z == cubeNum - 1) ||
-    (face == FACE_BACK && z == 0) ||
-    (face == FACE_LEFT && x == 0) ||
-    (face == FACE_RIGHT && x == cubeNum - 1)
+    (face == FACE_TOP && y >= cubeNum - depth) ||
+    (face == FACE_BOTTOM && y < depth) ||
+    (face == FACE_FRONT && z >= cubeNum - depth) ||
+    (face == FACE_BACK && z < depth) ||
+    (face == FACE_LEFT && x < depth) ||
+    (face == FACE_RIGHT && x >= cubeNum - depth)
   ) {
     return true;
   }
@@ -48,7 +48,7 @@ function getColor(x, y, z, face) {
   ];
   const BLACK = 0x181825;
 
-  if (isInFace(x, y, z, face)) {
+  if (isInFace(x, y, z, face, 1)) {
     return FACE_TO_COLOR[face];
   }
   return BLACK;
@@ -60,7 +60,6 @@ function makeSingleCube(x, y, z) {
   const colors = [];
   const color = new THREE.Color();
   color.setHex(0x000000);
-
   for (let i = 0; i < positionAttribute.count; i += 6) {
     const face = i / 6;
     color.setHex(getColor(x, y, z, face));
@@ -160,7 +159,11 @@ function init(n) {
   }
   setupCamera(w, h);
   makeRubik();
-  startMove(Math.floor(Math.random() * 5), Math.floor(Math.random() * 5) - 2);
+  startMove(
+    Math.floor(Math.random() * 5),
+    Math.floor(Math.random() * cubeNum),
+    Math.floor(Math.random() * 5) - 2
+  );
   window.addEventListener("resize", onWindowResize);
 }
 
@@ -191,11 +194,11 @@ function addDebugArrow(object) {
   object.add(xArrow);
 }
 
-function startMove(face, magnitude) {
+function startMove(face, depth, magnitude) {
   for (let x = 0; x < cubeNum; x++) {
     for (let y = 0; y < cubeNum; y++) {
       for (let z = 0; z < cubeNum; z++) {
-        if (!isInFace(x, y, z, face)) {
+        if (!isInFace(x, y, z, face, depth)) {
           continue;
         }
         pivot.attach(cubes[x][y][z]);
@@ -290,7 +293,11 @@ function cleanUpAfterMove() {
   }
   cubes = newCubes;
   pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
-  startMove(Math.floor(Math.random() * 5), Math.floor(Math.random() * 5) - 2);
+  startMove(
+    Math.floor(Math.random() * 5),
+    Math.floor(Math.random() * cubeNum),
+    Math.floor(Math.random() * 5) - 2
+  );
 }
 
 function render() {
