@@ -19,7 +19,6 @@ const LEETCODE_PAYLOAD = {
     attended
     rating
     contest {
-      title
       startTime
     }
   }

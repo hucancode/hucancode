@@ -1,7 +1,6 @@
 {
   "userContestRanking": {
     "rating": 1785.9405963165627,
-    "globalRanking": 25817,
     "topPercentage": 7.79
   },
   "userContestRankingHistory": [
@@ -9,7 +8,6 @@
       "attended": true,
       "rating": 1594.085,
       "contest": {
-        "title": "Weekly Contest 314",
         "startTime": 1665282600
       }
     },
@@ -17,7 +15,6 @@
       "attended": false,
       "rating": 1594.085,
       "contest": {
-        "title": "Biweekly Contest 89",
         "startTime": 1665844200
       }
     },
@@ -25,7 +22,6 @@
       "attended": true,
       "rating": 1645.338,
       "contest": {
-        "title": "Weekly Contest 315",
         "startTime": 1665887400
       }
     },
@@ -33,7 +29,6 @@
       "attended": true,
       "rating": 1712.289,
       "contest": {
-        "title": "Weekly Contest 316",
         "startTime": 1666492200
       }
     },
@@ -41,7 +36,6 @@
       "attended": false,
       "rating": 1712.289,
       "contest": {
-        "title": "Biweekly Contest 90",
         "startTime": 1667053800
       }
     },
@@ -49,7 +43,6 @@
       "attended": true,
       "rating": 1717.483,
       "contest": {
-        "title": "Weekly Contest 317",
         "startTime": 1667097000
       }
     },
@@ -57,7 +50,6 @@
       "attended": true,
       "rating": 1820.153,
       "contest": {
-        "title": "Weekly Contest 318",
         "startTime": 1667701800
       }
     },
@@ -65,7 +57,6 @@
       "attended": false,
       "rating": 1820.153,
       "contest": {
-        "title": "Biweekly Contest 91",
         "startTime": 1668263400
       }
     },
@@ -73,7 +64,6 @@
       "attended": false,
       "rating": 1820.153,
       "contest": {
-        "title": "Weekly Contest 319",
         "startTime": 1668306600
       }
     },
@@ -81,7 +71,6 @@
       "attended": true,
       "rating": 1799.335,
       "contest": {
-        "title": "Weekly Contest 320",
         "startTime": 1668911400
       }
     },
@@ -89,7 +78,6 @@
       "attended": false,
       "rating": 1799.335,
       "contest": {
-        "title": "Biweekly Contest 92",
         "startTime": 1669473000
       }
     },
@@ -97,7 +85,6 @@
       "attended": false,
       "rating": 1799.335,
       "contest": {
-        "title": "Weekly Contest 321",
         "startTime": 1669516200
       }
     },
@@ -105,7 +92,6 @@
       "attended": false,
       "rating": 1799.335,
       "contest": {
-        "title": "Weekly Contest 322",
         "startTime": 1670121000
       }
     }
