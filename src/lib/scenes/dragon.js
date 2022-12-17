@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { Flow } from "../three/modifiers/CurveModifier.js";
-import { OBJLoader } from "../three/loaders/OBJLoader.js";
-import { GLTFLoader } from "../three/loaders/GLTFLoader.js";
+import { Flow } from "$lib/three/modifiers/CurveModifier.js";
+import { loadModelStatic } from "$lib/utils.js"
 
 let scene, camera, renderer, model;
 let dragons = [];
@@ -15,9 +14,13 @@ const ASPECT_RATIO = 0.75;
 function getCurrentDragonCount() {
   return dragons.length;
 }
+
+async function buildScene() {
+  scene = new THREE.Scene();
+  model = await loadModelStatic("dragon.glb");
+}
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new THREE.Scene();
   camera.position.set(0, 20, 200);
   camera.lookAt(scene.position);
 }
@@ -33,14 +36,6 @@ function setupLightning() {
     )
   );
   scene.add(dynamicLight);
-}
-
-function loadModel(url) {
-  const loader = new GLTFLoader();
-  loader.setPath("/assets/gltf/");
-  return new Promise((resolve, reject) => {
-    loader.load(url, (gltf) => resolve(gltf.scene), null, reject);
-  });
 }
 
 function clearDragon() {
@@ -87,17 +82,16 @@ async function init() {
     antialias: true,
     alpha: true,
   });
-  renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
+  addEventListener("resize", onWindowResize);
   if (scene != null) {
     return;
   }
+  await buildScene();
   setupCamera(w, h);
   setupLightning();
-  model = await loadModel("dragon.glb");
   makeDragon();
-  window.addEventListener("resize", onWindowResize);
 }
 
 function onWindowResize() {
@@ -132,7 +126,9 @@ function render() {
     ambientLight.color.g = (Math.sin(time * 0.07) + 1.0) * 0.5;
     ambientLight.color.b = (Math.sin(time * 0.03) + 1.0) * 0.5;
   }
-  renderer.render(scene, camera);
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
 }
 
 export {

@@ -3,8 +3,8 @@
   import Canvas3D from "./canvas3d.svelte";
   import { CANVAS_ID, init, render, playAction } from "$lib/scenes/sabor.js";
 
-  onMount(() => {
-    init();
+  onMount(async () => {
+    await init();
   });
 
   export function performMagic() {

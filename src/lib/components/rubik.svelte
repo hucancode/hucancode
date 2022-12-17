@@ -11,8 +11,8 @@
 
   let size = getCurrentSize() - 1;
   let MAX_SIZE = 6;
-  onMount(() => {
-    init();
+  onMount(async () => {
+    await init();
   });
 
   export function performMagic() {

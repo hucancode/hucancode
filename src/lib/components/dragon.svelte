@@ -10,8 +10,8 @@
     makeDragon,
   } from "$lib/scenes/dragon.js";
 
-  onMount(() => {
-    init();
+  onMount(async () => {
+    await init();
   });
 
   let MAX_DRAGON = 5;
