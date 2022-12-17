@@ -24,14 +24,21 @@ function onWindowResize() {
   renderer.setSize(w, h);
 }
 
+let cameraPositionNear;
+let cameraPositionFar;
+let isZoomingIn;
+let isZoomingOut;
 function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
+  cameraPositionNear = new THREE.Vector3(330, 200, 330);
+  cameraPositionFar = new THREE.Vector3(400, 360, 400);
+  isZoomingIn = false;
+  isZoomingOut = false;
   camera.position.set(330, 200, 330);
   camera.lookAt(0, 80, 0);
-
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -150,6 +157,17 @@ function render() {
   if (scene) {
     renderer.render(scene, camera);
   }
+  if (isZoomingOut) {
+    camera.position.lerp(cameraPositionFar, 0.1);
+    if (camera.position.distanceTo(cameraPositionFar) < 0.01) {
+      isZoomingOut = false;
+    }
+  } else if (isZoomingIn) {
+    camera.position.lerp(cameraPositionNear, 0.1);
+    if (camera.position.distanceTo(cameraPositionNear) < 0.01) {
+      isZoomingIn = false;
+    }
+  }
 }
 
 function playIntro() {
@@ -157,11 +175,25 @@ function playIntro() {
   animation.clampWhenFinished = true;
   animation.setLoop(THREE.LoopOnce);
   animator.addEventListener("finished", returnToIdle);
+  isZoomingOut = true;
+}
+
+function playAction() {
+  animator.stopAllAction();
+  const actions = ["jump", "jump_lick"];
+  let action = "jump_lick"; //actions[Math.floor(Math.random() * actions.length)];
+  const animation = fadeToAction(action, 0.0);
+  animation.clampWhenFinished = true;
+  animation.setLoop(THREE.LoopOnce);
+  animator.addEventListener("finished", returnToIdle);
+  isZoomingOut = true;
 }
 
 function returnToIdle() {
   animator.removeEventListener("finished", returnToIdle);
   fadeToAction("idle", 0.25);
+  isZoomingOut = false;
+  isZoomingIn = true;
 }
 
 function fadeToAction(name, duration) {
@@ -171,4 +203,4 @@ function fadeToAction(name, duration) {
   return animation.reset().fadeIn(duration).play();
 }
 
-export { CANVAS_ID, init, render, playIntro };
+export { CANVAS_ID, init, render, playAction };
