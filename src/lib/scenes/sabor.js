@@ -34,7 +34,7 @@ function init() {
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   cameraPositionNear = new THREE.Vector3(330, 200, 330);
-  cameraPositionFar = new THREE.Vector3(430, 580, 430);
+  cameraPositionFar = new THREE.Vector3(450, 580, 450);
   isZoomingIn = false;
   isZoomingOut = false;
   camera.position.copy(cameraPositionNear);
@@ -49,17 +49,18 @@ function init() {
   renderer.setSize(w, h);
   renderer.shadowMap.enabled = true;
   if (USE_CAMERA_CONTROL) {
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 80, 0);
+      controls.minDistance = 200; // the minimum distance the camera must have from center
+      controls.maxDistance = 700; // the maximum distance the camera must have from center
+      controls.enableRotateY = false;
+      controls.enablePan = false;
     const isTouchDevice =
       "ontouchstart" in window ||
       navigator.maxTouchPoints > 0 ||
       navigator.msMaxTouchPoints > 0;
-    if (!isTouchDevice) {
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 80, 0);
-      controls.enableRotateY = false;
-      controls.enablePan = false;
-      controls.enableZoom = false;
-      controls.update();
+    if (isTouchDevice) {
+      controls.enable = false;
     }
   }
   window.addEventListener("resize", onWindowResize);
@@ -184,10 +185,9 @@ function playIntro() {
 function playAction() {
   isZoomingOut = true;
   setTimeout(() => {
-    controls.enableRotate = false;
     animator.stopAllAction();
     const actions = ["jump", "jump_lick"];
-    let action = "jump_lick"; //actions[Math.floor(Math.random() * actions.length)];
+    let action = actions[Math.floor(Math.random() * actions.length)];
     const animation = fadeToAction(action, 0.0);
     animation.clampWhenFinished = true;
     animation.setLoop(THREE.LoopOnce);
@@ -200,7 +200,6 @@ function returnToIdle() {
   fadeToAction("idle", 0.25);
   isZoomingOut = false;
   isZoomingIn = true;
-  controls.enableRotate = true;
   setTimeout(() => {
     isZoomingIn = false;
   }, 500);
