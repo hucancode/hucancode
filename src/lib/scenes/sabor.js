@@ -37,7 +37,7 @@ function init() {
   cameraPositionFar = new THREE.Vector3(430, 580, 430);
   isZoomingIn = false;
   isZoomingOut = false;
-  camera.position.copy(cameraPositionFar);
+  camera.position.copy(cameraPositionNear);
   camera.lookAt(0, 80, 0);
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
