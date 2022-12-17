@@ -4,22 +4,13 @@
   import WavingHand from "~icons/twemoji/waving-hand";
 </script>
 
-<section
-  class="relative
-        my-10 flex
-        w-full max-w-screen-lg flex-col items-center justify-around
-        overflow-hidden
-        px-10
-        md:flex-row"
->
+<section class="flex-col md:flex-row">
   <div
-    class="flex
-    w-full flex-col items-center
-    pb-10 md:relative
-    md:left-0 md:w-2/5
-    md:items-start"
+    class="flex flex-col
+    w-full items-center md:items-start
+    py-10 md:py-0 md:w-2/5"
   >
-    <div class="mb-4 flex select-none items-center gap-4 text-4xl font-bold">
+    <div class="mb-4 flex items-center gap-4 text-4xl font-bold">
       <h1
         class="text-fill-none animate-bg-pingpong bg-rainbow2 bg-double-width bg-clip-text"
       >

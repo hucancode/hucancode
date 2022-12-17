@@ -6,9 +6,7 @@
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
 </script>
 
-<nav
-  class="flex h-16 w-full max-w-screen-lg flex-row items-center justify-between px-4 md:px-10"
->
+<nav>
   <Switcher
     id="switchLanguage"
     on:change={(event) => {
@@ -22,15 +20,5 @@
     <FlagEN slot="label-a" />
     <FlagJP slot="label-b" />
   </Switcher>
-  <div
-    class="flex h-12
-        w-16
-        cursor-pointer
-        select-none
-        items-center border-none
-        bg-transparent
-        outline-none"
-  >
     <ThemeSwitcher />
-  </div>
 </nav>

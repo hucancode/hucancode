@@ -6,14 +6,17 @@
 @layer base {
   body {
     @apply bg-sky-100 text-gray-800 antialiased
-            duration-500 dark:bg-gray-900 dark:text-white;
+            duration-500 dark:bg-gray-900 dark:text-white flex min-h-screen w-full flex-col items-center
+            justify-start gap-4 pt-4;
     font-family: "Poppins", "Noto Sans JP", sans-serif;
-    @apply flex min-h-screen w-full flex-col items-center
-            justify-start gap-4;
-    main {
-      @apply flex w-full grow flex-col
-                items-center justify-start;
-    }
+  }
+  nav {
+    @apply flex w-full max-w-screen-lg items-center justify-between px-4;
+  }
+  section {
+    @apply flex w-full
+    max-w-screen-lg flex-col items-center
+    px-4;
   }
 
   * {

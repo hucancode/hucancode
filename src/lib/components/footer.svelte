@@ -10,10 +10,10 @@
 <section
   class="flex w-full
         max-w-screen-lg flex-col items-center justify-around gap-3 px-4 py-10
-        md:flex-row md:items-start md:px-10"
+        md:flex-row md:items-start md:px-10 text-sm text-gray-800 dark:text-gray-400"
 >
   <div
-    class="mb-10 flex flex-col items-center justify-start gap-3 text-sm text-gray-800 dark:text-gray-400 md:items-start"
+    class="mb-10 flex flex-col items-center justify-start gap-3 md:items-start"
   >
     <h1
       class="w-full
@@ -45,7 +45,7 @@
     </div>
   </div>
   <div
-    class="mb-10 flex flex-col items-center justify-start gap-3 text-sm text-gray-800 dark:text-gray-400 md:items-start"
+    class="mb-10 flex flex-col items-center justify-start gap-3 md:items-start"
   >
     <h1
       class="w-full
@@ -79,3 +79,4 @@
     </div>
   </div>
 </section>
+<p class="text-gray-500 text-xs mb-10">{$_("common.note.madeWith")}</p>

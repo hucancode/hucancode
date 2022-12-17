@@ -27,7 +27,6 @@
   });
 </script>
 
-<div class="flex w-full items-center justify-center">
   <input
     {id}
     type="checkbox"
@@ -39,7 +38,7 @@
   />
   <label
     for={id}
-    class="relative m-4 block
+    class="relative block
         aspect-[2]
         h-8
         cursor-pointer rounded-2xl bg-blue-300
@@ -58,4 +57,3 @@
         peer-checked:after:-translate-x-full
         peer-checked:dark:bg-gray-500"
   />
-</div>
