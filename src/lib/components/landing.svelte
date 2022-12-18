@@ -18,7 +18,7 @@
       </h1>
       <WavingHand class="origin-[70%_70%] hover:animate-waving-hand" />
     </div>
-    <p class="text-center md:text-left">{$_("home.landing.about1")}</p>
+    <p class="text-center md:text-left">{$_("home.landing.about")}</p>
   </div>
   <MiniShowcase />
 </section>

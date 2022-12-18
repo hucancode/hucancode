@@ -15,33 +15,13 @@
   "home": {
     "landing": {
       "hello": "Greetings!",
-      "about1": "I am Bang, a problem solver with an instinct for visual design",
-      "about2": "I build mobile applications and games for a living."
+      "about": "I am Bang, a problem solver with an instinct for visual design"
     },
     "stats": {
       "title": "Tech I love",
       "lcRating": "Current Leetcode rating",
       "rating": "Rating",
       "topPercentage": "Top"
-    }
-  },
-  "challenge": {
-    "dragon": {
-      "title": "Procedural Dragon",
-      "refresh": "Generate new flying path"
-    },
-    "spider": {
-      "title": "Procedural Spider",
-      "addMore": "Add more spider"
-    },
-    "sabor": {
-      "title": "Sabor Game Character"
-    },
-    "weapon-master": {
-      "title": "Weapon Master"
-    },
-    "doll": {
-      "title": "Gun and Doll"
     }
   }
 }

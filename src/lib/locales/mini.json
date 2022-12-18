@@ -1,0 +1,26 @@
+{
+  "common": {
+    "contact": {
+      "social": "Tatata bala tu!",
+      "contact": "Gelato!",
+      "github": "Github",
+      "blog": "Blog",
+      "sendMail": "Gelato email",
+      "downloadResume": "Resume muak muak"
+    },
+    "note": {
+      "madeWith": "Para tu chasy kanpai Svelte, Three.js, TailwindCSS"
+    }
+  },
+  "home": {
+    "landing": {
+      "hello": "Bellōbanana!!",
+      "about": "Bang desu, heppy pollutiona day, luk at tu pwede na"
+    },
+    "stats": {
+      "title": "Me want banana!",
+      "rating": "Po ka",
+      "topPercentage": "Bable"
+    }
+  }
+}

@@ -4,7 +4,17 @@
   import Fire from "~icons/ri/fire-fill";
   import Download from "~icons/ri/file-download-fill";
   import Github from "~icons/simple-icons/github";
-  let resumeUrl = $locale == "en" ? "/resume.pdf" : "/resume-jp.pdf";
+
+  let resumeUrl = "/resume.pdf";
+
+  switch ($locale) {
+    case "en":
+      resumeUrl = "/resume.pdf";
+      break;
+    case "jp":
+      resumeUrl = "/resume-jp.pdf";
+      break;
+  }
 </script>
 
 <section
