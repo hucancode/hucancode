@@ -7,15 +7,36 @@
     LineController,
     PointElement,
     LineElement,
+    TimeScale,
     LinearScale,
-    CategoryScale,
+    Tooltip,
   } from "chart.js";
+  import { enGB, ja } from "date-fns/locale";
+  import "chartjs-adapter-date-fns";
   import Leetcode from "~icons/simple-icons/leetcode";
   import DualTag from "$lib/components/dual-tag.svelte";
   let canvas;
   export let data;
   export let rating;
   export let topPercentage;
+  let chart;
+
+  locale.subscribe((value) => {
+    if (!chart) {
+      return;
+    }
+    let lang = enGB;
+    switch (value) {
+      case "en":
+        lang = enGB;
+        break;
+      case "ja":
+        lang = ja;
+        break;
+    }
+    chart.options.scales.x.adapters.date.locale = lang;
+    chart.update();
+  });
 
   onMount(() => {
     Chart.register(
@@ -24,37 +45,29 @@
       LineElement,
       PointElement,
       LinearScale,
-      CategoryScale
+      TimeScale,
+      Tooltip
     );
-    let labels = data.map((e) => {
-      let format = { year: "numeric", month: "short" };
-      let date = new Date(e.contest.startTime * 1000);
-      let lang = "en";
-      switch ($locale) {
-        case "en":
-        case "ja":
-          lang = $locale;
-      }
-      return date.toLocaleDateString(lang, format);
+    let ratingData = data.map((e) => {
+      return {
+        y: e.rating,
+        x: e.contest.startTime * 1000,
+      };
     });
-    if (data.length != 0) {
-      let lastLabel = labels[0];
-      for (let i = 1; i < labels.length; i++) {
-        if (labels[i] == lastLabel) {
-          labels[i] = "";
-        } else {
-          lastLabel = labels[i];
-        }
-      }
+    let lang = enGB;
+    switch ($locale) {
+      case "en":
+        lang = enGB;
+        break;
+      case "ja":
+        lang = ja;
+        break;
     }
-    let ratingData = data.map((e) => e.rating);
-    let chart = new Chart(canvas, {
+    chart = new Chart(canvas, {
       type: "line",
       data: {
-        labels: labels,
         datasets: [
           {
-            label: $_("home.stats.rating"),
             data: ratingData,
           },
         ],
@@ -62,6 +75,15 @@
       options: {
         scales: {
           x: {
+            type: "time",
+            time: {
+              unit: "month",
+            },
+            adapters: {
+              date: {
+                locale: lang,
+              },
+            },
             grid: {
               color: "rgba(128,128,128,0.1)",
             },
