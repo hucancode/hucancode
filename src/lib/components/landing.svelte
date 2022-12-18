@@ -12,13 +12,13 @@
   >
     <div class="flex items-center gap-4 text-4xl font-bold">
       <h1
-        class="text-fill-none animate-bg-pingpong bg-rainbow2 bg-double-width bg-clip-text"
+        class="text-fill-none animate-bg-pingpong bg-rainbow2 bg-double-width bg-clip-text p-1"
       >
         {$_("home.landing.hello")}
       </h1>
       <WavingHand class="origin-[70%_70%] hover:animate-waving-hand" />
     </div>
-    <p class="text-center md:text-left">{$_("home.landing.about1")}</p>
+    <p class="text-center md:text-left">{$_("home.landing.about")}</p>
   </div>
   <MiniShowcase />
 </section>

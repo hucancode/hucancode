@@ -29,7 +29,13 @@
     let labels = data.map((e) => {
       let format = { year: "numeric", month: "short" };
       let date = new Date(e.contest.startTime * 1000);
-      return date.toLocaleDateString($locale, format);
+      let lang = "en";
+      switch ($locale) {
+        case "en":
+        case "ja":
+          lang = $locale;
+      }
+      return date.toLocaleDateString(lang, format);
     });
     if (data.length != 0) {
       let lastLabel = labels[0];
