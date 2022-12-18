@@ -53,7 +53,6 @@
       class="z-10 cursor-pointer
 			px-4
 			py-2
-			text-xs
 			duration-300 peer-checked:bg-gray-700 dark:peer-checked:bg-black md:text-base"
     >
       <slot name="label-a">Label A</slot>
@@ -73,7 +72,6 @@
       class="z-10 cursor-pointer
 			px-4
 			py-2
-			text-xs
 			duration-300 peer-checked:bg-gray-700 dark:peer-checked:bg-black md:text-base"
     >
       <slot name="label-b">Label B</slot>
@@ -93,7 +91,6 @@
       class="z-10 cursor-pointer
 			px-4
 			py-2
-			text-xs
 			duration-300 peer-checked:bg-gray-700 dark:peer-checked:bg-black md:text-base"
     >
       <slot name="label-c">Label C</slot>
