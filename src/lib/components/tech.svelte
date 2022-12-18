@@ -21,7 +21,7 @@
 </script>
 
 <ul
-  class="flex w-full
+  class="flex w-full lg:w-1/2
     flex-wrap items-center justify-center
     p-5 text-center text-gray-700 dark:text-gray-300"
 >
