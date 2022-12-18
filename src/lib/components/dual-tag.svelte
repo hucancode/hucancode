@@ -10,7 +10,7 @@
     {title}
   </span>
   <span
-    class="bg-white text-gray-800 px-2 py-1 text-center dark:bg-black dark:text-white"
+    class="bg-white px-2 py-1 text-center text-gray-800 dark:bg-black dark:text-white"
   >
     {value}
   </span>
