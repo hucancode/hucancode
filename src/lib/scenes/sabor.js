@@ -1,15 +1,18 @@
 import * as THREE from "three";
-import { FBXLoader } from "../three/loaders/FBXLoader";
-import { GLTFLoader } from "../three/loaders/GLTFLoader.js";
-import { OrbitControls } from "../three/controls/OrbitControls";
+import { GLTFLoader } from "$lib/three/loaders/GLTFLoader.js";
+import { OrbitControls } from "$lib/three/controls/OrbitControls";
+import { loadModel, wait } from "$lib/utils.js";
 
-var camera, scene, renderer, animator, controls;
-var sabor;
+let camera, scene, renderer, animator, controls;
+let model;
+let cameraPositionNear;
+let cameraPositionFar;
+let isZoomingIn;
+let isZoomingOut;
 const clock = new THREE.Clock();
 const CANVAS_ID = "sabor";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
-const USE_FBX = false;
 
 function onWindowResize() {
   let canvas = document.getElementById(CANVAS_ID);
@@ -23,36 +26,19 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
 }
-
-let cameraPositionNear;
-let cameraPositionFar;
-let isZoomingIn;
-let isZoomingOut;
-function init() {
-  let canvas = document.getElementById(CANVAS_ID);
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-  cameraPositionNear = new THREE.Vector3(330, 200, 330);
-  cameraPositionFar = new THREE.Vector3(450, 580, 450);
+function setupCamera(w, h) {
+  camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
+  cameraPositionNear = new THREE.Vector3(3.5, 2, 3.5);
+  cameraPositionFar = new THREE.Vector3(4, 6, 4);
   isZoomingIn = false;
   isZoomingOut = false;
-  camera.position.copy(cameraPositionNear);
-  camera.lookAt(0, 80, 0);
-  renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    antialias: true,
-    alpha: true,
-  });
-  renderer.setClearColor(0x000000, 0);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(w, h);
-  renderer.shadowMap.enabled = true;
+  camera.position.copy(cameraPositionFar);
+  camera.lookAt(0, 0.8, 0);
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 80, 0);
-    controls.minDistance = 200; // the minimum distance the camera must have from center
-    controls.maxDistance = 700; // the maximum distance the camera must have from center
+    controls.target.set(0, 0.8, 0);
+    controls.minDistance = 2; // the minimum distance the camera must have from center
+    controls.maxDistance = 10; // the maximum distance the camera must have from center
     controls.enableRotateY = false;
     controls.enablePan = false;
     const isTouchDevice =
@@ -63,91 +49,54 @@ function init() {
       controls.enable = false;
     }
   }
-  window.addEventListener("resize", onWindowResize);
-  buildScene();
 }
-
-async function buildScene() {
+async function init() {
+  let canvas = document.getElementById(CANVAS_ID);
+  let w = canvas.clientWidth;
+  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true,
+    alpha: true,
+  });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(w, h);
+  addEventListener("resize", onWindowResize);
   if (scene != null) {
     return;
   }
+  await buildScene();
+  setupCamera(w, h);
+  playIntro();
+}
+
+async function buildScene() {
   scene = new THREE.Scene();
-  scene.background = null; //new THREE.Color(0x282c34);
-  //scene.fog = new THREE.Fog(0xa0a0a0, 100, 2000);
 
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
-  hemiLight.position.set(0, 200, 0);
+  hemiLight.position.set(0, 2, 0);
   hemiLight.intensity = 2;
   scene.add(hemiLight);
 
   const backLight = new THREE.PointLight(0xffffff, 1, 600);
   //backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 15, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
-  backLight.position.set(0, 250, -70);
+  backLight.position.set(0, 2.5, -0.7);
   scene.add(backLight);
-
-  const dirLight = new THREE.DirectionalLight(0xffffff);
-  dirLight.intensity = 1;
-  dirLight.position.set(0, 220, 150);
-  dirLight.castShadow = true;
-  dirLight.shadow.camera.top = 180;
-  dirLight.shadow.camera.bottom = -100;
-  dirLight.shadow.camera.left = -120;
-  dirLight.shadow.camera.right = 120;
-  //scene.add(dirLight);
-
-  //scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
   // ground
   const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(200, 50, 0, Math.PI * 2),
+    new THREE.CircleGeometry(2, 50, 0, Math.PI * 2),
     new THREE.MeshPhongMaterial({ color: 0x11111f, depthWrite: false })
   );
   ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
   ground.material.opacity = 0.4;
   ground.material.transparent = true;
   scene.add(ground);
 
-  if (USE_FBX) {
-    const loader = new FBXLoader();
-    loader.setPath("/assets/fbx/");
-    loader.setResourcePath("/assets/textures/");
-    loader.load("SarborV2.fbx", function (object) {
-      animator = new THREE.AnimationMixer(object);
-      object.traverse((child) => {
-        if (!child.isMesh) {
-          return;
-        }
-        child.castShadow = true;
-        child.receiveShadow = false;
-        child.material.vertexColors = false;
-        child.material.shininess = child.material.name === "body" ? 1.0 : 10.0;
-      });
-      object.position.z = 40;
-      scene.add(object);
-      sabor = object;
-      window.setTimeout(playIntro, 0);
-    });
-  } else {
-    const loader = new GLTFLoader();
-    loader.setPath("/assets/gltf/");
-    loader.load("sabor.glb", function (gltf) {
-      animator = new THREE.AnimationMixer(gltf.scene);
-      gltf.scene.traverse((child) => {
-        if (!child.isMesh) {
-          return;
-        }
-        child.material.doubleSided = false;
-        child.castShadow = true;
-        child.receiveShadow = false;
-      });
-      gltf.scene.scale.setScalar(100);
-      gltf.scene.position.z = 40;
-      scene.add(gltf.scene);
-      sabor = gltf;
-      window.setTimeout(playIntro, 0);
-    });
-  }
+  model = await loadModel("sabor.glb");
+  animator = new THREE.AnimationMixer(model.scene);
+  model.scene.position.z = 0.5;
+  scene.add(model.scene);
 }
 
 function render() {
@@ -155,7 +104,7 @@ function render() {
   if (animator) {
     animator.update(delta);
   }
-  if (scene) {
+  if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
   if (controls) {
@@ -163,12 +112,12 @@ function render() {
   }
   if (isZoomingOut) {
     camera.position.lerp(cameraPositionFar, 0.1);
-    if (camera.position.distanceTo(cameraPositionFar) < 0.01) {
+    if (camera.position.distanceTo(cameraPositionFar) < 0.001) {
       isZoomingOut = false;
     }
   } else if (isZoomingIn) {
     camera.position.lerp(cameraPositionNear, 0.1);
-    if (camera.position.distanceTo(cameraPositionNear) < 0.01) {
+    if (camera.position.distanceTo(cameraPositionNear) < 0.001) {
       isZoomingIn = false;
     }
   }
@@ -182,32 +131,30 @@ function playIntro() {
   isZoomingOut = true;
 }
 
-function playAction() {
+async function playAction() {
   isZoomingOut = true;
-  setTimeout(() => {
-    animator.stopAllAction();
-    const actions = ["jump", "jump_lick"];
-    let action = actions[Math.floor(Math.random() * actions.length)];
-    const animation = fadeToAction(action, 0.0);
-    animation.clampWhenFinished = true;
-    animation.setLoop(THREE.LoopOnce);
-    animator.addEventListener("finished", returnToIdle);
-  }, 250);
+  await wait(250);
+  animator.stopAllAction();
+  const actions = ["jump", "jump_lick"];
+  let action = actions[Math.floor(Math.random() * actions.length)];
+  const animation = fadeToAction(action, 0.0);
+  animation.clampWhenFinished = true;
+  animation.setLoop(THREE.LoopOnce);
+  animator.addEventListener("finished", returnToIdle);
 }
 
-function returnToIdle() {
+async function returnToIdle() {
   animator.removeEventListener("finished", returnToIdle);
   fadeToAction("idle", 0.25);
   isZoomingOut = false;
   isZoomingIn = true;
-  setTimeout(() => {
-    isZoomingIn = false;
-  }, 500);
+  await wait(500);
+  isZoomingIn = false;
 }
 
 function fadeToAction(name, duration) {
   const animation = animator.clipAction(
-    sabor.animations.find((e) => e.name === name)
+    model.animations.find((e) => e.name === name)
   );
   return animation.reset().fadeIn(duration).play();
 }

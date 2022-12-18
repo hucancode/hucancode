@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import anime from "animejs";
-import { OrbitControls } from "../three/controls/OrbitControls";
+import { OrbitControls } from "$lib/three/controls/OrbitControls";
 
 let scene, camera, renderer, controls;
 let clock = new THREE.Clock();
@@ -22,20 +22,16 @@ const FACE_BACK = 5;
 const CUBE_NUM_DEFAULT = 3;
 let cubeNum = CUBE_NUM_DEFAULT;
 const CUBE_MARGIN = 0.1;
-let lastMove = -1;
 
 function isInFace(x, y, z, face, depth) {
-  if (
+  return (
     (face == FACE_TOP && y >= cubeNum - depth) ||
     (face == FACE_BOTTOM && y < depth) ||
     (face == FACE_FRONT && z >= cubeNum - depth) ||
     (face == FACE_BACK && z < depth) ||
     (face == FACE_LEFT && x < depth) ||
     (face == FACE_RIGHT && x >= cubeNum - depth)
-  ) {
-    return true;
-  }
-  return false;
+  );
 }
 function getColor(x, y, z, face) {
   const FACE_TO_COLOR = [
@@ -60,23 +56,21 @@ function getCurrentSize() {
 
 function makeSingleCube(x, y, z) {
   const piece = new THREE.BoxGeometry(1, 1, 1).toNonIndexed();
-  const positionAttribute = piece.getAttribute("position");
-  const colors = [];
+  const n = piece.getAttribute("position").count / 6;
+  const buffer = [];
   const color = new THREE.Color();
-  color.setHex(0x000000);
-  for (let i = 0; i < positionAttribute.count; i += 6) {
-    const face = i / 6;
-    color.setHex(getColor(x, y, z, face));
+  for (let i = 0; i < n; i++) {
+    color.setHex(getColor(x, y, z, i));
 
-    colors.push(color.r, color.g, color.b);
-    colors.push(color.r, color.g, color.b);
-    colors.push(color.r, color.g, color.b);
+    buffer.push(color.r, color.g, color.b);
+    buffer.push(color.r, color.g, color.b);
+    buffer.push(color.r, color.g, color.b);
 
-    colors.push(color.r, color.g, color.b);
-    colors.push(color.r, color.g, color.b);
-    colors.push(color.r, color.g, color.b);
+    buffer.push(color.r, color.g, color.b);
+    buffer.push(color.r, color.g, color.b);
+    buffer.push(color.r, color.g, color.b);
   }
-  piece.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
   return piece;
 }
 
@@ -143,10 +137,7 @@ function setupCamera(w, h) {
   }
 }
 
-function init(n) {
-  if (!isNaN(n)) {
-    cubeNum = n;
-  }
+function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
@@ -155,7 +146,6 @@ function init(n) {
     antialias: true,
     alpha: true,
   });
-  renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
   if (scene != null) {
@@ -274,7 +264,6 @@ function startMove(face, depth, magnitude) {
     easing: easing,
     complete: cleanUpAfterMove,
   });
-  lastMove = face;
 }
 
 function cleanUpAfterMove() {
@@ -306,7 +295,7 @@ function cleanUpAfterMove() {
 
 function render() {
   time += clock.getDelta();
-  if (renderer) {
+  if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
   if (controls) {

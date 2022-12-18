@@ -20,9 +20,11 @@
   import Svelte from "~icons/simple-icons/svelte";
 </script>
 
-<ul class="flex w-full
+<ul
+  class="flex w-full
     flex-wrap items-center justify-center
-    text-center text-gray-700 dark:text-gray-300 p-5">
+    p-5 text-center text-gray-700 dark:text-gray-300"
+>
   <li>
     <CPP />
     <span>CPP</span>
