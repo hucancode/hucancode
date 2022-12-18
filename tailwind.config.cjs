@@ -27,7 +27,7 @@ const config = {
       animation: {
         "waving-hand": "waving-hand 2.5s infinite",
         "move-left": "move-left 1.5s linear infinite",
-        "bg-pingpong": "bg-pingpong 5s ease infinite alternate",
+        "bg-pingpong": "bg-pingpong 2.5s ease infinite alternate",
         marquee: "move-left-full 60s infinite linear",
         "marquee-reverse": "move-right-full 60s infinite linear",
       },
