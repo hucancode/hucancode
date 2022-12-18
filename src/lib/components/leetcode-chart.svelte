@@ -19,6 +19,24 @@
   export let data;
   export let rating;
   export let topPercentage;
+  let chart;
+
+  locale.subscribe((value) => {
+    if (!chart) {
+      return;
+    }
+    let lang = enGB;
+    switch (value) {
+      case "en":
+        lang = enGB;
+        break;
+      case "ja":
+        lang = ja;
+        break;
+    }
+    chart.options.scales.x.adapters.date.locale = lang;
+    chart.update();
+  });
 
   onMount(() => {
     Chart.register(
@@ -40,10 +58,12 @@
     switch ($locale) {
       case "en":
         lang = enGB;
+        break;
       case "ja":
         lang = ja;
+        break;
     }
-    let chart = new Chart(canvas, {
+    chart = new Chart(canvas, {
       type: "line",
       data: {
         datasets: [
