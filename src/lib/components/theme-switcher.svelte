@@ -27,18 +27,18 @@
   });
 </script>
 
-  <input
-    {id}
-    type="checkbox"
-    class="peer hidden"
-    checked={isDarkMode}
-    on:change={() => {
-      setDarkMode(!isDarkMode);
-    }}
-  />
-  <label
-    for={id}
-    class="relative block
+<input
+  {id}
+  type="checkbox"
+  class="peer hidden"
+  checked={isDarkMode}
+  on:change={() => {
+    setDarkMode(!isDarkMode);
+  }}
+/>
+<label
+  for={id}
+  class="relative block
         aspect-[2]
         h-8
         cursor-pointer rounded-2xl bg-blue-300
@@ -56,4 +56,4 @@
         peer-checked:after:left-[calc(100%-0.2rem)]
         peer-checked:after:-translate-x-full
         peer-checked:dark:bg-gray-500"
-  />
+/>

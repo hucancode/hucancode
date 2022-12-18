@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "$lib/three/loaders/GLTFLoader.js";
 import { OrbitControls } from "$lib/three/controls/OrbitControls";
-import { loadModel, wait } from "$lib/utils.js"
+import { loadModel, wait } from "$lib/utils.js";
 
 let camera, scene, renderer, animator, controls;
 let model;

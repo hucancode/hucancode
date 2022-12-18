@@ -1,7 +1,15 @@
 <script>
   import { _, locale } from "svelte-i18n";
   import { onMount } from "svelte";
-  import Chart from "chart.js/auto";
+  import {
+    Chart,
+    Colors,
+    LineController,
+    PointElement,
+    LineElement,
+    LinearScale,
+    CategoryScale,
+  } from "chart.js";
   import Leetcode from "~icons/simple-icons/leetcode";
   import DualTag from "$lib/components/dual-tag.svelte";
   let canvas;
@@ -10,6 +18,14 @@
   export let topPercentage;
 
   onMount(() => {
+    Chart.register(
+      Colors,
+      LineController,
+      LineElement,
+      PointElement,
+      LinearScale,
+      CategoryScale
+    );
     let labels = data.map((e) => {
       let format = { year: "numeric", month: "short" };
       let date = new Date(e.contest.startTime * 1000);
@@ -38,9 +54,16 @@
         ],
       },
       options: {
-        plugins: {
-          legend: {
-            display: false,
+        scales: {
+          x: {
+            grid: {
+              color: "rgba(128,128,128,0.1)",
+            },
+          },
+          y: {
+            grid: {
+              color: "rgba(128,128,128,0.1)",
+            },
           },
         },
       },

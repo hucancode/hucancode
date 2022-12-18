@@ -5,9 +5,9 @@
 
 @layer base {
   body {
-    @apply bg-sky-100 text-gray-800 antialiased
-            duration-500 dark:bg-gray-900 dark:text-white flex min-h-screen w-full flex-col items-center
-            justify-start gap-4 pt-4;
+    @apply flex min-h-screen w-full
+            flex-col items-center justify-start gap-4 bg-sky-100 pt-4 text-gray-800 antialiased
+            duration-500 dark:bg-gray-900 dark:text-white;
     font-family: "Poppins", "Noto Sans JP", sans-serif;
   }
   nav {

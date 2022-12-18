@@ -20,5 +20,5 @@
     <FlagEN slot="label-a" />
     <FlagJP slot="label-b" />
   </Switcher>
-    <ThemeSwitcher />
+  <ThemeSwitcher />
 </nav>

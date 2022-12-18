@@ -6,9 +6,9 @@
 
 <section class="flex-col md:flex-row">
   <div
-    class="flex flex-col gap-4
-    w-full items-center md:items-start
-    py-10 md:py-0 md:w-2/5"
+    class="flex w-full flex-col
+    items-center gap-4 py-10
+    md:w-2/5 md:items-start md:py-0"
   >
     <div class="flex items-center gap-4 text-4xl font-bold">
       <h1

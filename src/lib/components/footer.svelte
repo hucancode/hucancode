@@ -10,7 +10,7 @@
 <section
   class="flex w-full
         max-w-screen-lg flex-col items-center justify-around gap-3 px-4 py-10
-        md:flex-row md:items-start md:px-10 text-sm text-gray-800 dark:text-gray-400"
+        text-sm text-gray-800 dark:text-gray-400 md:flex-row md:items-start md:px-10"
 >
   <div
     class="mb-10 flex flex-col items-center justify-start gap-3 md:items-start"
@@ -79,4 +79,4 @@
     </div>
   </div>
 </section>
-<p class="text-gray-500 text-xs mb-10">{$_("common.note.madeWith")}</p>
+<p class="mb-10 text-xs text-gray-500">{$_("common.note.madeWith")}</p>

@@ -56,7 +56,7 @@ function getCurrentSize() {
 
 function makeSingleCube(x, y, z) {
   const piece = new THREE.BoxGeometry(1, 1, 1).toNonIndexed();
-  const n = piece.getAttribute("position").count/6;
+  const n = piece.getAttribute("position").count / 6;
   const buffer = [];
   const color = new THREE.Color();
   for (let i = 0; i < n; i++) {

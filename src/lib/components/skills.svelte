@@ -14,10 +14,10 @@
     class="flex aspect-square w-full flex-col items-center md:aspect-[4/3] lg:aspect-[30/9] lg:flex-row lg:items-start"
   >
     <Tech />
-      <Leetcode
-        rating={data.userContestRanking.rating}
-        topPercentage={data.userContestRanking.topPercentage}
-        data={data.userContestRankingHistory}
-      />
+    <Leetcode
+      rating={data.userContestRanking.rating}
+      topPercentage={data.userContestRanking.topPercentage}
+      data={data.userContestRankingHistory}
+    />
   </div>
 </section>

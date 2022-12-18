@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
-import { loadModelStatic } from "$lib/utils.js"
+import { loadModelStatic } from "$lib/utils.js";
 
 let scene, camera, renderer, model;
 let dragons = [];
