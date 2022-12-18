@@ -30,7 +30,7 @@
       let format = { year: "numeric", month: "short" };
       let date = new Date(e.contest.startTime * 1000);
       let lang = "en";
-      switch($locale) {
+      switch ($locale) {
         case "en":
         case "ja":
           lang = $locale;
