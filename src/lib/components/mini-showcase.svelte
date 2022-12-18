@@ -38,27 +38,27 @@
     class="flex w-full justify-center gap-2 text-2xl text-white md:w-auto md:flex-col"
   >
     <button
-      class="rounded-full bg-gray-600 p-4 dark:bg-black dark:text-white"
+      class="rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
       on:click={performMagic}
     >
       <BoringIcon class="animate-waving-hand" />
     </button>
     <button
-      class="bg-gray-400 p-4 aria-checked:bg-gray-600 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
+      class="bg-gray-500 p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
       aria-checked={selected == 0}
       on:click={() => select(0)}
     >
       <RubikIcon />
     </button>
     <button
-      class="bg-gray-400 p-4 aria-checked:bg-gray-600 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
+      class="bg-gray-500 p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
       aria-checked={selected == 1}
       on:click={() => select(1)}
     >
       <DragonIcon />
     </button>
     <button
-      class="bg-gray-400 p-4 aria-checked:bg-gray-600 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
+      class="bg-gray-500 p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
       aria-checked={selected == 2}
       on:click={() => select(2)}
     >
