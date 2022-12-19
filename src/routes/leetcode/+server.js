@@ -46,8 +46,7 @@ export async function GET() {
   try {
     const res = await requestAxios();
     const data = res.data.data;
-    const i = data.userContestRankingHistory.findIndex((e) => e.attended);
-    data.userContestRankingHistory = data.userContestRankingHistory.slice(i);
+    data.userContestRankingHistory = data.userContestRankingHistory.filter(e => e.attended);
     return json(data);
   } catch (e) {
     console.error(e);
