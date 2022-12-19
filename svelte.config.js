@@ -6,12 +6,12 @@ const config = {
   kit: {
     csp: {
       directives: {
-        'default-src': ['self'],
-        'script-src': ['self'],
-        'connect-src': ['self', 'blob:', 'vitals.vercel-insights.com'],
-        'style-src': ['self', 'unsafe-inline', 'fonts.googleapis.com'],
-        'font-src': ['self', 'fonts.gstatic.com'],
-      }
+        "default-src": ["self"],
+        "script-src": ["self"],
+        "connect-src": ["self", "blob:", "vitals.vercel-insights.com"],
+        "style-src": ["self", "unsafe-inline", "fonts.googleapis.com"],
+        "font-src": ["self", "fonts.gstatic.com"],
+      },
     },
     adapter: adapter(),
   },

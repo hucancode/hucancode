@@ -33,6 +33,9 @@
 
 <div class="relative h-full w-full">
   <div
+    class="absolute left-1/2 top-1/2 mx-auto aspect-square h-full -translate-x-1/2 -translate-y-1/2 bg-gradient-radial from-gray-300 via-sky-50/0 to-sky-50/0 bg-contain dark:from-gray-300/10 dark:via-gray-900/0 dark:to-gray-900/0"
+  />
+  <div
     bind:this={loadingCircle}
     class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
   >
