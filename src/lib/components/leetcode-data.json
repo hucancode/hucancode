@@ -12,13 +12,6 @@
       }
     },
     {
-      "attended": false,
-      "rating": 1594.085,
-      "contest": {
-        "startTime": 1665844200
-      }
-    },
-    {
       "attended": true,
       "rating": 1645.338,
       "contest": {
@@ -30,13 +23,6 @@
       "rating": 1712.289,
       "contest": {
         "startTime": 1666492200
-      }
-    },
-    {
-      "attended": false,
-      "rating": 1712.289,
-      "contest": {
-        "startTime": 1667053800
       }
     },
     {
@@ -54,45 +40,10 @@
       }
     },
     {
-      "attended": false,
-      "rating": 1820.153,
-      "contest": {
-        "startTime": 1668263400
-      }
-    },
-    {
-      "attended": false,
-      "rating": 1820.153,
-      "contest": {
-        "startTime": 1668306600
-      }
-    },
-    {
       "attended": true,
       "rating": 1799.335,
       "contest": {
         "startTime": 1668911400
-      }
-    },
-    {
-      "attended": false,
-      "rating": 1799.335,
-      "contest": {
-        "startTime": 1669473000
-      }
-    },
-    {
-      "attended": false,
-      "rating": 1799.335,
-      "contest": {
-        "startTime": 1669516200
-      }
-    },
-    {
-      "attended": false,
-      "rating": 1799.335,
-      "contest": {
-        "startTime": 1670121000
       }
     }
   ]

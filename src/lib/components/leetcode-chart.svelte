@@ -102,7 +102,7 @@
   });
 </script>
 
-<div class="h-full w-full p-5">
+<div class="w-full max-w-screen-sm p-5 lg:w-1/2">
   <div class="mb-4 flex justify-center gap-2">
     <div class="flex flex-col items-center justify-center gap-2 md:flex-row">
       <Leetcode class="text-lg" />

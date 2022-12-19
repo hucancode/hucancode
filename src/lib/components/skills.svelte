@@ -1,6 +1,5 @@
 <script>
   import { _ } from "svelte-i18n";
-  import { onMount } from "svelte";
   import Leetcode from "$lib/components/leetcode-chart.svelte";
   import Tech from "$lib/components/tech.svelte";
 

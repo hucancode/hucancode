@@ -13,6 +13,7 @@ const clock = new THREE.Clock();
 const CANVAS_ID = "sabor";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
+const USE_GROUND = false;
 
 function onWindowResize() {
   let canvas = document.getElementById(CANVAS_ID);
@@ -28,15 +29,15 @@ function onWindowResize() {
 }
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
-  cameraPositionNear = new THREE.Vector3(3.5, 2, 3.5);
+  cameraPositionNear = new THREE.Vector3(2.5, 3, 2.5);
   cameraPositionFar = new THREE.Vector3(4, 6, 4);
   isZoomingIn = false;
   isZoomingOut = false;
   camera.position.copy(cameraPositionFar);
-  camera.lookAt(0, 0.8, 0);
+  camera.lookAt(0, 1, 0);
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0.8, 0);
+    controls.target.set(0, 1, 0);
     controls.minDistance = 2; // the minimum distance the camera must have from center
     controls.maxDistance = 10; // the maximum distance the camera must have from center
     controls.enableRotateY = false;
@@ -84,14 +85,16 @@ async function buildScene() {
   scene.add(backLight);
 
   // ground
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(2, 50, 0, Math.PI * 2),
-    new THREE.MeshPhongMaterial({ color: 0x11111f, depthWrite: false })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.material.opacity = 0.4;
-  ground.material.transparent = true;
-  scene.add(ground);
+  if (USE_GROUND) {
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(2, 50, 0, Math.PI * 2),
+      new THREE.MeshPhongMaterial({ color: 0x11111f, depthWrite: false })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.material.opacity = 0.4;
+    ground.material.transparent = true;
+    scene.add(ground);
+  }
 
   model = await loadModel("sabor.glb");
   animator = new THREE.AnimationMixer(model.scene);

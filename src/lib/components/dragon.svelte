@@ -10,8 +10,11 @@
     makeDragon,
   } from "$lib/scenes/dragon.js";
 
+  let canvas;
+
   onMount(async () => {
     await init();
+    canvas.hideLoadingCircle();
   });
 
   let MAX_DRAGON = 5;
@@ -24,4 +27,4 @@
   }
 </script>
 
-<Canvas3D id={CANVAS_ID} {render} />
+<Canvas3D bind:this={canvas} id={CANVAS_ID} {render} />

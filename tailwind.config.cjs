@@ -18,6 +18,7 @@ const config = {
         "double-width": "200% 100%",
       },
       backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         rainbow:
           "linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b)",
         rainbow2:

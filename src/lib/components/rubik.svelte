@@ -9,10 +9,12 @@
     remakeRubik,
   } from "$lib/scenes/rubik.js";
 
+  let canvas;
   let size = getCurrentSize() - 1;
   let MAX_SIZE = 6;
   onMount(async () => {
     await init();
+    canvas.hideLoadingCircle();
   });
 
   export function performMagic() {
@@ -21,4 +23,4 @@
   }
 </script>
 
-<Canvas3D id={CANVAS_ID} {render} />
+<Canvas3D bind:this={canvas} id={CANVAS_ID} {render} />
