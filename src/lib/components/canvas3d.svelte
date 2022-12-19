@@ -20,13 +20,15 @@
       }
     });
     observer.observe(canvas);
-    loadingCircle.classList.add("invisible");
     frameID = requestAnimationFrame(loop);
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frameID);
     };
   });
+  export function hideLoadingCircle() {
+    loadingCircle.classList.add("invisible");
+  }
 </script>
 
 <div class="relative h-full w-full">

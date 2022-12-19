@@ -12,7 +12,7 @@
   >
     <div class="flex items-center gap-4 text-4xl font-bold">
       <h1
-        class="whitespace-nowrap text-fill-none animate-bg-pingpong bg-rainbow2 bg-double-width bg-clip-text pb-1"
+        class="text-fill-none animate-bg-pingpong whitespace-nowrap bg-rainbow2 bg-double-width bg-clip-text pb-1"
       >
         {$_("home.landing.hello")}
       </h1>

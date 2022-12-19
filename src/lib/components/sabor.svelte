@@ -3,8 +3,11 @@
   import Canvas3D from "./canvas3d.svelte";
   import { CANVAS_ID, init, render, playAction } from "$lib/scenes/sabor.js";
 
+  let canvas;
+
   onMount(async () => {
     await init();
+    canvas.hideLoadingCircle();
   });
 
   export function performMagic() {
@@ -12,4 +15,4 @@
   }
 </script>
 
-<Canvas3D id={CANVAS_ID} {render} />
+<Canvas3D bind:this={canvas} id={CANVAS_ID} {render} />

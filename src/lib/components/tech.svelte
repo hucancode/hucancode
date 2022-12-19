@@ -21,9 +21,9 @@
 </script>
 
 <ul
-  class="flex w-full lg:w-1/2 max-w-screen-sm
-    flex-wrap items-center justify-center
-    p-5 text-center text-gray-700 dark:text-gray-300"
+  class="flex w-full max-w-screen-sm flex-wrap
+    items-center justify-center p-5
+    text-center text-gray-700 dark:text-gray-300 lg:w-1/2"
 >
   <li>
     <CPP />
