@@ -7,6 +7,7 @@ const config = {
     csp: {
       directives: {
         "default-src": ["self"],
+        "img-src": ["self", "blob:"],
         "script-src": ["self"],
         "connect-src": ["self", "blob:", "vitals.vercel-insights.com"],
         "style-src": ["self", "unsafe-inline", "fonts.googleapis.com"],
