@@ -47,13 +47,6 @@ function rebuildOrbitControl() {
     controls.maxDistance = 10; // the maximum distance the camera must have from center
     controls.enableRotateY = false;
     controls.enablePan = false;
-    const isTouchDevice =
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0 ||
-      navigator.msMaxTouchPoints > 0;
-    if (isTouchDevice) {
-      controls.enabled = false;
-    }
   }
 }
 
