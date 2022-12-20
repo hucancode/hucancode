@@ -43,7 +43,7 @@
       on:click={performMagic}
     >
       <BoringIcon class="animate-waving-hand group-hover:hidden" />
-      <ExcitingIcon class="hidden group-hover:block" />
+      <ExcitingIcon class="hidden group-hover:block group-active:scale-150" />
     </button>
     <button
       class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
