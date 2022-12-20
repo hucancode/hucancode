@@ -25,7 +25,7 @@
         break;
     }
   }
-  select(0);
+  select(Math.floor(Math.random() * 2));
 </script>
 
 <div
