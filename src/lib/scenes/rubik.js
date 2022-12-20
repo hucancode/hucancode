@@ -125,9 +125,14 @@ function setupCamera(w, h) {
   scene = new THREE.Scene();
   camera.position.set(0, 0, 0);
   cameraTarget = new THREE.Vector3(0, 0, 0);
-  camera.lookAt(scene.position);
+  rebuildOrbitControl();
+}
+
+function rebuildOrbitControl() {
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
+    const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+    controls.target.set(k, k, k);
     //controls.enablePan = false;
     controls.minDistance = 4; // the minimum distance the camera must have from center
     controls.maxDistance = 30; // the maximum distance the camera must have from center
@@ -149,6 +154,7 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
   if (scene != null) {
+    rebuildOrbitControl();
     return;
   }
   setupCamera(w, h);
