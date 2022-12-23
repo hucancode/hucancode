@@ -7,23 +7,23 @@ categories:
   - hackerrank
 ---
 
-# Problem
+## Problem
 
 Your goal is to find the number of ways to construct an array such that consecutive positions contain different values.
 
 Specifically, we want to construct an array with $n$ elements such that each element between $1$ and $k$ inclusive. We also want the first and last elements of the array to be $1$ and $x$
 
-## Example
+### Example
 
 For example, for $n=4, k=3, x=2$ there are $3$ ways, as shown here:
 
-```cpp
+```
 1 2 1 2
 1 2 3 2
 1 3 1 2
 ```
 
-## Constraints
+### Constraints
 
 - $3 <= n <= 10^5$
 - $2 <= k <= 10^5$
@@ -31,9 +31,9 @@ For example, for $n=4, k=3, x=2$ there are $3$ ways, as shown here:
 
 Read more: https://www.hackerrank.com/challenges/construct-the-array
 
-# Solution
+## Solution
 
-## Strategy
+### Approach
 
 We will apply the idea of Dynamic Programming.
 
@@ -70,7 +70,7 @@ $$
 
 That's conclude our solution.
 
-## Code
+### Code
 
 Readable code
 
