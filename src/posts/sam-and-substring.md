@@ -7,29 +7,29 @@ categories:
 excerpt: How to analyze mathematics formular to solve a programming puzzle
 ---
 
-# Problem
+## Problem
 
 Samantha and Sam are playing a numbers game. Given a number as a string, no leading zeros, determine the sum of all integer values of substrings of the string.
 
 Given an integer as a string, sum all of its substrings cast as integers. As the number may become large, return the value modulo 10<sup>9</sup>+7.
 
-## Example
+### Example
 
-```cpp
+```
 n = '42'
 ```
 
 Here `n` is a string that has `3` integer substrings: `4` ,`2`, and `42`. Their sum is `48`, and $$48\mod(10^9+7) = 48$$.
 
-## Constraints
+### Constraints
 
 ```cpp
 1 <= sizeof(n) <= 2*10^5
 ```
 
-# Solution
+## Solution
 
-## First attempt
+### Brute force (TLE)
 
 ```cpp
 #include <string>
@@ -56,13 +56,13 @@ int slow_substrings(string n) {
 }
 ```
 
-## Observe
+### Observation
 
 - Answer seems correct but TLE
 - O(n<sup>3</sup>)
 - Alot of plus `+` operator. Can we improve the formular?
 
-## Optimized attempt
+### Code
 
 ```cpp
 

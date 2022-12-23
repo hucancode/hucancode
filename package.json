@@ -10,6 +10,7 @@
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. ."
   },
   "dependencies": {
+    "@sveltejs/adapter-vercel": "^1.0.0",
     "animejs": "^3.2.1",
     "axios": "^1.2.1",
     "chart.js": "^4.0.1",
