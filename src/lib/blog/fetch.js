@@ -1,4 +1,4 @@
-const POST_PER_PAGE = 7;
+const POST_PER_PAGE = 8;
 const BLOG_CONTENT_FILTER = "/src/posts/*.md";
 
 export default async function fetchPosts({ page = 1, category = "" } = {}) {

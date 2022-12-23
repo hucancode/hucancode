@@ -17,4 +17,8 @@
 
 <PostsList posts={data.posts} />
 
-<Pagination page={data.page} lastPage={data.lastPage} />
+<Pagination
+  page={data.page}
+  path={`/blog/category/${data.category}`}
+  lastPage={data.lastPage}
+/>

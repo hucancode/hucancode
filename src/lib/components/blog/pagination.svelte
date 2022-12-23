@@ -1,6 +1,7 @@
 <script>
   export let page;
   export let lastPage;
+  export let path;
   let DISPLAY_NUM = 9;
   let pages = Array.from({ length: lastPage }, (_, i) => i + 1);
   if (lastPage > DISPLAY_NUM) {
@@ -29,7 +30,7 @@
             class:pointer-events-none={p == page}
             class="flex h-full w-full items-center justify-center"
             data-sveltekit:prefetch
-            href="/blog/{p}"
+            href="{path}/{p}"
           >
             {p}
           </a>
