@@ -24,7 +24,9 @@
   {#if lastPage > 1}
     <ul class="flex gap-4 text-sm font-bold">
       {#each pages as p}
-        <li class="aspect-square w-12 p-2 dark:bg-gray-700 dark:text-gray-200">
+        <li
+          class="aspect-square w-12 bg-sky-200 p-2 text-gray-600 dark:bg-gray-700 dark:text-gray-200"
+        >
           <a
             sveltekit:noscroll
             class:pointer-events-none={p == page}
