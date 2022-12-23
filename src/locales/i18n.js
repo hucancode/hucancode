@@ -4,9 +4,9 @@ import { browser } from "$app/environment";
 const defaultLocale = "en";
 
 export default async function init() {
-  register("en", () => import("$lib/locales/en.json"));
-  register("ja", () => import("$lib/locales/ja.json"));
-  register("mini", () => import("$lib/locales/mini.json"));
+  register("en", () => import("$locales/en.json"));
+  register("ja", () => import("$locales/ja.json"));
+  register("mini", () => import("$locales/mini.json"));
   let initialLocale = defaultLocale;
   if (browser) {
     const params = new URLSearchParams(window.location.search);

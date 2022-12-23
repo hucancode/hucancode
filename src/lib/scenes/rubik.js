@@ -36,11 +36,11 @@ function isInFace(x, y, z, face, depth) {
 function getColor(x, y, z, face) {
   const FACE_TO_COLOR = [
     0x40a02b, //right - green
-    0x1e66f5, //left - purple
-    0xfde047, //top - yellow
+    0x89b4fa, //left - purple
+    0xf9e2af, //top - yellow
     0xf8fafc, //bottom - white
     0xef4444, //front - red
-    0x16a34a, //back - orange
+    0xfe640b, //back - orange
   ];
   const BLACK = 0x181825;
 
@@ -125,9 +125,14 @@ function setupCamera(w, h) {
   scene = new THREE.Scene();
   camera.position.set(0, 0, 0);
   cameraTarget = new THREE.Vector3(0, 0, 0);
-  camera.lookAt(scene.position);
+  rebuildOrbitControl();
+}
+
+function rebuildOrbitControl() {
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
+    const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+    controls.target.set(k, k, k);
     //controls.enablePan = false;
     controls.minDistance = 4; // the minimum distance the camera must have from center
     controls.maxDistance = 30; // the maximum distance the camera must have from center
@@ -149,6 +154,7 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
   if (scene != null) {
+    rebuildOrbitControl();
     return;
   }
   setupCamera(w, h);

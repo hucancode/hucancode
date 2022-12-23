@@ -27,6 +27,7 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
 }
+
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
   cameraPositionNear = new THREE.Vector3(2.5, 3, 2.5);
@@ -35,6 +36,10 @@ function setupCamera(w, h) {
   isZoomingOut = false;
   camera.position.copy(cameraPositionFar);
   camera.lookAt(0, 1, 0);
+  rebuildOrbitControl();
+}
+
+function rebuildOrbitControl() {
   if (USE_CAMERA_CONTROL) {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 1, 0);
@@ -42,15 +47,9 @@ function setupCamera(w, h) {
     controls.maxDistance = 10; // the maximum distance the camera must have from center
     controls.enableRotateY = false;
     controls.enablePan = false;
-    const isTouchDevice =
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0 ||
-      navigator.msMaxTouchPoints > 0;
-    if (isTouchDevice) {
-      controls.enable = false;
-    }
   }
 }
+
 async function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
@@ -64,6 +63,7 @@ async function init() {
   renderer.setSize(w, h);
   addEventListener("resize", onWindowResize);
   if (scene != null) {
+    rebuildOrbitControl();
     return;
   }
   await buildScene();

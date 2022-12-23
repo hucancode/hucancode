@@ -37,6 +37,7 @@
       <SendMail size="1.5em" style={{ marginRight: "0.5em" }} />
       <a
         class="hover:text-blue-900 hover:dark:text-blue-300"
+        rel="external"
         href="mailto:hucancode@gmail.com"
       >
         hucancode@gmail.com
@@ -79,10 +80,9 @@
     <div class="flex justify-center gap-2 md:justify-start">
       <Fire size="1.5em" style={{ marginRight: "0.5em" }} />
       <a
+        data-sveltekit:prefetch
         class="hover:text-blue-900 hover:dark:text-blue-300"
-        target="_blank"
-        rel="noreferrer"
-        href="https://blog.hucanco.de"
+        href="/blog"
       >
         {$_("common.contact.blog")}
       </a>

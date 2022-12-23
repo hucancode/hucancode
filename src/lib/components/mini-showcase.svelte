@@ -3,6 +3,7 @@
   import DragonIcon from "~icons/game-icons/sea-dragon";
   import SwordIcon from "~icons/ri/sword-fill";
   import BoringIcon from "~icons/twemoji/face-with-rolling-eyes";
+  import ExcitingIcon from "~icons/twemoji/face-holding-back-tears";
 
   let selected = 0;
   let sceneInstance;
@@ -24,7 +25,7 @@
         break;
     }
   }
-  select(0);
+  select(Math.floor(Math.random() * 2));
 </script>
 
 <div
@@ -38,28 +39,29 @@
     class="flex w-full justify-center gap-2 text-2xl text-white md:w-auto md:flex-col"
   >
     <button
-      class="rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
+      class="group rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
       on:click={performMagic}
     >
-      <BoringIcon class="animate-waving-hand" />
+      <BoringIcon class="animate-waving-hand group-hover:hidden" />
+      <ExcitingIcon class="hidden group-hover:block group-active:scale-150" />
     </button>
     <button
-      class="bg-gray-500 p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
-      aria-checked={selected == 0}
+      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      disabled={selected == 0}
       on:click={() => select(0)}
     >
       <RubikIcon />
     </button>
     <button
-      class="bg-gray-500 p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
-      aria-checked={selected == 1}
+      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      disabled={selected == 1}
       on:click={() => select(1)}
     >
       <DragonIcon />
     </button>
     <button
-      class="bg-gray-500 p-4 aria-checked:bg-gray-700 aria-checked:text-white dark:bg-gray-700 dark:aria-checked:bg-black"
-      aria-checked={selected == 2}
+      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      disabled={selected == 2}
       on:click={() => select(2)}
     >
       <SwordIcon />
