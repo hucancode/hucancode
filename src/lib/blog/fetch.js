@@ -1,0 +1,52 @@
+const POST_PER_PAGE = 10;
+const BLOG_CONTENT_FILTER = "/src/posts/*.md";
+
+export default async function fetchPosts({ page = 1, category = "" } = {}) {
+  const from = (page - 1) * POST_PER_PAGE;
+  const to = POST_PER_PAGE;
+  let posts = await Promise.all(
+    Object.entries(import.meta.glob("/src/posts/*.md")).map(
+      async ([path, resolver]) => {
+        const { metadata } = await resolver();
+        const slug = path.split("/").pop().slice(0, -3);
+        return { ...metadata, slug };
+      }
+    )
+  );
+  if (category) {
+    posts = posts.filter((post) => post.categories.includes(category));
+  }
+  posts = posts
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(from, to);
+  posts = posts.map((post) => ({
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt,
+    coverImage: post.coverImage,
+    coverWidth: post.coverWidth,
+    coverHeight: post.coverHeight,
+    date: post.date,
+    categories: post.categories,
+  }));
+  return { posts: posts };
+}
+
+export async function fetchPostCount({ category = "" } = {}) {
+  let posts = import.meta.glob("/src/posts/*.md");
+  if (category) {
+    posts = await Promise.all(
+      Object.entries(posts).map(async ([path, resolver]) => {
+        const { metadata } = await resolver();
+        return { ...metadata };
+      })
+    );
+    posts = posts.filter((post) => post.categories.includes(category));
+  }
+  return Object.keys(posts).length;
+}
+
+export async function fetchPageCount(props) {
+  const count = await fetchPostCount(props);
+  return Math.ceil(count / POST_PER_PAGE);
+}
