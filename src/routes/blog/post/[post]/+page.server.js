@@ -1,13 +1,12 @@
 import { error } from "@sveltejs/kit";
 
-export const load = async ({ params }) => {
+export async function load({ params, fetch }) {
   try {
-    const post = await import(`/src/posts/${params.post}.md`);
-    return {
-      PostContent: post.default.render().html,
-      meta: { ...post.metadata, slug: params.post },
-    };
+    console.log("loading data for", params.post);
+    const res = await fetch(`/blog/post/${params.post}/json`);
+    const data = await res.json();
+    return data;
   } catch (err) {
     throw error(404, err);
   }
-};
+}

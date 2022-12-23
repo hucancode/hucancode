@@ -1,8 +1,6 @@
 import fetchPosts, { fetchPageCount } from "$lib/blog/fetch";
 import { json } from "@sveltejs/kit";
 
-export const prerender = true;
-
 export async function GET({ params }) {
   const lastPage = await fetchPageCount();
   let page = parseInt(params.page) || 1;

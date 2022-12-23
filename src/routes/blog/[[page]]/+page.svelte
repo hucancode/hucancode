@@ -8,13 +8,19 @@
 <svelte:head>
   <title>Blog</title>
 </svelte:head>
-
-<h1
-  class="text-fill-none animate-bg-pingpong whitespace-nowrap bg-rainbow2 bg-double-width bg-clip-text pb-1 text-4xl font-bold"
->
-  hucancode's blog
-</h1>
-
+<header class="flex flex max-w-screen-sm flex-col items-center gap-2 p-16">
+  <a data-sveltekit:prefetch href="/"
+    ><div
+      class="flex aspect-square w-24 items-center justify-center rounded-full bg-black"
+    >
+      <img alt="logo" src="/assets/logo-source.svg" />
+    </div></a
+  >
+  <p class="text-center text-sm text-gray-400">
+    Welcome to my blog, I write about programming, game and other random things,
+    mostly random things
+  </p>
+</header>
 <PostsList posts={data.posts} />
 
 <Pagination page={data.page} lastPage={data.lastPage} />

@@ -1,17 +1,10 @@
-<!-- This file renders each individual blog post for reading. Be sure to update the svelte:head below -->
 <script>
+  import { parseISO, formatRelative } from "date-fns";
   export let data;
 
-  const {
-    title,
-    excerpt,
-    date,
-    updated,
-    coverImage,
-    coverWidth,
-    coverHeight,
-    categories,
-  } = data.meta;
+  const { title, excerpt, date, cover, categories } = data.meta;
+
+  let dateString = formatRelative(parseISO(date), new Date());
 </script>
 
 <svelte:head>
@@ -24,47 +17,31 @@
   <meta property="og:description" content={excerpt} />
   <meta name="twitter:description" content={excerpt} />
   <!-- <meta property="og:image" content="https://yourdomain.com/image_path" /> -->
-  <meta property="og:image:width" content={coverWidth} />
-  <meta property="og:image:height" content={coverHeight} />
   <!-- <meta name="twitter:image" content="https://yourdomain.com/image_path" /> -->
 </svelte:head>
 
-<article>
-  <!-- You might want to add an alt frontmatter attribute. If not, leaving alt blank here works, too. -->
-  <img
-    class="cover-image"
-    src={coverImage}
-    alt=""
-    style="aspect-ratio: {coverWidth} / {coverHeight};"
-    width={coverWidth}
-    height={coverHeight}
-  />
-
-  <h1>{title}</h1>
-
-  <div class="meta">
-    <b>Published:</b>
-    {date}
-    <br />
-    <b>Updated:</b>
-    {updated}
-  </div>
-
-  <div class="dark:prose-dark lg:dark:prose-xl-dark prose lg:prose-xl">
-    {@html data.PostContent}
-  </div>
+<article class="container my-20 max-w-screen-lg">
   {#if categories}
-    <aside class="mt-5">
-      <h2>Posted in:</h2>
-      <ul class="flex flex-wrap gap-2 ">
-        {#each categories as category}
-          <li class="bg-orange-700 p-1 text-gray-100">
-            <a href="/blog/category/{category}/">
-              {category}
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </aside>
+    <ul class="flex flex-wrap gap-2 ">
+      {#each categories as category}
+        <li
+          class="text-fill-none bg-rainbow3 bg-clip-text pb-1 text-sm font-bold before:content-['#']"
+        >
+          <a data-sveltekit:prefetch href="/blog/category/{category}/">
+            {category}
+          </a>
+        </li>
+      {/each}
+    </ul>
   {/if}
+  <h1 class="text-4xl font-extrabold">{title}</h1>
+  <small class="text-gray-400">Posted {dateString}</small>
+
+  <img class="my-4 w-full rounded-lg" src={cover} alt="" />
+
+  <div
+    class="prose prose-slate max-w-full prose-a:text-blue-600 prose-a:no-underline dark:prose-invert prose-a:dark:text-sky-300"
+  >
+    {@html data.content}
+  </div>
 </article>

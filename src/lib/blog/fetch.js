@@ -23,9 +23,7 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
     title: post.title,
     slug: post.slug,
     excerpt: post.excerpt,
-    coverImage: post.coverImage,
-    coverWidth: post.coverWidth,
-    coverHeight: post.coverHeight,
+    cover: post.cover,
     date: post.date,
     categories: post.categories,
   }));

@@ -1,7 +1,6 @@
 <script>
   export let page;
   export let lastPage;
-  export let path = "/blog/";
 </script>
 
 <!-- For some reason, the pagination wasn't re-rendering properly during navigation without the #key block -->
@@ -11,7 +10,7 @@
       <ul>
         {#each Array.from({ length: lastPage }, (_, i) => i + 1) as p}
           <li>
-            <a href="{path}/{page}">
+            <a href="/blog/{page}">
               {p}
             </a>
           </li>

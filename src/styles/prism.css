@@ -6,10 +6,15 @@
  * Added by Souvik Mandal [@SimpleIndian]
  */
 
+code,
+pre {
+  overflow-wrap: anywhere;
+}
+
 code[class*="language-"],
 pre[class*="language-"] {
   color: #d6deeb;
-  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  font-family: "Fira Code", Consolas, "Ubuntu Mono", monospace;
   text-align: left;
   white-space: pre;
   word-spacing: normal;
@@ -47,6 +52,15 @@ code[class*="language-"] ::selection {
   pre[class*="language-"] {
     text-shadow: none;
   }
+}
+html.dark pre[class*="language-"] {
+  filter: none;
+  -webkit-filter: none;
+}
+
+pre[class*="language-"] {
+  filter: invert(100%);
+  -webkit-filter: invert(100%);
 }
 
 /* Code blocks */

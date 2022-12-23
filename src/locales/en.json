@@ -1,6 +1,7 @@
 {
   "common": {
     "contact": {
+      "home": "Home",
       "social": "See more from me!",
       "contact": "Contact",
       "github": "Github",

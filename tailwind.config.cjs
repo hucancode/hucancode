@@ -23,6 +23,12 @@ const config = {
           "linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b)",
         rainbow2:
           "linear-gradient(141.27deg,#ff904e 0%,#ff5982 20%,#ec68f4 40%,#79e2ff 80%)",
+        rainbow3:
+          "linear-gradient(140deg, #D2A8FF 12.09%, #F778BA 42.58%, #FF7B72 84.96%)",
+        rainbow4:
+          "linear-gradient(45deg, rgb(255, 255, 255) -20%, rgb(0, 112, 243) 70%)",
+        rainbow5:
+          "linear-gradient(45deg, rgb(51, 51, 51) -20%, rgb(0, 112, 243) 70%)",
         "opaque-radial": "radial-gradient(closest-side,#ffffff20,#00000032)",
       },
       animation: {
