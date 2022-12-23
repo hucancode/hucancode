@@ -1,9 +1,9 @@
-const POST_PER_PAGE = 10;
+const POST_PER_PAGE = 7;
 const BLOG_CONTENT_FILTER = "/src/posts/*.md";
 
 export default async function fetchPosts({ page = 1, category = "" } = {}) {
-  const from = (page - 1) * POST_PER_PAGE;
-  const to = POST_PER_PAGE;
+  const offset = (page - 1) * POST_PER_PAGE;
+  const take = POST_PER_PAGE - 1;
   let posts = await Promise.all(
     Object.entries(import.meta.glob("/src/posts/*.md")).map(
       async ([path, resolver]) => {
@@ -18,7 +18,7 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
   }
   posts = posts
     .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(from, to);
+    .slice(offset, offset + take);
   posts = posts.map((post) => ({
     title: post.title,
     slug: post.slug,
