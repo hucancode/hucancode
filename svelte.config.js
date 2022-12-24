@@ -12,8 +12,13 @@ const config = {
       directives: {
         "default-src": ["self"],
         "img-src": ["self", "blob:", "https:"],
-        "script-src": ["self"],
-        "connect-src": ["self", "blob:", "vitals.vercel-insights.com"],
+        "script-src": ["self", "vercel.live"],
+        "connect-src": [
+          "self",
+          "blob:",
+          "vitals.vercel-insights.com",
+          "vitals.vercel-analytics.com",
+        ],
         "style-src": ["self", "unsafe-inline", "fonts.googleapis.com"],
         "font-src": ["self", "data:", "fonts.gstatic.com"],
       },
