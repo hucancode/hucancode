@@ -1,5 +1,7 @@
 <script>
   import { parseISO, formatRelative } from "date-fns";
+  import Nav from "$lib/components/blog/nav-bottom.svelte";
+
   export let data;
 
   const { title, excerpt, date, cover, categories } = data.meta;
@@ -45,3 +47,4 @@
     {@html data.content}
   </div>
 </article>
+<Nav />
