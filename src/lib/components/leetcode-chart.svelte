@@ -98,6 +98,7 @@
     });
     return () => {
       chart.destroy();
+      chart = null;
     };
   });
 </script>
