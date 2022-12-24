@@ -28,7 +28,7 @@
           class="aspect-square w-12 bg-sky-200 p-2 text-gray-600 dark:bg-gray-700 dark:text-gray-200"
         >
           <a
-            sveltekit:noscroll
+            data-sveltekit-noscroll
             class:pointer-events-none={p == page}
             class="flex h-full w-full items-center justify-center"
             data-sveltekit:prefetch
