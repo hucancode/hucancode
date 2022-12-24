@@ -8,7 +8,7 @@
 
 <ul>
   {#each posts as post}
-    <li class="mb-2 p-6">
+    <li class="mb-2 p-2">
       <article>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
           <h2

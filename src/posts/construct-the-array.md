@@ -29,7 +29,7 @@ For example, for $n=4, k=3, x=2$ there are $3$ ways, as shown here:
 - $2 <= k <= 10^5$
 - $1 <= x <= k$
 
-Read more: https://www.hackerrank.com/challenges/construct-the-array
+Submit your solution at: https://www.hackerrank.com/challenges/construct-the-array
 
 ## Solution
 
@@ -40,20 +40,14 @@ We will apply the idea of Dynamic Programming.
 - Let $f(i)$ indicates the number of ways to contruct array of $i$ length and the last number **must not be** $x$.
 - Let $g(i)$ indicates the number of ways to contruct array of $i$ length and the last number **must be** $x$.
 
-Easily we see **the answer is $g(x)$**.
+Easily we see **the answer is $g(n)$**.
 We can calculate some initial value without much difficulty.
 
----
+- If $x = 1$, our initial values would be $f(1) = 0, f(2) = k - 1$, and $g(1) = 1, g(2) = 0$
+- If $x != 1$, there is a little different $f(1) = 1, f(2) = k - 2$, and $g(1) = 0;g(2) = 1$
+- From $i=3$ onward, the formular stays consistent regardless of $x$.
 
-$$
-\text{If x = 1}, f(1) = 0; f(2) = k - 1; g(1) = 1; g(2) = 0
-$$
-
-$$
-\text{If x != 1}, f(1) = 1; f(2) = k - 2; g(1) = 0;g(2) = 1
-$$
-
-Take a step back and observe, we would notice that $f(i)$ and $g(i)$ can be calculated using $f(i-1)$ and $g(i-1)$.
+Notice that $f(i)$ and $g(i)$ can be calculated using $f(i-1)$ and $g(i-1)$.
 There are only 1 way to pick $x$ at position $i$ so
 
 $$
@@ -62,7 +56,7 @@ $$
 
 If the previous number is not $x$ we will lost 2 candidates. Thus, there are $k - 2$ ways to pick a number at $i$
 If the previous number is $x$ we only lost 1 candidate. Thus, there are $k - 1$ ways to pick a number at $i$
-Combine them we have
+Combine them altogether we have
 
 $$
 f(i) = (k - 2) * f(i - 1) + (k - 1) * g(i - 1)
