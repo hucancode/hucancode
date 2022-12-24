@@ -11,7 +11,7 @@
   >
     <img alt="logo" src="/assets/logo-source.svg" />
   </div>
-  <p class="text-center text-sm text-gray-400">
+  <p class="text-center text-sm text-gray-600 dark:text-gray-400">
     Welcome to my blog, I write about programming, game and other random things,
     mostly random things
   </p>
