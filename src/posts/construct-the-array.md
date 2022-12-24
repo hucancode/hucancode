@@ -29,7 +29,7 @@ For example, for $n=4, k=3, x=2$ there are $3$ ways, as shown here:
 - $2 <= k <= 10^5$
 - $1 <= x <= k$
 
-Read more: https://www.hackerrank.com/challenges/construct-the-array
+Submit your solution at: https://www.hackerrank.com/challenges/construct-the-array
 
 ## Solution
 
@@ -40,12 +40,12 @@ We will apply the idea of Dynamic Programming.
 - Let $f(i)$ indicates the number of ways to contruct array of $i$ length and the last number **must not be** $x$.
 - Let $g(i)$ indicates the number of ways to contruct array of $i$ length and the last number **must be** $x$.
 
-Easily we see **the answer is $g(n,x)$**.
+Easily we see **the answer is $g(n)$**.
 We can calculate some initial value without much difficulty.
 
 - If $x = 1$, our initial values would be $f(1) = 0, f(2) = k - 1$, and $g(1) = 1, g(2) = 0$
-- If $x != 1$, there is a little different $f(1,x) = 1, f(2,x) = k - 2$, and $g(1,x) = 0;g(2,x) = 1$
-- For $i>=3$ onward, the formular stays consistent regardless of $x$.
+- If $x != 1$, there is a little different $f(1) = 1, f(2) = k - 2$, and $g(1) = 0;g(2) = 1$
+- From $i=3$ onward, the formular stays consistent regardless of $x$.
 
 Notice that $f(i)$ and $g(i)$ can be calculated using $f(i-1)$ and $g(i-1)$.
 There are only 1 way to pick $x$ at position $i$ so
