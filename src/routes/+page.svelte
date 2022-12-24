@@ -6,6 +6,9 @@
   export let data;
 </script>
 
+<svelte:head>
+  <title>hucancode</title>
+</svelte:head>
 <Nav />
 <Landing />
 <Skills {data} />
