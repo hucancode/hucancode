@@ -18,7 +18,17 @@ I will refer to [the Infinity Stones](https://en.wikipedia.org/wiki/Infinity_Sto
 - __Reality__, prepare for the next career leap. Work on the game I always wanted to. Lean math, graphics programming
 - __Time__, get up early consistently. Seriously my daily schedule is messed up so bad
 
-## Goals
+## Last Year's Achievement
+Before go to the goal for this year, I would like to mention my last year's achievement. For some people, this is trivia, but to me it's has special meaning. I have growth and I'm prowd of it.
+
+### Get Over A Nasty Break Up
+She was my first love. I loved her, it was hurtful but I'm glad I got over it. It cost me 6 months to learn how childish I am. Pretty expensive lession. Later last year I met some new friend, learned new thing and get my life together.
+I am now more grateful with what I am having. Feel pretty good now.
+
+### Learned Linux and Vim
+I learned the important lesson about how a tiny simple thing can improve my tech life greatly. If you haven't use `vim` I would highly recommend learning it.
+
+## 2023's Goals
 
 |         | Year Start                                                                          | Mid Year                                                                                                        | Year End                                                                                                                                            |
 |---------|-------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -28,3 +38,4 @@ I will refer to [the Infinity Stones](https://en.wikipedia.org/wiki/Infinity_Sto
 | Soul    | Tien can remember my name, no more no less                                          | Having meaningful conversation with Tien                                                                        | Win Tien's heart                                                                                                                                    |
 | Reality | - Stable job <br />- UE5 game has little meaningful progression - Started doing comission | - Keep doing everything, the goal is to maintain this level of progression <br />- Do creative coding once in a while | - Promotion in current job <br />- Finish first commission, even if it's free labour, no commission fee is needed <br />- Ideally a little progress on UE5 game |
 | Time    | - Go to bed at anytime between 10:00 and 2:00 <br />- Wake up at 7:00, sometimes 7:30                                                   | - Go to bed at 11:00, ideally 10:00 <br />- Wake up at 6:00, ideally 5:00                                                                                   | - Go to bed at 10:00 consistently<br />- Wake up at 5:00 consistently                                                                                                                        |
+
