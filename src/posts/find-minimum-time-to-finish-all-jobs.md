@@ -1,6 +1,6 @@
 ---
 title: Find Minimum Time to Finish All Jobs
-date: 2022-11-08 17:50:00
+date: 2022-11-08 
 categories:
   - algorithm
   - greedy

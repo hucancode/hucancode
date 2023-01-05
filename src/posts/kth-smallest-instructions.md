@@ -1,6 +1,6 @@
 ---
 title: Kth Smallest Instructions
-date: 2022-11-24 17:50:00
+date: 2022-11-24 
 categories:
   - algorithm
   - combinatorics
