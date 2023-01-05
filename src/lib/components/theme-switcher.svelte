@@ -1,4 +1,6 @@
 <script>
+  import Night from "~icons/ic/twotone-dark-mode";
+  import Day from "~icons/ic/twotone-light-mode";
   import { onMount } from "svelte";
 
   let id = "theme-switcher";
@@ -38,10 +40,10 @@
 />
 <label
   for={id}
-  class="relative block
-        aspect-[2]
-        h-8
-        cursor-pointer rounded-2xl bg-blue-300
+  class="relative flex aspect-[2] h-8
+        cursor-pointer
+        items-center
+        justify-between rounded-2xl bg-blue-300
         duration-500
         after:absolute
         after:top-1 
@@ -56,4 +58,11 @@
         peer-checked:after:left-[calc(100%-0.2rem)]
         peer-checked:after:-translate-x-full
         peer-checked:dark:bg-gray-500"
-/>
+>
+  <Day
+    class="duration-600 z-10 w-1/2 text-gray-400 opacity-100 ease-in-out dark:opacity-0"
+  />
+  <Night
+    class="duration-600 z-10 w-1/2 text-gray-400 opacity-0 ease-in-out dark:opacity-100"
+  />
+</label>

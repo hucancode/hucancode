@@ -1,7 +1,8 @@
 ---
 title: Unreal Engine Networking - Session
-excerpt: How to use Session to implement a simple game lobby mechanic
+excerpt: In this article we will build a host game/join game mechanic using C++ and Unreal Engine Session API
 date: 2022-06-21 17:50:00
+cover: ue/networking-session/jordan-harrison-40XgDxBfYXM-unsplash.webp
 categories:
   - unreal
 ---

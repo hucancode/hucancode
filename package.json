@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "@sveltejs/adapter-vercel": "^1.0.0",
+    "@vercel/analytics": "^0.1.6",
     "animejs": "^3.2.1",
     "axios": "^1.2.1",
     "chart.js": "^4.0.1",
     "chartjs-adapter-date-fns": "^3.0.0",
     "date-fns": "^2.29.3",
-    "three": "^0.147.0"
+    "three": "^0.147.0",
+    "web-vitals": "^3.1.0"
   },
   "devDependencies": {
     "@iconify/json": "^2.1.152",
