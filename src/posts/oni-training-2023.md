@@ -13,7 +13,7 @@ First of all, happy new year to all who celebrate, wish you happiness and prospe
 Before go to the goal for this year, I would like to mention my last year’s achievement. For some people, this is trivia, but to me, it has special meaning. I have grown and I’m proud of it.
 
 ### Get Over A Nasty Break Up
-She was my first love. I loved her, it was hurtful, but I’m glad I got over it. It cost me 6 months to learn how stupid and immature I am. I was, and I am embarrassed, that was a pretty expensive lesson haha 😀. Later that year I met some new friend, learned new thing and get my life together (I guess). I am now more grateful with what I am having. I feel pretty good now. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
+She was my first love. I loved her, it was hurtful, but I’m glad I got over it. It cost me 6 months to learn how stupid and immature I am. I was, and I am embarrassed, that was a pretty expensive lesson haha 😀. Later that year I met some new friend, learned new thing and get my life together (I guess). I am grateful I still have some good friends, just a few, but good friends indeed. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="competition" src="oni-training-2023/Heartbroken-amico.svg" />
 
