@@ -45,46 +45,47 @@ New job, new opportunity, yay 🙌. I quit my job as an engineering manager at a
 
 I will refer to [the Infinity Stones](https://en.wikipedia.org/wiki/Infinity_Stones) 💎 as an abstraction of multiple aspects in life. Word on the street is that, to be as powerful as `Thanos`, one must find himself not 1, not 2, but 6 Infinity Stones. Since I'm on my quest seeking the ultimate power, this year I want to improve my:
 
-#### ⚡ Power
-
+#### ⚡ Power Stone
+In the Comic, power stone gives its owner, you know, power. In real life, improving "power" will allow me to have more energy, break my current limitation and improve my life quality.
+Training Taiji is a good way to gain power. Specifically I will train:
 - Core strength, hip strength
 - Leg strength
-- Organ health are correlate with longevity
-- Lower body strength are correlate with life quality
-- Training Taiji benefits both inner organ and lower body health
-
-#### 🐾 Space
-
-- Stamina, stamina is like battery, small battery capacity is very annoying
+- Stamina, stamina is like battery, no body likes a phone with small battery capacity
 - Flexibility, I want to achieve the full split this year
 
-#### 🧠 Mind
+#### 🐾 Space Stone
+Befitting its name, the Space Stone held dominion over the fabric of space being able to teleport its users anywhere in the universe. In real life, I mean the ability to take care of people I am caring for without the need of my presense. I think I need to:
+- Learn to put attention to detail
+- Remember important days, birthday, memorial day
+- Have a plan on how to express my affection. Otherwise I am no different than a stranger
 
+#### 🧠 Mind Stone
+Knowledge is power, knowledge is also money. I am good with the calculation and logical thinking. But there are still some domain remain foreign to me. I would like to explore those next year:
 - Train Leetcode
 - Learn Taiji techniques, learn about the body, live longer
-- Knowledge is power, knowledge is also money. Read books to be more finacial literate
+- Finance, tax, FIRE
 
-#### 💖 Soul
-
+#### 💖 Soul Stone 
+My emotional skill deserves more work than it is receiving right now. Next year I would like to:
 - Build self-confidence
 - Learn more about Tien (smartest girl I know, also richest girl I know)
 - Learn to put effort into everything I do (I have a focus issue)
 - Improve my story telling skill (despite speaking 3 languages fluently I still have communication problems)
 
-#### ✨ Reality
-
-- Prepare for the next career leap, as if I can lost my job anytime
+#### ✨ Reality Stone
+Reality means fate in our culture. I already have some things to do in mind, to go against the heaven and change my fate:
+- Practice senior programmer's skill, for example System Design
 - Work on the game I always wanted to
 - Lean math, yes, math
 
-#### ⏰ Time
-
+#### ⏰ Time Stone
+I am bad at time management. Mostly because the lacking of discipline 😎 and motivation 🙄. This year I need to:
 - Get up early consistently
 - Seriously, my daily schedule is messed up so bad
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="super hero" src="oni-training-2023/Superhero-amico.svg" />
 
-### This Year I Resolve To ...
+### To Wrap This Up, This Year I Resolve To ...
 
 |     | Year Start                                                                                                                            | Mid-Year                                                                                                                                                               | Year End                                                                                                                                                   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
