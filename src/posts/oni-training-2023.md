@@ -33,7 +33,7 @@ On the 1st September 2022, I gave my first submission after a very lonnng break 
 
 
 ### Got A New Job
-I quit my job as an engineering manager at a small company. Leave some good friends behind and start a new position as a team leader, building some useful things with my favorite language `C++`. Plus, I met some nice people too. I guess I will be here for a while.
+New job, new opportunity, yay 🙌. I quit my job as an engineering manager at a small company. Leave some good friends behind and start a new position as a team leader, building some useful things with my favorite language `C++`. Plus, I met some nice people too. I guess I will be here for a while.
 
 
 ## New Year's Resolution 🎉
@@ -42,13 +42,16 @@ I will refer to [the Infinity Stones](https://en.wikipedia.org/wiki/Infinity_Sto
 #### ⚡ Power
 - Core strength, hip strength
 - Leg strength
+- Organ health are correlate with longevity
+- Lower body strength are correlate with life quality
+- Training Taiji benefits both inner organ and lower body health
 #### 🐾 Space
-- Stamina
+- Stamina, stamina is like battery, small battery capacity is very annoying
 - Flexibility, I want to achieve the full split this year
 #### 🧠 Mind
 - Train Leetcode
-- Learn Taiji techniques
-- Knowledge is power, knowledge is also money. Read more about finance
+- Learn Taiji techniques, learn about the body, live longer
+- Knowledge is power, knowledge is also money. Read books to be more finacial literate
 #### 💖 Soul
 - Build self-confidence
 - Learn more about Tien (smartest girl I know, also richest girl I know)
