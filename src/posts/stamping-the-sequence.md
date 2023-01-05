@@ -1,6 +1,6 @@
 ---
 title: Stamping The Sequence
-date: 2022-12-24 
+date: 2022-12-24
 categories:
   - algorithm
   - greedy

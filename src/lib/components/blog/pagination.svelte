@@ -25,7 +25,8 @@
     <ul class="flex gap-4 text-sm font-bold">
       {#each pages as p}
         <li
-          class="aspect-square w-12 bg-sky-200 p-2 text-gray-600 dark:bg-gray-700 dark:text-gray-200"
+          class="aspect-square w-12 border-gray-500 bg-sky-200 p-2 text-gray-600 dark:border-gray-400 dark:bg-gray-700 dark:text-gray-200"
+          class:border={p == page}
         >
           <a
             data-sveltekit-noscroll

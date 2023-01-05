@@ -1,6 +1,6 @@
 ---
 title: Minimum Number of K Consecutive Bit Flips
-date: 2022-12-14 
+date: 2022-12-14
 categories:
   - algorithm
   - bitmask

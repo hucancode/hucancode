@@ -1,6 +1,6 @@
 ---
 title: Minimum One Bit Operations to Make Integers Zero
-date: 2022-10-28 
+date: 2022-10-28
 categories:
   - algorithm
   - bitmask

@@ -1,6 +1,6 @@
 ---
 title: Substring With Largest Variance
-date: 2022-11-22 
+date: 2022-11-22
 categories:
   - algorithm
   - dynamic-programming

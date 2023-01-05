@@ -1,6 +1,6 @@
 ---
 title: Split Message Based on Limit
-date: 2022-11-16 
+date: 2022-11-16
 categories:
   - algorithm
   - greedy

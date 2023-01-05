@@ -1,6 +1,6 @@
 ---
 title: Sum of Distances in Tree
-date: 2022-12-22 
+date: 2022-12-22
 categories:
   - algorithm
   - depth-first-search
