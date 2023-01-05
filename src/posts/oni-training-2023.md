@@ -7,7 +7,7 @@ categories:
   - training
   - new-year
 ---
-First of all, happy new year to everyone that celebrate, wish you happiness and prosperity. 
+First of all, happy new year to all who celebrate, wish you happiness and prosperity in the year ahead. May the luck be with you and your family. May the god of the rabbit 🐰 gives you strength to overcome all the hardship might cross your path.
 Not sure how long it may last but I will start writing personal journal and self reflection, from this year. 
 Hopefully it would be a good read when I look back later.
 
