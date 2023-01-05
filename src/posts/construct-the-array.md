@@ -1,7 +1,7 @@
 ---
 title: Construct the array
 excerpt: How to use Dynamic Programming to solve a programming puzzle
-date: 2022-12-22 17:50:00
+date: 2022-12-22
 categories:
   - algorithm
   - hackerrank

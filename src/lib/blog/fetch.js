@@ -1,9 +1,9 @@
-const POST_PER_PAGE = 8;
+const POST_PER_PAGE = 5;
 const BLOG_CONTENT_FILTER = "/src/posts/*.md";
 
 export default async function fetchPosts({ page = 1, category = "" } = {}) {
   const offset = (page - 1) * POST_PER_PAGE;
-  const take = POST_PER_PAGE - 1;
+  const take = POST_PER_PAGE;
   let posts = await Promise.all(
     Object.entries(import.meta.glob("/src/posts/*.md")).map(
       async ([path, resolver]) => {

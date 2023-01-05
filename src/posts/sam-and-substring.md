@@ -1,7 +1,7 @@
 ---
 title: Sam and substrings
 excerpt: How to analyze mathematics formular to solve a programming puzzle
-date: 2022-06-24 17:50:00
+date: 2022-06-24
 categories:
   - algorithm
   - hackerrank
