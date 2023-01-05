@@ -13,7 +13,7 @@ Hopefully it would be a good read when I look back later.
 
 ## Last Year's Achievement
 Before go to the goal for this year, I would like to mention my last year's achievement. 
-For some people, this is trivia, but to me it's has special meaning. I have growth and I'm proud of it.
+For some people, this is trivia, but to me it's has special meaning. I have grown and I'm proud of it.
 
 ### Get Over A Nasty Break Up
 She was my first love. I loved her, it was hurtful but I'm glad I got over it. 
