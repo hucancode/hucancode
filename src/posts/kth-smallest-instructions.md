@@ -25,7 +25,7 @@ Given an integer array `destination` and an integer `k`, return the `kth` lexico
 
 ### Example
 
-![](https://assets.leetcode.com/uploads/2020/10/12/ex1.png)
+![example 1](https://assets.leetcode.com/uploads/2020/10/12/ex1.png)
 
 ```
 Input: destination = [2,3], k = 1
@@ -34,7 +34,7 @@ Explanation: All the instructions that reach (2, 3) in lexicographic order are a
 ["HHHVV", "HHVHV", "HHVVH", "HVHHV", "HVHVH", "HVVHH", "VHHHV", "VHHVH", "VHVHH", "VVHHH"].
 ```
 
-![](https://assets.leetcode.com/uploads/2020/10/12/ex3.png)
+![example 2](https://assets.leetcode.com/uploads/2020/10/12/ex3.png)
 
 ```
 Input: destination = [2,3], k = 3
