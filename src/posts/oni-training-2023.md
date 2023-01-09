@@ -16,13 +16,13 @@ Before go to the goal for this year, I would like to mention my last year’s ac
 
 ### Break Up
 
-She was my first love. I loved her, it was hurtful, but I’m glad I got over it. It cost me 6 months to learn how stupid and immature I am. I am grateful I still have some good friends, just a few, but good friends indeed. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
+At the beginning of the year, when holiday sprit is still in the air, my girlfriend broke up with me. What a great way to start a year! She was my first love. I loved her, I can accept the truth that it was over. As an engineer I research when I am in doubt. I read books, I did a reflection and eventually learned how stupid and immature I am. Hurtful, depression, self loathe. Lucky for me I still have some good friends during the hard times, just a few, but good friends indeed. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="heart broken" src="oni-training-2023/Heartbroken-amico.svg" />
 
 ### Linux and Vim
 
-I learned the important lesson about how a tiny, simple thing can improve my life greatly. If you have not used `vim` I would highly recommend learning it. It is a command line tool, it is ugly by default, but powerful. Not everyone needs lightning fast text editing skill, but trust me, it is worth a try.
+I reached out and found my people. Installed `Arch` from scratch so I can safely says `I use Arch btw`. Learned a lot of new programming concepts last year thanks to Linux and Open Source community. I learned the important lesson about how a tiny, simple thing can improve my life greatly. If you have not used `vim` I would highly recommend learning it. It is a command line tool, it is ugly by default, but powerful.
 
 $$
 \text{Beauty fades, but power lasts forever}\\
@@ -63,7 +63,7 @@ I would like to learn how to take care of people I love without being close to t
 
 #### 🧠 Mind Stone
 
-Knowledge is power, knowledge is also money. I am pretty confident with the calculation and logical thinking. But there are still some domain remain foreign to me. I would like to explore those next year:
+Knowledge is power, knowledge is also money. I am pretty confident with the calculation and logical thinking. But there are still some domains remain foreign to me. I would like to explore those next year:
 
 - Train Leetcode
 - Learn about the body, live longer
@@ -80,7 +80,7 @@ My emotional skill deserves more work than it is receiving right now. Next year 
 
 #### ✨ Reality Stone
 
-Reality means fate in our culture. It takes great effort to go against the heaven and change my fate. It is easy to understand that making such changes in 1 year is difficult. This year I will narrow down my target to:
+Reality means fate in our culture. It takes great effort to go against the heaven and change my fate. One can easily know that making such changes in 1 year is difficult. So this year I will narrow down my target to:
 
 - Learn System Design
 - If at all possible, I would like to work on the game I always wanted to
