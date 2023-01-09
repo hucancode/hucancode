@@ -1,7 +1,7 @@
 <script>
   import RubikIcon from "~icons/arcticons/cubesolver";
   import DragonIcon from "~icons/game-icons/sea-dragon";
-    import PlanetIcon from '~icons/ph/planet-fill'
+  import PlanetIcon from "~icons/ph/planet-fill";
   import SwordIcon from "~icons/ri/sword-fill";
   import BoringIcon from "~icons/twemoji/face-with-rolling-eyes";
   import ExcitingIcon from "~icons/twemoji/face-holding-back-tears";

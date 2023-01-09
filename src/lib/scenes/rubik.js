@@ -61,8 +61,8 @@ function makeSingleCube(x, y, z) {
   const color = new THREE.Color();
   for (let i = 0; i < n; i++) {
     color.setHex(getColor(x, y, z, i));
-    for(let j = 0;j<6;j++) {
-        buffer.push(color.r, color.g, color.b);
+    for (let j = 0; j < 6; j++) {
+      buffer.push(color.r, color.g, color.b);
     }
   }
   piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
