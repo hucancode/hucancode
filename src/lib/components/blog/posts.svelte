@@ -6,7 +6,7 @@
   }
 </script>
 
-<ul>
+<ul class="grow">
   {#each posts as post}
     <li class="mb-2 p-4">
       <article>

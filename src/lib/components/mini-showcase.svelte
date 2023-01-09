@@ -1,6 +1,7 @@
 <script>
   import RubikIcon from "~icons/arcticons/cubesolver";
   import DragonIcon from "~icons/game-icons/sea-dragon";
+  import PlanetIcon from "~icons/ph/planet-fill";
   import SwordIcon from "~icons/ri/sword-fill";
   import BoringIcon from "~icons/twemoji/face-with-rolling-eyes";
   import ExcitingIcon from "~icons/twemoji/face-holding-back-tears";
@@ -21,11 +22,14 @@
         Scene = (await import("$lib/components/dragon.svelte")).default;
         break;
       case 2:
+        Scene = (await import("$lib/components/lego.svelte")).default;
+        break;
+      case 3:
         Scene = (await import("$lib/components/sabor.svelte")).default;
         break;
     }
   }
-  select(Math.floor(Math.random() * 2));
+  select(Math.floor(Math.random() * 3));
 </script>
 
 <div
@@ -63,6 +67,13 @@
       class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 2}
       on:click={() => select(2)}
+    >
+      <PlanetIcon />
+    </button>
+    <button
+      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      disabled={selected == 3}
+      on:click={() => select(3)}
     >
       <SwordIcon />
     </button>

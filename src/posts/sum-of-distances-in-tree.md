@@ -19,7 +19,7 @@ Return an array answer of length n where answer[i] is the sum of the distances b
 
 ### Example
 
-![](https://assets.leetcode.com/uploads/2021/07/23/lc-sumdist1.jpg)
+![example 1](https://assets.leetcode.com/uploads/2021/07/23/lc-sumdist1.jpg)
 
 ```
 Input: n = 6, edges = [[0,1],[0,2],[2,3],[2,4],[2,5]]
@@ -30,14 +30,14 @@ equals 1 + 1 + 2 + 2 + 2 = 8.
 Hence, answer[0] = 8, and so on.
 ```
 
-![](https://assets.leetcode.com/uploads/2021/07/23/lc-sumdist2.jpg)
+![example 2](https://assets.leetcode.com/uploads/2021/07/23/lc-sumdist2.jpg)
 
 ```
 Input: n = 1, edges = []
 Output: [0]
 ```
 
-![](https://assets.leetcode.com/uploads/2021/07/23/lc-sumdist3.jpg)
+![example 3](https://assets.leetcode.com/uploads/2021/07/23/lc-sumdist3.jpg)
 
 ```
 Input: n = 2, edges = [[1,0]]
