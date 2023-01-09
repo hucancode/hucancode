@@ -16,7 +16,7 @@ Before go to the goal for this year, I would like to mention my last year’s ac
 
 ### Break Up
 
-At the beginning of the year, when holiday sprit is still in the air, my girlfriend broke up with me. What a great way to start a year! She was my first love. I loved her, I can accept the truth that it was over. As an engineer I research when I am in doubt. I read books, I did a reflection and eventually learned how stupid and immature I am. Hurtful, depression, self loathe. Lucky for me I still have some good friends during the hard times, just a few, but good friends indeed. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
+At the beginning of the year, when holiday sprit is still in the air, my girlfriend broke up with me. What a great way to start a year! She was my first love. I loved her, I can not accept the truth that it was over. I did stupid things for no reasons hoping that it could fix the situation only to get disappointment in the end. Hurtful, resentment, depression, self loathe. Lucky for me I still have some good friends during the hard times, just a few, but good friends indeed. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="heart broken" src="oni-training-2023/Heartbroken-amico.svg" />
 
@@ -74,9 +74,9 @@ Knowledge is power, knowledge is also money. I am pretty confident with the calc
 My emotional skill deserves more work than it is receiving right now. Next year I would like to:
 
 - Build self-confidence
-- Learn more about Tien (smartest girl I know, also richest girl I know)
-- Learn to put effort into everything I do (I have a focus issue)
-- Improve my story telling skill (despite speaking 3 languages fluently I still have communication problems)
+- Learn how the dating game works
+- Learn to put effort into everything I do
+- Improve my story telling skill
 
 #### ✨ Reality Stone
 
@@ -102,7 +102,7 @@ I do not have a sense of time management. This year I would like to:
 | ⚡  | Inconsistent cold shower, stop at 10°C. <br />3 minutes plank.<br />Eat vegetable.                                                    | Train Taiji.<br />Consistent 5 minutes plank.<br />Cold shower, maintain showering until around 5°C.<br/>Eat more vegetable.                                           | Train more Taiji.<br />Consistent 6 minutes plank, visible 11-shaped belly.<br />Cold shower all year.<br />Eat less sugar.                                 |
 | 🐾  | Not yet full split, 25~30cm until ground, pretty far.                                                                                 | Build running habit.<br />Close the gap to the ground, ideally 10~15cm.                                                                                                | Maintain running habit.<br />Full split, 朝天登.                                                                                                            |
 | 🧠  | Leetcode R1780                                                                                                                        | Leetcode R1900 (two pointers, mod inverse, combinatorics, segment tree, consistent 3 contest problems).                                                                | Leetcode R2000 (KMP, advanced graph, intuitions, speed solving).                                                                                            |
-| 💖  | Tien can remember my name, no more no less.                                                                                           | Having meaningful conversation with Tien.                                                                                                                              | Win Tien's heart.                                                                                                                                           |
+| 💖  | My crush can remember my name, no more no less.                                                                                       | Having meaningful conversation with her.                                                                                                                               | Win her heart.                                                                                                                                              |
 | ✨  | Good job security.<br />UE5 game has little meaningful progression.<br />Started doing commission, but still no significant progress. | Keep doing everything, the goal is to maintain this level of progression.<br />Do creative coding once in a while.<br />Make significant improvement on side business. | Promotion in current job.<br />Finish first commission, even if it is free labour, no commission fee is needed.<br />Ideally a little progress on UE5 game. |
 | ⏰  | Go to bed at anytime between $10:00$ and $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                                            | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                                        | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                     |
 
