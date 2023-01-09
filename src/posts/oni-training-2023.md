@@ -68,13 +68,13 @@ Knowledge is power, knowledge is also money. I am pretty confident with the calc
 - Train Leetcode
 - Learn about the body, live longer
 - Finance, tax, FIRE
+- Learn how the dating game works
 
 #### 💖 Soul Stone
 
 My emotional skill deserves more work than it is receiving right now. Next year I would like to:
 
 - Build self-confidence
-- Learn how the dating game works
 - Learn to put effort into everything I do
 - Improve my story telling skill
 
@@ -102,7 +102,7 @@ I do not have a sense of time management. This year I would like to:
 | --- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ⚡  | Inconsistent cold shower, drop at 10°C. <br />3 minutes plank.<br />Eat vegetable.                                                    | Train Taiji.<br />Consistent 5 minutes plank.<br />Cold shower, maintain showering until around 5°C.<br/>Eat more vegetable.                                           | Train more Taiji.<br />Consistent 6 minutes plank, visible 11-shaped belly. Nimble, flexible body.<br />Cold shower all year.<br />Eat less sugar.          |
 | 🐾  | Not yet full split, 25~30cm until ground, pretty far.                                                                                 | Build running habit.<br />Close the gap to the ground, ideally 10~15cm.                                                                                                | Maintain running habit.<br />Full split, 朝天登.                                                                                                            |
-| 🧠  | Leetcode R1780                                                                                                                        | Leetcode R1900 (two pointers, mod inverse, combinatorics, segment tree, consistent 3 contest problems).                                                                | Leetcode R2000 (KMP, advanced graph, intuitions, speed solving).                                                                                            |
+| 🧠  | Leetcode R1780. <br />Know nothing about dating.                                                                                      | Leetcode R1900 (two pointers, mod inverse, combinatorics, segment tree, consistent 3 contest problems).<br />Learn about technical aspect of dating.                   | Leetcode R2000 (KMP, advanced graph, intuitions, speed solving).<br />Have confident in dating skill. Develop interesting personality.                      |
 | 💖  | My crush can remember my name, no more no less.                                                                                       | Having meaningful conversation with her.                                                                                                                               | Win her heart.                                                                                                                                              |
 | ✨  | Good job security.<br />UE5 game has little meaningful progression.<br />Started doing commission, but still no significant progress. | Keep doing everything, the goal is to maintain this level of progression.<br />Do creative coding once in a while.<br />Make significant improvement on side business. | Promotion in current job.<br />Finish first commission, even if it is free labour, no commission fee is needed.<br />Ideally a little progress on UE5 game. |
 | ⏰  | Inconsistent bedtime $10:00$ ~ $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                                                      | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                                        | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                     |
