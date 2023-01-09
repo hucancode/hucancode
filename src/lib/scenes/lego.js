@@ -233,7 +233,7 @@ function rebuildOrbitControl() {
     controls.maxDistance = 100; // the maximum distance the camera must have from center
     //controls.update();
     controls.enableRotate = true;
-    controls.autoRotate = true;
+    // controls.autoRotate = true;
   }
 }
 
