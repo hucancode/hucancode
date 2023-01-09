@@ -132,13 +132,13 @@ function makeCenterPiece() {
 }
 
 function setupLight() {
-  const light = new THREE.AmbientLight(0xcccccc); // soft white light
+  const light = new THREE.AmbientLight(0x666666); // soft white light
   scene.add(light);
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
+  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 1);
   hemiLight.position.set(0, 30, 0);
-  // scene.add(hemiLight);
+  scene.add(hemiLight);
 
-  const backLight = new THREE.PointLight(0xffffff, 1);
+  const backLight = new THREE.PointLight(0x5599ff, 1);
   // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 1, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, 30, 0);
   scene.add(backLight);
@@ -286,7 +286,6 @@ function render() {
 
 function playAnimation() {
   animation.play();
-  console.log("play", animation);
 }
 
 export { CANVAS_ID, init, render, playAnimation };
