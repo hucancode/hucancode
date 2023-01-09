@@ -55,20 +55,15 @@ function getCurrentSize() {
 }
 
 function makeSingleCube(x, y, z) {
-  const piece = new THREE.BoxGeometry(1, 1, 1).toNonIndexed();
+  const piece = new THREE.BoxGeometry().toNonIndexed();
   const n = piece.getAttribute("position").count / 6;
   const buffer = [];
   const color = new THREE.Color();
   for (let i = 0; i < n; i++) {
     color.setHex(getColor(x, y, z, i));
-
-    buffer.push(color.r, color.g, color.b);
-    buffer.push(color.r, color.g, color.b);
-    buffer.push(color.r, color.g, color.b);
-
-    buffer.push(color.r, color.g, color.b);
-    buffer.push(color.r, color.g, color.b);
-    buffer.push(color.r, color.g, color.b);
+    for(let j = 0;j<6;j++) {
+        buffer.push(color.r, color.g, color.b);
+    }
   }
   piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
   return piece;
