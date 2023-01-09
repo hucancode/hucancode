@@ -29,7 +29,7 @@
         break;
     }
   }
-  select(2);
+  select(Math.floor(Math.random() * 3));
 </script>
 
 <div
