@@ -12,17 +12,17 @@ First of all, happy new year to all who celebrate, wish you happiness and prospe
 
 ## Last Year's Achievement
 
-Before go to the goal for this year, I would like to mention my last year’s achievement. For some people, this is trivia, but to me, it has special meaning. I have grown and I’m proud of it.
+Before go to the goal for this year, I would like to mention my last year’s achievements. For some people, this is trivial, but to me, it has a special meaning. I have grown and I’m proud of it.
 
-### Get Over A Difficult Break Up
+### Break Up
 
-I loved her, it was hurtful. It cost me 6 months to learn how stupid and immature I am. I was, and I am embarrassed, that was a pretty expensive lesson haha 😀. Later that year I met some new friend, learned new thing and get my life together (I guess). I am grateful I still have some good friends, just a few, but good friends indeed. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
+She was my first love. I loved her, it was hurtful, but I’m glad I got over it. It cost me 6 months to learn how stupid and immature I am. I am grateful I still have some good friends, just a few, but good friends indeed. Good friends are hard to come by, if you have one, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="heart broken" src="oni-training-2023/Heartbroken-amico.svg" />
 
-### Learned Linux and Vim
+### Linux and Vim
 
-I learned the important lesson about how a tiny, simple thing can improve my life greatly. If you haven’t used `vim` I would highly recommend learning it. It’s a command line tool, it’s ugly, but powerful. Not everyone needs lightning fast text editing skill, but trust me, it is worth a try.
+I learned the important lesson about how a tiny, simple thing can improve my life greatly. If you have not used `vim` I would highly recommend learning it. It is a command line tool, it is ugly by default, but powerful. Not everyone needs lightning fast text editing skill, but trust me, it is worth a try.
 
 $$
 \text{Beauty fades, but power lasts forever}\\
@@ -35,7 +35,7 @@ On the 1st September 2022, I gave my first submission after a very lonnng break 
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="leetcode stats" src="oni-training-2023/lc.png" />
 
-### Got A New Job
+### New Job
 
 New job, new opportunity, yay 🙌. I quit my job as an engineering manager at a small company. Leave some good friends behind and start a new position as a team leader, building some useful things with my favorite language `C++`. Plus, I met some nice people too. I guess I will be here for a while.
 
@@ -47,8 +47,7 @@ I will refer to [the Infinity Stones](https://en.wikipedia.org/wiki/Infinity_Sto
 
 #### ⚡ Power Stone
 
-In the Comic, power stone gives its owner, you know, power. In real life, improving "power" will allow me to have more energy, break my current limitation and improve my life quality.
-Training Taiji is a good way to gain power. Specifically I will train:
+Power (or strength) is one of the most primitive quality a person can have. Having abundant strength helps increase longevity and life quality. Training Taiji is a good way to address that problem. Specifically I will train:
 
 - Core strength, hip strength, leg strength
 - Stamina
@@ -56,7 +55,7 @@ Training Taiji is a good way to gain power. Specifically I will train:
 
 #### 🐾 Space Stone
 
-Befitting its name, the Space Stone held dominion over the fabric of space being able to teleport its users anywhere in the universe. In real life, I mean the ability to take care of people I am caring for without the need of my presence. I will:
+I would like to learn how to take care of people I love without being close to them geographically, which requires:
 
 - Learn to put attention to detail
 - Remember important days, birthday, memorial day
@@ -64,7 +63,7 @@ Befitting its name, the Space Stone held dominion over the fabric of space being
 
 #### 🧠 Mind Stone
 
-Knowledge is power, knowledge is also money. I am good with the calculation and logical thinking. But there are still some domain remain foreign to me. I would like to explore those next year:
+Knowledge is power, knowledge is also money. I am pretty confident with the calculation and logical thinking. But there are still some domain remain foreign to me. I would like to explore those next year:
 
 - Train Leetcode
 - Learn about the body, live longer
@@ -81,16 +80,17 @@ My emotional skill deserves more work than it is receiving right now. Next year 
 
 #### ✨ Reality Stone
 
-Reality means fate in our culture. To go against the heaven and change my fate, I need to:
+Reality means fate in our culture. It takes great effort to go against the heaven and change my fate. It is easy to understand that making such changes in 1 year is difficult. This year I will narrow down my target to:
 
 - Learn System Design
-- If at all possible, I would like to work on the game I always wanted to,
+- If at all possible, I would like to work on the game I always wanted to
 - Lean math
 
 #### ⏰ Time Stone
 
-I am bad at time management. Mostly because the lacking of discipline 😎 and motivation 🙄. This year I need to:
+I do not have a sense of time management. This year I would like to:
 
+- Learn to set time and scope of work to all tasks
 - Get up early consistently
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="super hero" src="oni-training-2023/Superhero-amico.svg" />
@@ -99,7 +99,7 @@ I am bad at time management. Mostly because the lacking of discipline 😎 and m
 
 |     | Year Start                                                                                                                            | Mid-Year                                                                                                                                                               | Year End                                                                                                                                                    |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ⚡  | Inconsistent cold shower, stop at 10°C. <br />3 minutes plank.<br />Eat vegetable, but inconsistent.                    | Train Taiji.<br />Consistent 5 minutes plank.<br />Cold shower, maintain showering until around 5°C.<br/>Eat more vegetable.                                           | Train more Taiji.<br />Consistent 6 minutes plank, visible 11-shaped belly.<br />Cold shower all year.<br />Eat less sugar.                                 |
+| ⚡  | Inconsistent cold shower, stop at 10°C. <br />3 minutes plank.<br />Eat vegetable.                                                    | Train Taiji.<br />Consistent 5 minutes plank.<br />Cold shower, maintain showering until around 5°C.<br/>Eat more vegetable.                                           | Train more Taiji.<br />Consistent 6 minutes plank, visible 11-shaped belly.<br />Cold shower all year.<br />Eat less sugar.                                 |
 | 🐾  | Not yet full split, 25~30cm until ground, pretty far.                                                                                 | Build running habit.<br />Close the gap to the ground, ideally 10~15cm.                                                                                                | Maintain running habit.<br />Full split, 朝天登.                                                                                                            |
 | 🧠  | Leetcode R1780                                                                                                                        | Leetcode R1900 (two pointers, mod inverse, combinatorics, segment tree, consistent 3 contest problems).                                                                | Leetcode R2000 (KMP, advanced graph, intuitions, speed solving).                                                                                            |
 | 💖  | Tien can remember my name, no more no less.                                                                                           | Having meaningful conversation with Tien.                                                                                                                              | Win Tien's heart.                                                                                                                                           |
