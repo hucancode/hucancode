@@ -4,10 +4,11 @@
   import DragonIcon from "~icons/game-icons/sea-dragon";
   import PlanetIcon from "~icons/ph/planet-fill";
   import SwordIcon from "~icons/ri/sword-fill";
-  import BoringIcon from "~icons/twemoji/face-with-rolling-eyes";
-  import ExcitingIcon from "~icons/twemoji/face-holding-back-tears";
+  import FullScreenIcon from "~icons/zondicons/screen-full";
+  import FireIcon from "~icons/twemoji/fire";
 
   let selected = 0;
+  let link = "/rubik";
   let sceneInstance;
   let Scene;
   function performMagic() {
@@ -18,15 +19,19 @@
     switch (selected) {
       case 0:
         Scene = (await import("$lib/components/rubik.svelte")).default;
+        link = "/rubik";
         break;
       case 1:
         Scene = (await import("$lib/components/dragon.svelte")).default;
+        link = "/dragon";
         break;
       case 2:
         Scene = (await import("$lib/components/lego.svelte")).default;
+        link = "/lego";
         break;
       case 3:
         Scene = (await import("$lib/components/sabor.svelte")).default;
+        link = "/sabor";
         break;
     }
   }
@@ -43,13 +48,6 @@
   <div
     class="flex w-full justify-center gap-2 text-2xl text-white md:w-auto md:flex-col"
   >
-    <button
-      class="group rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
-      on:click={performMagic}
-    >
-      <BoringIcon class="animate-waving-hand group-hover:hidden" />
-      <ExcitingIcon class="hidden group-hover:block group-active:scale-150" />
-    </button>
     <button
       class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 0}
@@ -79,11 +77,22 @@
       <SwordIcon />
     </button>
   </div>
-  <div class="w-full h-full flex flex-col items-center">
-      <svelte:component this={Scene} bind:this={sceneInstance} />
-    
-      <h3
-        class="text-fill-none flex items-center p-4 uppercase whitespace-nowrap bg-rainbow5 bg-clip-text text-base font-bold dark:bg-rainbow4 md:text-lg"
-      >{$_("creative.more")}</h3>
+  <div class="flex h-full w-full flex-col items-center">
+    <svelte:component this={Scene} bind:this={sceneInstance} />
+    <div class="flex w-full items-center justify-center gap-2">
+      <button
+        class="group rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
+        on:click={performMagic}
+      >
+        <FireIcon class="group-active:scale-150" />
+      </button>
+      <a href={link}>
+        <button
+          class="rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
+        >
+          <FullScreenIcon class="group-active:scale-150" />
+        </button>
+      </a>
     </div>
+  </div>
 </div>

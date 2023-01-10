@@ -63,11 +63,13 @@ async function init() {
   renderer.setSize(w, h);
   addEventListener("resize", onWindowResize);
   if (scene != null) {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
     rebuildOrbitControl();
     return;
   }
-  await buildScene();
   setupCamera(w, h);
+  await buildScene();
   playIntro();
 }
 

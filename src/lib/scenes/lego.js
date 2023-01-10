@@ -241,6 +241,7 @@ function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  console.log("lego init", w, h);
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -249,12 +250,12 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
   if (scene != null) {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
     rebuildOrbitControl();
     return;
   }
   setupCamera(w, h);
-  const axesHelper = new THREE.AxesHelper(5);
-  scene.add(axesHelper);
   buildPiecePool();
   makeLegoRing();
   makeCenterPiece();

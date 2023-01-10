@@ -149,6 +149,8 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
   if (scene != null) {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
     rebuildOrbitControl();
     return;
   }

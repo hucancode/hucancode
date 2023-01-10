@@ -5,8 +5,7 @@
   import Coffee from "~icons/simple-icons/buymeacoffee";
   import Scene from "$lib/components/rubik.svelte";
 
-  import BoringIcon from "~icons/twemoji/face-with-rolling-eyes";
-  import ExcitingIcon from "~icons/twemoji/face-holding-back-tears";
+  import FireIcon from "~icons/twemoji/fire";
 
   export const prerender = true;
   let sceneInstance;
@@ -20,15 +19,14 @@
 </svelte:head>
 <Nav />
 <section
-  class="flex aspect-square max-w-screen-sm flex-col items-center justify-center"
+  class="flex aspect-video max-w-screen-lg flex-col items-center justify-center"
 >
   <Scene bind:this={sceneInstance} />
   <button
     class="group rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
     on:click={performMagic}
   >
-    <BoringIcon class="animate-waving-hand group-hover:hidden" />
-    <ExcitingIcon class="hidden group-hover:block group-active:scale-150" />
+    <FireIcon class="group-active:scale-150" />
   </button>
 </section>
 

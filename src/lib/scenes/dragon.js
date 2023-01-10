@@ -86,6 +86,8 @@ async function init() {
   renderer.setSize(w, h);
   addEventListener("resize", onWindowResize);
   if (scene != null) {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
     return;
   }
   await buildScene();
