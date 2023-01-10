@@ -1,4 +1,5 @@
 <script>
+  import { _ } from "svelte-i18n";
   import RubikIcon from "~icons/arcticons/cubesolver";
   import DragonIcon from "~icons/game-icons/sea-dragon";
   import PlanetIcon from "~icons/ph/planet-fill";
@@ -78,5 +79,11 @@
       <SwordIcon />
     </button>
   </div>
-  <svelte:component this={Scene} bind:this={sceneInstance} />
+  <div class="w-full h-full flex flex-col items-center">
+      <svelte:component this={Scene} bind:this={sceneInstance} />
+    
+      <h3
+        class="text-fill-none flex items-center p-4 uppercase whitespace-nowrap bg-rainbow5 bg-clip-text text-base font-bold dark:bg-rainbow4 md:text-lg"
+      >{$_("creative.more")}</h3>
+    </div>
 </div>

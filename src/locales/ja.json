@@ -23,5 +23,10 @@
       "rating": "成績",
       "topPercentage": "トップ"
     }
+  },
+  "creative": {
+    "more": "大きく見る",
+    "return": "戻る",
+    "buymeacoffee": "コーヒーを一杯あげる"
   }
 }
