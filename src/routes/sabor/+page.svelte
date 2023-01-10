@@ -19,7 +19,7 @@
 </svelte:head>
 <Nav />
 <section class="flex max-w-screen-lg grow flex-col items-center justify-center">
-  <div class="aspect-video w-full">
+  <div class="aspect-square w-full md:aspect-video">
     <Scene bind:this={sceneInstance} />
   </div>
   <button
