@@ -78,7 +78,7 @@
       <SwordIcon />
     </button>
   </div>
-  <div class="flex h-full w-full flex-col items-center">
+  <div class="flex h-full w-full flex-col items-center justify-end">
     <svelte:component this={Scene} bind:this={sceneInstance} />
     <div class="flex w-full items-center justify-center gap-2 text-xl">
       <button
