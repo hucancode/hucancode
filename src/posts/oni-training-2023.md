@@ -16,7 +16,7 @@ Before go to the goal for this year, I would like to mention my last year’s ac
 
 ### Break Up
 
-At the beginning of the year, when holiday sprit is still in the air, my girlfriend broke up with me. What a great way to start a year! She was my first love. I loved her, I could not accept the truth that it was over. I did stupid things for no reasons hoping that it could fix the situation only to get disappointment in the end. Hurtful, resentment, depression, self loathe. Lucky for me I still have some good friends during the hard times, just a few, but good friends indeed. Good friends are hard to come by, if you have any, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
+At the beginning of the year, when holiday sprit is still in the air, my girlfriend broke up with me. What a great way to start a year! Lucky for me I still have some good friends during the hard times, just a few, but good friends indeed. Good friends are hard to come by, if you have any, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="heart broken" src="oni-training-2023/Heartbroken-amico.svg" />
 
@@ -31,7 +31,7 @@ $$
 
 ### Competitive Programming
 
-On the 1st September 2022, I gave my first submission after a very lonnng break and restarted my competitive programming training. Over a month later I participated in my first Leetcode contest and placed at top $22.46\%$ (didn't expect that high of a rank 😀). That small win boosted my confidence and I eventually regain my momentum in training. This is the most unexpected event because I just started Leetcode out of boredom. I am so happy I started. Though not much, it’s indeed a memorable journey.
+On the 1st September 2022, I gave my first submission after a very lonnng break and restarted my competitive programming training. Later I participated in my first Leetcode contest and placed at top $22.46\%$ (didn't expect that high of a rank 😀). That small win boosted my confidence and I eventually regain my momentum in training.
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="leetcode stats" src="oni-training-2023/lc.png" />
 
