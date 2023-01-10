@@ -87,7 +87,7 @@
       >
         <FireIcon class="group-active:scale-150" />
       </button>
-      <a href={link}>
+      <a data-sveltekit:prefetch href={link}>
         <button class="rounded-full bg-gray-700 p-4 text-white dark:bg-black">
           <FullScreenIcon class="group-active:scale-150" />
         </button>
