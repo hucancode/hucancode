@@ -18,10 +18,10 @@
   <title>Dragon</title>
 </svelte:head>
 <Nav />
-<section
-  class="flex aspect-video max-w-screen-lg flex-col items-center justify-center"
->
-  <Scene bind:this={sceneInstance} />
+<section class="flex max-w-screen-lg grow flex-col items-center justify-center">
+  <div class="aspect-video w-full">
+    <Scene bind:this={sceneInstance} />
+  </div>
   <button
     class="group rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
     on:click={performMagic}

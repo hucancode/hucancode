@@ -41,9 +41,10 @@
 <div
   class="flex aspect-square w-full flex-col-reverse
         items-center justify-start
+        gap-2
         md:aspect-video
         md:grow
-        md:flex-row-reverse"
+        md:flex-row-reverse md:gap-0"
 >
   <div
     class="flex w-full justify-center gap-2 text-2xl text-white md:w-auto md:flex-col"
@@ -87,9 +88,7 @@
         <FireIcon class="group-active:scale-150" />
       </button>
       <a href={link}>
-        <button
-          class="rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
-        >
+        <button class="rounded-full bg-gray-700 p-4 text-white dark:bg-black">
           <FullScreenIcon class="group-active:scale-150" />
         </button>
       </a>
