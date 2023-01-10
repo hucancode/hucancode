@@ -80,7 +80,7 @@
   </div>
   <div class="flex h-full w-full flex-col items-center">
     <svelte:component this={Scene} bind:this={sceneInstance} />
-    <div class="flex w-full items-center justify-center gap-2">
+    <div class="flex w-full items-center justify-center gap-2 text-xl">
       <button
         class="group rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
         on:click={performMagic}
