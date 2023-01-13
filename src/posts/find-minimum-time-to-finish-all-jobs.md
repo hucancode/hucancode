@@ -37,7 +37,7 @@ The maximum working time is 11.
 ### Constraints
 
 - $1 \leq k \leq jobs.length \leq 12$
-- $1 \leq jobs[i] \leq 10^7$
+- $1 \leq jobs_i \leq 10^7$
 
 ## Solution
 

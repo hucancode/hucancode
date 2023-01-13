@@ -11,7 +11,7 @@ excerpt: Practice greedy thinking and implementation with me
 
 ## Problem
 
-You are given two strings $stamp$ and $target$. Initially, there is a string $s$ of length $target.length$ with all $s[i] = ?$.
+You are given two strings $stamp$ and $target$. Initially, there is a string $s$ of length $target.length$ with all $s_i = ?$.
 
 In one turn, you can place $stamp$ over $s$ and replace every letter in the $s$ with the corresponding letter from $stamp$.
 

@@ -51,7 +51,7 @@ Output: 7
 
 ### Full search brute force (TLE)
 
-First idea come to my mind is Brute Force because $n \leq 40$ is pretty small, I can even get away with $O(n^4)$. So I made an array of set $f$ to maintain all possible $sum$. $f[i]$ holds all $sum$ candidates until $nums[i]$.
+First idea come to my mind is Brute Force because $n \leq 40$ is pretty small, I can even get away with $O(n^4)$. So I made an array of set $f$ to maintain all possible $sum$. $f_i$ holds all $sum$ candidates until $nums[i]$.
 Here is the code for your reference
 
 ```cpp
