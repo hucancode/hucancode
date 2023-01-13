@@ -93,7 +93,7 @@ So I changed my approach, notice that $n = 40$ so $O(2^n) = T(2^{40})$ would ver
 
 - Split $nums$ into 2 array, let's call them $left$ and $right$
 - Calculate all possible $sum$ for each sub array. Sort them.
-- For each $a$ in $left$, find $b$ so that $a+b$ is closest to $goal$. This could be done in $O(mlogm)$ with $m$ being the candidates array length $2^n$
+- For each $a \in left$, find $b \in right$ so that $a+b$ is closest to $goal$. This could be done in $O(m \times log(m))$ with $m$ being the candidates array length $2^n$
 - Altogether we have an $O(2^n \times n)$ solution. It gives AC but I was afraid it is still slow I made a small optimization to reduce search range while traversing $right$ array.
 
 ### Complexity
