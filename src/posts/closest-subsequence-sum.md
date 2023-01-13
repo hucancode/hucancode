@@ -3,11 +3,10 @@ title: Closest Subsequence Sum
 excerpt: Practice bitmask and binary search technique with me
 date: 2023-01-13
 categories:
-
-- algorithm
-- bitmask
-- binary-search
-- leetcode
+  - algorithm
+  - bitmask
+  - binary-search
+  - leetcode
 ---
 
 ## Problem

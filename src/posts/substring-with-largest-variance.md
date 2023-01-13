@@ -14,7 +14,7 @@ The variance of a string is defined as the largest difference between the number
 
 Given a string $s$ consisting of lowercase English letters only, return the largest variance possible among all substrings of $s$.
 
-*A substring is a contiguous sequence of characters within a string*
+_A substring is a contiguous sequence of characters within a string_
 
 ### Example
 

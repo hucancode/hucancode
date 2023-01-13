@@ -389,6 +389,10 @@ function init() {
   }
 }
 
+function destroy() {
+  renderer.dispose();
+}
+
 function addSpider() {
   const loader = new GLTFLoader();
   loader.setPath("/assets/gltf/");
@@ -419,4 +423,4 @@ function render() {
   renderer.render(scene, camera);
 }
 
-export { CANVAS_ID, init, render };
+export { CANVAS_ID, init, destroy, render };

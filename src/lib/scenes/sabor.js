@@ -73,6 +73,10 @@ async function init() {
   playIntro();
 }
 
+function destroy() {
+  renderer.dispose();
+}
+
 async function buildScene() {
   scene = new THREE.Scene();
 
@@ -164,4 +168,4 @@ function fadeToAction(name, duration) {
   return animation.reset().fadeIn(duration).play();
 }
 
-export { CANVAS_ID, init, render, playAction };
+export { CANVAS_ID, init, destroy, render, playAction };

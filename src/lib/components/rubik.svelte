@@ -1,10 +1,12 @@
 <script>
-  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { onMount, onDestroy } from "svelte";
   import Canvas3D from "./canvas3d.svelte";
   import {
     CANVAS_ID,
     init,
     render,
+    destroy,
     getCurrentSize,
     remakeRubik,
   } from "$lib/scenes/rubik.js";
@@ -15,6 +17,12 @@
   onMount(async () => {
     await init();
     canvas.hideLoadingCircle();
+  });
+
+  onDestroy(() => {
+    if (browser) {
+      destroy();
+    }
   });
 
   export function performMagic() {

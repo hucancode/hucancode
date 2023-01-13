@@ -164,6 +164,10 @@ function init() {
   window.addEventListener("resize", onWindowResize);
 }
 
+function destroy() {
+  renderer.dispose();
+}
+
 function onWindowResize() {
   let canvas = document.getElementById(CANVAS_ID);
   if (!canvas) {
@@ -314,4 +318,4 @@ function render() {
   }
 }
 
-export { CANVAS_ID, init, render, getCurrentSize, remakeRubik };
+export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };

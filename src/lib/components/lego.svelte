@@ -1,12 +1,25 @@
 <script>
-  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { onMount, onDestroy } from "svelte";
   import Canvas3D from "./canvas3d.svelte";
-  import { CANVAS_ID, init, render, playAnimation } from "$lib/scenes/lego.js";
+  import {
+    CANVAS_ID,
+    init,
+    destroy,
+    render,
+    playAnimation,
+  } from "$lib/scenes/lego.js";
 
   let canvas;
   onMount(async () => {
     await init();
     canvas.hideLoadingCircle();
+  });
+
+  onDestroy(() => {
+    if (browser) {
+      destroy();
+    }
   });
 
   export function performMagic() {
