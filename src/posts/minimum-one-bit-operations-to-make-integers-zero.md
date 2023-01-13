@@ -11,11 +11,12 @@ excerpt: A hard problem related to bit manipulation
 
 ## Problem
 
-Given an integer `n`, you must transform it into `0` using the following operations any number of times:
+Given an integer $n$, you must transform it into $0$ using the following operations any number of times:
 
-- Change the rightmost (`0th`) bit in the binary representation of `n`.
-- Change the `ith` bit in the binary representation of $n$ if the `(i-1)th` bit is set to $1$ and the `(i-2)th` through `0th` bits are set to `0`.
-  Return the minimum number of operations to transform `n` into `0`.
+- Change the rightmost $0^{th}$ bit in the binary representation of $n$
+- Change the $i^{th}$ bit in the binary representation of $n$ if the $(i-1)^{th}$ bit is set to $1$ and the $(i-2)^{th}$ through $0^{th}$ bits are set to $0$
+
+Return the minimum number of operations to transform $n$ into $0$.
 
 ### Example
 
@@ -39,7 +40,7 @@ Explanation: The binary representation of 6 is "110".
 
 ### Constraints
 
-$0 <= n <= 10^9$
+$0 \leq n \leq 10^9$
 
 ## Solution
 
@@ -47,8 +48,8 @@ $0 <= n <= 10^9$
 
 My solution is based on this observation:
 
-- Let's say we have number `1xxxx`, in order to clear the highest 1, there is no other way but to make it `11000` first, and then clear the highest `1` to form `1000`. This is not proven but I can't find any other way to do it. So I just assume it. If you have a proof or a counter example on this I would gladly accept.
-- From number `10000`, the only way to make it `00000` is by transform it to `11000`, clear the highest `1` and then recursively do it all over again. Let `n` is the decimal form of the number we need to clear, the number of steps needed is `n*2-1`, or you can use bit operator with `i` is the position of the `1` bit, `(1<<(i+1)) - 1`
+- Let's say we have number $1xxxx$, in order to clear the highest $1$, there is no other way but to make it $11000$ first, and then clear the highest $1$ to form $1000$. This is not proven but I can't find any other way to do it. So I just assume it. If you have a proof or a counter example on this I would gladly accept.
+- From number $10000$, the only way to make it $00000$ is by transform it to $11000$, clear the highest $1$ and then recursively do it all over again. Let $n$ is the decimal form of the number we need to clear, the number of steps needed is $n \times 2-1$, or you can use bit operator with $i$ is the position of the $1$ bit, $(1<<(i+1)) - 1$
 
 ### Time complexity
 

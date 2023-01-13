@@ -10,11 +10,11 @@ excerpt: Practice bitmask technique with me
 
 ## Problem
 
-You are given a binary array nums and an integer k.
+You are given a binary array $nums$ and an integer $k$.
 
-A k-bit flip is choosing a subarray of length k from nums and simultaneously changing every 0 in the subarray to 1, and every 1 in the subarray to 0.
+A k-bit flip is choosing a subarray of length $k$ from $nums$ and simultaneously changing every $0$ in the subarray to $1$, and every $1$ in the subarray to $0$.
 
-Return the minimum number of k-bit flips required so that there is no 0 in the array. If it is not possible, return -1.
+Return the minimum number of k-bit flips required so that there is no $0$ in the array. If it is not possible, return $-1$.
 
 A subarray is a contiguous part of an array
 
@@ -43,8 +43,8 @@ Flip nums[5],nums[6],nums[7]: nums becomes [1,1,1,1,1,1,1,1]
 
 ### Constraints
 
-- $1 <= nums.length <= 10^5$
-- $1 <= k <= nums.length$
+- $1 \leq nums.length \leq 10^5$
+- $1 \leq k \leq nums.length$
 
 ## Solution
 
@@ -64,11 +64,9 @@ This solution relies on 2 important observations:
 
 ### Complexity
 
-- Time complexity:
-  $O(n)$ to travel through array once
+- Time complexity: $O(n)$ to travel through array once
 
-- Space complexity:
-  $O(n)$ to maintain a queue
+- Space complexity: $O(n)$ to maintain a queue
 
 ### Code
 

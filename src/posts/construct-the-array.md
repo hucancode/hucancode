@@ -25,9 +25,9 @@ For example, for $n=4, k=3, x=2$ there are $3$ ways, as shown here:
 
 ### Constraints
 
-- $3 <= n <= 10^5$
-- $2 <= k <= 10^5$
-- $1 <= x <= k$
+- $3 \leq n \leq 10^5$
+- $2 \leq k \leq 10^5$
+- $1 \leq x \leq k$
 
 Submit your solution at: https://www.hackerrank.com/challenges/construct-the-array
 
@@ -44,7 +44,7 @@ Easily we see **the answer is $g(n)$**.
 We can calculate some initial value without much difficulty.
 
 - If $x = 1$, our initial values would be $f(1) = 0, f(2) = k - 1$, and $g(1) = 1, g(2) = 0$
-- If $x != 1$, there is a little different $f(1) = 1, f(2) = k - 2$, and $g(1) = 0;g(2) = 1$
+- If $x \neq 1$, there is a little different $f(1) = 1, f(2) = k - 2$, and $g(1) = 0;g(2) = 1$
 - From $i=3$ onward, the formular stays consistent regardless of $x$.
 
 Notice that $f(i)$ and $g(i)$ can be calculated using $f(i-1)$ and $g(i-1)$.
@@ -59,7 +59,7 @@ If the previous number is $x$ we only lost 1 candidate. Thus, there are $k - 1$ 
 Combine them altogether we have
 
 $$
-f(i) = (k - 2) * f(i - 1) + (k - 1) * g(i - 1)
+f(i) = (k - 2) \times f(i - 1) + (k - 1) \times g(i - 1)
 $$
 
 That's conclude our solution.

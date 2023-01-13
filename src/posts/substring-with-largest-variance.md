@@ -12,9 +12,9 @@ excerpt: A hard problem that can be solved using dynamic programming
 
 The variance of a string is defined as the largest difference between the number of occurrences of any 2 characters present in the string. Note the two characters may or may not be the same.
 
-Given a string s consisting of lowercase English letters only, return the largest variance possible among all substrings of s.
+Given a string $s$ consisting of lowercase English letters only, return the largest variance possible among all substrings of $s$.
 
-A substring is a contiguous sequence of characters within a string.
+*A substring is a contiguous sequence of characters within a string*
 
 ### Example
 
@@ -39,7 +39,7 @@ No letter occurs more than once in s, so the variance of every substring is 0.
 
 ### Constraints
 
-- $1 <= s.length <= 104$
+- $1 \leq s.length \leq 104$
 - $s$ consists of lowercase English letters
 
 ## Solution
@@ -47,10 +47,10 @@ No letter occurs more than once in s, so the variance of every substring is 0.
 ### Intuition
 
 - First consider problem with only 2 character type, say **a** and **b**
-  - Let f(i) be the optimal score of all substring end at i, with or without character **b** in it
-  - Let g(i) be the optimal score of all substring end at i, guaranteed having character **b** in it
-  - The answer is max(0, max_element(g))
-- Then loop through all possible (a,b) pairs, calculate and take the best pair
+  - Let $f(i)$ be the optimal score of all substring end at $i$, with or without character **b** in it
+  - Let $g(i)$ be the optimal score of all substring end at $i$, guaranteed having character **b** in it
+  - The answer is $max(0, max_element(g))$
+- Then loop through all possible $(a,b)$ pairs, calculate and take the best pair
 
 ### Code
 

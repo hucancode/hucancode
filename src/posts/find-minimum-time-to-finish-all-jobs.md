@@ -11,9 +11,9 @@ excerpt: A hard problem that requires careful DFS and backtracking
 
 ## Problem
 
-You are given an integer array `jobs`, where `jobs[i]` is the amount of time it takes to complete the `ith` job.
+You are given an integer array $jobs$, where $jobs_i$ is the amount of time it takes to complete the $i^{th}$ job.
 
-There are `k` workers that you can assign jobs to. Each job should be assigned to exactly one worker. The working time of a worker is the sum of the time it takes to complete all jobs assigned to them. Your goal is to devise an optimal assignment such that the maximum working time of any worker is minimized.
+There are $k$ workers that you can assign jobs to. Each job should be assigned to exactly one worker. The working time of a worker is the sum of the time it takes to complete all jobs assigned to them. Your goal is to devise an optimal assignment such that the maximum working time of any worker is minimized.
 
 Return the minimum possible maximum working time of any assignment.
 
@@ -36,8 +36,8 @@ The maximum working time is 11.
 
 ### Constraints
 
-- $1 <= k <= jobs.length <= 12$
-- $1 <= jobs[i] <= 10^7$
+- $1 \leq k \leq jobs.length \leq 12$
+- $1 \leq jobs[i] \leq 10^7$
 
 ## Solution
 

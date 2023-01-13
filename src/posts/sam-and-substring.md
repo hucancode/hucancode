@@ -19,7 +19,7 @@ Let $n = 42$. Here $n$ is a string that has $3$ integer substrings: $4$ ,$2$, an
 
 ### Constraints
 
-$1 <= sizeof(n) <= 2*10^5$
+$1 \leq sizeof(n) \leq 2 \times 10^5$
 
 ## Solution
 

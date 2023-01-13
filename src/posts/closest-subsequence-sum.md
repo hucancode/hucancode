@@ -1,5 +1,6 @@
+---
 title: Closest Subsequence Sum
-excerpt:
+excerpt: Practice bitmask and binary search technique with me
 date: 2023-01-13
 categories:
 
@@ -7,6 +8,7 @@ categories:
 - bitmask
 - binary-search
 - leetcode
+---
 
 ## Problem
 
@@ -41,15 +43,15 @@ Output: 7
 
 ### Constraints
 
-- $1 <= nums.length <= 40$
-- $-10^7 <= nums[i] <= 10^7$
-- $-10^9 <= goal <= 10^9$
+- $1 \leq nums.length \leq 40$
+- $-10^7 \leq nums[i] \leq 10^7$
+- $-10^9 \leq goal \leq 10^9$
 
 ## Solution
 
 ### Full search brute force (TLE)
 
-First idea come to my mind is Brute Force because $n <= 40$ is pretty small, I can even get away with $O(n^4)$. So I made an array of set $f$ to maintain all possible $sum$. $f[i]$ holds all $sum$ candidates until $nums[i]$.
+First idea come to my mind is Brute Force because $n \leq 40$ is pretty small, I can even get away with $O(n^4)$. So I made an array of set $f$ to maintain all possible $sum$. $f[i]$ holds all $sum$ candidates until $nums[i]$.
 Here is the code for your reference
 
 ```cpp
@@ -86,20 +88,20 @@ public:
 };
 ```
 
-Sadly this gives TLE, I can optimize it further by using only 1 sets instead of $n$ sets but I don't think it's would AC.
+Sadly this gives TLE, I can optimize it further by using only 1 sets instead of $n$ sets but I don't think it would AC.
 
 ### Intuition
 
-So I changed my approach, notice that $n = 40$ so $O(2^n) = T(2^40)$ would not work, but how about $T(2^20)$? This is quite a potential solution. The idea is simple:
+So I changed my approach, notice that $n = 40$ so $O(2^n) = T(2^{40})$ would not work, but how about $T(2^{20})$? This is quite a potential solution. The idea is simple:
 
 - Split $nums$ into 2 array, let's call them $left$ and $right$
 - Calculate all possible $sum$ for each sub array. Sort them.
 - For each $a$ in $left$, find $b$ so that $a+b$ is closest to $goal$. This could be done in $O(mlogm)$ with $m$ being the candidates array length $2^n$
-- Altogether we have an $O(2^n * n)$ solution. It gives AC but I was afraid it is still slow I made a small optimization to reduce search range while traversing $right$ array.
+- Altogether we have an $O(2^n \times n)$ solution. It gives AC but I was afraid it is still slow I made a small optimization to reduce search range while traversing $right$ array.
 
 ### Complexity
 
-- Time complexity: $O(2^n * n)$
+- Time complexity: $O(2^n \times n)$
 - Space complexity: $O(2^n)$
 
 ## Code
