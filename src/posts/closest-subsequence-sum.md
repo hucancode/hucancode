@@ -44,14 +44,14 @@ Output: 7
 ### Constraints
 
 - $1 \leq nums.length \leq 40$
-- $-10^7 \leq nums[i] \leq 10^7$
+- $-10^7 \leq nums_i \leq 10^7$
 - $-10^9 \leq goal \leq 10^9$
 
 ## Solution
 
 ### Full search brute force (TLE)
 
-First idea come to my mind is Brute Force because $n \leq 40$ is pretty small, I can even get away with $O(n^4)$. So I made an array of set $f$ to maintain all possible $sum$. $f_i$ holds all $sum$ candidates until $nums[i]$.
+First idea come to my mind is Brute Force because $n \leq 40$ is pretty small, I can even get away with $O(n^4)$. So I made an array of set $f$ to maintain all possible $sum$. $f_i$ holds all $sum$ candidates until $nums_i$.
 Here is the code for your reference
 
 ```cpp
@@ -67,9 +67,7 @@ public:
             for(auto x: f[i-1]) {
                 int score;
                 score = abs(x - goal);
-                if(score < ret || x < goal || true) {
-                    f[i].insert(x);
-                }
+                f[i].insert(x);
                 score = abs(nums[i-1] - goal);
                 if(score < ret || nums[i-1] < goal) {
                     ret = min(ret, score);
@@ -92,7 +90,7 @@ Sadly this gives TLE, I can optimize it further by using only 1 sets instead of 
 
 ### Intuition
 
-So I changed my approach, notice that $n = 40$ so $O(2^n) = T(2^{40})$ would not work, but how about $T(2^{20})$? This is quite a potential solution. The idea is simple:
+So I changed my approach, notice that $n = 40$ so $O(2^n) = T(2^{40})$ would very likely to TLE, but how about $T(2^{20})$? Seems sensible. The idea is simple:
 
 - Split $nums$ into 2 array, let's call them $left$ and $right$
 - Calculate all possible $sum$ for each sub array. Sort them.
