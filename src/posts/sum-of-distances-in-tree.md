@@ -11,11 +11,11 @@ excerpt: Practice tree traversal and dynamic programming with me
 
 ## Problem
 
-There is an undirected connected tree with n nodes labeled from 0 to n - 1 and n - 1 edges.
+There is an undirected connected tree with $n$ nodes labeled from $0$ to $n - 1$ and $n - 1$ edges.
 
-You are given the integer n and the array edges where edges[i] = [ai, bi] indicates that there is an edge between nodes ai and bi in the tree.
+You are given the integer $n$ and the array edges where $edges_i = [a_i, b_i]$ indicates that there is an edge between nodes $a_i$ and $b_i$ in the tree.
 
-Return an array answer of length n where answer[i] is the sum of the distances between the ith node in the tree and all other nodes.
+Return an array $answer$ of length $n$ where $answer_i$ is the sum of the distances between the $i^{th}$ node in the tree and all other nodes.
 
 ### Example
 
@@ -46,11 +46,11 @@ Output: [1,1]
 
 ### Constraints
 
-- $1 <= n <= 3 * 10^4$
-- $edges.length == n - 1$
-- $edges[i].length == 2$
-- $0 <= a_i, b_i < n$
-- $a_i != b_i$
+- $1 \leq n \leq 3 \times 10^4$
+- $edges.length = n - 1$
+- $edges[i].length = 2$
+- $0 \leq a_i, b_i < n$
+- $a_i \neq b_i$
 
 ## Solution
 
@@ -62,7 +62,7 @@ But what if we have already have the answer for node $i$, can we calculate answe
 
 ### Approach
 
-DFS twice:
+Actually we can do it, let's DFS twice:
 
 - First pass, for each node $i$ calculate sum of all path to all children of $i$
   - After first pass, the value on the root node already is the answer
@@ -70,15 +70,13 @@ DFS twice:
 
 ### Complexity
 
-- Time complexity:
-  $O(n)$
+- Time complexity: $O(n)$
 
-- Space complexity:
-  $O(n)$
+- Space complexity: $O(n)$
 
 ### Code
 
-The implementation is heavy, looks daunting but actually not too complex :)
+The implementation is heavy, looks daunting but actually not too complex 😀
 
 ```cpp
 class Solution {

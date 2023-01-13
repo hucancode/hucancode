@@ -11,20 +11,20 @@ excerpt: Practice greedy thinking and implementation with me
 
 ## Problem
 
-You are given two strings $stamp$ and $target$. Initially, there is a string $s$ of length $target.length$ with all $s[i] = '?'$.
+You are given two strings $stamp$ and $target$. Initially, there is a string $s$ of length $target.length$ with all $s_i = ?$.
 
 In one turn, you can place $stamp$ over $s$ and replace every letter in the $s$ with the corresponding letter from $stamp$.
 
-For example, if $stamp = "abc"$ and $target = "abcba"$, then $s$ is $"?????"$ initially. In one turn you can:
+For example, if $stamp = "abc"$ and $target = "abcba"$, then $s = ?????$ initially. In one turn you can:
 
-- place stamp at index $0$ of $s$ to obtain $"abc??"$,
-- place stamp at index $1$ of $s$ to obtain $"?abc?"$, or
-- place stamp at index $2$ of $s$ to obtain $"??abc"$.
+- place stamp at index $0$ of $s$ to obtain $abc??$,
+- place stamp at index $1$ of $s$ to obtain $?abc?$, or
+- place stamp at index $2$ of $s$ to obtain $??abc$.
 
 Note that $stamp$ must be fully contained in the boundaries of $s$ in order to stamp (i.e., you cannot place stamp at index $3$ of $s$).
-We want to convert $s$ to $target$ using at most $10 * target.length$ turns.
+We want to convert $s$ to $target$ using at most $10 \times target.length$ turns.
 
-Return an array of the index of the left-most letter being stamped at each turn. If we cannot obtain $target$ from $s$ within $10 * target.length$ turns, return an empty array.
+Return an array of the index of the left-most letter being stamped at each turn. If we cannot obtain $target$ from $s$ within $10 \times target.length$ turns, return an empty array.
 
 ### Example
 
@@ -48,7 +48,7 @@ Explanation: Initially s = "???????".
 
 ### Constraints
 
-- $1 <= stamp.length <= target.length <= 1000$
+- $1 \leq stamp.length \leq target.length \leq 1000$
 - $stamp$ and $target$ consist of lowercase English letters
 
 ## Solution
@@ -61,7 +61,7 @@ We use greedy approach to do the stamping. We will do it in multiple rounds.
 - At round 1, for every stamp $x$ we made in round 0, we go to the left and right, then greedily find the longest possible stamp right next to $x$, stamp them **under** the stamps made in round 0
 - At round 2, for every stamp $y$ we made in round 1, we again go to the left and right, find the longest possible stamp to make, stamp them **under** the stamps made in previous rounds
 - The loop ends when we run out of moves or when we can't find a stamp anymore
-- **I can't prove that this method will yield minimum number of steps. And it seems that indeed it doesn't. If there is a test case where the optimal answer is exactly n\*10 this method would very likely fail. I tried and luckily it passed all the test cases**
+- **I can't prove that this method will yield minimum number of steps. And it seems that indeed it doesn't. If there is a test case where the optimal answer is exactly $n \times 10$ this method would very likely fail. I tried and luckily it passed all the test cases**
 
 ### Approach
 
@@ -72,7 +72,7 @@ After finishing the loop. Reverse the result and we get the answer.
 ### Complexity
 
 - Time complexity:
-  Running time is $T((n-m+1)*m)$ where $n$ is target length and $m$ is stamp length, in worst case where $m = n/2$ we will have $O(n^2)$
+  Running time is $T((n-m+1) \times m)$ where $n$ is target length and $m$ is stamp length, in worst case where $m = n \div 2$ we will have $O(n^2)$
 
 - Space complexity:
   $O(n)$

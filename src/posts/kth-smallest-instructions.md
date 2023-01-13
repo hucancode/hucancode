@@ -11,17 +11,17 @@ excerpt: Practice dynamic programming with me
 
 ## Problem
 
-Bob is standing at cell `(0, 0)`, and he wants to reach destination: `(row, column)`. He can only travel right and down. You are going to help Bob by providing instructions for him to reach destination.
+Bob is standing at cell $(0, 0)$, and he wants to reach destination: $(row, column)$. He can only travel right and down. You are going to help Bob by providing instructions for him to reach destination.
 
 The instructions are represented as a string, where each character is either:
 
-- 'H', meaning move horizontally (go right), or
-- 'V', meaning move vertically (go down).
-  Multiple instructions will lead Bob to destination. For example, if destination is `(2, 3)`, both "HHHVV" and "HVHVH" are valid instructions.
+- $H$, meaning move horizontally (go right), or
+- $V$, meaning move vertically (go down).
+  Multiple instructions will lead Bob to destination. For example, if destination is $(2, 3)$, both $HHHVV$ and $HVHVH$ are valid instructions.
 
-However, Bob is very picky. Bob has a lucky number `k`, and he wants the `kth` lexicographically smallest instructions that will lead him to destination. `k` is 1-indexed.
+However, Bob is very picky. Bob has a lucky number $k$, and he wants the $k^{th}$ lexicographically smallest instructions that will lead him to destination. $k$ is 1-indexed.
 
-Given an integer array `destination` and an integer `k`, return the `kth` lexicographically smallest instructions that will take Bob to destination.
+Given an integer array $destination$ and an integer $k$, return the $k^{th}$ lexicographically smallest instructions that will take Bob to destination.
 
 ### Example
 
@@ -43,9 +43,9 @@ Output: "HHVVH"
 
 ### Constraints
 
-- $destination.length == 2$
-- $1 <= row, column <= 15$
-- $1 <= k <= nCr(row + column, row)$, where $nCr(a, b)$ denotes a choose b
+- $destination.length = 2$
+- $1 \leq row, column \leq 15$
+- $1 \leq k \leq nCr(row + column, row)$, where $nCr(a, b)$ denotes a choose b
 
 ## Solution
 
@@ -54,10 +54,10 @@ Output: "HHVVH"
 I solve this in 2 steps:
 
 - Count possible ways to reach all $i,j (i<n, j<m)$
-- Travel from (0,0), in each step, greedily decide if we should go right or down
-  - If we go right, our rank stay the same, since "H" is the best choice lexicography
-  - If we go left, our rank decrease, we choose "V" which essentially go down lexicography. Use precalculated array from previous step to determine how many rank do we go down
-  - When we reach (n,m), answer is the path made from the traversal
+- Travel from $(0,0)$, in each step, greedily decide if we should go right or down
+  - If we go right, our rank stay the same, since $H$ is the best choice lexicography
+  - If we go left, our rank decrease, we choose $V$ which essentially go down lexicography. Use precalculated array from previous step to determine how many rank do we go down
+  - When we reach $(n,m)$, answer is the path made from the traversal
 
 ### Code
 
