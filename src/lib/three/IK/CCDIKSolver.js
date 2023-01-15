@@ -134,7 +134,6 @@ class CCDIKSolver {
         angle = math.acos(angle);
 
         // skip if changing angle is too small to prevent vibration of bone
-        // Refer to http://www20.atpages.jp/katwat/three.js_r58/examples/mytest37/mmd.three.js
         if (angle < 1e-5) continue;
 
         if (ik.minAngle !== undefined && angle < ik.minAngle) {
@@ -168,13 +167,13 @@ class CCDIKSolver {
 
         if (rotationMin !== undefined) {
           link.rotation.setFromVector3(
-            link.rotation.toVector3(_vector).max(rotationMin)
+            _vector.setFromEuler(link.rotation).max(rotationMin)
           );
         }
 
         if (rotationMax !== undefined) {
           link.rotation.setFromVector3(
-            link.rotation.toVector3(_vector).min(rotationMax)
+            _vector.setFromEuler(link.rotation).min(rotationMax)
           );
         }
 
@@ -195,7 +194,7 @@ class CCDIKSolver {
    * @return {CCDIKHelper}
    */
   createHelper() {
-    return new CCDIKHelper(this.mesh, this.mesh.geometry.userData.MMD.iks);
+    return new CCDIKHelper(this.mesh, this.iks);
   }
 
   // private methods
@@ -251,7 +250,7 @@ function setPositionOfBoneToAttributeArray(array, index, bone, matrixWorldInv) {
  * @param {Array<Object>} iks
  */
 class CCDIKHelper extends Object3D {
-  constructor(mesh, iks = []) {
+  constructor(mesh, iks = [], sphereSize = 0.25) {
     super();
 
     this.root = mesh;
@@ -260,7 +259,7 @@ class CCDIKHelper extends Object3D {
     this.matrix.copy(mesh.matrixWorld);
     this.matrixAutoUpdate = false;
 
-    this.sphereGeometry = new SphereGeometry(0.25, 16, 8);
+    this.sphereGeometry = new SphereGeometry(sphereSize, 16, 8);
 
     this.targetSphereMaterial = new MeshBasicMaterial({
       color: new Color(0xff8888),
@@ -347,6 +346,26 @@ class CCDIKHelper extends Object3D {
     this.matrix.copy(mesh.matrixWorld);
 
     super.updateMatrixWorld(force);
+  }
+
+  /**
+   * Frees the GPU-related resources allocated by this instance. Call this method whenever this instance is no longer used in your app.
+   */
+  dispose() {
+    this.sphereGeometry.dispose();
+
+    this.targetSphereMaterial.dispose();
+    this.effectorSphereMaterial.dispose();
+    this.linkSphereMaterial.dispose();
+    this.lineMaterial.dispose();
+
+    const children = this.children;
+
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+
+      if (child.isLine) child.geometry.dispose();
+    }
   }
 
   // private method
