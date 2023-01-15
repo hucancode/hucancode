@@ -51,6 +51,8 @@ Explanation: Initially s = "???????".
 - $1 \leq stamp.length \leq target.length \leq 1000$
 - $stamp$ and $target$ consist of lowercase English letters
 
+Submit your solution at [here](https://leetcode.com/problems/stamping-the-sequence/)
+
 ## Solution
 
 ### Intuition

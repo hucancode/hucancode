@@ -47,6 +47,8 @@ Output: "HHVVH"
 - $1 \leq row, column \leq 15$
 - $1 \leq k \leq nCr(row + column, row)$, where $nCr(a, b)$ denotes a choose b
 
+Submit your solution at [here](https://leetcode.com/problems/kth-smallest-instructions/)
+
 ## Solution
 
 ### Intuition

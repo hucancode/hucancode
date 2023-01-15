@@ -46,6 +46,8 @@ Under the given constraints, the string can be split into two parts:
 - $message$ consists only of lowercase English letters and ' '
 - $1 \leq limit \leq 10^4$
 
+Submit your solution at [here](https://leetcode.com/problems/split-message-based-on-limit/)
+
 ## Solution
 
 ### Intuition

@@ -21,6 +21,8 @@ Let $n = 42$. Here $n$ is a string that has $3$ integer substrings: $4$ ,$2$, an
 
 $1 \leq sizeof(n) \leq 2 \times 10^5$
 
+Submit your solution at [here](https://www.hackerrank.com/challenges/sam-and-substrings/problem)
+
 ## Solution
 
 ### Brute force (TLE)

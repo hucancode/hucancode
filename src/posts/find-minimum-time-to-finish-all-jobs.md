@@ -39,6 +39,8 @@ The maximum working time is 11.
 - $1 \leq k \leq jobs.length \leq 12$
 - $1 \leq jobs_i \leq 10^7$
 
+Submit your solution at [here](https://leetcode.com/problems/find-minimum-time-to-finish-all-jobs/)
+
 ## Solution
 
 ### Intuition

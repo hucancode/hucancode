@@ -42,6 +42,8 @@ Explanation: The binary representation of 6 is "110".
 
 $0 \leq n \leq 10^9$
 
+Submit your solution at [here](https://leetcode.com/problems/minimum-one-bit-operations-to-make-integers-zero)
+
 ## Solution
 
 ### Observation
@@ -53,7 +55,7 @@ My solution is based on this observation:
 
 ### Time complexity
 
-$O(k)$ where $k$ is maximum bit count of $n$
+$O(log(n))$
 
 ### Code
 

@@ -29,7 +29,7 @@ For example, for $n=4, k=3, x=2$ there are $3$ ways, as shown here:
 - $2 \leq k \leq 10^5$
 - $1 \leq x \leq k$
 
-Submit your solution at: https://www.hackerrank.com/challenges/construct-the-array
+Submit your solution at [here](https://www.hackerrank.com/challenges/construct-the-array)
 
 ## Solution
 

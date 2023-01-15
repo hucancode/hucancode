@@ -42,6 +42,8 @@ No letter occurs more than once in s, so the variance of every substring is 0.
 - $1 \leq s.length \leq 104$
 - $s$ consists of lowercase English letters
 
+Submit your solution at [here](https://leetcode.com/problems/substring-with-largest-variance/)
+
 ## Solution
 
 ### Intuition
@@ -49,7 +51,7 @@ No letter occurs more than once in s, so the variance of every substring is 0.
 - First consider problem with only 2 character type, say **a** and **b**
   - Let $f(i)$ be the optimal score of all substring end at $i$, with or without character **b** in it
   - Let $g(i)$ be the optimal score of all substring end at $i$, guaranteed having character **b** in it
-  - The answer is $max(0, max_element(g))$
+  - The answer is $max(0, max(g[0,n]))$
 - Then loop through all possible $(a,b)$ pairs, calculate and take the best pair
 
 ### Code

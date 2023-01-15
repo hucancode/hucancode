@@ -46,6 +46,8 @@ Output: 7
 - $-10^7 \leq nums_i \leq 10^7$
 - $-10^9 \leq goal \leq 10^9$
 
+Submit your solution at [here](https://leetcode.com/problems/closest-subsequence-sum/)
+
 ## Solution
 
 ### Full search brute force (TLE)
@@ -65,7 +67,6 @@ public:
         for(int i = 1;i<=n;i++) {
             for(auto x: f[i-1]) {
                 int score;
-                score = abs(x - goal);
                 f[i].insert(x);
                 score = abs(nums[i-1] - goal);
                 if(score < ret || nums[i-1] < goal) {

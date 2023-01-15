@@ -46,6 +46,8 @@ Flip nums[5],nums[6],nums[7]: nums becomes [1,1,1,1,1,1,1,1]
 - $1 \leq nums.length \leq 10^5$
 - $1 \leq k \leq nums.length$
 
+Submit your solution at [here](https://leetcode.com/problems/minimum-number-of-k-consecutive-bit-flips/)
+
 ## Solution
 
 ### Intuition
