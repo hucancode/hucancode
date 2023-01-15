@@ -77,7 +77,7 @@ public:
 
 We will solve this row by row. On each row, we manage an array $delta$ to keep track of how the value change. 
 Let $delta_i = k$ denotes that $ans_i = ans_{i-1}+k$
-For each query $q$ that span from $[x_0,x_n]$ it will make $delta_i = delta_i + 1$ and $delta_{n+1} = delta_{n+1} - 1$, 
+For each query $q$ that span from $[a,b]$ it will make $delta_a = delta_a + 1$ and $delta_{b+1} = delta_{b+1} - 1$, 
 everything in the middle would not change and stay as is.
 We can build the $delta$ array in $O(m \times n)$ where $m$ is the $queries.length$.
 We also need a nested loop to update the array so the overall complexity would be $O(m \times n+n^2)$
