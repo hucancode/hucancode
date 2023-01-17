@@ -2,7 +2,7 @@
 title: Unreal Engine Networking - Session
 excerpt: In this article we will build a host game/join game mechanic using C++ and Unreal Engine Session API
 date: 2022-06-21
-cover: ue/networking-session/jordan-harrison-40XgDxBfYXM-unsplash.webp
+cover: /blog/post/ue/networking-session/jordan-harrison-40XgDxBfYXM-unsplash.webp
 categories:
   - unreal
 ---

@@ -2,7 +2,7 @@
 title: Oni Training 2023
 excerpt: Happy new year. This is my new year resolution for 2023
 date: 2023-01-05
-cover: oni-training-2023/chinese-new-year-celebration-with-rabbit-money-bag.jpg
+cover: /blog/post/oni-training-2023/chinese-new-year-celebration-with-rabbit-money-bag.jpg
 categories:
   - training
   - new-year

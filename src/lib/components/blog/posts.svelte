@@ -12,7 +12,7 @@
       <img
         class="aspect-video w-full object-cover sm:w-1/4"
         alt="thumbnail"
-        src={(post.cover.startsWith("http") ? "" : "/blog/post/") + post.cover}
+        src={post.cover}
       />
       <article>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
