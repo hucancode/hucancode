@@ -6,9 +6,14 @@
   }
 </script>
 
-<ul class="grow">
+<ul class="max-w-screen-md grow">
   {#each posts as post}
-    <li class="mb-2 p-4">
+    <li class="mb-2 flex flex-col gap-2 p-4 sm:flex-row">
+      <img
+        class="aspect-video w-full object-cover sm:w-1/4"
+        alt="thumbnail"
+        src={(post.cover.startsWith("http") ? "" : "/blog/post/") + post.cover}
+      />
       <article>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
           <h2
@@ -20,8 +25,8 @@
             >Posted {convertDate(post.date)}</small
           >
         </a>
+        <p class="text-sm text-gray-600 dark:text-gray-400">{post.excerpt}</p>
       </article>
-      <p class="text-sm text-gray-600 dark:text-gray-400">{post.excerpt}</p>
     </li>
   {/each}
 </ul>

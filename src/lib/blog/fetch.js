@@ -23,7 +23,11 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
     title: post.title,
     slug: post.slug,
     excerpt: post.excerpt,
-    cover: post.cover,
+    cover:
+      post.cover ??
+      `https://picsum.photos/seed/${post.slug}/${512}/${Math.floor(
+        (512 * 16) / 9
+      )}`,
     date: post.date,
     categories: post.categories,
   }));

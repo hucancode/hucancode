@@ -12,11 +12,11 @@ categories:
 
 You are given a positive integer $n$, indicating that we initially have an $n \times n$ 0-indexed integer matrix $mat$ filled with zeroes.
 
-You are also given a 2D integer array $query$. 
-For each $query_i = [row1_i, col1_i, row2_i, col2_i]$, 
+You are also given a 2D integer array $query$.
+For each $query_i = [row1_i, col1_i, row2_i, col2_i]$,
 you should do the following operation:
 
-- Add $1$ to every element in the submatrix with the top left corner $(row1_i, col1_i)$ and the bottom right corner $(row2_i, col2_i)$. 
+- Add $1$ to every element in the submatrix with the top left corner $(row1_i, col1_i)$ and the bottom right corner $(row2_i, col2_i)$.
 - That is, add $1$ to $mat[x][y]$ for for all $row1_i \leq x \leq row2_i$ and $col1_i \leq y \leq col2_i$.
 
 Return the matrix $mat$ after performing every query.
@@ -55,7 +55,7 @@ Submit your solution at [here](https://leetcode.com/problems/increment-submatric
 
 ### Brute Force (TLE)
 
-The brute force approach has $O(m \times n^2)$ complexity and very likely to TLE. 
+The brute force approach has $O(m \times n^2)$ complexity and very likely to TLE.
 But I heard some people managed to AC with it. I was not that lucky and got TLE.
 
 ```cpp
@@ -75,9 +75,9 @@ public:
 
 ### Intuition
 
-We will solve this row by row. On each row, we manage an array $delta$ to keep track of how the value change. 
+We will solve this row by row. On each row, we manage an array $delta$ to keep track of how the value change.
 Let $delta_i = k$ denotes that $ans_i = ans_{i-1}+k$
-For each query $q$ that span from $[a,b]$ it will make $delta_a = delta_a + 1$ and $delta_{b+1} = delta_{b+1} - 1$, 
+For each query $q$ that span from $[a,b]$ it will make $delta_a = delta_a + 1$ and $delta_{b+1} = delta_{b+1} - 1$,
 everything in the middle would not change and stay as is.
 We can build the $delta$ array in $O(m \times n)$ where $m$ is the $queries.length$.
 We also need a nested loop to update the array so the overall complexity would be $O(m \times n+n^2)$

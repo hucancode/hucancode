@@ -39,7 +39,7 @@
   <h1 class="text-4xl font-extrabold">{title}</h1>
   <small class="text-gray-400">Posted {dateString}</small>
 
-  <img class="my-4 w-full rounded-lg" src={cover} alt="" />
+  <img class="my-4 aspect-video w-full rounded-lg" src={cover} alt="" />
 
   <div
     class="prose prose-slate max-w-full prose-a:text-blue-600 prose-a:no-underline dark:prose-invert prose-a:dark:text-sky-300"
