@@ -12,7 +12,7 @@
   } from "$lib/scenes/rubik";
 
   let canvas;
-  export let size = getCurrentSize() - 1;
+  export let size = getCurrentSize();
   let MAX_SIZE = 6;
 
   onMount(async () => {
@@ -28,8 +28,8 @@
   });
 
   export function performMagic() {
-    size = (size + 1) % MAX_SIZE;
-    remakeRubik(size + 1);
+    size = Math.max(1, (size + 1) % MAX_SIZE);
+    remakeRubik(size);
   }
 </script>
 
