@@ -1,12 +1,12 @@
 ---
 title: Split Message Based on Limit
+excerpt: Given a string and an integer limit, the problem is to split the given string into a list of strings such that the length of each string does not exceed the given limit and return the list
 date: 2022-11-16
 categories:
   - algorithm
   - greedy
   - implementation
   - leetcode
-excerpt: A hard problem that is heavy on implementation
 ---
 
 ## Problem

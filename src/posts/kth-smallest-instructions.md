@@ -1,12 +1,12 @@
 ---
 title: Kth Smallest Instructions
+excerpt: Find the minimum number of k-length bit flips to make an array of all 1s or kth smallest string of instructions to reach the bottom-right corner of a grid
 date: 2022-11-24
 categories:
   - algorithm
   - combinatorics
   - dynamic-programming
   - leetcode
-excerpt: Practice dynamic programming with me
 ---
 
 ## Problem

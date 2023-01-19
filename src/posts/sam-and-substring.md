@@ -1,6 +1,6 @@
 ---
 title: Sam and substrings
-excerpt: How to analyze mathematics formular to solve a programming puzzle
+excerpt: Given a string, the problem is to find the sum of all possible substrings of it
 date: 2022-06-24
 categories:
   - algorithm
@@ -15,7 +15,7 @@ Given an integer as a string, sum all of its substrings cast as integers. As the
 
 ### Example
 
-Let $n = 42$. Here $n$ is a string that has $3$ integer substrings: $4$ ,$2$, and $42$. Their sum is $48$, and $$48\mod(10^9+7) = 48$$.
+Let $n = 42$. Here $n$ is a string that has $3$ integer substrings: $4$ ,$2$, and $42$. Their sum is $48$, and $48\mod(10^9+7) = 48$.
 
 ### Constraints
 

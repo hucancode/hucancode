@@ -1,12 +1,12 @@
 ---
 title: Stamping The Sequence
+excerpt: Given a target string and a set of characters, the problem is to find the minimal number of times the set of characters need to be used to form the target string, and return the order in which the characters are used
 date: 2022-12-24
 categories:
   - algorithm
   - greedy
   - implementation
   - leetcode
-excerpt: Practice greedy thinking and implementation with me
 ---
 
 ## Problem

@@ -1,6 +1,6 @@
 ---
 title: Construct the array
-excerpt: How to use Dynamic Programming to solve a programming puzzle
+excerpt: Given an array of integers and a range of elements that could be in the array, the problem is to find the number of ways to construct the array such that the array has exactly K distinct integers in it
 date: 2022-12-22
 categories:
   - algorithm
@@ -66,8 +66,6 @@ That's conclude our solution.
 
 ### Code
 
-Readable code
-
 ```cpp
 #define INF 1000000007
 long countArray(int n, int k, int x) {
@@ -88,7 +86,7 @@ long countArray(int n, int k, int x) {
 }
 ```
 
-Optimized code
+You can optimize it further by only store latest $f$ and $g$, to get $O(1)$ space complexity
 
 ```cpp
 #define INF 1000000007

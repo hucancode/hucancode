@@ -1,12 +1,12 @@
 ---
 title: Minimum One Bit Operations to Make Integers Zero
+excerpt: Given an array of integers, the problem is to find the minimum number of operations needed to make all the integers in the array 0 by performing only one bit operation (flipping one bit) at a time
 date: 2022-10-28
 categories:
   - algorithm
   - bitmask
   - dynamic-programming
   - leetcode
-excerpt: A hard problem related to bit manipulation
 ---
 
 ## Problem

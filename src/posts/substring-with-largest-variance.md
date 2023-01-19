@@ -1,11 +1,11 @@
 ---
 title: Substring With Largest Variance
+excerpt: Given a string and an integer k, the problem is to find the substring of length k that has the largest variance of character frequencies in it
 date: 2022-11-22
 categories:
   - algorithm
   - dynamic-programming
   - leetcode
-excerpt: A hard problem that can be solved using dynamic programming
 ---
 
 ## Problem

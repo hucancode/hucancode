@@ -1,12 +1,12 @@
 ---
 title: Find Minimum Time to Finish All Jobs
+excerpt: Given an array of jobs where each job has a start time, end time and a penalty if it is not finished on time, the problem is to find the minimum penalty that can be incurred by finishing the jobs in the order they are given
 date: 2022-11-08
 categories:
   - algorithm
   - greedy
   - depth-first-search
   - leetcode
-excerpt: A hard problem that requires careful DFS and backtracking
 ---
 
 ## Problem

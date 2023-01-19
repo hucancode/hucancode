@@ -1,6 +1,6 @@
 ---
 title: Closest Subsequence Sum
-excerpt: Practice bitmask and binary search technique with me
+excerpt: Given a list of integers and a target number, the problem is to find the closest subsequence of that list that add up to the target number, return the sum of that subsequence
 date: 2023-01-13
 categories:
   - algorithm

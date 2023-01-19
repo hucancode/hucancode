@@ -1,6 +1,6 @@
 ---
 title: Increment Submatrices by One
-excerpt: Use dynamic programming to solve a leetcode puzzle
+excerpt: The problem is to increment all elements of submatrices by 1, given a matrix of integers, the task is to return the updated matrix where all elements of submatrices are incremented by 1
 date: 2023-01-15
 categories:
   - algorithm
