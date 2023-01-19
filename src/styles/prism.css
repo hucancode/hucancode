@@ -54,15 +54,6 @@ code[class*="language-"] ::selection {
     text-shadow: none;
   }
 }
-html.dark pre[class*="language-"] {
-  filter: none;
-  -webkit-filter: none;
-}
-
-pre[class*="language-"] {
-  filter: invert(100%);
-  -webkit-filter: invert(100%);
-}
 
 /* Code blocks */
 pre[class*="language-"] {
