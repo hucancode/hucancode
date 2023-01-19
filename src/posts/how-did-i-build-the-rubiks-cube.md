@@ -27,7 +27,7 @@ $$
 
 The Rubik's Cube is not only interesting, it is also beautiful aesthetically. Let's take a look at some art people have done with cubes
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/3d-render-rainbow-coloured-cubes.jpg" />
+<img class="w-full sm:w-1/2 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/3d-render-rainbow-coloured-cubes.jpg" />
 
 Today I will use `ThreeJS` to build a Rubik's Cube. Our Cube would be able to rotate like a real cube. We will not cover manual rotation here because a good controller would be very tricky to get right. We will also not cover Cube solving because I am not too smart, I just want to look at the Cube not solving them.
 
@@ -35,7 +35,7 @@ Today I will use `ThreeJS` to build a Rubik's Cube. Our Cube would be able to ro
 
 ### Build single cube
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/single-cube.png" />
+<img class="w-full sm:w-1/2 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/single-cube.png" />
 
 We need to consider 2 things
 
@@ -71,9 +71,9 @@ If you have experience with OpenGL or something similar before, this code will l
 
 Here is our completed cube
 
-<div class="w-1/2 mx-auto aspect-square">
+<div class="w-full sm:w-1/2 mx-auto aspect-square">
     <Rubik1 />
-  </div>
+</div>
 
 ### Add more cubes (build 3x3 cubes)
 
@@ -101,7 +101,7 @@ for (let x = 0; x < cubeNum; x++) {
 
 Here is the finished 3x3 Cube
 
-<div class="w-1/2 mx-auto aspect-square">
+<div class="w-full sm:w-1/2 mx-auto aspect-square">
     <Rubik3 />
   </div>
 
@@ -116,7 +116,7 @@ My approach is based on some observation:
 - After we done rotating, ungroup them
 - Rotation pivot stay the same at the center of the Cube
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/rotation.png" />
+<img class="w-full sm:w-1/2 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/rotation.png" />
 
 Group & rotate function
 
@@ -187,7 +187,7 @@ function cleanUpAfterMove() {
 
 The result will looks somewhere like this
 
-<div class="w-1/2 mx-auto aspect-square">
+<div class="w-full sm:w-1/2 mx-auto aspect-square">
     <Rubik3R />
   </div>
 
@@ -196,7 +196,7 @@ The result will looks somewhere like this
 At this point, it's up to your creativity to add more interesting features.
 I would like to add more dimentsion, and some random curve to spice up the rotation.
 
-<div class="w-1/2 mx-auto aspect-square">
+<div class="w-full sm:w-1/2 mx-auto aspect-square">
     <Rubik size={5} />
 </div>
 
