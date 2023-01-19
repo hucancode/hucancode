@@ -43,6 +43,7 @@
     for (let item of data) {
       if (post.categories.some((cat) => item.categories.includes(cat))) {
         ret.push(item.icon);
+        if (ret.length >= 5) break;
       }
     }
     return ret;
@@ -58,10 +59,10 @@
         src={post.cover}
       />
       <div
-        class="absolute top-4 left-4 flex flex-row flex-wrap bg-black text-3xl text-white"
+        class="absolute top-4 left-4 flex w-full flex-wrap text-3xl text-white sm:w-1/4"
       >
         {#each getIcons(post) as icon}
-          <svelte:component this={icon} class="p-2" />
+          <svelte:component this={icon} class="bg-black p-2" />
         {/each}
       </div>
       <article>
