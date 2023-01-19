@@ -51,11 +51,12 @@ const piece = new THREE.BoxGeometry();
 Then we need to give color to each face
 
 ```js
-const n = piece.getAttribute("position").count / 6;
+const vertices = piece.getAttribute("position").count;
+const faces = vertices / 6;
 const buffer = [];
 const color = new THREE.Color();
-for (let i = 0; i < n; i++) {
-  color.setHex(getColor(x, y, z, i));
+for (let f = 0; f < faces; i++) {
+  color.setHex(getColor(x, y, z, f));
   for (let j = 0; j < 6; j++) {
     buffer.push(color.r, color.g, color.b);
   }
@@ -65,7 +66,7 @@ piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
 
 If you have experience with OpenGL or something similar before, this code will looks obvious to your eyes. But if you don't, here is a brief explaination about what the code done:
 
-- Get the number of "faces" by taking "position"/6. Because 3 "position" make up a triangle, 2 triangles make up a face
+- Get the number of $faces$ by taking $vertices \div 6$. Because 3 $vertices$ make up a $triangle$, 2 $triangle$ make up a $face$
 - For each face, calculate color based on that face, push the result to the buffer. Notice that we have to push 6 times for 6 vertices
 - Send the color buffer back to vertices data
 
@@ -194,7 +195,7 @@ The result will looks somewhere like this
 ### And finally let's add some variations
 
 At this point, it's up to your creativity to add more interesting features.
-I would like to add more dimentsion, and some random curve to spice up the rotation.
+I would like to add more dimension, then add some goofy easing curve to spice up the rotation.
 
 <div class="w-full sm:w-1/2 mx-auto aspect-square">
     <Rubik size={5} />
@@ -203,4 +204,4 @@ I would like to add more dimentsion, and some random curve to spice up the rotat
 ## Code
 
 Currently I'm too lazy to make a minimal working demo. Here is the closest to that,
-Please checkout [this file](https://github.com/hucancode/portfolio/blob/master/src/lib/scenes/rubik.js) if you are interested.
+Please checkout [this file](https://github.com/hucancode/portfolio/blob/master/src/lib/scenes/rubik.js) if you are interested (pardon the messy code 😁)
