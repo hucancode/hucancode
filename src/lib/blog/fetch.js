@@ -20,11 +20,12 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
   posts = posts
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(offset, offset + take);
-  posts = await Promise.all(posts.map(async function(post) {
-    if(!post.cover) {
+  posts = await Promise.all(
+    posts.map(async function (post) {
+      if (!post.cover) {
         post.cover = await randomThumbnail(post.slug);
-    }
-    return {
+      }
+      return {
         title: post.title,
         slug: post.slug,
         excerpt: post.excerpt,
@@ -32,7 +33,8 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
         date: post.date,
         categories: post.categories,
       };
-  }));
+    })
+  );
   return { posts: posts };
 }
 
