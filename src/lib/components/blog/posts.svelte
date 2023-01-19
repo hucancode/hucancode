@@ -1,5 +1,8 @@
 <script>
+  import CreativeIcon from "~icons/icons8/idea";
   import MathIcon from "~icons/tabler/math";
+  import ThreeDIcon from "~icons/ic/twotone-3d-rotation";
+  import UEIcon from "~icons/fontisto/unreal-engine";
   import LeetcodeIcon from "~icons/simple-icons/leetcode";
   import CppIcon from "~icons/mdi/language-cpp";
   import ProgrammingIcon from "~icons/icon-park-twotone/computer";
@@ -31,12 +34,24 @@
         icon: CppIcon,
       },
       {
-        categories: ["math"],
+        categories: ["math", "geometry", "computational-geometry"],
         icon: MathIcon,
       },
       {
         categories: ["unreal", "game"],
         icon: GameIcon,
+      },
+      {
+        categories: ["unreal"],
+        icon: UEIcon,
+      },
+      {
+        categories: ["3d"],
+        icon: ThreeDIcon,
+      },
+      {
+        categories: ["creative", "creative-coding"],
+        icon: CreativeIcon,
       },
     ];
     let ret = [];

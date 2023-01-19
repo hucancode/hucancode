@@ -2,15 +2,7 @@
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import Canvas3D from "./canvas3d.svelte";
-  import {
-    CANVAS_ID,
-    init,
-    render,
-    destroy,
-    getCurrentDragonCount,
-    clearDragon,
-    makeDragon,
-  } from "$lib/scenes/dragon";
+  import { CANVAS_ID, init, render, destroy } from "$lib/scenes/rubik3r";
 
   let canvas;
 
@@ -24,15 +16,6 @@
       destroy();
     }
   });
-
-  let MAX_DRAGON = 5;
-
-  export function performMagic() {
-    if (getCurrentDragonCount() > MAX_DRAGON) {
-      clearDragon();
-    }
-    makeDragon();
-  }
 </script>
 
 <Canvas3D bind:this={canvas} id={CANVAS_ID} {render} />

@@ -96,15 +96,10 @@ public:
         vector<vector<int>> ret(n, vector<int>(n, 0));
         vector<vector<int>> delta(n, vector<int>(n, 0));
         for(auto& q: queries) {
-            int x0 = q[0];
-            int y0 = q[1];
-            int xn = q[2];
-            int yn = q[3];
+            int x0 = q[0], y0 = q[1], xn = q[2], yn = q[3];
             for(int y = y0;y<=yn;y++) {
                 delta[x0][y]++;
-                if(xn+1 >= n) {
-                    continue;
-                }
+                if(xn+1 >= n) continue;
                 delta[xn+1][y]--;
             }
         }

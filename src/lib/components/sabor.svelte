@@ -8,7 +8,7 @@
     destroy,
     render,
     playAction,
-  } from "$lib/scenes/sabor.js";
+  } from "$lib/scenes/sabor";
 
   let canvas;
 

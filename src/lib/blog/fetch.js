@@ -1,6 +1,5 @@
 import { randomThumbnail } from "$lib/utils";
 const POST_PER_PAGE = 5;
-const BLOG_CONTENT_FILTER = "/src/posts/*.md";
 
 export default async function fetchPosts({ page = 1, category = "" } = {}) {
   const offset = (page - 1) * POST_PER_PAGE;

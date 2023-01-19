@@ -1,12 +1,18 @@
 <script>
   import { parseISO, formatRelative } from "date-fns";
-  import Nav from "$lib/components/blog/nav-bottom.svelte";
 
-  export let data;
-
-  const { title, excerpt, date, cover, categories } = data.meta;
+  export let title;
+  export let excerpt;
+  export let date;
+  export let cover;
+  export let categories;
 
   let dateString = formatRelative(parseISO(date), new Date());
+  //import "prismjs/themes/prism-twilight.css";
+  import Nav from "$lib/components/blog/nav-bottom.svelte";
+  import "$styles/prism.css";
+  import "$styles/prism-light.css";
+  import "katex/dist/katex.css";
 </script>
 
 <svelte:head>
@@ -21,10 +27,9 @@
   <!-- <meta property="og:image" content="https://yourdomain.com/image_path" /> -->
   <!-- <meta name="twitter:image" content="https://yourdomain.com/image_path" /> -->
 </svelte:head>
-
 <article class="container my-20 max-w-screen-lg">
   {#if categories}
-    <ul class="flex flex-wrap gap-2 ">
+    <ul class="flex flex-wrap gap-2">
       {#each categories as category}
         <li
           class="text-fill-none bg-rainbow3 bg-clip-text pb-1 text-sm font-bold before:content-['#']"
@@ -44,7 +49,7 @@
   <div
     class="prose prose-slate mt-4 max-w-full prose-a:text-blue-600 prose-a:no-underline dark:prose-invert prose-a:dark:text-sky-300"
   >
-    <svelte:component this={data.content} />
+    <slot />
   </div>
 </article>
 <Nav />

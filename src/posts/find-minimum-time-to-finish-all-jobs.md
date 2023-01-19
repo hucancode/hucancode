@@ -74,9 +74,7 @@ public:
         q.emplace(0, workers);
         map<state, bool> vis;
         while(!q.empty()) {
-            vector<int> w;
-            int u;
-            tie(u, w) = q.top();
+            auto [u, w] = q.top();
             if(vis[q.top()]) {
                 q.pop();
                 continue;
@@ -93,7 +91,7 @@ public:
                 continue;
             }
             for(int i = w.size()-1;i>=0;i--) {
-                vector<int> nextw = w;
+                auto nextw = w;
                 nextw[i] += jobs[v-1];
                 sort(nextw.begin(), nextw.end());
                 q.emplace(v, nextw);

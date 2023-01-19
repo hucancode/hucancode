@@ -8,7 +8,7 @@
     destroy,
     render,
     playAnimation,
-  } from "$lib/scenes/lego.js";
+  } from "$lib/scenes/lego";
 
   let canvas;
   onMount(async () => {

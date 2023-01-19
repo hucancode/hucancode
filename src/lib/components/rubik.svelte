@@ -9,13 +9,15 @@
     destroy,
     getCurrentSize,
     remakeRubik,
-  } from "$lib/scenes/rubik.js";
+  } from "$lib/scenes/rubik";
 
   let canvas;
-  let size = getCurrentSize() - 1;
+  export let size = getCurrentSize() - 1;
   let MAX_SIZE = 6;
+
   onMount(async () => {
     await init();
+    remakeRubik(size);
     canvas.hideLoadingCircle();
   });
 

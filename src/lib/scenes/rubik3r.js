@@ -10,7 +10,7 @@ const material = new THREE.MeshBasicMaterial({
 let cameraTarget;
 let isInIntro = false;
 var time = 0;
-const CANVAS_ID = "rubik";
+const CANVAS_ID = "rubik3r";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
 const FACE_RIGHT = 0;
@@ -22,6 +22,7 @@ const FACE_BACK = 5;
 const CUBE_NUM_DEFAULT = 3;
 let cubeNum = CUBE_NUM_DEFAULT;
 const CUBE_MARGIN = 0.1;
+let move = 0;
 
 function isInFace(x, y, z, face, depth) {
   return (
@@ -102,17 +103,12 @@ function makeRubik() {
   scene.add(pivot);
   camera.lookAt(pivot.position);
   controls.target.set(k, k, k);
-  controls.enableRotate = false;
-  controls.autoRotate = false;
-  cameraTarget.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
+  camera.position.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
   isInIntro = true;
   //addDebugArrow(pivot);
 }
 
 function remakeRubik(n) {
-  if (cubeNum == n) {
-    return;
-  }
   scene.clear();
   cubeNum = n;
   makeRubik();
@@ -122,7 +118,6 @@ function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
   camera.position.set(0, 0, 0);
-  cameraTarget = new THREE.Vector3(0, 0, 0);
   rebuildOrbitControl();
 }
 
@@ -159,11 +154,7 @@ function init() {
   }
   setupCamera(w, h);
   makeRubik();
-  startMove(
-    Math.floor(Math.random() * 5),
-    Math.floor(Math.random() * cubeNum),
-    Math.floor(Math.random() * 5) - 2
-  );
+  startMove(0, 1, 1);
   window.addEventListener("resize", onWindowResize);
 }
 
@@ -219,59 +210,15 @@ function startMove(face, depth, magnitude) {
   } else if (face == FACE_FRONT || face == FACE_BACK) {
     targetZ += (Math.PI / 2) * magnitude;
   }
-  const easingFunctions = [
-    "easeInElastic",
-    "easeOutElastic",
-    "easeInOutElastic",
-    "easeOutInElastic",
-    "easeInQuad",
-    "easeInCubic",
-    "easeInQuart",
-    "easeInQuint",
-    "easeInSine",
-    "easeInExpo",
-    "easeInCirc",
-    "easeInBack",
-    "easeOutQuad",
-    "easeOutCubic",
-    "easeOutQuart",
-    "easeOutQuint",
-    "easeOutSine",
-    "easeOutExpo",
-    "easeOutCirc",
-    "easeOutBack",
-    "easeInBounce",
-    "easeInOutQuad",
-    "easeInOutCubic",
-    "easeInOutQuart",
-    "easeInOutQuint",
-    "easeInOutSine",
-    "easeInOutExpo",
-    "easeInOutCirc",
-    "easeInOutBack",
-    "easeInOutBounce",
-    "easeOutBounce",
-    "easeOutInQuad",
-    "easeOutInCubic",
-    "easeOutInQuart",
-    "easeOutInQuint",
-    "easeOutInSine",
-    "easeOutInExpo",
-    "easeOutInCirc",
-    "easeOutInBack",
-    "easeOutInBounce",
-  ];
-  const easing =
-    easingFunctions[Math.floor(Math.random() * easingFunctions.length)];
   anime({
     targets: pivot.rotation,
     x: targetX,
     y: targetY,
     z: targetZ,
+    easing: "linear",
     duration: 600 * Math.abs(magnitude),
     round: 100,
     delay: 200,
-    easing: easing,
     complete: cleanUpAfterMove,
   });
 }
@@ -299,11 +246,7 @@ function cleanUpAfterMove() {
   }
   cubes = newCubes;
   pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
-  startMove(
-    Math.floor(Math.random() * 5),
-    Math.floor(Math.random() * cubeNum),
-    Math.floor(Math.random() * 5) - 2
-  );
+  startMove(move++ % 6, 1, 1);
 }
 
 function render() {
@@ -313,14 +256,6 @@ function render() {
   }
   if (controls) {
     controls.update();
-  }
-  if (isInIntro && camera) {
-    camera.position.lerp(cameraTarget, 0.1);
-    if (camera.position.distanceTo(cameraTarget) < 0.01) {
-      isInIntro = false;
-      controls.enableRotate = true;
-      controls.autoRotate = true;
-    }
   }
 }
 

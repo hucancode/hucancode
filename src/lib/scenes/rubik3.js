@@ -10,7 +10,7 @@ const material = new THREE.MeshBasicMaterial({
 let cameraTarget;
 let isInIntro = false;
 var time = 0;
-const CANVAS_ID = "rubik";
+const CANVAS_ID = "rubik3";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
 const FACE_RIGHT = 0;
@@ -102,17 +102,10 @@ function makeRubik() {
   scene.add(pivot);
   camera.lookAt(pivot.position);
   controls.target.set(k, k, k);
-  controls.enableRotate = false;
-  controls.autoRotate = false;
-  cameraTarget.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
-  isInIntro = true;
-  //addDebugArrow(pivot);
+  camera.position.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
 }
 
 function remakeRubik(n) {
-  if (cubeNum == n) {
-    return;
-  }
   scene.clear();
   cubeNum = n;
   makeRubik();
@@ -121,8 +114,7 @@ function remakeRubik(n) {
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
-  camera.position.set(0, 0, 0);
-  cameraTarget = new THREE.Vector3(0, 0, 0);
+  camera.position.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
   rebuildOrbitControl();
 }
 
@@ -159,11 +151,6 @@ function init() {
   }
   setupCamera(w, h);
   makeRubik();
-  startMove(
-    Math.floor(Math.random() * 5),
-    Math.floor(Math.random() * cubeNum),
-    Math.floor(Math.random() * 5) - 2
-  );
   window.addEventListener("resize", onWindowResize);
 }
 
@@ -183,128 +170,6 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
 }
-function addDebugArrow(object) {
-  const dirZ = new THREE.Vector3(0, 0, 1);
-  const dirY = new THREE.Vector3(0, 1, 0);
-  const dirX = new THREE.Vector3(1, 0, 0);
-  const origin = THREE.Vector3.Zero; //object.position;
-  const length = 2;
-  const hex = 0x0077ff;
-  const zArrow = new THREE.ArrowHelper(dirZ, origin, length, hex);
-  object.add(zArrow);
-  const yArrow = new THREE.ArrowHelper(dirY, origin, length, hex);
-  object.add(yArrow);
-  const xArrow = new THREE.ArrowHelper(dirX, origin, length, hex);
-  object.add(xArrow);
-}
-
-function startMove(face, depth, magnitude) {
-  for (let x = 0; x < cubeNum; x++) {
-    for (let y = 0; y < cubeNum; y++) {
-      for (let z = 0; z < cubeNum; z++) {
-        if (!isInFace(x, y, z, face, depth)) {
-          continue;
-        }
-        pivot.attach(cubes[x][y][z]);
-      }
-    }
-  }
-  let targetX = pivot.rotation.x;
-  let targetY = pivot.rotation.y;
-  let targetZ = pivot.rotation.z;
-  if (face == FACE_LEFT || face == FACE_RIGHT) {
-    targetX += (Math.PI / 2) * magnitude;
-  } else if (face == FACE_TOP || face == FACE_BOTTOM) {
-    targetY += (Math.PI / 2) * magnitude;
-  } else if (face == FACE_FRONT || face == FACE_BACK) {
-    targetZ += (Math.PI / 2) * magnitude;
-  }
-  const easingFunctions = [
-    "easeInElastic",
-    "easeOutElastic",
-    "easeInOutElastic",
-    "easeOutInElastic",
-    "easeInQuad",
-    "easeInCubic",
-    "easeInQuart",
-    "easeInQuint",
-    "easeInSine",
-    "easeInExpo",
-    "easeInCirc",
-    "easeInBack",
-    "easeOutQuad",
-    "easeOutCubic",
-    "easeOutQuart",
-    "easeOutQuint",
-    "easeOutSine",
-    "easeOutExpo",
-    "easeOutCirc",
-    "easeOutBack",
-    "easeInBounce",
-    "easeInOutQuad",
-    "easeInOutCubic",
-    "easeInOutQuart",
-    "easeInOutQuint",
-    "easeInOutSine",
-    "easeInOutExpo",
-    "easeInOutCirc",
-    "easeInOutBack",
-    "easeInOutBounce",
-    "easeOutBounce",
-    "easeOutInQuad",
-    "easeOutInCubic",
-    "easeOutInQuart",
-    "easeOutInQuint",
-    "easeOutInSine",
-    "easeOutInExpo",
-    "easeOutInCirc",
-    "easeOutInBack",
-    "easeOutInBounce",
-  ];
-  const easing =
-    easingFunctions[Math.floor(Math.random() * easingFunctions.length)];
-  anime({
-    targets: pivot.rotation,
-    x: targetX,
-    y: targetY,
-    z: targetZ,
-    duration: 600 * Math.abs(magnitude),
-    round: 100,
-    delay: 200,
-    easing: easing,
-    complete: cleanUpAfterMove,
-  });
-}
-
-function cleanUpAfterMove() {
-  const clamp = function (n, l, r) {
-    return Math.min(r, Math.max(l, n));
-  };
-  const posToIndex = function (n) {
-    return clamp(Math.round(n / (1 + CUBE_MARGIN)), 0, cubeNum - 1);
-  };
-  let newCubes = cubes;
-  for (let i = pivot.children.length - 1; i >= 0; i--) {
-    const cube = pivot.children[i];
-    const pos = new THREE.Vector3();
-    scene.attach(cube);
-    cube.getWorldPosition(pos);
-    const x = posToIndex(pos.x);
-    const y = posToIndex(pos.y);
-    const z = posToIndex(pos.z);
-    cube.position.x = x * (1 + CUBE_MARGIN);
-    cube.position.y = y * (1 + CUBE_MARGIN);
-    cube.position.z = z * (1 + CUBE_MARGIN);
-    newCubes[x][y][z] = cube;
-  }
-  cubes = newCubes;
-  pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
-  startMove(
-    Math.floor(Math.random() * 5),
-    Math.floor(Math.random() * cubeNum),
-    Math.floor(Math.random() * 5) - 2
-  );
-}
 
 function render() {
   time += clock.getDelta();
@@ -313,14 +178,6 @@ function render() {
   }
   if (controls) {
     controls.update();
-  }
-  if (isInIntro && camera) {
-    camera.position.lerp(cameraTarget, 0.1);
-    if (camera.position.distanceTo(cameraTarget) < 0.01) {
-      isInIntro = false;
-      controls.enableRotate = true;
-      controls.autoRotate = true;
-    }
   }
 }
 
