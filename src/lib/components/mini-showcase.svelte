@@ -52,38 +52,38 @@
         md:flex-row-reverse md:gap-0"
 >
   <div
-    class="flex w-full justify-center gap-2 text-2xl text-white md:w-auto md:flex-col"
+    class="flex w-full flex-wrap items-center justify-center gap-1 text-2xl text-white md:w-auto md:flex-col md:items-start"
   >
     <button
-      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 0}
       on:click={() => select(0)}
     >
       <RubikIcon />
     </button>
     <button
-      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 1}
       on:click={() => select(1)}
     >
       <DragonIcon />
     </button>
     <button
-      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 2}
       on:click={() => select(2)}
     >
       <PlanetIcon />
     </button>
     <button
-      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 3}
       on:click={() => select(3)}
     >
       <YinYangIcon />
     </button>
     <button
-      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 4}
       on:click={() => select(4)}
     >

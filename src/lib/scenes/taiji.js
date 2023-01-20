@@ -5,10 +5,11 @@ import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
 
 var time = 0;
 let clock = new THREE.Clock();
-let blackMaterial, whiteMaterial;
 let scene, camera, renderer, controls;
 let taiji;
+let taijiParticle;
 let bagua;
+let dropAnimation;
 const CANVAS_ID = "taiji";
 const USE_CAMERA_CONTROL = true;
 const TAIJI_ROTATION_CIRCLE = 5000;
@@ -19,7 +20,7 @@ function makeTaiji() {
   const fullCircle = new THREE.CircleGeometry(1, 32);
   const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
   const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  taiji = new THREE.Object3D();
+  const root = new THREE.Object3D();
   const baseA = new THREE.Mesh(semiCircle, blackMaterial);
   const baseB = new THREE.Mesh(semiCircle, whiteMaterial);
   const yin = new THREE.Mesh(fullCircle, blackMaterial);
@@ -37,23 +38,13 @@ function makeTaiji() {
   yangMini.scale.x = yangMini.scale.y = 0.3;
   yin.add(yangMini);
   yang.add(yinMini);
-  taiji.add(baseA);
-  taiji.add(baseB);
-  taiji.add(yin);
-  taiji.add(yang);
-  taiji.rotation.x = -Math.PI / 2;
-  taiji.scale.x = taiji.scale.y = Math.PI / 2;
-  scene.add(taiji);
-  // const axesHelper = new THREE.AxesHelper( 5 );
-  // scene.add( axesHelper );
-  anime({
-    targets: taiji.rotation,
-    z: Math.PI * 2,
-    duration: TAIJI_ROTATION_CIRCLE,
-    easing: "linear",
-    direction: "reverse",
-    loop: true,
-  });
+  root.add(baseA);
+  root.add(baseB);
+  root.add(yin);
+  root.add(yang);
+  root.rotation.x = -Math.PI / 2;
+  root.scale.x = root.scale.y = Math.PI / 2;
+  return root;
 }
 
 function makeBagua() {
@@ -64,7 +55,7 @@ function makeBagua() {
   const bar11 = new THREE.PlaneGeometry(1, 1);
   const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
   const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  bagua = new THREE.Object3D();
+  const root = new THREE.Object3D();
   for (let i = 0; i < 8; i++) {
     const figure = new THREE.Object3D();
     for (let bit = 0; bit < 3; bit++) {
@@ -99,9 +90,77 @@ function makeBagua() {
       }
     }
     figure.rotation.z = (i * Math.PI * 2) / 8;
-    bagua.add(figure);
+    root.add(figure);
   }
-  bagua.rotation.x = -Math.PI / 2;
+  root.rotation.x = -Math.PI / 2;
+  return root;
+}
+
+function setupObject() {
+  // const axesHelper = new THREE.AxesHelper(5);
+  // scene.add(axesHelper);
+  taiji = makeTaiji();
+  anime({
+    targets: taiji.rotation,
+    z: Math.PI * 2,
+    duration: TAIJI_ROTATION_CIRCLE,
+    easing: "linear",
+    direction: "reverse",
+    loop: true,
+  });
+  scene.add(taiji);
+  taijiParticle = makeTaiji();
+  taijiParticle.opacity = 1;
+  for (let child of taijiParticle.children) {
+    child.material.transparent = true;
+  }
+  taijiParticle.position.y = 10;
+  dropAnimation = anime.timeline({
+    duration: 1000,
+    easing: "easeOutExpo",
+    complete: (anim) => {
+      console.log("complete");
+      taijiParticle.scale.x = taijiParticle.scale.y = 1;
+      taijiParticle.position.y = 10;
+      taijiParticle.opacity = 1;
+    },
+  });
+  dropAnimation
+    .add({
+      targets: taijiParticle.rotation,
+      z: Math.PI * 4,
+    })
+    .add(
+      {
+        targets: taijiParticle.position,
+        y: 0.1,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taijiParticle.scale,
+        easing: "easeInOutQuad",
+        x: 4,
+        y: 4,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taijiParticle,
+        easing: "easeInOutQuad",
+        opacity: 0,
+        update: (anim) => {
+          for (let child of taijiParticle.children) {
+            child.material.opacity = taijiParticle.opacity;
+          }
+        },
+      },
+      200
+    );
+  scene.add(taijiParticle);
+  bagua = makeBagua();
   scene.add(bagua);
   anime({
     targets: bagua.rotation,
@@ -173,8 +232,7 @@ function init() {
   }
   setupCamera(w, h);
   setupLight();
-  makeTaiji();
-  makeBagua();
+  setupObject();
   window.addEventListener("resize", onWindowResize);
 }
 
@@ -204,5 +262,8 @@ function render() {
     controls.update();
   }
 }
+function playAnimation() {
+  dropAnimation.play();
+}
 
-export { CANVAS_ID, init, destroy, render };
+export { CANVAS_ID, init, destroy, render, playAnimation };
