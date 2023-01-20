@@ -3,6 +3,7 @@
   import RubikIcon from "~icons/arcticons/cubesolver";
   import DragonIcon from "~icons/game-icons/sea-dragon";
   import PlanetIcon from "~icons/ph/planet-fill";
+  import YinYangIcon from "~icons/bi/yin-yang";
   import SwordIcon from "~icons/ri/sword-fill";
   import FullScreenIcon from "~icons/zondicons/screen-full";
   import FireIcon from "~icons/twemoji/fire";
@@ -30,12 +31,16 @@
         link = "/lego";
         break;
       case 3:
+        Scene = (await import("$lib/components/taiji.svelte")).default;
+        link = "/taiji";
+        break;
+      case 4:
         Scene = (await import("$lib/components/sabor.svelte")).default;
         link = "/sabor";
         break;
     }
   }
-  select(Math.floor(Math.random() * 3));
+  select(Math.floor(Math.random() * 4));
 </script>
 
 <div
@@ -74,6 +79,13 @@
       class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
       disabled={selected == 3}
       on:click={() => select(3)}
+    >
+      <YinYangIcon />
+    </button>
+    <button
+      class="bg-gray-500 p-4 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
+      disabled={selected == 4}
+      on:click={() => select(4)}
     >
       <SwordIcon />
     </button>
