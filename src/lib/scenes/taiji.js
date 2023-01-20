@@ -7,6 +7,8 @@ import {
   TAIJI_FRAGMENT_SHADER,
   BACKGROUND_VERTEX_SHADER,
   BACKGROUND_FRAGMENT_SHADER,
+  BAGUA_VERTEX_SHADER,
+  BAGUA_FRAGMENT_SHADER,
 } from "./taiji-shaders";
 
 let scene, camera, renderer, controls;
@@ -31,12 +33,13 @@ function makeBackground() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(16, 16);
+  const geometry = new THREE.PlaneGeometry(18, 18);
   const ret = new THREE.Mesh(geometry, material);
   ret.rotation.x = -Math.PI / 2;
-  ret.position.y = -0.1;
+  ret.position.y = -2;
   return ret;
 }
+
 function makeTaiji() {
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -57,52 +60,21 @@ function makeTaiji() {
 }
 
 function makeBagua() {
-  const HEIGHT = 5;
-  const MARGIN = 0.2;
-  const STROKE_WIDTH = 0.05;
-  const bar31 = new THREE.PlaneGeometry(3, 1);
-  const bar11 = new THREE.PlaneGeometry(1, 1);
-  const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
-  const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const root = new THREE.Object3D();
-  for (let i = 0; i < 8; i++) {
-    const figure = new THREE.Object3D();
-    for (let bit = 0; bit < 3; bit++) {
-      const v = (i >> bit) & 1;
-      if (v == 1) {
-        const base = new THREE.Mesh(bar31, blackMaterial);
-        const mesh = new THREE.Mesh(bar31, whiteMaterial);
-        mesh.position.y = bit * (1 + MARGIN) + HEIGHT;
-        mesh.add(base);
-        base.position.z = -0.01;
-        base.scale.x = (3 + STROKE_WIDTH * 2) / 3;
-        base.scale.y = (1 + STROKE_WIDTH * 2) / 1;
-        figure.add(mesh);
-      } else {
-        const baseA = new THREE.Mesh(bar11, blackMaterial);
-        const baseB = new THREE.Mesh(bar11, blackMaterial);
-        baseB.position.z = baseA.position.z = -0.01;
-        baseB.scale.x =
-          baseB.scale.y =
-          baseA.scale.x =
-          baseA.scale.y =
-            (1 + STROKE_WIDTH * 2) / 1;
-        const meshA = new THREE.Mesh(bar11, whiteMaterial);
-        const meshB = new THREE.Mesh(bar11, whiteMaterial);
-        meshA.add(baseA);
-        meshB.add(baseB);
-        meshB.position.y = meshA.position.y = bit * (1 + MARGIN) + HEIGHT;
-        meshA.position.x = -1;
-        meshB.position.x = 1;
-        figure.add(meshA);
-        figure.add(meshB);
-      }
-    }
-    figure.rotation.z = (i * Math.PI * 2) / 8;
-    root.add(figure);
-  }
-  root.rotation.x = -Math.PI / 2;
-  return root;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      alpha: { value: 1.0 },
+    },
+    vertexShader: BAGUA_VERTEX_SHADER,
+    fragmentShader: BAGUA_FRAGMENT_SHADER,
+  });
+  material.clipping = true;
+  material.transparent = true;
+  const geometry = new THREE.PlaneGeometry(35, 35);
+  const ret = new THREE.Mesh(geometry, material);
+  ret.scale.x = ret.scale.y = 1;
+  ret.rotation.x = -Math.PI / 2;
+  ret.position.y = -0.01;
+  return ret;
 }
 
 function setupObject() {
@@ -122,6 +94,7 @@ function setupObject() {
     easing: "linear",
     loop: true,
   });
+  return;
   anime({
     targets: bagua.rotation,
     z: Math.PI * 2,
@@ -148,7 +121,7 @@ function rebuildOrbitControl() {
     controls.maxDistance = 30; // the maximum distance the camera must have from center
     //controls.update();
     controls.enableRotate = true;
-    // controls.autoRotate = true;
+    controls.autoRotate = true;
   }
 }
 
@@ -236,7 +209,7 @@ function playAnimation() {
     .add(
       {
         targets: particle.position,
-        y: 0.2,
+        y: Math.random() * -1.0, // avoid z-fighting
       },
       0
     )
@@ -255,7 +228,7 @@ function playAnimation() {
         easing: "easeInOutQuad",
         value: 0,
       },
-      400
+      100
     );
   scene.add(particle);
   animation.play();
