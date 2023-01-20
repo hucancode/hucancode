@@ -13,7 +13,9 @@ export const TAIJI_FRAGMENT_SHADER = `
 #define EPSILON 0.01
 #define BIG_CIRCLE_RADIUS 0.4
 #define SMALL_CIRCLE_RADIUS 0.07
-#define STROKE_WIDTH 0.015
+#define STROKE_WIDTH 0.04
+#define WHITE_CIRCLE(r, o) smoothstep(r + EPSILON, r, length(uv - o))
+#define BLACK_CIRCLE(r, o) smoothstep(r, r + EPSILON, length(uv - o))
 
 uniform float alpha;
 uniform vec3 color1;
@@ -22,25 +24,18 @@ varying vec2 vUV;
 
 void main() {
     float v = 0.0;
-    vec2 center = vec2(0.5);
-    vec2 centerTop = center + vec2(0.0, BIG_CIRCLE_RADIUS/2.0);
-    vec2 centerBottom = center + vec2(0.0, -BIG_CIRCLE_RADIUS/2.0);
-    float bigCircle = smoothstep(BIG_CIRCLE_RADIUS + EPSILON, BIG_CIRCLE_RADIUS, length(vUV-center));
-    float rightHalf = smoothstep(0.5,0.51, vUV.x);
-    float halfCircle = bigCircle*rightHalf;
-    v += halfCircle;
-    float topCircle = smoothstep(BIG_CIRCLE_RADIUS/2.0 + EPSILON, BIG_CIRCLE_RADIUS/2.0, length(vUV-centerTop));
-    v += topCircle;
-    float bottomCircle = smoothstep(BIG_CIRCLE_RADIUS/2.0,BIG_CIRCLE_RADIUS/2.0 + EPSILON, length(vUV-centerBottom));
-    v *= bottomCircle;
-    float bottomDot = smoothstep(SMALL_CIRCLE_RADIUS + EPSILON, SMALL_CIRCLE_RADIUS, length(vUV-centerBottom));
-    v += bottomDot;
-    float topDot = smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS + EPSILON, length(vUV-centerTop));
-    v *= topDot;
+    vec2 uv = vUV * 2.0 - 1.0;
+    vec2 center = vec2(0.0);
+    vec2 centerTop = center + vec2(0.0, BIG_CIRCLE_RADIUS);
+    vec2 centerBottom = center + vec2(0.0, -BIG_CIRCLE_RADIUS);
+    v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS*2.0, center) * smoothstep(uv.x/2.0,uv.x/2.0+EPSILON, uv.x);
+    v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS, centerTop);
+    v *= BLACK_CIRCLE(BIG_CIRCLE_RADIUS, centerBottom);
+    v += WHITE_CIRCLE(SMALL_CIRCLE_RADIUS, centerBottom);
+    v *= BLACK_CIRCLE(SMALL_CIRCLE_RADIUS, centerTop);
     v = clamp(v, 0.0, 1.0);
-    float mask = smoothstep(BIG_CIRCLE_RADIUS +STROKE_WIDTH+EPSILON, BIG_CIRCLE_RADIUS+STROKE_WIDTH, length(vUV-center));
-    float a = mask * alpha;
-    gl_FragColor = vec4(color1 * v + color2 * (1.0-v), a);
+    float mask = WHITE_CIRCLE(BIG_CIRCLE_RADIUS*2.0 + STROKE_WIDTH, center);
+    gl_FragColor = vec4(color1 * v + color2 * (1.0 - v), mask * alpha);
 }
 `;
 
@@ -150,10 +145,13 @@ export const BAGUA_FRAGMENT_SHADER = `
 #define BAR_WIDTH 0.3
 #define BAR_HEIGHT 0.07
 #define BAR_MARGIN 0.02
-#define CIRCLE_RADIUS 1.1
-#define CUT_WIDTH 0.05
+#define CIRCLE_RADIUS 0.9
+#define CUT_WIDTH 0.02
 #define PI2 6.28318530718
 #define PI 3.14159265359
+
+#define RANGE(l,r,x) smoothstep(l, l + EPSILON, x) * smoothstep(r + EPSILON, r, x)
+#define RANGE_INVERT(l,r,x) smoothstep(l, l + EPSILON, x) + smoothstep(r + EPSILON, r, x)
 
 uniform float time;
 uniform float alpha;
@@ -166,13 +164,10 @@ vec2 rotate2D(vec2 v, float angle) {
 }
 
 float bar(int x, vec2 uv) {
-    float ret = smoothstep(-BAR_WIDTH*0.5, -BAR_WIDTH*0.5+EPSILON, uv.x);
-    ret *= smoothstep(BAR_WIDTH*0.5+EPSILON, BAR_WIDTH*0.5, uv.x);
-    ret *= smoothstep(-BAR_HEIGHT*0.5, -BAR_HEIGHT*0.5+EPSILON, uv.y);
-    ret *= smoothstep(BAR_HEIGHT*0.5+EPSILON, BAR_HEIGHT*0.5, uv.y);
+    float ret = RANGE(-BAR_WIDTH*0.5, BAR_WIDTH*0.5, uv.x) *
+        RANGE(-BAR_HEIGHT*0.5, BAR_HEIGHT*0.5, uv.y);
     if(x == 0) {
-        ret *= smoothstep(-CUT_WIDTH*0.5+EPSILON, -CUT_WIDTH*0.5, uv.x) + 
-            smoothstep(CUT_WIDTH*0.5, CUT_WIDTH*0.5+EPSILON, uv.x);
+        ret *= RANGE_INVERT(CUT_WIDTH, -CUT_WIDTH, uv.x);
     }
     return ret;
 }
@@ -198,7 +193,7 @@ float bagua(vec2 uv) {
 
 void main()
 {
-    vec2 uv = vUV*2.0 - vec2(1.0,1.0);
+    vec2 uv = vUV*2.0 - 1.0;
     // scale uv to fit the bagua
     uv *= CIRCLE_RADIUS+(BAR_HEIGHT+BAR_MARGIN)*6.0;
     float v = bagua(uv);
