@@ -102,7 +102,6 @@ function makeBagua() {
     root.add(figure);
   }
   root.rotation.x = -Math.PI / 2;
-  root.position.y = -0.2;
   return root;
 }
 

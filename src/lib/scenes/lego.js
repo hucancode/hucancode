@@ -289,7 +289,7 @@ function render() {
 }
 
 function playAnimation() {
-  animation.play();
+  animation.restart();
 }
 
 export { CANVAS_ID, init, destroy, render, playAnimation };

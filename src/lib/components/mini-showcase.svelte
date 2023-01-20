@@ -92,17 +92,19 @@
   </div>
   <div class="flex h-full w-full flex-col items-center justify-end">
     <svelte:component this={Scene} bind:this={sceneInstance} />
-    <div class="flex w-full items-center justify-center gap-2 text-xl">
+    <div class="flex w-full items-center justify-center gap-px text-xl">
       <button
-        class="group rounded-full bg-gray-700 p-4 dark:bg-black dark:text-white"
+        class="group bg-gray-700 p-3 px-14 dark:bg-black dark:text-white"
         on:click={performMagic}
       >
         <FireIcon class="group-active:scale-150" />
       </button>
-      <a data-sveltekit:prefetch href={link}>
-        <button class="rounded-full bg-gray-700 p-4 text-white dark:bg-black">
-          <FullScreenIcon class="group-active:scale-150" />
-        </button>
+      <a
+        data-sveltekit:prefetch
+        href={link}
+        class="bg-gray-700 p-3 px-14 text-white dark:bg-black"
+      >
+        <FullScreenIcon class="group-active:scale-150" />
       </a>
     </div>
   </div>
