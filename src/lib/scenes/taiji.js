@@ -2,59 +2,41 @@ import * as THREE from "three";
 import anime from "animejs";
 import { OrbitControls } from "$lib/three/controls/OrbitControls";
 import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
+import {
+  TAIJI_VERTEX_SHADER,
+  TAIJI_FRAGMENT_SHADER,
+  BACKGROUND_VERTEX_SHADER,
+  BACKGROUND_FRAGMENT_SHADER,
+} from "./taiji-shaders";
 
 let scene, camera, renderer, controls;
 let taiji;
 let bagua;
+let background;
+let clock = new THREE.Clock();
+var time = 0;
 
 const CANVAS_ID = "taiji";
 const USE_CAMERA_CONTROL = true;
-const TAIJI_ROTATION_CIRCLE = 5000;
-const BAGUA_ROTATION_CIRCLE = 13000;
+const TAIJI_ROTATION_CIRCLE = 23000;
+const BAGUA_ROTATION_CIRCLE = 43000;
 
-const TAIJI_VERTEX_SHADER = `
-// uniform mat4 modelViewMatrix;
-// uniform mat4 projectionMatrix;
-// attribute vec3 position;
-// attribute vec2 uv;
-varying vec2 vUV;
-void main() {
-    vUV = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+function makeBackground() {
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0.0 },
+    },
+    vertexShader: BACKGROUND_VERTEX_SHADER,
+    fragmentShader: BACKGROUND_FRAGMENT_SHADER,
+  });
+  material.clipping = true;
+  material.transparent = true;
+  const geometry = new THREE.PlaneGeometry(16, 16);
+  const ret = new THREE.Mesh(geometry, material);
+  ret.rotation.x = -Math.PI / 2;
+  ret.position.y = -0.1;
+  return ret;
 }
-`;
-const TAIJI_FRAGMENT_SHADER = `
-#define BIG_CIRCLE_RADIUS 0.4
-#define SMALL_CIRCLE_RADIUS 0.07
-#define STROKE_WIDTH 0.015
-
-uniform float alpha;
-uniform vec3 color1;
-uniform vec3 color2;
-varying vec2 vUV;
-void main() {
-    float v = 0.0;
-    vec2 center = vec2(0.5);
-    vec2 centerTop = vec2(0.5, 0.5+BIG_CIRCLE_RADIUS/2.0);
-    vec2 centerBottom = vec2(0.5, 0.5-BIG_CIRCLE_RADIUS/2.0);
-    float bigCircle = 1.0-smoothstep(BIG_CIRCLE_RADIUS,BIG_CIRCLE_RADIUS +0.01, length(vUV-center));
-    float rightHalf = smoothstep(0.5,0.51, vUV.x);
-    float halfCircle = bigCircle*rightHalf;
-    v += halfCircle;
-    float topCircle = 1.0-smoothstep(BIG_CIRCLE_RADIUS/2.0,BIG_CIRCLE_RADIUS/2.0 + 0.01, length(vUV-centerTop));
-    v += topCircle;
-    float bottomCircle = smoothstep(BIG_CIRCLE_RADIUS/2.0,BIG_CIRCLE_RADIUS/2.0 + 0.01, length(vUV-centerBottom));
-    v *= bottomCircle;
-    float bottomDot = 1.0 - smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerBottom));
-    v += bottomDot;
-    float topDot = smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerTop));
-    v *= topDot;
-    v = clamp(v, 0.0, 1.0);
-    float mask = 1.0-smoothstep(BIG_CIRCLE_RADIUS+STROKE_WIDTH,BIG_CIRCLE_RADIUS +STROKE_WIDTH+0.03, length(vUV-center));
-    float a = mask * alpha;
-    gl_FragColor = vec4(color1 * v + color2 * (1.0-v), a);
-}
-`;
 function makeTaiji() {
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -120,6 +102,7 @@ function makeBagua() {
     root.add(figure);
   }
   root.rotation.x = -Math.PI / 2;
+  root.position.y = -0.2;
   return root;
 }
 
@@ -127,6 +110,12 @@ function setupObject() {
   // const axesHelper = new THREE.AxesHelper(5);
   // scene.add(axesHelper);
   taiji = makeTaiji();
+  taiji.material.uniforms.alpha.value = 0.9;
+  scene.add(taiji);
+  bagua = makeBagua();
+  scene.add(bagua);
+  background = makeBackground();
+  scene.add(background);
   anime({
     targets: taiji.rotation,
     z: Math.PI * 2,
@@ -134,9 +123,6 @@ function setupObject() {
     easing: "linear",
     loop: true,
   });
-  scene.add(taiji);
-  bagua = makeBagua();
-  scene.add(bagua);
   anime({
     targets: bagua.rotation,
     z: Math.PI * 2,
@@ -207,6 +193,10 @@ function onWindowResize() {
 }
 
 function render() {
+  time += clock.getDelta();
+  if (background) {
+    background.material.uniforms.time.value = time * 4;
+  }
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
