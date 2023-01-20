@@ -21,6 +21,15 @@
     find me. I write about programming, game and other random things, mostly random
     things
   </p>
+  <p class="text-gray-600, text-center text-sm dark:text-gray-400">
+    Most illustration images on this blog are taken from <a
+      href="https://freepik.com">freepik</a
+    >, thanks to wonderful contribution by
+    <strong
+      >freepik, pressfoto, dcstudio, rawpixel, wirestock, starline<strong
+      /></strong
+    >
+  </p>
   <h1 class="flex items-center gap-2 text-xl font-bold">
     <a
       target="_blank"

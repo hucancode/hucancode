@@ -1,12 +1,12 @@
 ---
 title: Minimum One Bit Operations to Make Integers Zero
+excerpt: Given an array of integers, the problem is to find the minimum number of operations needed to make all the integers in the array 0 by performing only one bit operation (flipping one bit) at a time
 date: 2022-10-28
 categories:
   - algorithm
   - bitmask
   - dynamic-programming
   - leetcode
-excerpt: A hard problem related to bit manipulation
 ---
 
 ## Problem
@@ -42,6 +42,8 @@ Explanation: The binary representation of 6 is "110".
 
 $0 \leq n \leq 10^9$
 
+Submit your solution at [here](https://leetcode.com/problems/minimum-one-bit-operations-to-make-integers-zero)
+
 ## Solution
 
 ### Observation
@@ -51,9 +53,10 @@ My solution is based on this observation:
 - Let's say we have number $1xxxx$, in order to clear the highest $1$, there is no other way but to make it $11000$ first, and then clear the highest $1$ to form $1000$. This is not proven but I can't find any other way to do it. So I just assume it. If you have a proof or a counter example on this I would gladly accept.
 - From number $10000$, the only way to make it $00000$ is by transform it to $11000$, clear the highest $1$ and then recursively do it all over again. Let $n$ is the decimal form of the number we need to clear, the number of steps needed is $n \times 2-1$, or you can use bit operator with $i$ is the position of the $1$ bit, $(1<<(i+1)) - 1$
 
-### Time complexity
+### Complexity
 
-$O(k)$ where $k$ is maximum bit count of $n$
+- Time complexity: $O(log(n))$
+- Space complexity: $O(log(n))$
 
 ### Code
 

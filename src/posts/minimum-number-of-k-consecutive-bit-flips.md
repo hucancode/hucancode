@@ -1,11 +1,11 @@
 ---
 title: Minimum Number of K Consecutive Bit Flips
+excerpt: Given an array of 0s and 1s and an integer k, the problem is to find the minimum number of times a k-length sequence of bits need to be flipped (i.e. 0s to 1s or 1s to 0s) in order to obtain an array of all 1s
 date: 2022-12-14
 categories:
   - algorithm
   - bitmask
   - leetcode
-excerpt: Practice bitmask technique with me
 ---
 
 ## Problem
@@ -45,6 +45,8 @@ Flip nums[5],nums[6],nums[7]: nums becomes [1,1,1,1,1,1,1,1]
 
 - $1 \leq nums.length \leq 10^5$
 - $1 \leq k \leq nums.length$
+
+Submit your solution at [here](https://leetcode.com/problems/minimum-number-of-k-consecutive-bit-flips/)
 
 ## Solution
 

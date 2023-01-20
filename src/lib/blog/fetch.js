@@ -1,5 +1,5 @@
+import { randomThumbnail } from "$lib/utils";
 const POST_PER_PAGE = 5;
-const BLOG_CONTENT_FILTER = "/src/posts/*.md";
 
 export default async function fetchPosts({ page = 1, category = "" } = {}) {
   const offset = (page - 1) * POST_PER_PAGE;
@@ -19,14 +19,21 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
   posts = posts
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(offset, offset + take);
-  posts = posts.map((post) => ({
-    title: post.title,
-    slug: post.slug,
-    excerpt: post.excerpt,
-    cover: post.cover,
-    date: post.date,
-    categories: post.categories,
-  }));
+  posts = await Promise.all(
+    posts.map(async function (post) {
+      if (!post.cover) {
+        post.cover = await randomThumbnail(post.slug);
+      }
+      return {
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt,
+        cover: post.cover,
+        date: post.date,
+        categories: post.categories,
+      };
+    })
+  );
   return { posts: posts };
 }
 

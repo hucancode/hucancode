@@ -23,7 +23,7 @@
     <Scene bind:this={sceneInstance} />
   </div>
   <button
-    class="group rounded-full bg-gray-700 p-4 text-2xl dark:bg-black dark:text-white"
+    class="group bg-gray-700 p-4 px-12 text-2xl dark:bg-black dark:text-white"
     on:click={performMagic}
   >
     <FireIcon class="group-active:scale-150" />

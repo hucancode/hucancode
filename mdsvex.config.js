@@ -1,10 +1,12 @@
 import remarkMath from "remark-math";
 import rehypeKatexSvelte from "rehype-katex-svelte";
-import { defineMDSveXConfig as defineConfig } from "mdsvex";
+import { defineMDSveXConfig } from "mdsvex";
 
-const config = defineConfig({
+const config = defineMDSveXConfig({
   extensions: [".svelte.md", ".md", ".svx"],
-
+  layout: {
+    blog: "src/routes/blog/post/layout.svelte",
+  },
   smartypants: {
     dashes: "oldschool",
   },

@@ -1,12 +1,12 @@
 ---
 title: Kth Smallest Instructions
+excerpt: Find the minimum number of k-length bit flips to make an array of all 1s or kth smallest string of instructions to reach the bottom-right corner of a grid
 date: 2022-11-24
 categories:
   - algorithm
   - combinatorics
   - dynamic-programming
   - leetcode
-excerpt: Practice dynamic programming with me
 ---
 
 ## Problem
@@ -46,6 +46,8 @@ Output: "HHVVH"
 - $destination.length = 2$
 - $1 \leq row, column \leq 15$
 - $1 \leq k \leq nCr(row + column, row)$, where $nCr(a, b)$ denotes a choose b
+
+Submit your solution at [here](https://leetcode.com/problems/kth-smallest-instructions/)
 
 ## Solution
 

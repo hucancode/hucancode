@@ -15,6 +15,7 @@ const config = {
         "script-src": ["self", "vercel.live"],
         "connect-src": [
           "self",
+          "data:",
           "blob:",
           "vitals.vercel-insights.com",
           "vitals.vercel-analytics.com",

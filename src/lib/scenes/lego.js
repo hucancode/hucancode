@@ -241,7 +241,6 @@ function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
-  console.log("lego init", w, h);
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -261,6 +260,10 @@ function init() {
   makeCenterPiece();
   setupLight();
   window.addEventListener("resize", onWindowResize);
+}
+
+function destroy() {
+  renderer.dispose();
 }
 
 function onWindowResize() {
@@ -286,7 +289,7 @@ function render() {
 }
 
 function playAnimation() {
-  animation.play();
+  animation.restart();
 }
 
-export { CANVAS_ID, init, render, playAnimation };
+export { CANVAS_ID, init, destroy, render, playAnimation };

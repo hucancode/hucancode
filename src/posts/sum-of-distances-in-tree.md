@@ -1,12 +1,12 @@
 ---
 title: Sum of Distances in Tree
+excerpt: Given an undirected tree, the problem is to find the sum of the distances between each pair of nodes in the tree, and return an array that contains the sum of distances between the node i and all other nodes, in the same order as the input
 date: 2022-12-22
 categories:
   - algorithm
   - depth-first-search
   - dynamic-programming
   - leetcode
-excerpt: Practice tree traversal and dynamic programming with me
 ---
 
 ## Problem
@@ -52,6 +52,8 @@ Output: [1,1]
 - $0 \leq a_i, b_i < n$
 - $a_i \neq b_i$
 
+Submit your solution at [here](https://leetcode.com/problems/sum-of-distances-in-tree/)
+
 ## Solution
 
 ### Intuition
@@ -71,7 +73,6 @@ Actually we can do it, let's DFS twice:
 ### Complexity
 
 - Time complexity: $O(n)$
-
 - Space complexity: $O(n)$
 
 ### Code

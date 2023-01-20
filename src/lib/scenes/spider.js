@@ -12,7 +12,7 @@ const ASPECT_RATIO = 0.75;
 const LEG_STEP_FREQUENCY = 2;
 const LEG_STEP_DURATION = 0.3;
 const VISUALIZE_IK = true;
-const USE_ORBIT_CONTROL = false;
+const USE_ORBIT_CONTROL = true;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const SPIDER_COUNT = 1;
 
@@ -76,12 +76,14 @@ class Spider {
     this.currentPathNode = 0;
     this.nextPathNode = 1;
     this.targetAngle = 0;
-    this.nodeTravelTime = 0;
     this.nodeTravelDuration = 1.2;
+    this.nodeTravelTime = this.nodeTravelDuration;
     this.speed = 3.5;
     this.findBodyParts();
     this.initIKSolver();
     this.buildCurvePath();
+    this.update(0.0);
+    this.root.rotation.y = this.targetAngle;
   }
   findBodyParts() {
     const litGray = new THREE.MeshPhongMaterial({
@@ -126,72 +128,28 @@ class Spider {
       if (bone.name != "legaR") {
         return;
       }
-      console.log(bone.name);
       let ikBone = this.body.skeleton.bones[ikBoneIndex];
-      const pi2 = Math.PI * 2;
-      const links = [];
-      {
-        const i = index + 2;
-        const range = new THREE.Vector3(pi2, pi2, pi2);
-        const rotationMin = this.body.skeleton.bones[i].rotation.clone();
-        rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
-        const rotationMax = this.body.skeleton.bones[i].rotation.clone();
-        rotationMax.setFromVector3(rotationMax.toVector3().add(range));
-        links.push({
-          index: i,
-          rotationMin: rotationMin,
-          rotationMax: rotationMax,
-        });
-      }
-      {
-        const i = index + 1;
-        const range = new THREE.Vector3(pi2, pi2, pi2);
-        const rotationMin = this.body.skeleton.bones[i].rotation.clone();
-        rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
-        const rotationMax = this.body.skeleton.bones[i].rotation.clone();
-        rotationMax.setFromVector3(rotationMax.toVector3().add(range));
-        links.push({
-          index: i,
-          rotationMin: rotationMin,
-          rotationMax: rotationMax,
-        });
-      }
-      {
-        const i = index;
-        const range = new THREE.Vector3(pi2, pi2, pi2);
-        const rotationMin = this.body.skeleton.bones[i].rotation.clone();
-        rotationMin.setFromVector3(rotationMin.toVector3().sub(range));
-        const rotationMax = this.body.skeleton.bones[i].rotation.clone();
-        rotationMax.setFromVector3(rotationMax.toVector3().add(range));
-        links.push({
-          index: i,
-          rotationMin: rotationMin,
-          rotationMax: rotationMax,
-        });
-      }
       iks.push({
         target: ikBoneIndex,
         effector: index + 3,
-        links: links,
-        iteration: 10,
-        minAngle: 0.0,
-        maxAngle: 0.01,
+        links: [
+          {
+            index: index + 2,
+          },
+          {
+            index: index + 1,
+          },
+          {
+            index: index,
+          },
+        ],
+        iteration: 50,
+        minAngle: -Math.PI * 2.0,
+        maxAngle: Math.PI * 2.0,
       });
       let position = new THREE.Vector3();
       ikBone.getWorldPosition(position);
       var offset = 0;
-      if (ikBone.name.indexOf("L") !== -1) {
-        offset += LEG_STEP_FREQUENCY / 2;
-      }
-      if (ikBone.name.indexOf("b") !== -1) {
-        offset += LEG_STEP_FREQUENCY / 8;
-      }
-      if (ikBone.name.indexOf("c") !== -1) {
-        offset += LEG_STEP_FREQUENCY / 4;
-      }
-      if (ikBone.name.indexOf("d") !== -1) {
-        offset += LEG_STEP_FREQUENCY / 2;
-      }
       const leg = new Leg(this.root, position, ikBone, offset);
       this.legIKAnimator.push(leg);
     });
@@ -279,6 +237,7 @@ class Spider {
       scene.add(this.curveObject);
     }
   }
+
   update(deltaTime) {
     if (!this.root) {
       return;
@@ -302,10 +261,15 @@ class Spider {
         this.path[this.nextPathNode],
         this.path[this.currentPathNode]
       );
+      const normalize = function (x) {
+        return (x + Math.PI * 2) % (Math.PI * 2);
+      };
       this.targetAngle = Math.atan2(currentPath.x, currentPath.z);
+      this.root.rotation.y = normalize(this.root.rotation.y);
+      this.targetAngle = normalize(this.targetAngle);
       const distanceRad = Math.abs(this.root.rotation.y - this.targetAngle);
       if (distanceRad > Math.PI) {
-        //targetAngle = Math.PI*2 - targetAngle;
+        this.targetAngle = Math.PI * 2 - this.targetAngle;
       }
     }
     const angle = lerp(this.root.rotation.y, this.targetAngle, 0.02);
@@ -318,7 +282,6 @@ class Spider {
       this.path[this.nextPathNode],
       progress
     );
-    //console.log(`spider update`);
     this.legIKAnimator.forEach((leg) => {
       leg.update(deltaTime);
     });
@@ -389,6 +352,10 @@ function init() {
   }
 }
 
+function destroy() {
+  renderer.dispose();
+}
+
 function addSpider() {
   const loader = new GLTFLoader();
   loader.setPath("/assets/gltf/");
@@ -396,7 +363,7 @@ function addSpider() {
     const spider = new Spider(gltf);
     scene.add(gltf.scene);
     spiders.push(spider);
-    spider.speed = Math.random() * 2 + 1.5;
+    spider.speed = 0.2;
   });
 }
 
@@ -405,7 +372,6 @@ function onWindowResize() {
   if (!canvas) {
     return;
   }
-  canvas.style = "";
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera.aspect = w / h;
@@ -419,4 +385,4 @@ function render() {
   renderer.render(scene, camera);
 }
 
-export { CANVAS_ID, init, render };
+export { CANVAS_ID, init, destroy, render };

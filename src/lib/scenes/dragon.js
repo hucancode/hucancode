@@ -96,6 +96,10 @@ async function init() {
   makeDragon();
 }
 
+function destroy() {
+  renderer.dispose();
+}
+
 function onWindowResize() {
   let canvas = document.getElementById(CANVAS_ID);
   if (!canvas) {
@@ -136,6 +140,7 @@ function render() {
 export {
   CANVAS_ID,
   init,
+  destroy,
   render,
   getCurrentDragonCount,
   clearDragon,

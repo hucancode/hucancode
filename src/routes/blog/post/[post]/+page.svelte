@@ -37,14 +37,18 @@
     </ul>
   {/if}
   <h1 class="text-4xl font-extrabold">{title}</h1>
-  <small class="text-gray-400">Posted {dateString}</small>
-
-  <img class="my-4 w-full rounded-lg" src={cover} alt="" />
-
+  <small class="mb-4 text-gray-400">Posted {dateString}</small>
+  {#if cover}
+    <img
+      class="aspect-video w-full rounded-lg object-cover sm:aspect-[22/9]"
+      src={cover}
+      alt=""
+    />
+  {/if}
   <div
-    class="prose prose-slate max-w-full prose-a:text-blue-600 prose-a:no-underline dark:prose-invert prose-a:dark:text-sky-300"
+    class="prose prose-slate mt-4 max-w-full prose-a:text-blue-600 prose-a:no-underline dark:prose-invert prose-a:dark:text-sky-300"
   >
-    {@html data.content}
+    <svelte:component this={data.content} />
   </div>
 </article>
 <Nav />

@@ -2,7 +2,7 @@
 title: Oni Training 2023
 excerpt: Happy new year. This is my new year resolution for 2023
 date: 2023-01-05
-cover: oni-training-2023/clay-banks-hwLAI5lRhdM-unsplash.jpg
+cover: /blog/post/oni-training-2023/chinese-new-year-celebration-with-rabbit-money-bag.jpg
 categories:
   - training
   - new-year
@@ -24,10 +24,7 @@ At the beginning of the year, when holiday sprit is still in the air, my girlfri
 
 I reached out and found my people. Installed `Arch` from scratch so I can safely says `I use Arch btw`. Learned a lot of new programming concepts last year thanks to Linux and Open Source community. I learned the important lesson about how a tiny, simple thing can improve my life greatly. If you have not used `vim` I would highly recommend learning it. It is a command line tool, it is ugly by default, but powerful.
 
-$$
-\text{Beauty fades, but power lasts forever}\\
-- Medusa 🐍
-$$
+> Beauty fades, but power lasts forever - Medusa 🐍
 
 ### Competitive Programming
 

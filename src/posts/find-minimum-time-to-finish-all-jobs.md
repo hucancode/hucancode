@@ -1,12 +1,12 @@
 ---
 title: Find Minimum Time to Finish All Jobs
+excerpt: Given an array of jobs where each job has a start time, end time and a penalty if it is not finished on time, the problem is to find the minimum penalty that can be incurred by finishing the jobs in the order they are given
 date: 2022-11-08
 categories:
   - algorithm
   - greedy
   - depth-first-search
   - leetcode
-excerpt: A hard problem that requires careful DFS and backtracking
 ---
 
 ## Problem
@@ -38,6 +38,8 @@ The maximum working time is 11.
 
 - $1 \leq k \leq jobs.length \leq 12$
 - $1 \leq jobs_i \leq 10^7$
+
+Submit your solution at [here](https://leetcode.com/problems/find-minimum-time-to-finish-all-jobs/)
 
 ## Solution
 
@@ -72,9 +74,7 @@ public:
         q.emplace(0, workers);
         map<state, bool> vis;
         while(!q.empty()) {
-            vector<int> w;
-            int u;
-            tie(u, w) = q.top();
+            auto [u, w] = q.top();
             if(vis[q.top()]) {
                 q.pop();
                 continue;
@@ -91,7 +91,7 @@ public:
                 continue;
             }
             for(int i = w.size()-1;i>=0;i--) {
-                vector<int> nextw = w;
+                auto nextw = w;
                 nextw[i] += jobs[v-1];
                 sort(nextw.begin(), nextw.end());
                 q.emplace(v, nextw);

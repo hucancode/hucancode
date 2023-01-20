@@ -1,12 +1,12 @@
 ---
 title: Split Message Based on Limit
+excerpt: Given a string and an integer limit, the problem is to split the given string into a list of strings such that the length of each string does not exceed the given limit and return the list
 date: 2022-11-16
 categories:
   - algorithm
   - greedy
   - implementation
   - leetcode
-excerpt: A hard problem that is heavy on implementation
 ---
 
 ## Problem
@@ -45,6 +45,8 @@ Under the given constraints, the string can be split into two parts:
 - $1 \leq message.length \leq 104$
 - $message$ consists only of lowercase English letters and ' '
 - $1 \leq limit \leq 10^4$
+
+Submit your solution at [here](https://leetcode.com/problems/split-message-based-on-limit/)
 
 ## Solution
 

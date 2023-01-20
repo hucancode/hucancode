@@ -110,6 +110,9 @@ function makeRubik() {
 }
 
 function remakeRubik(n) {
+  if (cubeNum == n) {
+    return;
+  }
   scene.clear();
   cubeNum = n;
   makeRubik();
@@ -162,6 +165,10 @@ function init() {
     Math.floor(Math.random() * 5) - 2
   );
   window.addEventListener("resize", onWindowResize);
+}
+
+function destroy() {
+  renderer.dispose();
 }
 
 function onWindowResize() {
@@ -285,6 +292,9 @@ function cleanUpAfterMove() {
     const x = posToIndex(pos.x);
     const y = posToIndex(pos.y);
     const z = posToIndex(pos.z);
+    cube.position.x = x * (1 + CUBE_MARGIN);
+    cube.position.y = y * (1 + CUBE_MARGIN);
+    cube.position.z = z * (1 + CUBE_MARGIN);
     newCubes[x][y][z] = cube;
   }
   cubes = newCubes;
@@ -314,4 +324,4 @@ function render() {
   }
 }
 
-export { CANVAS_ID, init, render, getCurrentSize, remakeRubik };
+export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };

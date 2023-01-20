@@ -1,11 +1,11 @@
 ---
 title: Substring With Largest Variance
+excerpt: Given a string and an integer k, the problem is to find the substring of length k that has the largest variance of character frequencies in it
 date: 2022-11-22
 categories:
   - algorithm
   - dynamic-programming
   - leetcode
-excerpt: A hard problem that can be solved using dynamic programming
 ---
 
 ## Problem
@@ -14,7 +14,7 @@ The variance of a string is defined as the largest difference between the number
 
 Given a string $s$ consisting of lowercase English letters only, return the largest variance possible among all substrings of $s$.
 
-*A substring is a contiguous sequence of characters within a string*
+_A substring is a contiguous sequence of characters within a string_
 
 ### Example
 
@@ -42,6 +42,8 @@ No letter occurs more than once in s, so the variance of every substring is 0.
 - $1 \leq s.length \leq 104$
 - $s$ consists of lowercase English letters
 
+Submit your solution at [here](https://leetcode.com/problems/substring-with-largest-variance/)
+
 ## Solution
 
 ### Intuition
@@ -49,7 +51,7 @@ No letter occurs more than once in s, so the variance of every substring is 0.
 - First consider problem with only 2 character type, say **a** and **b**
   - Let $f(i)$ be the optimal score of all substring end at $i$, with or without character **b** in it
   - Let $g(i)$ be the optimal score of all substring end at $i$, guaranteed having character **b** in it
-  - The answer is $max(0, max_element(g))$
+  - The answer is $max(0, max(g[0,n]))$
 - Then loop through all possible $(a,b)$ pairs, calculate and take the best pair
 
 ### Code
