@@ -14,37 +14,61 @@ const CANVAS_ID = "taiji";
 const USE_CAMERA_CONTROL = true;
 const TAIJI_ROTATION_CIRCLE = 5000;
 const BAGUA_ROTATION_CIRCLE = 13000;
+const TAIJI_VERTEX_SHADER = `
+// uniform mat4 modelViewMatrix;
+// uniform mat4 projectionMatrix;
+// attribute vec3 position;
+// attribute vec2 uv;
+varying vec2 vUV;
+void main() {
+    vUV = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+const TAIJI_FRAGMENT_SHADER = `
+#define BIG_CIRCLE_RADIUS 0.45
+#define SMALL_CIRCLE_RADIUS 0.1
+#define STROKE_WIDTH 0.01
 
+uniform float alpha;
+varying vec2 vUV;
+void main() {
+    float v = 0.0;
+    vec2 center = vec2(0.5);
+    vec2 centerTop = vec2(0.5, 0.5+BIG_CIRCLE_RADIUS/2.0);
+    vec2 centerBottom = vec2(0.5, 0.5-BIG_CIRCLE_RADIUS/2.0);
+    float bigCircle = 1.0-smoothstep(BIG_CIRCLE_RADIUS,BIG_CIRCLE_RADIUS +0.01, length(vUV-center));
+    float rightHalf = smoothstep(0.5,0.51, vUV.x);
+    float halfCircle = bigCircle*rightHalf;
+    v += halfCircle;
+    float topCircle = 1.0-smoothstep(BIG_CIRCLE_RADIUS/2.0,BIG_CIRCLE_RADIUS/2.0 + 0.01, length(vUV-centerTop));
+    v += topCircle;
+    float bottomCircle = smoothstep(BIG_CIRCLE_RADIUS/2.0,BIG_CIRCLE_RADIUS/2.0 + 0.01, length(vUV-centerBottom));
+    v *= bottomCircle;
+    float bottomDot = 1.0 - smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerBottom));
+    v += bottomDot;
+    float topDot = smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerTop));
+    v *= topDot;
+    vec3 col = vec3(v);
+    float a = bigCircle * alpha;
+    gl_FragColor = vec4(col, a);
+}
+`;
 function makeTaiji() {
-  const semiCircle = new THREE.CircleGeometry(2, 32, 0, Math.PI);
-  const fullCircle = new THREE.CircleGeometry(1, 32);
-  const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-  const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const root = new THREE.Object3D();
-  const baseA = new THREE.Mesh(semiCircle, blackMaterial);
-  const baseB = new THREE.Mesh(semiCircle, whiteMaterial);
-  const yin = new THREE.Mesh(fullCircle, blackMaterial);
-  const yang = new THREE.Mesh(fullCircle, whiteMaterial);
-  const yinMini = new THREE.Mesh(fullCircle, blackMaterial);
-  const yangMini = new THREE.Mesh(fullCircle, whiteMaterial);
-  baseB.rotation.z = Math.PI;
-  yin.position.z = 0.01;
-  yin.position.x = 1;
-  yang.position.z = 0.01;
-  yang.position.x = -1;
-  yinMini.scale.x = yinMini.scale.y = 0.3;
-  yinMini.position.z = 0.01;
-  yangMini.position.z = 0.01;
-  yangMini.scale.x = yangMini.scale.y = 0.3;
-  yin.add(yangMini);
-  yang.add(yinMini);
-  root.add(baseA);
-  root.add(baseB);
-  root.add(yin);
-  root.add(yang);
-  root.rotation.x = -Math.PI / 2;
-  root.scale.x = root.scale.y = Math.PI / 2;
-  return root;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      alpha: { value: 1.0 },
+    },
+    vertexShader: TAIJI_VERTEX_SHADER,
+    fragmentShader: TAIJI_FRAGMENT_SHADER,
+  });
+  material.clipping = true;
+  material.transparent = true;
+  const geometry = new THREE.PlaneGeometry(1, 1);
+  const ret = new THREE.Mesh(geometry, material);
+  ret.scale.x = ret.scale.y = 7;
+  ret.rotation.x = -Math.PI / 2;
+  return ret;
 }
 
 function makeBagua() {
@@ -118,12 +142,6 @@ function setupObject() {
   dropAnimation = anime.timeline({
     duration: 1000,
     easing: "easeOutExpo",
-    complete: (anim) => {
-      console.log("complete");
-      taijiParticle.scale.x = taijiParticle.scale.y = 1;
-      taijiParticle.position.y = 10;
-      taijiParticle.opacity = 1;
-    },
   });
   dropAnimation
     .add({
@@ -133,7 +151,7 @@ function setupObject() {
     .add(
       {
         targets: taijiParticle.position,
-        y: 0.1,
+        y: 0.2,
       },
       0
     )
@@ -141,20 +159,18 @@ function setupObject() {
       {
         targets: taijiParticle.scale,
         easing: "easeInOutQuad",
-        x: 4,
-        y: 4,
+        x: 20,
+        y: 20,
       },
       0
     )
     .add(
       {
-        targets: taijiParticle,
+        targets: taijiParticle.material.uniforms.alpha,
         easing: "easeInOutQuad",
-        opacity: 0,
+        value: 0,
         update: (anim) => {
-          for (let child of taijiParticle.children) {
-            child.material.opacity = taijiParticle.opacity;
-          }
+          taijiParticle.material.uniformsNeedUpdate = true;
         },
       },
       200
