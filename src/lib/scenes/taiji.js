@@ -3,17 +3,15 @@ import anime from "animejs";
 import { OrbitControls } from "$lib/three/controls/OrbitControls";
 import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
 
-var time = 0;
-let clock = new THREE.Clock();
 let scene, camera, renderer, controls;
 let taiji;
-let taijiParticle;
 let bagua;
-let dropAnimation;
+
 const CANVAS_ID = "taiji";
 const USE_CAMERA_CONTROL = true;
 const TAIJI_ROTATION_CIRCLE = 5000;
 const BAGUA_ROTATION_CIRCLE = 13000;
+
 const TAIJI_VERTEX_SHADER = `
 // uniform mat4 modelViewMatrix;
 // uniform mat4 projectionMatrix;
@@ -26,9 +24,9 @@ void main() {
 }
 `;
 const TAIJI_FRAGMENT_SHADER = `
-#define BIG_CIRCLE_RADIUS 0.45
+#define BIG_CIRCLE_RADIUS 0.4
 #define SMALL_CIRCLE_RADIUS 0.1
-#define STROKE_WIDTH 0.01
+#define STROKE_WIDTH 0.015
 
 uniform float alpha;
 varying vec2 vUV;
@@ -50,7 +48,8 @@ void main() {
     float topDot = smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerTop));
     v *= topDot;
     vec3 col = vec3(v);
-    float a = bigCircle * alpha;
+    float mask = 1.0-smoothstep(BIG_CIRCLE_RADIUS+STROKE_WIDTH,BIG_CIRCLE_RADIUS +STROKE_WIDTH+0.03, length(vUV-center));
+    float a = mask * alpha;
     gl_FragColor = vec4(col, a);
 }
 `;
@@ -129,82 +128,17 @@ function setupObject() {
     z: Math.PI * 2,
     duration: TAIJI_ROTATION_CIRCLE,
     easing: "linear",
-    direction: "reverse",
     loop: true,
   });
   scene.add(taiji);
-  taijiParticle = makeTaiji();
-  taijiParticle.opacity = 1;
-  for (let child of taijiParticle.children) {
-    child.material.transparent = true;
-  }
-  taijiParticle.position.y = 10;
-  dropAnimation = anime.timeline({
-    duration: 1000,
-    easing: "easeOutExpo",
-  });
-  dropAnimation
-    .add({
-      targets: taijiParticle.rotation,
-      z: Math.PI * 4,
-    })
-    .add(
-      {
-        targets: taijiParticle.position,
-        y: 0.2,
-      },
-      0
-    )
-    .add(
-      {
-        targets: taijiParticle.scale,
-        easing: "easeInOutQuad",
-        x: 20,
-        y: 20,
-      },
-      0
-    )
-    .add(
-      {
-        targets: taijiParticle.material.uniforms.alpha,
-        easing: "easeInOutQuad",
-        value: 0,
-        update: (anim) => {
-          taijiParticle.material.uniformsNeedUpdate = true;
-        },
-      },
-      200
-    );
-  scene.add(taijiParticle);
   bagua = makeBagua();
   scene.add(bagua);
   anime({
     targets: bagua.rotation,
-    z: -Math.PI * 2,
+    z: Math.PI * 2,
     duration: BAGUA_ROTATION_CIRCLE,
     easing: "linear",
     direction: "reverse",
-    loop: true,
-  });
-}
-function setupLight() {
-  const light = new THREE.AmbientLight(0x666666); // soft white light
-  scene.add(light);
-  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 1);
-  hemiLight.position.set(0, 0, 10);
-  scene.add(hemiLight);
-
-  const backLight = new THREE.PointLight(0x5599ff, 1);
-  // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 1, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
-  backLight.position.set(0, 0, 10);
-  scene.add(backLight);
-
-  anime({
-    targets: backLight.position,
-    y: 15,
-    duration: 3000,
-    easing: "easeOutInCubic",
-    direction: "alternate",
     loop: true,
   });
 }
@@ -247,7 +181,6 @@ function init() {
     return;
   }
   setupCamera(w, h);
-  setupLight();
   setupObject();
   window.addEventListener("resize", onWindowResize);
 }
@@ -270,7 +203,6 @@ function onWindowResize() {
 }
 
 function render() {
-  time += clock.getDelta();
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
@@ -279,7 +211,46 @@ function render() {
   }
 }
 function playAnimation() {
-  dropAnimation.play();
+  let particle = makeTaiji();
+  particle.position.y = 10;
+  let animation = anime.timeline({
+    duration: 1000,
+    easing: "easeOutExpo",
+    complete: () => {
+      particle.removeFromParent();
+    },
+  });
+  animation
+    .add({
+      targets: particle.rotation,
+      z: Math.PI * 4,
+    })
+    .add(
+      {
+        targets: particle.position,
+        y: 0.2,
+      },
+      0
+    )
+    .add(
+      {
+        targets: particle.scale,
+        easing: "easeInOutQuad",
+        x: 20,
+        y: 20,
+      },
+      0
+    )
+    .add(
+      {
+        targets: particle.material.uniforms.alpha,
+        easing: "easeInOutQuad",
+        value: 0,
+      },
+      200
+    );
+  scene.add(particle);
+  animation.play();
 }
 
 export { CANVAS_ID, init, destroy, render, playAnimation };
