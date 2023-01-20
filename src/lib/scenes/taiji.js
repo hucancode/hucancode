@@ -209,7 +209,7 @@ function playAnimation() {
     .add(
       {
         targets: particle.position,
-        y: Math.random() * -1.0, // avoid z-fighting
+        y: Math.random(), // avoid z-fighting
       },
       0
     )
