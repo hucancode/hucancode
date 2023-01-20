@@ -25,10 +25,12 @@ void main() {
 `;
 const TAIJI_FRAGMENT_SHADER = `
 #define BIG_CIRCLE_RADIUS 0.4
-#define SMALL_CIRCLE_RADIUS 0.1
+#define SMALL_CIRCLE_RADIUS 0.07
 #define STROKE_WIDTH 0.015
 
 uniform float alpha;
+uniform vec3 color1;
+uniform vec3 color2;
 varying vec2 vUV;
 void main() {
     float v = 0.0;
@@ -47,16 +49,18 @@ void main() {
     v += bottomDot;
     float topDot = smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerTop));
     v *= topDot;
-    vec3 col = vec3(v);
+    v = clamp(v, 0.0, 1.0);
     float mask = 1.0-smoothstep(BIG_CIRCLE_RADIUS+STROKE_WIDTH,BIG_CIRCLE_RADIUS +STROKE_WIDTH+0.03, length(vUV-center));
     float a = mask * alpha;
-    gl_FragColor = vec4(col, a);
+    gl_FragColor = vec4(color1 * v + color2 * (1.0-v), a);
 }
 `;
 function makeTaiji() {
   const material = new THREE.ShaderMaterial({
     uniforms: {
       alpha: { value: 1.0 },
+      color1: { value: new THREE.Color(1, 1, 1) },
+      color2: { value: new THREE.Color(0, 0, 0) },
     },
     vertexShader: TAIJI_VERTEX_SHADER,
     fragmentShader: TAIJI_FRAGMENT_SHADER,
@@ -65,15 +69,15 @@ function makeTaiji() {
   material.transparent = true;
   const geometry = new THREE.PlaneGeometry(1, 1);
   const ret = new THREE.Mesh(geometry, material);
-  ret.scale.x = ret.scale.y = 7;
+  ret.scale.x = ret.scale.y = 9;
   ret.rotation.x = -Math.PI / 2;
   return ret;
 }
 
 function makeBagua() {
   const HEIGHT = 5;
-  const MARGIN = 0.1;
-  const STROKE_WIDTH = 0.1;
+  const MARGIN = 0.2;
+  const STROKE_WIDTH = 0.05;
   const bar31 = new THREE.PlaneGeometry(3, 1);
   const bar11 = new THREE.PlaneGeometry(1, 1);
   const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
@@ -212,19 +216,34 @@ function render() {
 }
 function playAnimation() {
   let particle = makeTaiji();
+  particle.scale.x = particle.scale.y = 6;
   particle.position.y = 10;
+  // use HSL to guaranteed 2 colors has acceptable contrast
+  particle.material.uniforms.color1.value.setHSL(
+    Math.random(),
+    Math.random(),
+    Math.random() * 0.2 + 0.8
+  );
+  particle.material.uniforms.color2.value.setHSL(
+    Math.random(),
+    Math.random(),
+    Math.random() * 0.2
+  );
   let animation = anime.timeline({
-    duration: 1000,
+    duration: 1500,
     easing: "easeOutExpo",
     complete: () => {
       particle.removeFromParent();
     },
   });
   animation
-    .add({
-      targets: particle.rotation,
-      z: Math.PI * 4,
-    })
+    .add(
+      {
+        targets: particle.rotation,
+        z: Math.PI * 6,
+      },
+      0
+    )
     .add(
       {
         targets: particle.position,
@@ -236,10 +255,10 @@ function playAnimation() {
       {
         targets: particle.scale,
         easing: "easeInOutQuad",
-        x: 20,
-        y: 20,
+        x: 22,
+        y: 22,
       },
-      0
+      400
     )
     .add(
       {
@@ -247,7 +266,7 @@ function playAnimation() {
         easing: "easeInOutQuad",
         value: 0,
       },
-      200
+      400
     );
   scene.add(particle);
   animation.play();
