@@ -11,6 +11,8 @@ let taiji;
 let bagua;
 const CANVAS_ID = "taiji";
 const USE_CAMERA_CONTROL = true;
+const TAIJI_ROTATION_CIRCLE = 5000;
+const BAGUA_ROTATION_CIRCLE = 13000;
 
 function makeTaiji() {
   const semiCircle = new THREE.CircleGeometry(2, 32, 0, Math.PI);
@@ -40,16 +42,27 @@ function makeTaiji() {
   taiji.add(yin);
   taiji.add(yang);
   taiji.rotation.x = -Math.PI / 2;
+  taiji.scale.x = taiji.scale.y = Math.PI / 2;
   scene.add(taiji);
   // const axesHelper = new THREE.AxesHelper( 5 );
   // scene.add( axesHelper );
+  anime({
+    targets: taiji.rotation,
+    z: Math.PI * 2,
+    duration: TAIJI_ROTATION_CIRCLE,
+    easing: "linear",
+    direction: "reverse",
+    loop: true,
+  });
 }
 
 function makeBagua() {
   const HEIGHT = 5;
   const MARGIN = 0.1;
+  const STROKE_WIDTH = 0.1;
   const bar31 = new THREE.PlaneGeometry(3, 1);
   const bar11 = new THREE.PlaneGeometry(1, 1);
+  const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
   const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
   bagua = new THREE.Object3D();
   for (let i = 0; i < 8; i++) {
@@ -57,13 +70,28 @@ function makeBagua() {
     for (let bit = 0; bit < 3; bit++) {
       const v = (i >> bit) & 1;
       if (v == 1) {
+        const base = new THREE.Mesh(bar31, blackMaterial);
         const mesh = new THREE.Mesh(bar31, whiteMaterial);
         mesh.position.y = bit * (1 + MARGIN) + HEIGHT;
+        mesh.add(base);
+        base.position.z = -0.01;
+        base.scale.x = (3 + STROKE_WIDTH * 2) / 3;
+        base.scale.y = (1 + STROKE_WIDTH * 2) / 1;
         figure.add(mesh);
       } else {
+        const baseA = new THREE.Mesh(bar11, blackMaterial);
+        const baseB = new THREE.Mesh(bar11, blackMaterial);
+        baseB.position.z = baseA.position.z = -0.01;
+        baseB.scale.x =
+          baseB.scale.y =
+          baseA.scale.x =
+          baseA.scale.y =
+            (1 + STROKE_WIDTH * 2) / 1;
         const meshA = new THREE.Mesh(bar11, whiteMaterial);
         const meshB = new THREE.Mesh(bar11, whiteMaterial);
-        meshB.position.y = meshA.position.y = bit * 1.1 + 5;
+        meshA.add(baseA);
+        meshB.add(baseB);
+        meshB.position.y = meshA.position.y = bit * (1 + MARGIN) + HEIGHT;
         meshA.position.x = -1;
         meshB.position.x = 1;
         figure.add(meshA);
@@ -75,6 +103,14 @@ function makeBagua() {
   }
   bagua.rotation.x = -Math.PI / 2;
   scene.add(bagua);
+  anime({
+    targets: bagua.rotation,
+    z: -Math.PI * 2,
+    duration: BAGUA_ROTATION_CIRCLE,
+    easing: "linear",
+    direction: "reverse",
+    loop: true,
+  });
 }
 function setupLight() {
   const light = new THREE.AmbientLight(0x666666); // soft white light
@@ -114,7 +150,7 @@ function rebuildOrbitControl() {
     controls.maxDistance = 30; // the maximum distance the camera must have from center
     //controls.update();
     controls.enableRotate = true;
-    controls.autoRotate = true;
+    // controls.autoRotate = true;
   }
 }
 
@@ -166,9 +202,6 @@ function render() {
   }
   if (controls) {
     controls.update();
-  }
-  if (taiji) {
-    taiji.rotation.z = (time * 10) % (Math.PI * 2);
   }
 }
 
