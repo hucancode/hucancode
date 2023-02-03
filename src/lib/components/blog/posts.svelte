@@ -9,6 +9,7 @@
   import FunctionIcon from "~icons/fluent/math-formula-16-filled";
   import GameIcon from "~icons/icon-park-twotone/game-ps";
   import DiceIcon from "~icons/fluent-emoji-high-contrast/game-die";
+  import BookIcon from "~icons/heroicons/book-open-solid";
   import { parseISO, formatRelative } from "date-fns";
   import { onMount } from "svelte";
   export let posts = [];
@@ -52,6 +53,10 @@
       {
         categories: ["creative", "creative-coding"],
         icon: CreativeIcon,
+      },
+      {
+        categories: ["book"],
+        icon: BookIcon,
       },
     ];
     let ret = [];

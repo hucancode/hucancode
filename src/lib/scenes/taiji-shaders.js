@@ -10,9 +10,13 @@ void main() {
 }
 `;
 export const TAIJI_FRAGMENT_SHADER = `
+#define EPSILON 0.01
 #define BIG_CIRCLE_RADIUS 0.4
-#define SMALL_CIRCLE_RADIUS 0.07
-#define STROKE_WIDTH 0.015
+#define SMALL_CIRCLE_RADIUS 0.12
+#define STROKE_WIDTH 0.04
+#define SMOOTH(t, x) smoothstep(t - EPSILON*0.5, t + EPSILON*0.5, x)
+#define WHITE_CIRCLE(r, o) smoothstep(r + EPSILON*0.5, r - EPSILON*0.5, length(uv - o))
+#define BLACK_CIRCLE(r, o) smoothstep(r - EPSILON*0.5, r + EPSILON*0.5, length(uv - o))
 
 uniform float alpha;
 uniform vec3 color1;
@@ -21,25 +25,18 @@ varying vec2 vUV;
 
 void main() {
     float v = 0.0;
-    vec2 center = vec2(0.5);
-    vec2 centerTop = vec2(0.5, 0.5+BIG_CIRCLE_RADIUS/2.0);
-    vec2 centerBottom = vec2(0.5, 0.5-BIG_CIRCLE_RADIUS/2.0);
-    float bigCircle = 1.0-smoothstep(BIG_CIRCLE_RADIUS,BIG_CIRCLE_RADIUS +0.01, length(vUV-center));
-    float rightHalf = smoothstep(0.5,0.51, vUV.x);
-    float halfCircle = bigCircle*rightHalf;
-    v += halfCircle;
-    float topCircle = 1.0-smoothstep(BIG_CIRCLE_RADIUS/2.0,BIG_CIRCLE_RADIUS/2.0 + 0.01, length(vUV-centerTop));
-    v += topCircle;
-    float bottomCircle = smoothstep(BIG_CIRCLE_RADIUS/2.0,BIG_CIRCLE_RADIUS/2.0 + 0.01, length(vUV-centerBottom));
-    v *= bottomCircle;
-    float bottomDot = 1.0 - smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerBottom));
-    v += bottomDot;
-    float topDot = smoothstep(SMALL_CIRCLE_RADIUS,SMALL_CIRCLE_RADIUS+0.01, length(vUV-centerTop));
-    v *= topDot;
+    vec2 uv = vUV * 2.0 - 1.0;
+    vec2 center = vec2(0.0);
+    vec2 centerTop = center + vec2(0.0, BIG_CIRCLE_RADIUS);
+    vec2 centerBottom = center + vec2(0.0, -BIG_CIRCLE_RADIUS);
+    v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS*2.0, center) * SMOOTH(0.0, uv.x);
+    v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS, centerTop);
+    v *= BLACK_CIRCLE(BIG_CIRCLE_RADIUS, centerBottom);
+    v += WHITE_CIRCLE(SMALL_CIRCLE_RADIUS, centerBottom);
+    v *= BLACK_CIRCLE(SMALL_CIRCLE_RADIUS, centerTop);
     v = clamp(v, 0.0, 1.0);
-    float mask = 1.0-smoothstep(BIG_CIRCLE_RADIUS+STROKE_WIDTH,BIG_CIRCLE_RADIUS +STROKE_WIDTH+0.03, length(vUV-center));
-    float a = mask * alpha;
-    gl_FragColor = vec4(color1 * v + color2 * (1.0-v), a);
+    float mask = WHITE_CIRCLE(BIG_CIRCLE_RADIUS*2.0 + STROKE_WIDTH, center);
+    gl_FragColor = vec4(color1 * v + color2 * (1.0 - v), mask * alpha);
 }
 `;
 
@@ -104,7 +101,7 @@ float fbm ( in vec2 _st) {
 void main() {
     vec2 st = vUV*3.0;
     float d = length(st - vec2(1.5));
-    float circle = 1.0-smoothstep(0.5,1.5, d);
+    float circle = 1.0-smoothstep(0.3,1.5, d);
     // st += st * abs(sin(time*0.1)*3.0);
     vec3 color = vec3(0.0);
 
@@ -132,3 +129,91 @@ void main() {
     gl_FragColor = vec4((f*f*f+.6*f*f+.5*f)*color,circle);
 }
 `;
+
+export const BAGUA_VERTEX_SHADER = `
+// uniform mat4 modelViewMatrix;
+// uniform mat4 projectionMatrix;
+// attribute vec3 position;
+// attribute vec2 uv;
+varying vec2 vUV;
+void main() {
+    vUV = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+export const BAGUA_FRAGMENT_SHADER = `
+#define PI 3.14159265359
+#define PIX2 6.28318530718
+#define BIT_COUNT 3
+#define EPSILON 0.01
+#define BAR_WIDTH (PI/float(1<<BIT_COUNT))
+#define BAR_HEIGHT 0.07
+#define BAR_MARGIN 0.02
+#define CIRCLE_RADIUS 1.1
+#define CUT_WIDTH (BAR_WIDTH*0.1)
+
+#define RANGE(l,r,x) smoothstep(l, l + EPSILON, x) * smoothstep(r + EPSILON, r, x)
+#define RANGE_INVERT(l,r,x) smoothstep(l, l + EPSILON, x) + smoothstep(r + EPSILON, r, x)
+
+uniform float time;
+uniform float alpha;
+varying vec2 vUV;
+
+
+mat2 rotateMat(float angle) {
+    return mat2(cos(angle),-sin(angle),
+                sin(angle),cos(angle));
+}
+
+// bar = return a full bar for x = 1, a broken bar for x = 0
+float bar(int x, vec2 uv) {
+    float ret = RANGE(-BAR_WIDTH*0.5, BAR_WIDTH*0.5, uv.x) *
+        RANGE(-BAR_HEIGHT*0.5, BAR_HEIGHT*0.5, uv.y);
+    if(x == 0) {
+        ret *= RANGE_INVERT(CUT_WIDTH, -CUT_WIDTH, uv.x);
+    }
+    return ret;
+}
+
+// stem = bar x3
+float stem(int x, vec2 uv) {
+    // eliminated a for loop, thanks https://www.shadertoy.com/user/FabriceNeyret2
+    int bit = int(0.5 - (uv.y + CIRCLE_RADIUS * 0.5)/(BAR_HEIGHT+BAR_MARGIN)); 
+    if(bit < 0 || bit >= BIT_COUNT) {
+        return 0.0;
+    }
+    int k = (x>>bit)&1;
+    vec2 offset = vec2(0.0, CIRCLE_RADIUS*0.5+float(bit)*(BAR_HEIGHT+BAR_MARGIN));
+    return bar(k, uv + offset);
+    // naive approach
+    float ret = 0.0;
+    for(int bit = 0;bit<BIT_COUNT;bit++) {
+        int k = (x>>bit)&1;
+        vec2 offset = vec2(0.0, CIRCLE_RADIUS*0.5+float(bit)*(BAR_HEIGHT+BAR_MARGIN));
+        ret += bar(k, uv + offset);
+    }
+    return ret;
+}
+
+// bagua = stem x8
+float bagua(vec2 uv) {
+    // eliminated a for loop, thanks https://www.shadertoy.com/user/FabriceNeyret2
+    int n = (1<<BIT_COUNT);
+    float i = round(float(n)*(0.75 - atan(uv.y,uv.x)/PIX2));
+    return stem(int(i), uv * rotateMat(i*PIX2/float(n))); 
+    // naive approach
+    float ret = 0.0;
+    for(int i = 0;i<n;i++) {
+        ret += stem(i, uv * rotateMat(float(i)*PIX2/float(n)));
+    }
+    return ret;
+}
+
+void main()
+{
+    vec2 uv = vUV*2.0 - 1.0;
+    // scale uv to fit the bagua
+    uv *= CIRCLE_RADIUS+(BAR_HEIGHT+BAR_MARGIN)*float(BIT_COUNT*2);
+    float v = bagua(uv);
+    gl_FragColor = vec4(v, v, v, alpha*v);
+}`;
