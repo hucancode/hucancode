@@ -97,7 +97,7 @@ than an unverified "100% sure" claim.
 
 #### Ulysses Contract
 
-A Ulysses Contract is when our past-selves prevent our present-selves from doing something stupid.
+An [Ulysses Contract](https://en.wikipedia.org/wiki/Ulysses_pact) is when our past-selves prevent our present-selves from doing something stupid.
 
 For example:
 
