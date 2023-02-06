@@ -10,7 +10,7 @@ categories:
 
 ## Problem
 
-Given a formular which result is normally very large, can’t be stored in any primitive data type. Calculate the result in mod $1e9+7$. The formular often involve _division_. 
+Given a formular which result is normally very large, can’t be stored in any primitive data type. Calculate the result in mod $1e9+7$. The formular often involve _division_.
 For example, let's calculate this
 
 $$
@@ -27,7 +27,7 @@ $$
 3. Divide 2 numbers to get the result
 4. Mod the result by $1e9+7$
 
-This requires **non-trivial** effort to implement `BigNumber` class. 
+This requires **non-trivial** effort to implement `BigNumber` class.
 `Python` folks are in luck but most programming language doesn't support big number by default.
 Assume that you are an average programmer like me. You often fail to come up with a correct implementation of the `BigNumber` class.
 
@@ -50,9 +50,11 @@ it converts division to multiplication by leveraging [Modular multiplicative inv
 Formally, **if $k$ is a prime number**, we have
 
 $$
-a \div b \equiv a \times b^{-1} \pmod k\\
-b^{-1} \equiv b^{k-2} \pmod k\\
-a \div b \equiv a \times b^{k-2} \pmod k
+\begin{align*}
+a \div b &\equiv a \times b^{-1} &\pmod k\\
+b^{-1} &\equiv b^{k-2} &\pmod k\\
+a \div b &\equiv a \times b^{k-2} &\pmod k
+\end{align*}
 $$
 
 Everytime you were to do _division_, you multiply it with the power $k-2$ of the divisor instead and it’s guaranteed correct mathematically 😎

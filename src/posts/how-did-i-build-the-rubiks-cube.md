@@ -21,8 +21,7 @@ categories:
 The Rubik's Cube is a 3-D combination puzzle that has been around since 1974. One of it's interesting property is that there are so many combinations. Somebody has done the math and apparently it is indeed alot
 
 $$
-8! \times 3^7 \times \frac{12!}{2} \times 2^{11} \\
-= 43,252,003,274,489,856,000
+8! \times 3^7 \times \frac{12!}{2} \times 2^{11} \approx 4.3 \times 10^{19}
 $$
 
 The Rubik's Cube is not only interesting, it is also beautiful aesthetically. Let's take a look at some art people have done with cubes
