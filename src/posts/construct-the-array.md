@@ -54,6 +54,7 @@ g(2) &= 0\\
 \end{align*}
 \right \}
 $$
+
 $$
 \text{   if } x \neq 1
 \left \{
@@ -65,6 +66,7 @@ g(2) &= 1\\
 \end{align*}
 \right \}
 $$
+
 From $i=3$ onward, the formular stays consistent regardless of $x$. $f(i)$ and $g(i)$ can be calculated using $f(i-1)$ and $g(i-1)$.
 There are only 1 way to pick $x$ at position $i$ so
 
