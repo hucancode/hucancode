@@ -8,11 +8,12 @@ categories:
 ---
 
 ## What is a Binary Indexed Tree
+
 [Binary Indexed Tree](https://en.wikipedia.org/wiki/Fenwick_tree) is a data structure that can store array $A$ of length $n$ with following property
 
 - Calculates the value of function $f$ in the given range $[l, r]$ in $O(log(n))$ time.
-There are some restriction on which kind of function $f$ you can use, 
-for example sum function works, but min/max function don't.
+  There are some restriction on which kind of function $f$ you can use,
+  for example sum function works, but min/max function don't.
 - Updates the value of an element of $A$ in $O(log(n))$ time
 - Requires only $O(n)$ spaces, which is the input spaces
 
