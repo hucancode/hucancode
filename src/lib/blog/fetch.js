@@ -1,4 +1,4 @@
-import { randomThumbnail } from "$lib/utils";
+import { randomThumbnail } from "$lib/server/thumbnail";
 const POST_PER_PAGE = 5;
 
 export default async function fetchPosts({ page = 1, category = "" } = {}) {
