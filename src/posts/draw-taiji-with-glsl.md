@@ -237,7 +237,7 @@ Again, to reduce the repetitiveness, I would like to make some macro
 
 3 bars in the triagram represent 3 bits of it.
 For example, Triagram #6 is 110 in binary and has ☱ as its figure.
-The triagram has 2 connected bar and 1 disconnected bar.
+The triagram has 2 connected bars and 1 disconnected bar.
 In general, the following function `stem(x,uv)` will draw triagram `x`
 
 ```glsl
@@ -316,7 +316,7 @@ void main() {
     // scale uv to fit the bagua
     uv *= CIRCLE_RADIUS+(BAR_HEIGHT+BAR_MARGIN)*float(BIT_COUNT*2)+IMAGE_MARGIN;
     float v = bagua(uv);
-    fragColor = vec4(v);
+    gl_FragColor = vec4(v);
 }
 ```
 
@@ -411,6 +411,6 @@ void main() {
     uv *= CIRCLE_RADIUS+(BAR_HEIGHT+BAR_MARGIN)*float(BIT_COUNT*2)+IMAGE_MARGIN;
 
     float v = bagua(uv);
-    fragColor = vec4(v);
+    gl_FragColor = vec4(v, v, v, 1.0);
 }
 ```
