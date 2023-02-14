@@ -59,7 +59,7 @@ void main() {
 
 <img class="w-full md:w-1/3 mx-auto" alt="circle sharp" src="/blog/post/draw-taiji-with-glsl/circle-at-0-sharp.png" />
 
-You will notice that the edge of our cicle is aliased (aka. not smooth), there is a function for that, it's `smoothstep`.
+You will notice that the edge of our circle is aliased (aka. not smooth), there is a function for that, it's `smoothstep`.
 Simply replace `step` with `smoothstep` and give it 2 thresholds instead of 1
 
 ```glsl
@@ -104,7 +104,7 @@ gl_FragColor = vec4(v, v, v, 1.0);
 
 ### Draw more circles
 
-With the same logic, we can make 2 more cicles at 2 different locations.
+With the same logic, we can make 2 more circles at 2 different locations.
 
 ```glsl
 vec2 centerTop = center + vec2(0.0, BIG_CIRCLE_RADIUS/2.0);
