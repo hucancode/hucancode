@@ -31,7 +31,7 @@ There are 2 bad mindset people often have:
 This is how we **think** we form beliefs:
 
 1. We hear something
-2. We determining whether it is true or false.
+2. We determine whether it is true or false.
 3. We form the belief based on the calibration.
 
 Unfortunately, this is how we **actually** form beliefs:
@@ -39,7 +39,7 @@ Unfortunately, this is how we **actually** form beliefs:
 1. We hear something
 2. We believe it
 3. **Only sometimes**, later we have the time or because of some special event,
-   we rethink about it and determining whether it is true or not
+   we rethink about it and determine whether it is true or not
 
 The default setting of our brain is to believe everything we hear.
 
@@ -83,13 +83,13 @@ In the long run, the more objective person will win against the more biased pers
 
 We are generally discouraged from saying “I don’t know” or “I’m not sure”.
 People regard those expressions as vague, unhelpful, and even evasive.
-But getting comfortable with “I’m not sure” is a vital step to being a better decision maker.
+But getting comfortable with “I’m not sure” is a vital step to being a better decision-maker.
 
-In fact, there rarely absolute "100% right" or "100% wrong" in real life.
+In fact, there is rarely absolute "100% right" or "100% wrong" in real life.
 Most of the time it's somewhere in between.
-We assume that if we don't come off as 100% confident, people will not value our oppinion.
-This is usually not true. A "64% sure" claim with good backup evident is more believable
-than a unverified "100% sure" claim.
+We assume that if we don't come off as 100% confident, people will not value our opinion.
+This is usually not true. A "64% sure" claim with good backup evidence is more believable
+than an unverified "100% sure" claim.
 
 ### Mental time travel
 
@@ -97,7 +97,7 @@ than a unverified "100% sure" claim.
 
 #### Ulysses Contract
 
-A Ulysses Contract is when our past-selves prevent our present-selves from doing something stupid.
+An [Ulysses Contract](https://en.wikipedia.org/wiki/Ulysses_pact) is when our past-selves prevent our present-selves from doing something stupid.
 
 For example:
 
@@ -119,39 +119,39 @@ The next time you anticipate a future decision, make a Ulysses contract with you
 
 #### The power of regret
 
-Author argues that we hate lose more than we love win. A 50$ loss inflict
+The author argues that we hate to lose more than we love to win. A 50$ loss inflict
 as much pain as a $100 give us happiness. Take 2 scenarios:
 
 1. First you win $1000, then you lose $900. In the end you win $100
-2. First you lose $1000, then win $900. Your ended up losing $100
+2. First you lose $1000, then win $900. You ended up losing $100
 
-In the first case the $1000 was ours and we lose. In the second case we felt
+In the first case, the $1000 was ours and we lose. In the second case, we felt
 we achieved something by gaining most of our loss back. We tend to feel better
-on the second scenario despite losing.
+in the second scenario despite losing.
 
 The power of regret can be harnessed in decision-making.
 We can utilize 2 strategies to optimize our vision:
 
 - **Backcasting**: Working backward from a _positive_ future, thinking about why did we got there.
-  What could we do from now to encourage this to happen? This is the positive frame that heps you
+  What could we do from now to encourage this to happen? This is the positive frame that helps you
   visualize what you want.
-- **Pre-mortems**: Imagine a _negative_ future, thinking why did we ended up there.
+- **Pre-mortems**: Imagine a _negative_ future, thinking about why we ended up there.
   What could we do to prevent this? This helps you create a plan that reduces the probability
   of these things from happening.
 
 ### Place a bet
 
 Judges and Scientists are known for being truth seekers, yet they still fall prey to bias.
-But by placing a bet, the chance of being biased are reduced. An experiment shows there is a
+But by placing a bet, the chance of being biased is reduced. An experiment shows there is a
 difference of 58% accuracy (without betting) vs. 71% accuracy (with betting).
-By placing a bet, you are hold **accountable** for your decisions, thus improving the quality.
+By placing a bet, you are held **accountable** for your decisions, thus improving the quality.
 
 ### Join a group
 
-Join a group can help you gain more information and improve the quality of your decision making.
-Make sure that you are surrounded by people with a diversity of oppinion and perspective.
-Otherwise you are just amplifying your bias.
-Your group need to have a goal to seek accuracy and objectivity.
+Join a group can help you gain more information and improve the quality of your decision-making.
+Make sure that you are surrounded by people with a diversity of opinions and perspectives.
+Otherwise, you are just amplifying your bias.
+Your group needs to have a goal to seek accuracy and objectivity.
 
 ## Buy the book
 

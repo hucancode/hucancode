@@ -1,5 +1,3 @@
-import { randomThumbnail } from "$lib/utils";
-
 export async function load({ params }) {
   try {
     const post = await import(`../../../../posts/${params.post}.md`);

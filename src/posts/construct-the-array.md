@@ -43,11 +43,31 @@ We will apply the idea of Dynamic Programming.
 Easily we see **the answer is $g(n)$**.
 We can calculate some initial value without much difficulty.
 
-- If $x = 1$, our initial values would be $f(1) = 0, f(2) = k - 1$, and $g(1) = 1, g(2) = 0$
-- If $x \neq 1$, there is a little different $f(1) = 1, f(2) = k - 2$, and $g(1) = 0;g(2) = 1$
-- From $i=3$ onward, the formular stays consistent regardless of $x$.
+$$
+\text{if } x = 1
+\left \{
+\begin{align*}
+f(1) &= 0\\
+f(2) &= k - 1\\
+g(1) &= 1\\
+g(2) &= 0\\
+\end{align*}
+\right \}
+$$
 
-Notice that $f(i)$ and $g(i)$ can be calculated using $f(i-1)$ and $g(i-1)$.
+$$
+\text{   if } x \neq 1
+\left \{
+\begin{align*}
+f(1) &= 1\\
+f(2) &= k - 2\\
+g(1) &= 0\\
+g(2) &= 1\\
+\end{align*}
+\right \}
+$$
+
+From $i=3$ onward, the formular stays consistent regardless of $x$. $f(i)$ and $g(i)$ can be calculated using $f(i-1)$ and $g(i-1)$.
 There are only 1 way to pick $x$ at position $i$ so
 
 $$
