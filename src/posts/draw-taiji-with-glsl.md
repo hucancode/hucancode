@@ -350,12 +350,11 @@ float bagua(vec2 uv) {
 ### Final code for the Bagua
 
 ```glsl
-#define PI 3.14159265359
+#define EPSILON 0.01
 #define PI2 6.28318530718
 #define IMAGE_MARGIN 0.5
 #define BIT_COUNT 3
 //#define BIT_COUNT (int(u_time/2.0)%4+2)
-#define SMOOTH_PIXEL 1.5
 #define BAR_WIDTH (PI/float(1<<BIT_COUNT))
 #define BAR_HEIGHT 0.08
 #define BAR_MARGIN 0.02
@@ -374,7 +373,6 @@ mat2 rotateMat(float angle) {
 }
 
 float bar(int x, vec2 uv) {
-    float EPSILON = SMOOTH_PIXEL/iResolution.y;
     float ret = RANGE(-BAR_WIDTH*0.5, BAR_WIDTH*0.5, uv.x) *
         RANGE(-BAR_HEIGHT*0.5, BAR_HEIGHT*0.5, uv.y);
     if(x == 0) {
