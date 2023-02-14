@@ -12,7 +12,7 @@ categories:
 
 ## See it live
 
-I have implemented all these (plus some nice animation) at here: https://hucanco.de/taiji
+I have implemented all these (plus some nice animation) at [here](/taiji)
 
 _Now let's see how did I make it!_
 
