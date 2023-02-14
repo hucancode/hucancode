@@ -12,16 +12,16 @@ categories:
 
 ## See it live
 
-I have implement all this, plus some nice animation at here: https://hucanco.de/taiji
+I have implemented all these (plus some nice animation) at here: https://hucanco.de/taiji
 
-_Now let's see how did I make these!_
+_Now let's see how did I make it!_
 
 ## Make a Taiji
 
 ### Draw a circle
 
 To draw a circle, you first calculate the distance from the given pixel to the center.
-Then according to the distance, you make the pixel black or white.
+Then according to the distance, you set the pixel black or white.
 The following code fade a circle from the center all the way to the edge.
 
 ```glsl
