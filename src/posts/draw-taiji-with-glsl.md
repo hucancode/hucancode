@@ -18,6 +18,9 @@ _Now let's see how did I make it!_
 
 ## Make a Taiji
 
+The term Taiji (太极) literally is "Supreme Ultimate", is a concept in [Daoism](<https://en.wikipedia.org/wiki/Taiji_(philosophy)>).
+It's symbol consists of curves and circle, Taiji is understood to be the highest conceivable principle, that from which existence flows.
+
 ### Draw a circle
 
 To draw a circle, you first calculate the distance from the given pixel to the center.
