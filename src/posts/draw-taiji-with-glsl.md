@@ -208,7 +208,7 @@ void main() {
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar.png" />
 
-To make a disrupted bar, simple add a cut in the middle
+To make a disrupted bar, simply add a cut in the middle
 
 ```glsl
 float cut = w*0.1;
