@@ -1,6 +1,7 @@
 ---
 title: Ten days of statistics (2) - Quatiles, Standard Deviation
 excerpt: Let's learn basic statistics in 10 days
+cover: /blog/post/statistics-10/5031659.jpg
 date: 2023-02-15
 categories:
   - combinatorics
