@@ -8,6 +8,7 @@ categories:
   - taiji
   - graphics
   - glsl
+  - creative-coding
 ---
 
 ## See it live

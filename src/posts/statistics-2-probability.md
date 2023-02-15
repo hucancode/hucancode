@@ -51,6 +51,7 @@ P(B|A) = \frac{P(A \cap B)}{P(A)}
 $$
 
 ## Bayes' Theorem
+
 Bayes' theorem is stated mathematically as the following equation
 
 $$
