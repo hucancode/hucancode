@@ -55,9 +55,15 @@ $$
 Bayes' theorem is stated mathematically as the following equation
 
 $$
-P(A|B) = \frac{P(B|A) \times P(A)}{P(B)} = \frac{P(B|A) \times P(A)}{P(B|A) \times P(A) + P(B|A^c) \times P(A^c)}
+P(A|B) = \frac{P(B|A) \times P(A)}{P(B)}
+$$
+
+Which also equals to
+
+$$
+\frac{P(B|A) \times P(A)}{P(B|A) \times P(A) + P(B|A^c) \times P(A^c)}
 $$
 
 Where $P(B) \neq 0$
 
-Proof: https://en.wikipedia.org/wiki/Bayes%27_theorem
+Proof can be found here: https://en.wikipedia.org/wiki/Bayes%27_theorem
