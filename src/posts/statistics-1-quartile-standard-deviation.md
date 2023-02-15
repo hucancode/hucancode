@@ -1,5 +1,5 @@
 ---
-title: Ten days of statistics (2) - Mean, Median, Mode
+title: Ten days of statistics (2) - Quatiles, Standard Deviation
 excerpt: Let's learn basic statistics in 10 days
 date: 2023-02-15
 categories:
