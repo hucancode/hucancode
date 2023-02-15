@@ -72,7 +72,7 @@ their clients on how many bedrooms they can expect to have in houses in a partic
 
 ## Practice
 
-Hackerrank has an exercise for you to test your knowledge:
+Hackerrank has some exercises for you to test your knowledge:
 
 - https://www.hackerrank.com/challenges/s10-basic-statistics/problem
 - https://www.hackerrank.com/challenges/s10-weighted-mean/problem

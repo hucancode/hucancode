@@ -61,7 +61,7 @@ If you are an adventurous man, you should pick stock A.
 
 ## Practice
 
-Hackerrank has an exercise for you to test your knowledge:
+Hackerrank has some exercises for you to test your knowledge:
 
 - https://www.hackerrank.com/challenges/s10-quartiles/problem
 - https://www.hackerrank.com/challenges/s10-interquartile-range/problem
