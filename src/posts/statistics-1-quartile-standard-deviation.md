@@ -47,8 +47,8 @@ $$
 High standard deviation means the average data point is far away from the mean.
 In plain English, we are not very sure about using the mean as an expected value.
 
-Conversely, low standard deviation means the average data point is far away from the mean.
-In plain English, we can use the mean as an expected value confidently.
+Conversely, low standard deviation means the average data point is close to the mean.
+Which means, we can use the mean as an expected value confidently.
 
 For example, let's take 2 stock's historical performance over 10 years:
 
