@@ -19,6 +19,16 @@ $$
 
 Where $x_i$ is the $i^{th}$ element of the set
 
+### Weighted mean
+
+Given a discrete set of numbers $X$, and a corresponding set of weights $W$, the weighted mean is calculated as follows:
+
+$$
+\mu_w = \frac{\sum_{i=1}^n (x_i \times w_i)}{\sum_{i=1}^n w_i}
+$$
+
+Where $x_i$, $w_i$ is the value and weight for element $i^{th}$ of the set
+
 ## Median
 
 The midpoint value of a data set for which an equal number of samples are less than and greater than the value.
@@ -38,7 +48,7 @@ $$
 ## Mode
 
 The element(s) that occur most frequently in a data set. For the set
-${1,1,1,1,1,1,2,3,3,4,9}$, the mode is $1$. For the set $1,2,3$, every number in the set is a valid mode.
+$\{1,1,1,1,1,1,2,3,3,4,9\}$, the mode is $1$. For the set $\{1,2,3\}$, every number in the set is a valid mode.
 
 ## Application of mean, median and mode
 
@@ -51,7 +61,7 @@ know how much salary to offer to new employees.
 
 Human Resource managers also often calculate the median salary
 so that they can be informed of what the typical “middle” salary is for a particular rank.
-Median is less influenced by outliers (few extraordinary talented individuals) so it is sometimes
+Median is less influenced by outliers (few extraordinary talented individuals with super high salary) so it is sometimes
 more accurate than mean value.
 
 ### Mode
@@ -61,4 +71,7 @@ their clients on how many bedrooms they can expect to have in houses in a partic
 
 ## Practice
 
-Hackerrank has an exercise for you to test your knowledge: https://www.hackerrank.com/challenges/s10-basic-statistics/problem
+Hackerrank has an exercise for you to test your knowledge:
+
+- https://www.hackerrank.com/challenges/s10-basic-statistics/problem
+- https://www.hackerrank.com/challenges/s10-weighted-mean/problem
