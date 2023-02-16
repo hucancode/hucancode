@@ -8,7 +8,9 @@ categories:
   - statistics
   - math
 ---
+
 ## Poisson Experiment
+
 Poisson experiment is a statistical experiment that has the following properties:
 
 - The outcome of each trial is either success or failure.
@@ -25,9 +27,14 @@ $$
 P(k, \lambda) = \frac{\lambda^ke^{-\lambda}}{k!}
 $$
 
-Where $k$ is the number of expected successes, $\lambda$ is the average number of successes, $e = 2.71828$
+Where
+
+- $k$ is the number of expected successes
+- $\lambda$ is the average number of successes
+- $e$ is Euler's number, $e = 2.71828$
 
 ### Example
+
 Vova sells 2 cars per day on average. What is the probability of him selling 3 cars today?
 
 $$
@@ -35,22 +42,28 @@ P(3,2) = \frac{2^3\times e^{-2}}{3!} = 0.180
 $$
 
 What is the probability of him selling at most 4 cars today?
+
 $$
 \sum_{k=0}^{4} \frac{2^k\times e^{-2}}{k!} = 0.94734825712
 $$
 
 ## Normal distribution
+
 The probability density of normal distribution is:
 
 $$
-N( \mu , \sigma) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
+N( \mu , \sigma) = \frac{1}{\sigma\sqrt{2\pi}} e^{-(x-\mu)^2/(2\sigma^2)}
 $$
 
 Where $\mu$ is the mean, $\sigma$ is the standard deviation
 
+### Why is it called normal?
+
+Because apparently it is the **most popular** distribution found in natural ([learn more](https://en.wikipedia.org/wiki/Normal_distribution#Naming))
+
 ## Cumulative probability
 
-Let $\Phi(x)$ is the cumulative distribution function of $x$, 
+Let $\Phi(x)$ is the cumulative distribution function of $x$,
 denotes the probability of all values less than or equal to $x$
 
 $$
