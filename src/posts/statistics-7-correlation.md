@@ -14,7 +14,7 @@ categories:
 This is a measure of how two random variables $X$ and $Y$ change together. Formally
 
 $$
-cov(X,Y) = \frac{1}{n}\sum_{i=1}^n (x_i - \bar{x}) \times (y_i - \bar{y}) \\
+cov(X,Y) = \frac{1}{n}\sum_{i=1}^n (x_i - \bar{x}) \times (y_i - \bar{y})
 $$
 
 Where
