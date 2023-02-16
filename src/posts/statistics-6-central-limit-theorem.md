@@ -16,7 +16,7 @@ for identically distributed independent samples, the standardized sample mean
 tends towards the standard normal distribution
 even if the original variables themselves are not normally distributed.
 
-<img class="mx-auto w-full md:w-1/2" src="/blog/post/statistics-10/CLT.png" />
+<img alt="abnormally distributed data eventually becomes normally distributed" class="mx-auto w-full md:w-1/2" src="/blog/post/statistics-10/CLT.png" />
 
 Eventhough at first our data seems to be chaotic (1), skew to the right (2) or left (3).
 We can safely say that when sample size is big enough, most probability distributions
