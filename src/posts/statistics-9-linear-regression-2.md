@@ -52,7 +52,7 @@ $$
 \begin{align*}
 &\qquad Y = X \cdot B \\
 &\Rightarrow B \cdot X = Y \\
-&\Rightarrow X^T \cdot Y \cdot B = X^T \cdot Y \\
+&\Rightarrow X^T \cdot X \cdot B = X^T \cdot Y \\
 &\Rightarrow B = (X^T \cdot X)^{-1} \cdot X^T \cdot Y \\
 \end{align*}
 $$
