@@ -1,7 +1,7 @@
 ---
 title: Ten days of statistics (10) - Multiple Regression
 excerpt: Let's learn basic statistics in 10 days
-cover: /blog/post/statistics-10/5031659.jpg
+cover: /blog/post/statistics-10/economical-research.jpg
 date: 2023-02-16
 categories:
   - combinatorics

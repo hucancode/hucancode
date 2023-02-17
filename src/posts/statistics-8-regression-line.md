@@ -1,7 +1,7 @@
 ---
 title: Ten days of statistics (9) - Regression Line
 excerpt: Let's learn basic statistics in 10 days
-cover: /blog/post/statistics-10/5031659.jpg
+cover: /blog/post/statistics-10/businesswoman-using-tablet-analysis-graph-company-finance-strategy-statistics-success-concept-planning-future-office-room.jpg
 date: 2023-02-16
 categories:
   - combinatorics

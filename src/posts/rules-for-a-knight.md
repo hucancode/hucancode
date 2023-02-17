@@ -1,6 +1,6 @@
 ---
 title: Rules for a Knight
-excerpt: Rules for a Knight is a novel written by Ethan Hawke. The story is offers life lessons from Sir Thomas Lemuel Hawke, to his children
+excerpt: Rules for a Knight is a novel written by Ethan Hawke. The story offers life lessons from Sir Thomas Lemuel Hawke, to his children
 cover: /blog/post/rules-for-a-knight/eerie-dark-castle-illustration.jpg
 date: 2023-02-17
 categories:
@@ -21,7 +21,7 @@ benefit you as much as it does to me.
 
 Create time alone with yourself. When seeking the wisdom and clarity of your own mind, silence is a helpful tool.
 
-## 2. Humility
+### 2. Humility
 
 Never announce that you are a knight, simply behave as one. You are better than no one, and no one is better than you.
 

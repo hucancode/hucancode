@@ -1,7 +1,7 @@
 ---
 title: Ten days of statistics (8) - Correlationship
 excerpt: Let's learn basic statistics in 10 days
-cover: /blog/post/statistics-10/5031659.jpg
+cover: /blog/post/statistics-10/business-woman-hand-with-financial-charts-laptop-ta.jpg
 date: 2023-02-16
 categories:
   - combinatorics

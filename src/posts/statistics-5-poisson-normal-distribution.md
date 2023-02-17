@@ -1,7 +1,7 @@
 ---
 title: Ten days of statistics (6) - Poisson & normal distribution
 excerpt: Let's learn basic statistics in 10 days
-cover: /blog/post/statistics-10/5031659.jpg
+cover: /blog/post/statistics-10/5024147.jpg
 date: 2023-02-15
 categories:
   - combinatorics
