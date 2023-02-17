@@ -40,7 +40,7 @@ $$
 The standard deviation $\sigma$ of a set $X$ is square root of it's variance. Formally:
 
 $$
-\sigma = \sqrt{\sigma} = \sqrt{\frac{\sum_{i=1}^n (x_i - \mu)^2}{n}}
+\sigma = \sqrt{\sigma^2} = \sqrt{\frac{\sum_{i=1}^n (x_i - \mu)^2}{n}}
 $$
 
 ## Application of standard deviation
