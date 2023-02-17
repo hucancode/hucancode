@@ -8,15 +8,19 @@ categories:
   - taiji
   - graphics
   - glsl
+  - creative-coding
 ---
 
 ## See it live
 
-I have implemented all these (plus some nice animation) at here: https://hucanco.de/taiji
+I have implemented all these (plus some nice animation) at [here](/taiji)
 
 _Now let's see how did I make it!_
 
 ## Make a Taiji
+
+The term Taiji (太极) literally is "Supreme Ultimate", is a concept in [Daoism](<https://en.wikipedia.org/wiki/Taiji_(philosophy)>).
+It's symbol consists of curves and circle, Taiji is understood to be the highest conceivable principle, that from which existence flows.
 
 ### Draw a circle
 
@@ -59,7 +63,7 @@ void main() {
 
 <img class="w-full md:w-1/3 mx-auto" alt="circle sharp" src="/blog/post/draw-taiji-with-glsl/circle-at-0-sharp.png" />
 
-You will notice that the edge of our cicle is aliased (aka. not smooth), there is a function for that, it's `smoothstep`.
+You will notice that the edge of our circle is aliased (aka. not smooth), there is a function for that, it's `smoothstep`.
 Simply replace `step` with `smoothstep` and give it 2 thresholds instead of 1
 
 ```glsl
@@ -104,7 +108,7 @@ gl_FragColor = vec4(v, v, v, 1.0);
 
 ### Draw more circles
 
-With the same logic, we can make 2 more cicles at 2 different locations.
+With the same logic, we can make 2 more circles at 2 different locations.
 
 ```glsl
 vec2 centerTop = center + vec2(0.0, BIG_CIRCLE_RADIUS/2.0);
@@ -208,7 +212,7 @@ void main() {
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar.png" />
 
-To make a disrupted bar, simple add a cut in the middle
+To make a disrupted bar, simply add a cut in the middle
 
 ```glsl
 float cut = w*0.1;
@@ -234,7 +238,7 @@ Again, to reduce the repetitiveness, I would like to make some macro
 
 3 bars in the triagram represent 3 bits of it.
 For example, Triagram #6 is 110 in binary and has ☱ as its figure.
-The triagram has 2 connected bar and 1 disconnected bar.
+The triagram has 2 connected bars and 1 disconnected bar.
 In general, the following function `stem(x,uv)` will draw triagram `x`
 
 ```glsl
@@ -313,7 +317,7 @@ void main() {
     // scale uv to fit the bagua
     uv *= CIRCLE_RADIUS+(BAR_HEIGHT+BAR_MARGIN)*float(BIT_COUNT*2)+IMAGE_MARGIN;
     float v = bagua(uv);
-    fragColor = vec4(v);
+    gl_FragColor = vec4(v);
 }
 ```
 
@@ -350,12 +354,11 @@ float bagua(vec2 uv) {
 ### Final code for the Bagua
 
 ```glsl
-#define PI 3.14159265359
+#define EPSILON 0.01
 #define PI2 6.28318530718
 #define IMAGE_MARGIN 0.5
 #define BIT_COUNT 3
 //#define BIT_COUNT (int(u_time/2.0)%4+2)
-#define SMOOTH_PIXEL 1.5
 #define BAR_WIDTH (PI/float(1<<BIT_COUNT))
 #define BAR_HEIGHT 0.08
 #define BAR_MARGIN 0.02
@@ -374,7 +377,6 @@ mat2 rotateMat(float angle) {
 }
 
 float bar(int x, vec2 uv) {
-    float EPSILON = SMOOTH_PIXEL/iResolution.y;
     float ret = RANGE(-BAR_WIDTH*0.5, BAR_WIDTH*0.5, uv.x) *
         RANGE(-BAR_HEIGHT*0.5, BAR_HEIGHT*0.5, uv.y);
     if(x == 0) {
@@ -410,6 +412,6 @@ void main() {
     uv *= CIRCLE_RADIUS+(BAR_HEIGHT+BAR_MARGIN)*float(BIT_COUNT*2)+IMAGE_MARGIN;
 
     float v = bagua(uv);
-    fragColor = vec4(v);
+    gl_FragColor = vec4(v, v, v, 1.0);
 }
 ```
