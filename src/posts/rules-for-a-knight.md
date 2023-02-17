@@ -10,12 +10,10 @@ categories:
 ---
 
 In the book [Rules for a Knight](https://en.wikipedia.org/wiki/Rules_for_a_Knight), Ryan Hawke
-states 20 life lessons Sir Thomas wished to pass along to his decendants.
+states life lessons Sir Thomas wished to pass along to his decendants.
 
 The book serves as a blueprint of civilized growth and self-improvement. I hope these lessons
-benefit you as much as it does to me.
-
-## 20 rules for a Knight
+benefit you as much as it does to me. Here is the 20 rules for a Knight.
 
 ### 1. Solitude
 
@@ -27,7 +25,6 @@ Never announce that you are a knight, simply behave as one. You are better than 
 
 ### 3. Gratitude
 
-The only intelligent response to the ongoing gift of life is gratitude.
 For all that has been, a knight says, “Thank you.” For all that is to come, a knight says, “Yes!”
 
 ### 4. Pride
@@ -37,7 +34,7 @@ We show others the most respect by offering the best of ourselves.
 
 ### 5. Cooperation
 
-Each one of us is walking our own road. We are born at specific times, in specific places, and our challenges are unique.
+We are born at specific times, in specific places, and our challenges are unique.
 As knights, understanding and respecting our distinctiveness is vital to our ability to harness our collective strength.
 
 ### 6. Friendship
@@ -85,7 +82,8 @@ Ordinary effort, ordinary result.
 
 ### 16. Speech
 
-Do not speak ill of others. A knight does not spread news that he does not know to be certain, or condemn things that he does not understand.
+Do not speak ill of others. 
+A knight does not spread news that he does not know to be certain, or condemn things that he does not understand.
 
 ### 17. Faith
 
@@ -103,6 +101,5 @@ Love is the end goal. It is the music of our lives. There is no obstacle that en
 
 ### 20. Death
 
-Life is a long series of farewells; only the circumstances should surprise us.
-A knight concerns himself with gratitude for the life he has been given.
+Life is a long series of farewells. A knight concerns himself with gratitude for the life he has been given.
 He does not fear death, for the work one knight begins, others may finish.
