@@ -13,7 +13,7 @@ In the book [Rules for a Knight](https://en.wikipedia.org/wiki/Rules_for_a_Knigh
 states life lessons Sir Thomas wished to pass along to his decendants.
 
 The book serves as a blueprint of civilized growth and self-improvement. I hope these lessons
-benefit you as much as it does to me. Here is the 20 rules for a Knight.
+benefit you as much as they do to me. Here is the 20 rules for a Knight.
 
 ### 1. Solitude
 
@@ -59,8 +59,8 @@ Grace is the ability to accept change. Be open and supple; the brittle break.
 
 ### 11. Patience
 
-A hurried mind is an addled mind; it cannot see clearly or hear precisely.
-A knight makes time his ally. There is a moment for action, and with a clear mind that moment is obvious.
+A hurried mind is an addled mind. A knight makes time his ally. 
+There is a moment for action, and with a clear mind that moment is obvious.
 
 ### 12. Justice
 
