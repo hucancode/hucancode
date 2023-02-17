@@ -59,7 +59,7 @@ Grace is the ability to accept change. Be open and supple; the brittle break.
 
 ### 11. Patience
 
-A hurried mind is an addled mind. A knight makes time his ally. 
+A hurried mind is an addled mind. A knight makes time his ally.
 There is a moment for action, and with a clear mind that moment is obvious.
 
 ### 12. Justice
@@ -82,7 +82,7 @@ Ordinary effort, ordinary result.
 
 ### 16. Speech
 
-Do not speak ill of others. 
+Do not speak ill of others.
 A knight does not spread news that he does not know to be certain, or condemn things that he does not understand.
 
 ### 17. Faith

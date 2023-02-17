@@ -43,10 +43,13 @@ Let $r_S$ is the Spearman's rank correlation coefficient of $X$ and $Y$,
 which equal to the Pearson correlation coefficient of $rank_X$ and $rank_Y$
 
 $$
-\begin{align*}
-r_S &= \frac{cov(rank_X, rank_Y)}{\sigma_{rank_X}\sigma_{rank_Y}}\\
-r_S &= \frac{cov(rank_X, rank_Y)}{\sigma^2} \qquad \text{(if X and Y contains no duplicates)}
-\end{align*}
+r_S = \frac{cov(rank_X, rank_Y)}{\sigma_{rank_X}\sigma_{rank_Y}}
+$$
+
+If X and Y contains no duplicates
+
+$$
+r_S = \frac{cov(rank_X, rank_Y)}{\sigma^2}
 $$
 
 ## Practice
