@@ -2,14 +2,14 @@
 title: Ten days of statistics (6) - Poisson & normal distribution
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/5024147.jpg
-date: 2023-02-15
+date: 2023-02-14
 categories:
   - combinatorics
   - statistics
   - math
 ---
 
-## Poisson Experiment
+## Poisson experiment
 
 Poisson experiment is a statistical experiment that has the following properties:
 
@@ -81,3 +81,5 @@ Hackerrank has some exercises for you to test your knowledge:
 - https://www.hackerrank.com/challenges/s10-poisson-distribution-2/problem
 - https://www.hackerrank.com/challenges/s10-normal-distribution-1/problem
 - https://www.hackerrank.com/challenges/s10-normal-distribution-2/problem
+
+Next lesson: [Central limit theorem](/blog/post/statistics-6-central-limit-theorem)

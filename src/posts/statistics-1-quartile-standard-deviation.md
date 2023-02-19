@@ -2,7 +2,7 @@
 title: Ten days of statistics (2) - Quatiles, Standard Deviation
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/5031659.jpg
-date: 2023-02-15
+date: 2023-02-10
 categories:
   - combinatorics
   - statistics
@@ -28,7 +28,7 @@ Take set $\{7, 15, 36, 39, 40, 41, 42, 43, 47, 49\}$.
 
 Then $Q_1 = 36; Q_2 = \frac{40+41}{2} = 40.5; Q_3 = 43$
 
-## Standard Deviation
+## Standard deviation
 
 Variance $\sigma^2$ of a set $X$ is the average magnitude of fluctuations of $X$ from its mean $\mu$.
 Formally:
@@ -66,3 +66,5 @@ Hackerrank has some exercises for you to test your knowledge:
 - https://www.hackerrank.com/challenges/s10-quartiles/problem
 - https://www.hackerrank.com/challenges/s10-interquartile-range/problem
 - https://www.hackerrank.com/challenges/s10-standard-deviation/problem
+
+Next lesson: [Probability](/blog/post/statistics-2-probability)

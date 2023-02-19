@@ -2,7 +2,7 @@
 title: Ten days of statistics (4) - Combinatorics
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/5031659.jpg
-date: 2023-02-15
+date: 2023-02-12
 categories:
   - combinatorics
   - statistics
@@ -35,3 +35,5 @@ $$
   This is a combination, there are $C \binom{100}{11}$ ways to form the team
 - A contest has 100 contestants and 3 medals (gold, silver, bronze) for 3 best performers.
   This is a permutation, there are $P \binom{100}{3}$ ways for the contest to end
+
+Next lesson: [Binomial distribution](/blog/post/statistics-4-binomial-distribution)

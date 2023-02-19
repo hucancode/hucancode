@@ -1,12 +1,21 @@
 <script>
   import { parseISO, formatRelative } from "date-fns";
+  import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
 
   export let data;
-
-  const { title, excerpt, date, cover, categories } = data.meta;
-
-  let dateString = formatRelative(parseISO(date), new Date());
+  let title, excerpt, date, cover, categories, dateString;
+  function update() {
+    title = data.meta.title;
+    excerpt = data.meta.excerpt;
+    cover = data.meta.cover;
+    date = data.meta.date;
+    categories = data.meta.categories;
+    if (!date) return;
+    dateString = formatRelative(parseISO(date), new Date());
+  }
+  update();
+  afterUpdate(update);
 </script>
 
 <svelte:head>

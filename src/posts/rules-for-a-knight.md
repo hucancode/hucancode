@@ -2,7 +2,7 @@
 title: Rules for a Knight
 excerpt: Rules for a Knight is a novel written by Ethan Hawke. The story offers life lessons from Sir Thomas Lemuel Hawke, to his children
 cover: /blog/post/rules-for-a-knight/eerie-dark-castle-illustration.jpg
-date: 2023-02-17
+date: 2023-02-19
 categories:
   - book
   - fiction

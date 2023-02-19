@@ -2,7 +2,7 @@
 title: Ten days of statistics (3) - Probability
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/5031659.jpg
-date: 2023-02-15
+date: 2023-02-11
 categories:
   - combinatorics
   - statistics
@@ -35,7 +35,7 @@ when their union covers the sample space. Formally $A \cup B = S$ and $P(A \cup 
 If the outcome of event $A$ has no impact on event $B$, they are considered to be independent.
 When $A$ and $B$ are independent, $P(A \cup B) = P(A) \times P(B)$
 
-## Conditional Probability
+## Conditional probability
 
 This is defined as the probability of an event occurring, assuming that one or more other events have already occurred.
 Let $P(B|A)$ denotes the probability of $B$ given $A$ occurred.
@@ -51,7 +51,7 @@ $$
 P(B|A) = \frac{P(A \cap B)}{P(A)}
 $$
 
-## Bayes' Theorem
+## Bayes' theorem
 
 Bayes' theorem is stated mathematically as the following equation
 
@@ -68,3 +68,5 @@ $$
 Where $P(B) \neq 0$
 
 Proof can be found here: https://en.wikipedia.org/wiki/Bayes%27_theorem
+
+Next lesson: [Combinatorics](/blog/post/statistics-3-combinatorics)

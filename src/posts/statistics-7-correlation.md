@@ -22,7 +22,7 @@ Where
 - $\bar{x}$ is the mean of $x$
 - $\bar{y}$ is the mean of $y$
 
-## Pearson Correlation Coefficient
+## Pearson correlation coefficient
 
 The Pearson correlation coefficient $\rho(X, Y)$ is given by:
 
@@ -35,7 +35,7 @@ Where
 - $\sigma_X$ is the standard deviation of $X$
 - $\sigma_Y$ is the standard deviation of $Y$
 
-## Spearman's Rank Correlation Coefficient
+## Spearman's rank correlation coefficient
 
 Given 2 random variables $X$ and $Y$ with the same sample size. Let $rank_X$ and $rank_Y$ denotes the ranks
 of each data point on $X$ and $Y$ respectively.
@@ -58,3 +58,5 @@ Hackerrank has some exercises for you to test your knowledge:
 
 - https://www.hackerrank.com/challenges/s10-pearson-correlation-coefficient/problem
 - https://www.hackerrank.com/challenges/s10-spearman-rank-correlation-coefficient/problem
+
+Next lesson: [Linear regression](/blog/post/statistics-8-linear-regression)
