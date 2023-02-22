@@ -94,6 +94,7 @@ $$
 &\Rightarrow X \cdot B = Y \\
 &\Rightarrow X^T \cdot X \cdot B = X^T \cdot Y \\
 &\Rightarrow B = (X^T \cdot X)^{-1} \cdot X^T \cdot Y \\
+&\Rightarrow B = X^T \cdot Y \\
 \end{align*}
 $$
 
