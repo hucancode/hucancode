@@ -1,11 +1,10 @@
 import * as THREE from "three";
 import anime from "animejs";
-import { OrbitControls } from "$lib/three/controls/OrbitControls";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
 
 let scene, camera, renderer, controls;
 let pieces = [];
-let particles = [];
 let materials = [];
 let animation = null;
 const CANVAS_ID = "lego";
@@ -232,6 +231,7 @@ function rebuildOrbitControl() {
     controls.minDistance = 40; // the minimum distance the camera must have from center
     controls.maxDistance = 100; // the maximum distance the camera must have from center
     //controls.update();
+    controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
     controls.enableRotate = true;
     // controls.autoRotate = true;
   }

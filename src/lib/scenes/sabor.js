@@ -1,6 +1,5 @@
 import * as THREE from "three";
-import { GLTFLoader } from "$lib/three/loaders/GLTFLoader.js";
-import { OrbitControls } from "$lib/three/controls/OrbitControls";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { loadModel, wait } from "$lib/utils.js";
 
 let camera, scene, renderer, animator, controls;
@@ -45,8 +44,9 @@ function rebuildOrbitControl() {
     controls.target.set(0, 1, 0);
     controls.minDistance = 2; // the minimum distance the camera must have from center
     controls.maxDistance = 10; // the maximum distance the camera must have from center
-    controls.enableRotateY = false;
+    controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.33;
     controls.enablePan = false;
+    controls.update();
   }
 }
 
