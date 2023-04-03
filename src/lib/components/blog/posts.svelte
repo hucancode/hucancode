@@ -93,9 +93,12 @@
             {post.title}
           </h2>
           <time class="text-xs text-gray-400 dark:text-gray-600"
-            >Posted {convertDate(post.date)}</time>
+            >Posted {convertDate(post.date)}</time
+          >
         </a>
-        <summary class="text-sm text-gray-600 dark:text-gray-400">{post.excerpt}</summary>
+        <summary class="text-sm text-gray-600 dark:text-gray-400"
+          >{post.excerpt}</summary
+        >
       </article>
     </li>
   {/each}

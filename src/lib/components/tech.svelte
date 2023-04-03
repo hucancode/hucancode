@@ -1,5 +1,6 @@
 <script>
   import CPP from "~icons/simple-icons/cplusplus";
+  import Rust from "~icons/simple-icons/rust";
   import OpenGL from "~icons/simple-icons/opengl";
   import Blender from "~icons/simple-icons/blender";
   import UnrealEngine from "~icons/simple-icons/unrealengine";
@@ -34,6 +35,10 @@
   <li>
     <UnrealEngine />
     <span>Unreal Engine</span>
+  </li>
+  <li>
+    <Rust />
+    <span>Rust</span>
   </li>
   <li>
     <Tailwind />

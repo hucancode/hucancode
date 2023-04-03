@@ -46,7 +46,7 @@
     </ul>
   {/if}
   <h1 class="text-4xl font-extrabold">{title}</h1>
-  <time class="text-xs mb-4 text-gray-400">Posted {dateString}</time>
+  <time class="mb-4 text-xs text-gray-400">Posted {dateString}</time>
   {#if cover}
     <img
       class="aspect-video w-full rounded-lg object-cover sm:aspect-[22/9]"
