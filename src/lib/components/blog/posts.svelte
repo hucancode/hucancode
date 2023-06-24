@@ -31,7 +31,7 @@
         icon: LeetcodeIcon,
       },
       {
-        categories: ["c++"],
+        categories: ["cpp"],
         icon: CppIcon,
       },
       {
