@@ -46,8 +46,8 @@
         justify-between rounded-2xl bg-blue-300
         duration-500
         after:absolute
-        after:top-1 
         after:left-1
+        after:top-1
         after:h-6
         after:w-6
         after:rounded-full

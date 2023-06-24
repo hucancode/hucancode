@@ -10,7 +10,6 @@
   import Arch from "~icons/simple-icons/archlinux";
   import Vim from "~icons/simple-icons/vim";
   import RX from "~icons/simple-icons/reactivex";
-  import GCP from "~icons/simple-icons/googlecloud";
   import Tailwind from "~icons/simple-icons/tailwindcss";
   import Svelte from "~icons/simple-icons/svelte";
 </script>
@@ -22,7 +21,7 @@
 >
   <li>
     <CPP />
-    <span>CPP</span>
+    <span>C++</span>
   </li>
   <li>
     <OpenGL />
@@ -63,10 +62,6 @@
   <li>
     <Vim />
     <span>Vim</span>
-  </li>
-  <li>
-    <GCP />
-    <span>GCP</span>
   </li>
   <li>
     <Docker />

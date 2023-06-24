@@ -1,5 +1,4 @@
 <script>
-  import { onMount } from "svelte";
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
 </script>
 

@@ -79,7 +79,7 @@
         src={post.cover}
       />
       <div
-        class="absolute top-4 left-4 flex w-full flex-wrap text-3xl text-white sm:w-1/4"
+        class="absolute left-4 top-4 flex w-full flex-wrap text-3xl text-white sm:w-1/4"
       >
         {#each getIcons(post) as icon}
           <svelte:component this={icon} class="bg-black p-2" />
