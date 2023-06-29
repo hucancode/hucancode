@@ -7,7 +7,6 @@
 
   import FireIcon from "~icons/twemoji/fire";
 
-  export const prerender = true;
   let sceneInstance;
   function performMagic() {
     sceneInstance.performMagic();
