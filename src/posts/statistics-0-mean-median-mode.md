@@ -2,7 +2,7 @@
 title: Ten days of statistics (1) - Mean, Median, Mode
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/5031659.jpg
-date: 2023-02-15
+date: 2023-02-09
 categories:
   - combinatorics
   - statistics
@@ -76,3 +76,5 @@ Hackerrank has some exercises for you to test your knowledge:
 
 - https://www.hackerrank.com/challenges/s10-basic-statistics/problem
 - https://www.hackerrank.com/challenges/s10-weighted-mean/problem
+
+Next lesson: [Quatiles, Standard Deviation](/blog/post/statistics-1-quartile-standard-deviation)

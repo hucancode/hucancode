@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CCDIKSolver, CCDIKHelper } from "../three/IK/CCDIKSolver";
-import { GLTFLoader } from "../three/loaders/GLTFLoader.js";
-import { OrbitControls } from "../three/controls/OrbitControls";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let spiders = [];
 let scene, camera, renderer;

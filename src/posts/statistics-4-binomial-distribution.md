@@ -2,7 +2,7 @@
 title: Ten days of statistics (5) - Binomial distribution
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/5024147.jpg
-date: 2023-02-15
+date: 2023-02-13
 categories:
   - combinatorics
   - statistics
@@ -122,3 +122,5 @@ Hackerrank has some exercises for you to test your knowledge:
 - https://www.hackerrank.com/challenges/s10-binomial-distribution-2/problem
 - https://www.hackerrank.com/challenges/s10-geometric-distribution-1/problem
 - https://www.hackerrank.com/challenges/s10-geometric-distribution-2/problem
+
+Next lesson: [Poisson & normal distribution](/blog/post/statistics-5-poisson-normal-distribution)

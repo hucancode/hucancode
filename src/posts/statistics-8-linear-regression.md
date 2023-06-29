@@ -1,15 +1,15 @@
 ---
-title: Ten days of statistics (9) - Regression Line
+title: Ten days of statistics (9) - Linear Regression
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/businesswoman-using-tablet-analysis-graph-company-finance-strategy-statistics-success-concept-planning-future-office-room.jpg
-date: 2023-02-16
+date: 2023-02-17
 categories:
   - combinatorics
   - statistics
   - math
 ---
 
-## Least Square Regression Line
+## Least square regression line
 
 Regression line is the straight line which best describes the relationship between 2 variables
 $X$ and $Y$. Formally
@@ -42,3 +42,5 @@ Where $\bar{x}$ and $\bar{y}$ is the mean of $X$ and $Y$ respectively
 Hackerrank has an exercise for you to test your knowledge:
 
 - https://www.hackerrank.com/challenges/s10-least-square-regression-line/problem
+
+Next lesson: [Multiple regression](/blog/post/statistics-9-linear-regression-2)

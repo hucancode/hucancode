@@ -31,7 +31,7 @@
         icon: LeetcodeIcon,
       },
       {
-        categories: ["c++"],
+        categories: ["cpp"],
         icon: CppIcon,
       },
       {
@@ -79,7 +79,7 @@
         src={post.cover}
       />
       <div
-        class="absolute top-4 left-4 flex w-full flex-wrap text-3xl text-white sm:w-1/4"
+        class="absolute left-4 top-4 flex w-full flex-wrap text-3xl text-white sm:w-1/4"
       >
         {#each getIcons(post) as icon}
           <svelte:component this={icon} class="bg-black p-2" />
@@ -92,11 +92,13 @@
           >
             {post.title}
           </h2>
-          <small class="text-gray-400 dark:text-gray-600"
-            >Posted {convertDate(post.date)}</small
+          <time class="text-xs text-gray-400 dark:text-gray-600"
+            >Posted {convertDate(post.date)}</time
           >
         </a>
-        <p class="text-sm text-gray-600 dark:text-gray-400">{post.excerpt}</p>
+        <summary class="text-sm text-gray-600 dark:text-gray-400"
+          >{post.excerpt}</summary
+        >
       </article>
     </li>
   {/each}

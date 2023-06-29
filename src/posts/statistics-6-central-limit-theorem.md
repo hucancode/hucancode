@@ -2,7 +2,7 @@
 title: Ten days of statistics (7) - Central limit theorem
 excerpt: Let's learn basic statistics in 10 days
 cover: /blog/post/statistics-10/5024147.jpg
-date: 2023-02-16
+date: 2023-02-15
 categories:
   - combinatorics
   - statistics
@@ -29,3 +29,5 @@ Hackerrank has some exercises for you to test your knowledge:
 - https://www.hackerrank.com/challenges/s10-the-central-limit-theorem-1/problem
 - https://www.hackerrank.com/challenges/s10-the-central-limit-theorem-2/problem
 - https://www.hackerrank.com/challenges/s10-the-central-limit-theorem-3/problem
+
+Next lesson: [Correlationship](/blog/post/statistics-7-correlation)

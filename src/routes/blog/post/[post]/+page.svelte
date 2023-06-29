@@ -1,12 +1,21 @@
 <script>
   import { parseISO, formatRelative } from "date-fns";
+  import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
 
   export let data;
-
-  const { title, excerpt, date, cover, categories } = data.meta;
-
-  let dateString = formatRelative(parseISO(date), new Date());
+  let title, excerpt, date, cover, categories, dateString;
+  function update() {
+    title = data.meta.title;
+    excerpt = data.meta.excerpt;
+    cover = data.meta.cover;
+    date = data.meta.date;
+    categories = data.meta.categories;
+    if (!date) return;
+    dateString = formatRelative(parseISO(date), new Date());
+  }
+  update();
+  afterUpdate(update);
 </script>
 
 <svelte:head>
@@ -24,7 +33,7 @@
 
 <article class="container my-20 max-w-screen-lg">
   {#if categories}
-    <ul class="flex flex-wrap gap-2 ">
+    <ul class="flex flex-wrap gap-2">
       {#each categories as category}
         <li
           class="text-fill-none bg-rainbow3 bg-clip-text pb-1 text-sm font-bold before:content-['#']"
@@ -37,7 +46,7 @@
     </ul>
   {/if}
   <h1 class="text-4xl font-extrabold">{title}</h1>
-  <small class="mb-4 text-gray-400">Posted {dateString}</small>
+  <time class="mb-4 text-xs text-gray-400">Posted {dateString}</time>
   {#if cover}
     <img
       class="aspect-video w-full rounded-lg object-cover sm:aspect-[22/9]"
@@ -46,7 +55,7 @@
     />
   {/if}
   <div
-    class="prose prose-slate mt-4 max-w-full prose-a:text-blue-600 prose-a:no-underline dark:prose-invert prose-a:dark:text-sky-300"
+    class="prose prose-slate mt-4 max-w-full dark:prose-invert prose-a:text-blue-600 prose-a:no-underline prose-a:dark:text-sky-300"
   >
     <svelte:component this={data.content} />
   </div>

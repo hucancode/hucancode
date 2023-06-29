@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import anime from "animejs";
-import { OrbitControls } from "$lib/three/controls/OrbitControls";
-import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
 import {
   TAIJI_VERTEX_SHADER,
   TAIJI_FRAGMENT_SHADER,
@@ -120,6 +120,7 @@ function rebuildOrbitControl() {
     controls.minDistance = 4; // the minimum distance the camera must have from center
     controls.maxDistance = 30; // the maximum distance the camera must have from center
     //controls.update();
+    controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
     controls.enableRotate = true;
     controls.autoRotate = true;
   }

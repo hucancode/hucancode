@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import anime from "animejs";
-import { OrbitControls } from "$lib/three/controls/OrbitControls";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
 let clock = new THREE.Clock();

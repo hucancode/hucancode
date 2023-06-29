@@ -2,7 +2,7 @@
 title: Rules for a Knight
 excerpt: Rules for a Knight is a novel written by Ethan Hawke. The story offers life lessons from Sir Thomas Lemuel Hawke, to his children
 cover: /blog/post/rules-for-a-knight/eerie-dark-castle-illustration.jpg
-date: 2023-02-17
+date: 2023-02-19
 categories:
   - book
   - fiction
@@ -13,7 +13,7 @@ In the book [Rules for a Knight](https://en.wikipedia.org/wiki/Rules_for_a_Knigh
 states life lessons Sir Thomas wished to pass along to his decendants.
 
 The book serves as a blueprint of civilized growth and self-improvement. I hope these lessons
-benefit you as much as it does to me. Here is the 20 rules for a Knight.
+benefit you as much as they do to me. Here is the 20 rules for a Knight.
 
 ### 1. Solitude
 
@@ -59,8 +59,8 @@ Grace is the ability to accept change. Be open and supple; the brittle break.
 
 ### 11. Patience
 
-A hurried mind is an addled mind; it cannot see clearly or hear precisely.
-A knight makes time his ally. There is a moment for action, and with a clear mind that moment is obvious.
+A hurried mind is an addled mind. A knight makes time his ally.
+There is a moment for action, and with a clear mind that moment is obvious.
 
 ### 12. Justice
 
@@ -82,7 +82,7 @@ Ordinary effort, ordinary result.
 
 ### 16. Speech
 
-Do not speak ill of others. 
+Do not speak ill of others.
 A knight does not spread news that he does not know to be certain, or condemn things that he does not understand.
 
 ### 17. Faith
