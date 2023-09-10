@@ -1,5 +1,5 @@
 <script>
-  import { _ } from "svelte-i18n";
+  import { _ } from "$lib/i18n";
   import Leetcode from "$lib/components/leetcode-chart.svelte";
   import Tech from "$lib/components/tech.svelte";
 

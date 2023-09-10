@@ -1,5 +1,5 @@
 <script>
-  import { _ } from "svelte-i18n";
+  import { _ } from "$lib/i18n";
   import RubikIcon from "~icons/arcticons/cubesolver";
   import DragonIcon from "~icons/game-icons/sea-dragon";
   import PlanetIcon from "~icons/ph/planet-fill";
