@@ -1,5 +1,5 @@
 <script>
-  import { _, locale } from "svelte-i18n";
+  import { _, locale } from "$lib/i18n";
   import SendMail from "~icons/simple-icons/minutemailer";
   import Fire from "~icons/ri/fire-fill";
   import Download from "~icons/ri/file-download-fill";

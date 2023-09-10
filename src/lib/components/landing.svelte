@@ -1,5 +1,5 @@
 <script>
-  import { _ } from "svelte-i18n";
+  import { _ } from "$lib/i18n";
   import MiniShowcase from "$lib/components/mini-showcase.svelte";
   import WavingHand from "~icons/twemoji/waving-hand";
 </script>

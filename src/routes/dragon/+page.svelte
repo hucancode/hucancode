@@ -1,5 +1,5 @@
 <script>
-  import { _ } from "svelte-i18n";
+  import { _ } from "$lib/i18n";
   import Nav from "$lib/components/nav.svelte";
   import GoBack from "~icons/ri/arrow-left-line";
   import Coffee from "~icons/simple-icons/buymeacoffee";
