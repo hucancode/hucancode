@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { locale } from "svelte-i18n";
+  import { locale } from "$lib/i18n";
   import FlagJP from "~icons/twemoji/flag-japan";
   import FlagEN from "~icons/twemoji/flag-united-kingdom";
   import FlagBanana from "~icons/twemoji/banana";

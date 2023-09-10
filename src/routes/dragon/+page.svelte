@@ -1,5 +1,5 @@
 <script>
-  import { _ } from "svelte-i18n";
+  import { _ } from "$lib/i18n";
   import Nav from "$lib/components/nav.svelte";
   import GoBack from "~icons/ri/arrow-left-line";
   import Coffee from "~icons/simple-icons/buymeacoffee";
@@ -7,7 +7,6 @@
 
   import FireIcon from "~icons/twemoji/fire";
 
-  export const prerender = true;
   let sceneInstance;
   function performMagic() {
     sceneInstance.performMagic();

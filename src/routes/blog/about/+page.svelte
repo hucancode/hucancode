@@ -1,7 +1,5 @@
 <script>
   import Coffee from "~icons/simple-icons/buymeacoffee";
-
-  export const prerender = true;
 </script>
 
 <svelte:head>

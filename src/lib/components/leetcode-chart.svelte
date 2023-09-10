@@ -1,5 +1,5 @@
 <script>
-  import { _, locale } from "svelte-i18n";
+  import { _, locale } from "$lib/i18n";
   import { onMount } from "svelte";
   import {
     Chart,

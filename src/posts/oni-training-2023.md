@@ -52,11 +52,10 @@ Power (or strength) is one of the most primitive quality a person can have. Havi
 
 #### 🐾 Space Stone
 
-I would like to learn how to take care of people I love without being close to them geographically, which requires:
+I would like to be organized, specifically:
 
-- Learn to put attention to detail
-- Remember important days, birthday, memorial day
-- Have a plan on how to express my affections. Otherwise I am no different than a stranger
+- Maintain clean room, messy room messy mind
+- Maintain minimal living style, keep no unnecessary belongings
 
 #### 🧠 Mind Stone
 
@@ -66,14 +65,16 @@ Knowledge is power, knowledge is also money. I am pretty confident with the calc
 - Learn about the body, live longer
 - Finance, tax, FIRE
 - Learn how the dating game works
+- Build self-confidence
 
 #### 💖 Soul Stone
 
 My emotional skill deserves more work than it is receiving right now. Next year I would like to:
 
-- Build self-confidence
 - Learn to put effort into everything I do
-- Improve my story telling skill
+- Learn to put attention to detail
+- Remember important days, birthday, memorial day, anniversary
+- Express my affections in solid action. Otherwise I am no different than a stranger
 
 #### ✨ Reality Stone
 
@@ -98,10 +99,10 @@ I do not have a sense of time management. This year I would like to:
 |     | Year Start                                                                                                                                     | Mid-Year                                                                                                                                                                                                        | Year End                                                                                                                                                                                                |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ⚡  | Inconsistent cold shower, drop at 10°C. <br />3 minutes plank.<br />Eat vegetable.<br /> Not yet full split, 25~30cm until ground, pretty far. | Train Taiji.<br />Consistent 5 minutes plank.<br />Cold shower, maintain showering until around 5°C.<br/>Eat more vegetable.<br/>Build running habit.<br />Reduce the split gap to the ground, ideally 10~15cm. | Train more Taiji.<br />Consistent 6 minutes plank, visible 11-shaped belly. Nimble, flexible body.<br />Cold shower all year.<br />Eat less sugar.<br/>Maintain running habit.<br />Full split, 朝天登. |
-| 🐾  | Good relationship with mom.<br/> Terrible relationship with Dung.                                                                              | Maintain relationship with mom. <br/>Learn to send gift on special occasions.                                                                                                                                   | Maintain relationship with mom. <br />Keep closer look on Dung.<br />Make more calls.                                                                                                                   |
+| 🐾  | Clean room. <br/> Minimal belongings                                                                                                           | Maintain current status                                                                                                                                                                                         | Maintain current status                                                                                                                                                                                 |
 | 🧠  | Leetcode R1780. <br />Know nothing about dating.                                                                                               | Leetcode R1900 (two pointers, mod inverse, combinatorics, segment tree, consistent 3 contest problems).<br />Learn about technical aspect of dating.                                                            | Leetcode R2000 (KMP, advanced graph, intuitions, speed solving).<br />Have confident in dating skill. Develop interesting personality.                                                                  |
-| 💖  | My crush can remember my name, no more no less.                                                                                                | Having meaningful conversation with her.                                                                                                                                                                        | Win her heart.                                                                                                                                                                                          |
-| ✨  | Good job security.<br />UE5 game has little meaningful progression.<br />Started doing commission, but still no significant progress.          | Keep doing everything, the goal is to maintain this level of progression.<br />Do creative coding once in a while.<br />Make significant improvement on side business.                                          | Promotion in current job.<br />Finish first commission, even if it is free labour, no commission fee is needed.<br />Ideally a little progress on UE5 game.                                             |
+| 💖  | Good relationship with mom.<br/>Terrible relationship with Dung.<br/>My crush can remember my name, no more no less.                           | Maintain relationship with mom.<br/>Learn to send gift on special occasions.<br/>Having meaningful conversation with my crush.                                                                                  | Maintain relationship with mom.<br />Keep closer look on Dung.<br />Make more calls.<br/>Win HER heart, get in a relationship.                                                                          |
+| ✨  | Good job security.<br />UE5 game has little meaningful progression.<br />Started doing commission, but still no significant progress.          | Maintain job security.<br />Do creative coding once in a while.<br />Make significant improvement on side business.                                                                                             | Promotion in current job.<br />Finish first commission, even if it is free labour, no commission fee is needed.<br />Ideally a little progress on UE5 game.                                             |
 | ⏰  | Inconsistent bedtime $10:00$ ~ $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                                                               | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                                                                                 | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                                                                 |
 
 <img class="w-1/2 md:w-1/3 mx-auto" alt="relaxing girl" src="oni-training-2023/Lo-fi-concept-amico.svg" />
