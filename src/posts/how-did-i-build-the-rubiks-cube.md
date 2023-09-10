@@ -203,4 +203,4 @@ I would like to add more dimension, then add some goofy easing curve to spice up
 ## Code
 
 Currently I'm too lazy to make a minimal working demo. Here is the closest to that,
-Please checkout [this file](https://github.com/hucancode/portfolio/blob/master/src/lib/scenes/rubik.js) if you are interested (pardon the messy code 😁)
+Please checkout [this file](https://github.com/hucancode/hucancode/blob/master/src/lib/scenes/rubik.js) if you are interested (pardon the messy code 😁)
