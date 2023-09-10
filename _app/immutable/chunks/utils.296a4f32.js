@@ -1,0 +1,1 @@
+import{G as s}from"./GLTFLoader.5c2f531c.js";function r(t){const e=new s;return e.setPath("/assets/gltf/"),new Promise((o,a)=>{e.load(t,n=>o(n),null,a)})}async function i(t){return(await r(t)).scene}function c(t){return new Promise(e=>setTimeout(e,t))}export{r as a,i as l,c as w};
