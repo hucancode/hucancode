@@ -85,7 +85,7 @@
           <svelte:component this={icon} class="bg-black p-2" />
         {/each}
       </div>
-      <article>
+      <article class="w-full">
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
           <h2
             class="flex gap-2 text-xl font-semibold hover:text-blue-800 hover:dark:text-sky-400"
