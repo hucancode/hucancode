@@ -7,7 +7,11 @@
   import SwordIcon from "~icons/ri/sword-fill";
   import FullScreenIcon from "~icons/zondicons/screen-full";
   import FireIcon from "~icons/twemoji/fire";
-
+  import "@shoelace-style/shoelace/dist/components/button-group/button-group.js?client";
+  import "@shoelace-style/shoelace/dist/components/button/button.js?client";
+  import "@shoelace-style/shoelace/dist/components/icon/icon.js?client";
+  import "@shoelace-style/shoelace/dist/components/radio-button/radio-button.js?client";
+  import "@shoelace-style/shoelace/dist/components/radio-group/radio-group.js?client";
   let selected = 0;
   let link = "/rubik";
   let sceneInstance;
@@ -38,74 +42,36 @@
         Scene = (await import("$lib/components/sabor.svelte")).default;
         link = "/sabor";
         break;
+      default:
+        console.log("unhandled value" + selected);
     }
   }
   select(Math.floor(Math.random() * 4));
 </script>
 
 <div
-  class="flex aspect-square w-full flex-col-reverse
-        items-center justify-start
-        gap-2
-        md:aspect-video
-        md:grow
-        md:flex-row-reverse md:gap-0"
+  class="flex aspect-video w-full max-w-lg flex-col items-center justify-end gap-2"
 >
-  <div
-    class="flex w-full flex-wrap items-center justify-center gap-1 text-2xl text-white md:w-auto md:flex-col md:items-start"
+  <sl-radio-group
+    name="showcase"
+    value="1"
+    on:sl-change={(e) => select(parseInt(e.target.value))}
   >
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 0}
-      on:click={() => select(0)}
-    >
-      <RubikIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 1}
-      on:click={() => select(1)}
-    >
-      <DragonIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 2}
-      on:click={() => select(2)}
-    >
-      <PlanetIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 3}
-      on:click={() => select(3)}
-    >
-      <YinYangIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 4}
-      on:click={() => select(4)}
-    >
-      <SwordIcon />
-    </button>
-  </div>
-  <div class="flex h-full w-full flex-col items-center justify-end">
-    <svelte:component this={Scene} bind:this={sceneInstance} />
-    <div class="flex w-full items-center justify-center gap-px text-xl">
-      <button
-        class="group bg-gray-700 p-3 px-14 dark:bg-black dark:text-white"
-        on:click={performMagic}
-      >
-        <FireIcon class="group-active:scale-150" />
-      </button>
-      <a
-        data-sveltekit:prefetch
-        href={link}
-        class="bg-gray-700 p-3 px-14 text-white dark:bg-black"
-      >
-        <FullScreenIcon class="group-active:scale-150" />
-      </a>
-    </div>
-  </div>
+    <sl-radio-button value="0">Rubik</sl-radio-button>
+    <sl-radio-button value="1">Dragon</sl-radio-button>
+    <sl-radio-button value="2">Lego</sl-radio-button>
+    <sl-radio-button value="3">Taiji</sl-radio-button>
+    <sl-radio-button value="4">Warrior</sl-radio-button>
+  </sl-radio-group>
+  <svelte:component this={Scene} bind:this={sceneInstance} />
+  <sl-button-group>
+    <sl-button on:click={performMagic}>
+      <sl-icon slot="prefix" name="star-fill" library="system" />
+      Surprise me!
+    </sl-button>
+    <sl-button data-sveltekit:prefetch href={link}>
+      <sl-icon slot="prefix" name="eye" library="system" />
+      Full screen
+    </sl-button>
+  </sl-button-group>
 </div>
