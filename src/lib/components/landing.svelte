@@ -4,7 +4,7 @@
   import WavingHand from "~icons/twemoji/waving-hand";
 </script>
 
-<section class="flex-col md:flex-row">
+<section class="flex-col md:flex-row md:justify-between">
   <div
     class="flex w-full flex-col
     items-center gap-4 py-10

@@ -10,9 +10,11 @@
     if (value) {
       localStorage.theme = "dark";
       document.documentElement.classList.add("dark");
+      document.documentElement.classList.add("sl-theme-dark");
     } else {
       localStorage.theme = "light";
       document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove("sl-theme-dark");
     }
     isDarkMode = value;
   }

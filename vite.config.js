@@ -1,4 +1,5 @@
 import { sveltekit } from "@sveltejs/kit/vite";
+import { isoImport } from "vite-plugin-iso-import";
 import Icons from "unplugin-icons/vite";
 import path from "path";
 
@@ -13,6 +14,7 @@ const config = {
   },
   plugins: [
     sveltekit(),
+    isoImport(),
     Icons({
       compiler: "svelte",
     }),
