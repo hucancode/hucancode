@@ -1,53 +1,24 @@
 <script>
   import { onMount } from "svelte";
   import { locale } from "$lib/i18n";
-  import FlagJP from "~icons/twemoji/flag-japan";
-  import FlagEN from "~icons/twemoji/flag-united-kingdom";
-  import FlagBanana from "~icons/twemoji/banana";
-  import Switcher from "$lib/components/switcher3.svelte";
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
-  let switcher;
-
-  onMount(() => {
-    switch ($locale) {
-      case "en":
-        switcher.userSelectA();
-        break;
-      case "ja":
-        switcher.userSelectB();
-        break;
-      case "mini":
-        switcher.userSelectC();
-        break;
-      default:
-        switcher.userSelectA();
-    }
+  onMount(async () => {
+    await import('@shoelace-style/shoelace/dist/components/radio-button/radio-button');
+    await import('@shoelace-style/shoelace/dist/components/radio-group/radio-group');
   });
 </script>
 
 <nav>
-  <Switcher
-    id="switchLanguage"
-    bind:this={switcher}
-    on:change={(event) => {
-      switch (event.detail.value) {
-        case 0:
-          locale.set("en");
-          break;
-        case 1:
-          locale.set("ja");
-          break;
-        case 2:
-          locale.set("mini");
-          break;
-        default:
-          locale.set("en");
-      }
-    }}
-  >
-    <FlagEN slot="label-a" />
-    <FlagJP slot="label-b" />
-    <FlagBanana slot="label-c" />
-  </Switcher>
+  <sl-radio-group name="language" value={$locale} on:sl-change={(e) => $locale = e.target.value}>
+    <sl-radio-button value="en">
+      <sl-icon name="apple" label="English"></sl-icon>
+    </sl-radio-button>
+    <sl-radio-button value="ja">
+      <sl-icon name="nintendo-switch" label="Japanese"></sl-icon>
+    </sl-radio-button>
+    <sl-radio-button value="mini">
+      <sl-icon name="rocket-takeoff" label="Minionese"></sl-icon>
+    </sl-radio-button>
+  </sl-radio-group>
   <ThemeSwitcher />
 </nav>
