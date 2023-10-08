@@ -2,6 +2,7 @@
   import Night from "~icons/ic/twotone-dark-mode";
   import Day from "~icons/ic/twotone-light-mode";
   import { onMount } from "svelte";
+	import { fade } from 'svelte/transition';
 
   let id = "theme-switcher";
   let isDarkMode = false;
@@ -19,7 +20,9 @@
     isDarkMode = value;
   }
 
-  onMount(() => {
+  onMount(async () => {
+    await import('@shoelace-style/shoelace/dist/components/icon/icon');
+    await import('@shoelace-style/shoelace/dist/components/switch/switch');
     let pickedDarkModeBefore = localStorage.theme === "dark";
     let neverPickedAnything = "theme" in localStorage;
     let preferDarkMode = window.matchMedia(
@@ -31,40 +34,18 @@
   });
 </script>
 
-<input
-  {id}
-  type="checkbox"
-  class="peer hidden"
-  checked={isDarkMode}
-  on:change={() => {
-    setDarkMode(!isDarkMode);
-  }}
-/>
-<label
-  for={id}
-  class="relative flex aspect-[2] h-8
-        cursor-pointer
-        items-center
-        justify-between rounded-2xl bg-blue-300
-        duration-500
-        after:absolute
-        after:left-1
-        after:top-1
-        after:h-6
-        after:w-6
-        after:rounded-full
-        after:bg-white
-        after:duration-300
-        active:after:w-3/5
-        peer-checked:bg-gray-700
-        peer-checked:after:left-[calc(100%-0.2rem)]
-        peer-checked:after:-translate-x-full
-        peer-checked:dark:bg-gray-500"
->
-  <Day
-    class="duration-600 z-10 w-1/2 text-gray-400 opacity-100 ease-in-out dark:opacity-0"
-  />
-  <Night
-    class="duration-600 z-10 w-1/2 text-gray-400 opacity-0 ease-in-out dark:opacity-100"
-  />
-</label>
+<sl-switch on:sl-change={(e) => setDarkMode(e.target.checked)} checked={isDarkMode}>
+  {#if isDarkMode}
+    <sl-icon transition:fade={{ delay: 250, duration: 300 }} slot="thumb" name="moon-stars"></sl-icon>
+  {:else}
+    <sl-icon transition:fade={{ delay: 250, duration: 300 }} slot="thumb" name="sun"></sl-icon>
+  {/if}
+</sl-switch>
+
+<style>
+  sl-switch {
+    --height: 1.5rem;
+    --width: calc(var(--height)*2);
+    --thumb-size: calc(var(--height)*0.9);
+  }
+</style>
