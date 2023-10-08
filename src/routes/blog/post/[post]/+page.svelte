@@ -55,7 +55,7 @@
     />
   {/if}
   <div
-    class="prose prose-slate mt-4 max-w-full dark:prose-invert prose-a:text-blue-600 prose-a:no-underline prose-a:dark:text-sky-300"
+    class="prose prose-slate dark:prose-invert prose-a:text-blue-600 prose-a:no-underline prose-a:dark:text-sky-300 mt-4 max-w-full"
   >
     <svelte:component this={data.content} />
   </div>

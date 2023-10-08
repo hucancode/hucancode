@@ -5,7 +5,7 @@
 <nav>
   <div class="flex gap-4">
     <h1
-      class="text-fill-none whitespace-nowrap bg-rainbow5 bg-clip-text text-2xl font-bold hover:bg-rainbow3 dark:bg-rainbow4 dark:hover:bg-rainbow3"
+      class="text-fill-none bg-rainbow5 hover:bg-rainbow3 dark:bg-rainbow4 dark:hover:bg-rainbow3 whitespace-nowrap bg-clip-text text-2xl font-bold"
     >
       <a data-sveltekit:prefetch href="/blog">Blog</a>
     </h1>

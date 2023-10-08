@@ -31,7 +31,7 @@
 
 <nav class="mb-10">
   <h1
-    class="text-fill-none flex items-center gap-2 whitespace-nowrap bg-rainbow5 bg-clip-text text-base font-bold dark:bg-rainbow4 md:text-xl"
+    class="text-fill-none bg-rainbow5 dark:bg-rainbow4 flex items-center gap-2 whitespace-nowrap bg-clip-text text-base font-bold md:text-xl"
   >
     <GoBack />
     <a data-sveltekit:prefetch href="/">
@@ -39,7 +39,7 @@
     </a>
   </h1>
   <h1
-    class="text-fill-none flex items-center gap-2 whitespace-nowrap bg-rainbow5 bg-clip-text text-base font-bold dark:bg-rainbow4 md:text-xl"
+    class="text-fill-none bg-rainbow5 dark:bg-rainbow4 flex items-center gap-2 whitespace-nowrap bg-clip-text text-base font-bold md:text-xl"
   >
     <a
       target="_blank"

@@ -10,16 +10,12 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  background-color: rgb(240 249 255);
+  background: var(--sl-color-neutral-0);
+  color: var(--sl-color-neutral-1000);
   padding-top: 1rem;
-  color: rgb(31 41 55);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition-duration: 500ms;
-}
-.dark body {
-  background-color: rgb(17 24 39);
-  color: rgb(255 255 255);
 }
 
 section {
@@ -45,6 +41,27 @@ section {
   @apply flex w-full
     max-w-screen-lg flex-col items-center
     px-4;
+}
+
+a {
+  text-decoration: none;
+  color: var(--sl-color-primary-600);
+}
+
+a:hover {
+  color: var(--sl-color-primary-700);
+}
+
+h1 {
+  color: var(--sl-color-primary-800);
+}
+
+p {
+  margin: 0;
+}
+
+small {
+  color: var(--sl-color-neutral-300);
 }
 
 * {

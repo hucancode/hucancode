@@ -11,7 +11,7 @@
 <div class="flex flex-col items-center">
   <p class="text-gray-400 dark:text-gray-600">Category</p>
   <h1
-    class="text-fill-none animate-bg-pingpong whitespace-nowrap bg-rainbow2 bg-double-width bg-clip-text pb-1 text-4xl font-bold"
+    class="text-fill-none animate-bg-pingpong bg-rainbow2 bg-double-width whitespace-nowrap bg-clip-text pb-1 text-4xl font-bold"
   >
     {data.category}
   </h1>
