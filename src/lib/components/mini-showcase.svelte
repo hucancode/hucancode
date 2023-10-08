@@ -56,14 +56,14 @@
 <div>
   <sl-radio-group
     name="showcase"
-    value="1"
+    value={selected}
     on:sl-change={(e) => select(parseInt(e.target.value))}
   >
-    <sl-radio-button value="0">Rubik</sl-radio-button>
-    <sl-radio-button value="1">Dragon</sl-radio-button>
-    <sl-radio-button value="2">Lego</sl-radio-button>
-    <sl-radio-button value="3">Taiji</sl-radio-button>
-    <sl-radio-button value="4">Warrior</sl-radio-button>
+    <sl-radio-button value={0}>Rubik</sl-radio-button>
+    <sl-radio-button value={1}>Dragon</sl-radio-button>
+    <sl-radio-button value={2}>Lego</sl-radio-button>
+    <sl-radio-button value={3}>Taiji</sl-radio-button>
+    <sl-radio-button value={4}>Warrior</sl-radio-button>
   </sl-radio-group>
   <svelte:component this={Scene} bind:this={sceneInstance} />
   <sl-button-group>
@@ -71,7 +71,7 @@
       <sl-icon slot="prefix" name="brilliance" />
       Surprise me!
     </sl-button>
-    <sl-button data-sveltekit:prefetch href={link}>
+    <sl-button data-sveltekit-reload href={link}>
       <sl-icon slot="prefix" name="eye" />
       Full screen
     </sl-button>

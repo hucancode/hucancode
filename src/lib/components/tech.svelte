@@ -1,66 +1,57 @@
 <script>
-  import CPP from "~icons/simple-icons/cplusplus";
-  import Rust from "~icons/simple-icons/rust";
-  import OpenGL from "~icons/simple-icons/opengl";
-  import Blender from "~icons/simple-icons/blender";
-  import UnrealEngine from "~icons/simple-icons/unrealengine";
-  import Flutter from "~icons/simple-icons/flutter";
-  import GraphQL from "~icons/simple-icons/graphql";
-  import Docker from "~icons/simple-icons/docker";
-  import Arch from "~icons/simple-icons/archlinux";
-  import Vim from "~icons/simple-icons/vim";
-  import RX from "~icons/simple-icons/reactivex";
-  import Tailwind from "~icons/simple-icons/tailwindcss";
-  import Svelte from "~icons/simple-icons/svelte";
+  import { onMount } from "svelte";
+  onMount(async () => {
+    await import("@shoelace-style/shoelace/dist/components/icon/icon");
+  });
 </script>
 
 <ul>
   <li>
-    <CPP />
+    <sl-icon library="si" name="cpp" />
     <span>C++</span>
   </li>
   <li>
-    <OpenGL />
+    <sl-icon library="si" name="opengl" />
     <span>OpenGL</span>
   </li>
   <li>
-    <Blender />
+    <sl-icon library="si" name="blender" />
     <span>Blender</span>
   </li>
   <li>
-    <UnrealEngine />
+    <sl-icon library="si" name="ue" />
     <span>Unreal Engine</span>
   </li>
   <li>
-    <Rust />
+    <sl-icon library="si" name="rust" />
     <span>Rust</span>
   </li>
   <li>
-    <Tailwind />
-    <span>Tailwind</span>
-  </li>
-  <li>
-    <Svelte />
+    <sl-icon library="si" name="svelte" />
     <span>Svelte</span>
   </li>
   <li>
-    <RX />
-    <span>RX</span>
+    <sl-icon library="si" name="tailwind" />
+    <span>Tailwind</span>
   </li>
   <li>
-    <Flutter />
+    <sl-icon library="si" name="rx" />
+    <span>Rx</span>
+  </li>
+  <li>
+    <sl-icon library="si" name="flutter" />
     <span>Flutter</span>
   </li>
   <li>
-    <Arch />
+    <sl-icon library="si" name="arch" />
     <span>Arch Linux</span>
   </li>
   <li>
-    <Vim />
+    <sl-icon library="si" name="vim" />
     <span>Vim</span>
   </li>
   <li>
-    <Docker />
+    <sl-icon library="si" name="docker" />
     <span>Docker</span>
   </li>
 </ul>
