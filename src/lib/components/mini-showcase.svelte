@@ -11,6 +11,9 @@
       "@shoelace-style/shoelace/dist/components/button-group/button-group"
     );
     await import("@shoelace-style/shoelace/dist/components/button/button");
+    await import(
+      "@shoelace-style/shoelace/dist/components/animation/animation"
+    );
     await import("@shoelace-style/shoelace/dist/components/icon/icon");
     await import(
       "@shoelace-style/shoelace/dist/components/radio-button/radio-button"
@@ -68,7 +71,23 @@
   <svelte:component this={Scene} bind:this={sceneInstance} />
   <sl-button-group>
     <sl-button on:click={performMagic}>
-      <sl-icon slot="prefix" name="brilliance" />
+      <sl-animation
+        duration={1000}
+        keyframes={[
+          {
+            offset: 0,
+            transform: "rotate(0)",
+          },
+          {
+            offset: 1,
+            transform: "rotate(360deg)",
+          },
+        ]}
+        play
+        slot="prefix"
+      >
+        <sl-icon name="brilliance" />
+      </sl-animation>
       Surprise me!
     </sl-button>
     <sl-button data-sveltekit-reload href={link}>
