@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-	import { fade } from 'svelte/transition';
+  import { fade } from "svelte/transition";
   export let id;
   export let render;
   let isInCamera = false;
@@ -37,10 +37,14 @@
 <div class="container">
   <div class="backdrop" />
   {#if showLoadingCircle}
-    <sl-spinner transition:fade={{ delay: 250, duration: 300 }} bind:this={loadingCircle}></sl-spinner>
+    <sl-spinner
+      transition:fade={{ delay: 250, duration: 300 }}
+      bind:this={loadingCircle}
+    />
   {/if}
   <canvas {id} bind:this={canvas} />
 </div>
+
 <style>
   .backdrop {
     position: absolute;
@@ -54,7 +58,7 @@
     background-size: contain;
     --from: rgb(209 213 219 / 0.1);
     --to: rgb(17 24 39 / 0.1);
-    background-image: radial-gradient(closest-side, var(--from), var(--to))
+    background-image: radial-gradient(closest-side, var(--from), var(--to));
   }
   .container {
     position: relative;

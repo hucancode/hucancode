@@ -1,4 +1,5 @@
 <script>
+  import "$styles/tailwind.css";
   import { _ } from "$lib/i18n";
   import Nav from "$lib/components/nav.svelte";
   import GoBack from "~icons/ri/arrow-left-line";

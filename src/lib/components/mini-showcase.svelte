@@ -1,10 +1,10 @@
 <script>
   import { _ } from "$lib/i18n";
-  import '@shoelace-style/shoelace/dist/components/button-group/button-group.js';
-  import '@shoelace-style/shoelace/dist/components/button/button.js?client';
-  import '@shoelace-style/shoelace/dist/components/icon/icon.js';
-  import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
-  import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
+  import "@shoelace-style/shoelace/dist/components/button-group/button-group.js";
+  import "@shoelace-style/shoelace/dist/components/button/button.js?client";
+  import "@shoelace-style/shoelace/dist/components/icon/icon.js";
+  import "@shoelace-style/shoelace/dist/components/radio-button/radio-button.js";
+  import "@shoelace-style/shoelace/dist/components/radio-group/radio-group.js";
   let selected = 0;
   let link = "/rubik";
   let sceneInstance;
@@ -36,14 +36,18 @@
         link = "/sabor";
         break;
       default:
-        console.log("unhandled value"+selected);
+        console.log("unhandled value" + selected);
     }
   }
   select(Math.floor(Math.random() * 4));
 </script>
 
 <div>
-  <sl-radio-group name="showcase" value="1" on:sl-change={(e) => select(parseInt(e.target.value))}>
+  <sl-radio-group
+    name="showcase"
+    value="1"
+    on:sl-change={(e) => select(parseInt(e.target.value))}
+  >
     <sl-radio-button value="0">Rubik</sl-radio-button>
     <sl-radio-button value="1">Dragon</sl-radio-button>
     <sl-radio-button value="2">Lego</sl-radio-button>
@@ -52,31 +56,26 @@
   </sl-radio-group>
   <svelte:component this={Scene} bind:this={sceneInstance} />
   <sl-button-group>
-      <sl-button
-        on:click={performMagic}
-      >
-        <sl-icon slot="prefix" name="brilliance"></sl-icon>
-        Surprise me!
-      </sl-button>
-      <sl-button
-        data-sveltekit:prefetch
-        href={link}
-      >
-        <sl-icon slot="prefix" name="eye"></sl-icon>
-        Full screen
-      </sl-button>
+    <sl-button on:click={performMagic}>
+      <sl-icon slot="prefix" name="brilliance" />
+      Surprise me!
+    </sl-button>
+    <sl-button data-sveltekit:prefetch href={link}>
+      <sl-icon slot="prefix" name="eye" />
+      Full screen
+    </sl-button>
   </sl-button-group>
 </div>
 
 <style>
-div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: flex-end;
-  aspect-ratio: 16/9;
-  width: 100%;
-  max-width: 32rem;
-}
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+    aspect-ratio: 16/9;
+    width: 100%;
+    max-width: 32rem;
+  }
 </style>

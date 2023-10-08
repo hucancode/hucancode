@@ -103,10 +103,10 @@
   });
 </script>
 
-<div class="w-full max-w-screen-sm p-5 lg:w-1/2">
-  <div class="mb-4 flex justify-center gap-2">
-    <div class="flex flex-col items-center justify-center gap-2 md:flex-row">
-      <Leetcode class="text-lg" />
+<div class="container">
+  <div class="summary">
+    <div class="heading">
+      <Leetcode />
       <span>Leetcode</span>
     </div>
     <DualTag title={$_("home.stats.rating")} value={Math.round(rating)} />
@@ -117,3 +117,29 @@
   </div>
   <canvas bind:this={canvas} />
 </div>
+
+<style>
+  .container {
+    width: 100%;
+    max-width: 640px;
+    padding: 1.25rem;
+  }
+  .summary {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  @media (min-width: 768px) {
+    .heading {
+      flex-direction: row;
+    }
+  }
+</style>
