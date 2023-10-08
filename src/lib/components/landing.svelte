@@ -2,11 +2,12 @@
   import { _ } from "$lib/i18n";
   import { onMount } from "svelte";
   import MiniShowcase from "$lib/components/mini-showcase.svelte";
-  import WavingHand from "~icons/twemoji/waving-hand";
+  let waving = false;
   onMount(async () => {
     await import(
       "@shoelace-style/shoelace/dist/components/animation/animation"
     );
+    await import("@shoelace-style/shoelace/dist/components/icon/icon");
   });
 </script>
 
@@ -15,16 +16,45 @@
     <div class="greetings">
       <h1 class="hello">
         {$_("home.landing.hello")}
+        <sl-animation
+          keyframes={[
+            {
+              offset: 0,
+              transform: "rotate(0)",
+            },
+            {
+              offset: 0.1,
+              transformOrigin: "80% 80%",
+              transform: "rotate(20deg)",
+            },
+            {
+              offset: 0.2,
+              transformOrigin: "80% 80%",
+              transform: "rotate(-10deg)",
+            },
+            {
+              offset: 0.3,
+              transformOrigin: "80% 80%",
+              transform: "rotate(10deg)",
+            },
+            {
+              offset: 0.4,
+              transformOrigin: "80% 80%",
+              transform: "rotate(-10deg)",
+            },
+            {
+              offset: 0.5,
+              transform: "rotate(0)",
+            },
+          ]}
+          duration={2000}
+          play={waving}
+          on:mouseenter={() => (waving = true)}
+          on:mouseleave={() => (waving = false)}
+        >
+          <sl-icon name="wave" library="fx" />
+        </sl-animation>
       </h1>
-      <sl-animation
-        name="tada"
-        duration={1500}
-        delay={1000}
-        end-delay={1000}
-        play
-      >
-        <span>👋</span>
-      </sl-animation>
     </div>
     <p class="about">{$_("home.landing.about")}</p>
   </div>
