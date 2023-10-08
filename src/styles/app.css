@@ -57,6 +57,7 @@ h1 {
   color: var(--sl-color-primary-800);
 }
 
+h1,
 p {
   margin: 0;
 }
