@@ -4,14 +4,17 @@
   import Tech from "$lib/components/tech.svelte";
 
   export let data;
+
+  import { onMount } from "svelte";
+  onMount(async () => {
+    await import("@shoelace-style/shoelace/dist/components/divider/divider");
+  });
 </script>
 
 <section>
-  <div class="mb-6 h-1 w-full max-w-sm bg-gray-900/10 dark:bg-white/10" />
-  <h1 class="mb-5 text-2xl font-bold">{$_("home.stats.title")}</h1>
-  <div
-    class="flex aspect-square w-full flex-col items-center md:aspect-[4/3] lg:aspect-[30/9] lg:flex-row lg:items-start"
-  >
+  <sl-divider />
+  <h1>{$_("home.stats.title")}</h1>
+  <div>
     <Tech />
     <Leetcode
       rating={data.userContestRanking.rating}
@@ -20,3 +23,31 @@
     />
   </div>
 </section>
+
+<style>
+  h1 {
+    margin-bottom: 1.25rem;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 700;
+  }
+  div {
+    display: flex;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+  @media (min-width: 768px) {
+    div {
+      aspect-ratio: 4/3;
+    }
+  }
+  @media (min-width: 1024px) {
+    div {
+      aspect-ratio: 30/9;
+      flex-direction: row;
+      align-items: flex-start;
+    }
+  }
+</style>

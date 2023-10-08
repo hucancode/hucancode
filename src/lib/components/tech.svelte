@@ -14,11 +14,7 @@
   import Svelte from "~icons/simple-icons/svelte";
 </script>
 
-<ul
-  class="flex w-full max-w-screen-sm flex-wrap
-    items-center justify-center p-5
-    text-center text-gray-700 dark:text-gray-300 lg:w-1/2"
->
+<ul>
   <li>
     <CPP />
     <span>C++</span>
@@ -70,12 +66,31 @@
 </ul>
 
 <style>
+  ul {
+    display: flex;
+    width: 100%;
+    max-width: 640px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    text-align: center;
+  }
   li {
-    @apply m-3 flex h-16
-                w-14 flex-col items-center
-                text-4xl;
+    margin: 0.75rem;
+    display: flex;
+    height: 4rem;
+    width: 3.5rem;
+    flex-direction: column;
+    align-items: center;
+    font-size: 2.25rem;
+    line-height: 2.5rem;
   }
   span {
-    @apply mt-2 w-24 text-center text-xs;
+    margin-top: 0.5rem;
+    width: 6rem;
+    text-align: center;
+    font-size: 0.75rem;
+    line-height: 1rem;
   }
 </style>

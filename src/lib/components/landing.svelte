@@ -13,9 +13,7 @@
 <section>
   <div class="greeting-wrapper">
     <div class="greetings">
-      <h1
-        class="hello"
-      >
+      <h1 class="hello">
         {$_("home.landing.hello")}
       </h1>
       <sl-animation
@@ -25,7 +23,7 @@
         end-delay={1000}
         play
       >
-        <span class="hand-icon">👋</span>
+        <span>👋</span>
       </sl-animation>
     </div>
     <p class="about">{$_("home.landing.about")}</p>
@@ -50,22 +48,27 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    font-size: 2.25rem;
-    line-height: 2.5rem;
-    font-weight: 700;
   }
-  .hello {
+  h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
     white-space: nowrap;
-    background-image: linear-gradient(141.27deg,#ff904e 0%,#ff5982 20%,#ec68f4 40%,#79e2ff 80%);
+    background-image: linear-gradient(
+      141.27deg,
+      #ff904e 0%,
+      #ff5982 20%,
+      #ec68f4 40%,
+      #79e2ff 80%
+    );
+    font-size: var(--sl-font-size-2x-large);
+    font-weight: var(--sl-font-weight-bold);
     background-size: 200% 100%;
     color: transparent;
     background-clip: text;
     -webkit-background-clip: text;
     padding-bottom: 0.25rem;
   }
-  .hand-icon {
-    font-size: 4.5rem;
+  span {
+    font-size: 3rem;
     width: 1em;
     aspect-ratio: 1;
     cursor: default;
@@ -93,5 +96,4 @@
       background-position-x: 50%;
     }
   }
-
 </style>

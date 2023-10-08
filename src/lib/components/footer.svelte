@@ -17,76 +17,66 @@
   }
 </script>
 
-<section
-  class="flex w-full
-        max-w-screen-lg flex-col items-center justify-around gap-3 px-4 py-10
-        text-gray-800 dark:text-gray-400 md:flex-row md:items-start md:px-10"
->
-  <div
-    class="mb-10 flex flex-col items-center justify-start gap-3 md:items-start"
-  >
-    <h1
-      class="w-full
-    text-center
-    text-2xl font-bold text-gray-800 dark:text-white
-    md:text-left"
-    >
+<section>
+  <div>
+    <h1>
       {$_("common.contact.contact")}
     </h1>
-    <div class="flex justify-center gap-2 md:justify-start">
+    <p>
       <SendMail size="1.5em" style={{ marginRight: "0.5em" }} />
-      <a
-        class="hover:text-blue-900 hover:dark:text-blue-300"
-        rel="external"
-        href="mailto:hucancode@gmail.com"
-      >
+      <a rel="external" href="mailto:hucancode@gmail.com">
         hucancode@gmail.com
       </a>
-    </div>
-    <div class="flex justify-center gap-2 md:justify-start">
+    </p>
+    <p>
       <Download />
-      <a
-        class="hover:text-blue-900 hover:dark:text-blue-300"
-        target="_blank"
-        rel="noreferrer"
-        href={resumeUrl}
-      >
+      <a target="_blank" rel="noreferrer" href={resumeUrl}>
         {$_("common.contact.downloadResume")}
       </a>
-    </div>
+    </p>
   </div>
-  <div
-    class="mb-10 flex flex-col items-center justify-start gap-3 md:items-start"
-  >
-    <h1
-      class="w-full
-    text-center
-    text-2xl font-bold text-gray-800 dark:text-white
-    md:text-left"
-    >
+  <div>
+    <h1>
       {$_("common.contact.social")}
     </h1>
-    <div class="flex justify-center gap-2 md:justify-start">
+    <p>
       <Github size="1.5em" style={{ marginRight: "0.5em" }} />
-      <a
-        class="hover:text-blue-900 hover:dark:text-blue-300"
-        target="_blank"
-        rel="noreferrer"
-        href="https://github.com/hucancode"
-      >
+      <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
         {$_("common.contact.github")}
       </a>
-    </div>
-    <div class="flex justify-center gap-2 md:justify-start">
+    </p>
+    <p>
       <Fire size="1.5em" style={{ marginRight: "0.5em" }} />
-      <a
-        data-sveltekit:prefetch
-        class="hover:text-blue-900 hover:dark:text-blue-300"
-        href="/blog"
-      >
+      <a data-sveltekit:prefetch href="/blog">
         {$_("common.contact.blog")}
       </a>
-    </div>
+    </p>
   </div>
 </section>
-<p class="mb-10 text-xs text-gray-500">{$_("common.note.madeWith")}</p>
+<small>{$_("common.note.madeWith")}</small>
+
+<style>
+  section {
+    @apply flex w-full
+        max-w-screen-lg flex-col items-center justify-around gap-3 px-4 py-10
+        text-gray-800 dark:text-gray-400 md:flex-row md:items-start md:px-10;
+  }
+  h1 {
+    @apply w-full
+      text-center
+      text-2xl font-bold text-gray-800 dark:text-white
+      md:text-left;
+  }
+  div {
+    @apply mb-10 flex flex-col items-center justify-start gap-3 md:items-start;
+  }
+  p {
+    @apply flex justify-center gap-2 md:justify-start;
+  }
+  a {
+    @apply hover:text-blue-900 hover:dark:text-blue-300;
+  }
+  small {
+    @apply mb-10 text-xs text-gray-500;
+  }
+</style>
