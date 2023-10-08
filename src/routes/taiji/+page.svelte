@@ -1,54 +1,48 @@
 <script>
-  import "$styles/tailwind.css";
+  import { onMount } from "svelte";
   import { _ } from "$lib/i18n";
   import Nav from "$lib/components/nav.svelte";
-  import GoBack from "~icons/ri/arrow-left-line";
-  import Coffee from "~icons/simple-icons/buymeacoffee";
   import Scene from "$lib/components/taiji.svelte";
-
-  import FireIcon from "~icons/twemoji/fire";
-
   let sceneInstance;
   function performMagic() {
     sceneInstance.performMagic();
   }
+  onMount(async () => {
+    await import("@shoelace-style/shoelace/dist/components/button/button");
+    await import(
+      "@shoelace-style/shoelace/dist/components/button-group/button-group"
+    );
+  });
 </script>
 
 <svelte:head>
   <title>Taiji</title>
 </svelte:head>
 <Nav />
-<section class="flex max-w-screen-lg grow flex-col items-center justify-center">
-  <div class="aspect-square w-full md:aspect-video">
+<section>
+  <div>
     <Scene bind:this={sceneInstance} />
   </div>
-  <button
-    class="group bg-gray-700 p-4 px-12 text-2xl dark:bg-black dark:text-white"
-    on:click={performMagic}
-  >
-    <FireIcon class="group-active:scale-150" />
-  </button>
+  <sl-button-group>
+    <sl-button data-sveltekit-reload href="/">
+      <sl-icon slot="prefix" name="arrow-return-left" />
+      Go back
+    </sl-button>
+    <sl-button on:click={performMagic}>
+      <sl-icon slot="prefix" name="brilliance" />
+      Surprise me!
+    </sl-button>
+  </sl-button-group>
 </section>
 
-<nav class="mb-10">
-  <h1
-    class="text-fill-none bg-rainbow5 dark:bg-rainbow4 flex items-center gap-2 whitespace-nowrap bg-clip-text text-base font-bold md:text-xl"
-  >
-    <GoBack />
-    <a data-sveltekit:prefetch href="/">
-      {$_("creative.return")}
-    </a>
-  </h1>
-  <h1
-    class="text-fill-none bg-rainbow5 dark:bg-rainbow4 flex items-center gap-2 whitespace-nowrap bg-clip-text text-base font-bold md:text-xl"
-  >
-    <a
-      target="_blank"
-      rel="noreferrer"
-      href="https://www.buymeacoffee.com/hucancode"
-    >
-      {$_("creative.buymeacoffee")}</a
-    >
-    <Coffee />
-  </h1>
-</nav>
+<style>
+  section {
+    flex-grow: 1;
+    justify-content: space-around;
+  }
+  div {
+    aspect-ratio: 1/1;
+    width: 100%;
+    max-width: 640px;
+  }
+</style>
