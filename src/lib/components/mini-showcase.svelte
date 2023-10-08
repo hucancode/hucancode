@@ -1,14 +1,25 @@
 <script>
   import { _ } from "$lib/i18n";
-  import "@shoelace-style/shoelace/dist/components/button-group/button-group.js";
-  import "@shoelace-style/shoelace/dist/components/button/button.js?client";
-  import "@shoelace-style/shoelace/dist/components/icon/icon.js";
-  import "@shoelace-style/shoelace/dist/components/radio-button/radio-button.js";
-  import "@shoelace-style/shoelace/dist/components/radio-group/radio-group.js";
+  import { onMount } from "svelte";
   let selected = 0;
   let link = "/rubik";
   let sceneInstance;
   let Scene;
+
+  onMount(async () => {
+    await import(
+      "@shoelace-style/shoelace/dist/components/button-group/button-group"
+    );
+    await import("@shoelace-style/shoelace/dist/components/button/button");
+    await import("@shoelace-style/shoelace/dist/components/icon/icon");
+    await import(
+      "@shoelace-style/shoelace/dist/components/radio-button/radio-button"
+    );
+    await import(
+      "@shoelace-style/shoelace/dist/components/radio-group/radio-group"
+    );
+  });
+
   function performMagic() {
     sceneInstance.performMagic();
   }

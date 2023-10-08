@@ -57,26 +57,58 @@
 
 <style>
   section {
-    @apply flex w-full
-        max-w-screen-lg flex-col items-center justify-around gap-3 px-4 py-10
-        text-gray-800 dark:text-gray-400 md:flex-row md:items-start md:px-10;
+    justify-content: space-around;
+    gap: 0.75rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  @media (min-width: 768px) {
+    section {
+      flex-direction: row;
+      align-items: flex-start;
+      padding-left: 2.5rem;
+      padding-right: 2.5rem;
+    }
   }
   h1 {
-    @apply w-full
-      text-center
-      text-2xl font-bold text-gray-800 dark:text-white
-      md:text-left;
+    width: 100%;
+    text-align: center;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 700;
+  }
+  @media (min-width: 768px) {
+    h1 {
+      text-align: left;
+    }
+  }
+  @media (min-width: 768px) {
+    div {
+      align-items: flex-start;
+    }
   }
   div {
-    @apply mb-10 flex flex-col items-center justify-start gap-3 md:items-start;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+  @media (min-width: 768px) {
+    p {
+      justify-content: flex-start;
+    }
   }
   p {
-    @apply flex justify-center gap-2 md:justify-start;
-  }
-  a {
-    @apply hover:text-blue-900 hover:dark:text-blue-300;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
   }
   small {
-    @apply mb-10 text-xs text-gray-500;
+    margin-bottom: 2.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: rgb(107 114 128);
   }
 </style>

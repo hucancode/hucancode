@@ -53,12 +53,14 @@
     margin-left: auto;
     margin-right: auto;
     aspect-ratio: 1 / 1;
-    height: 100%;
+    height: 90%;
     translate: -50% -50%;
     background-size: contain;
-    --from: rgb(209 213 219 / 0.1);
-    --to: rgb(17 24 39 / 0.1);
-    background-image: radial-gradient(closest-side, var(--from), var(--to));
+    background-image: radial-gradient(
+      closest-side,
+      var(--sl-color-neutral-200),
+      var(--sl-color-neutral-0)
+    );
   }
   .container {
     position: relative;

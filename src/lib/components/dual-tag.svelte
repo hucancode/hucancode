@@ -26,19 +26,11 @@
     text-align: center;
   }
   span:first-of-type {
-    background-color: rgb(186 230 253);
-    color: rgb(55 65 81);
-  }
-  .dark span:first-of-type {
-    background-color: rgb(55 65 81);
-    color: rgb(243 244 246);
+    background-color: var(--sl-color-neutral-100);
+    color: var(--sl-color-neutral-800);
   }
   span:last-of-type {
-    background-color: rgb(255 255 255);
-    color: rgb(31 41 55);
-  }
-  .dark span:last-of-type {
-    background-color: rgb(0 0 0);
-    color: rgb(31 41 55);
+    background-color: var(--sl-color-neutral-900);
+    color: var(--sl-color-neutral-200);
   }
 </style>
