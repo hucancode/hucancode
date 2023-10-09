@@ -3,18 +3,22 @@
 </script>
 
 <nav>
-  <div class="flex gap-4">
-    <h1
-      class="text-fill-none bg-rainbow5 hover:bg-rainbow3 dark:bg-rainbow4 dark:hover:bg-rainbow3 whitespace-nowrap bg-clip-text text-2xl font-bold"
-    >
+  <div>
+    <h2 rainbow>
       <a data-sveltekit:prefetch href="/blog">Blog</a>
-    </h1>
-    <h1 class="text-2xl hover:text-purple-800 hover:dark:text-blue-300">
+    </h2>
+    <h2>
       <a data-sveltekit:prefetch href="/">Home</a>
-    </h1>
-    <h1 class="text-2xl hover:text-purple-800 hover:dark:text-blue-300">
+    </h2>
+    <h2>
       <a data-sveltekit:prefetch href="/blog/about">About</a>
-    </h1>
+    </h2>
   </div>
   <ThemeSwitcher />
 </nav>
+<style>
+  div {
+    display: flex;
+    gap: 1rem;
+  }
+</style>

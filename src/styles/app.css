@@ -1,8 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500;700;900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
 body {
   font-family: "Poppins", "Noto Sans JP", sans-serif;
-}
-body {
   display: flex;
   min-height: 100vh;
   width: 100%;
@@ -28,6 +27,7 @@ section {
   padding-left: 1rem;
   padding-right: 1rem;
 }
+
 nav {
   display: flex;
   width: 100%;
@@ -38,10 +38,46 @@ nav {
   padding-right: 1rem;
 }
 
-section {
-  @apply flex w-full
-    max-w-screen-lg flex-col items-center
-    px-4;
+.container {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .container {
+    width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    width: 1536px;
+  }
+}
+
+h1,h2,h3,h4,p,a {
+  --rainbow1: linear-gradient(115deg,#4fcf70,#fad648,#a767e5,#12bcfe,#44ce7b);
+  --rainbow2: linear-gradient(141.27deg,#ff904e 0%,#ff5982 20%,#ec68f4 40%,#79e2ff 80%);
+  --rainbow3: linear-gradient(140deg, #D2A8FF 12.09%, #F778BA 42.58%, #FF7B72 84.96%);
+  --rainbow4: linear-gradient(45deg, rgb(250 222 255) 0%, rgb(219 204 255) 70%);
+  --rainbow5: linear-gradient(45deg, rgb(150 130 191) 0%, rgb(32 22 22) 70%);
 }
 
 a {
@@ -55,9 +91,30 @@ a:hover {
 
 h1 {
   color: var(--sl-color-primary-800);
+  font-size: var(--sl-font-size-2x-large);
+  font-weight: var(--sl-font-weight-bold);
+}
+h1[xl] {
+  font-weight: 800;
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+
+h2 {
+  font-size: var(--sl-font-size-large);
+  font-weight: var(--sl-font-weight-bold);
+}
+
+:is(h1,h2,h3,h4,p,a)[rainbow] {
+  white-space: nowrap;
+  background-image: var(--rainbow2);
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
 }
 
 h1,
+h2,
 p {
   margin: 0;
 }

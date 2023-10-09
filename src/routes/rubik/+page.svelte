@@ -8,9 +8,9 @@
     sceneInstance.performMagic();
   }
   onMount(async () => {
-    await import("@shoelace-style/shoelace/dist/components/button/button");
+    await import("$shoelace/button/button");
     await import(
-      "@shoelace-style/shoelace/dist/components/button-group/button-group"
+      "$shoelace/button-group/button-group"
     );
   });
 </script>

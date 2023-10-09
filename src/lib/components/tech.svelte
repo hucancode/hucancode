@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   onMount(async () => {
-    await import("@shoelace-style/shoelace/dist/components/icon/icon");
+    await import("$shoelace/icon/icon");
   });
 </script>
 

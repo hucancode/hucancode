@@ -35,15 +35,15 @@
   ];
   onMount(async () => {
     await import(
-      "@shoelace-style/shoelace/dist/components/animation/animation"
+      "$shoelace/animation/animation"
     );
-    await import("@shoelace-style/shoelace/dist/components/icon/icon");
+    await import("$shoelace/icon/icon");
   });
 </script>
 
 <section>
   <div class="greetings">
-    <h1 class="hello">
+    <h1 rainbow>
       {$_("home.landing.hello")}
       <sl-animation
         keyframes={wavingAnimation}
@@ -75,20 +75,8 @@
   }
   h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
-    white-space: nowrap;
-    background-image: linear-gradient(
-      141.27deg,
-      #ff904e 0%,
-      #ff5982 20%,
-      #ec68f4 40%,
-      #79e2ff 80%
-    );
-    font-size: var(--sl-font-size-2x-large);
-    font-weight: var(--sl-font-weight-bold);
+    background-image: var(--rainbow2);
     background-size: 200% 100%;
-    color: transparent;
-    background-clip: text;
-    -webkit-background-clip: text;
   }
   p {
     text-align: center;

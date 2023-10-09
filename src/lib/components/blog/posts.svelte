@@ -70,36 +70,88 @@
   }
 </script>
 
-<ul class="max-w-screen-md grow">
+<ul>
   {#each posts as post}
-    <li class="relative mb-2 flex flex-col gap-2 p-4 sm:flex-row">
+    <li>
       <img
-        class="aspect-video w-full object-cover sm:w-1/4"
         alt="thumbnail"
         src={post.cover}
       />
-      <div
-        class="absolute left-4 top-4 flex w-full flex-wrap text-3xl text-white sm:w-1/4"
-      >
+      <div class="tag-container">
         {#each getIcons(post) as icon}
           <svelte:component this={icon} class="bg-black p-2" />
         {/each}
       </div>
-      <article class="w-full">
+      <article>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
           <h2
-            class="flex gap-2 text-xl font-semibold hover:text-blue-800 hover:dark:text-sky-400"
           >
             {post.title}
           </h2>
-          <time class="text-xs text-gray-400 dark:text-gray-600"
+          <time
             >Posted {convertDate(post.date)}</time
           >
         </a>
-        <summary class="text-sm text-gray-600 dark:text-gray-400"
+        <summary
           >{post.excerpt}</summary
         >
       </article>
     </li>
   {/each}
 </ul>
+
+<style>
+  ul {
+    max-width: 768px;
+    flex-grow: 1;
+  }
+  li {
+    display: flex;
+    position: relative;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+    padding: 1rem;
+    flex-direction: column;
+  }
+  @media (min-width: 768px) {
+    li {
+      flex-direction: row;
+    }
+  }
+  img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+  }
+  @media (min-width: 640px) {
+    img {
+      width: 25%;
+    }
+  }
+  .tag-container {
+    width: 100%;
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  @media (min-width: 640px) {
+    .tag-container {
+      width: 25%;
+    }
+  }
+  article {
+    width: 100%;
+  }
+  summary {
+    color: var(--sl-color-neutral-300);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  time {
+    color: var(--sl-color-neutral-400);
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+</style>

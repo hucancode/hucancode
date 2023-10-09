@@ -27,29 +27,48 @@
   <!-- <meta property="og:image" content="https://yourdomain.com/image_path" /> -->
   <!-- <meta name="twitter:image" content="https://yourdomain.com/image_path" /> -->
 </svelte:head>
-<article class="container my-20 max-w-screen-lg">
+<article class="container">
   {#if categories}
-    <ul class="flex flex-wrap gap-2">
+    <ul>
       {#each categories as category}
-        <li
-          class="text-fill-none bg-rainbow3 bg-clip-text pb-1 text-sm font-bold before:content-['#']"
-        >
-          <a data-sveltekit:prefetch href="/blog/category/{category}/">
+        <li>
+          <a data-sveltekit:prefetch href="/blog/category/{category}/" rainbow>
             {category}
           </a>
         </li>
       {/each}
     </ul>
   {/if}
-  <h1 class="text-4xl font-extrabold">{title}</h1>
-  <small class="mb-4 text-gray-400">Posted {dateString}</small>
+  <h1 class="xl">{title}</h1>
+  <small>Posted {dateString}</small>
   {#if cover}
-    <img class="aspect-video w-full rounded-lg" src={cover} alt="" />
+    <img src={cover} alt="" />
   {/if}
-  <div
-    class="prose prose-slate dark:prose-invert prose-a:text-blue-600 prose-a:no-underline prose-a:dark:text-sky-300 mt-4 max-w-full"
-  >
+  <div>
     <slot />
   </div>
 </article>
 <Nav />
+
+<style>
+  article {
+    margin-top: 5rem;
+    margin-bottom: 5rem;
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  li a:before {
+    content: '#';
+  }
+  small {
+    margin-bottom: 1rem;
+  }
+  img {
+    aspect-ratio: 16/9;
+    width: 100%;
+    border-radius: 0.5rem;
+  }
+</style>

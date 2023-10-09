@@ -5,21 +5,20 @@
 <svelte:head>
   <title>About</title>
 </svelte:head>
-<header class="flex flex max-w-screen-sm flex-col items-center gap-6 p-16">
+<header>
   <div
-    class="flex aspect-square w-24 items-center justify-center rounded-full bg-black"
   >
     <img alt="logo" src="/assets/logo-source.svg" />
   </div>
-  <p class="text-center text-sm text-gray-600 dark:text-gray-400">
+  <small>
     Welcome to my blog, I am a Vietnamese software engineer based in Japan and a <s
       >weaboo</s
     >
     anime fan. I go by the handle <strong>hucancode</strong> in most places you can
     find me. I write about programming, game and other random things, mostly random
     things
-  </p>
-  <p class="text-gray-600, text-center text-sm dark:text-gray-400">
+  </small>
+  <small>
     Most illustration images on this blog are taken from <a
       href="https://freepik.com">freepik</a
     >, thanks to wonderful contribution by
@@ -27,13 +26,32 @@
       >freepik, pressfoto, dcstudio, rawpixel, wirestock, starline<strong
       /></strong
     >
-  </p>
-  <h1 class="flex items-center gap-2 text-xl font-bold">
+  </small>
+  <h2>
     <a
       target="_blank"
       rel="noreferrer"
       href="https://www.buymeacoffee.com/hucancode">Buy me a coffee</a
     >
     <Coffee />
-  </h1>
+  </h2>
 </header>
+
+<style>
+  header {
+    max-width: 640px;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 4rem;
+  }
+  div {
+    display: flex;
+    aspect-ratio: 1/1;
+    width: 6rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: black;
+  }
+</style>

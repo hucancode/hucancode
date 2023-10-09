@@ -8,18 +8,18 @@
 
   onMount(async () => {
     await import(
-      "@shoelace-style/shoelace/dist/components/button-group/button-group"
+      "$shoelace/button-group/button-group"
     );
-    await import("@shoelace-style/shoelace/dist/components/button/button");
+    await import("$shoelace/button/button");
     await import(
-      "@shoelace-style/shoelace/dist/components/animation/animation"
+      "$shoelace/animation/animation"
     );
-    await import("@shoelace-style/shoelace/dist/components/icon/icon");
+    await import("$shoelace/icon/icon");
     await import(
-      "@shoelace-style/shoelace/dist/components/radio-button/radio-button"
+      "$shoelace/radio-button/radio-button"
     );
     await import(
-      "@shoelace-style/shoelace/dist/components/radio-group/radio-group"
+      "$shoelace/radio-group/radio-group"
     );
   });
 
