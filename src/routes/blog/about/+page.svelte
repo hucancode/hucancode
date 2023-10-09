@@ -6,8 +6,7 @@
   <title>About</title>
 </svelte:head>
 <header>
-  <div
-  >
+  <div>
     <img alt="logo" src="/assets/logo-source.svg" />
   </div>
   <small>
@@ -41,9 +40,14 @@
   header {
     max-width: 640px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 1.5rem;
     padding: 4rem;
+  }
+  img {
+    width: 100%;
+    height: auto;
   }
   div {
     display: flex;

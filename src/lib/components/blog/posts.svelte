@@ -129,12 +129,12 @@
     }
   }
   .tag-container {
-    width: 100%;
     position: absolute;
     left: 1rem;
     top: 1rem;
     display: flex;
     flex-wrap: wrap;
+    background-color: black;
   }
   @media (min-width: 640px) {
     .tag-container {
