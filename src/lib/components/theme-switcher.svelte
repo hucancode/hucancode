@@ -1,10 +1,7 @@
 <script>
-  import Night from "~icons/ic/twotone-dark-mode";
-  import Day from "~icons/ic/twotone-light-mode";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
 
-  let id = "theme-switcher";
   let isDarkMode = false;
 
   function setDarkMode(value) {
@@ -36,25 +33,39 @@
   on:sl-change={(e) => setDarkMode(e.target.checked)}
   checked={isDarkMode}
 >
-  {#if isDarkMode}
-    <sl-icon
-      transition:fade={{ delay: 250, duration: 300 }}
-      slot="thumb"
-      name="moon-stars"
-    />
-  {:else}
-    <sl-icon
-      transition:fade={{ delay: 250, duration: 300 }}
-      slot="thumb"
-      name="sun"
-    />
-  {/if}
+  <sl-icon
+      dark={isDarkMode}
+      name={isDarkMode?"moon-stars":"sun"}
+    ></sl-icon>
 </sl-switch>
 
 <style>
   sl-switch {
-    --height: 1.5rem;
+    --height: 1.7rem;
     --width: calc(var(--height) * 2);
     --thumb-size: calc(var(--height) * 0.9);
+  }
+  sl-switch::part(thumb) {
+    border-radius: 9999px;
+    border-width: 0; 
+  }
+  sl-switch::part(label) {
+    position: absolute;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+  }
+  sl-icon {
+    position: absolute;
+    aspect-ratio: 1/1;
+    transform-origin: center;
+    height: calc(var(--height) * 0.65);
+    padding: calc(var(--height) * 0.18);
+  }
+  sl-icon[dark=true] {
+    right: 0;
+  }
+  sl-icon[dark=false] {
+    left: 0;
   }
 </style>
