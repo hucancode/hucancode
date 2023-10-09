@@ -66,6 +66,7 @@
     justify-content: center;
     padding: 1.25rem;
     text-align: center;
+    list-style-type: none;
   }
   li {
     margin: 0.75rem;

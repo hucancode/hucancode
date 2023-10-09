@@ -1,5 +1,5 @@
 <script>
-  import { formatDateRelative } from "$lib/i18n";
+  import { onMount } from 'svelte';
   import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
 
@@ -11,11 +11,13 @@
     cover = data.meta.cover;
     date = data.meta.date;
     categories = data.meta.categories;
-    if (!date) return;
-    dateString = formatDateRelative('en', new Date(date));
   }
   update();
   afterUpdate(update);
+  
+  onMount(async () => {
+    await import("$shoelace/relative-time/relative-time")
+  });
 </script>
 
 <svelte:head>
@@ -31,33 +33,49 @@
   <!-- <meta name="twitter:image" content="https://yourdomain.com/image_path" /> -->
 </svelte:head>
 
-<article class="container my-20 max-w-screen-lg">
+<article class="container">
   {#if categories}
-    <ul class="flex flex-wrap gap-2">
+    <ul>
       {#each categories as category}
-        <li
-          class="text-fill-none bg-rainbow3 bg-clip-text pb-1 text-sm font-bold before:content-['#']"
-        >
-          <a data-sveltekit:prefetch href="/blog/category/{category}/">
+        <li>
+          <a data-sveltekit:prefetch href="/blog/category/{category}/" rainbow>
             {category}
           </a>
         </li>
       {/each}
     </ul>
   {/if}
-  <h1 class="text-4xl font-extrabold">{title}</h1>
-  <time class="mb-4 text-xs text-gray-400">Posted {dateString}</time>
+  <h1 class="xl">{title}</h1>
+  <sl-relative-time {date} lang="en-US"></sl-relative-time>
   {#if cover}
-    <img
-      class="aspect-video w-full rounded-lg object-cover sm:aspect-[22/9]"
-      src={cover}
-      alt=""
-    />
+    <img src={cover} alt="" />
   {/if}
-  <div
-    class="prose prose-slate dark:prose-invert prose-a:text-blue-600 prose-a:no-underline prose-a:dark:text-sky-300 mt-4 max-w-full"
-  >
+  <div>
     <svelte:component this={data.content} />
   </div>
 </article>
 <Nav />
+
+<style>
+  article {
+    margin-top: 5rem;
+    margin-bottom: 5rem;
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style-type: none;
+  }
+  li a:before {
+    content: '#';
+  }
+  sl-relative-time {
+    margin-bottom: 1rem;
+  }
+  img {
+    aspect-ratio: 16/9;
+    width: 100%;
+    border-radius: 0.5rem;
+  }
+</style>
