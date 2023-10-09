@@ -4,10 +4,10 @@
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
   onMount(async () => {
     await import(
-      "@shoelace-style/shoelace/dist/components/radio-button/radio-button"
+      "$shoelace/radio-button/radio-button"
     );
     await import(
-      "@shoelace-style/shoelace/dist/components/radio-group/radio-group"
+      "$shoelace/radio-group/radio-group"
     );
   });
 </script>

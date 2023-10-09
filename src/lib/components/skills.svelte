@@ -7,13 +7,13 @@
 
   import { onMount } from "svelte";
   onMount(async () => {
-    await import("@shoelace-style/shoelace/dist/components/divider/divider");
+    await import("$shoelace/divider/divider");
   });
 </script>
 
 <section>
   <sl-divider />
-  <h1>{$_("home.stats.title")}</h1>
+  <h2>{$_("home.stats.title")}</h2>
   <div>
     <Tech />
     <Leetcode
@@ -25,12 +25,6 @@
 </section>
 
 <style>
-  h1 {
-    margin-bottom: 1.25rem;
-    font-size: 1.5rem;
-    line-height: 2rem;
-    font-weight: 700;
-  }
   div {
     display: flex;
     aspect-ratio: 1 / 1;

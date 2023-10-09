@@ -19,8 +19,8 @@
   }
 
   onMount(async () => {
-    await import("@shoelace-style/shoelace/dist/components/icon/icon");
-    await import("@shoelace-style/shoelace/dist/components/switch/switch");
+    await import("$shoelace/icon/icon");
+    await import("$shoelace/switch/switch");
     let pickedDarkModeBefore = localStorage.theme === "dark";
     let neverPickedAnything = "theme" in localStorage;
     let preferDarkMode = window.matchMedia(

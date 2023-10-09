@@ -14,7 +14,7 @@
     render();
   }
   onMount(async () => {
-    await import("@shoelace-style/shoelace/dist/components/spinner/spinner");
+    await import("$shoelace/spinner/spinner");
     observer = new IntersectionObserver(([entry]) => {
       isInCamera = entry.isIntersecting;
       cancelAnimationFrame(frameID);

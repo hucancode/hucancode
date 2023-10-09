@@ -19,9 +19,9 @@
 
 <section>
   <div>
-    <h1>
+    <h2>
       {$_("common.contact.contact")}
-    </h1>
+    </h2>
     <p>
       <SendMail size="1.5em" style={{ marginRight: "0.5em" }} />
       <a rel="external" href="mailto:hucancode@gmail.com">
@@ -36,9 +36,9 @@
     </p>
   </div>
   <div>
-    <h1>
+    <h2>
       {$_("common.contact.social")}
-    </h1>
+    </h2>
     <p>
       <Github size="1.5em" style={{ marginRight: "0.5em" }} />
       <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
