@@ -24,7 +24,7 @@
   }
   update();
   afterUpdate(update);
-  onMount(async() => {
+  onMount(async () => {
     await import("$shoelace/button-group/button-group");
     await import("$shoelace/button/button");
   });
@@ -35,10 +35,12 @@
   {#if lastPage > 1}
     <sl-button-group>
       {#each pages as p}
-        <sl-button outline={p == page} disabled={p==page}
-            data-sveltekit:prefetch
-            href="{path}/{p}"
-          >
+        <sl-button
+          outline={p == page}
+          disabled={p == page}
+          data-sveltekit:prefetch
+          href="{path}/{p}"
+        >
           {p}
         </sl-button>
       {/each}

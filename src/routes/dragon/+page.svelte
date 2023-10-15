@@ -9,9 +9,7 @@
   }
   onMount(async () => {
     await import("$shoelace/button/button");
-    await import(
-      "$shoelace/button-group/button-group"
-    );
+    await import("$shoelace/button-group/button-group");
   });
 </script>
 

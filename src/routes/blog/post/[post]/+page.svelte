@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
   import { formatDateRelative } from "$lib/i18n";
   import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
@@ -13,13 +13,14 @@
     date = data.meta.date;
     categories = data.meta.categories;
     if (!date) return;
-    dateString = formatDateRelative('en', new Date(date));
+    dateString = formatDateRelative("en", new Date(date));
   }
   update();
   afterUpdate(update);
-  
+
   onMount(async () => {
-    await import("$shoelace/relative-time/relative-time")
+    await import("$shoelace/relative-time/relative-time");
+    await import("$shoelace/divider/divider");
   });
 </script>
 
@@ -48,10 +49,13 @@
       {/each}
     </ul>
   {/if}
-  <h1 class="xl">{title}</h1>
-  <sl-relative-time {date} lang="en-US"></sl-relative-time>
+  <h1 xl>{title}</h1>
+  <small>
+    Posted <sl-relative-time {date} lang="en-US" />
+  </small>
+  <sl-divider />
   {#if cover}
-    <img src={cover} alt="" />
+    <img src={cover} alt="cover" />
   {/if}
   <div>
     <svelte:component this={data.content} />
@@ -60,6 +64,10 @@
 <Nav />
 
 <style>
+  img {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
   article {
     margin-top: 5rem;
     margin-bottom: 5rem;
@@ -97,10 +105,7 @@
     list-style-type: none;
   }
   li a:before {
-    content: '#';
-  }
-  sl-relative-time {
-    margin-bottom: 1rem;
+    content: "#";
   }
   img {
     aspect-ratio: 16/9;

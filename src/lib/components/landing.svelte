@@ -34,9 +34,7 @@
     },
   ];
   onMount(async () => {
-    await import(
-      "$shoelace/animation/animation"
-    );
+    await import("$shoelace/animation/animation");
     await import("$shoelace/icon/icon");
   });
 </script>
@@ -52,7 +50,7 @@
         on:mouseenter={() => (waving = true)}
         on:mouseleave={() => (waving = false)}
       >
-        <sl-icon name="wave" library="fx"></sl-icon>
+        <sl-icon name="wave" library="fx" />
       </sl-animation>
     </h1>
     <p class="about">{$_("home.landing.about")}</p>

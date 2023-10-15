@@ -16,6 +16,7 @@
   </div>
   <ThemeSwitcher />
 </nav>
+
 <style>
   div {
     display: flex;

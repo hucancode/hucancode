@@ -15,7 +15,7 @@
   export let posts = [];
 
   function convertDate(date) {
-    return formatDateRelative('en', new Date(date));
+    return formatDateRelative("en", new Date(date));
   }
   function getIcons(post) {
     let data = [
@@ -75,29 +75,21 @@
   {#each posts as post}
     <li>
       <div class="cover">
-      <img
-        alt="thumbnail"
-        src={post.cover}
-      />
-      <div class="tag-container">
-        {#each getIcons(post) as icon}
-          <svelte:component this={icon} class="bg-black p-2" />
-        {/each}
-      </div>
+        <img alt="thumbnail" src={post.cover} />
+        <div class="tag-container">
+          {#each getIcons(post) as icon}
+            <svelte:component this={icon} class="bg-black p-2" />
+          {/each}
+        </div>
       </div>
       <article>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
-          <h2
-          >
+          <h2>
             {post.title}
           </h2>
-          <time
-            >Posted {convertDate(post.date)}</time
-          >
+          <time>Posted {convertDate(post.date)}</time>
         </a>
-        <summary
-          >{post.excerpt}</summary
-        >
+        <summary>{post.excerpt}</summary>
       </article>
     </li>
   {/each}
@@ -150,7 +142,7 @@
     width: 100%;
   }
   summary {
-    color: var(--sl-color-neutral-300);
+    color: var(--sl-color-neutral-600);
     font-size: 0.875rem;
     line-height: 1.25rem;
   }

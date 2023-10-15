@@ -323,7 +323,7 @@ void main() {
 ```
 
 ![taiji](/blog/post/draw-taiji-with-glsl/bagua.png)
-*Final result would looks like this*
+_Final result would looks like this_
 
 ### Optimization
 

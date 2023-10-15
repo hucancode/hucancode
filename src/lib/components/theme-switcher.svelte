@@ -33,10 +33,7 @@
   on:sl-change={(e) => setDarkMode(e.target.checked)}
   checked={isDarkMode}
 >
-  <sl-icon
-      dark={isDarkMode}
-      name={isDarkMode?"moon-stars":"sun"}
-    ></sl-icon>
+  <sl-icon dark={isDarkMode} name={isDarkMode ? "moon-stars" : "sun"} />
 </sl-switch>
 
 <style>
@@ -47,7 +44,7 @@
   }
   sl-switch::part(thumb) {
     border-radius: 9999px;
-    border-width: 0; 
+    border-width: 0;
   }
   sl-switch::part(label) {
     position: absolute;
@@ -62,10 +59,10 @@
     height: calc(var(--height) * 0.65);
     padding: calc(var(--height) * 0.18);
   }
-  sl-icon[dark=true] {
+  sl-icon[dark="true"] {
     right: 0;
   }
-  sl-icon[dark=false] {
+  sl-icon[dark="false"] {
     left: 0;
   }
 </style>

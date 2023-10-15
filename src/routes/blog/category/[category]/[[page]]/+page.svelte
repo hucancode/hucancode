@@ -21,6 +21,7 @@
   path={`/blog/category/${data.category}`}
   lastPage={data.lastPage}
 />
+
 <style>
   div {
     display: flex;

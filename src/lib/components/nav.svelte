@@ -3,12 +3,8 @@
   import { locale } from "$lib/i18n";
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
   onMount(async () => {
-    await import(
-      "$shoelace/radio-button/radio-button"
-    );
-    await import(
-      "$shoelace/radio-group/radio-group"
-    );
+    await import("$shoelace/radio-button/radio-button");
+    await import("$shoelace/radio-group/radio-group");
   });
 </script>
 
