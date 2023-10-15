@@ -142,6 +142,7 @@
     top: 0;
     display: flex;
     flex-wrap: wrap;
+    gap: 0.5rem;
     padding: 0.25rem;
     background-color: var(--sl-color-neutral-200);
   }
