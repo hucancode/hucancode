@@ -59,10 +59,27 @@
 </article>
 <Nav />
 
-<style>
+<style global>
   article {
     margin-top: 5rem;
     margin-bottom: 5rem;
+    max-width: 768px;
+    padding: 0 1.5rem;
+  }
+  article :global(img) {
+    margin: 0 auto;
+    display: block;
+  }
+  article :global(div img) {
+    max-width: 80%;
+  }
+  article :global(div p img:only-child) {
+    max-width: 80%;
+  }
+  @media (min-width: 640px) {
+    article :global(div p img:only-child) {
+      max-width: 50%;
+    }
   }
   ul {
     display: flex;
