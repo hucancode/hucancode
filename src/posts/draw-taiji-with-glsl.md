@@ -267,13 +267,14 @@ float stem(int x, vec2 uv) {
 ```
 
 This is the result when you call `stem(0)` `stem(1)` `stem(5)` `stem(7)` respectively
+<small>
 
-<div>
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-0.png" />
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-1.png" />
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-5.png" />
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-7.png" />
-</div>
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-0.png)
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-1.png)
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-5.png)
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-7.png)
+
+</small>
 
 ### Draw 8 triagrams on a circle
 
@@ -321,8 +322,8 @@ void main() {
 }
 ```
 
-Final result would looks like this
 ![taiji](/blog/post/draw-taiji-with-glsl/bagua.png)
+*Final result would looks like this*
 
 ### Optimization
 
