@@ -10,11 +10,12 @@
   import GameIcon from "~icons/icon-park-twotone/game-ps";
   import DiceIcon from "~icons/fluent-emoji-high-contrast/game-die";
   import BookIcon from "~icons/heroicons/book-open-solid";
-  import { parseISO, formatRelative } from "date-fns";
+  import { formatDateRelative } from "$lib/i18n";
   import { onMount } from "svelte";
   export let posts = [];
+
   function convertDate(date) {
-    return formatRelative(parseISO(date), new Date());
+    return formatDateRelative('en', new Date(date));
   }
   function getIcons(post) {
     let data = [

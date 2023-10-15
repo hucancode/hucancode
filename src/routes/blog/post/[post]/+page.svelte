@@ -1,5 +1,5 @@
 <script>
-  import { parseISO, formatRelative } from "date-fns";
+  import { formatDateRelative } from "$lib/i18n";
   import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
 
@@ -12,7 +12,7 @@
     date = data.meta.date;
     categories = data.meta.categories;
     if (!date) return;
-    dateString = formatRelative(parseISO(date), new Date());
+    dateString = formatDateRelative('en', new Date(date));
   }
   update();
   afterUpdate(update);
