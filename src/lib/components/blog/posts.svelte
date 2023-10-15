@@ -74,6 +74,7 @@
 <ul>
   {#each posts as post}
     <li>
+      <div class="cover">
       <img
         alt="thumbnail"
         src={post.cover}
@@ -82,6 +83,7 @@
         {#each getIcons(post) as icon}
           <svelte:component this={icon} class="bg-black p-2" />
         {/each}
+      </div>
       </div>
       <article>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
@@ -108,7 +110,6 @@
   }
   li {
     display: flex;
-    position: relative;
     margin-bottom: 0.5rem;
     gap: 0.5rem;
     padding: 1rem;
@@ -121,26 +122,28 @@
   }
   img {
     width: 100%;
-    aspect-ratio: 16/9;
+    height: 100%;
     object-fit: cover;
   }
+  .cover {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+  }
   @media (min-width: 640px) {
-    img {
+    .cover {
       width: 25%;
     }
   }
   .tag-container {
     position: absolute;
-    left: 1rem;
-    top: 1rem;
+    max-width: 100%;
+    left: 0;
+    top: 0;
     display: flex;
     flex-wrap: wrap;
-    background-color: black;
-  }
-  @media (min-width: 640px) {
-    .tag-container {
-      width: 25%;
-    }
+    padding: 0.25rem;
+    background-color: var(--sl-color-neutral-200);
   }
   article {
     width: 100%;

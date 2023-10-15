@@ -94,15 +94,6 @@ function setupObject() {
     easing: "linear",
     loop: true,
   });
-  return;
-  anime({
-    targets: bagua.rotation,
-    z: Math.PI * 2,
-    duration: BAGUA_ROTATION_CIRCLE,
-    easing: "linear",
-    direction: "reverse",
-    loop: true,
-  });
 }
 
 function setupCamera(w, h) {
