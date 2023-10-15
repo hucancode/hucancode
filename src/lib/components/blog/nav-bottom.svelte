@@ -3,9 +3,7 @@
   import Coffee from "~icons/simple-icons/buymeacoffee";
 </script>
 
-<small>
-  That's all! Thank you for reading all the way here 😊
-</small>
+<small> That's all! Thank you for reading all the way here 😊 </small>
 <nav>
   <h2 rainbow>
     <GoBack />

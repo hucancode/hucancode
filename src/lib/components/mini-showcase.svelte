@@ -7,20 +7,12 @@
   let Scene;
 
   onMount(async () => {
-    await import(
-      "$shoelace/button-group/button-group"
-    );
+    await import("$shoelace/button-group/button-group");
     await import("$shoelace/button/button");
-    await import(
-      "$shoelace/animation/animation"
-    );
+    await import("$shoelace/animation/animation");
     await import("$shoelace/icon/icon");
-    await import(
-      "$shoelace/radio-button/radio-button"
-    );
-    await import(
-      "$shoelace/radio-group/radio-group"
-    );
+    await import("$shoelace/radio-button/radio-button");
+    await import("$shoelace/radio-group/radio-group");
   });
 
   function performMagic() {
