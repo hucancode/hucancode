@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { formatDateRelative } from "$lib/i18n";
   import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
 
@@ -11,6 +12,8 @@
     cover = data.meta.cover;
     date = data.meta.date;
     categories = data.meta.categories;
+    if (!date) return;
+    dateString = formatDateRelative('en', new Date(date));
   }
   update();
   afterUpdate(update);
