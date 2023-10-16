@@ -7,6 +7,7 @@ categories:
   - bitmask
   - taiji
   - graphics
+  - threejs
   - glsl
   - creative-coding
 ---
