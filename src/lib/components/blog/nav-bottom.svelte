@@ -39,7 +39,8 @@
     gap: 0.5rem;
     align-items: center;
   }
-  h2 :global(svg) {
+  sl-icon {
     color: var(--sl-color-primary-700);
+    font-size: larger;
   }
 </style>

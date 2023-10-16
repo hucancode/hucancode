@@ -68,7 +68,7 @@
     height: 100%;
   }
   sl-spinner {
-    font-size: 50px;
+    font-size: xxx-large;
     --track-width: 10px;
     position: absolute;
     top: 50%;

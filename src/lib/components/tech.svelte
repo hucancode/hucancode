@@ -75,14 +75,13 @@
     width: 3.5rem;
     flex-direction: column;
     align-items: center;
-    font-size: 2.25rem;
+    font-size: xx-large;
     line-height: 2.5rem;
   }
   span {
     margin-top: 0.5rem;
     width: 6rem;
     text-align: center;
-    font-size: 0.75rem;
-    line-height: 1rem;
+    font-size: small;
   }
 </style>

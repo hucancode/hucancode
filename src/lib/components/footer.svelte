@@ -7,8 +7,7 @@
 <style>
   small {
     margin-bottom: 2.5rem;
-    font-size: 0.75rem;
-    line-height: 1rem;
+    font-size: small;
     color: rgb(107 114 128);
   }
 </style>

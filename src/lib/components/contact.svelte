@@ -23,35 +23,35 @@
     <h2>
       {$_("common.contact.contact")}
     </h2>
-    <p>
+    <small>
       <sl-icon name="email" library="line-md" />
       <a rel="external" href="mailto:hucancode@gmail.com">
         hucancode@gmail.com
       </a>
-    </p>
-    <p>
+    </small>
+    <small>
       <sl-icon name="document" library="line-md" />
       <a target="_blank" rel="noreferrer" href={resumeUrl}>
         {$_("common.contact.downloadResume")}
       </a>
-    </p>
+    </small>
   </div>
   <div>
     <h2>
       {$_("common.contact.social")}
     </h2>
-    <p>
+    <small>
       <sl-icon name="github" library="line-md" />
       <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
         {$_("common.contact.github")}
       </a>
-    </p>
-    <p>
+    </small>
+    <small>
       <sl-icon name="coffee" library="line-md" />
       <a data-sveltekit:prefetch href="/blog">
         {$_("common.contact.blog")}
       </a>
-    </p>
+    </small>
   </div>
 </section>
 
@@ -65,26 +65,25 @@
   @media (min-width: 768px) {
     section {
       flex-direction: row;
-      align-items: flex-start;
+      align-items: start;
       padding-left: 2.5rem;
       padding-right: 2.5rem;
     }
   }
-  h1 {
+  h2 {
     width: 100%;
     text-align: center;
-    font-size: 1.5rem;
-    line-height: 2rem;
-    font-weight: 700;
+    font-size: large;
+    font-weight: var(--sl-font-weight-bold);
   }
   @media (min-width: 768px) {
-    h1 {
+    h2 {
       text-align: left;
     }
   }
   @media (min-width: 768px) {
     div {
-      align-items: flex-start;
+      align-items: start;
     }
   }
   div {
@@ -96,17 +95,16 @@
     gap: 0.75rem;
   }
   @media (min-width: 768px) {
-    p {
-      justify-content: flex-start;
+    div {
+      align-items: start;
     }
   }
-  p {
+  small {
     display: flex;
-    justify-content: center;
     gap: 0.5rem;
     align-items: center;
   }
-  p sl-icon {
-    font-size: 1.25em;
+  sl-icon {
+    font-size: larger;
   }
 </style>
