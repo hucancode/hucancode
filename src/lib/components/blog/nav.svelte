@@ -22,4 +22,7 @@
     display: flex;
     gap: 1rem;
   }
+  h2 {
+    font-weight: var(--sl-font-weight-semibold);
+  }
 </style>

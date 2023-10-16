@@ -36,8 +36,8 @@
     <sl-button-group>
       {#each pages as p}
         <sl-button
-          outline={p == page}
-          disabled={p == page}
+          outline={page && p == page}
+          disabled={page && p == page}
           data-sveltekit:prefetch
           href="{path}/{p}"
         >
