@@ -1,9 +1,6 @@
 <script>
+  import { onMount } from "svelte";
   import { _, locale } from "$lib/i18n";
-  import SendMail from "~icons/simple-icons/minutemailer";
-  import Fire from "~icons/ri/fire-fill";
-  import Download from "~icons/ri/file-download-fill";
-  import Github from "~icons/simple-icons/github";
 
   let resumeUrl = "/resume.pdf";
 
@@ -15,6 +12,10 @@
       resumeUrl = "/resume-jp.pdf";
       break;
   }
+
+  onMount(async () => {
+    await import("$shoelace/icon/icon");
+  });
 </script>
 
 <section>
@@ -23,13 +24,13 @@
       {$_("common.contact.contact")}
     </h2>
     <p>
-      <SendMail size="1.5em" style={{ marginRight: "0.5em" }} />
+      <sl-icon name="email" library="line-md" />
       <a rel="external" href="mailto:hucancode@gmail.com">
         hucancode@gmail.com
       </a>
     </p>
     <p>
-      <Download />
+      <sl-icon name="document" library="line-md" />
       <a target="_blank" rel="noreferrer" href={resumeUrl}>
         {$_("common.contact.downloadResume")}
       </a>
@@ -40,13 +41,13 @@
       {$_("common.contact.social")}
     </h2>
     <p>
-      <Github size="1.5em" style={{ marginRight: "0.5em" }} />
+      <sl-icon name="github" library="line-md" />
       <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
         {$_("common.contact.github")}
       </a>
     </p>
     <p>
-      <Fire size="1.5em" style={{ marginRight: "0.5em" }} />
+      <sl-icon name="coffee" library="line-md" />
       <a data-sveltekit:prefetch href="/blog">
         {$_("common.contact.blog")}
       </a>
@@ -103,5 +104,9 @@
     display: flex;
     justify-content: center;
     gap: 0.5rem;
+    align-items: center;
+  }
+  p sl-icon {
+    font-size: 1.25em;
   }
 </style>

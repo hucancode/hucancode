@@ -1,5 +1,9 @@
 <script>
-  import Coffee from "~icons/simple-icons/buymeacoffee";
+  import { onMount } from "svelte";
+
+  onMount(async () => {
+    await import("$shoelace/icon/icon");
+  });
 </script>
 
 <svelte:head>
@@ -33,7 +37,7 @@
   >
     <h2 rainbow>
       Buy me a coffee
-      <Coffee />
+      <sl-icon name="buy-me-a-coffee" library="line-md" />
     </h2></a
   >
 </header>
@@ -65,7 +69,8 @@
     gap: 0.5rem;
     align-items: center;
   }
-  h2 :global(svg) {
-    color: var(--sl-color-primary-700);
+  h2 sl-icon {
+    font-size: 1.25em;
+    color: var(--sl-color-primary-800);
   }
 </style>

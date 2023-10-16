@@ -13,7 +13,6 @@
   } from "chart.js";
   import { enGB, ja } from "date-fns/locale";
   import "chartjs-adapter-date-fns";
-  import Leetcode from "~icons/simple-icons/leetcode";
   import DualTag from "$lib/components/dual-tag.svelte";
   let canvas;
   export let data;
@@ -38,7 +37,8 @@
     chart.update();
   });
 
-  onMount(() => {
+  onMount(async () => {
+    await import("$shoelace/icon/icon");
     Chart.register(
       Colors,
       LineController,
@@ -106,7 +106,7 @@
 <div class="container">
   <div class="summary">
     <div class="heading">
-      <Leetcode />
+      <sl-icon name="leetcode" library="si" />
       <span>Leetcode</span>
     </div>
     <DualTag title={$_("home.stats.rating")} value={Math.round(rating)} />

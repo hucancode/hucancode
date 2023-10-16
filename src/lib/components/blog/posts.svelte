@@ -1,17 +1,6 @@
 <script>
-  import CreativeIcon from "~icons/icons8/idea";
-  import MathIcon from "~icons/tabler/math";
-  import ThreeDIcon from "~icons/ic/twotone-3d-rotation";
-  import UEIcon from "~icons/fontisto/unreal-engine";
-  import LeetcodeIcon from "~icons/simple-icons/leetcode";
-  import CppIcon from "~icons/mdi/language-cpp";
-  import ProgrammingIcon from "~icons/icon-park-twotone/computer";
-  import FunctionIcon from "~icons/fluent/math-formula-16-filled";
-  import GameIcon from "~icons/icon-park-twotone/game-ps";
-  import DiceIcon from "~icons/fluent-emoji-high-contrast/game-die";
-  import BookIcon from "~icons/heroicons/book-open-solid";
-  import { formatDateRelative } from "$lib/i18n";
   import { onMount } from "svelte";
+  import { formatDateRelative } from "$lib/i18n";
   export let posts = [];
 
   function convertDate(date) {
@@ -21,49 +10,59 @@
     let data = [
       {
         categories: ["combinatorics"],
-        icon: DiceIcon,
+        iconSet: "fluent",
+        icon: "game-die",
       },
       {
         categories: ["dynamic-programming"],
-        icon: FunctionIcon,
+        iconSet: "material",
+        icon: "function",
       },
       {
         categories: ["leetcode"],
-        icon: LeetcodeIcon,
+        iconSet: "si",
+        icon: "leetcode",
       },
       {
         categories: ["cpp"],
-        icon: CppIcon,
+        iconSet: "si",
+        icon: "cpp",
       },
       {
         categories: ["math", "geometry", "computational-geometry"],
-        icon: MathIcon,
+        iconSet: "material",
+        icon: "calculate",
       },
       {
         categories: ["unreal", "game"],
-        icon: GameIcon,
+        iconSet: "material",
+        icon: "video-game",
       },
       {
         categories: ["unreal"],
-        icon: UEIcon,
+        iconSet: "si",
+        icon: "ue",
       },
       {
         categories: ["3d"],
-        icon: ThreeDIcon,
+        iconSet: "material",
+        icon: "3d-rotation",
       },
       {
         categories: ["creative", "creative-coding"],
-        icon: CreativeIcon,
+        iconSet: "material",
+        icon: "lightbulb",
       },
       {
         categories: ["book"],
-        icon: BookIcon,
+        iconSet: "material",
+        icon: "menu-book",
       },
     ];
     let ret = [];
     for (let item of data) {
       if (post.categories.some((cat) => item.categories.includes(cat))) {
-        ret.push(item.icon);
+        ret.push({ icon: item.icon, set: item.iconSet });
         if (ret.length >= 5) break;
       }
     }
@@ -78,7 +77,7 @@
         <img alt="thumbnail" src={post.cover} />
         <div class="tag-container">
           {#each getIcons(post) as icon}
-            <svelte:component this={icon} class="bg-black p-2" />
+            <sl-icon name={icon.icon} library={icon.set} />
           {/each}
         </div>
       </div>
@@ -121,6 +120,7 @@
     position: relative;
     width: 100%;
     aspect-ratio: 16/9;
+    max-height: 10rem;
   }
   @media (min-width: 640px) {
     .cover {
