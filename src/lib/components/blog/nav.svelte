@@ -4,15 +4,15 @@
 
 <nav>
   <div>
-    <h2 rainbow>
-      <a data-sveltekit:prefetch href="/blog">Blog</a>
-    </h2>
-    <h2>
-      <a data-sveltekit:prefetch href="/">Home</a>
-    </h2>
-    <h2>
-      <a data-sveltekit:prefetch href="/blog/about">About</a>
-    </h2>
+    <a data-sveltekit:prefetch href="/blog">
+      <h2 rainbow="1">Blog</h2>
+    </a>
+    <a data-sveltekit:prefetch href="/">
+      <h2>Home</h2>
+    </a>
+    <a data-sveltekit:prefetch href="/blog/about">
+      <h2>About</h2>
+    </a>
   </div>
   <ThemeSwitcher />
 </nav>

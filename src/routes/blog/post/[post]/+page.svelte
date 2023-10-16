@@ -42,7 +42,11 @@
     <ul>
       {#each categories as category}
         <li>
-          <a data-sveltekit:prefetch href="/blog/category/{category}/" rainbow>
+          <a
+            data-sveltekit:prefetch
+            href="/blog/category/{category}/"
+            rainbow="3"
+          >
             {category}
           </a>
         </li>
@@ -103,6 +107,8 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     list-style-type: none;
+    padding-left: 0;
+    font-weight: var(--sl-font-weight-bold);
   }
   li a:before {
     content: "#";
