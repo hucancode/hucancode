@@ -34,7 +34,7 @@ Today I will use `ThreeJS` to build a Rubik's Cube. Our Cube would be able to ro
 
 ### Build single cube
 
-<img class="w-full sm:w-1/2 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/single-cube.png" />
+![cube](how-did-i-build-the-rubiks-cube/single-cube.png)
 
 We need to consider 2 things
 
@@ -71,7 +71,7 @@ If you have experience with OpenGL or something similar before, this code will l
 
 Here is our completed cube
 
-<div class="w-full sm:w-1/2 mx-auto aspect-square">
+<div class="rubik">
     <Rubik1 />
 </div>
 
@@ -101,7 +101,7 @@ for (let x = 0; x < cubeNum; x++) {
 
 Here is the finished 3x3 Cube
 
-<div class="w-full sm:w-1/2 mx-auto aspect-square">
+<div class="rubik">
     <Rubik3 />
   </div>
 
@@ -116,7 +116,7 @@ My approach is based on some observation:
 - After we done rotating, ungroup them
 - Rotation pivot stay the same at the center of the Cube
 
-<img class="w-full sm:w-1/2 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/rotation.png" />
+![cube](how-did-i-build-the-rubiks-cube/rotation.png)
 
 Group & rotate function
 
@@ -187,16 +187,16 @@ function cleanUpAfterMove() {
 
 The result will looks somewhere like this
 
-<div class="w-full sm:w-1/2 mx-auto aspect-square">
+<div class="rubik">
     <Rubik3R />
-  </div>
+</div>
 
 ### And finally let's add some variations
 
 At this point, it's up to your creativity to add more interesting features.
 I would like to add more dimension, then add some goofy easing curve to spice up the rotation.
 
-<div class="w-full sm:w-1/2 mx-auto aspect-square">
+<div class="rubik">
     <Rubik size={5} />
 </div>
 
@@ -204,3 +204,12 @@ I would like to add more dimension, then add some goofy easing curve to spice up
 
 Currently I'm too lazy to make a minimal working demo. Here is the closest to that,
 Please checkout [this file](https://github.com/hucancode/hucancode/blob/master/src/lib/scenes/rubik.js) if you are interested (pardon the messy code 😁)
+
+<style>
+  .rubik {
+    aspect-ratio: 1/1;
+    max-width: 400px;
+    width: 80%;
+    margin: 0 auto;
+  }
+</style>
