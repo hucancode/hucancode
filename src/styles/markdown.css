@@ -34,3 +34,38 @@ article :is(h1, h2, h3) {
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
+
+article h1 {
+  color: var(--sl-color-neutral-1000);
+}
+
+article h2 {
+  color: var(--sl-color-neutral-900);
+}
+
+article h3 {
+  color: var(--sl-color-neutral-800);
+}
+
+article :is(p, ol, ul, table) {
+  color: var(--sl-color-neutral-700);
+}
+article table {
+  width: 100%;
+  padding: 0.5rem;
+}
+article table thead {
+  background-color: var(--sl-color-neutral-200);
+}
+article table td {
+  padding: 0.25rem 0.5rem;
+}
+article table th {
+  padding: 0.5rem;
+}
+article table tbody tr:nth-child(even) {
+  background-color: var(--sl-color-neutral-100);
+}
+article table tbody tr:nth-child(odd) {
+  background-color: var(--sl-color-neutral-0);
+}
