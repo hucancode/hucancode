@@ -92,23 +92,22 @@ a:hover {
 }
 
 h1 {
-  font-size: var(--sl-font-size-2x-large);
+  font-size: xx-large;
   font-weight: var(--sl-font-weight-bold);
 }
 h1[xl] {
   font-weight: 800;
-  font-size: var(--sl-font-size-2x-large);
-  line-height: 2.5rem;
+  font-size: xx-large;
   margin-bottom: 1rem;
 }
 
 h2 {
-  font-size: var(--sl-font-size-large);
+  font-size: large;
   font-weight: var(--sl-font-weight-bold);
 }
 
 h3 {
-  font-size: var(--sl-font-size-medium);
+  font-size: medium;
   font-weight: var(--sl-font-weight-semibold);
 }
 
@@ -200,4 +199,5 @@ p {
 
 small {
   color: var(--sl-color-neutral-500);
+  font-size: small;
 }

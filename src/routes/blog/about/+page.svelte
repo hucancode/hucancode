@@ -69,8 +69,8 @@
     gap: 0.5rem;
     align-items: center;
   }
-  h2 sl-icon {
-    font-size: 1.25em;
+  sl-icon {
+    font-size: larger;
     color: var(--sl-color-primary-800);
   }
 </style>

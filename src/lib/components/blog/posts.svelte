@@ -143,12 +143,10 @@
   }
   summary {
     color: var(--sl-color-neutral-600);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: small;
   }
   time {
     color: var(--sl-color-neutral-400);
-    font-size: 0.75rem;
-    line-height: 1rem;
+    font-size: small;
   }
 </style>
