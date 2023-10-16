@@ -4,32 +4,39 @@ article img {
   margin: 0 auto;
   display: block;
 }
+
 article {
   margin-top: 5rem;
   margin-bottom: 5rem;
   max-width: 768px;
   padding: 0 1.5rem;
 }
+
 article small img {
   margin: 0 auto;
   display: inline-block;
 }
+
 article img + em {
   margin: 0 auto;
   display: block;
   text-align: center;
 }
+
 article div img {
   max-width: 80%;
 }
+
 article div p img:only-of-type {
   max-width: 80%;
 }
+
 @media (min-width: 640px) {
   article div p img:only-of-type {
     max-width: 50%;
   }
 }
+
 article :is(h1, h2, h3) {
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -50,22 +57,28 @@ article h3 {
 article :is(p, ol, ul, table) {
   color: var(--sl-color-neutral-700);
 }
+
 article table {
   width: 100%;
   padding: 0.5rem;
 }
+
 article table thead {
   background-color: var(--sl-color-neutral-200);
 }
+
 article table td {
   padding: 0.25rem 0.5rem;
 }
+
 article table th {
   padding: 0.5rem;
 }
+
 article table tbody tr:nth-child(even) {
   background-color: var(--sl-color-neutral-100);
 }
+
 article table tbody tr:nth-child(odd) {
   background-color: var(--sl-color-neutral-0);
 }
