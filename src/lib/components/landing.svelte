@@ -41,7 +41,7 @@
 
 <section>
   <div class="greetings">
-    <h1 rainbow>
+    <h1 rainbow="1">
       {$_("home.landing.hello")}
       <sl-animation
         keyframes={wavingAnimation}
@@ -73,8 +73,11 @@
   }
   h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
-    background-image: var(--rainbow2);
     background-size: 200% 100%;
+    cursor: default;
+  }
+  h1:hover {
+    background-position-x: unset;
   }
   p {
     text-align: center;

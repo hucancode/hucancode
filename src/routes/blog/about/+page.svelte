@@ -26,14 +26,16 @@
       /></strong
     >
   </small>
-  <h2>
-    <a
-      target="_blank"
-      rel="noreferrer"
-      href="https://www.buymeacoffee.com/hucancode">Buy me a coffee</a
-    >
-    <Coffee />
-  </h2>
+  <a
+    target="_blank"
+    rel="noreferrer"
+    href="https://www.buymeacoffee.com/hucancode"
+  >
+    <h2 rainbow>
+      Buy me a coffee
+      <Coffee />
+    </h2></a
+  >
 </header>
 
 <style>
@@ -57,5 +59,13 @@
     justify-content: center;
     border-radius: 9999px;
     background-color: black;
+  }
+  h2 {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  h2 :global(svg) {
+    color: var(--sl-color-primary-700);
   }
 </style>

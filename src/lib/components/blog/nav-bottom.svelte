@@ -5,18 +5,21 @@
 
 <small> That's all! Thank you for reading all the way here 😊 </small>
 <nav>
-  <h2 rainbow>
-    <GoBack />
-    <a data-sveltekit:prefetch href="/blog">Return to blog</a>
-  </h2>
-  <h2 rainbow>
-    <a
-      target="_blank"
-      rel="noreferrer"
-      href="https://www.buymeacoffee.com/hucancode">Buy me a coffee</a
-    >
-    <Coffee />
-  </h2>
+  <a data-sveltekit:prefetch href="/blog"
+    ><h2 rainbow>
+      <GoBack />
+      Return to blog
+    </h2></a
+  >
+  <a
+    target="_blank"
+    rel="noreferrer"
+    href="https://www.buymeacoffee.com/hucancode"
+    ><h2 rainbow="0">
+      Buy me a coffee
+      <Coffee />
+    </h2></a
+  >
 </nav>
 
 <style>
@@ -27,5 +30,13 @@
   }
   nav {
     margin-bottom: 2.5rem;
+  }
+  h2 {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  h2 :global(svg) {
+    color: var(--sl-color-primary-700);
   }
 </style>
