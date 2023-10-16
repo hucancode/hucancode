@@ -47,8 +47,20 @@
     --thumb-size: calc(var(--height) * 0.9);
   }
   sl-switch::part(thumb) {
+    position: absolute;
     border-radius: 9999px;
     border-width: 0;
+    transition-duration: 300ms;
+    width: var(--thumb-size);
+    left: calc(var(--height) * 0.5);
+    transition-property: width;
+  }
+  sl-switch:active::part(thumb) {
+    width: calc(var(--thumb-size) * 1.5);
+  }
+  sl-switch[checked]::part(thumb) {
+    right: calc(var(--height) * 0.5);
+    left: unset;
   }
   sl-switch::part(label) {
     position: absolute;
