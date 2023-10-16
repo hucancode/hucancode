@@ -1,13 +1,16 @@
 <script>
-  import GoBack from "~icons/ri/arrow-left-line";
-  import Coffee from "~icons/simple-icons/buymeacoffee";
+  import { onMount } from "svelte";
+
+  onMount(async () => {
+    await import("$shoelace/icon/icon");
+  });
 </script>
 
 <small> That's all! Thank you for reading all the way here 😊 </small>
 <nav>
   <a data-sveltekit:prefetch href="/blog"
     ><h2 rainbow>
-      <GoBack />
+      <sl-icon name="chevron-left" library="line-md" />
       Return to blog
     </h2></a
   >
@@ -17,7 +20,7 @@
     href="https://www.buymeacoffee.com/hucancode"
     ><h2 rainbow="0">
       Buy me a coffee
-      <Coffee />
+      <sl-icon name="buy-me-a-coffee" library="line-md" />
     </h2></a
   >
 </nav>

@@ -33,7 +33,11 @@
   on:sl-change={(e) => setDarkMode(e.target.checked)}
   checked={isDarkMode}
 >
-  <sl-icon dark={isDarkMode} name={isDarkMode ? "moon-stars" : "sun"} />
+  <sl-icon
+    dark={isDarkMode}
+    name={isDarkMode ? "sun-to-moon" : "sun-rising"}
+    library="line-md"
+  />
 </sl-switch>
 
 <style>

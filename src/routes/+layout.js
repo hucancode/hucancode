@@ -7,10 +7,31 @@ export async function load() {
   let { registerIconLibrary } = await import(
     "@shoelace-style/shoelace/dist/utilities/icon-library"
   );
-  registerIconLibrary("fx", {
-    resolver: (name) => `assets/icons/firefox/${name}.svg`,
-  });
-  registerIconLibrary("si", {
-    resolver: (name) => `assets/icons/simple-icons/${name}.svg`,
+  let sets = [
+    {
+      alias: "fx",
+      path: "firefox",
+    },
+    {
+      alias: "si",
+      path: "simple-icons",
+    },
+    {
+      alias: "line-md",
+      path: "line-md",
+    },
+    {
+      alias: "material",
+      path: "google-material",
+    },
+    {
+      alias: "fluent",
+      path: "fluent",
+    },
+  ];
+  sets.forEach((e) => {
+    registerIconLibrary(e.alias, {
+      resolver: (name) => `/assets/icons/${e.path}/${name}.svg`,
+    });
   });
 }
