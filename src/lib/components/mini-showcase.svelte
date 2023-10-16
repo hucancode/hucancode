@@ -82,7 +82,7 @@
       </sl-animation>
       Surprise me!
     </sl-button>
-    <sl-button data-sveltekit-reload href={link}>
+    <sl-button data-sveltekit:prefetch href={link}>
       <sl-icon slot="prefix" name="eye" />
       Full screen
     </sl-button>

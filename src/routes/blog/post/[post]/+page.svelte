@@ -1,4 +1,5 @@
 <script>
+  import "$styles/markdown.css";
   import { onMount } from "svelte";
   import { formatDateRelative } from "$lib/i18n";
   import { afterUpdate } from "svelte";
@@ -68,40 +69,6 @@
 <Nav />
 
 <style>
-  img {
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-  }
-  article {
-    margin-top: 5rem;
-    margin-bottom: 5rem;
-    max-width: 768px;
-    padding: 0 1.5rem;
-  }
-  article :global(small img) {
-    margin: 0 auto;
-    display: inline-block;
-  }
-  article :global(img) {
-    margin: 0 auto;
-    display: block;
-  }
-  article :global(img + em) {
-    margin: 0 auto;
-    display: block;
-    text-align: center;
-  }
-  article :global(div img) {
-    max-width: 80%;
-  }
-  article :global(div p img:only-of-type) {
-    max-width: 80%;
-  }
-  @media (min-width: 640px) {
-    article :global(div p img:only-of-type) {
-      max-width: 50%;
-    }
-  }
   ul {
     display: flex;
     flex-wrap: wrap;
@@ -117,5 +84,6 @@
     aspect-ratio: 16/9;
     width: 100%;
     border-radius: 0.5rem;
+    margin-bottom: 2rem;
   }
 </style>

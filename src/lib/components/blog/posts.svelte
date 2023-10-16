@@ -82,15 +82,15 @@
           {/each}
         </div>
       </div>
-      <article>
+      <header>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
-          <h2>
+          <h3>
             {post.title}
-          </h2>
+          </h3>
           <time>Posted {convertDate(post.date)}</time>
         </a>
         <summary>{post.excerpt}</summary>
-      </article>
+      </header>
     </li>
   {/each}
 </ul>
@@ -138,7 +138,7 @@
     padding: 0.25rem;
     background-color: var(--sl-color-neutral-200);
   }
-  article {
+  header {
     width: 100%;
   }
   summary {

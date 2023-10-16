@@ -1,8 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { _ } from "$lib/i18n";
-  import Nav from "$lib/components/nav.svelte";
-  import Scene from "$lib/components/taiji.svelte";
+  import Scene from "$lib/components/dragon.svelte";
   let sceneInstance;
   function performMagic() {
     sceneInstance.performMagic();
@@ -14,15 +13,15 @@
 </script>
 
 <svelte:head>
-  <title>Taiji</title>
+  <title>Dragon</title>
 </svelte:head>
-<Nav />
+
 <section>
   <div>
     <Scene bind:this={sceneInstance} />
   </div>
   <sl-button-group>
-    <sl-button data-sveltekit-reload href="/">
+    <sl-button data-sveltekit:prefetch href="/">
       <sl-icon slot="prefix" name="arrow-return-left" />
       Go back
     </sl-button>

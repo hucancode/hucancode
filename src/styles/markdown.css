@@ -1,0 +1,36 @@
+article img {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  margin: 0 auto;
+  display: block;
+}
+article {
+  margin-top: 5rem;
+  margin-bottom: 5rem;
+  max-width: 768px;
+  padding: 0 1.5rem;
+}
+article small img {
+  margin: 0 auto;
+  display: inline-block;
+}
+article img + em {
+  margin: 0 auto;
+  display: block;
+  text-align: center;
+}
+article div img {
+  max-width: 80%;
+}
+article div p img:only-of-type {
+  max-width: 80%;
+}
+@media (min-width: 640px) {
+  article div p img:only-of-type {
+    max-width: 50%;
+  }
+}
+article :is(h1, h2, h3) {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
