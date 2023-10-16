@@ -179,22 +179,6 @@ p {
   margin: 0;
 }
 
-h1 {
-  color: var(--sl-color-neutral-1000);
-}
-
-h2 {
-  color: var(--sl-color-neutral-900);
-}
-
-h3 {
-  color: var(--sl-color-neutral-800);
-}
-
-p {
-  color: var(--sl-color-neutral-700);
-}
-
 small {
   color: var(--sl-color-neutral-500);
 }
