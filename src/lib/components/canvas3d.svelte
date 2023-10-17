@@ -59,7 +59,7 @@
     background-image: radial-gradient(
       closest-side,
       var(--sl-color-neutral-200),
-      var(--sl-color-neutral-0)
+      var(--sl-color-neutral-50)
     );
   }
   .container {
