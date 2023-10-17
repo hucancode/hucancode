@@ -10,7 +10,7 @@
       "downloadResume": "Resume muak muak"
     },
     "note": {
-      "madeWith": "Para tu chasy kanpai Svelte, Three.js, TailwindCSS"
+      "madeWith": "Underwear para tu kanpai Svelte, Three.js"
     }
   },
   "home": {
@@ -25,7 +25,8 @@
       "taiji": "Apple",
       "warrior": "Mango",
       "surprise": "Waaaaaa!!",
-      "fullscreen": "Big banana!"
+      "fullscreen": "Big banana!",
+      "goback": "Overware"
     },
     "stats": {
       "title": "Me want banana!",

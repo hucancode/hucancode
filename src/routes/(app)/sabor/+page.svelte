@@ -23,11 +23,11 @@
   <sl-button-group>
     <sl-button data-sveltekit:prefetch href="/">
       <sl-icon slot="prefix" name="arrow-return-left" />
-      Go back
+      {$_("home.showcase.goback")}
     </sl-button>
     <sl-button on:click={performMagic}>
       <sl-icon slot="prefix" name="brilliance" />
-      Surprise me!
+      {$_("home.showcase.surprise")}
     </sl-button>
   </sl-button-group>
 </section>
