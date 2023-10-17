@@ -11,7 +11,7 @@
     LinearScale,
     Tooltip,
   } from "chart.js";
-  import { enGB, ja } from "date-fns/locale";
+  import { enGB, ja, vi } from "date-fns/locale";
   import "chartjs-adapter-date-fns";
   import DualTag from "$lib/components/dual-tag.svelte";
   let canvas;
@@ -31,6 +31,12 @@
         break;
       case "ja":
         lang = ja;
+        break;
+      case "vi":
+        lang = vi;
+        break;
+      default:
+        lang = enGB;
         break;
     }
     chart.options.scales.x.adapters.date.locale = lang;
@@ -62,6 +68,11 @@
       case "ja":
         lang = ja;
         break;
+      case "vi":
+        lang = vi;
+        break;
+      default:
+        lang = enGB;
     }
     chart = new Chart(canvas, {
       type: "line",

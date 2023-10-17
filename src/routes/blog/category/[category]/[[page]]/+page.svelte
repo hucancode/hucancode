@@ -28,4 +28,7 @@
     flex-direction: column;
     align-items: center;
   }
+  h1 {
+    pointer-events: none;
+  }
 </style>

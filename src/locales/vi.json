@@ -1,0 +1,40 @@
+{
+  "common": {
+    "contact": {
+      "home": "Trang Chính",
+      "social": "Xem thêm về mình!",
+      "contact": "Liên hệ",
+      "github": "Github",
+      "blog": "Blog",
+      "sendMail": "Gửi thư cho mình",
+      "downloadResume": "Tải xuống resume của mình"
+    },
+    "note": {
+      "madeWith": "Hân hạnh được tài trợ bởi Svelte, Three.js"
+    }
+  },
+  "home": {
+    "landing": {
+      "hello": "Xin chào!",
+      "about": "Mình là Bằng, một người kỹ sư có đam mê với tất cả những gì thuộc về đồ họa"
+    },
+    "showcase": {
+      "rubik": "Rubik",
+      "dragon": "Phi long",
+      "lego": "Lego",
+      "taiji": "Thái cực",
+      "warrior": "Chiến binh",
+      "surprise": "Chỉ vậy thôi à?",
+      "fullscreen": "Phóng to"
+    },
+    "stats": {
+      "title": "Những thứ mình thích",
+      "rating": "Điểm",
+      "topPercentage": "Hạng"
+    }
+  },
+  "creative": {
+    "return": "Quay về",
+    "buymeacoffee": "Tặng mình một ly cà phê"
+  }
+}

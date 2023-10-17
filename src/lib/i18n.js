@@ -1,9 +1,10 @@
 import { derived, writable, readable } from "svelte/store";
 import * as en from "$locales/en.json";
 import * as ja from "$locales/ja.json";
+import * as vi from "$locales/vi.json";
 import * as mini from "$locales/mini.json";
 
-const DICT = { en, ja, mini };
+const DICT = { en, ja, vi, mini };
 const FALLBACK_LANG = "en";
 export const locale = writable("en");
 export const locales = Object.keys(DICT);

@@ -13,6 +13,10 @@ export async function load() {
       path: "firefox",
     },
     {
+      alias: "open",
+      path: "openmoji",
+    },
+    {
       alias: "si",
       path: "simple-icons",
     },

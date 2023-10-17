@@ -6,7 +6,6 @@
   });
 </script>
 
-<small> That's all! Thank you for reading all the way here 😊 </small>
 <nav>
   <a data-sveltekit:prefetch href="/blog"
     ><h2 rainbow>
