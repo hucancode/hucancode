@@ -1,8 +1,7 @@
 <script>
   import { _ } from "$lib/i18n";
   import { onMount } from "svelte";
-  let selected = 0;
-  let link = "/rubik";
+  let selected = "";
   let sceneInstance;
   let Scene;
 
@@ -21,44 +20,44 @@
   async function select(value) {
     selected = value;
     switch (selected) {
-      case 0:
+      case "rubik":
         Scene = (await import("$lib/components/rubik.svelte")).default;
-        link = "/rubik";
         break;
-      case 1:
+      case "dragon":
         Scene = (await import("$lib/components/dragon.svelte")).default;
-        link = "/dragon";
         break;
-      case 2:
+      case "lego":
         Scene = (await import("$lib/components/lego.svelte")).default;
-        link = "/lego";
         break;
-      case 3:
+      case "taiji":
         Scene = (await import("$lib/components/taiji.svelte")).default;
-        link = "/taiji";
         break;
-      case 4:
+      case "sabor":
         Scene = (await import("$lib/components/sabor.svelte")).default;
-        link = "/sabor";
         break;
       default:
+        selected = "";
         console.log("unhandled value" + selected);
     }
   }
-  select(Math.floor(Math.random() * 4));
+  select("rubik");
 </script>
 
 <div>
   <sl-radio-group
     name="showcase"
     value={selected}
-    on:sl-change={(e) => select(parseInt(e.target.value))}
+    on:sl-change={(e) => select(e.target.value)}
   >
-    <sl-radio-button value={0}>Rubik</sl-radio-button>
-    <sl-radio-button value={1}>Dragon</sl-radio-button>
-    <sl-radio-button value={2}>Lego</sl-radio-button>
-    <sl-radio-button value={3}>Taiji</sl-radio-button>
-    <sl-radio-button value={4}>Warrior</sl-radio-button>
+    <sl-radio-button value="rubik">{$_("home.showcase.rubik")}</sl-radio-button>
+    <sl-radio-button value="dragon"
+      >{$_("home.showcase.dragon")}</sl-radio-button
+    >
+    <sl-radio-button value="lego">{$_("home.showcase.lego")}</sl-radio-button>
+    <sl-radio-button value="taiji">{$_("home.showcase.taiji")}</sl-radio-button>
+    <sl-radio-button value="sabor"
+      >{$_("home.showcase.warrior")}</sl-radio-button
+    >
   </sl-radio-group>
   <svelte:component this={Scene} bind:this={sceneInstance} />
   <sl-button-group>
@@ -80,11 +79,11 @@
       >
         <sl-icon name="brilliance" />
       </sl-animation>
-      Surprise me!
+      {$_("home.showcase.surprise")}
     </sl-button>
-    <sl-button data-sveltekit:prefetch href={link}>
+    <sl-button data-sveltekit:prefetch href={"/" + selected}>
       <sl-icon slot="prefix" name="eye" />
-      Full screen
+      {$_("home.showcase.fullscreen")}
     </sl-button>
   </sl-button-group>
 </div>

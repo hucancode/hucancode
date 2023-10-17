@@ -10,17 +10,25 @@
       "downloadResume": "Download my resume"
     },
     "note": {
-      "madeWith": "Made with love using Svelte, Three.js, TailwindCSS"
+      "madeWith": "Made with love using Svelte, Three.js"
     }
   },
   "home": {
     "landing": {
       "hello": "Greetings!",
-      "about": "I am Bang, a problem solver with an instinct for visual design"
+      "about": "I am Bang, a problem solver with a strong passion for visual design"
+    },
+    "showcase": {
+      "rubik": "Rubik",
+      "dragon": "Dragon",
+      "lego": "Lego",
+      "taiji": "Taij",
+      "warrior": "Warrior",
+      "surprise": "Surprise me!",
+      "fullscreen": "Fullscreen"
     },
     "stats": {
       "title": "Tech I love",
-      "lcRating": "Current Leetcode rating",
       "rating": "Rating",
       "topPercentage": "Top"
     }

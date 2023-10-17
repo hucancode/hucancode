@@ -11,6 +11,9 @@
     case "jp":
       resumeUrl = "/resume-jp.pdf";
       break;
+    default:
+      resumeUrl = "/resume.pdf";
+      break;
   }
 
   onMount(async () => {

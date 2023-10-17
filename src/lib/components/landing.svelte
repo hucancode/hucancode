@@ -74,7 +74,7 @@
   h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
     background-size: 200% 100%;
-    cursor: default;
+    pointer-events: none;
   }
   h1:hover {
     background-position-x: unset;
