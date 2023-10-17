@@ -10,6 +10,7 @@
 
 <nav>
   <sl-radio-group
+    size="small"
     name="language"
     value={$locale}
     on:sl-change={(e) => ($locale = e.target.value)}
@@ -29,3 +30,8 @@
   </sl-radio-group>
   <ThemeSwitcher />
 </nav>
+<style>
+  sl-icon {
+    font-size: larger;
+  }
+</style>

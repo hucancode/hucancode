@@ -25,7 +25,8 @@
       "taiji": "Taij",
       "warrior": "Warrior",
       "surprise": "Surprise me!",
-      "fullscreen": "Fullscreen"
+      "fullscreen": "Fullscreen",
+      "goback": "Go back"
     },
     "stats": {
       "title": "Tech I love",
