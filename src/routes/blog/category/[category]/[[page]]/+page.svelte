@@ -29,6 +29,6 @@
     align-items: center;
   }
   h1 {
-    pointer-events: none;
+    cursor: default;
   }
 </style>

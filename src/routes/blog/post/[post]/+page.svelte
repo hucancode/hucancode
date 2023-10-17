@@ -73,6 +73,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    padding-left: 0;
     list-style-type: none;
     font-weight: var(--sl-font-weight-bold);
   }
