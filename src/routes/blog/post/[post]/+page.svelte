@@ -74,7 +74,6 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     list-style-type: none;
-    padding-left: 0;
     font-weight: var(--sl-font-weight-bold);
   }
   li a:before {

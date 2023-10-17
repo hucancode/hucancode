@@ -27,10 +27,10 @@
   }
   span:first-of-type {
     background-color: var(--sl-color-neutral-100);
-    color: var(--sl-color-neutral-800);
+    color: var(--sl-color-neutral-1000);
   }
   span:last-of-type {
-    background-color: var(--sl-color-neutral-900);
-    color: var(--sl-color-neutral-200);
+    background-color: var(--sl-color-neutral-1000);
+    color: var(--sl-color-neutral-100);
   }
 </style>

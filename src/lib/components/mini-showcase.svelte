@@ -95,8 +95,13 @@
     gap: 0.5rem;
     align-items: center;
     justify-content: flex-end;
-    aspect-ratio: 16/9;
+    aspect-ratio: 4/3;
     width: 100%;
     max-width: 32rem;
+  }
+  @media(min-width: 768px) {
+    div {
+      aspect-ratio: 16/9;
+    }
   }
 </style>

@@ -30,6 +30,7 @@
   </sl-radio-group>
   <ThemeSwitcher />
 </nav>
+
 <style>
   sl-icon {
     font-size: larger;

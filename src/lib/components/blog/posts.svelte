@@ -98,6 +98,7 @@
   ul {
     max-width: 768px;
     flex-grow: 1;
+    padding-left: 0;
   }
   li {
     display: flex;
