@@ -19,8 +19,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  background: var(--sl-color-neutral-0);
-  color: var(--sl-color-neutral-900);
+  background: var(--sl-color-neutral-50);
+  color: var(--sl-color-neutral-950);
   padding-top: 1rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
