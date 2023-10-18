@@ -5,6 +5,7 @@
   let isDarkMode = false;
 
   function setDarkMode(value) {
+    isDarkMode = value;
     if (value) {
       localStorage.theme = "dark";
       document.documentElement.classList.add("sl-theme-dark");
@@ -12,7 +13,6 @@
       localStorage.theme = "light";
       document.documentElement.classList.remove("sl-theme-dark");
     }
-    isDarkMode = value;
   }
 
   onMount(async () => {
@@ -33,7 +33,7 @@
 
 <sl-switch
   on:sl-change={(e) => setDarkMode(e.target.checked)}
-  checked={isDarkMode}
+  checked={isDarkMode || undefined}
 >
   <sl-icon
     dark={isDarkMode}
