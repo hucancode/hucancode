@@ -56,11 +56,7 @@
     height: 90%;
     translate: -50% -50%;
     background-size: contain;
-    background-image: radial-gradient(
-      closest-side,
-      var(--sl-color-neutral-200),
-      var(--sl-color-neutral-50)
-    );
+    background-image: radial-gradient(closest-side,var(--sl-color-neutral-200),transparent);
   }
   .container {
     position: relative;
