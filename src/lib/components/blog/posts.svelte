@@ -128,6 +128,9 @@
       width: 25%;
     }
   }
+  .tag-container:empty {
+    display: none;
+  }
   .tag-container {
     position: absolute;
     max-width: 100%;
