@@ -50,3 +50,20 @@
   --sl-color-primary-100: rgb(59 62 83);
   --sl-color-primary-50: rgb(36 38 51);
 }
+
+sl-radio-button::part(button) {
+  border-color: var(--sl-color-primary-300);
+  color: var(--sl-color-neutral-400);
+}
+
+sl-radio-button[checked]::part(button) {
+  border-color: var(--sl-color-primary-300);
+  color: var(--sl-color-neutral-950);
+  background-color: var(--sl-color-primary-100);
+}
+
+sl-radio-button:not([checked]):hover::part(button) {
+  border-color: var(--sl-color-primary-300);
+  color: var(--sl-color-neutral-950);
+  background-color: var(--sl-color-primary-50);
+}
