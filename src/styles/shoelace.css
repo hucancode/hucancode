@@ -52,7 +52,7 @@
 }
 
 sl-radio-button::part(button) {
-  border-color: var(--sl-color-primary-100);
+  border-color: var(--sl-color-primary-200);
   color: var(--sl-color-neutral-700);
 }
 
@@ -64,7 +64,6 @@ sl-radio-button[checked]::part(button) {
 sl-radio-button:hover::part(button) {
   color: var(--sl-color-neutral-950);
   background-color: var(--sl-color-primary-50);
-  border-color: var(--sl-color-primary-300);
 }
 
 sl-button::part(base), sl-radio-button::part(button) {
