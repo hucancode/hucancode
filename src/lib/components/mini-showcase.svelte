@@ -1,111 +1,107 @@
 <script>
   import { _ } from "$lib/i18n";
-  import RubikIcon from "~icons/arcticons/cubesolver";
-  import DragonIcon from "~icons/game-icons/sea-dragon";
-  import PlanetIcon from "~icons/ph/planet-fill";
-  import YinYangIcon from "~icons/bi/yin-yang";
-  import SwordIcon from "~icons/ri/sword-fill";
-  import FullScreenIcon from "~icons/zondicons/screen-full";
-  import FireIcon from "~icons/twemoji/fire";
-
-  let selected = 0;
-  let link = "/rubik";
+  import { onMount } from "svelte";
+  let selected = "";
   let sceneInstance;
   let Scene;
+
+  onMount(async () => {
+    await import("$shoelace/button-group/button-group");
+    await import("$shoelace/button/button");
+    await import("$shoelace/animation/animation");
+    await import("$shoelace/icon/icon");
+    await import("$shoelace/radio-button/radio-button");
+    await import("$shoelace/radio-group/radio-group");
+  });
+
   function performMagic() {
     sceneInstance.performMagic();
   }
   async function select(value) {
     selected = value;
     switch (selected) {
-      case 0:
+      case "rubik":
         Scene = (await import("$lib/components/rubik.svelte")).default;
-        link = "/rubik";
         break;
-      case 1:
+      case "dragon":
         Scene = (await import("$lib/components/dragon.svelte")).default;
-        link = "/dragon";
         break;
-      case 2:
+      case "lego":
         Scene = (await import("$lib/components/lego.svelte")).default;
-        link = "/lego";
         break;
-      case 3:
+      case "taiji":
         Scene = (await import("$lib/components/taiji.svelte")).default;
-        link = "/taiji";
         break;
-      case 4:
+      case "sabor":
         Scene = (await import("$lib/components/sabor.svelte")).default;
-        link = "/sabor";
         break;
+      default:
+        selected = "";
+        console.log("unhandled value" + selected);
     }
   }
-  select(Math.floor(Math.random() * 4));
+  select("rubik");
 </script>
 
-<div
-  class="flex aspect-square w-full flex-col-reverse
-        items-center justify-start
-        gap-2
-        md:aspect-video
-        md:grow
-        md:flex-row-reverse md:gap-0"
->
-  <div
-    class="flex w-full flex-wrap items-center justify-center gap-1 text-2xl text-white md:w-auto md:flex-col md:items-start"
+<div>
+  <sl-radio-group
+    name="showcase"
+    value={selected}
+    on:sl-change={(e) => select(e.target.value)}
   >
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 0}
-      on:click={() => select(0)}
+    <sl-radio-button value="rubik">{$_("home.showcase.rubik")}</sl-radio-button>
+    <sl-radio-button value="dragon"
+      >{$_("home.showcase.dragon")}</sl-radio-button
     >
-      <RubikIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 1}
-      on:click={() => select(1)}
+    <sl-radio-button value="lego">{$_("home.showcase.lego")}</sl-radio-button>
+    <sl-radio-button value="taiji">{$_("home.showcase.taiji")}</sl-radio-button>
+    <sl-radio-button value="sabor"
+      >{$_("home.showcase.warrior")}</sl-radio-button
     >
-      <DragonIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 2}
-      on:click={() => select(2)}
-    >
-      <PlanetIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 3}
-      on:click={() => select(3)}
-    >
-      <YinYangIcon />
-    </button>
-    <button
-      class="bg-gray-500 p-3 disabled:bg-gray-700 disabled:text-white dark:bg-gray-700 dark:disabled:bg-black"
-      disabled={selected == 4}
-      on:click={() => select(4)}
-    >
-      <SwordIcon />
-    </button>
-  </div>
-  <div class="flex h-full w-full flex-col items-center justify-end">
-    <svelte:component this={Scene} bind:this={sceneInstance} />
-    <div class="flex w-full items-center justify-center gap-px text-xl">
-      <button
-        class="group bg-gray-700 p-3 px-14 dark:bg-black dark:text-white"
-        on:click={performMagic}
+  </sl-radio-group>
+  <svelte:component this={Scene} bind:this={sceneInstance} />
+  <sl-button-group>
+    <sl-button on:click={performMagic}>
+      <sl-animation
+        duration={1000}
+        keyframes={[
+          {
+            offset: 0,
+            transform: "rotate(0)",
+          },
+          {
+            offset: 1,
+            transform: "rotate(360deg)",
+          },
+        ]}
+        play
+        slot="prefix"
       >
-        <FireIcon class="group-active:scale-150" />
-      </button>
-      <a
-        data-sveltekit:prefetch
-        href={link}
-        class="bg-gray-700 p-3 px-14 text-white dark:bg-black"
-      >
-        <FullScreenIcon class="group-active:scale-150" />
-      </a>
-    </div>
-  </div>
+        <sl-icon name="brilliance" />
+      </sl-animation>
+      {$_("home.showcase.surprise")}
+    </sl-button>
+    <sl-button data-sveltekit:prefetch href={"/" + selected}>
+      <sl-icon slot="prefix" name="eye" />
+      {$_("home.showcase.fullscreen")}
+    </sl-button>
+  </sl-button-group>
 </div>
+
+<style>
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+    aspect-ratio: 4/3;
+    width: 100%;
+    max-width: 32rem;
+  }
+  @media (min-width: 768px) {
+    div {
+      aspect-ratio: 16/9;
+    }
+  }
+</style>

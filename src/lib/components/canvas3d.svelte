@@ -1,17 +1,20 @@
 <script>
   import { onMount } from "svelte";
+  import { fade } from "svelte/transition";
   export let id;
   export let render;
   let isInCamera = false;
   let frameID = 0;
   let canvas;
   let loadingCircle;
+  let showLoadingCircle = true;
   let observer;
   function loop() {
     frameID = requestAnimationFrame(loop);
     render();
   }
-  onMount(() => {
+  onMount(async () => {
+    await import("$shoelace/spinner/spinner");
     observer = new IntersectionObserver(([entry]) => {
       isInCamera = entry.isIntersecting;
       cancelAnimationFrame(frameID);
@@ -27,38 +30,54 @@
     };
   });
   export function hideLoadingCircle() {
-    loadingCircle.classList.add("invisible");
+    showLoadingCircle = false;
   }
 </script>
 
-<div class="relative h-full w-full">
-  <div
-    class="absolute left-1/2 top-1/2 mx-auto aspect-square h-full -translate-x-1/2 -translate-y-1/2 bg-gradient-radial from-gray-300 via-sky-50/0 to-sky-50/0 bg-contain dark:from-gray-300/10 dark:via-gray-900/0 dark:to-gray-900/0"
-  />
-  <div
-    bind:this={loadingCircle}
-    class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-  >
-    <svg
-      class="h-10 w-10 animate-spin text-black dark:text-white"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        class="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        class="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
-  </div>
-  <canvas class="absolute h-full w-full" {id} bind:this={canvas} />
+<div class="container">
+  <div class="backdrop" />
+  {#if showLoadingCircle}
+    <sl-spinner
+      transition:fade={{ delay: 250, duration: 300 }}
+      bind:this={loadingCircle}
+    />
+  {/if}
+  <canvas {id} bind:this={canvas} />
 </div>
+
+<style>
+  .backdrop {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    aspect-ratio: 1 / 1;
+    height: 90%;
+    translate: -50% -50%;
+    background-size: contain;
+    background-image: radial-gradient(
+      closest-side,
+      var(--sl-color-neutral-200),
+      var(--sl-color-neutral-50)
+    );
+  }
+  .container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  sl-spinner {
+    font-size: xxx-large;
+    --track-width: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+  }
+  canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+</style>

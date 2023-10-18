@@ -1,26 +1,45 @@
 <script>
-  import GoBack from "~icons/ri/arrow-left-line";
-  import Coffee from "~icons/simple-icons/buymeacoffee";
+  import { onMount } from "svelte";
+
+  onMount(async () => {
+    await import("$shoelace/icon/icon");
+  });
 </script>
 
-<p class="mx-4 text-center text-gray-400 dark:text-gray-600">
-  That's all! Thank you for reading all the way here 😊
-</p>
-<nav class="mb-10">
-  <h1
-    class="text-fill-none flex items-center gap-2 whitespace-nowrap bg-rainbow5 bg-clip-text text-base font-bold dark:bg-rainbow4 md:text-xl"
+<nav>
+  <a data-sveltekit:prefetch href="/blog"
+    ><h2 rainbow>
+      <sl-icon name="chevron-left" library="line-md" />
+      Return to blog
+    </h2></a
   >
-    <GoBack />
-    <a data-sveltekit:prefetch href="/blog">Return to blog</a>
-  </h1>
-  <h1
-    class="text-fill-none flex items-center gap-2 whitespace-nowrap bg-rainbow5 bg-clip-text text-base font-bold dark:bg-rainbow4 md:text-xl"
+  <a
+    target="_blank"
+    rel="noreferrer"
+    href="https://www.buymeacoffee.com/hucancode"
+    ><h2 rainbow="0">
+      Buy me a coffee
+      <sl-icon name="buy-me-a-coffee" library="line-md" />
+    </h2></a
   >
-    <a
-      target="_blank"
-      rel="noreferrer"
-      href="https://www.buymeacoffee.com/hucancode">Buy me a coffee</a
-    >
-    <Coffee />
-  </h1>
 </nav>
+
+<style>
+  small {
+    margin-left: 1rem;
+    margin-right: 1rem;
+    text-align: center;
+  }
+  nav {
+    margin-bottom: 2.5rem;
+  }
+  h2 {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  sl-icon {
+    color: var(--sl-color-primary-700);
+    font-size: larger;
+  }
+</style>

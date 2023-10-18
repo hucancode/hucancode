@@ -1,4 +1,6 @@
 <script>
+  import "$styles/markdown.css";
+  import { onMount } from "svelte";
   import { formatDateRelative } from "$lib/i18n";
   import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
@@ -12,10 +14,15 @@
     date = data.meta.date;
     categories = data.meta.categories;
     if (!date) return;
-    dateString = formatDateRelative('en', new Date(date));
+    dateString = formatDateRelative("en", new Date(date));
   }
   update();
   afterUpdate(update);
+
+  onMount(async () => {
+    await import("$shoelace/relative-time/relative-time");
+    await import("$shoelace/divider/divider");
+  });
 </script>
 
 <svelte:head>
@@ -31,33 +38,52 @@
   <!-- <meta name="twitter:image" content="https://yourdomain.com/image_path" /> -->
 </svelte:head>
 
-<article class="container my-20 max-w-screen-lg">
+<article class="container">
   {#if categories}
-    <ul class="flex flex-wrap gap-2">
+    <ul>
       {#each categories as category}
-        <li
-          class="text-fill-none bg-rainbow3 bg-clip-text pb-1 text-sm font-bold before:content-['#']"
-        >
-          <a data-sveltekit:prefetch href="/blog/category/{category}/">
+        <li>
+          <a
+            data-sveltekit:prefetch
+            href="/blog/category/{category}/"
+            rainbow="3"
+          >
             {category}
           </a>
         </li>
       {/each}
     </ul>
   {/if}
-  <h1 class="text-4xl font-extrabold">{title}</h1>
-  <time class="mb-4 text-xs text-gray-400">Posted {dateString}</time>
+  <h1 xl>{title}</h1>
+  <small>
+    Posted <sl-relative-time {date} lang="en-US" />
+  </small>
+  <sl-divider />
   {#if cover}
-    <img
-      class="aspect-video w-full rounded-lg object-cover sm:aspect-[22/9]"
-      src={cover}
-      alt=""
-    />
+    <img src={cover} alt="cover" />
   {/if}
-  <div
-    class="prose prose-slate mt-4 max-w-full dark:prose-invert prose-a:text-blue-600 prose-a:no-underline prose-a:dark:text-sky-300"
-  >
+  <div>
     <svelte:component this={data.content} />
   </div>
 </article>
 <Nav />
+
+<style>
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-left: 0;
+    list-style-type: none;
+    font-weight: var(--sl-font-weight-bold);
+  }
+  li a:before {
+    content: "#";
+  }
+  img {
+    aspect-ratio: 16/9;
+    width: 100%;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+  }
+</style>
