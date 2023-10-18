@@ -3,57 +3,96 @@
   onMount(async () => {
     await import("$shoelace/icon/icon");
   });
+  let techs = [
+    {
+      set: "logo",
+      icon: "cpp",
+      name: "C++",
+    },
+    {
+      set: "logo",
+      icon: "opengl",
+      name: "Open GL",
+    },
+    {
+      set: "logo",
+      icon: "wgpu",
+      name: "Web GPU",
+    },
+    {
+      set: "logo",
+      icon: "blender",
+      name: "Blender",
+    },
+    {
+      set: "si",
+      icon: "ue",
+      name: "Unreal Engine",
+    },
+    {
+      set: "si",
+      icon: "rust",
+      name: "Rust",
+    },
+    {
+      set: "logo",
+      icon: "wa",
+      name: "Web Assembly",
+    },
+    {
+      set: "logo",
+      icon: "surrealdb",
+      name: "Surreal DB",
+    },
+    {
+      set: "logo",
+      icon: "svelte-icon",
+      name: "Svelte",
+    },
+    {
+      set: "logo",
+      icon: "tailwind-icon",
+      name: "Tailwind CSS",
+    },
+    {
+      set: "logo",
+      icon: "rx",
+      name: "Reactive X",
+    },
+    {
+      set: "logo",
+      icon: "flutter",
+      name: "Flutter",
+    },
+    {
+      set: "logo",
+      icon: "arch",
+      name: "Arch Linux",
+    },
+    {
+      set: "logo",
+      icon: "vim",
+      name: "Vim",
+    },
+    {
+      set: "logo",
+      icon: "docker-icon",
+      name: "Docker",
+    },
+  ];
 </script>
 
 <ul>
-  <li>
-    <sl-icon library="si" name="cpp" />
-    <span>C++</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="opengl" />
-    <span>OpenGL</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="blender" />
-    <span>Blender</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="ue" />
-    <span>Unreal Engine</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="rust" />
-    <span>Rust</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="svelte" />
-    <span>Svelte</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="tailwind" />
-    <span>Tailwind</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="rx" />
-    <span>Rx</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="flutter" />
-    <span>Flutter</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="arch" />
-    <span>Arch Linux</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="vim" />
-    <span>Vim</span>
-  </li>
-  <li>
-    <sl-icon library="si" name="docker" />
-    <span>Docker</span>
-  </li>
+  {#each techs as tech}
+    <li>
+      <sl-icon
+        library={tech.set}
+        name={tech.icon}
+        label={tech.name}
+        title={tech.name}
+      />
+    </li>
+  {/each}
 </ul>
 
 <style>
@@ -67,21 +106,10 @@
     padding: 1.25rem;
     text-align: center;
     list-style-type: none;
-  }
-  li {
-    margin: 0.75rem;
-    display: flex;
-    height: 4rem;
-    width: 3.5rem;
-    flex-direction: column;
-    align-items: center;
     font-size: xx-large;
-    line-height: 2.5rem;
+    gap: 1.25rem;
   }
-  span {
-    margin-top: 0.5rem;
-    width: 6rem;
-    text-align: center;
-    font-size: small;
+  sl-icon {
+    width: unset;
   }
 </style>

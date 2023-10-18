@@ -32,6 +32,10 @@ export async function load() {
       alias: "fluent",
       path: "fluent",
     },
+    {
+      alias: "logo",
+      path: "logo",
+    },
   ];
   sets.forEach((e) => {
     registerIconLibrary(e.alias, {

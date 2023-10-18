@@ -99,7 +99,7 @@
     width: 100%;
     max-width: 32rem;
   }
-  @media(min-width: 768px) {
+  @media (min-width: 768px) {
     div {
       aspect-ratio: 16/9;
     }
