@@ -52,18 +52,21 @@
 }
 
 sl-radio-button::part(button) {
-  border-color: var(--sl-color-primary-300);
-  color: var(--sl-color-neutral-400);
+  border-color: var(--sl-color-primary-100);
+  color: var(--sl-color-neutral-700);
 }
 
 sl-radio-button[checked]::part(button) {
-  border-color: var(--sl-color-primary-300);
-  color: var(--sl-color-neutral-950);
-  background-color: var(--sl-color-primary-100);
-}
-
-sl-radio-button:not([checked]):hover::part(button) {
-  border-color: var(--sl-color-primary-300);
   color: var(--sl-color-neutral-950);
   background-color: var(--sl-color-primary-50);
+}
+
+sl-radio-button:hover::part(button) {
+  color: var(--sl-color-neutral-950);
+  background-color: var(--sl-color-primary-50);
+  border-color: var(--sl-color-primary-300);
+}
+
+sl-button::part(base), sl-radio-button::part(button) {
+  border-radius: 0;
 }
