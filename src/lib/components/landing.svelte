@@ -47,6 +47,7 @@
         keyframes={wavingAnimation}
         duration={2000}
         play={waving}
+        role="img"
         on:mouseenter={() => (waving = true)}
         on:mouseleave={() => (waving = false)}
       >

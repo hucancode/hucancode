@@ -25,6 +25,8 @@
     ).matches;
     if (pickedDarkModeBefore || (neverPickedAnything && preferDarkMode)) {
       setDarkMode(true);
+    } else {
+      setDarkMode(false);
     }
   });
 </script>
