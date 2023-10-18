@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import Moon from "$icons/line-md/moon.svg?raw";
+  import Sun from "$icons/line-md/sunny.svg?raw";
 
   let isDarkMode = false;
 
@@ -16,8 +17,6 @@
   }
 
   onMount(async () => {
-    await import("$shoelace/icon/icon");
-    await import("$shoelace/switch/switch");
     let pickedDarkModeBefore = localStorage.theme === "dark";
     let neverPickedAnything = "theme" in localStorage;
     let preferDarkMode = window.matchMedia(
@@ -30,57 +29,59 @@
     }
   });
 </script>
-
-<sl-switch
-  on:sl-change={(e) => setDarkMode(e.target.checked)}
-  checked={isDarkMode || undefined}
->
-  <sl-icon
-    dark={isDarkMode}
-    name={isDarkMode ? "sun-to-moon" : "sun-rising"}
-    library="line-md"
-  />
-</sl-switch>
+<label>
+  {#if isDarkMode}
+    {@html Moon }
+  {:else}
+    {@html Sun }
+  {/if}
+  <input type="checkbox" 
+    on:change={(e) => setDarkMode(e.target.checked)} 
+    checked={isDarkMode || undefined} />
+</label>
 
 <style>
-  sl-switch {
-    --height: 1.7rem;
-    --width: calc(var(--height) * 2);
-    --thumb-size: calc(var(--height) * 0.9);
-  }
-  sl-switch::part(thumb) {
-    position: absolute;
+  label {
+    font-size: large;
+    aspect-ratio: 2;
+    height: 1.85rem;
     border-radius: 9999px;
-    border-width: 0;
-    transition-duration: 300ms;
-    width: var(--thumb-size);
-    left: calc(var(--height) * 0.5);
-    transition-property: width;
+    background-color: var(--sl-color-primary-400);
+    border-color: var(--sl-color-primary-400);
+    border-style: solid;
+    border-width: 0.15rem;
+    position: relative;
+    color: var(--sl-color-neutral-950);
+    cursor: pointer;
   }
-  sl-switch:active::part(thumb) {
-    width: calc(var(--thumb-size) * 1.5);
-  }
-  sl-switch[checked]::part(thumb) {
-    right: calc(var(--height) * 0.5);
-    left: unset;
-  }
-  sl-switch::part(label) {
+  input {
     position: absolute;
-    margin: 0;
     width: 100%;
     height: 100%;
+    visibility: hidden;
   }
-  sl-icon {
+  label:active::before {
+    width: 75%;
+  }
+  label:has(input:checked)::before, 
+  label:has(input:checked) :global(svg) {
+    left: 100%;
+    transform: translateX(-100%);
+  }
+  label :global(svg) {
+    padding: 0.1rem;
+  }
+  label::before {
+    content: "";
+    background-color: var(--sl-color-neutral-50);
+    transition-property: width, left, background-color;
+  }
+  label::before, label :global(svg) {
+    border-radius: 9999px;
+    height: 100%;
+    width: 50%;
     position: absolute;
-    aspect-ratio: 1/1;
-    transform-origin: center;
-    height: calc(var(--height) * 0.65);
-    padding: calc(var(--height) * 0.18);
-  }
-  sl-icon[dark="true"] {
-    right: 0;
-  }
-  sl-icon[dark="false"] {
-    left: 0;
+    transition-duration: 300ms;
+    pointer-events: none;
   }
 </style>
