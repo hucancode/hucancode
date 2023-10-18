@@ -12,17 +12,17 @@
   --sl-color-gray-800: rgb(49, 50, 68);
   --sl-color-gray-900: rgb(30, 30, 46);
   --sl-color-gray-950: rgb(24, 24, 37);
-  --sl-color-primary-50: rgb(254 249 239);
-  --sl-color-primary-100: rgb(251 235 200);
-  --sl-color-primary-200: rgb(242 220 170);
-  --sl-color-primary-300: rgb(225 205 158);
-  --sl-color-primary-400: rgb(203 184 143);
-  --sl-color-primary-500: rgb(174 158 123);
-  --sl-color-primary-600: rgb(144 131 101);
-  --sl-color-primary-700: rgb(118 107 83);
-  --sl-color-primary-800: rgb(97 88 68);
-  --sl-color-primary-900: rgb(69 63 49);
-  --sl-color-primary-950: rgb(42 38 30);
+  --sl-color-primary-50: rgb(246 250 255);
+  --sl-color-primary-100: rgb(227 237 254);
+  --sl-color-primary-200: rgb(205 223 253);
+  --sl-color-primary-300: rgb(181 208 252);
+  --sl-color-primary-400: rgb(149 187 250);
+  --sl-color-primary-500: rgb(122 161 224);
+  --sl-color-primary-600: rgb(101 133 185);
+  --sl-color-primary-700: rgb(83 109 151);
+  --sl-color-primary-800: rgb(68 90 125);
+  --sl-color-primary-900: rgb(49 64 89);
+  --sl-color-primary-950: rgb(30 39 54);
 }
 
 :host,
@@ -52,18 +52,18 @@
 }
 
 sl-radio-button::part(button) {
-  border-color: var(--sl-color-primary-200);
+  border-color: var(--sl-color-neutral-200);
   color: var(--sl-color-neutral-700);
 }
 
 sl-radio-button[checked]::part(button) {
   color: var(--sl-color-neutral-950);
-  background-color: var(--sl-color-primary-50);
+  background-color: var(--sl-color-primary-100);
 }
 
-sl-radio-button:hover::part(button) {
+sl-radio-button:not([checked]):hover::part(button) {
   color: var(--sl-color-neutral-950);
-  background-color: var(--sl-color-primary-50);
+  background-color: var(--sl-color-neutral-200);
 }
 
 sl-button::part(base), sl-radio-button::part(button) {
