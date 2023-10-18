@@ -66,6 +66,7 @@ sl-radio-button:not([checked]):hover::part(button) {
   background-color: var(--sl-color-neutral-200);
 }
 
-sl-button::part(base), sl-radio-button::part(button) {
+sl-button::part(base),
+sl-radio-button::part(button) {
   border-radius: 0;
 }

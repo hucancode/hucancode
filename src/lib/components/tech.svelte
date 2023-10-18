@@ -87,11 +87,7 @@
   {#each techs as tech}
     <li>
       <sl-tooltip content={tech.name}>
-        <sl-icon
-          library={tech.set}
-          name={tech.icon}
-          label={tech.name}
-        />
+        <sl-icon library={tech.set} name={tech.icon} label={tech.name} />
       </sl-tooltip>
     </li>
   {/each}

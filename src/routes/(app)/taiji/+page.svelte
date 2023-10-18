@@ -38,7 +38,7 @@
     justify-content: space-around;
   }
   div {
-    aspect-ratio: 1/1;
+    aspect-ratio: 4/3;
     width: 100%;
     max-width: 640px;
   }
