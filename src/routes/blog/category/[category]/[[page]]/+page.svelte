@@ -6,13 +6,11 @@
 </script>
 
 <svelte:head>
-  <title>Blog</title>
+  <title>Blog - {data.category}</title>
 </svelte:head>
-<div class="flex flex-col items-center">
-  <p class="text-gray-400 dark:text-gray-600">Category</p>
-  <h1
-    class="text-fill-none animate-bg-pingpong whitespace-nowrap bg-rainbow2 bg-double-width bg-clip-text pb-1 text-4xl font-bold"
-  >
+<div>
+  <small>Category</small>
+  <h1 rainbow>
     {data.category}
   </h1>
 </div>
@@ -23,3 +21,14 @@
   path={`/blog/category/${data.category}`}
   lastPage={data.lastPage}
 />
+
+<style>
+  div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    cursor: default;
+  }
+</style>

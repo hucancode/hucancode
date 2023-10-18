@@ -7,6 +7,7 @@ categories:
   - bitmask
   - taiji
   - graphics
+  - threejs
   - glsl
   - creative-coding
 ---
@@ -43,7 +44,7 @@ void main() {
 }
 ```
 
-<img class="w-full md:w-1/3 mx-auto" alt="circle at zero" src="/blog/post/draw-taiji-with-glsl/circle-at-0-center.png" />
+![circle at zero](/blog/post/draw-taiji-with-glsl/circle-at-0-center.png)
 
 To make it "sharper" we need to apply absolute black on the inside, then absolute white to the outside.
 There is a function for that, it's `step`
@@ -61,7 +62,7 @@ void main() {
 }
 ```
 
-<img class="w-full md:w-1/3 mx-auto" alt="circle sharp" src="/blog/post/draw-taiji-with-glsl/circle-at-0-sharp.png" />
+![circle sharp](/blog/post/draw-taiji-with-glsl/circle-at-0-sharp.png)
 
 You will notice that the edge of our circle is aliased (aka. not smooth), there is a function for that, it's `smoothstep`.
 Simply replace `step` with `smoothstep` and give it 2 thresholds instead of 1
@@ -86,7 +87,7 @@ Writing these `smoothstep` can be tedious, I will make a macro for it
 #define BLACK_CIRCLE(r, o) SMOOTH((r)*0.5, length(uv - o))
 ```
 
-<img class="w-full md:w-1/3 mx-auto" alt="smooth circle" src="/blog/post/draw-taiji-with-glsl/circle-at-0-smooth.png" />
+![smooth circle](/blog/post/draw-taiji-with-glsl/circle-at-0-smooth.png)
 
 #### Make it half black, half white
 
@@ -104,7 +105,7 @@ v += BLACK_CIRCLE(BIG_CIRCLE_RADIUS*2.0 + STROKE_WIDTH, center);
 gl_FragColor = vec4(v, v, v, 1.0);
 ```
 
-<img class="w-full md:w-1/3 mx-auto" alt="circle half-black half-white" src="/blog/post/draw-taiji-with-glsl/circle-half.png" />
+![circle half-black half-white](/blog/post/draw-taiji-with-glsl/circle-half.png)
 
 ### Draw more circles
 
@@ -117,7 +118,7 @@ v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS, centerTop);
 v *= BLACK_CIRCLE(BIG_CIRCLE_RADIUS, centerBottom);
 ```
 
-<img class="w-full md:w-1/3 mx-auto" alt="circle + 2 more circles" src="/blog/post/draw-taiji-with-glsl/circle-3x.png" />
+![circle + 2 more circles](/blog/post/draw-taiji-with-glsl/circle-3x.png)
 And finally, draw the dots
 
 ```glsl
@@ -126,7 +127,7 @@ v += WHITE_CIRCLE(SMALL_CIRCLE_RADIUS, centerBottom);
 v *= BLACK_CIRCLE(SMALL_CIRCLE_RADIUS, centerTop);
 ```
 
-<img class="w-full md:w-1/3 mx-auto" alt="taiji" src="/blog/post/draw-taiji-with-glsl/taiji.png" />
+![taiji](/blog/post/draw-taiji-with-glsl/taiji.png)
 The code so far
 
 ```glsl
@@ -210,7 +211,7 @@ void main() {
 }
 ```
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar.png" />
+![taiji](/blog/post/draw-taiji-with-glsl/bar.png)
 
 To make a disrupted bar, simply add a cut in the middle
 
@@ -221,7 +222,7 @@ float cutR = -cut*0.5;
 v *= smoothstep(cutL, cutL + EPSILON, uv.x) + smoothstep(cutR + EPSILON, cutR, uv.x);
 ```
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-cut.png" />
+![taiji](/blog/post/draw-taiji-with-glsl/bar-cut.png)
 
 Again, to reduce the repetitiveness, I would like to make some macro
 
@@ -267,13 +268,14 @@ float stem(int x, vec2 uv) {
 ```
 
 This is the result when you call `stem(0)` `stem(1)` `stem(5)` `stem(7)` respectively
+<small>
 
-<div class="flex items-center justify-center flex-wrap">
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-0.png" />
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-1.png" />
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-5.png" />
-    <img alt="taiji" src="/blog/post/draw-taiji-with-glsl/bar-7.png" />
-</div>
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-0.png)
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-1.png)
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-5.png)
+    ![taiji](/blog/post/draw-taiji-with-glsl/bar-7.png)
+
+</small>
 
 ### Draw 8 triagrams on a circle
 
@@ -321,8 +323,8 @@ void main() {
 }
 ```
 
-Final result would looks like this
-<img class="w-full md:w-1/3 mx-auto" alt="taiji" src="/blog/post/draw-taiji-with-glsl/bagua.png" />
+![taiji](/blog/post/draw-taiji-with-glsl/bagua.png)
+_Final result would looks like this_
 
 ### Optimization
 

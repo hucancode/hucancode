@@ -18,7 +18,7 @@ Before go to the goal for this year, I would like to mention my last year’s ac
 
 At the beginning of the year, when holiday sprit is still in the air, my girlfriend broke up with me. What a great way to start a year! Lucky for me I still have some good friends during the hard times, just a few, but good friends indeed. Good friends are hard to come by, if you have any, treat them well, cherish them, invite them for a drink, buy them a gift on their birthday!
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="heart broken" src="oni-training-2023/Heartbroken-amico.svg" />
+![heart broken](oni-training-2023/Heartbroken-amico.svg)
 
 ### Linux and Vim
 
@@ -30,7 +30,7 @@ I reached out and found my people. Installed `Arch` from scratch so I can safely
 
 On the 1st September 2022, I gave my first submission after a very lonnng break and restarted my competitive programming training. Later I participated in my first Leetcode contest and placed at top $22.46\%$ (didn't expect that high of a rank 😀). That small win boosted my confidence and I eventually regain my momentum in training.
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="leetcode stats" src="oni-training-2023/lc.png" />
+![leetcode stats](oni-training-2023/lc.png)
 
 ### New Job
 
@@ -92,7 +92,7 @@ I do not have a sense of time management. This year I would like to:
 - Learn to set time and scope of work to all tasks
 - Get up early consistently
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="super hero" src="oni-training-2023/Superhero-amico.svg" />
+![super hero](oni-training-2023/Superhero-amico.svg)
 
 ### To Wrap This Up, This Year I Resolve To ...
 
@@ -105,4 +105,4 @@ I do not have a sense of time management. This year I would like to:
 | ✨  | Good job security.<br />UE5 game has little meaningful progression.<br />Started doing commission, but still no significant progress.          | Maintain job security.<br />Do creative coding once in a while.<br />Make significant improvement on side business.                                                                                             | Promotion in current job.<br />Finish first commission, even if it is free labour, no commission fee is needed.<br />Ideally a little progress on UE5 game.                                             |
 | ⏰  | Inconsistent bedtime $10:00$ ~ $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                                                               | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                                                                                 | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                                                                 |
 
-<img class="w-1/2 md:w-1/3 mx-auto" alt="relaxing girl" src="oni-training-2023/Lo-fi-concept-amico.svg" />
+![relaxing girl](oni-training-2023/Lo-fi-concept-amico.svg)

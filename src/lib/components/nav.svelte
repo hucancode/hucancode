@@ -1,53 +1,38 @@
 <script>
   import { onMount } from "svelte";
   import { locale } from "$lib/i18n";
-  import FlagJP from "~icons/twemoji/flag-japan";
-  import FlagEN from "~icons/twemoji/flag-united-kingdom";
-  import FlagBanana from "~icons/twemoji/banana";
-  import Switcher from "$lib/components/switcher3.svelte";
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
-  let switcher;
-
-  onMount(() => {
-    switch ($locale) {
-      case "en":
-        switcher.userSelectA();
-        break;
-      case "ja":
-        switcher.userSelectB();
-        break;
-      case "mini":
-        switcher.userSelectC();
-        break;
-      default:
-        switcher.userSelectA();
-    }
+  onMount(async () => {
+    await import("$shoelace/radio-button/radio-button");
+    await import("$shoelace/radio-group/radio-group");
   });
 </script>
 
 <nav>
-  <Switcher
-    id="switchLanguage"
-    bind:this={switcher}
-    on:change={(event) => {
-      switch (event.detail.value) {
-        case 0:
-          locale.set("en");
-          break;
-        case 1:
-          locale.set("ja");
-          break;
-        case 2:
-          locale.set("mini");
-          break;
-        default:
-          locale.set("en");
-      }
-    }}
+  <sl-radio-group
+    size="small"
+    name="language"
+    value={$locale}
+    on:sl-change={(e) => ($locale = e.target.value)}
   >
-    <FlagEN slot="label-a" />
-    <FlagJP slot="label-b" />
-    <FlagBanana slot="label-c" />
-  </Switcher>
+    <sl-radio-button value="en">
+      <sl-icon name="flag-us" library="open" label="English" />
+    </sl-radio-button>
+    <sl-radio-button value="ja">
+      <sl-icon name="flag-ja" library="open" label="Japanese" />
+    </sl-radio-button>
+    <sl-radio-button value="vi">
+      <sl-icon name="flag-vi" library="open" label="Vietnamese" />
+    </sl-radio-button>
+    <sl-radio-button value="mini">
+      <sl-icon name="banana" library="fx" label="Minionese" />
+    </sl-radio-button>
+  </sl-radio-group>
   <ThemeSwitcher />
 </nav>
+
+<style>
+  sl-icon {
+    font-size: larger;
+  }
+</style>

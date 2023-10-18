@@ -1,68 +1,68 @@
 <script>
-  import CreativeIcon from "~icons/icons8/idea";
-  import MathIcon from "~icons/tabler/math";
-  import ThreeDIcon from "~icons/ic/twotone-3d-rotation";
-  import UEIcon from "~icons/fontisto/unreal-engine";
-  import LeetcodeIcon from "~icons/simple-icons/leetcode";
-  import CppIcon from "~icons/mdi/language-cpp";
-  import ProgrammingIcon from "~icons/icon-park-twotone/computer";
-  import FunctionIcon from "~icons/fluent/math-formula-16-filled";
-  import GameIcon from "~icons/icon-park-twotone/game-ps";
-  import DiceIcon from "~icons/fluent-emoji-high-contrast/game-die";
-  import BookIcon from "~icons/heroicons/book-open-solid";
-  import { parseISO, formatRelative } from "date-fns";
   import { onMount } from "svelte";
+  import { formatDateRelative } from "$lib/i18n";
   export let posts = [];
+
   function convertDate(date) {
-    return formatRelative(parseISO(date), new Date());
+    return formatDateRelative("en", new Date(date));
   }
   function getIcons(post) {
     let data = [
       {
         categories: ["combinatorics"],
-        icon: DiceIcon,
+        iconSet: "fluent",
+        icon: "game-die",
       },
       {
         categories: ["dynamic-programming"],
-        icon: FunctionIcon,
+        iconSet: "material",
+        icon: "function",
       },
       {
         categories: ["leetcode"],
-        icon: LeetcodeIcon,
+        iconSet: "si",
+        icon: "leetcode",
       },
       {
         categories: ["cpp"],
-        icon: CppIcon,
+        iconSet: "si",
+        icon: "cpp",
       },
       {
         categories: ["math", "geometry", "computational-geometry"],
-        icon: MathIcon,
+        iconSet: "material",
+        icon: "calculate",
       },
       {
         categories: ["unreal", "game"],
-        icon: GameIcon,
+        iconSet: "material",
+        icon: "video-game",
       },
       {
         categories: ["unreal"],
-        icon: UEIcon,
+        iconSet: "si",
+        icon: "ue",
       },
       {
         categories: ["3d"],
-        icon: ThreeDIcon,
+        iconSet: "material",
+        icon: "3d-rotation",
       },
       {
         categories: ["creative", "creative-coding"],
-        icon: CreativeIcon,
+        iconSet: "material",
+        icon: "lightbulb",
       },
       {
         categories: ["book"],
-        icon: BookIcon,
+        iconSet: "material",
+        icon: "menu-book",
       },
     ];
     let ret = [];
     for (let item of data) {
       if (post.categories.some((cat) => item.categories.includes(cat))) {
-        ret.push(item.icon);
+        ret.push({ icon: item.icon, set: item.iconSet });
         if (ret.length >= 5) break;
       }
     }
@@ -70,36 +70,87 @@
   }
 </script>
 
-<ul class="max-w-screen-md grow">
+<ul>
   {#each posts as post}
-    <li class="relative mb-2 flex flex-col gap-2 p-4 sm:flex-row">
-      <img
-        class="aspect-video w-full object-cover sm:w-1/4"
-        alt="thumbnail"
-        src={post.cover}
-      />
-      <div
-        class="absolute left-4 top-4 flex w-full flex-wrap text-3xl text-white sm:w-1/4"
-      >
-        {#each getIcons(post) as icon}
-          <svelte:component this={icon} class="bg-black p-2" />
-        {/each}
+    <li>
+      <div class="cover">
+        <img alt="thumbnail" src={post.cover} />
+        <div class="tag-container">
+          {#each getIcons(post) as icon}
+            <sl-icon name={icon.icon} library={icon.set} />
+          {/each}
+        </div>
       </div>
-      <article class="w-full">
+      <header>
         <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
-          <h2
-            class="flex gap-2 text-xl font-semibold hover:text-blue-800 hover:dark:text-sky-400"
-          >
+          <h3>
             {post.title}
-          </h2>
-          <time class="text-xs text-gray-400 dark:text-gray-600"
-            >Posted {convertDate(post.date)}</time
-          >
+          </h3>
+          <time>Posted {convertDate(post.date)}</time>
         </a>
-        <summary class="text-sm text-gray-600 dark:text-gray-400"
-          >{post.excerpt}</summary
-        >
-      </article>
+        <summary>{post.excerpt}</summary>
+      </header>
     </li>
   {/each}
 </ul>
+
+<style>
+  ul {
+    max-width: 768px;
+    flex-grow: 1;
+    padding-left: 0;
+  }
+  li {
+    display: flex;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+    padding: 1rem;
+    flex-direction: column;
+  }
+  @media (min-width: 768px) {
+    li {
+      flex-direction: row;
+    }
+  }
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .cover {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    max-height: 10rem;
+  }
+  @media (min-width: 640px) {
+    .cover {
+      width: 25%;
+    }
+  }
+  .tag-container:empty {
+    display: none;
+  }
+  .tag-container {
+    position: absolute;
+    max-width: 100%;
+    left: 0;
+    top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    background-color: var(--sl-color-neutral-200);
+  }
+  header {
+    width: 100%;
+  }
+  summary {
+    color: var(--sl-color-neutral-600);
+    font-size: small;
+  }
+  time {
+    color: var(--sl-color-neutral-400);
+    font-size: small;
+  }
+</style>

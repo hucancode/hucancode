@@ -1,24 +1,105 @@
 <script>
   import { _ } from "$lib/i18n";
+  import { onMount } from "svelte";
   import MiniShowcase from "$lib/components/mini-showcase.svelte";
-  import WavingHand from "~icons/twemoji/waving-hand";
+  let waving = false;
+  let wavingAnimation = [
+    {
+      offset: 0,
+      transform: "rotate(0)",
+    },
+    {
+      offset: 0.1,
+      transformOrigin: "80% 80%",
+      transform: "rotate(20deg)",
+    },
+    {
+      offset: 0.2,
+      transformOrigin: "80% 80%",
+      transform: "rotate(-10deg)",
+    },
+    {
+      offset: 0.3,
+      transformOrigin: "80% 80%",
+      transform: "rotate(10deg)",
+    },
+    {
+      offset: 0.4,
+      transformOrigin: "80% 80%",
+      transform: "rotate(-10deg)",
+    },
+    {
+      offset: 0.5,
+      transform: "rotate(0)",
+    },
+  ];
+  onMount(async () => {
+    await import("$shoelace/animation/animation");
+    await import("$shoelace/icon/icon");
+  });
 </script>
 
-<section class="flex-col md:flex-row">
-  <div
-    class="flex w-full flex-col
-    items-center gap-4 py-10
-    md:w-2/5 md:items-start md:py-0"
-  >
-    <div class="flex items-center gap-4 text-4xl font-bold">
-      <h1
-        class="text-fill-none animate-bg-pingpong whitespace-nowrap bg-rainbow2 bg-double-width bg-clip-text pb-1"
+<section>
+  <div class="greetings">
+    <h1 rainbow="1">
+      {$_("home.landing.hello")}
+      <sl-animation
+        keyframes={wavingAnimation}
+        duration={2000}
+        play={waving}
+        on:mouseenter={() => (waving = true)}
+        on:mouseleave={() => (waving = false)}
       >
-        {$_("home.landing.hello")}
-      </h1>
-      <WavingHand class="origin-[70%_70%] hover:animate-waving-hand" />
-    </div>
-    <p class="text-center md:text-left">{$_("home.landing.about")}</p>
+        <sl-icon name="wave" library="fx" />
+      </sl-animation>
+    </h1>
+    <p class="about">{$_("home.landing.about")}</p>
   </div>
   <MiniShowcase />
 </section>
+
+<style>
+  section {
+    flex-direction: column;
+  }
+  .greetings {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  h1 {
+    animation: bg-pingpong 2.5s ease infinite alternate;
+    background-size: 200% 100%;
+    cursor: default;
+  }
+  h1:hover {
+    background-position-x: unset;
+  }
+  p {
+    text-align: center;
+  }
+  @media (min-width: 768px) {
+    section {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    .greetings {
+      width: 40%;
+      align-items: flex-start;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    p {
+      text-align: left;
+    }
+  }
+  @keyframes bg-pingpong {
+    to {
+      background-position-x: 50%;
+    }
+  }
+</style>
