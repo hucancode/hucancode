@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   onMount(async () => {
     await import("$shoelace/icon/icon");
+    await import("$shoelace/tooltip/tooltip");
   });
   let techs = [
     {
@@ -85,12 +86,13 @@
 <ul>
   {#each techs as tech}
     <li>
-      <sl-icon
-        library={tech.set}
-        name={tech.icon}
-        label={tech.name}
-        title={tech.name}
-      />
+      <sl-tooltip content={tech.name}>
+        <sl-icon
+          library={tech.set}
+          name={tech.icon}
+          label={tech.name}
+        />
+      </sl-tooltip>
     </li>
   {/each}
 </ul>
@@ -111,5 +113,10 @@
   }
   sl-icon {
     width: unset;
+    transition-duration: 800ms;
+    filter: contrast(90%) sepia(50%);
+  }
+  sl-icon:hover {
+    filter: none;
   }
 </style>
