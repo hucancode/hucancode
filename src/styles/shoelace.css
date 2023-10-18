@@ -38,15 +38,15 @@
   --sl-color-gray-200: rgb(30, 30, 46);
   --sl-color-gray-100: rgb(24, 24, 37);
   --sl-color-gray-50: rgb(17, 17, 27);
-  --sl-color-primary-50: rgb(248 249 255);
-  --sl-color-primary-100: rgb(232 235 255);
-  --sl-color-primary-200: rgb(215 220 254);
-  --sl-color-primary-300: rgb(196 204 254);
-  --sl-color-primary-400: rgb(173 182 244);
+  --sl-color-primary-950: rgb(248 249 255);
+  --sl-color-primary-900: rgb(232 235 255);
+  --sl-color-primary-800: rgb(215 220 254);
+  --sl-color-primary-700: rgb(196 204 254);
+  --sl-color-primary-600: rgb(173 182 244);
   --sl-color-primary-500: rgb(148 157 210);
-  --sl-color-primary-600: rgb(123 129 173);
-  --sl-color-primary-700: rgb(100 106 142);
-  --sl-color-primary-800: rgb(83 87 117);
-  --sl-color-primary-900: rgb(59 62 83);
-  --sl-color-primary-950: rgb(36 38 51);
+  --sl-color-primary-400: rgb(123 129 173);
+  --sl-color-primary-300: rgb(100 106 142);
+  --sl-color-primary-200: rgb(83 87 117);
+  --sl-color-primary-100: rgb(59 62 83);
+  --sl-color-primary-50: rgb(36 38 51);
 }
