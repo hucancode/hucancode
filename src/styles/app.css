@@ -142,7 +142,7 @@ h3 {
 }
 
 :is(h1, h2, h3, h4, p, a)[rainbow] > * {
-  color: initial;
+  color: var(--color-neutral-950);
 }
 
 :is(h1, h2, h3, h4, p, a)[rainbow="0"] {

@@ -68,7 +68,7 @@
     flex-direction: column;
     gap: 0.5rem;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     aspect-ratio: 4/3;
     width: 100%;
     max-width: 32rem;
