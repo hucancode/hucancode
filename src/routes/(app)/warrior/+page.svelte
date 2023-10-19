@@ -1,6 +1,6 @@
 <script>
   import { _ } from "$lib/i18n";
-  import Scene from "$lib/components/dragon.svelte";
+  import Scene from "$lib/components/warrior.svelte";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   let sceneInstance;
@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-  <title>Dragon</title>
+  <title>Warrior</title>
 </svelte:head>
 
 <section>

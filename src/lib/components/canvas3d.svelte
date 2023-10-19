@@ -6,15 +6,13 @@
   let isInCamera = false;
   let frameID = 0;
   let canvas;
-  let loadingCircle;
   let showLoadingCircle = true;
   let observer;
   function loop() {
     frameID = requestAnimationFrame(loop);
     render();
   }
-  onMount(async () => {
-    await import("$shoelace/spinner/spinner");
+  onMount(() => {
     observer = new IntersectionObserver(([entry]) => {
       isInCamera = entry.isIntersecting;
       cancelAnimationFrame(frameID);
@@ -37,10 +35,7 @@
 <div class="container">
   <div class="backdrop" />
   {#if showLoadingCircle}
-    <sl-spinner
-      transition:fade={{ delay: 250, duration: 300 }}
-      bind:this={loadingCircle}
-    />
+    <span class="spinner" transition:fade={{ duration: 300 }} />
   {/if}
   <canvas {id} bind:this={canvas} />
 </div>
@@ -58,7 +53,7 @@
     background-size: contain;
     background-image: radial-gradient(
       closest-side,
-      var(--sl-color-neutral-200),
+      var(--color-neutral-200),
       transparent
     );
   }
@@ -67,17 +62,32 @@
     width: 100%;
     height: 100%;
   }
-  sl-spinner {
-    font-size: xxx-large;
-    --track-width: 10px;
+  .container .spinner {
     position: absolute;
     top: 50%;
     left: 50%;
     translate: -50% -50%;
+    width: 4rem;
   }
   canvas {
     position: absolute;
     width: 100%;
     height: 100%;
+  }
+  .spinner {
+    aspect-ratio: 1;
+    border: 0.8rem solid var(--color-primary-500);
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    animation: rotation 1s linear infinite;
+  }
+
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 </style>

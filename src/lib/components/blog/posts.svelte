@@ -1,6 +1,17 @@
 <script>
   import { onMount } from "svelte";
   import { formatDateRelative } from "$lib/i18n";
+  import GameDie from "$icons/fluent/game-die.svg?raw";
+  import Function from "$icons/google-material/function.svg?raw";
+  import Leetcode from "$icons/simple-icons/leetcode.svg?raw";
+  import Cpp from "$icons/simple-icons/cpp.svg?raw";
+  import Calculate from "$icons/google-material/calculate.svg?raw";
+  import VideoGame from "$icons/google-material/video-game.svg?raw";
+  import UnrealEngine from "$icons/simple-icons/ue.svg?raw";
+  import ThreeD from "$icons/google-material/3d-rotation.svg?raw";
+  import Lightbulb from "$icons/google-material/lightbulb.svg?raw";
+  import Book from "$icons/google-material/menu-book.svg?raw";
+
   export let posts = [];
 
   function convertDate(date) {
@@ -10,59 +21,49 @@
     let data = [
       {
         categories: ["combinatorics"],
-        iconSet: "fluent",
-        icon: "game-die",
+        icon: GameDie,
       },
       {
         categories: ["dynamic-programming"],
-        iconSet: "material",
-        icon: "function",
+        icon: Function,
       },
       {
         categories: ["leetcode"],
-        iconSet: "si",
-        icon: "leetcode",
+        icon: Leetcode,
       },
       {
         categories: ["cpp"],
-        iconSet: "si",
-        icon: "cpp",
+        icon: Cpp,
       },
       {
         categories: ["math", "geometry", "computational-geometry"],
-        iconSet: "material",
-        icon: "calculate",
+        icon: Calculate,
       },
       {
         categories: ["unreal", "game"],
-        iconSet: "material",
-        icon: "video-game",
+        icon: VideoGame,
       },
       {
         categories: ["unreal"],
-        iconSet: "si",
-        icon: "ue",
+        icon: UnrealEngine,
       },
       {
         categories: ["3d"],
-        iconSet: "material",
-        icon: "3d-rotation",
+        icon: ThreeD,
       },
       {
         categories: ["creative", "creative-coding"],
-        iconSet: "material",
-        icon: "lightbulb",
+        icon: Lightbulb,
       },
       {
         categories: ["book"],
-        iconSet: "material",
-        icon: "menu-book",
+        icon: Book,
       },
     ];
     let ret = [];
     for (let item of data) {
       if (post.categories.some((cat) => item.categories.includes(cat))) {
-        ret.push({ icon: item.icon, set: item.iconSet });
+        ret.push(item.icon);
         if (ret.length >= 5) break;
       }
     }
@@ -75,9 +76,9 @@
     <li>
       <div class="cover">
         <img alt="thumbnail" src={post.cover} />
-        <div class="tag-container">
+        <div role="container">
           {#each getIcons(post) as icon}
-            <sl-icon name={icon.icon} library={icon.set} />
+            {@html icon}
           {/each}
         </div>
       </div>
@@ -128,29 +129,32 @@
       width: 25%;
     }
   }
-  .tag-container:empty {
+  div[role="container"]:empty {
     display: none;
   }
-  .tag-container {
+  div[role="container"] {
     position: absolute;
     max-width: 100%;
     left: 0;
     top: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.25rem;
-    background-color: var(--sl-color-neutral-200);
+    gap: 0.15rem;
+    padding: 0.2rem;
+    background-color: var(--color-neutral-200);
+  }
+  div[role="container"] :global(svg) {
+    height: 1.5em;
   }
   header {
     width: 100%;
   }
   summary {
-    color: var(--sl-color-neutral-600);
+    color: var(--color-neutral-600);
     font-size: small;
   }
   time {
-    color: var(--sl-color-neutral-400);
+    color: var(--color-neutral-400);
     font-size: small;
   }
 </style>

@@ -1,58 +1,14 @@
 <script>
   import { _ } from "$lib/i18n";
-  import { onMount } from "svelte";
+  import WavingHand from "$icons/firefox/wave.svg?raw";
   import MiniShowcase from "$lib/components/mini-showcase.svelte";
-  let waving = false;
-  let wavingAnimation = [
-    {
-      offset: 0,
-      transform: "rotate(0)",
-    },
-    {
-      offset: 0.1,
-      transformOrigin: "80% 80%",
-      transform: "rotate(20deg)",
-    },
-    {
-      offset: 0.2,
-      transformOrigin: "80% 80%",
-      transform: "rotate(-10deg)",
-    },
-    {
-      offset: 0.3,
-      transformOrigin: "80% 80%",
-      transform: "rotate(10deg)",
-    },
-    {
-      offset: 0.4,
-      transformOrigin: "80% 80%",
-      transform: "rotate(-10deg)",
-    },
-    {
-      offset: 0.5,
-      transform: "rotate(0)",
-    },
-  ];
-  onMount(async () => {
-    await import("$shoelace/animation/animation");
-    await import("$shoelace/icon/icon");
-  });
 </script>
 
 <section>
   <div class="greetings">
     <h1 rainbow="1">
       {$_("home.landing.hello")}
-      <sl-animation
-        keyframes={wavingAnimation}
-        duration={2000}
-        play={waving}
-        role="img"
-        on:mouseenter={() => (waving = true)}
-        on:mouseleave={() => (waving = false)}
-      >
-        <sl-icon name="wave" library="fx" />
-      </sl-animation>
+      {@html WavingHand}
     </h1>
     <p class="about">{$_("home.landing.about")}</p>
   </div>
@@ -76,9 +32,19 @@
     animation: bg-pingpong 2.5s ease infinite alternate;
     background-size: 200% 100%;
     cursor: default;
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
   }
   h1:hover {
     background-position-x: unset;
+  }
+  h1 :global(svg) {
+    transform-origin: 70% 70%;
+    cursor: default;
+  }
+  h1 :global(svg:hover) {
+    animation: wave 2.5s ease infinite;
   }
   p {
     text-align: center;
@@ -101,6 +67,26 @@
   @keyframes bg-pingpong {
     to {
       background-position-x: 50%;
+    }
+  }
+  @keyframes wave {
+    0% {
+      transform: rotate(0deg);
+    }
+    10% {
+      transform: rotate(20deg);
+    }
+    20% {
+      transform: rotate(-10deg);
+    }
+    30% {
+      transform: rotate(10deg);
+    }
+    40% {
+      transform: rotate(-10deg);
+    }
+    50% {
+      transform: rotate(0deg);
     }
   }
 </style>

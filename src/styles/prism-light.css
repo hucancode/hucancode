@@ -28,8 +28,8 @@
  * --syntax-cursor-line: hsla(230, 8%, 24%, 0.05);
  */
 
-html:not(.sl-theme-dark) code[class*="language-"],
-html:not(.sl-theme-dark) pre[class*="language-"] {
+html:not(.dark) code[class*="language-"],
+html:not(.dark) pre[class*="language-"] {
   background: hsl(230, 1%, 98%);
   color: hsl(230, 8%, 24%);
   font-family: "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono",
@@ -50,22 +50,22 @@ html:not(.sl-theme-dark) pre[class*="language-"] {
 }
 
 /* Selection */
-html:not(.sl-theme-dark) code[class*="language-"]::-moz-selection,
-html:not(.sl-theme-dark) code[class*="language-"] *::-moz-selection,
+html:not(.dark) code[class*="language-"]::-moz-selection,
+html:not(.dark) code[class*="language-"] *::-moz-selection,
 pre[class*="language-"] *::-moz-selection {
   background: hsl(230, 1%, 90%);
   color: inherit;
 }
 
-html:not(.sl-theme-dark) code[class*="language-"]::selection,
-html:not(.sl-theme-dark) code[class*="language-"] *::selection,
-html:not(.sl-theme-dark) pre[class*="language-"] *::selection {
+html:not(.dark) code[class*="language-"]::selection,
+html:not(.dark) code[class*="language-"] *::selection,
+html:not(.dark) pre[class*="language-"] *::selection {
   background: hsl(230, 1%, 90%);
   color: inherit;
 }
 
 /* Code blocks */
-html:not(.sl-theme-dark) pre[class*="language-"] {
+html:not(.dark) pre[class*="language-"] {
   padding: 1em;
   margin: 0.5em 0;
   overflow: auto;
@@ -73,104 +73,101 @@ html:not(.sl-theme-dark) pre[class*="language-"] {
 }
 
 /* Inline code */
-html:not(.sl-theme-dark) :not(pre) > code[class*="language-"] {
+html:not(.dark) :not(pre) > code[class*="language-"] {
   padding: 0.2em 0.3em;
   border-radius: 0.3em;
   white-space: normal;
 }
 
-html:not(.sl-theme-dark) .token.comment,
-html:not(.sl-theme-dark) .token.prolog,
-html:not(.sl-theme-dark) .token.cdata {
+html:not(.dark) .token.comment,
+html:not(.dark) .token.prolog,
+html:not(.dark) .token.cdata {
   color: hsl(230, 4%, 64%);
 }
 
-html:not(.sl-theme-dark) .token.doctype,
-html:not(.sl-theme-dark) .token.punctuation,
-html:not(.sl-theme-dark) .token.entity {
+html:not(.dark) .token.doctype,
+html:not(.dark) .token.punctuation,
+html:not(.dark) .token.entity {
   color: hsl(230, 8%, 24%);
 }
 
-html:not(.sl-theme-dark) .token.attr-name,
-html:not(.sl-theme-dark) .token.class-name,
-html:not(.sl-theme-dark) .token.boolean,
-html:not(.sl-theme-dark) .token.constant,
-html:not(.sl-theme-dark) .token.number,
-html:not(.sl-theme-dark) .token.atrule {
+html:not(.dark) .token.attr-name,
+html:not(.dark) .token.class-name,
+html:not(.dark) .token.boolean,
+html:not(.dark) .token.constant,
+html:not(.dark) .token.number,
+html:not(.dark) .token.atrule {
   color: hsl(35, 99%, 36%);
 }
 
-html:not(.sl-theme-dark) .token.keyword {
+html:not(.dark) .token.keyword {
   color: hsl(301, 63%, 40%);
 }
 
-html:not(.sl-theme-dark) .token.property,
-html:not(.sl-theme-dark) .token.tag,
-html:not(.sl-theme-dark) .token.symbol,
-html:not(.sl-theme-dark) .token.deleted,
-html:not(.sl-theme-dark) .token.important {
+html:not(.dark) .token.property,
+html:not(.dark) .token.tag,
+html:not(.dark) .token.symbol,
+html:not(.dark) .token.deleted,
+html:not(.dark) .token.important {
   color: hsl(5, 74%, 59%);
 }
 
-html:not(.sl-theme-dark) .token.selector,
-html:not(.sl-theme-dark) .token.string,
-html:not(.sl-theme-dark) .token.char,
-html:not(.sl-theme-dark) .token.builtin,
-html:not(.sl-theme-dark) .token.inserted,
-html:not(.sl-theme-dark) .token.regex,
-html:not(.sl-theme-dark) .token.attr-value,
-html:not(.sl-theme-dark) .token.attr-value > .token.punctuation {
+html:not(.dark) .token.selector,
+html:not(.dark) .token.string,
+html:not(.dark) .token.char,
+html:not(.dark) .token.builtin,
+html:not(.dark) .token.inserted,
+html:not(.dark) .token.regex,
+html:not(.dark) .token.attr-value,
+html:not(.dark) .token.attr-value > .token.punctuation {
   color: hsl(119, 34%, 47%);
 }
 
-html:not(.sl-theme-dark) .token.variable,
-html:not(.sl-theme-dark) .token.operator,
-html:not(.sl-theme-dark) .token.function {
+html:not(.dark) .token.variable,
+html:not(.dark) .token.operator,
+html:not(.dark) .token.function {
   color: hsl(221, 87%, 60%);
 }
 
-html:not(.sl-theme-dark) .token.url {
+html:not(.dark) .token.url {
   color: hsl(198, 99%, 37%);
 }
 
 /* HTML overrides */
-html:not(.sl-theme-dark) .token.attr-value > .token.punctuation.attr-equals,
-html:not(.sl-theme-dark)
-  .token.special-attr
-  > .token.attr-value
-  > .token.value.css {
+html:not(.dark) .token.attr-value > .token.punctuation.attr-equals,
+html:not(.dark) .token.special-attr > .token.attr-value > .token.value.css {
   color: hsl(230, 8%, 24%);
 }
 
 /* CSS overrides */
-html:not(.sl-theme-dark) .language-css .token.selector {
+html:not(.dark) .language-css .token.selector {
   color: hsl(5, 74%, 59%);
 }
 
-html:not(.sl-theme-dark) .language-css .token.property {
+html:not(.dark) .language-css .token.property {
   color: hsl(230, 8%, 24%);
 }
 
-html:not(.sl-theme-dark) .language-css .token.function,
-html:not(.sl-theme-dark) .language-css .token.url > .token.function {
+html:not(.dark) .language-css .token.function,
+html:not(.dark) .language-css .token.url > .token.function {
   color: hsl(198, 99%, 37%);
 }
 
-html:not(.sl-theme-dark) .language-css .token.url > .token.string.url {
+html:not(.dark) .language-css .token.url > .token.string.url {
   color: hsl(119, 34%, 47%);
 }
 
-html:not(.sl-theme-dark) .language-css .token.important,
-html:not(.sl-theme-dark) .language-css .token.atrule .token.rule {
+html:not(.dark) .language-css .token.important,
+html:not(.dark) .language-css .token.atrule .token.rule {
   color: hsl(301, 63%, 40%);
 }
 
 /* JS overrides */
-html:not(.sl-theme-dark) .language-javascript .token.operator {
+html:not(.dark) .language-javascript .token.operator {
   color: hsl(301, 63%, 40%);
 }
 
-html:not(.sl-theme-dark)
+html:not(.dark)
   .language-javascript
   .token.template-string
   > .token.interpolation
@@ -179,76 +176,70 @@ html:not(.sl-theme-dark)
 }
 
 /* JSON overrides */
-html:not(.sl-theme-dark) .language-json .token.operator {
+html:not(.dark) .language-json .token.operator {
   color: hsl(230, 8%, 24%);
 }
 
-html:not(.sl-theme-dark) .language-json .token.null.keyword {
+html:not(.dark) .language-json .token.null.keyword {
   color: hsl(35, 99%, 36%);
 }
 
 /* MD overrides */
-html:not(.sl-theme-dark) .language-markdown .token.url,
-html:not(.sl-theme-dark) .language-markdown .token.url > .token.operator,
-html:not(.sl-theme-dark)
-  .language-markdown
-  .token.url-reference.url
-  > .token.string {
+html:not(.dark) .language-markdown .token.url,
+html:not(.dark) .language-markdown .token.url > .token.operator,
+html:not(.dark) .language-markdown .token.url-reference.url > .token.string {
   color: hsl(230, 8%, 24%);
 }
 
-html:not(.sl-theme-dark) .language-markdown .token.url > .token.content {
+html:not(.dark) .language-markdown .token.url > .token.content {
   color: hsl(221, 87%, 60%);
 }
 
-html:not(.sl-theme-dark) .language-markdown .token.url > .token.url,
-html:not(.sl-theme-dark) .language-markdown .token.url-reference.url {
+html:not(.dark) .language-markdown .token.url > .token.url,
+html:not(.dark) .language-markdown .token.url-reference.url {
   color: hsl(198, 99%, 37%);
 }
 
-html:not(.sl-theme-dark) .language-markdown .token.blockquote.punctuation,
-html:not(.sl-theme-dark) .language-markdown .token.hr.punctuation {
+html:not(.dark) .language-markdown .token.blockquote.punctuation,
+html:not(.dark) .language-markdown .token.hr.punctuation {
   color: hsl(230, 4%, 64%);
   font-style: italic;
 }
 
-html:not(.sl-theme-dark) .language-markdown .token.code-snippet {
+html:not(.dark) .language-markdown .token.code-snippet {
   color: hsl(119, 34%, 47%);
 }
 
-html:not(.sl-theme-dark) .language-markdown .token.bold .token.content {
+html:not(.dark) .language-markdown .token.bold .token.content {
   color: hsl(35, 99%, 36%);
 }
 
-html:not(.sl-theme-dark) .language-markdown .token.italic .token.content {
+html:not(.dark) .language-markdown .token.italic .token.content {
   color: hsl(301, 63%, 40%);
 }
 
-html:not(.sl-theme-dark) .language-markdown .token.strike .token.content,
-html:not(.sl-theme-dark) .language-markdown .token.strike .token.punctuation,
-html:not(.sl-theme-dark) .language-markdown .token.list.punctuation,
-html:not(.sl-theme-dark)
-  .language-markdown
-  .token.title.important
-  > .token.punctuation {
+html:not(.dark) .language-markdown .token.strike .token.content,
+html:not(.dark) .language-markdown .token.strike .token.punctuation,
+html:not(.dark) .language-markdown .token.list.punctuation,
+html:not(.dark) .language-markdown .token.title.important > .token.punctuation {
   color: hsl(5, 74%, 59%);
 }
 
 /* General */
-html:not(.sl-theme-dark) .token.bold {
+html:not(.dark) .token.bold {
   font-weight: bold;
 }
 
-html:not(.sl-theme-dark) .token.comment,
-html:not(.sl-theme-dark) .token.italic {
+html:not(.dark) .token.comment,
+html:not(.dark) .token.italic {
   font-style: italic;
 }
 
-html:not(.sl-theme-dark) .token.entity {
+html:not(.dark) .token.entity {
   cursor: help;
 }
 
-html:not(.sl-theme-dark) .token.namespace {
+html:not(.dark) .token.namespace {
   opacity: 0.8;
 }
 
@@ -256,67 +247,47 @@ html:not(.sl-theme-dark) .token.namespace {
 /* Selectors should have higher specificity than those in the plugins' default stylesheets */
 
 /* Show Invisibles plugin overrides */
-html:not(.sl-theme-dark) .token.token.tab:not(:empty):before,
-html:not(.sl-theme-dark) .token.token.cr:before,
-html:not(.sl-theme-dark) .token.token.lf:before,
-html:not(.sl-theme-dark) .token.token.space:before {
+html:not(.dark) .token.token.tab:not(:empty):before,
+html:not(.dark) .token.token.cr:before,
+html:not(.dark) .token.token.lf:before,
+html:not(.dark) .token.token.space:before {
   color: hsla(230, 8%, 24%, 0.2);
 }
 
 /* Toolbar plugin overrides */
 /* Space out all buttons and move them away from the right edge of the code block */
-html:not(.sl-theme-dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item {
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item {
   margin-right: 0.4em;
 }
 
 /* Styling the buttons */
-html:not(.sl-theme-dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > button,
-html:not(.sl-theme-dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > a,
-html:not(.sl-theme-dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > span {
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > button,
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > a,
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > span {
   background: hsl(230, 1%, 90%);
   color: hsl(230, 6%, 44%);
   padding: 0.1em 0.4em;
   border-radius: 0.3em;
 }
 
-html:not(.sl-theme-dark)
+html:not(.dark)
   div.code-toolbar
   > .toolbar.toolbar
   > .toolbar-item
   > button:hover,
-html:not(.sl-theme-dark)
+html:not(.dark)
   div.code-toolbar
   > .toolbar.toolbar
   > .toolbar-item
   > button:focus,
-html:not(.sl-theme-dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > a:hover,
-html:not(.sl-theme-dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > a:focus,
-html:not(.sl-theme-dark)
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > a:hover,
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > a:focus,
+html:not(.dark)
   div.code-toolbar
   > .toolbar.toolbar
   > .toolbar-item
   > span:hover,
-html:not(.sl-theme-dark)
+html:not(.dark)
   div.code-toolbar
   > .toolbar.toolbar
   > .toolbar-item
@@ -327,13 +298,13 @@ html:not(.sl-theme-dark)
 
 /* Line Highlight plugin overrides */
 /* The highlighted line itself */
-html:not(.sl-theme-dark) .line-highlight.line-highlight {
+html:not(.dark) .line-highlight.line-highlight {
   background: hsla(230, 8%, 24%, 0.05);
 }
 
 /* Default line numbers in Line Highlight plugin */
-html:not(.sl-theme-dark) .line-highlight.line-highlight:before,
-html:not(.sl-theme-dark) .line-highlight.line-highlight[data-end]:after {
+html:not(.dark) .line-highlight.line-highlight:before,
+html:not(.dark) .line-highlight.line-highlight[data-end]:after {
   background: hsl(230, 1%, 90%);
   color: hsl(230, 8%, 24%);
   padding: 0.1em 0.6em;
@@ -343,7 +314,7 @@ html:not(.sl-theme-dark) .line-highlight.line-highlight[data-end]:after {
 
 /* Hovering over a linkable line number (in the gutter area) */
 /* Requires Line Numbers plugin as well */
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre[id].linkable-line-numbers.linkable-line-numbers
   span.line-numbers-rows
   > span:hover:before {
@@ -352,78 +323,64 @@ html:not(.sl-theme-dark)
 
 /* Line Numbers and Command Line plugins overrides */
 /* Line separating gutter from coding area */
-html:not(.sl-theme-dark) .line-numbers.line-numbers .line-numbers-rows,
-html:not(.sl-theme-dark) .command-line .command-line-prompt {
+html:not(.dark) .line-numbers.line-numbers .line-numbers-rows,
+html:not(.dark) .command-line .command-line-prompt {
   border-right-color: hsla(230, 8%, 24%, 0.2);
 }
 
 /* Stuff in the gutter */
-html:not(.sl-theme-dark) .line-numbers .line-numbers-rows > span:before,
-html:not(.sl-theme-dark) .command-line .command-line-prompt > span:before {
+html:not(.dark) .line-numbers .line-numbers-rows > span:before,
+html:not(.dark) .command-line .command-line-prompt > span:before {
   color: hsl(230, 1%, 62%);
 }
 
 /* Match Braces plugin overrides */
 /* Note: Outline colour is inherited from the braces */
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-1,
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-5,
-html:not(.sl-theme-dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-9 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-1,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-5,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-9 {
   color: hsl(5, 74%, 59%);
 }
 
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-2,
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-6,
-html:not(.sl-theme-dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-10 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-2,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-6,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-10 {
   color: hsl(119, 34%, 47%);
 }
 
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-3,
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-7,
-html:not(.sl-theme-dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-11 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-3,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-7,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-11 {
   color: hsl(221, 87%, 60%);
 }
 
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-4,
-html:not(.sl-theme-dark) .rainbow-braces .token.token.punctuation.brace-level-8,
-html:not(.sl-theme-dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-12 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-4,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-8,
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-12 {
   color: hsl(301, 63%, 40%);
 }
 
 /* Diff Highlight plugin overrides */
 /* Taken from https://github.com/atom/github/blob/master/styles/variables.less */
-html:not(.sl-theme-dark)
-  pre.diff-highlight
-  > code
-  .token.token.deleted:not(.prefix),
-html:not(.sl-theme-dark)
-  pre
-  > code.diff-highlight
-  .token.token.deleted:not(.prefix) {
+html:not(.dark) pre.diff-highlight > code .token.token.deleted:not(.prefix),
+html:not(.dark) pre > code.diff-highlight .token.token.deleted:not(.prefix) {
   background-color: hsla(353, 100%, 66%, 0.15);
 }
 
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.deleted:not(.prefix)::-moz-selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.deleted:not(.prefix)
   *::-moz-selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.deleted:not(.prefix)::-moz-selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.deleted:not(.prefix)
@@ -431,20 +388,20 @@ html:not(.sl-theme-dark)
   background-color: hsla(353, 95%, 66%, 0.25);
 }
 
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.deleted:not(.prefix)::selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.deleted:not(.prefix)
   *::selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.deleted:not(.prefix)::selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.deleted:not(.prefix)
@@ -452,31 +409,25 @@ html:not(.sl-theme-dark)
   background-color: hsla(353, 95%, 66%, 0.25);
 }
 
-html:not(.sl-theme-dark)
-  pre.diff-highlight
-  > code
-  .token.token.inserted:not(.prefix),
-html:not(.sl-theme-dark)
-  pre
-  > code.diff-highlight
-  .token.token.inserted:not(.prefix) {
+html:not(.dark) pre.diff-highlight > code .token.token.inserted:not(.prefix),
+html:not(.dark) pre > code.diff-highlight .token.token.inserted:not(.prefix) {
   background-color: hsla(137, 100%, 55%, 0.15);
 }
 
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.inserted:not(.prefix)::-moz-selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.inserted:not(.prefix)
   *::-moz-selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.inserted:not(.prefix)::-moz-selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.inserted:not(.prefix)
@@ -484,20 +435,20 @@ html:not(.sl-theme-dark)
   background-color: hsla(135, 73%, 55%, 0.25);
 }
 
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.inserted:not(.prefix)::selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre.diff-highlight
   > code
   .token.token.inserted:not(.prefix)
   *::selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.inserted:not(.prefix)::selection,
-html:not(.sl-theme-dark)
+html:not(.dark)
   pre
   > code.diff-highlight
   .token.token.inserted:not(.prefix)
@@ -508,53 +459,50 @@ html:not(.sl-theme-dark)
 /* Previewers plugin overrides */
 /* Based on https://github.com/atom-community/atom-ide-datatip/blob/master/styles/atom-ide-datatips.less and https://github.com/atom/atom/blob/master/packages/one-light-ui */
 /* Border around popup */
-html:not(.sl-theme-dark) .prism-previewer.prism-previewer:before,
-html:not(.sl-theme-dark)
-  .prism-previewer-gradient.prism-previewer-gradient
-  div {
+html:not(.dark) .prism-previewer.prism-previewer:before,
+html:not(.dark) .prism-previewer-gradient.prism-previewer-gradient div {
   border-color: hsl(0, 0, 95%);
 }
 
 /* Angle and time should remain as circles and are hence not included */
-html:not(.sl-theme-dark) .prism-previewer-color.prism-previewer-color:before,
-html:not(.sl-theme-dark) .prism-previewer-gradient.prism-previewer-gradient div,
-html:not(.sl-theme-dark) .prism-previewer-easing.prism-previewer-easing:before {
+html:not(.dark) .prism-previewer-color.prism-previewer-color:before,
+html:not(.dark) .prism-previewer-gradient.prism-previewer-gradient div,
+html:not(.dark) .prism-previewer-easing.prism-previewer-easing:before {
   border-radius: 0.3em;
 }
 
 /* Triangles pointing to the code */
-html:not(.sl-theme-dark) .prism-previewer.prism-previewer:after {
+html:not(.dark) .prism-previewer.prism-previewer:after {
   border-top-color: hsl(0, 0, 95%);
 }
 
-html:not(.sl-theme-dark)
-  .prism-previewer-flipped.prism-previewer-flipped.after {
+html:not(.dark) .prism-previewer-flipped.prism-previewer-flipped.after {
   border-bottom-color: hsl(0, 0, 95%);
 }
 
 /* Background colour within the popup */
-html:not(.sl-theme-dark) .prism-previewer-angle.prism-previewer-angle:before,
-html:not(.sl-theme-dark) .prism-previewer-time.prism-previewer-time:before,
-html:not(.sl-theme-dark) .prism-previewer-easing.prism-previewer-easing {
+html:not(.dark) .prism-previewer-angle.prism-previewer-angle:before,
+html:not(.dark) .prism-previewer-time.prism-previewer-time:before,
+html:not(.dark) .prism-previewer-easing.prism-previewer-easing {
   background: hsl(0, 0%, 100%);
 }
 
 /* For angle, this is the positive area (eg. 90deg will display one quadrant in this colour) */
 /* For time, this is the alternate colour */
-html:not(.sl-theme-dark) .prism-previewer-angle.prism-previewer-angle circle,
-html:not(.sl-theme-dark) .prism-previewer-time.prism-previewer-time circle {
+html:not(.dark) .prism-previewer-angle.prism-previewer-angle circle,
+html:not(.dark) .prism-previewer-time.prism-previewer-time circle {
   stroke: hsl(230, 8%, 24%);
   stroke-opacity: 1;
 }
 
 /* Stroke colours of the handle, direction point, and vector itself */
-html:not(.sl-theme-dark) .prism-previewer-easing.prism-previewer-easing circle,
-html:not(.sl-theme-dark) .prism-previewer-easing.prism-previewer-easing path,
-html:not(.sl-theme-dark) .prism-previewer-easing.prism-previewer-easing line {
+html:not(.dark) .prism-previewer-easing.prism-previewer-easing circle,
+html:not(.dark) .prism-previewer-easing.prism-previewer-easing path,
+html:not(.dark) .prism-previewer-easing.prism-previewer-easing line {
   stroke: hsl(230, 8%, 24%);
 }
 
 /* Fill colour of the handle */
-html:not(.sl-theme-dark) .prism-previewer-easing.prism-previewer-easing circle {
+html:not(.dark) .prism-previewer-easing.prism-previewer-easing circle {
   fill: transparent;
 }
