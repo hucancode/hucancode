@@ -9,10 +9,6 @@ const config = {
       $icons: path.resolve(__dirname, "./src/icons"),
       $styles: path.resolve(__dirname, "./src/styles"),
       $locales: path.resolve(__dirname, "./src/locales"),
-      $shoelace: path.resolve(
-        __dirname,
-        "./node_modules/@shoelace-style/shoelace/dist/components"
-      ),
     },
   },
   plugins: [sveltekit()],
