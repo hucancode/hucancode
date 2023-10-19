@@ -44,7 +44,7 @@
   }
 </script>
 
-<article>
+<figure>
   <div role="group">
     {#each showcases as showcase}
       <label>
@@ -69,10 +69,10 @@
       {$_("home.showcase.fullscreen")}
     </a>
   </div>
-</article>
+</figure>
 
 <style>
-  article {
+  figure {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -83,7 +83,7 @@
     max-width: 32rem;
   }
   @media (min-width: 768px) {
-    article {
+    figure {
       aspect-ratio: 16/9;
     }
   }
