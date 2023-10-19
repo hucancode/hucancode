@@ -82,7 +82,7 @@
 <ul>
   {#each techs as tech}
     <li title={tech.name}>
-        {@html tech.icon}
+      {@html tech.icon}
     </li>
   {/each}
 </ul>

@@ -40,6 +40,6 @@
           {p}
         </a>
       {/each}
-      </div>
+    </div>
   {/if}
 {/key}

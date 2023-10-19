@@ -19,8 +19,8 @@
   </div>
   <div role="group">
     <a role="button" data-sveltekit:prefetch href="/">
-        {@html Return}
-        {$_("home.showcase.goback")}
+      {@html Return}
+      {$_("home.showcase.goback")}
     </a>
     <button on:click={performMagic}>
       {@html Idea}

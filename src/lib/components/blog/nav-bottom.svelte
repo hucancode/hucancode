@@ -1,5 +1,5 @@
 <script>
-  import GoBack from "$icons/line-md/chevron-left.svg?raw"
+  import GoBack from "$icons/line-md/chevron-left.svg?raw";
   import BuyMeACoffee from "$icons/line-md/buy-me-a-coffee.svg?raw";
 </script>
 

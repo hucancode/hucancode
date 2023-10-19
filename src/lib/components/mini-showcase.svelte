@@ -20,19 +20,23 @@
   $: {
     switch (selected) {
       case "rubik":
-        import("$lib/components/rubik.svelte").then((m) => Scene = m.default);
+        import("$lib/components/rubik.svelte").then((m) => (Scene = m.default));
         break;
       case "dragon":
-        import("$lib/components/dragon.svelte").then((m) => Scene = m.default);
+        import("$lib/components/dragon.svelte").then(
+          (m) => (Scene = m.default)
+        );
         break;
       case "lego":
-        import("$lib/components/lego.svelte").then((m) => Scene = m.default);
+        import("$lib/components/lego.svelte").then((m) => (Scene = m.default));
         break;
       case "taiji":
-        import("$lib/components/taiji.svelte").then((m) => Scene = m.default);
+        import("$lib/components/taiji.svelte").then((m) => (Scene = m.default));
         break;
       case "warrior":
-        import("$lib/components/warrior.svelte").then((m) => Scene = m.default);
+        import("$lib/components/warrior.svelte").then(
+          (m) => (Scene = m.default)
+        );
         break;
       default:
         console.log("unhandled value" + selected);
@@ -44,7 +48,12 @@
   <div role="group">
     {#each showcases as showcase}
       <label>
-        <input bind:group={selected} type="radio" name="showcase" value={showcase} />
+        <input
+          bind:group={selected}
+          type="radio"
+          name="showcase"
+          value={showcase}
+        />
         {$_(`home.showcase.${showcase}`)}
       </label>
     {/each}

@@ -71,19 +71,19 @@
       transform: rotate(0deg);
     }
     10% {
-      transform: rotate(20deg),
+      transform: rotate(20deg);
     }
     20% {
       transform: rotate(-10deg);
     }
     30% {
-      transform: rotate(10deg),
+      transform: rotate(10deg);
     }
     40% {
-      transform: rotate(-10deg),
+      transform: rotate(-10deg);
     }
     50% {
-      transform: rotate(0deg),
+      transform: rotate(0deg);
     }
   }
 </style>

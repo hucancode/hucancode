@@ -29,15 +29,18 @@
     }
   });
 </script>
+
 <label>
   {#if isDarkMode}
-    {@html Moon }
+    {@html Moon}
   {:else}
-    {@html Sun }
+    {@html Sun}
   {/if}
-  <input type="checkbox" 
-    on:change={(e) => setDarkMode(e.target.checked)} 
-    checked={isDarkMode || undefined} />
+  <input
+    type="checkbox"
+    on:change={(e) => setDarkMode(e.target.checked)}
+    checked={isDarkMode || undefined}
+  />
 </label>
 
 <style>
@@ -63,7 +66,7 @@
   label:active::before {
     width: 75%;
   }
-  label:has(input:checked)::before, 
+  label:has(input:checked)::before,
   label:has(input:checked) :global(svg) {
     left: 100%;
     transform: translateX(-100%);
@@ -76,7 +79,8 @@
     background-color: var(--color-neutral-50);
     transition-property: width, left, background-color;
   }
-  label::before, label :global(svg) {
+  label::before,
+  label :global(svg) {
     border-radius: 9999px;
     height: 100%;
     width: 50%;

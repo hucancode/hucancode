@@ -135,10 +135,7 @@ html:not(.dark) .token.url {
 
 /* HTML overrides */
 html:not(.dark) .token.attr-value > .token.punctuation.attr-equals,
-html:not(.dark)
-  .token.special-attr
-  > .token.attr-value
-  > .token.value.css {
+html:not(.dark) .token.special-attr > .token.attr-value > .token.value.css {
   color: hsl(230, 8%, 24%);
 }
 
@@ -190,10 +187,7 @@ html:not(.dark) .language-json .token.null.keyword {
 /* MD overrides */
 html:not(.dark) .language-markdown .token.url,
 html:not(.dark) .language-markdown .token.url > .token.operator,
-html:not(.dark)
-  .language-markdown
-  .token.url-reference.url
-  > .token.string {
+html:not(.dark) .language-markdown .token.url-reference.url > .token.string {
   color: hsl(230, 8%, 24%);
 }
 
@@ -227,10 +221,7 @@ html:not(.dark) .language-markdown .token.italic .token.content {
 html:not(.dark) .language-markdown .token.strike .token.content,
 html:not(.dark) .language-markdown .token.strike .token.punctuation,
 html:not(.dark) .language-markdown .token.list.punctuation,
-html:not(.dark)
-  .language-markdown
-  .token.title.important
-  > .token.punctuation {
+html:not(.dark) .language-markdown .token.title.important > .token.punctuation {
   color: hsl(5, 74%, 59%);
 }
 
@@ -270,21 +261,9 @@ html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item {
 }
 
 /* Styling the buttons */
-html:not(.dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > button,
-html:not(.dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > a,
-html:not(.dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > span {
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > button,
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > a,
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > span {
   background: hsl(230, 1%, 90%);
   color: hsl(230, 6%, 44%);
   padding: 0.1em 0.4em;
@@ -301,16 +280,8 @@ html:not(.dark)
   > .toolbar.toolbar
   > .toolbar-item
   > button:focus,
-html:not(.dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > a:hover,
-html:not(.dark)
-  div.code-toolbar
-  > .toolbar.toolbar
-  > .toolbar-item
-  > a:focus,
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > a:hover,
+html:not(.dark) div.code-toolbar > .toolbar.toolbar > .toolbar-item > a:focus,
 html:not(.dark)
   div.code-toolbar
   > .toolbar.toolbar
@@ -367,46 +338,32 @@ html:not(.dark) .command-line .command-line-prompt > span:before {
 /* Note: Outline colour is inherited from the braces */
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-1,
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-5,
-html:not(.dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-9 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-9 {
   color: hsl(5, 74%, 59%);
 }
 
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-2,
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-6,
-html:not(.dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-10 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-10 {
   color: hsl(119, 34%, 47%);
 }
 
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-3,
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-7,
-html:not(.dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-11 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-11 {
   color: hsl(221, 87%, 60%);
 }
 
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-4,
 html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-8,
-html:not(.dark)
-  .rainbow-braces
-  .token.token.punctuation.brace-level-12 {
+html:not(.dark) .rainbow-braces .token.token.punctuation.brace-level-12 {
   color: hsl(301, 63%, 40%);
 }
 
 /* Diff Highlight plugin overrides */
 /* Taken from https://github.com/atom/github/blob/master/styles/variables.less */
-html:not(.dark)
-  pre.diff-highlight
-  > code
-  .token.token.deleted:not(.prefix),
-html:not(.dark)
-  pre
-  > code.diff-highlight
-  .token.token.deleted:not(.prefix) {
+html:not(.dark) pre.diff-highlight > code .token.token.deleted:not(.prefix),
+html:not(.dark) pre > code.diff-highlight .token.token.deleted:not(.prefix) {
   background-color: hsla(353, 100%, 66%, 0.15);
 }
 
@@ -452,14 +409,8 @@ html:not(.dark)
   background-color: hsla(353, 95%, 66%, 0.25);
 }
 
-html:not(.dark)
-  pre.diff-highlight
-  > code
-  .token.token.inserted:not(.prefix),
-html:not(.dark)
-  pre
-  > code.diff-highlight
-  .token.token.inserted:not(.prefix) {
+html:not(.dark) pre.diff-highlight > code .token.token.inserted:not(.prefix),
+html:not(.dark) pre > code.diff-highlight .token.token.inserted:not(.prefix) {
   background-color: hsla(137, 100%, 55%, 0.15);
 }
 
@@ -509,9 +460,7 @@ html:not(.dark)
 /* Based on https://github.com/atom-community/atom-ide-datatip/blob/master/styles/atom-ide-datatips.less and https://github.com/atom/atom/blob/master/packages/one-light-ui */
 /* Border around popup */
 html:not(.dark) .prism-previewer.prism-previewer:before,
-html:not(.dark)
-  .prism-previewer-gradient.prism-previewer-gradient
-  div {
+html:not(.dark) .prism-previewer-gradient.prism-previewer-gradient div {
   border-color: hsl(0, 0, 95%);
 }
 
@@ -527,8 +476,7 @@ html:not(.dark) .prism-previewer.prism-previewer:after {
   border-top-color: hsl(0, 0, 95%);
 }
 
-html:not(.dark)
-  .prism-previewer-flipped.prism-previewer-flipped.after {
+html:not(.dark) .prism-previewer-flipped.prism-previewer-flipped.after {
   border-bottom-color: hsl(0, 0, 95%);
 }
 
