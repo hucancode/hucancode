@@ -1,15 +1,10 @@
 <script>
-  import { onMount } from "svelte";
   import { locale } from "$lib/i18n";
   import Ja from "$icons/openmoji/flag-ja.svg?raw";
   import Us from "$icons/openmoji/flag-us.svg?raw";
   import Vi from "$icons/openmoji/flag-vi.svg?raw";
   import Banana from "$icons/fluent/banana.svg?raw";
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
-  onMount(async () => {
-    await import("$shoelace/radio-button/radio-button");
-    await import("$shoelace/radio-group/radio-group");
-  });
 </script>
 
 <nav>
@@ -33,9 +28,3 @@
   </div>
   <ThemeSwitcher />
 </nav>
-
-<style>
-  sl-icon {
-    font-size: larger;
-  }
-</style>
