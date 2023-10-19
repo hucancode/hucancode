@@ -1,15 +1,12 @@
 <script>
-  import { onMount } from "svelte";
   import { _ } from "$lib/i18n";
   import Scene from "$lib/components/lego.svelte";
+  import Idea from "$icons/line-md/lightbulb.svg?raw";
+  import Return from "$icons/line-md/chevron-left.svg?raw";
   let sceneInstance;
   function performMagic() {
     sceneInstance.performMagic();
   }
-  onMount(async () => {
-    await import("$shoelace/button/button");
-    await import("$shoelace/button-group/button-group");
-  });
 </script>
 
 <svelte:head>
@@ -17,19 +14,19 @@
 </svelte:head>
 
 <section>
-  <div>
+  <div role="container">
     <Scene bind:this={sceneInstance} />
   </div>
-  <sl-button-group>
-    <sl-button data-sveltekit:prefetch href="/">
-      <sl-icon slot="prefix" name="arrow-return-left" />
-      {$_("home.showcase.goback")}
-    </sl-button>
-    <sl-button on:click={performMagic}>
-      <sl-icon slot="prefix" name="brilliance" />
+  <div role="group">
+    <a role="button" data-sveltekit:prefetch href="/">
+        {@html Return}
+        {$_("home.showcase.goback")}
+    </a>
+    <button on:click={performMagic}>
+      {@html Idea}
       {$_("home.showcase.surprise")}
-    </sl-button>
-  </sl-button-group>
+    </button>
+  </div>
 </section>
 
 <style>
@@ -37,7 +34,7 @@
     flex-grow: 1;
     justify-content: space-around;
   }
-  div {
+  div[role="container"] {
     aspect-ratio: 4/3;
     width: 100%;
     max-width: 640px;

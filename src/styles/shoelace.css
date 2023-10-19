@@ -72,27 +72,24 @@ sl-radio-button::part(button) {
 }
 
 div[role="group"]:has(input[type="radio"]),
-div[role="group"]:has(button) {
+div[role="group"]:has(:is(button, a[role="button"])) {
   display: flex;
 }
 input[type="radio"] {
   display: none;
 }
-label:has(input[type="radio"]), button {
+label:has(input[type="radio"]), :is(button, a[role="button"]) {
   padding: 0.5em 1em;
   font-size: medium;
 }
-:is(label, button) svg {
+:is(h1,h2,h3,p,a,small,label,button) svg {
   height: 1.5em;
 }
-label:has(input[type="radio"])[small], button[small] {
+label:has(input[type="radio"])[small], :is(button, a[role="button"])[small] {
   font-size: small;
   padding: 0.25em 0.5em;
 }
-button a {
-  display: contents;
-}
-label:has(input[type="radio"]), button {
+label:has(input[type="radio"]), :is(button, a[role="button"]) {
   border-style: solid;
   border-width: 0.075em;
   border-color: var(--sl-color-neutral-200);
@@ -103,21 +100,17 @@ label:has(input[type="radio"]), button {
   align-items: center;
   cursor: pointer;
 }
-label:hover:has(input[type="radio"]), button:hover {
+label:hover:has(input[type="radio"]), :is(button, a[role="button"]):hover {
   background-color: var(--sl-color-primary-50);
   border-color: var(--sl-color-primary-300);
   color: var(--sl-color-primary-700);
 }
-label:active:has(input[type="radio"]), button:active {
+label:active:has(input[type="radio"]), :is(button, a[role="button"]):active {
   color: var(--sl-color-primary-900);
 }
-button a {
-  color: unset;
-}
-button svg {
+:is(button, a[role="button"]) svg {
   font-size: larger;
 }
-
 div label:has(input[type="radio"]:checked) {
   background-color: var(--sl-color-primary-50);
 }

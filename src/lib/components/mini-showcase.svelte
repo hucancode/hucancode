@@ -1,8 +1,8 @@
 <script>
   import { _ } from "$lib/i18n";
   import { onMount } from "svelte";
-  import Brilliance from "$icons/bootstrap/brilliance.svg?raw";
-  import Eye from "$icons/bootstrap/eye.svg?raw";
+  import Idea from "$icons/line-md/lightbulb.svg?raw";
+  import Watch from "$icons/line-md/watch.svg?raw";
   let selected = "";
   let sceneInstance;
   let Scene;
@@ -52,14 +52,13 @@
   <svelte:component this={Scene} bind:this={sceneInstance} />
   <div role="group">
     <button on:click={performMagic}>
-      {@html Brilliance}
+      {@html Idea}
       {$_("home.showcase.surprise")}
     </button>
-    <button data-sveltekit:prefetch>
-      <a  href={"/" + selected}>
-      {@html Eye}
-      {$_("home.showcase.fullscreen")}</a>
-    </button>
+    <a role="button" data-sveltekit:prefetch href={"/" + selected}>
+      {@html Watch}
+      {$_("home.showcase.fullscreen")}
+    </a>
   </div>
 </article>
 

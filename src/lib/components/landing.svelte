@@ -1,6 +1,7 @@
 <script>
   import { _ } from "$lib/i18n";
   import { onMount } from "svelte";
+  import WavingHand from "$icons/firefox/wave.svg?raw";
   import MiniShowcase from "$lib/components/mini-showcase.svelte";
   let waving = false;
   let wavingAnimation = [
@@ -51,7 +52,7 @@
         on:mouseenter={() => (waving = true)}
         on:mouseleave={() => (waving = false)}
       >
-        <sl-icon name="wave" library="fx" />
+        {@html WavingHand}
       </sl-animation>
     </h1>
     <p class="about">{$_("home.landing.about")}</p>

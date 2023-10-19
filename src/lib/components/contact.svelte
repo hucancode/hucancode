@@ -1,6 +1,9 @@
 <script>
-  import { onMount } from "svelte";
   import { _, locale } from "$lib/i18n";
+  import Email from "$icons/google-material/mail.svg?raw";
+  import Download from "$icons/google-material/download.svg?raw";
+  import Github from "$icons/simple-icons/github.svg?raw";
+  import Banana from "$icons/fluent/banana-hc.svg?raw";
 
   let resumeUrl = "/resume.pdf";
 
@@ -15,10 +18,6 @@
       resumeUrl = "/resume.pdf";
       break;
   }
-
-  onMount(async () => {
-    await import("$shoelace/icon/icon");
-  });
 </script>
 
 <section>
@@ -27,13 +26,13 @@
       {$_("common.contact.contact")}
     </h2>
     <small>
-      <sl-icon name="email" library="line-md" />
+      {@html Email}
       <a rel="external" href="mailto:hucancode@gmail.com">
         hucancode@gmail.com
       </a>
     </small>
     <small>
-      <sl-icon name="document" library="line-md" />
+      {@html Download}
       <a target="_blank" rel="noreferrer" href={resumeUrl}>
         {$_("common.contact.downloadResume")}
       </a>
@@ -44,13 +43,13 @@
       {$_("common.contact.social")}
     </h2>
     <small>
-      <sl-icon name="github" library="line-md" />
+      {@html Github}
       <a target="_blank" rel="noreferrer" href="https://github.com/hucancode">
         {$_("common.contact.github")}
       </a>
     </small>
     <small>
-      <sl-icon name="coffee" library="line-md" />
+      {@html Banana}
       <a data-sveltekit:prefetch href="/blog">
         {$_("common.contact.blog")}
       </a>
@@ -106,8 +105,5 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
-  }
-  sl-icon {
-    font-size: larger;
   }
 </style>

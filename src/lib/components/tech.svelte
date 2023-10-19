@@ -1,83 +1,79 @@
 <script>
   import { onMount } from "svelte";
-  onMount(async () => {
-    await import("$shoelace/icon/icon");
-    await import("$shoelace/tooltip/tooltip");
-  });
+  import Cpp from "$icons/logo/cpp.svg?raw";
+  import OpenGL from "$icons/logo/opengl.svg?raw";
+  import WebGPU from "$icons/logo/wgpu.svg?raw";
+  import Blender from "$icons/logo/blender.svg?raw";
+  import UnrealEngine from "$icons/simple-icons/ue.svg?raw";
+  import Rust from "$icons/simple-icons/rust.svg?raw";
+  import WebAssembly from "$icons/logo/wa.svg?raw";
+  import SurrealDB from "$icons/logo/surrealdb.svg?raw";
+  import Svelte from "$icons/logo/svelte-icon.svg?raw";
+  import Tailwind from "$icons/logo/tailwind-icon.svg?raw";
+  import ReactiveX from "$icons/logo/rx.svg?raw";
+  import Flutter from "$icons/logo/flutter.svg?raw";
+  import Arch from "$icons/logo/arch.svg?raw";
+  import Vim from "$icons/logo/vim.svg?raw";
+  import Docker from "$icons/logo/docker.svg?raw";
   let techs = [
     {
-      set: "logo",
-      icon: "cpp",
+      icon: Cpp,
       name: "C++",
     },
     {
-      set: "logo",
-      icon: "opengl",
+      icon: OpenGL,
       name: "Open GL",
     },
     {
-      set: "logo",
-      icon: "wgpu",
+      icon: WebGPU,
       name: "Web GPU",
     },
     {
-      set: "logo",
-      icon: "blender",
+      icon: Blender,
       name: "Blender",
     },
     {
-      set: "si",
-      icon: "ue",
+      icon: UnrealEngine,
       name: "Unreal Engine",
     },
     {
-      set: "si",
-      icon: "rust",
+      icon: Rust,
       name: "Rust",
     },
     {
-      set: "logo",
-      icon: "wa",
+      icon: WebAssembly,
       name: "Web Assembly",
     },
     {
-      set: "logo",
-      icon: "surrealdb",
+      icon: SurrealDB,
       name: "Surreal DB",
     },
     {
-      set: "logo",
-      icon: "svelte-icon",
+      icon: Svelte,
       name: "Svelte",
     },
     {
-      set: "logo",
-      icon: "tailwind-icon",
+      icon: Tailwind,
       name: "Tailwind CSS",
     },
     {
-      set: "logo",
-      icon: "rx",
+      icon: ReactiveX,
       name: "Reactive X",
     },
     {
-      set: "logo",
-      icon: "flutter",
+      icon: Flutter,
       name: "Flutter",
     },
     {
-      set: "logo",
-      icon: "arch",
+      icon: Arch,
       name: "Arch Linux",
     },
     {
-      set: "logo",
-      icon: "vim",
+      icon: Vim,
       name: "Vim",
     },
     {
-      set: "logo",
-      icon: "docker-icon",
+      icon: Docker,
       name: "Docker",
     },
   ];
@@ -85,10 +81,8 @@
 
 <ul>
   {#each techs as tech}
-    <li>
-      <sl-tooltip content={tech.name}>
-        <sl-icon library={tech.set} name={tech.icon} label={tech.name} />
-      </sl-tooltip>
+    <li title={tech.name}>
+        {@html tech.icon}
     </li>
   {/each}
 </ul>
@@ -107,12 +101,12 @@
     font-size: xx-large;
     gap: 1.25rem;
   }
-  sl-icon {
+  li {
     width: unset;
     transition-duration: 800ms;
     filter: contrast(90%) sepia(50%);
   }
-  sl-icon:hover {
+  li:hover {
     filter: none;
   }
 </style>
