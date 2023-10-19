@@ -43,11 +43,11 @@ article :is(h1, h2, h3) {
 }
 
 article :is(h1, h2, h3, strong) {
-  color: var(--sl-color-neutral-1000);
+  color: var(--color-neutral-1000);
 }
 
 article :is(p, ol, ul, table) {
-  color: var(--sl-color-neutral-800);
+  color: var(--color-neutral-800);
 }
 
 article table {
@@ -56,7 +56,7 @@ article table {
 }
 
 article table thead {
-  background-color: var(--sl-color-neutral-200);
+  background-color: var(--color-neutral-200);
 }
 
 article table td {
@@ -68,9 +68,9 @@ article table th {
 }
 
 article table tbody tr:nth-child(even) {
-  background-color: var(--sl-color-neutral-100);
+  background-color: var(--color-neutral-100);
 }
 
 article table tbody tr:nth-child(odd) {
-  background-color: var(--sl-color-neutral-0);
+  background-color: var(--color-neutral-0);
 }

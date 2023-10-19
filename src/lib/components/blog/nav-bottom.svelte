@@ -1,15 +1,12 @@
 <script>
-  import { onMount } from "svelte";
-
-  onMount(async () => {
-    await import("$shoelace/icon/icon");
-  });
+  import GoBack from "$icons/line-md/chevron-left.svg?raw";
+  import BuyMeACoffee from "$icons/line-md/buy-me-a-coffee.svg?raw";
 </script>
 
 <nav>
   <a data-sveltekit:prefetch href="/blog"
     ><h2 rainbow>
-      <sl-icon name="chevron-left" library="line-md" />
+      {@html GoBack}
       Return to blog
     </h2></a
   >
@@ -19,7 +16,7 @@
     href="https://www.buymeacoffee.com/hucancode"
     ><h2 rainbow="0">
       Buy me a coffee
-      <sl-icon name="buy-me-a-coffee" library="line-md" />
+      {@html BuyMeACoffee}
     </h2></a
   >
 </nav>
@@ -37,9 +34,5 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
-  }
-  sl-icon {
-    color: var(--sl-color-primary-700);
-    font-size: larger;
   }
 </style>

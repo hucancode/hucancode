@@ -26,11 +26,11 @@
     text-align: center;
   }
   span:first-of-type {
-    background-color: var(--sl-color-neutral-100);
-    color: var(--sl-color-neutral-900);
+    background-color: var(--color-neutral-100);
+    color: var(--color-neutral-900);
   }
   span:last-of-type {
-    background-color: var(--sl-color-neutral-200);
-    color: var(--sl-color-neutral-950);
+    background-color: var(--color-neutral-200);
+    color: var(--color-neutral-950);
   }
 </style>
