@@ -1,95 +1,70 @@
 <script>
   import { _ } from "$lib/i18n";
   import { onMount } from "svelte";
+  import Brilliance from "$icons/bootstrap/brilliance.svg?raw";
+  import Eye from "$icons/bootstrap/eye.svg?raw";
   let selected = "";
   let sceneInstance;
   let Scene;
 
+  let showcases = ["rubik", "dragon", "lego", "taiji", "warrior"];
+
   onMount(async () => {
-    await import("$shoelace/button-group/button-group");
-    await import("$shoelace/button/button");
-    await import("$shoelace/animation/animation");
-    await import("$shoelace/icon/icon");
-    await import("$shoelace/radio-button/radio-button");
-    await import("$shoelace/radio-group/radio-group");
+    selected = showcases[0];
   });
 
   function performMagic() {
     sceneInstance.performMagic();
   }
-  async function select(value) {
-    selected = value;
+
+  $: {
     switch (selected) {
       case "rubik":
-        Scene = (await import("$lib/components/rubik.svelte")).default;
+        import("$lib/components/rubik.svelte").then((m) => Scene = m.default);
         break;
       case "dragon":
-        Scene = (await import("$lib/components/dragon.svelte")).default;
+        import("$lib/components/dragon.svelte").then((m) => Scene = m.default);
         break;
       case "lego":
-        Scene = (await import("$lib/components/lego.svelte")).default;
+        import("$lib/components/lego.svelte").then((m) => Scene = m.default);
         break;
       case "taiji":
-        Scene = (await import("$lib/components/taiji.svelte")).default;
+        import("$lib/components/taiji.svelte").then((m) => Scene = m.default);
         break;
-      case "sabor":
-        Scene = (await import("$lib/components/sabor.svelte")).default;
+      case "warrior":
+        import("$lib/components/warrior.svelte").then((m) => Scene = m.default);
         break;
       default:
-        selected = "";
         console.log("unhandled value" + selected);
     }
   }
-  select("rubik");
 </script>
 
-<div>
-  <sl-radio-group
-    name="showcase"
-    value={selected}
-    on:sl-change={(e) => select(e.target.value)}
-  >
-    <sl-radio-button value="rubik">{$_("home.showcase.rubik")}</sl-radio-button>
-    <sl-radio-button value="dragon"
-      >{$_("home.showcase.dragon")}</sl-radio-button
-    >
-    <sl-radio-button value="lego">{$_("home.showcase.lego")}</sl-radio-button>
-    <sl-radio-button value="taiji">{$_("home.showcase.taiji")}</sl-radio-button>
-    <sl-radio-button value="sabor"
-      >{$_("home.showcase.warrior")}</sl-radio-button
-    >
-  </sl-radio-group>
+<article>
+  <div role="group">
+    {#each showcases as showcase}
+      <label>
+        <input bind:group={selected} type="radio" name="showcase" value={showcase} />
+        {$_(`home.showcase.${showcase}`)}
+      </label>
+    {/each}
+  </div>
   <svelte:component this={Scene} bind:this={sceneInstance} />
-  <sl-button-group>
-    <sl-button on:click={performMagic}>
-      <sl-animation
-        duration={1000}
-        keyframes={[
-          {
-            offset: 0,
-            transform: "rotate(0)",
-          },
-          {
-            offset: 1,
-            transform: "rotate(360deg)",
-          },
-        ]}
-        play
-        slot="prefix"
-      >
-        <sl-icon name="brilliance" />
-      </sl-animation>
+  <div role="group">
+    <button on:click={performMagic}>
+      {@html Brilliance}
       {$_("home.showcase.surprise")}
-    </sl-button>
-    <sl-button data-sveltekit:prefetch href={"/" + selected}>
-      <sl-icon slot="prefix" name="eye" />
-      {$_("home.showcase.fullscreen")}
-    </sl-button>
-  </sl-button-group>
-</div>
+    </button>
+    <button data-sveltekit:prefetch>
+      <a  href={"/" + selected}>
+      {@html Eye}
+      {$_("home.showcase.fullscreen")}</a>
+    </button>
+  </div>
+</article>
 
 <style>
-  div {
+  article {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -100,7 +75,7 @@
     max-width: 32rem;
   }
   @media (min-width: 768px) {
-    div {
+    article {
       aspect-ratio: 16/9;
     }
   }

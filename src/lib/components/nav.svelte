@@ -1,6 +1,10 @@
 <script>
   import { onMount } from "svelte";
   import { locale } from "$lib/i18n";
+  import Ja from "$icons/openmoji/flag-ja.svg?raw";
+  import Us from "$icons/openmoji/flag-us.svg?raw";
+  import Vi from "$icons/openmoji/flag-vi.svg?raw";
+  import Banana from "$icons/fluent/banana.svg?raw";
   import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
   onMount(async () => {
     await import("$shoelace/radio-button/radio-button");
@@ -9,25 +13,24 @@
 </script>
 
 <nav>
-  <sl-radio-group
-    size="small"
-    name="language"
-    value={$locale}
-    on:sl-change={(e) => ($locale = e.target.value)}
-  >
-    <sl-radio-button value="en">
-      <sl-icon name="flag-us" library="open" label="English" />
-    </sl-radio-button>
-    <sl-radio-button value="ja">
-      <sl-icon name="flag-ja" library="open" label="Japanese" />
-    </sl-radio-button>
-    <sl-radio-button value="vi">
-      <sl-icon name="flag-vi" library="open" label="Vietnamese" />
-    </sl-radio-button>
-    <sl-radio-button value="mini">
-      <sl-icon name="banana" library="fx" label="Minionese" />
-    </sl-radio-button>
-  </sl-radio-group>
+  <div role="group">
+    <label small>
+      <input bind:group={$locale} type="radio" name="language" value="en" />
+      {@html Us}
+    </label>
+    <label small>
+      <input bind:group={$locale} type="radio" name="language" value="ja" />
+      {@html Ja}
+    </label>
+    <label small>
+      <input bind:group={$locale} type="radio" name="language" value="vi" />
+      {@html Vi}
+    </label>
+    <label small>
+      <input bind:group={$locale} type="radio" name="language" value="mini" />
+      {@html Banana}
+    </label>
+  </div>
   <ThemeSwitcher />
 </nav>
 

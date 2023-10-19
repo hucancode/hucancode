@@ -9,7 +9,7 @@ let cameraPositionFar;
 let isZoomingIn;
 let isZoomingOut;
 const clock = new THREE.Clock();
-const CANVAS_ID = "sabor";
+const CANVAS_ID = "warrior";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
 const USE_GROUND = false;

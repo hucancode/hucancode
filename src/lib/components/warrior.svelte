@@ -8,7 +8,7 @@
     destroy,
     render,
     playAction,
-  } from "$lib/scenes/sabor";
+  } from "$lib/scenes/warrior";
 
   let canvas;
 
