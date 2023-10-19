@@ -102,7 +102,7 @@ async function buildScene() {
     scene.add(ground);
   }
 
-  model = await loadModel("sabor.glb");
+  model = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(model.scene);
   model.scene.position.z = 0.5;
   scene.add(model.scene);
