@@ -32,6 +32,9 @@
     animation: bg-pingpong 2.5s ease infinite alternate;
     background-size: 200% 100%;
     cursor: default;
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
   }
   h1:hover {
     background-position-x: unset;
@@ -40,7 +43,7 @@
     transform-origin: 70% 70%;
     cursor: default;
   }
-  _h1 :global(svg:hover) {
+  h1 :global(svg:hover) {
     animation: wave 2.5s ease infinite;
   }
   p {

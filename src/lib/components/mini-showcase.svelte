@@ -2,7 +2,7 @@
   import { _ } from "$lib/i18n";
   import { onMount } from "svelte";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
-  import Watch from "$icons/line-md/watch.svg?raw";
+  import Watch from "$icons/fluent/eye-48.svg?raw";
   let selected = "";
   let sceneInstance;
   let Scene;

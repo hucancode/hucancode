@@ -290,17 +290,19 @@ label:has(input[type="radio"]),
   border-style: solid;
   border-width: 0.075em;
   border-color: var(--color-neutral-200);
-  color: var(--color-neutral-950);
-  background-color: var(--color-primary-100);
+  color: var(--color-neutral-700);
+  background-color: var(--color-neutral-0);
   display: flex;
   gap: 0.5em;
   align-items: center;
   cursor: pointer;
+  font-size: small;
+  font-weight: 500;
 }
 label:hover:has(input[type="radio"]),
 :is(button, a[role="button"]):hover {
   background-color: var(--color-primary-50);
-  border-color: var(--color-primary-300);
+  border-color: var(--color-primary-200);
   color: var(--color-primary-700);
 }
 label:active:has(input[type="radio"]),
