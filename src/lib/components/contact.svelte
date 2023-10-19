@@ -76,7 +76,7 @@
     width: 100%;
     text-align: center;
     font-size: large;
-    font-weight: var(--sl-font-weight-bold);
+    font-weight: bold;
   }
   @media (min-width: 768px) {
     h2 {
