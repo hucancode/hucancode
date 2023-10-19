@@ -18,11 +18,6 @@
   }
   update();
   afterUpdate(update);
-
-  onMount(async () => {
-    await import("$shoelace/relative-time/relative-time");
-    await import("$shoelace/divider/divider");
-  });
 </script>
 
 <svelte:head>
@@ -55,10 +50,10 @@
     </ul>
   {/if}
   <h1 xl>{title}</h1>
-  <small>
-    Posted <sl-relative-time {date} lang="en-US" />
-  </small>
-  <sl-divider />
+  <time>
+    Posted {dateString}
+  </time>
+  <hr />
   {#if cover}
     <img src={cover} alt="cover" />
   {/if}
@@ -85,5 +80,9 @@
     width: 100%;
     border-radius: 0.5rem;
     margin-bottom: 2rem;
+  }
+  time {
+    color: var(--color-neutral-400);
+    font-size: small;
   }
 </style>

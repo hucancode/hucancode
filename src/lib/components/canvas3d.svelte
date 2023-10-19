@@ -53,7 +53,7 @@
     background-size: contain;
     background-image: radial-gradient(
       closest-side,
-      var(--sl-color-neutral-200),
+      var(--color-neutral-200),
       transparent
     );
   }
@@ -70,13 +70,14 @@
     width: 4rem;
   }
   canvas {
+    visibility: hidden;
     position: absolute;
     width: 100%;
     height: 100%;
   }
   .spinner {
     aspect-ratio: 1;
-    border: 0.8rem solid var(--sl-color-primary-500);
+    border: 0.8rem solid var(--color-primary-500);
     border-bottom-color: transparent;
     border-radius: 50%;
     animation: rotation 1s linear infinite;

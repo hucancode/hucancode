@@ -141,7 +141,7 @@
     flex-wrap: wrap;
     gap: 0.15rem;
     padding: 0.2rem;
-    background-color: var(--sl-color-neutral-200);
+    background-color: var(--color-neutral-200);
   }
   div[role="container"] :global(svg) {
     height: 1.5em;
@@ -150,11 +150,11 @@
     width: 100%;
   }
   summary {
-    color: var(--sl-color-neutral-600);
+    color: var(--color-neutral-600);
     font-size: small;
   }
   time {
-    color: var(--sl-color-neutral-400);
+    color: var(--color-neutral-400);
     font-size: small;
   }
 </style>

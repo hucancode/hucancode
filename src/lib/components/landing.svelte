@@ -1,6 +1,5 @@
 <script>
   import { _ } from "$lib/i18n";
-  import { onMount } from "svelte";
   import WavingHand from "$icons/firefox/wave.svg?raw";
   import MiniShowcase from "$lib/components/mini-showcase.svelte";
   let waving = false;
@@ -34,10 +33,6 @@
       transform: "rotate(0)",
     },
   ];
-  onMount(async () => {
-    await import("$shoelace/animation/animation");
-    await import("$shoelace/icon/icon");
-  });
 </script>
 
 <section>

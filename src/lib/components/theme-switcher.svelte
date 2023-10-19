@@ -9,10 +9,10 @@
     isDarkMode = value;
     if (value) {
       localStorage.theme = "dark";
-      document.documentElement.classList.add("sl-theme-dark");
+      document.documentElement.classList.add("dark");
     } else {
       localStorage.theme = "light";
-      document.documentElement.classList.remove("sl-theme-dark");
+      document.documentElement.classList.remove("dark");
     }
   }
 
@@ -46,12 +46,12 @@
     aspect-ratio: 2;
     height: 1.85rem;
     border-radius: 9999px;
-    background-color: var(--sl-color-primary-400);
-    border-color: var(--sl-color-primary-400);
+    background-color: var(--color-primary-400);
+    border-color: var(--color-primary-400);
     border-style: solid;
     border-width: 0.15rem;
     position: relative;
-    color: var(--sl-color-neutral-950);
+    color: var(--color-neutral-950);
     cursor: pointer;
   }
   input {
@@ -73,7 +73,7 @@
   }
   label::before {
     content: "";
-    background-color: var(--sl-color-neutral-50);
+    background-color: var(--color-neutral-50);
     transition-property: width, left, background-color;
   }
   label::before, label :global(svg) {

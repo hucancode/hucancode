@@ -19,8 +19,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  background: var(--sl-color-neutral-50);
-  color: var(--sl-color-neutral-950);
+  background: var(--color-neutral-50);
+  color: var(--color-neutral-950);
   padding-top: 1rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -82,18 +82,24 @@ nav {
   }
 }
 
+hr {
+  width: 90%;
+  max-width: 640px;
+  border: 1px solid var(--color-neutral-200);
+}
+
 a {
   text-decoration: none;
-  color: var(--sl-color-primary-500);
+  color: var(--color-primary-500);
 }
 
 a:hover {
-  color: var(--sl-color-primary-600);
+  color: var(--color-primary-600);
 }
 
 h1 {
   font-size: xx-large;
-  font-weight: var(--sl-font-weight-bold);
+  font-weight: bold;
 }
 h1[xl] {
   font-weight: 800;
@@ -103,7 +109,7 @@ h1[xl] {
 
 h2 {
   font-size: large;
-  font-weight: var(--sl-font-weight-bold);
+  font-weight: bold;
 }
 
 h3 {
@@ -114,13 +120,13 @@ h3 {
 :is(h1, h2, h3, h4, p, a)[rainbow] {
   --rainbow: linear-gradient(
     45deg,
-    var(--sl-color-neutral-200) 0%,
-    var(--sl-color-primary-700) 70%
+    var(--color-neutral-200) 0%,
+    var(--color-primary-700) 70%
   );
   --rainbow-hover: linear-gradient(
     45deg,
-    var(--sl-color-primary-700) 0%,
-    var(--sl-color-neutral-200) 70%
+    var(--color-primary-700) 0%,
+    var(--color-neutral-200) 70%
   );
   white-space: nowrap;
   background-image: var(--rainbow);
@@ -142,8 +148,8 @@ h3 {
 :is(h1, h2, h3, h4, p, a)[rainbow="0"] {
   --rainbow: linear-gradient(
     45deg,
-    var(--sl-color-primary-700) 0%,
-    var(--sl-color-neutral-300) 70%
+    var(--color-primary-700) 0%,
+    var(--color-neutral-300) 70%
   );
   background-position-x: 100%;
 }
@@ -198,6 +204,6 @@ p {
 }
 
 small {
-  color: var(--sl-color-neutral-500);
+  color: var(--color-neutral-500);
   font-size: small;
 }

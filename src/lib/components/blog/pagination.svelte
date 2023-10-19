@@ -24,26 +24,22 @@
   }
   update();
   afterUpdate(update);
-  onMount(async () => {
-    await import("$shoelace/button-group/button-group");
-    await import("$shoelace/button/button");
-  });
 </script>
 
 <!-- For some reason, the pagination wasn't re-rendering properly during navigation without the #key block -->
 {#key page}
   {#if lastPage > 1}
-    <sl-button-group>
+    <div role="group">
       {#each pages as p}
-        <sl-button
-          outline={page && p == page}
+        <a
+          role="button"
           disabled={page && p == page}
           data-sveltekit:prefetch
           href="{path}/{p}"
         >
           {p}
-        </sl-button>
+        </a>
       {/each}
-    </sl-button-group>
+      </div>
   {/if}
 {/key}

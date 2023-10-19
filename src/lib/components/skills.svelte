@@ -4,15 +4,10 @@
   import Tech from "$lib/components/tech.svelte";
 
   export let data;
-
-  import { onMount } from "svelte";
-  onMount(async () => {
-    await import("$shoelace/divider/divider");
-  });
 </script>
 
 <section>
-  <sl-divider />
+  <hr />
   <h2>{$_("home.stats.title")}</h2>
   <div>
     <Tech />
