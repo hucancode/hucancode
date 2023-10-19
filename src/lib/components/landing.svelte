@@ -44,16 +44,7 @@
   <div class="greetings">
     <h1 rainbow="1">
       {$_("home.landing.hello")}
-      <sl-animation
-        keyframes={wavingAnimation}
-        duration={2000}
-        play={waving}
-        role="img"
-        on:mouseenter={() => (waving = true)}
-        on:mouseleave={() => (waving = false)}
-      >
-        {@html WavingHand}
-      </sl-animation>
+      <span>{@html WavingHand}</span>
     </h1>
     <p class="about">{$_("home.landing.about")}</p>
   </div>
@@ -81,6 +72,13 @@
   h1:hover {
     background-position-x: unset;
   }
+  h1 span {
+    transform-origin: 70% 70%;
+    cursor: default;
+  }
+  h1 span:hover {
+    animation: wave 2.5s ease infinite;
+  }
   p {
     text-align: center;
   }
@@ -102,6 +100,26 @@
   @keyframes bg-pingpong {
     to {
       background-position-x: 50%;
+    }
+  }
+  @keyframes wave {
+    0% {
+      transform: rotate(0deg);
+    }
+    10% {
+      transform: rotate(20deg),
+    }
+    20% {
+      transform: rotate(-10deg);
+    }
+    30% {
+      transform: rotate(10deg),
+    }
+    40% {
+      transform: rotate(-10deg),
+    }
+    50% {
+      transform: rotate(0deg),
     }
   }
 </style>
