@@ -114,12 +114,12 @@
   });
 </script>
 
-<div class="container">
+<figure>
   <div class="summary">
-    <div class="heading">
+    <small class="heading">
       {@html Leetcode}
       <span>Leetcode</span>
-    </div>
+    </small>
     <DualTag title={$_("home.stats.rating")} value={Math.round(rating)} />
     <DualTag
       title={$_("home.stats.topPercentage")}
@@ -127,10 +127,10 @@
     />
   </div>
   <canvas bind:this={canvas} />
-</div>
+</figure>
 
 <style>
-  .container {
+  figure {
     width: 100%;
     max-width: 640px;
     padding: 1.25rem;
@@ -146,7 +146,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
   }
   @media (min-width: 768px) {
     .heading {
