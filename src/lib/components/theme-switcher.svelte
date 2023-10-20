@@ -88,4 +88,7 @@
     transition-duration: 300ms;
     pointer-events: none;
   }
+  label :global(svg) {
+    filter: contrast(0.5);
+  }
 </style>
