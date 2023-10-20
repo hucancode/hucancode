@@ -3,18 +3,18 @@
   export let title;
 </script>
 
-<div>
+<small>
   <span> {title} </span>
   <span> {value} </span>
-</div>
+</small>
 
 <style>
-  div {
+  small {
     display: flex;
     flex-direction: column;
   }
   @media (min-width: 768px) {
-    div {
+    small {
       flex-direction: row;
     }
   }
