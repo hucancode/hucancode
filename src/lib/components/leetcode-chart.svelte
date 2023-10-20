@@ -143,13 +143,8 @@
   }
   .heading {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-  }
-  @media (min-width: 768px) {
-    .heading {
-      flex-direction: row;
-    }
   }
 </style>

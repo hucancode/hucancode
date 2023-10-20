@@ -11,12 +11,7 @@
 <style>
   small {
     display: flex;
-    flex-direction: column;
-  }
-  @media (min-width: 768px) {
-    small {
-      flex-direction: row;
-    }
+    flex-direction: row;
   }
   span {
     padding-left: 0.5rem;
