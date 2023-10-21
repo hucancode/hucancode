@@ -34,7 +34,7 @@
         <a
           role="button"
           disabled={page && p == page}
-          data-sveltekit:prefetch
+          data-sveltekit-noscroll
           href="{path}/{p}"
         >
           {p}

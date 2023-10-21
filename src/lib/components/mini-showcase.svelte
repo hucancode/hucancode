@@ -64,7 +64,7 @@
       {@html Idea}
       {$_("home.showcase.surprise")}
     </button>
-    <a role="button" data-sveltekit:prefetch href={"/" + selected}>
+    <a role="button" href={"/" + selected}>
       {@html Watch}
       {$_("home.showcase.fullscreen")}
     </a>

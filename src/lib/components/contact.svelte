@@ -50,7 +50,7 @@
     </small>
     <small>
       {@html Banana}
-      <a data-sveltekit:prefetch href="/blog">
+      <a href="/blog">
         {$_("common.contact.blog")}
       </a>
     </small>

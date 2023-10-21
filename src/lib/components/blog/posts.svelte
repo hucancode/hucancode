@@ -83,7 +83,7 @@
         </div>
       </div>
       <header>
-        <a data-sveltekit:prefetch href="/blog/post/{post.slug}">
+        <a href="/blog/post/{post.slug}">
           <h3>
             {post.title}
           </h3>

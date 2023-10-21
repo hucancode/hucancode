@@ -4,7 +4,7 @@
 </script>
 
 <nav>
-  <a data-sveltekit:prefetch href="/blog"
+  <a href="/blog"
     ><h2 rainbow>
       {@html GoBack}
       Return to blog
