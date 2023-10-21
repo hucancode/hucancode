@@ -135,6 +135,7 @@
   figure {
     position: absolute;
     max-width: 100%;
+    margin: 0;
     left: 0;
     top: 0;
     display: flex;
