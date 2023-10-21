@@ -22,11 +22,6 @@
 </nav>
 
 <style>
-  small {
-    margin-left: 1rem;
-    margin-right: 1rem;
-    text-align: center;
-  }
   nav {
     margin-bottom: 2.5rem;
   }
