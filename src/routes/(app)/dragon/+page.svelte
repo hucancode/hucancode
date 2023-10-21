@@ -34,7 +34,7 @@
     flex-grow: 1;
     justify-content: space-around;
   }
-  div[role="container"] {
+  figure {
     aspect-ratio: 4/3;
     width: 100%;
     max-width: 640px;
