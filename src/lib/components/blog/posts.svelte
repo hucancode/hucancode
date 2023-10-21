@@ -76,11 +76,11 @@
     <li>
       <div class="cover">
         <img alt="thumbnail" src={post.cover} />
-        <div role="container">
+        <figure>
           {#each getIcons(post) as icon}
             {@html icon}
           {/each}
-        </div>
+        </figure>
       </div>
       <header>
         <a href="/blog/post/{post.slug}">
@@ -129,10 +129,10 @@
       width: 25%;
     }
   }
-  div[role="container"]:empty {
+  figure:empty {
     display: none;
   }
-  div[role="container"] {
+  figure {
     position: absolute;
     max-width: 100%;
     left: 0;
@@ -143,7 +143,7 @@
     padding: 0.2rem;
     background-color: var(--color-neutral-200);
   }
-  div[role="container"] :global(svg) {
+  figure :global(svg) {
     height: 1.5em;
   }
   header {

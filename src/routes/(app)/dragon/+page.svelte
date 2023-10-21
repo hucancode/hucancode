@@ -14,11 +14,11 @@
 </svelte:head>
 
 <section>
-  <div role="container">
+  <figure>
     <Scene bind:this={sceneInstance} />
-  </div>
+  </figure>
   <div role="group">
-    <a role="button" data-sveltekit:prefetch href="/">
+    <a role="button" href="/">
       {@html Return}
       {$_("home.showcase.goback")}
     </a>
@@ -34,7 +34,7 @@
     flex-grow: 1;
     justify-content: space-around;
   }
-  div[role="container"] {
+  figure {
     aspect-ratio: 4/3;
     width: 100%;
     max-width: 640px;

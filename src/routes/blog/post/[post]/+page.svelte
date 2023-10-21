@@ -38,11 +38,7 @@
     <ul>
       {#each categories as category}
         <li>
-          <a
-            data-sveltekit:prefetch
-            href="/blog/category/{category}/"
-            rainbow="3"
-          >
+          <a href="/blog/category/{category}/" rainbow="3">
             {category}
           </a>
         </li>
