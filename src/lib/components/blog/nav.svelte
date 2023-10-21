@@ -4,13 +4,13 @@
 
 <nav>
   <div>
-    <a data-sveltekit:prefetch href="/blog">
+    <a href="/blog">
       <h2 rainbow="1">Blog</h2>
     </a>
-    <a data-sveltekit:prefetch href="/">
+    <a href="/">
       <h2>Home</h2>
     </a>
-    <a data-sveltekit:prefetch href="/blog/about">
+    <a href="/blog/about">
       <h2>About</h2>
     </a>
   </div>

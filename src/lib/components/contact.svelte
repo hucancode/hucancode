@@ -50,7 +50,7 @@
     </small>
     <small>
       {@html Banana}
-      <a data-sveltekit:prefetch href="/blog">
+      <a href="/blog">
         {$_("common.contact.blog")}
       </a>
     </small>
@@ -61,44 +61,29 @@
   section {
     justify-content: space-around;
     gap: 0.75rem;
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-  @media (min-width: 768px) {
-    section {
-      flex-direction: row;
-      align-items: start;
-      padding-left: 2.5rem;
-      padding-right: 2.5rem;
-    }
+    padding: 2.5rem;
+    align-items: start;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   h2 {
     width: 100%;
-    text-align: center;
+    text-align: left;
     font-size: large;
     font-weight: bold;
   }
-  @media (min-width: 768px) {
-    h2 {
-      text-align: left;
-    }
-  }
-  @media (min-width: 768px) {
-    div {
-      align-items: start;
-    }
-  }
   div {
+    width: 100%;
     margin-bottom: 2.5rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: start;
     justify-content: flex-start;
     gap: 0.75rem;
   }
-  @media (min-width: 768px) {
+  @media (min-width: 480px) {
     div {
-      align-items: start;
+      width: unset;
     }
   }
   small {
