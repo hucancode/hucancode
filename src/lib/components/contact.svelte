@@ -81,7 +81,7 @@
     justify-content: flex-start;
     gap: 0.75rem;
   }
-  @media(min-width: 480px) {
+  @media (min-width: 480px) {
     div {
       width: unset;
     }
