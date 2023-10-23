@@ -4,11 +4,11 @@
   import Canvas3D from "./canvas3d.svelte";
   import { CANVAS_ID, init, render, destroy } from "$lib/scenes/rubik3";
 
-  let canvas;
+  let ready = false;
 
   onMount(async () => {
     await init();
-    canvas.hideLoadingCircle();
+    ready = true;
   });
 
   onDestroy(() => {
@@ -18,4 +18,4 @@
   });
 </script>
 
-<Canvas3D bind:this={canvas} id={CANVAS_ID} {render} />
+<Canvas3D {ready} id={CANVAS_ID} {render} />

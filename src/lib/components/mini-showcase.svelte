@@ -4,9 +4,10 @@
   import Watch from "$icons/fluent/eye-48.svg?raw";
   let sceneInstance;
   let scene;
-  let showcases = ["rubik", "dragon", "lego", "taiji", "warrior"];
+  let showcases = ["rubik", "lego", "taiji", "dragon", "warrior"];
   let selected =
-    showcases[Math.floor(Math.random() * showcases.length) % showcases.length];
+    // dragon & warrior scene are expensive, skip them at first load
+    showcases[Math.floor(Math.random() * 3)];
 
   function performMagic() {
     sceneInstance.performMagic();
@@ -17,16 +18,16 @@
       case "rubik":
         import("$lib/components/rubik.svelte").then((m) => (scene = m.default));
         break;
-      case "dragon":
-        import("$lib/components/dragon.svelte").then(
-          (m) => (scene = m.default)
-        );
-        break;
       case "lego":
         import("$lib/components/lego.svelte").then((m) => (scene = m.default));
         break;
       case "taiji":
         import("$lib/components/taiji.svelte").then((m) => (scene = m.default));
+        break;
+      case "dragon":
+        import("$lib/components/dragon.svelte").then(
+          (m) => (scene = m.default)
+        );
         break;
       case "warrior":
         import("$lib/components/warrior.svelte").then(
