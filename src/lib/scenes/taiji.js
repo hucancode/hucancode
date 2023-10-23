@@ -104,17 +104,18 @@ function setupCamera(w, h) {
 }
 
 function rebuildOrbitControl() {
-  if (USE_CAMERA_CONTROL) {
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, 0);
-    //controls.enablePan = false;
-    controls.minDistance = 4; // the minimum distance the camera must have from center
-    controls.maxDistance = 30; // the maximum distance the camera must have from center
-    //controls.update();
-    controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
-    controls.enableRotate = true;
-    controls.autoRotate = true;
+  if (!USE_CAMERA_CONTROL) {
+    return;
   }
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0, 0);
+  //controls.enablePan = false;
+  controls.minDistance = 4; // the minimum distance the camera must have from center
+  controls.maxDistance = 30; // the maximum distance the camera must have from center
+  //controls.update();
+  controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
+  controls.enableRotate = true;
+  controls.autoRotate = true;
 }
 
 function init() {

@@ -6,7 +6,7 @@
   let isInCamera = false;
   let frameID = 0;
   let canvas;
-  let showLoadingCircle = true;
+  export let ready = false;
   let observer;
   function loop() {
     frameID = requestAnimationFrame(loop);
@@ -14,27 +14,23 @@
   }
   onMount(() => {
     observer = new IntersectionObserver(([entry]) => {
-      isInCamera = entry.isIntersecting;
-      cancelAnimationFrame(frameID);
-      if (isInCamera) {
+      if (entry.isIntersecting) {
         frameID = requestAnimationFrame(loop);
+      } else {
+        cancelAnimationFrame(frameID);
       }
     });
     observer.observe(canvas);
-    frameID = requestAnimationFrame(loop);
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frameID);
     };
   });
-  export function hideLoadingCircle() {
-    showLoadingCircle = false;
-  }
 </script>
 
 <div class="container">
   <div class="backdrop" />
-  {#if showLoadingCircle}
+  {#if !ready}
     <span class="spinner" transition:fade={{ duration: 300 }} />
   {/if}
   <canvas {id} bind:this={canvas} />

@@ -11,14 +11,15 @@
     remakeRubik,
   } from "$lib/scenes/rubik";
 
-  let canvas;
+  let ready = false;
+
   export let size = getCurrentSize();
-  let MAX_SIZE = 6;
+  const MAX_SIZE = 6;
+  const MIN_SIZE = 2;
 
   onMount(async () => {
     await init();
-    remakeRubik(size);
-    canvas.hideLoadingCircle();
+    ready = true;
   });
 
   onDestroy(() => {
@@ -28,9 +29,10 @@
   });
 
   export function performMagic() {
-    size = Math.max(1, (size + 1) % MAX_SIZE);
+    const n = MAX_SIZE - MIN_SIZE;
+    size = ((size + 1) % n) + MIN_SIZE;
     remakeRubik(size);
   }
 </script>
 
-<Canvas3D bind:this={canvas} id={CANVAS_ID} {render} />
+<Canvas3D {ready} id={CANVAS_ID} {render} />

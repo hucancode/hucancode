@@ -7,8 +7,6 @@ let clock = new THREE.Clock();
 const material = new THREE.MeshBasicMaterial({
   vertexColors: true,
 });
-let cameraTarget;
-let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik3";
 const USE_CAMERA_CONTROL = true;
@@ -90,7 +88,6 @@ function makeRubik() {
         cube.position.z = z * (1 + CUBE_MARGIN);
         cubes[x][y][z] = cube;
         scene.add(cube);
-        //addDebugArrow(cube);
       }
     }
   }
@@ -119,17 +116,18 @@ function setupCamera(w, h) {
 }
 
 function rebuildOrbitControl() {
-  if (USE_CAMERA_CONTROL) {
-    controls = new OrbitControls(camera, renderer.domElement);
-    const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
-    controls.target.set(k, k, k);
-    //controls.enablePan = false;
-    controls.minDistance = 4; // the minimum distance the camera must have from center
-    controls.maxDistance = 30; // the maximum distance the camera must have from center
-    //controls.update();
-    controls.enableRotate = true;
-    controls.autoRotate = true;
+  if (!USE_CAMERA_CONTROL) {
+    return;
   }
+  controls = new OrbitControls(camera, renderer.domElement);
+  const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+  controls.target.set(k, k, k);
+  //controls.enablePan = false;
+  controls.minDistance = 4; // the minimum distance the camera must have from center
+  controls.maxDistance = 30; // the maximum distance the camera must have from center
+  //controls.update();
+  controls.enableRotate = true;
+  controls.autoRotate = true;
 }
 
 function init() {

@@ -69,9 +69,6 @@ function makeSingleCube(x, y, z) {
   return piece;
 }
 
-let cubes = null;
-let pivot = null;
-
 function makeRubik() {
   const geometry = makeSingleCube(0, 0, 0);
   const cube = new THREE.Mesh(geometry, material);
@@ -82,7 +79,6 @@ function makeRubik() {
   camera.lookAt(0, 0, 0);
   controls.target.set(0, 0, 0);
   cameraTarget.set(0, 2, 5);
-  //addDebugArrow(pivot);
 }
 
 function remakeRubik(n) {
@@ -100,16 +96,18 @@ function setupCamera(w, h) {
 }
 
 function rebuildOrbitControl() {
-  if (USE_CAMERA_CONTROL) {
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, 0);
-    //controls.enablePan = false;
-    controls.minDistance = 4; // the minimum distance the camera must have from center
-    controls.maxDistance = 30; // the maximum distance the camera must have from center
-    //controls.update();
-    controls.enableRotate = true;
-    controls.autoRotate = true;
+  if (!USE_CAMERA_CONTROL) {
+    return;
   }
+  controls = new OrbitControls(camera, renderer.domElement);
+  const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+  controls.target.set(k, k, k);
+  //controls.enablePan = false;
+  controls.minDistance = 4; // the minimum distance the camera must have from center
+  controls.maxDistance = 30; // the maximum distance the camera must have from center
+  //controls.update();
+  controls.enableRotate = true;
+  controls.autoRotate = true;
 }
 
 function init() {

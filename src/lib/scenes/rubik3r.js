@@ -7,7 +7,6 @@ let clock = new THREE.Clock();
 const material = new THREE.MeshBasicMaterial({
   vertexColors: true,
 });
-let cameraTarget;
 let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik3r";
@@ -91,7 +90,6 @@ function makeRubik() {
         cube.position.z = z * (1 + CUBE_MARGIN);
         cubes[x][y][z] = cube;
         scene.add(cube);
-        //addDebugArrow(cube);
       }
     }
   }
@@ -105,7 +103,6 @@ function makeRubik() {
   controls.target.set(k, k, k);
   camera.position.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
   isInIntro = true;
-  //addDebugArrow(pivot);
 }
 
 function remakeRubik(n) {
@@ -122,17 +119,18 @@ function setupCamera(w, h) {
 }
 
 function rebuildOrbitControl() {
-  if (USE_CAMERA_CONTROL) {
-    controls = new OrbitControls(camera, renderer.domElement);
-    const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
-    controls.target.set(k, k, k);
-    //controls.enablePan = false;
-    controls.minDistance = 4; // the minimum distance the camera must have from center
-    controls.maxDistance = 30; // the maximum distance the camera must have from center
-    //controls.update();
-    controls.enableRotate = true;
-    controls.autoRotate = true;
+  if (!USE_CAMERA_CONTROL) {
+    return;
   }
+  controls = new OrbitControls(camera, renderer.domElement);
+  const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+  controls.target.set(k, k, k);
+  //controls.enablePan = false;
+  controls.minDistance = 4; // the minimum distance the camera must have from center
+  controls.maxDistance = 30; // the maximum distance the camera must have from center
+  //controls.update();
+  controls.enableRotate = true;
+  controls.autoRotate = true;
 }
 
 function init() {
@@ -173,20 +171,6 @@ function onWindowResize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
-}
-function addDebugArrow(object) {
-  const dirZ = new THREE.Vector3(0, 0, 1);
-  const dirY = new THREE.Vector3(0, 1, 0);
-  const dirX = new THREE.Vector3(1, 0, 0);
-  const origin = THREE.Vector3.Zero; //object.position;
-  const length = 2;
-  const hex = 0x0077ff;
-  const zArrow = new THREE.ArrowHelper(dirZ, origin, length, hex);
-  object.add(zArrow);
-  const yArrow = new THREE.ArrowHelper(dirY, origin, length, hex);
-  object.add(yArrow);
-  const xArrow = new THREE.ArrowHelper(dirX, origin, length, hex);
-  object.add(xArrow);
 }
 
 function startMove(face, depth, magnitude) {
