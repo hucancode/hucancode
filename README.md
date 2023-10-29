@@ -6,8 +6,8 @@
   - Software Engineer by day // Creative Coder by night
   - Avid language learner 🇺🇸 🇯🇵 🇨🇳
 - I'm learning:
-  - Rust
-  - 3D Math
+  - [wgpu](https://wgpu.rs/)
+  - System Design
 
 ## 🛠 My tool box
 
