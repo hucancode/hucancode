@@ -3,7 +3,6 @@
   import { fade } from "svelte/transition";
   export let id;
   export let render;
-  let isInCamera = false;
   let frameID = 0;
   let canvas;
   export let ready = false;

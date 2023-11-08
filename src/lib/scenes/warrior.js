@@ -15,13 +15,13 @@ const ASPECT_RATIO = 0.75;
 const USE_GROUND = false;
 
 function onWindowResize() {
-  let canvas = document.getElementById(CANVAS_ID);
+  const canvas = document.getElementById(CANVAS_ID);
   if (!canvas) {
     return;
   }
   canvas.style = "";
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
@@ -52,9 +52,9 @@ function rebuildOrbitControl() {
 }
 
 async function init() {
-  let canvas = document.getElementById(CANVAS_ID);
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  const canvas = document.getElementById(CANVAS_ID);
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight; //w * ASPECT_RATIO;
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -145,8 +145,8 @@ async function playAction() {
   isZoomingOut = true;
   await wait(250);
   animator.stopAllAction();
-  const actions = ["jump", "jump_lick"];
-  let action = actions[Math.floor(Math.random() * actions.length)];
+  const ACTIONS = ["jump", "jump_lick"];
+  const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
   const animation = fadeToAction(action, 0.0);
   animation.clampWhenFinished = true;
   animation.setLoop(THREE.LoopOnce);

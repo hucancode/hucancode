@@ -1,7 +1,7 @@
 import axios from "axios";
 import { json } from "@sveltejs/kit";
 // import defaultData from "$lib/components/leetcode-data.json";
-let defaultData = {
+const defaultData = {
   userContestRanking: {
     rating: -1,
     topPercentage: 0,
@@ -27,7 +27,7 @@ const LEETCODE_PAYLOAD = {
 };
 
 async function requestAxios() {
-  let options = {
+  const options = {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

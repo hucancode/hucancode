@@ -17,9 +17,9 @@
   }
 
   onMount(async () => {
-    let pickedDarkModeBefore = localStorage.theme === "dark";
-    let neverPickedAnything = "theme" in localStorage;
-    let preferDarkMode = window.matchMedia(
+    const pickedDarkModeBefore = localStorage.theme === "dark";
+    const neverPickedAnything = "theme" in localStorage;
+    const preferDarkMode = window.matchMedia(
       "(prefers-color-scheme: dark)"
     ).matches;
     if (pickedDarkModeBefore || (neverPickedAnything && preferDarkMode)) {

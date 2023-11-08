@@ -3,7 +3,7 @@
   export let page;
   export let lastPage;
   export let path;
-  let DISPLAY_NUM = 6;
+  const DISPLAY_NUM = 6;
   let pages = [];
   function update() {
     pages = Array.from({ length: lastPage }, (_, i) => i + 1);

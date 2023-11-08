@@ -30,7 +30,7 @@
 
   export function performMagic() {
     const n = MAX_SIZE - MIN_SIZE;
-    size = ((size + 1) % n) + MIN_SIZE;
+    size = ((size - MIN_SIZE + 1) % n) + MIN_SIZE;
     remakeRubik(size);
   }
 </script>

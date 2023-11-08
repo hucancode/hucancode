@@ -5,7 +5,7 @@ import { loadModelStatic } from "$lib/utils.js";
 let scene, camera, renderer, model;
 let dragons = [];
 let curves = [];
-let clock = new THREE.Clock();
+const clock = new THREE.Clock();
 var time = 0;
 let dynamicLight, ambientLight;
 const CANVAS_ID = "dragon";

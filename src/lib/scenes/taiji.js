@@ -15,7 +15,7 @@ let scene, camera, renderer, controls;
 let taiji;
 let bagua;
 let background;
-let clock = new THREE.Clock();
+const clock = new THREE.Clock();
 var time = 0;
 
 const CANVAS_ID = "taiji";
@@ -119,9 +119,9 @@ function rebuildOrbitControl() {
 }
 
 function init() {
-  let canvas = document.getElementById(CANVAS_ID);
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  const canvas = document.getElementById(CANVAS_ID);
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight; //w * ASPECT_RATIO;
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -145,13 +145,13 @@ function destroy() {
 }
 
 function onWindowResize() {
-  let canvas = document.getElementById(CANVAS_ID);
+  const canvas = document.getElementById(CANVAS_ID);
   if (!canvas) {
     return;
   }
   canvas.style = "";
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
@@ -170,7 +170,7 @@ function render() {
   }
 }
 function playAnimation() {
-  let particle = makeTaiji();
+  const particle = makeTaiji();
   particle.scale.x = particle.scale.y = 6;
   particle.position.y = 10;
   // use HSL to guaranteed 2 colors has acceptable contrast
@@ -184,7 +184,7 @@ function playAnimation() {
     Math.random(),
     Math.random() * 0.2
   );
-  let animation = anime.timeline({
+  const animation = anime.timeline({
     duration: 1500,
     easing: "easeOutExpo",
     complete: () => {
