@@ -54,7 +54,14 @@ Submit your solution at [here](https://leetcode.com/problems/number-of-pairs-sat
 ### Intuition
 
 Let the two given array be $A,B$ the diff is $d$, let's take some observation:
-$A_i - A_j \geq B_i - B_j + d \implies A_i - B_i \geq A_j - B_j + d$
+
+$$
+\begin{align*}
+A_i - A_j \geq B_i - B_j + d
+\implies A_i - B_i \geq A_j - B_j + d
+\end{align*}
+$$
+
 Let $delta = A-B$, the problem becomes
 
 > Count the pair $(i,j)$ where $delta_i \geq delta_j + d$ and $0 \leq i < j < n$
