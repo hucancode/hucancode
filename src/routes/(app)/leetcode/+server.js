@@ -1,13 +1,6 @@
 import axios from "axios";
 import { json } from "@sveltejs/kit";
-// import defaultData from "$lib/components/leetcode-data.json";
-let defaultData = {
-  userContestRanking: {
-    rating: -1,
-    topPercentage: 0,
-  },
-  userContestRankingHistory: [],
-};
+import defaultData from "$lib/components/leetcode-data.json";
 const LEETCODE_GQL_ENDPOINT = "https://leetcode.com/graphql";
 const LEETCODE_PAYLOAD = {
   query: `query userContestRankingInfo($username: String!) {
