@@ -3,11 +3,10 @@ import anime from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
-let clock = new THREE.Clock();
+const clock = new THREE.Clock();
 const material = new THREE.MeshBasicMaterial({
   vertexColors: true,
 });
-let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik3r";
 const USE_CAMERA_CONTROL = true;
@@ -134,9 +133,9 @@ function rebuildOrbitControl() {
 }
 
 function init() {
-  let canvas = document.getElementById(CANVAS_ID);
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  const canvas = document.getElementById(CANVAS_ID);
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight; //w * ASPECT_RATIO;
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -161,13 +160,13 @@ function destroy() {
 }
 
 function onWindowResize() {
-  let canvas = document.getElementById(CANVAS_ID);
+  const canvas = document.getElementById(CANVAS_ID);
   if (!canvas) {
     return;
   }
   canvas.style = "";
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
@@ -214,7 +213,7 @@ function cleanUpAfterMove() {
   const posToIndex = function (n) {
     return clamp(Math.round(n / (1 + CUBE_MARGIN)), 0, cubeNum - 1);
   };
-  let newCubes = cubes;
+  const newCubes = cubes;
   for (let i = pivot.children.length - 1; i >= 0; i--) {
     const cube = pivot.children[i];
     const pos = new THREE.Vector3();

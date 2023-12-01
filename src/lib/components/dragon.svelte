@@ -25,7 +25,7 @@
     }
   });
 
-  let MAX_DRAGON = 5;
+  const MAX_DRAGON = 5;
 
   export function performMagic() {
     if (getCurrentDragonCount() > MAX_DRAGON) {

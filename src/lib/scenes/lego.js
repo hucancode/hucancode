@@ -16,17 +16,17 @@ function makeLegoRing() {
   const PIECE_COUNT = 30;
   const ELEVATION = 5;
   const RADIUS = 25;
-  let ring = new THREE.Object3D();
+  const ring = new THREE.Object3D();
   for (let i = 0; i < PIECE_COUNT; i++) {
-    let node = new THREE.Mesh(
+    const node = new THREE.Mesh(
       getRandomPieceFromPool(),
       getRandomMaterialFromPool()
     );
-    let rotation = Math.random() * Math.PI * 2;
-    let elevation = (Math.random() - 0.5) * ELEVATION;
-    let duration = Math.random() * 2000 + 5000;
+    const rotation = Math.random() * Math.PI * 2;
+    const elevation = (Math.random() - 0.5) * ELEVATION;
+    const duration = Math.random() * 2000 + 5000;
     ring.add(node);
-    let particle = {
+    const particle = {
       node: node,
       elevation: elevation,
       rotation: rotation,
@@ -38,10 +38,10 @@ function makeLegoRing() {
       easing: "linear",
       direction: "reverse",
       loop: true,
-      update: (anim) => {
-        let x = Math.sin(particle.rotation) * RADIUS;
-        let z = Math.cos(particle.rotation) * RADIUS;
-        let y = particle.elevation;
+      update: (_) => {
+        const x = Math.sin(particle.rotation) * RADIUS;
+        const z = Math.cos(particle.rotation) * RADIUS;
+        const y = particle.elevation;
         particle.node.position.set(x, y, z);
         particle.node.lookAt(0, 0, 0);
       },
@@ -51,36 +51,36 @@ function makeLegoRing() {
 }
 
 function makeCenterPiece() {
-  let material = getRandomMaterialFromPool();
+  const material = getRandomMaterialFromPool();
   const OFFSET = 5;
-  let cube = new THREE.Object3D();
-  let geometry = makeLegoPiece(2, 2, 1);
-  let nodeA = new THREE.Mesh(geometry, material);
+  const cube = new THREE.Object3D();
+  const geometry = makeLegoPiece(2, 2, 1);
+  const nodeA = new THREE.Mesh(geometry, material);
   nodeA.position.set(0, OFFSET, 0);
   nodeA.scale.set(8, 8, 8);
-  let nodeB = new THREE.Mesh(geometry, material);
+  const nodeB = new THREE.Mesh(geometry, material);
   nodeB.position.set(0, -OFFSET, 0);
   nodeB.scale.set(8, 8, 8);
   nodeB.rotation.set(Math.PI, 0, 0);
   cube.add(nodeA);
   cube.add(nodeB);
 
-  let nodeC = new THREE.Mesh(geometry, material);
+  const nodeC = new THREE.Mesh(geometry, material);
   nodeC.position.set(0, 0, -OFFSET);
   nodeC.scale.set(8, 8, 8);
   nodeC.rotation.set(-Math.PI / 2, 0, 0);
-  let nodeD = new THREE.Mesh(geometry, material);
+  const nodeD = new THREE.Mesh(geometry, material);
   nodeD.position.set(0, 0, OFFSET);
   nodeD.scale.set(8, 8, 8);
   nodeD.rotation.set(Math.PI / 2, 0, 0);
   cube.add(nodeC);
   cube.add(nodeD);
 
-  let nodeE = new THREE.Mesh(geometry, material);
+  const nodeE = new THREE.Mesh(geometry, material);
   nodeE.position.set(OFFSET, 0, 0);
   nodeE.scale.set(8, 8, 8);
   nodeE.rotation.set(0, 0, -Math.PI / 2);
-  let nodeF = new THREE.Mesh(geometry, material);
+  const nodeF = new THREE.Mesh(geometry, material);
   nodeF.position.set(-OFFSET, 0, 0);
   nodeF.scale.set(8, 8, 8);
   nodeF.rotation.set(0, 0, Math.PI / 2);
@@ -112,7 +112,7 @@ function makeCenterPiece() {
     direction: "reverse",
     loop: true,
   });
-  let nodes = [nodeA, nodeB, nodeC, nodeD, nodeE, nodeF];
+  const nodes = [nodeA, nodeB, nodeC, nodeD, nodeE, nodeF];
   nodes.forEach((e) => (e.offsetScale = 1));
   animation = anime({
     targets: nodes,
@@ -154,8 +154,8 @@ function setupLight() {
 
 function buildPiecePool() {
   for (let i = 0; i < POOL_SIZE; i++) {
-    let w = Math.floor(Math.random() * 6) + 2;
-    let h = Math.floor(Math.random() * 2) + 2;
+    const w = Math.floor(Math.random() * 6) + 2;
+    const h = Math.floor(Math.random() * 2) + 2;
     pieces.push(makeLegoPiece(w, h));
   }
   const colors = [
@@ -172,11 +172,11 @@ function buildPiecePool() {
 }
 
 function getRandomPieceFromPool() {
-  let i = Math.floor(Math.random() * pieces.length);
+  const i = Math.floor(Math.random() * pieces.length);
   return pieces[i];
 }
 function getRandomMaterialFromPool() {
-  let i = Math.floor(Math.random() * materials.length);
+  const i = Math.floor(Math.random() * materials.length);
   return materials[i];
 }
 
@@ -193,7 +193,7 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
   da.translate(-hw, 0, 0);
   const plank = new THREE.BoxGeometry(width, thickness, height);
   plank.translate(0, depth / 2, 0);
-  let pieces = [ab, bc, cd, da, plank];
+  const pieces = [ab, bc, cd, da, plank];
   const BUTTON_RADIUS = 0.4;
   const BUTTON_HEIGHT = 0.3;
   for (let i = 0; i < width; i++) {
@@ -239,9 +239,9 @@ function rebuildOrbitControl() {
 }
 
 function init() {
-  let canvas = document.getElementById(CANVAS_ID);
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  const canvas = document.getElementById(CANVAS_ID);
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight; //w * ASPECT_RATIO;
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
@@ -268,13 +268,13 @@ function destroy() {
 }
 
 function onWindowResize() {
-  let canvas = document.getElementById(CANVAS_ID);
+  const canvas = document.getElementById(CANVAS_ID);
   if (!canvas) {
     return;
   }
   canvas.style = "";
-  let w = canvas.clientWidth;
-  let h = canvas.clientHeight; //w * ASPECT_RATIO;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight; //w * ASPECT_RATIO;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);

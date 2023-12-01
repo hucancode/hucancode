@@ -1,5 +1,4 @@
 <script>
-  import { onMount } from "svelte";
   import { formatDateRelative } from "$lib/i18n";
   import GameDie from "$icons/fluent/game-die.svg?raw";
   import Function from "$icons/google-material/function.svg?raw";
@@ -18,7 +17,7 @@
     return formatDateRelative("en", new Date(date));
   }
   function getIcons(post) {
-    let data = [
+    const data = [
       {
         categories: ["combinatorics"],
         icon: GameDie,
@@ -60,7 +59,7 @@
         icon: Book,
       },
     ];
-    let ret = [];
+    const ret = [];
     for (let item of data) {
       if (post.categories.some((cat) => item.categories.includes(cat))) {
         ret.push(item.icon);

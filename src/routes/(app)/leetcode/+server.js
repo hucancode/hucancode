@@ -20,7 +20,7 @@ const LEETCODE_PAYLOAD = {
 };
 
 async function requestAxios() {
-  let options = {
+  const options = {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
