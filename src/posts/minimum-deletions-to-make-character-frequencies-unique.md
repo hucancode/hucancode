@@ -1,6 +1,6 @@
 ---
 title: Minimum Deletions to Make Character Frequencies Unique
-excerpt: The task is to determine the minimum number of characters that need to be deleted from a given string to make it satisfies a condition. 
+excerpt: The task is to determine the minimum number of characters that need to be deleted from a given string to make it satisfies a condition.
 date: 2023-09-12
 categories:
   - algorithm
@@ -56,11 +56,14 @@ We use greedy approach here:
 - We use the last valid frequency to calculate deletion needed
 
 ### Complexity
+
 - Time complexity: $O(n)$
 - Space complexity: $O(1)$
 
 ### Code
+
 Rust
+
 ```rust
 use std::cmp::max;
 use std::cmp::min;
@@ -85,7 +88,9 @@ impl Solution {
     }
 }
 ```
+
 Kotlin
+
 ```kotlin
 class Solution {
     fun minDeletions(s: String): Int {
@@ -103,7 +108,9 @@ class Solution {
     }
 }
 ```
+
 C++
+
 ```cpp
 class Solution {
 public:

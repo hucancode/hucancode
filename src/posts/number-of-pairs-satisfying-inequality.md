@@ -1,6 +1,6 @@
 ---
 title: Number of Pairs Satisfying Inequality
-excerpt: he problem involves two arrays, and an integer diff. The task is to count the number of pairs (i, j) satisfying an inequality.
+excerpt: The problem involves two arrays, and an integer diff. The task is to count the number of pairs (i, j) satisfying an inequality.
 date: 2023-06-28
 categories:
   - algorithm
@@ -34,7 +34,7 @@ Therefore, we return 3.
 Input: nums1 = [3,-1], nums2 = [-2,2], diff = -1
 Output: 0
 Explanation:
-Since there does not exist any pair that satisfies the conditions, we return 0.``
+Since there does not exist any pair that satisfies the conditions, we return 0.
 ```
 
 ```
