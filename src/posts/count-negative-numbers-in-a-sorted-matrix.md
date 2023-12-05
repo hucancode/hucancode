@@ -1,9 +1,10 @@
 ---
 title: Count Negative Numbers in a Sorted Matrix
 excerpt: Simple traversing problem that can be solve in many ways
-date: 2023-06-28
+date: 2023-06-08
 categories:
   - algorithm
+  - greedy
   - leetcode
 ---
 

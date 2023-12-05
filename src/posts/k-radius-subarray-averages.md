@@ -1,7 +1,7 @@
 ---
 title: K Radius Subarray Averages
 excerpt: The task is to compute running average of an array. We must do it efficiently.
-date: 2023-06-28
+date: 2023-06-20
 categories:
   - algorithm
   - sliding-window
