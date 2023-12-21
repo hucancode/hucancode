@@ -49,13 +49,6 @@ Submit your solution at [here](https://leetcode.com/problems/number-of-ways-to-r
 
 ### Intuition
 
-Thinking recursively, pretend that we know:
-
-- There are $x$ ways to arrange $n-1$ sticks shows $k$ sticks
-- There are $y$ ways to arrange $n-1$ sticks shows $k-1$ sticks
-
-_How can we count the ways to arrange $n$ sticks in which $k$ visible?_
-
 Let's say we have used up $n$ sticks labels $a-1,a-2,...,a-n$, and we have another stick length $b = a-n-1$ which is smaller than all previous sticks, how can we go from here:
 
 - From $n-1,k-1$ configuration, there is only 1 way can make $n,k$ configuration. That is put the new stick on the front
