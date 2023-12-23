@@ -49,7 +49,7 @@ Submit your solution at [here](https://leetcode.com/problems/number-of-ways-to-r
 
 ### Intuition
 
-Let's say we have used up $n$ sticks labels $a-1,a-2,...,a-n$, and we have another stick length $b = a-n-1$ which is smaller than all previous sticks, how can we go from here:
+Let's say we have used up $n$ sticks labels $a-1,a-2,...,a-(n-1)$, and we have another stick length $a-n$ which is smaller than all previous sticks, how can we go from here:
 
 - From $n-1,k-1$ configuration, there is only 1 way can make $n,k$ configuration. That is put the new stick on the front
 - From $n-1,k$ configuration, there are $n-1$ ways to put the new stick behind and keep the number of visible sticks the same
