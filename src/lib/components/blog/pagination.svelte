@@ -3,24 +3,24 @@
   export let page;
   export let lastPage;
   export let path;
-  const DISPLAY_NUM = 6;
+  const DISPLAY_NUM = 7;
   let pages = [];
   function update() {
-    pages = Array.from({ length: lastPage }, (_, i) => i + 1);
-    if (lastPage > DISPLAY_NUM) {
-      const k = DISPLAY_NUM / 2;
-      const nearEnd = lastPage - page <= k;
-      const nearStart = page < k;
-      // console.log("page", page, "k",k,"near end", nearEnd, "near start", nearStart);
-      if (!nearEnd && !nearStart) {
-        pages.splice(1, page - k);
-        pages.splice(DISPLAY_NUM - 1, page - k + 1);
-      } else if (nearEnd) {
-        pages.splice(1, lastPage - DISPLAY_NUM);
-      } else if (nearStart) {
-        pages.splice(DISPLAY_NUM - 1, lastPage - DISPLAY_NUM);
-      }
+    if (lastPage <= DISPLAY_NUM) {
+      return Array(lastPage)
+        .fill(1)
+        .map((_, i) => i + 1);
     }
+    let halfLength = (DISPLAY_NUM - 3) / 2;
+    let a = halfLength + 2;
+    let b = lastPage - halfLength - 1;
+    let pivot = Math.max(a, Math.min(b, page));
+    pages = [];
+    pages.push(1);
+    for (var i = pivot - halfLength; i <= pivot + halfLength; i++) {
+      pages.push(i);
+    }
+    pages.push(lastPage);
   }
   update();
   afterUpdate(update);
