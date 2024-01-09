@@ -8,7 +8,7 @@ categories:
   - new-year
 ---
 
-First of all, happy new year to all who celebrate, wish you happiness and prosperity in the year ahead. I hope the luck be with you and your family. May God of The Dragon 🐲 gives you strength to overcome all the hardships that might cross your path.
+Xin chào, hello, こんにちは, 你好 it's me again, happy new year to all who celebrates, wish you happiness and prosperity in the year ahead. I hope the luck be with you and your relatives. I wish you not the easy life but the power to make your life easy. May God of The Dragon 🐲 gives you strength to overcome all the hardships that might cross your path.
 
 ## Last Year's Achievement
 
@@ -24,7 +24,7 @@ Last year I picked up `rust 🦀` and like it very much. I can say that was a su
 
 ### Blog & Internet Presence
 
-I have managed to maintain a blog, mostly low-effort leetcode solution but it's an active blog nonetheless. I have also did some creative coding and get something interesting out of it.
+I have managed to maintain a blog, mostly low-effort leetcode solutions but it's an active blog nonetheless. I have also did some creative coding and got something interesting out of it.
 
 ### Nhi 💖
 
@@ -65,7 +65,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 
 #### ✨ Reality Stone
 
-- By the end of the year, aim for at least 1.5x yearly income, ideally 2x
+- By the end of the year, aim for at least 1.5x annual income, ideally 2x
 
 #### ⏰ Time Stone
 
