@@ -41,9 +41,9 @@
   name: "NTQ Japan",
   location: "Gifu, Japan",
   date: "Aug. 2022 - Present",
-  [Built complex and performant embedded applications used in buses and trains],
-  [Maintained full-stack web applications using Vue, Django],
   [Taken part in software requirements hearing, bidding, proposal activities],
+  [Built complex and performant embedded applications used in buses and trains],
+  
 )
 #exp_item(
   role: "Engineering Manager",
@@ -51,17 +51,13 @@
   location: "Kagawa, Japan",
   date: "July 2020 - Aug. 2022",
   [Communicated with clients to to build responsive rich-featured EC websites],
-  [Trained and develop team members in: Networking, Linux, HTML/CSS, React, Flutter],
-  [Built full-featured performant cross platform mobile applications],
-  [Utilized modern HTML/CSS to build aesthetic responsive EC web applications],
-  [Maintained web backend written in Laravel, NodeJS, nginx. Support HTTPS with both manual and automatic methods],
+  [Built full-featured performant cross platform mobile applications and web backend written using Flutter, NodeJS, nginx],
 )
 #exp_item(
   role: "C++ Engineer",
   name: "FPT Software",
   location: "Hanoi, Vietnam",
   date: "May 2019 - July 2019",
-  [Worked with large C++ code base. Performed static analysis using Coverity],
   [Developed performant and feature-rich embedded applications],
 )
 #exp_item(
@@ -69,9 +65,7 @@
   name: "Gameloft HAN",
   location: "Hanoi, Vietnam",
   date: "Mar. 2014 - Mar. 2016, Apr. - Nov. 2018",
-  [Worked with C++, OpenGL, GLSL, HLSL, Android NDK, Box2D, Unity3D],
-  [Analyzed, optimized complex games to run on low-end mobile devices],
-  [Worked with large and complex C++ project and build system],
+  [Developed, and optimized games for low-end mobile devices using C++, OpenGL, Android NDK, Unity3D, with large code base and complex build system],
   [Contributed in: Order and Chaos 2, Brothers in Arms 3, Ice Age Adventure, Shark Dash and many other games],
 )
 
@@ -101,13 +95,14 @@
   date: "July 2020 - July 2022",
   [Managed an app making system, allowing users to build custom Android/iOS application with no technical prerequisite],
   [Maintained an automated app building system, using Laravel, Fastlane, Nodejs, XCode],
-  [Built highly customizable React Native applications, offering 9 different themes with feature set suitable for various kind of application: restaurant, apparel shop, hotel, taxi services, and more]
+  [Built highly customizable React Native applications, offering 9 different themes with feature set suitable for various kind of application: restaurant, apparel shop, hotel, taxi services, and more],
+  [Support HTTPS with both manual and automatic methods],
 )
 #project_item(
   name: "HKMC",
   skills: "Qt, Linux, IVI, Embedded",
   date: "Feb. 2017 - Nov. 2017",
-  [Built media playing application for automotive in-vehicle infortainment (IVI) system using #emph("Qt")],
+  [Built media playing application for automotive in-vehicle infortainment (IVI) system using Qt],
   [Implemented lazy loading mechanic, handling thousands of song with small memory footprint],
   [Worked with large C++ code base. Utilized Coverity for static analysis]
 )
@@ -122,14 +117,14 @@
 
 #resume_heading[Education]
 #edu_item(
-  name: "Hung Yen University of Technology and Education",
-  degree: "BSc Software Engineering",
-  location: "Hung Yen, Vietnam",
-  date: "Sep. 2010 - June 2014"
-)
-#edu_item(
   name: "Mizuno School of Foreign Language",
   degree: "Japanese",
   location: "Chiba, Japan",
   date: "Apr. 2018 - Apr. 2019"
+)
+#edu_item(
+  name: "Hung Yen University of Technology and Education",
+  degree: "BSc Software Engineering",
+  location: "Hung Yen, Vietnam",
+  date: "Sep. 2010 - June 2014"
 )

@@ -11,7 +11,7 @@
   
   set text(
     size: 11pt,
-      font: "New Computer Modern",
+      font: "New Computer Modern, Hina Mincho",
   )
 
   body
@@ -31,8 +31,8 @@
   align(center,
     block[
       #name_header(name) \
-      #address |
-      #link("mailto:" + email)[#email] |
+      #address ・
+      #link("mailto:" + email)[#email] ・
       #link("https://" + site)[#site]
     ]
   )
@@ -58,7 +58,7 @@
   pad(left: 1em, right: 0.5em, grid(
     columns: (3fr, 1fr),
     align(left)[
-      *#name* _#description _
+      *#name*・_#description _
     ],
     align(right)[
       _#date _
@@ -118,7 +118,7 @@
 ) = {
   set block(above: 0.7em, below: 1em)
   pad(left: 1em, right: 0.5em, box[
-    *#name* | _#skills _ #h(1fr) #date
+    *#name*・_#skills _ #h(1fr) #date
     #list(..points)
   ])
 }
