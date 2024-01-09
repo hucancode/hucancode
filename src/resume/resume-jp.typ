@@ -4,22 +4,26 @@
 
 #header(
   name: "Bang Nguyen Huu",
-  address: "岐阜、日本",
+  address: "岐阜県、日本",
   email: "hucancode@gmail.com",
   site: "hucanco.de",
 )
 
 #resume_heading("技術的なスキル")
 #skill_item(
-  category: "言語、フレームワーク",
-  skills: "Rust、C++、GLSL、HLSL、Typescript、CSS、Java、Kotlin、SQL　・　OpenGL、nginx、NextJS, React、Vue、Svelte、ThreeJS、Tailwind、NestJS、Strapi、Flutter、MySQL、WebGPU"
+  category: "プログラミング言語",
+  skills: "Rust、C++、GLSL、HLSL、Typescript、CSS、Java、Kotlin、SQL"
+)
+#skill_item(
+  category: "フレームワーク",
+  skills: "OpenGL、nginx、React、Vue、Svelte、ThreeJS、Tailwind、NestJS、Strapi、Flutter、MySQL、WebGPU"
 )
 #skill_item(
   category: "OS",
   skills: "Windows、Mac、Linux (Debian、Arch、RHEL)、Android、iOS"
 )
 #skill_item(
-  category: "コミュニケーション",
+  category: "言語",
   skills: "ベトナム語（母国語）・日本語（JLPT N2）・英語（TOEIC 945）"
 )
 
@@ -39,7 +43,7 @@
 #exp_item(
   role: "システムエンジニア",
   name: "NTQ Japan",
-  location: "岐阜、日本",
+  location: "岐阜県、日本",
   date: "2022年8月～現在",
   [ソフトウェア要件のヒアリング、入札、提案活動に参加],
   [バスや電車で使用される複雑で高性能な組み込みアプリケーションを構築],
@@ -47,7 +51,7 @@
 #exp_item(
   role: "エンジニアマネージャー",
   name: "グッドクリエイト",
-  location: "香川、日本",
+  location: "香川県、日本",
   date: "2020年7月～2022年8月",
   [クライアントとコミュニケーションをとり、レスポンシブで機能豊富な EC ウェブサイトを構築します],
   [Flutter、NodeJS、nginx を使用して作成されたフル機能のパフォーマンスの高いクロスプラットフォーム モバイル アプリケーションと Web バックエンドを構築],
@@ -117,7 +121,7 @@
 #edu_item(
   name: "水野外語学院",
   degree: "日本語",
-  location: "千葉、日本",
+  location: "千葉県、日本",
   date: "2018年4月～2019年4月"
 )
 #edu_item(

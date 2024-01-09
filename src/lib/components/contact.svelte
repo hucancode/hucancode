@@ -8,11 +8,11 @@
   let resumeUrl = "/resume.pdf";
 
   switch ($locale) {
-    case "en":
-      resumeUrl = "/resume.pdf";
+    case "ja":
+      resumeUrl = "/resume-ja.pdf";
       break;
-    case "jp":
-      resumeUrl = "/resume-jp.pdf";
+    case "vi":
+      resumeUrl = "/resume-vi.pdf";
       break;
     default:
       resumeUrl = "/resume.pdf";
