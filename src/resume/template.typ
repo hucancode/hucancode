@@ -11,7 +11,7 @@
   
   set text(
     size: 11pt,
-      font: "New Computer Modern, Hina Mincho",
+      font: ("New Computer Modern", "Hina Mincho"),
   )
 
   body

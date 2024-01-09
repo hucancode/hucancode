@@ -45,7 +45,7 @@
   name: "NTQ Japan",
   location: "Gifu, Japan",
   date: "Aug. 2022 - Present",
-  [Taken part in software requirements hearing, bidding, proposal activities],
+  [Took part in requirements collecting, bidding, proposal activities. Proudly won engineer of the year 2023],
   [Built complex and performant embedded applications used in buses and trains],
   
 )
