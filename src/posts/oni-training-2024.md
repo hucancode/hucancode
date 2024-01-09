@@ -8,7 +8,7 @@ categories:
   - new-year
 ---
 
-Xin chào, hello, こんにちは, 你好 it's me again, happy new year to all who celebrates, wish you happiness and prosperity in the year ahead. I hope the luck be with you and your relatives. I wish you not the easy life but the power to make your life easy. May God of The Dragon 🐲 gives you strength to overcome all the hardships that might cross your path.
+Xin chào, hello, こんにちは, 你好 it's me again, happy new year to all who celebrates, wish you happiness and prosperity in the year ahead. I hope the luck be with you and your relatives. I wish you not the easy life but the power to make your life easy. May the God of The Dragon 🐲 gives you strength to overcome all the hardships that might cross your path.
 
 ## Last Year's Achievement
 
