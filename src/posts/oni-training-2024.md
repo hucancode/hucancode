@@ -20,20 +20,19 @@ I have read 12 books this year. Taking out boring technical books, there are 9 a
 
 ### Programming
 
-Last year I picked up `rust 🦀` and like it very much. I can say that was a successful attempt. `kotlin` is also on my list but I haven't done anything significant.
+Last year I picked up `rust 🦀` and like it very much. I can say that was a successful attempt or a nice adventure I would say. On a side note, `kotlin` is also on my list but I haven't done anything significant.
 
 ### Blog & Internet Presence
 
-I have managed to maintain a blog, mostly low-effort leetcode solution but it's an active blog nonetheless.
-I have also did some creative coding and get something interesting out of it.
+I have managed to maintain a blog, mostly low-effort leetcode solution but it's an active blog nonetheless. I have also did some creative coding and get something interesting out of it.
 
-### Nhi
+### Nhi 💖
 
-The relationship with Nhi is, without a doubt the best thing happened this year. After not a few moments of awkard silent, countless silly conversations and a clumsy confession. I did it. We are officially together, since 15<super>th</super> July 2023. We have walked through temples in Kyoto together. I have seen panda in real life for the first time, and her too probably. Our personalities may seems contrast but turned out that's what makes us compatible. Fights make us understand each other more. I still learning to love her until to day and I enjoy that process.
+The relationship with Nhi is, without a doubt the best thing happened last year. After not a few moments of awkard silent, countless silly conversations and a clumsy confession, I did it. We are officially together, since 15<super>th</super> July 2023. We have walked through temples in Kyoto together. I have seen panda in real life for the first time, and her too probably. Speaking of panda, we have seen panda in most places we can find them in Japan. It's crazy how an introvert who never go outside like me now enjoy wandering Tokyo's street. Our personalities may seems contrast but turned out that's what makes us compatible. Fights make us understand each other more. I still learning to love her until today and I enjoy that process.
 
-### 10000 steps
+### 10K steps
 
-I have been maintaining 10k steps nearly everyday since earlier this year. I even installed Strava and kept running for a month. Not so impressive but still an achievement.
+I have been maintaining 10K steps nearly everyday since earlier this year. I even installed Strava and kept running for a month. Not so impressive but still an achievement.
 
 ## New Year's Resolution 🎉
 
@@ -62,7 +61,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 #### 💖 Soul Stone
 
 - Be more caring and romantic
-- Control inner emotion
+- Better control of negative emotion
 
 #### ✨ Reality Stone
 
