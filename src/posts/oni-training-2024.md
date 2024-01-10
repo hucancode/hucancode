@@ -12,7 +12,7 @@ Xin chào, hello, こんにちは, 你好 it's me again, happy new year to all w
 
 ## Last Year's Achievement
 
-Before go to the goal for this year, I would like to mention some nice thing happed last year. I have done some good job and I would like to praise myself for it.
+Before go to the goals for this year, I would like to mention some nice thing happed last year. I have done some good job and I would like to praise myself for it.
 
 ### Reading
 
@@ -20,11 +20,11 @@ I have read 12 books this year. Taking out boring technical books, there are 9 a
 
 ### Programming
 
-Last year I picked up `rust 🦀` and like it very much. I can say that was a successful attempt or a nice adventure I would say. On a side note, `kotlin` is also on my list but I haven't done anything significant.
+Last year I picked up `rust 🦀` and like it very much. I can confidently say I am now a Rustacean. That was a successful attempt or at least a nice adventure I would say. On a side note, `kotlin` is also on my list but I haven't done anything significant with it.
 
-### Blog & Internet Presence
+### Internet Presence
 
-I have managed to maintain a blog, mostly low-effort leetcode solutions but it's an active blog nonetheless. I have also did some creative coding and got something interesting out of it.
+My personal toy web page is up to date with modern looks and cool stuffs, pretty proud of it. I also have managed to maintain a blog, mostly low-effort leetcode solutions but it's an active blog nonetheless. I have also did some creative coding and got something interesting out of it.
 
 ### Nhi 💖
 
@@ -45,7 +45,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 - Stamina
 - Flexibility
 
-#### 🐾 Space Stone
+#### 🚀 Space Stone
 
 - New job in Tokyo
 - Move in with Nhi
@@ -54,7 +54,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 #### 🧠 Mind Stone
 
 - Train Leetcode
-- Learn Backend, Distributed Architecture
+- Learn Backend, Distributed System Design
 
 #### 💖 Soul Stone
 
