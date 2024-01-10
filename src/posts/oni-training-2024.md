@@ -42,7 +42,6 @@ Continue the tradition I have established last year. I will use [the Infinity St
 
 #### ⚡ Power Stone
 
-- Core strength
 - Stamina
 - Flexibility
 
@@ -55,8 +54,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 #### 🧠 Mind Stone
 
 - Train Leetcode
-- Learn about the body, live longer
-- Investing
+- Learn Backend, Distributed Architecture
 
 #### 💖 Soul Stone
 
@@ -65,11 +63,14 @@ Continue the tradition I have established last year. I will use [the Infinity St
 
 #### ✨ Reality Stone
 
+- Learn more about investing
 - By the end of the year, aim for at least 1.5x annual income, ideally 2x
+- This ambitious goal inevitably put myself in the risk of having to change job, but that's the risk I'm willing to take
 
 #### ⏰ Time Stone
 
 - Get up early consistently
+- Honestly it's harder than it seems
 
 ![festive illustration](/blog/post/oni-training-2024/job516-namcha-09.jpg)
 
@@ -79,7 +80,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 | --- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ⚡  | 5 minutes plank.<br />Eat vegetable.<br /> Not yet full split, 25~30cm until ground, pretty far. | Train Taiji.<br />Consistent 7 minutes plank.<br />Eat more vegetable.<br/>Build running habit.<br />Reduce the split gap to the ground, ideally 10~15cm. | Train more Taiji.<br />Consistent 9 minutes plank, visible 11-shaped belly. Nimble, flexible body.<br />Eat less sugar.<br/>Maintain running habit.<br />Full split, 朝天登. |
 | 🐾  | Stay in Gifu                                                                                     | Move to Tokyo, move in with Nhi                                                                                                                           | Home trip                                                                                                                                                                    |
-| 🧠  | Leetcode R2033                                                                                   | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                          | Leetcode R2200 (speed solving)                                                                                                                                               |
+| 🧠  | Leetcode R2033                                                                                   | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                          | Leetcode R2200 (speed solving)<br/> Learn AWS SAA/SAP                                                                                                                                               |
 | 💖  | Learn to drive                                                                                   | Move in with her                                                                                                                                          | Buy a car<br/>Chengdu trip                                                                                                                                                   |
 | ✨  | Good career momentum<br/> Invest all NISA quota                                                  | Look for new oppotunities.<br />Do more creative coding.<br />Do more graphics works.                                                                     | Have at least 1 interview with tier-2 tech company.<br />                                                                                                                    |
 | ⏰  | Inconsistent bedtime $10:00$ ~ $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                 | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                           | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                                      |
