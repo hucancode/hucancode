@@ -12,19 +12,19 @@
 #resume_heading("技術的なスキル")
 #skill_item(
   category: "プログラミング言語",
-  skills: "Rust、C++、GLSL、HLSL、Typescript、CSS、Java、Kotlin、SQL"
+  skills: "Rust、C++、C#、GLSL、Typescript、Java、Kotlin、SQL"
 )
 #skill_item(
   category: "フレームワーク",
-  skills: "OpenGL、nginx、React、Vue、Svelte、ThreeJS、Tailwind、NestJS、Strapi、Flutter、MySQL、WebGPU"
+  skills: "OpenGL、ReactiveX、React、Vue、Svelte、Tailwind、NestJS、Strapi、Flutter、Jetpack Compose、Axum、Tokio、WebGPU"
 )
 #skill_item(
-  category: "OS",
-  skills: "Windows、Mac、Linux (Debian、Arch、RHEL)、Android、iOS"
+  category: "ツール　＆　OS",
+  skills: "Windows、Mac、Linux (Debian、Arch、RHEL)、Android、iOS、Docker、nginx、MySQL"
 )
 #skill_item(
   category: "言語",
-  skills: "ベトナム語（母国語）・日本語（JLPT N2）・英語（TOEIC 945）"
+  skills: "日本語（JLPT N2）・英語（TOEIC 945）・ベトナム語（母国語）"
 )
 
 #resume_heading("証明書")
@@ -39,7 +39,7 @@
   date: "2023"
 )
 
-#resume_heading[経験]
+#resume_heading[経歴]
 #exp_item(
   role: "システムエンジニア",
   name: "NTQ Japan",
@@ -72,7 +72,7 @@
   [貢献作品: Order and Chaos 2、Brothers in Arms 3、Ice Age Adventure、Shark Dash、その他多くのゲーム],
 )
 
-#resume_heading("案件")
+#resume_heading("注目案件")
 #project_item(
   name: "Hi-ABT",
   skills: "Linux、Android、Java、C++、TCP/IP、Serial",
@@ -117,7 +117,7 @@
   [Solo は、手作業の約 90% を削減する静的アナライザーを開発しました。 分析された C++ コード コンテンツ、正規表現を使用した構造化コンテンツの処理],
 )
 
-#resume_heading[Education]
+#resume_heading[学歴]
 #edu_item(
   name: "水野外語学院",
   degree: "日本語",

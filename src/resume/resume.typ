@@ -12,19 +12,19 @@
 #resume_heading("Technical Skills")
 #skill_item(
   category: "Programming Languages",
-  skills: "Rust, C++, GLSL, HLSL, Typescript, CSS, Java, Kotlin, SQL"
+  skills: "Rust, C++, C#, GLSL, Typescript, Java, Kotlin, SQL"
 )
 #skill_item(
   category: "Frameworks",
-  skills: "OpenGL, nginx, React, Vue, Svelte, ThreeJS, Tailwind, NestJS, Strapi, Flutter, MySQL, WebGPU"
+  skills: "OpenGL, ReactiveX, React, Vue, Svelte, Tailwind, NestJS, Strapi, Flutter, Jetpack Compose, Axum, Tokio, WebGPU"
 )
 #skill_item(
-  category: "OS",
-  skills: "Windows, Mac, Linux (Debian, Arch, RHEL), Android, iOS"
+  category: "Tools & OS",
+  skills: "Windows, Mac, Linux (Debian, Arch, RHEL), Android, iOS, Docker, nginx, MySQL"
 )
 #skill_item(
   category: "Languages",
-  skills: "Vietnamese (Native), Japanese (JLPT N2), English (TOEIC 945)"
+  skills: "Japanese (JLPT N2), English (TOEIC 945), Vietnamese (Native)"
 )
 
 #resume_heading("Certifications")
@@ -73,7 +73,7 @@
   [Contributed in: Order and Chaos 2, Brothers in Arms 3, Ice Age Adventure, Shark Dash and many other games],
 )
 
-#resume_heading("Projects")
+#resume_heading("Notable Projects")
 #project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, Java, C++, TCP/IP, Serial",
