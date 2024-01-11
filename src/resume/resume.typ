@@ -97,8 +97,8 @@
   name: "AtCreator",
   skills: "Laravel, Fastlane, React Native, XCode CLI",
   date: "July 2020 - July 2022",
-  [Managed an app making system, allowing users to build custom Android/iOS application with no technical prerequisite],
-  [Maintained an automated app building system, using Laravel, Fastlane, Nodejs, XCode],
+  [Maintained an app making system, allowing users to build and publish custom Android/iOS application with no technical prerequisite. Similar to Wix, but for mobile application],
+  [Maintained an automated app building system, using Fastlane, Nodejs, XCode],
   [Built highly customizable React Native applications, offering 9 different themes with feature set suitable for various kind of application: restaurant, apparel shop, hotel, taxi services, and more],
   [Support HTTPS with both manual and automatic methods],
 )
