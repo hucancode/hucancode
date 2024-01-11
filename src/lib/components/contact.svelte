@@ -6,18 +6,19 @@
   import Banana from "$icons/fluent/banana-hc.svg?raw";
 
   let resumeUrl = "/resume.pdf";
-
-  switch ($locale) {
-    case "ja":
-      resumeUrl = "/resume-ja.pdf";
-      break;
-    case "vi":
-      resumeUrl = "/resume-vi.pdf";
-      break;
-    default:
-      resumeUrl = "/resume.pdf";
-      break;
-  }
+  locale.subscribe((value) => {
+    switch (value) {
+      case "ja":
+        resumeUrl = "/resume-ja.pdf";
+        break;
+      case "vi":
+        resumeUrl = "/resume-vi.pdf";
+        break;
+      default:
+        resumeUrl = "/resume.pdf";
+        break;
+    }
+  });
 </script>
 
 <section>

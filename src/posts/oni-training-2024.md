@@ -12,7 +12,7 @@ Xin chào, hello, こんにちは, 你好 it's me again, happy new year to all w
 
 ## Last Year's Achievement
 
-Before go to the goal for this year, I would like to mention some nice thing happed last year. I have done some good job and I would like to praise myself for it.
+Before go to the goals for this year, I would like to mention some nice thing happed last year. I have done some good job and I would like to praise myself for it.
 
 ### Reading
 
@@ -20,11 +20,11 @@ I have read 12 books this year. Taking out boring technical books, there are 9 a
 
 ### Programming
 
-Last year I picked up `rust 🦀` and like it very much. I can say that was a successful attempt or a nice adventure I would say. On a side note, `kotlin` is also on my list but I haven't done anything significant.
+Last year I picked up `rust 🦀` and like it very much. I can confidently say I am now a Rustacean. That was a successful attempt or at least a nice adventure I would say. On a side note, `kotlin` is also on my list but I haven't done anything significant with it.
 
-### Blog & Internet Presence
+### Internet Presence
 
-I have managed to maintain a blog, mostly low-effort leetcode solutions but it's an active blog nonetheless. I have also did some creative coding and got something interesting out of it.
+My personal toy web page is up to date with modern looks and cool stuffs, pretty proud of it. I also have managed to maintain a blog, mostly low-effort leetcode solutions but it's an active blog nonetheless. I have also did some creative coding and got something interesting out of it.
 
 ### Nhi 💖
 
@@ -42,11 +42,10 @@ Continue the tradition I have established last year. I will use [the Infinity St
 
 #### ⚡ Power Stone
 
-- Core strength
 - Stamina
 - Flexibility
 
-#### 🐾 Space Stone
+#### 🚀 Space Stone
 
 - New job in Tokyo
 - Move in with Nhi
@@ -55,8 +54,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 #### 🧠 Mind Stone
 
 - Train Leetcode
-- Learn about the body, live longer
-- Investing
+- Learn Backend, Distributed System Design
 
 #### 💖 Soul Stone
 
@@ -65,11 +63,14 @@ Continue the tradition I have established last year. I will use [the Infinity St
 
 #### ✨ Reality Stone
 
+- Learn more about investing
 - By the end of the year, aim for at least 1.5x annual income, ideally 2x
+- This ambitious goal inevitably put myself in the risk of having to change job, but that's the risk I'm willing to take
 
 #### ⏰ Time Stone
 
 - Get up early consistently
+- Honestly it's harder than it seems
 
 ![festive illustration](/blog/post/oni-training-2024/job516-namcha-09.jpg)
 
@@ -79,7 +80,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 | --- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ⚡  | 5 minutes plank.<br />Eat vegetable.<br /> Not yet full split, 25~30cm until ground, pretty far. | Train Taiji.<br />Consistent 7 minutes plank.<br />Eat more vegetable.<br/>Build running habit.<br />Reduce the split gap to the ground, ideally 10~15cm. | Train more Taiji.<br />Consistent 9 minutes plank, visible 11-shaped belly. Nimble, flexible body.<br />Eat less sugar.<br/>Maintain running habit.<br />Full split, 朝天登. |
 | 🐾  | Stay in Gifu                                                                                     | Move to Tokyo, move in with Nhi                                                                                                                           | Home trip                                                                                                                                                                    |
-| 🧠  | Leetcode R2033                                                                                   | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                          | Leetcode R2200 (speed solving)                                                                                                                                               |
+| 🧠  | Leetcode R2033                                                                                   | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                          | Leetcode R2200 (speed solving)<br/> Learn AWS SAA/SAP                                                                                                                                               |
 | 💖  | Learn to drive                                                                                   | Move in with her                                                                                                                                          | Buy a car<br/>Chengdu trip                                                                                                                                                   |
 | ✨  | Good career momentum<br/> Invest all NISA quota                                                  | Look for new oppotunities.<br />Do more creative coding.<br />Do more graphics works.                                                                     | Have at least 1 interview with tier-2 tech company.<br />                                                                                                                    |
 | ⏰  | Inconsistent bedtime $10:00$ ~ $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                 | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                           | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                                      |

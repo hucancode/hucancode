@@ -12,19 +12,19 @@
 #resume_heading("技術的なスキル")
 #skill_item(
   category: "プログラミング言語",
-  skills: "Rust、C++、GLSL、HLSL、Typescript、CSS、Java、Kotlin、SQL"
+  skills: "Rust、C++、C#、GLSL、Typescript、Java、Kotlin、SQL"
 )
 #skill_item(
   category: "フレームワーク",
-  skills: "OpenGL、nginx、React、Vue、Svelte、ThreeJS、Tailwind、NestJS、Strapi、Flutter、MySQL、WebGPU"
+  skills: "OpenGL、ReactiveX、React、Vue、Svelte、Tailwind、NestJS、Strapi、Flutter、Jetpack Compose、Axum、Tokio、WebGPU"
 )
 #skill_item(
-  category: "OS",
-  skills: "Windows、Mac、Linux (Debian、Arch、RHEL)、Android、iOS"
+  category: "ツール　＆　OS",
+  skills: "Windows、Mac、Linux (Debian、Arch、RHEL)、Android、iOS、Docker、nginx、MySQL"
 )
 #skill_item(
   category: "言語",
-  skills: "ベトナム語（母国語）・日本語（JLPT N2）・英語（TOEIC 945）"
+  skills: "日本語（JLPT N2）・英語（TOEIC 945）・ベトナム語（母国語）"
 )
 
 #resume_heading("証明書")
@@ -39,7 +39,7 @@
   date: "2023"
 )
 
-#resume_heading[経験]
+#resume_heading[経歴]
 #exp_item(
   role: "システムエンジニア",
   name: "NTQ Japan",
@@ -72,7 +72,7 @@
   [貢献作品: Order and Chaos 2、Brothers in Arms 3、Ice Age Adventure、Shark Dash、その他多くのゲーム],
 )
 
-#resume_heading("案件")
+#resume_heading("注目案件")
 #project_item(
   name: "Hi-ABT",
   skills: "Linux、Android、Java、C++、TCP/IP、Serial",
@@ -96,8 +96,8 @@
   name: "AtCreator",
   skills: "Laravel、Fastlane、React Native、XCode CLI",
   date: "2020年7月～2022年7月",
-  [アプリ作成システムを管理し、ユーザーが技術的な前提条件なしでカスタム Android/iOS アプリケーションを構築できるようにしました],
-  [Laravel、Fastlane、Nodejs、XCode を使用した自動アプリ構築システムを保守],
+  [アプリ作成システムを維持し、ユーザーが技術的な前提条件なしでカスタム Android/iOS アプリケーションを構築および公開できるようにします。 Wix に似ていますが、モバイル アプリケーション用です],
+  [Fastlane、Nodejs、XCode を使用して自動化されたアプリ構築システムを保守],
   [高度にカスタマイズ可能な React Native アプリケーションを構築し、レストラン、アパレル ショップ、ホテル、タクシー サービスなど、さまざまな種類のアプリケーションに適した機能セットを備えた 9 つの異なるテーマを提供します],
 )
 #project_item(
@@ -117,7 +117,7 @@
   [Solo は、手作業の約 90% を削減する静的アナライザーを開発しました。 分析された C++ コード コンテンツ、正規表現を使用した構造化コンテンツの処理],
 )
 
-#resume_heading[Education]
+#resume_heading[学歴]
 #edu_item(
   name: "水野外語学院",
   degree: "日本語",

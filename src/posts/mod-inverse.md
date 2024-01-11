@@ -38,7 +38,7 @@ Assume that you are an average programmer like me. You often fail to come up wit
    1. Same as before. You can optimize this by calculate $n!/r!$ in one loop. This way you decimate alot of computation
 3. Divide 2 numbers to get the result
 
-This gives WA because the algorithm is wrong mathematically.
+This seems natural but unfortunately gives WA, because the algorithm is wrong mathematically.
 
 ## Solution
 
@@ -57,7 +57,7 @@ a \div b &\equiv a \times b^{k-2} &\pmod k
 \end{align*}
 $$
 
-Everytime you were to do _division_, you multiply it with the power $k-2$ of the divisor instead and it’s guaranteed correct mathematically 😎
+Everytime you were to do _division_, you multiply it with the power $k-2$ of the divisor instead and it’s guaranteed to be correct mathematically 😎
 
 There is a new problem araise, calculation of $b^{k-2}$ could be expensive (for example $k=10^9+7$). This could easily be solved by using a fast $O(log(n))$ power calculation algorithm
 
