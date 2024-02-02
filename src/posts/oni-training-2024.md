@@ -20,7 +20,7 @@ I have read 12 books this year. Taking out boring technical books, there are 9 a
 
 ### Programming
 
-Last year I picked up `rust 🦀` and like it very much. I can confidently say I am now a Rustacean. That was a successful attempt or at least a nice adventure I would say. On a side note, `kotlin` is also on my list but I haven't done anything significant with it.
+Last year I picked up `rust 🦀` and like it very much. I can confidently say I am now a Rustacean. That was a successful attempt or at least a nice adventure I would say. On a side note, `kotlin` is also on my list but I haven't done anything significant with it. Last but not least, my `C++` skill got certificated by [CPP Institute](https://verify.openedg.org/?id=8iHK.Ohf3.ZMBn)
 
 ### Internet Presence
 
@@ -64,8 +64,9 @@ Continue the tradition I have established last year. I will use [the Infinity St
 #### ✨ Reality Stone
 
 - Learn more about investing
-- By the end of the year, aim for at least 1.5x annual income, ideally 2x
-- This ambitious goal inevitably put myself in the risk of having to change job, but that's the risk I'm willing to take
+- Get certificated, GCP PCA (default) or AWS SAA
+- By the end of the year, aim for at least 1.3x annual income, ideally 1.5x
+- Detail on how to get to that will be planned out later
 
 #### ⏰ Time Stone
 
@@ -80,7 +81,7 @@ Continue the tradition I have established last year. I will use [the Infinity St
 | --- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ⚡  | 5 minutes plank.<br />Eat vegetable.<br /> Not yet full split, 25~30cm until ground, pretty far. | Train Taiji.<br />Consistent 7 minutes plank.<br />Eat more vegetable.<br/>Build running habit.<br />Reduce the split gap to the ground, ideally 10~15cm. | Train more Taiji.<br />Consistent 9 minutes plank, visible 11-shaped belly. Nimble, flexible body.<br />Eat less sugar.<br/>Maintain running habit.<br />Full split, 朝天登. |
 | 🐾  | Stay in Gifu                                                                                     | Move to Tokyo, move in with Nhi                                                                                                                           | Home trip                                                                                                                                                                    |
-| 🧠  | Leetcode R2033                                                                                   | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                          | Leetcode R2200 (speed solving)<br/> Learn AWS SAA/SAP                                                                                                                                               |
+| 🧠  | Leetcode R2033                                                                                   | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                          | Leetcode R2200 (speed solving)<br/> Learn AWS SAA/SAP                                                                                                                        |
 | 💖  | Learn to drive                                                                                   | Move in with her                                                                                                                                          | Buy a car<br/>Chengdu trip                                                                                                                                                   |
-| ✨  | Good career momentum<br/> Invest all NISA quota                                                  | Look for new oppotunities.<br />Do more creative coding.<br />Do more graphics works.                                                                     | Have at least 1 interview with tier-2 tech company.<br />                                                                                                                    |
+| ✨  | Good career momentum<br/> Invest all NISA quota                                                  | Learn the certificate.<br />Do more creative coding.<br />Do more graphics works.                                                                         | Have at least 1 interview with tier-2 tech company.<br />                                                                                                                    |
 | ⏰  | Inconsistent bedtime $10:00$ ~ $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                 | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                           | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                                      |
