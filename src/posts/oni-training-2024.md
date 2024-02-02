@@ -12,7 +12,7 @@ Xin chào, hello, こんにちは, 你好 it's me again, happy new year to all w
 
 ## Last Year's Achievement
 
-Before go to the goals for this year, I would like to mention some nice thing happed last year. I have done some good job and I would like to praise myself for it.
+Before go to the goals for this year, I would like to mention some nice thing happened last year. I have done some good job and I would like to praise myself for it.
 
 ### Reading
 
@@ -33,6 +33,8 @@ The relationship with Nhi is, without a doubt the best thing happened last year.
 ### 10K steps
 
 I have been maintaining 10K steps nearly everyday since earlier this year. I even installed Strava and kept running for a month. Not so impressive but still an achievement.
+
+![dragon boat illustration](/blog/post/oni-training-2024/hand-drawn-dragon-boat-collection.jpg)
 
 ## New Year's Resolution 🎉
 
@@ -82,6 +84,6 @@ Continue the tradition I have established last year. I will use [the Infinity St
 | ⚡  | 5 minutes plank.<br />Eat vegetable.<br /> Not yet full split, 25~30cm until ground, pretty far. | Train Taiji.<br />Consistent 7 minutes plank.<br />Eat more vegetable.<br/>Build running habit.<br />Reduce the split gap to the ground, ideally 10~15cm. | Train more Taiji.<br />Consistent 9 minutes plank, visible 11-shaped belly. Nimble, flexible body.<br />Eat less sugar.<br/>Maintain running habit.<br />Full split, 朝天登. |
 | 🐾  | Stay in Gifu                                                                                     | Move to Tokyo, move in with Nhi                                                                                                                           | Home trip                                                                                                                                                                    |
 | 🧠  | Leetcode R2033                                                                                   | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                          | Leetcode R2200 (speed solving)<br/> Learn AWS SAA/SAP                                                                                                                        |
-| 💖  | Learn to drive                                                                                   | Move in with her                                                                                                                                          | Buy a car<br/>Chengdu trip                                                                                                                                                   |
+| 💖  | Meet her parent for the first time                                                               | Move in with her                                                                                                                                          | Learn to drive<br/>Seoul trip                                                                                                                                                |
 | ✨  | Good career momentum<br/> Invest all NISA quota                                                  | Learn the certificate.<br />Do more creative coding.<br />Do more graphics works.                                                                         | Have at least 1 interview with tier-2 tech company.<br />                                                                                                                    |
 | ⏰  | Inconsistent bedtime $10:00$ ~ $2:00$.<br />Wake up at $7:00$, sometimes $7:30$.                 | Go to bed at $11:00$, ideally $10:00$. <br />Wake up at $6:00$, ideally $5:00$.                                                                           | Go to bed at $10:00$ consistently.<br />Wake up at $5:00$ consistently.                                                                                                      |
