@@ -16,11 +16,11 @@
 )
 #skill_item(
   category: "フレームワーク",
-  skills: "OpenGL、ReactiveX、React、Vue、Svelte、Tailwind、NestJS、Strapi、Flutter、Jetpack Compose、Axum、Tokio、WebGPU"
+  skills: "ReactiveX、React、Svelte、Tailwind、NestJS、Flutter、Axum、WebGPU、OpenGL"
 )
 #skill_item(
   category: "ツール　＆　OS",
-  skills: "Windows、Mac、Linux (Debian、Arch、RHEL)、Android、iOS、Docker、nginx、MySQL"
+  skills: "Mac、Linux (Debian、Arch)、Android、iOS、Docker、nginx、MySQL、Redis、AWS、GCP"
 )
 #skill_item(
   category: "言語",
