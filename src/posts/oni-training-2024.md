@@ -65,9 +65,9 @@ Continue the tradition I have established last year. I will use [the Infinity St
 
 #### ✨ Reality Stone
 
-- Learn more about investing
+- Keep investing
+- Learn to trade
 - Get certificated, GCP PCA (default) or AWS SAA
-- By the end of the year, aim for at least 30% annual growth, ideally 40%
 
 #### ⏰ Time Stone
 
@@ -80,9 +80,9 @@ Continue the tradition I have established last year. I will use [the Infinity St
 
 |     | Year Start                                                                     | Mid-Year                                                                                                                                                   | Year End                                                                                                                                         |
 | --- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ⚡  | 5 minutes plank                                                                | Train Taiji<br />Consistent 7 minutes plank<br />Eat more vegetable.<br/>Run at least once a week<br />Reduce the split gap to the ground, ideally 10~15cm | Train more Taiji<br />Consistent 9 minutes plank, visible 11-shaped belly<br />Eat less sugar<br/>Maintain running habit<br />Full split, 朝天登 |
+| ⚡  | 5 minutes plank                                                                | Train Taiji<br />Consistent 7 minutes plank<br />Eat more vegetable.<br/>Run at least once a week<br />Learn to split again | Train more Taiji<br />Consistent 9 minutes plank, visible 11-shaped belly<br />Eat less sugar<br/>Maintain running habit<br />Full split, 朝天登 |
 | 🐾  | Stay in Gifu                                                                   | Move to Tokyo, move in with Nhi                                                                                                                            | Home trip                                                                                                                                        |
 | 🧠  | Leetcode R2033                                                                 | Leetcode R2100 (DP, segment tree, consistent 4 contest problems)                                                                                           | Leetcode R2200 (speed solving)                                                                                                                   |
-| 💖  | Meet her parent for the first time                                             | Move in with her                                                                                                                                           | Learn to drive<br/>Seoul trip                                                                                                                    |
+| 💖  | Meet her parent for the first time                                             | Keep loving her                                                                                                                                           | Seoul trip                                                                                                                    |
 | ✨  | Build strong resume<br/> Invest all NISA quota                                | Learn the certificate<br />Do more creative coding<br />Learn more graphics                                                                                | Have at least 1 interview with tier-2 tech company<br />Invest all idle cash in stocks                                                           |
 | ⏰  | Inconsistent bedtime $12:00$ ~ $2:00$<br />Wake up at $7:00$, sometimes $7:30$ | Go to bed at $11:00$ <br />Wake up at $6:00$, ideally $5:00$                                                                                               | Go to bed at $10:30$ consistently.<br />Wake up at $5:00$ consistently                                                                           |
