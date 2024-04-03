@@ -16,11 +16,11 @@
 )
 #skill_item(
   category: "Frameworks",
-  skills: "OpenGL, ReactiveX, React, Vue, Svelte, Tailwind, NestJS, Strapi, Flutter, Jetpack Compose, Axum, Tokio, WebGPU"
+  skills: "ReactiveX, React, Svelte, Tailwind, NestJS, Flutter, Axum, WebGPU, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
-  skills: "Windows, Mac, Linux (Debian, Arch, RHEL), Android, iOS, Docker, nginx, MySQL"
+  skills: "Mac, Linux (Debian, Arch), Android, iOS, Docker, nginx, MySQL, Redis, AWS, GCP"
 )
 #skill_item(
   category: "Languages",
@@ -88,23 +88,22 @@
   name: "Toxy",
   skills: "Flutter, NextJS, NestJS, Google Cloud, Fastlane, Github Actions",
   date: "Aug. 2021 - July 2022",
-  [Built an app offering coupons based on user’s location. Powered by a scalable backend server with NestJS, built to handle 50K/100K active users with 70K￥/100K￥ monthly budget],
-  [Reduce potential server cost by designing Microservice architecture and utilizing Docker and Cloud Run. Estimated saving at about 40% compared to legacy method],
+  [Built an app offering coupons based on user’s location. Powered by a scalable backend server with NestJS],
+  [Reduce potential server cost by designing Microservice architecture and utilizing Docker and Cloud Run. Saved about 40% running cost compared to legacy method],
   [Utilized API caching/UI hydration mechanic, resulting in highly responsive app with virtually zero loading UX after first initial load],
-  [Built a fully automated CI pipeline with Fastlane and Github Actions]
+  [Built a fully automated CI pipeline with Fastlane and Github Actions. Built another similar pipeline with Gitlab CI]
 )
 #project_item(
   name: "AtCreator",
   skills: "Laravel, Fastlane, React Native, XCode CLI",
   date: "July 2020 - July 2022",
-  [Maintained an app making system, allowing users to build and publish custom Android/iOS application with no technical prerequisite. Similar to Wix, but for mobile application],
-  [Maintained an automated app building system, using Fastlane, Nodejs, XCode],
-  [Built highly customizable React Native applications, offering 9 different themes with feature set suitable for various kind of application: restaurant, apparel shop, hotel, taxi services, and more],
-  [Support HTTPS with both manual and automatic methods],
+  [Developed an app making system, allowing users to build and publish custom Android/iOS application with no technical prerequisite. Similar to Wix, but for mobile application],
+  [Developed an automated app building system, using Fastlane, Nodejs, XCode],
+  [Built highly customizable React Native applications, offering 9 different themes with feature sets suitable for various kind of application: restaurant, apparel shop, hotel, taxi services, and more]
 )
 #project_item(
   name: "HKMC",
-  skills: "Qt, Linux, IVI, Embedded",
+  skills: "Qt, Linux, Coverity, IVI, Embedded",
   date: "Feb. 2017 - Nov. 2017",
   [Built media playing application for automotive in-vehicle infortainment (IVI) system using Qt],
   [Implemented lazy loading mechanic, handling thousands of song with small memory footprint],
@@ -112,7 +111,7 @@
 )
 #project_item(
   name: "NSP64Bit",
-  skills: "C++, Migration, String Matching",
+  skills: "C++, Migration, Static Analysis",
   date: "Apr. 2016 - Jan. 2017",
   [Worked with C++, memory management, 64bit coding patterns],
   [Worked with large C++ code base with 2 millions line of code],
