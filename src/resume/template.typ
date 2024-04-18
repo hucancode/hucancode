@@ -18,7 +18,7 @@
 }
 
 #let name_header(name) = {
-  set text(size: 2.25em)
+  set text(size: 1.5em)
   [*#name*]
 }
 
@@ -28,11 +28,14 @@
   email: "john@doe.com",
   site: "linked.in",
 ) = {
-  align(center,
-    block[
+  grid(
+    columns: (1fr, 1fr),
+    align(left)[
       #name_header(name) \
-      #address ・
-      #link("mailto:" + email)[#email] ・
+      #address
+    ],
+    align(right)[
+      #link("mailto:" + email)[#email] \
       #link("https://" + site)[#site]
     ]
   )
@@ -40,7 +43,7 @@
 }
 
 #let resume_heading(txt) = {
-  show heading: set text(size: 0.92em, weight: "regular")
+  show heading: set text(size: 0.82em, weight: "regular")
 
   block[
     = #smallcaps(txt)
@@ -74,13 +77,12 @@
 ) = {
   set block(above: 0.7em, below: 1em)
   pad(left: 1em, right: 0.5em, grid(
-    columns: (3fr, 1fr),
+    columns: (9fr, 1fr),
     align(left)[
-      *#name* \
-      _#degree _
+      *#name* 
+      _#degree _ (#location)
     ],
     align(right)[
-      #location \
       _#date _
     ]
   ))
@@ -96,14 +98,12 @@
     set block(above: 0.7em, below: 1em)
     pad(left: 1em, right: 0.5em, box[
       #grid(
-        columns: (3fr, 3fr),
+        columns: (3fr, 2fr),
         align(left)[
-          *#role* \
-          _#name _
+          *#role* _#name _ (_#location _)
         ],
         align(right)[
-          #date \
-          _#location _
+          #date 
         ]
       )
       #list(..points)
