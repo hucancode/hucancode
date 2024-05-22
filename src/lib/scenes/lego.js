@@ -7,10 +7,15 @@ let scene, camera, renderer, controls;
 let pieces = [];
 let materials = [];
 let animation = null;
+let use_camera_control = true;
 const CANVAS_ID = "lego";
-const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
 const POOL_SIZE = 20;
+
+export function setCameraControl(use) {
+  use_camera_control = use;
+  rebuildOrbitControl();
+}
 
 function makeLegoRing() {
   const PIECE_COUNT = 30;
@@ -220,11 +225,16 @@ function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
   camera.position.set(40, 40, 40);
+  camera.lookAt(0, 0, 0);
   rebuildOrbitControl();
 }
 
 function rebuildOrbitControl() {
-  if (!USE_CAMERA_CONTROL) {
+  if (!use_camera_control) {
+    controls = null;
+    return;
+  }
+  if (!renderer || !renderer.domElement || !camera) {
     return;
   }
   controls = new OrbitControls(camera, renderer.domElement);
@@ -234,9 +244,20 @@ function rebuildOrbitControl() {
   controls.maxDistance = 100; // the maximum distance the camera must have from center
   //controls.update();
   controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
-  controls.enableRotate = true;
+  //controls.enableRotate = true;
   // controls.autoRotate = true;
 }
+
+export function animateCamera(t) {
+  // rotate camera around camera target for an amount based on t
+  if (camera) {
+    let alpha = -t*Math.PI*2;
+    let distance = 60*t+10;
+    camera.position.set(Math.sin(alpha) * distance, distance, Math.cos(alpha) * distance);
+    camera.lookAt(0, 0, 0);
+  }
+}
+
 
 function init() {
   const canvas = document.getElementById(CANVAS_ID);

@@ -1,0 +1,42 @@
+body {
+  position: relative;
+}
+body:before {
+  --minor-grid-size: 1em;
+  --major-grid-size: calc(var(--minor-grid-size)*11);
+  --minor-grid-color: rgba(255, 255, 255, 0.1);
+  --major-grid-color: rgba(255, 255, 255, 0.2);
+  --minor-grid-stroke: 1px;
+  --major-grid-stroke: 2px;
+  content: "";
+  z-index: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-image: linear-gradient(
+      -90deg,
+      var(--minor-grid-color) var(--minor-grid-stroke),
+      transparent var(--minor-grid-stroke)
+    ),
+    linear-gradient(
+      var(--minor-grid-color) var(--minor-grid-stroke),
+      transparent var(--minor-grid-stroke)
+    ),
+    linear-gradient(
+      -90deg,
+      var(--major-grid-color) var(--major-grid-stroke),
+      transparent var(--major-grid-stroke)
+    ),
+    linear-gradient(
+      var(--major-grid-color) var(--major-grid-stroke),
+      transparent var(--major-grid-stroke)
+    ),
+    radial-gradient(circle, rgb(128, 200, 255) 0%, rgb(64, 128, 255) 75%);
+  background-size: var(--minor-grid-size) var(--minor-grid-size),
+    var(--minor-grid-size) var(--minor-grid-size),
+    var(--major-grid-size) var(--major-grid-size),
+    var(--major-grid-size) var(--major-grid-size), 100% 100%;
+}
