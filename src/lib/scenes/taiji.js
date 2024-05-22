@@ -19,9 +19,14 @@ const clock = new THREE.Clock();
 var time = 0;
 
 const CANVAS_ID = "taiji";
-const USE_CAMERA_CONTROL = true;
+let use_camera_control = true;
 const TAIJI_ROTATION_CIRCLE = 23000;
 const BAGUA_ROTATION_CIRCLE = 43000;
+
+export function setCameraControl(use) {
+  use_camera_control = use;
+  rebuildOrbitControl();
+}
 
 function makeBackground() {
   const material = new THREE.ShaderMaterial({
@@ -104,7 +109,7 @@ function setupCamera(w, h) {
 }
 
 function rebuildOrbitControl() {
-  if (!USE_CAMERA_CONTROL) {
+  if (!use_camera_control) {
     return;
   }
   controls = new OrbitControls(camera, renderer.domElement);
@@ -118,6 +123,15 @@ function rebuildOrbitControl() {
   controls.autoRotate = true;
 }
 
+export function animateCamera(t) {
+  // rotate camera around camera target for an amount based on t
+  if (camera) {
+    let alpha = -t*Math.PI*2;
+    let distance = 30*t+4;
+    camera.position.set(Math.sin(alpha) * distance, distance, Math.cos(alpha) * distance);
+    camera.lookAt(0, 0, 0);
+  }
+}
 function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;

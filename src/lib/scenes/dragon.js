@@ -73,6 +73,15 @@ function makeDragon() {
   curves.push(curve);
 }
 
+export function animateCamera(t) {
+  // rotate camera around camera target for an amount based on t
+  if (camera) {
+    let alpha = -t*Math.PI*2;
+    let distance = 100*t+100;
+    camera.position.set(Math.sin(alpha) * distance, distance, Math.cos(alpha) * distance);
+    camera.lookAt(0, 0, 0);
+  }
+}
 async function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;

@@ -315,3 +315,22 @@ label:active:has(input[type="radio"]),
 div label:has(input[type="radio"]:checked) {
   background-color: var(--color-primary-50);
 }
+
+.container, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
+  width: 100%;
+}
+.container-sm {
+  max-width: 640px;
+}
+.container-md {
+  max-width: 768px;
+}
+.container-lg {
+  max-width: 1024px;
+}
+.container-xl {
+  max-width: 1280px;
+}
+.container-xxl {
+  max-width: 1536px;
+}

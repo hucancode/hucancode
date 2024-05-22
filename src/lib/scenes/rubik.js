@@ -11,7 +11,7 @@ let cameraTarget;
 let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik";
-const USE_CAMERA_CONTROL = true;
+let use_camera_control = true;
 const ASPECT_RATIO = 0.75;
 const FACE_RIGHT = 0;
 const FACE_LEFT = 1;
@@ -22,6 +22,11 @@ const FACE_BACK = 5;
 const CUBE_NUM_DEFAULT = 3;
 let cubeNum = CUBE_NUM_DEFAULT;
 const CUBE_MARGIN = 0.1;
+
+export function setCameraControl(use) {
+  use_camera_control = use;
+  //rebuildOrbitControl();
+}
 
 function isInFace(x, y, z, face, depth) {
   return (
@@ -101,9 +106,11 @@ function makeRubik() {
   pivot.position.z = k;
   scene.add(pivot);
   camera.lookAt(pivot.position);
-  controls.target.set(k, k, k);
-  controls.enableRotate = false;
-  controls.autoRotate = false;
+  if(controls) {
+    controls.target.set(k, k, k);
+    controls.enableRotate = false;
+    controls.autoRotate = false;
+  }
   cameraTarget.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
   isInIntro = true;
   //addDebugArrow(pivot);
@@ -121,26 +128,31 @@ function remakeRubik(n) {
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
-  camera.position.set(0, 0, 0);
   cameraTarget = new THREE.Vector3(0, 0, 0);
+  // scene.fog = new THREE.Fog(0x000000, 10, 35);
   rebuildOrbitControl();
 }
 
 function rebuildOrbitControl() {
-  if (!USE_CAMERA_CONTROL) {
-    return;
-  }
-  controls = new OrbitControls(camera, renderer.domElement);
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+  camera.lookAt(k, k, k);
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(k, k, k);
-  //controls.enablePan = false;
   controls.minDistance = 4; // the minimum distance the camera must have from center
   controls.maxDistance = 30; // the maximum distance the camera must have from center
-  //controls.update();
-  controls.enableRotate = true;
-  controls.autoRotate = true;
+  //controls.enableRotate = true;
+  // controls.autoRotate = false;
+  controls.enabled = false;
 }
 
+export function animateCamera(t) {
+  // rotate camera around camera target for an amount based on t
+  if (camera) {
+    let alpha = -t*Math.PI*2;
+    let distance = 3*t+4;
+    let v = new THREE.Vector3();
+  }
+}
 function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
