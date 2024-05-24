@@ -1,0 +1,126 @@
+.--card:after {
+  content: "";
+  width: 200%;
+  top: -50%;
+  aspect-ratio: 1;
+  position: absolute;
+  border-radius: 9999px;
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.08)
+  );
+}
+.card {
+  aspect-ratio: 16/9;
+  width: 100%;
+  border-radius: 2rem;
+  --background-color: rgb(22, 27, 34);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  justify-content: space-between;
+  color: white;
+  font-family: Arial;
+  overflow: hidden;
+  position: relative;
+}
+.icons {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 2.5rem;
+  color: white;
+  gap: 0.1em;
+}
+.icons .icon-container {
+  position: relative;
+}
+
+.icons .icon-container[active]:before {
+  content: "";
+  background-color: rgb(165, 202, 254);
+  filter: blur(8em);
+  display: block;
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  translate: -25% -25%;
+  border-radius: 9999px;
+}
+.icons .icon-container[active] .halo:before {
+  content: "";
+  display: block;
+  animation: spin 2s linear infinite;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(9px);
+  background-repeat: no-repeat;
+  background-size: 50% 50%, 50% 50%;
+  background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+  --color-1: rgb(220, 250, 19);
+  --color-2: rgb(131, 66, 251);
+  --color-3: rgb(38, 23, 249);
+  --color-4: rgb(245, 19, 32);
+  background-image: linear-gradient(var(--color-1), var(--color-1)),
+    linear-gradient(var(--color-2), var(--color-2)),
+    linear-gradient(var(--color-3), var(--color-3)),
+    linear-gradient(var(--color-4), var(--color-4));
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.icons .icon-container .halo {
+  padding: 0.08em;
+  line-height: 0;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.icons .icon-container .icon {
+  border-radius: 9999px;
+  background: black;
+  line-height: 0;
+  padding: 0.35em;
+  aspect-ratio: 1;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  color: white;
+}
+img {
+  width: 1em;
+  height: 1em;
+  filter: invert(100%);
+}
+
+.text {
+  z-index: 1;
+}
+
+a {
+  text-decoration: none;
+  color: skyblue;
+  vertical-align: middle;
+}
+
+a:after {
+  margin-left: 0.5em;
+  font-size: 1.2em;
+  content: "⇢";
+}
+a:hover:after {
+  content: "⤳";
+}

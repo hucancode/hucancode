@@ -1,4 +1,3 @@
-
 <script>
   import { _ } from "$lib/i18n";
   import { browser } from "$app/environment";
@@ -17,30 +16,39 @@
   let canvas;
   let observer;
   onMount(async () => {
-    if(!browser) return;
-    if(!canvas) return;
+    if (!browser) return;
+    if (!canvas) return;
     setCameraControl(false);
     await init();
     frameID = requestAnimationFrame(loop);
-    observer = new IntersectionObserver(([entry]) => {
-      // console.log(entry.intersectionRatio);
-      animateCamera(entry.intersectionRatio);
-      canvas.style.opacity = Math.sin(entry.intersectionRatio * Math.PI/2);
-      if(entry.intersectionRatio > 0 && frameID === 0) {
-        frameID = requestAnimationFrame(loop);
-      } if(entry.intersectionRatio <= 0) {
-        cancelAnimationFrame(frameID);
-        frameID = 0;
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        // console.log(entry.intersectionRatio);
+        animateCamera(entry.intersectionRatio);
+        canvas.style.opacity = Math.sin(
+          (entry.intersectionRatio * Math.PI) / 2
+        );
+        if (entry.intersectionRatio > 0 && frameID === 0) {
+          frameID = requestAnimationFrame(loop);
+        }
+        if (entry.intersectionRatio <= 0) {
+          cancelAnimationFrame(frameID);
+          frameID = 0;
+        }
+      },
+      {
+        threshold: Array.from(
+          { length: OBSERVATION_RESOLUTION + 1 },
+          (_, i) => i / OBSERVATION_RESOLUTION
+        ),
       }
-    }, {
-      threshold: Array.from({ length: OBSERVATION_RESOLUTION + 1 }, (_, i) => i/OBSERVATION_RESOLUTION)
-    });
+    );
     observer.observe(canvas);
     loop();
   });
 
   onDestroy(() => {
-    if(!browser) return;
+    if (!browser) return;
     cancelAnimationFrame(frameID);
     frameID = 0;
     destroy();

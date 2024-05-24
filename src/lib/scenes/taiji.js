@@ -126,9 +126,13 @@ function rebuildOrbitControl() {
 export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
-    let alpha = -t*Math.PI*2;
-    let distance = 30*t+4;
-    camera.position.set(Math.sin(alpha) * distance, distance, Math.cos(alpha) * distance);
+    let alpha = -t * Math.PI * 2;
+    let distance = 30 * t + 4;
+    camera.position.set(
+      Math.sin(alpha) * distance,
+      distance,
+      Math.cos(alpha) * distance
+    );
     camera.lookAt(0, 0, 0);
   }
 }

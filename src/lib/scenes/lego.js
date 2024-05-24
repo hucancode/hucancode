@@ -30,7 +30,7 @@ function makeLegoRing() {
     );
     const rotation = Math.random() * Math.PI * 2;
     const elevation = (Math.random() - 0.5) * ELEVATION;
-    const duration = Math.random() * 2000 + 5000;
+    const duration = Math.random() * 4000 + 20000;
     ring.add(node);
     const particle = {
       node: node,
@@ -173,14 +173,21 @@ function buildPiecePool() {
   ];
   const gradients = new Uint8Array(GRADIENT_STEP);
   for (var i = 0; i < gradients.length; i++) {
-    gradients[i] = i/gradients.length * 256;
+    gradients[i] = (i / gradients.length) * 256;
   }
-  const gradientMap = new THREE.DataTexture(gradients, gradients.length, 1, THREE.RedFormat );
+  const gradientMap = new THREE.DataTexture(
+    gradients,
+    gradients.length,
+    1,
+    THREE.RedFormat
+  );
   gradientMap.needsUpdate = true;
 
   materials = colors
     .map((v) => new THREE.Color(v))
-    .map((color) => new THREE.MeshToonMaterial({ color, gradientMap, fog: true }));
+    .map(
+      (color) => new THREE.MeshToonMaterial({ color, gradientMap, fog: true })
+    );
 }
 
 function getRandomPieceFromPool() {
@@ -259,13 +266,16 @@ function rebuildOrbitControl() {
 export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
-    let alpha = -t*Math.PI*2;
-    let distance = 40*t+10;
-    camera.position.set(Math.sin(alpha) * distance, distance, Math.cos(alpha) * distance);
+    let alpha = -t * Math.PI * 2;
+    let distance = 40 * t + 10;
+    camera.position.set(
+      Math.sin(alpha) * distance,
+      distance,
+      Math.cos(alpha) * distance
+    );
     camera.lookAt(0, 0, 0);
   }
 }
-
 
 function init() {
   const canvas = document.getElementById(CANVAS_ID);

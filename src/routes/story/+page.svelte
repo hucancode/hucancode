@@ -10,8 +10,17 @@
   <title>hucancode</title>
 </svelte:head>
 
-<Lego />
-<Rubik />
-<Dragon />
-<Taiji />
-<Warrior />
+<main class="container-lg">
+  <Lego />
+  <!-- <Rubik />
+  <Dragon />
+  <Taiji />
+  <Warrior /> -->
+</main>
+
+<style>
+  main {
+    padding-top: 50vh;
+    height: 200vh;
+  }
+</style>

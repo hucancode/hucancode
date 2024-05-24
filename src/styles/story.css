@@ -1,9 +1,11 @@
 body {
   position: relative;
+  overflow: visible;
+  background: rgb(64, 128, 255);
 }
 body:before {
   --minor-grid-size: 1em;
-  --major-grid-size: calc(var(--minor-grid-size)*11);
+  --major-grid-size: calc(var(--minor-grid-size) * 11);
   --minor-grid-color: rgba(255, 255, 255, 0.1);
   --major-grid-color: rgba(255, 255, 255, 0.2);
   --minor-grid-stroke: 1px;
@@ -14,7 +16,7 @@ body:before {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 200%;
   background-position: center;
   background-image: linear-gradient(
       -90deg,

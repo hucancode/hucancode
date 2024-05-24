@@ -316,7 +316,12 @@ div label:has(input[type="radio"]:checked) {
   background-color: var(--color-primary-50);
 }
 
-.container, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
+.container,
+.container-sm,
+.container-md,
+.container-lg,
+.container-xl,
+.container-xxl {
   width: 100%;
 }
 .container-sm {

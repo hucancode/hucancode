@@ -106,7 +106,7 @@ function makeRubik() {
   pivot.position.z = k;
   scene.add(pivot);
   camera.lookAt(pivot.position);
-  if(controls) {
+  if (controls) {
     controls.target.set(k, k, k);
     controls.enableRotate = false;
     controls.autoRotate = false;
@@ -148,8 +148,8 @@ function rebuildOrbitControl() {
 export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
-    let alpha = -t*Math.PI*2;
-    let distance = 3*t+4;
+    let alpha = -t * Math.PI * 2;
+    let distance = 3 * t + 4;
     let v = new THREE.Vector3();
   }
 }
