@@ -1,9 +1,9 @@
-body {
+.blueprint {
   position: relative;
   overflow: visible;
   background: rgb(64, 128, 255);
 }
-body:before {
+.blueprint:before {
   --minor-grid-size: 1em;
   --major-grid-size: calc(var(--minor-grid-size) * 11);
   --minor-grid-color: rgba(255, 255, 255, 0.1);

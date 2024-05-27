@@ -20,7 +20,6 @@
 
 <style>
   main {
-    padding-top: 50vh;
-    height: 200vh;
+    padding-top: 5vh;
   }
 </style>
