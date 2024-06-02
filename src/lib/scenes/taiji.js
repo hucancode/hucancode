@@ -115,25 +115,34 @@ function rebuildOrbitControl() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0, 0);
   //controls.enablePan = false;
-  controls.minDistance = 4; // the minimum distance the camera must have from center
-  controls.maxDistance = 30; // the maximum distance the camera must have from center
+  controls.minDistance = 10; // the minimum distance the camera must have from center
+  controls.maxDistance = 100; // the maximum distance the camera must have from center
   //controls.update();
   controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
-  controls.enableRotate = true;
-  controls.autoRotate = true;
 }
 
 export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
-    let alpha = -t * Math.PI * 2;
-    let distance = 30 * t + 4;
-    camera.position.set(
-      Math.sin(alpha) * distance,
-      distance,
-      Math.cos(alpha) * distance
-    );
-    camera.lookAt(0, 0, 0);
+    let distance = 25 * t + 2;
+    if(camera.distance === undefined) {
+      camera.distance = camera.position.length();
+    }
+    anime({
+      targets: camera,
+      distance: distance,
+      duration: 1000,
+      update: () => {
+        camera.position.setLength(camera.distance);
+        camera.lookAt(0, 0, 0);
+      },
+      onComplete: () => {
+        if(t >= 0.9) {
+          controls.enableRotate = true;
+          controls.autoRotate = true;
+        }
+      }
+    });
   }
 }
 function init() {

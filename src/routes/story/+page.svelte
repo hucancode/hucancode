@@ -1,4 +1,5 @@
 <script>
+  import Nav from "$lib/components/nav.svelte";
   import Lego from "$lib/components/story/lego.svelte";
   import Rubik from "$lib/components/story/rubik.svelte";
   import Dragon from "$lib/components/story/dragon.svelte";
@@ -9,13 +10,13 @@
 <svelte:head>
   <title>hucancode</title>
 </svelte:head>
-
+<Nav />
 <main class="container-lg">
   <Lego />
-  <!-- <Rubik />
+  <Rubik />
   <Dragon />
   <Taiji />
-  <Warrior /> -->
+  <Warrior />
 </main>
 
 <style>

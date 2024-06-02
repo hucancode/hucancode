@@ -2,49 +2,36 @@
   import { _ } from "$lib/i18n";
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
+  import ScrollObserver from "$lib/components/scroll-observer.svelte";
   import {
     CANVAS_ID,
     init,
     destroy,
-    setCameraControl,
     animateCamera,
     render,
   } from "$lib/scenes/taiji";
 
-  const OBSERVATION_RESOLUTION = 30;
   let frameID;
   let canvas;
   let observer;
+
+  function onScroll(e) {
+    let r = e.detail;
+    animateCamera(Math.max(1, r));
+    if (r > 0 && frameID === 0) {
+      frameID = requestAnimationFrame(loop);
+    }
+    if (r <= 0 || r >= 2) {
+      cancelAnimationFrame(frameID);
+      frameID = 0;
+    }
+  }
+
   onMount(async () => {
     if (!browser) return;
     if (!canvas) return;
-    setCameraControl(false);
     await init();
     frameID = requestAnimationFrame(loop);
-    observer = new IntersectionObserver(
-      ([entry]) => {
-        // console.log(entry.intersectionRatio);
-        animateCamera(entry.intersectionRatio);
-        canvas.style.opacity = Math.sin(
-          (entry.intersectionRatio * Math.PI) / 2
-        );
-        if (entry.intersectionRatio > 0 && frameID === 0) {
-          frameID = requestAnimationFrame(loop);
-        }
-        if (entry.intersectionRatio <= 0) {
-          cancelAnimationFrame(frameID);
-          frameID = 0;
-        }
-      },
-      {
-        threshold: Array.from(
-          { length: OBSERVATION_RESOLUTION + 1 },
-          (_, i) => i / OBSERVATION_RESOLUTION
-        ),
-      }
-    );
-    observer.observe(canvas);
-    loop();
   });
 
   onDestroy(() => {
@@ -60,17 +47,23 @@
   }
 </script>
 
-<div class="blueprint">
-  <div class="greetings">
-    <h1 rainbow="1">
-      {$_("home.landing.hello")}
+<section class="-blueprint">
+  <div class="explain">
+    <h1>
+      It's a good day to create something great!
     </h1>
+    <p>
+      This is a Taiji, a symbol of the philosophy of yin and yang.
+      It represents the idea that everything in the universe consists of two forces that are opposing but complementary.
+    </p>
   </div>
-  <canvas id={CANVAS_ID} bind:this={canvas} />
-</div>
+  <ScrollObserver bind:this={observer} on:scroll={onScroll} threshold={30}>
+    <canvas id={CANVAS_ID} bind:this={canvas} />
+  </ScrollObserver>
+</section>
 
 <style>
-  .greetings {
+  .explain {
     display: flex;
     width: 100%;
     flex-direction: column;
@@ -79,30 +72,27 @@
     padding-top: 2.5rem;
     padding-bottom: 2.5rem;
   }
-  h1 {
-    animation: bg-pingpong 2.5s ease infinite alternate;
-    background-size: 200% 100%;
-    cursor: default;
-    display: flex;
-    gap: 0.5em;
-    align-items: center;
+  .explain p {
+    color: var(--color-neutral-600);
   }
-  .blueprint {
+  section {
     width: 100%;
+    height: 80vh;
     display: flex;
+    flex-direction: row;
     gap: 1rem;
     justify-content: center;
     align-items: center;
-    flex: 1;
   }
   canvas {
     width: 100%;
     aspect-ratio: 4/3;
     max-width: 640px;
     max-height: 480px;
+    margin: auto;
   }
   @media (max-width: 768px) {
-    .blueprint {
+    section {
       flex-direction: column;
     }
   }

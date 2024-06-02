@@ -6,9 +6,8 @@ let scene, camera, renderer, controls;
 const clock = new THREE.Clock();
 const material = new THREE.MeshBasicMaterial({
   vertexColors: true,
+  fog: true,
 });
-let cameraTarget;
-let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik";
 let use_camera_control = true;
@@ -111,8 +110,6 @@ function makeRubik() {
     controls.enableRotate = false;
     controls.autoRotate = false;
   }
-  cameraTarget.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
-  isInIntro = true;
   //addDebugArrow(pivot);
 }
 
@@ -128,12 +125,15 @@ function remakeRubik(n) {
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
-  cameraTarget = new THREE.Vector3(0, 0, 0);
-  // scene.fog = new THREE.Fog(0x000000, 10, 35);
+  scene.fog = new THREE.Fog(0x000000, 5, 20);
+  camera.position.set(0, 25, 25);
   rebuildOrbitControl();
 }
 
 function rebuildOrbitControl() {
+  if (!renderer || !renderer.domElement || !camera) {
+    return;
+  }
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   camera.lookAt(k, k, k);
   controls = new OrbitControls(camera, renderer.domElement);
@@ -146,11 +146,27 @@ function rebuildOrbitControl() {
 }
 
 export function animateCamera(t) {
-  // rotate camera around camera target for an amount based on t
   if (camera) {
-    let alpha = -t * Math.PI * 2;
-    let distance = 3 * t + 4;
-    let v = new THREE.Vector3();
+    let distance = 10 * t;
+    if(camera.distance === undefined) {
+      camera.distance = camera.position.length();
+    }
+    anime({
+      targets: camera,
+      distance: distance,
+      duration: 1000,
+      update: () => {
+        camera.position.setLength(camera.distance);
+        const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+        camera.lookAt(k, k, k);
+      },
+      complete: () => {
+        if(t >= 0.9) {
+          controls.enableRotate = true;
+          controls.autoRotate = true;
+        }
+      }
+    });
   }
 }
 function init() {
@@ -178,6 +194,7 @@ function init() {
     Math.floor(Math.random() * 5) - 2
   );
   window.addEventListener("resize", onWindowResize);
+  animateCamera(1);
 }
 
 function destroy() {
@@ -326,14 +343,6 @@ function render() {
   }
   if (controls) {
     controls.update();
-  }
-  if (isInIntro && camera) {
-    camera.position.lerp(cameraTarget, 0.1);
-    if (camera.position.distanceTo(cameraTarget) < 0.01) {
-      isInIntro = false;
-      controls.enableRotate = true;
-      controls.autoRotate = true;
-    }
   }
 }
 

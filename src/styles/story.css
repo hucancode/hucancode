@@ -1,7 +1,6 @@
 .blueprint {
   position: relative;
   overflow: visible;
-  background: rgb(64, 128, 255);
 }
 .blueprint:before {
   --minor-grid-size: 1em;
@@ -16,7 +15,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 200%;
+  height: 100%;
   background-position: center;
   background-image: linear-gradient(
       -90deg,

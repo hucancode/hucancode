@@ -273,11 +273,17 @@ export function animateCamera(t) {
     anime({
       targets: camera,
       distance: distance,
-      duration: 500,
+      duration: 1000,
       update: () => {
         camera.position.setLength(camera.distance);
         camera.lookAt(0, 0, 0);
       },
+      onComplete: () => {
+        if(t >= 0.9) {
+          controls.enableRotate = true;
+          controls.autoRotate = true;
+        }
+      }
     });
   }
 }

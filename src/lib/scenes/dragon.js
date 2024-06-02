@@ -74,16 +74,20 @@ function makeDragon() {
 }
 
 export function animateCamera(t) {
-  // rotate camera around camera target for an amount based on t
   if (camera) {
-    let alpha = -t * Math.PI * 2;
-    let distance = 100 * t + 100;
-    camera.position.set(
-      Math.sin(alpha) * distance,
-      distance,
-      Math.cos(alpha) * distance
-    );
-    camera.lookAt(0, 0, 0);
+    let distance = 100 * t;
+    if(camera.distance === undefined) {
+      camera.distance = camera.position.length();
+    }
+    anime({
+      targets: camera,
+      distance: distance,
+      duration: 1000,
+      update: () => {
+        camera.position.setLength(camera.distance);
+        camera.lookAt(0, 0, 0);
+      },
+    });
   }
 }
 async function init() {

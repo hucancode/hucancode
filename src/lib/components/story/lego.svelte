@@ -49,10 +49,16 @@
 </script>
 <section>
   <div class="greetings">
-    <h1 rainbow="1">
-      {$_("home.landing.hello")}
+    <h1 rainbow="1" class="xl">
+      Greetings!
     </h1>
-    <p>I am Bang, a problem solver with a strong passion for computer graphics and animation</p>
+    <h1>
+      My name is Bang, I am a creative software engineer
+      <input type="checkbox" id="expander" />
+      <label for="expander">...</label>
+      <span>and I use Arch by the way 😎</span>
+    </h1>
+    <p>Here are something I do for fun. Hope you enjoy them as much as I enjoy making them</p>
   </div>
   <ScrollObserver bind:this={observer} on:scroll={onScroll} threshold={30}>
     <canvas id={CANVAS_ID} bind:this={canvas} />
@@ -60,6 +66,25 @@
 </section>
 
 <style>
+  input[type="checkbox"] {
+    & + label {
+      display: contents;
+      cursor: pointer;
+    }
+    & + label:hover {
+      color: var(--color-primary-500);
+    }
+    &:checked + label {
+      display: none;
+    }
+    &:checked ~ span {
+      display: contents;
+    }
+    & ~ span {
+      display: none;
+    }
+    display: none;
+  }
   section {
     display: flex;
     flex-direction: column;
@@ -77,6 +102,9 @@
     padding-top: 2.5rem;
     padding-bottom: 2.5rem;
   }
+  h1.xl {
+    font-size: 3.5rem;
+  }
   h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
     background-size: 200% 100%;
@@ -84,11 +112,12 @@
     display: flex;
     gap: 0.5em;
     align-items: center;
+    text-align: center;
   }
   p {
     text-align: center;
     max-width: 640px;
-    color: var(--color-neutral-400);
+    color: var(--color-neutral-600);
   }
   canvas {
     margin: auto;
