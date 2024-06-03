@@ -85,6 +85,10 @@
     justify-content: center;
     align-items: center;
   }
+  section {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
   canvas {
     width: 100%;
     aspect-ratio: 4/3;

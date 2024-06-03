@@ -1,13 +1,10 @@
 import * as THREE from "three";
+import anime from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { loadModel, wait } from "$lib/utils.js";
 
 let camera, scene, renderer, animator, controls;
 let model;
-let cameraPositionNear;
-let cameraPositionFar;
-let isZoomingIn;
-let isZoomingOut;
 const clock = new THREE.Clock();
 const CANVAS_ID = "warrior";
 let use_camera_control = true;
@@ -33,12 +30,7 @@ function onWindowResize() {
 
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
-  cameraPositionNear = new THREE.Vector3(2.5, 3, 2.5);
-  cameraPositionFar = new THREE.Vector3(4, 6, 4);
-  isZoomingIn = false;
-  isZoomingOut = false;
-  camera.position.copy(cameraPositionFar);
-  camera.lookAt(0, 1, 0);
+  camera.position.set(1, 0, 1);
   rebuildOrbitControl();
 }
 
@@ -48,7 +40,7 @@ function rebuildOrbitControl() {
   }
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 1, 0);
-  controls.minDistance = 2; // the minimum distance the camera must have from center
+  controls.minDistance = 0.1; // the minimum distance the camera must have from center
   controls.maxDistance = 10; // the maximum distance the camera must have from center
   controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.33;
   controls.enablePan = false;
@@ -58,14 +50,21 @@ function rebuildOrbitControl() {
 export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
-    let alpha = -t * Math.PI * 2;
-    let distance = 3 * t + 4;
-    camera.position.set(
-      Math.sin(alpha) * distance,
-      distance,
-      Math.cos(alpha) * distance
-    );
-    camera.lookAt(0, 0, 0);
+    let distance = 5 * t;
+    if(camera.distance === undefined) {
+      camera.distance = camera.position.length();
+      camera.lookAt(0, (8-camera.distance)*0.4, 0);
+    }
+    anime({
+      targets: camera,
+      distance: distance,
+      duration: 1000,
+      update: () => {
+        camera.position.setComponent(1, camera.distance*0.2);
+        camera.lookAt(0, 1, 0);
+        camera.position.setLength(camera.distance);
+      },
+    });
   }
 }
 
@@ -138,17 +137,6 @@ function render() {
   if (controls) {
     controls.update();
   }
-  if (isZoomingOut) {
-    camera.position.lerp(cameraPositionFar, 0.1);
-    if (camera.position.distanceTo(cameraPositionFar) < 0.001) {
-      isZoomingOut = false;
-    }
-  } else if (isZoomingIn) {
-    camera.position.lerp(cameraPositionNear, 0.1);
-    if (camera.position.distanceTo(cameraPositionNear) < 0.001) {
-      isZoomingIn = false;
-    }
-  }
 }
 
 function playIntro() {
@@ -156,12 +144,9 @@ function playIntro() {
   animation.clampWhenFinished = true;
   animation.setLoop(THREE.LoopOnce);
   animator.addEventListener("finished", returnToIdle);
-  isZoomingOut = true;
 }
 
 async function playAction() {
-  isZoomingOut = true;
-  await wait(250);
   animator.stopAllAction();
   const ACTIONS = ["jump", "jump_lick"];
   const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
@@ -169,15 +154,34 @@ async function playAction() {
   animation.clampWhenFinished = true;
   animation.setLoop(THREE.LoopOnce);
   animator.addEventListener("finished", returnToIdle);
+  anime({
+    targets: camera,
+    easing: "easeOutExpo",
+    distance: 10,
+    duration: 500,
+    update: () => {
+      camera.position.setComponent(1, camera.distance*0.6);
+      camera.lookAt(0, 1, 0);
+      camera.position.setLength(camera.distance);
+    },
+  });
 }
 
 async function returnToIdle() {
   animator.removeEventListener("finished", returnToIdle);
   fadeToAction("idle", 0.25);
-  isZoomingOut = false;
-  isZoomingIn = true;
-  await wait(500);
-  isZoomingIn = false;
+  anime({
+    targets: camera,
+    easing: "easeOutInElastic",
+    distance: 5,
+    duration: 3000,
+    update: () => {
+      return;
+      camera.position.setComponent(1, camera.distance*0.6);
+      camera.lookAt(0, 1, 0);
+      camera.position.setLength(camera.distance);
+    },
+  });
 }
 
 function fadeToAction(name, duration) {
