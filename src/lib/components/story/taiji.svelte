@@ -7,6 +7,7 @@
     CANVAS_ID,
     init,
     destroy,
+    setCameraControl,
     animateCamera,
     render,
   } from "$lib/scenes/taiji";
@@ -29,6 +30,7 @@
   onMount(async () => {
     if (!browser) return;
     if (!canvas) return;
+    setCameraControl(false);
     await init();
     frameID = requestAnimationFrame(loop);
   });

@@ -57,10 +57,20 @@
       This is a warrior, a fighter who is skilled in combat and warfare. They are known for their courage, strength, and honor.
     </p>
   </div>
-  <ScrollObserver on:scroll={onScroll} threshold={30}>
+  <ScrollObserver class="relative" on:scroll={onScroll} threshold={30}>
     <canvas id={CANVAS_ID} bind:this={canvas} />
+    <div class="backdrop" />
   </ScrollObserver>
 </section>
 
 <style>
+  .backdrop {
+    position: absolute;
+    z-index: -1;
+    aspect-ratio: 1.2;
+    top: 44.5%;
+    width: 55%;
+    background: rgba(136, 125, 151, 0.5);
+    border: 1em solid rgba(215, 187, 255, 0.5);
+  }
 </style>

@@ -110,6 +110,7 @@ function setupCamera(w, h) {
 
 function rebuildOrbitControl() {
   if (!use_camera_control) {
+    controls = null;
     return;
   }
   controls = new OrbitControls(camera, renderer.domElement);

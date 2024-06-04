@@ -90,3 +90,7 @@ main section {
     flex-direction: column;
   }
 }
+
+.relative {
+  position: relative;
+}

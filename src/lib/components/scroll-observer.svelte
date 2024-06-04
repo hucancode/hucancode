@@ -3,6 +3,8 @@
   import { onMount, onDestroy } from "svelte";
   import { createEventDispatcher } from "svelte";
   export let threshold = 1;
+  let className;
+	export { className as class };
   let container;
   let observer;
   let dispatch = createEventDispatcher();
@@ -31,7 +33,7 @@
   });
 </script>
 
-<div bind:this={container}>
+<div bind:this={container} class={className}>
   <slot />
 </div>
 
