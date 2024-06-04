@@ -14,7 +14,6 @@
 
   let frameID;
   let canvas;
-  let observer;
 
   function onScroll(e) {
     let r = e.detail;
@@ -58,7 +57,7 @@
       This is a Rubik's Cube, a 3D combination puzzle invented in 1974 by Hungarian sculptor and professor of architecture Ernő Rubik
     </p>
   </div>
-  <ScrollObserver bind:this={observer} on:scroll={onScroll} threshold={30}>
+  <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas id={CANVAS_ID} bind:this={canvas} />
   </ScrollObserver>
 </section>

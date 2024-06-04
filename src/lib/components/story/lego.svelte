@@ -14,7 +14,6 @@
 
   let frameID;
   let canvas;
-  let observer;
 
   function onScroll(e) {
     let r = e.detail;
@@ -60,13 +59,14 @@
     </h1>
     <p>Here are something I do for fun. Hope you enjoy them as much as I enjoy making them</p>
   </div>
-  <ScrollObserver bind:this={observer} on:scroll={onScroll} threshold={30}>
+  <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas id={CANVAS_ID} bind:this={canvas} />
   </ScrollObserver>
 </section>
 
 <style>
   input[type="checkbox"] {
+    display: none;
     & + label {
       display: contents;
       cursor: pointer;
@@ -83,7 +83,6 @@
     & ~ span {
       display: none;
     }
-    display: none;
   }
   section {
     height: auto;

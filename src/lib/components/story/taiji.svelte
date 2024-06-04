@@ -13,7 +13,6 @@
 
   let frameID;
   let canvas;
-  let observer;
 
   function onScroll(e) {
     let r = e.detail;
@@ -57,7 +56,7 @@
       It represents the idea that everything in the universe consists of two forces that are opposing but complementary.
     </p>
   </div>
-  <ScrollObserver bind:this={observer} on:scroll={onScroll} threshold={30}>
+  <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas id={CANVAS_ID} bind:this={canvas} />
   </ScrollObserver>
 </section>

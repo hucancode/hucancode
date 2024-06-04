@@ -14,7 +14,6 @@
 
   let frameID;
   let canvas;
-  let observer;
 
   function onScroll(e) {
     let r = e.detail;
@@ -58,7 +57,7 @@
       This is a warrior, a fighter who is skilled in combat and warfare. They are known for their courage, strength, and honor.
     </p>
   </div>
-  <ScrollObserver bind:this={observer} on:scroll={onScroll} threshold={30}>
+  <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas id={CANVAS_ID} bind:this={canvas} />
   </ScrollObserver>
 </section>
