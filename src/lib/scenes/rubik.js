@@ -147,7 +147,7 @@ function rebuildOrbitControl() {
 
 export function animateCamera(t) {
   if (camera) {
-    let distance = 10 * t;
+    let distance = 20 - 10 * t;
     if(camera.distance === undefined) {
       camera.distance = camera.position.length();
     }
@@ -302,7 +302,14 @@ function startMove(face, depth, magnitude) {
     round: 100,
     delay: 200,
     easing: easing,
-    complete: cleanUpAfterMove,
+    complete: () => {
+      cleanUpAfterMove();
+      startMove(
+        Math.floor(Math.random() * 5),
+        Math.floor(Math.random() * cubeNum),
+        Math.floor(Math.random() * 5) - 2
+      );
+    },
   });
 }
 
@@ -329,11 +336,6 @@ function cleanUpAfterMove() {
   }
   cubes = newCubes;
   pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
-  startMove(
-    Math.floor(Math.random() * 5),
-    Math.floor(Math.random() * cubeNum),
-    Math.floor(Math.random() * 5) - 2
-  );
 }
 
 function render() {

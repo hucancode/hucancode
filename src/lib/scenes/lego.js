@@ -266,7 +266,7 @@ function rebuildOrbitControl() {
 export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
-    let distance = 60 * t + 15;
+    let distance = 100 - 25 * t;
     if(camera.distance === undefined) {
       camera.distance = camera.position.length();
     }

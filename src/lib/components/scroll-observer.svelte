@@ -12,8 +12,8 @@
       ([entry]) => {
         let towardTop = entry.boundingClientRect.top < 0;
         let r = towardTop
-          ? entry.intersectionRatio
-          : 2 - entry.intersectionRatio;
+          ? (2 - entry.intersectionRatio)
+          : entry.intersectionRatio;
         dispatch("scroll", r);
       },
       {

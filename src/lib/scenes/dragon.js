@@ -1,3 +1,4 @@
+import anime from "animejs";
 import * as THREE from "three";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
@@ -75,7 +76,7 @@ function makeDragon() {
 
 export function animateCamera(t) {
   if (camera) {
-    let distance = 100 * t;
+    let distance = 230 * t + 20;
     if(camera.distance === undefined) {
       camera.distance = camera.position.length();
     }

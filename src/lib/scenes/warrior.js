@@ -2,6 +2,7 @@ import * as THREE from "three";
 import anime from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { loadModel, wait } from "$lib/utils.js";
+import { is } from "date-fns/locale";
 
 let camera, scene, renderer, animator, controls;
 let model;
@@ -10,7 +11,16 @@ const CANVAS_ID = "warrior";
 let use_camera_control = true;
 const ASPECT_RATIO = 0.75;
 const USE_GROUND = false;
-
+const CAMERA_INTRO = [
+  new THREE.Vector3(-10, 8, -10),
+  new THREE.Vector3(0, 8, -10),
+  new THREE.Vector3(7, 5, 7),
+];
+const CAMERA_CINEMATIC = [
+  new THREE.Vector3(3, 8, 8),
+  new THREE.Vector3(7, 5, 7),
+];
+let cameraBusy = true;
 export function setCameraControl(use) {
   use_camera_control = use;
   rebuildOrbitControl();
@@ -31,6 +41,7 @@ function onWindowResize() {
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
   camera.position.set(1, 0, 1);
+  camera.introTime = 0;
   rebuildOrbitControl();
 }
 
@@ -47,22 +58,30 @@ function rebuildOrbitControl() {
   controls.update();
 }
 
+function moveCameraAlongPath(t) {
+  console.log("moveCameraAlongPath", t);
+  let k = t * CAMERA_CINEMATIC.length;
+  let n = CAMERA_CINEMATIC.length;
+  let i = Math.max(0, Math.min(n-1, Math.floor(k)));
+  let j = Math.min(n-1, i+1);
+  const a = CAMERA_CINEMATIC[i];
+  const b = CAMERA_CINEMATIC[j];
+  const alpha = k - Math.floor(k);
+  camera.position.lerpVectors(a, b, alpha);
+  let distance = 10-t*6;
+  camera.position.setLength(distance);
+  camera.lookAt(0, 2, 0);
+}
+
 export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
-  if (camera) {
-    let distance = 5 * t;
-    if(camera.distance === undefined) {
-      camera.distance = camera.position.length();
-      camera.lookAt(0, (8-camera.distance)*0.4, 0);
-    }
+  if (camera && !cameraBusy) {
     anime({
       targets: camera,
-      distance: distance,
+      introTime: t,
       duration: 1000,
       update: () => {
-        camera.position.setComponent(1, camera.distance*0.2);
-        camera.lookAt(0, 1, 0);
-        camera.position.setLength(camera.distance);
+        moveCameraAlongPath(camera.introTime);
       },
     });
   }
@@ -144,6 +163,20 @@ function playIntro() {
   animation.clampWhenFinished = true;
   animation.setLoop(THREE.LoopOnce);
   animator.addEventListener("finished", returnToIdle);
+  cameraBusy = true;
+  camera.introTime = 1;
+  anime({
+    targets: camera,
+    introTime: 0,
+    duration: 500,
+    easing: "easeInOutExpo",
+    update: () => {
+      moveCameraAlongPath(camera.introTime);
+    },
+    complete: () => {
+      cameraBusy = false;
+    },
+  });
 }
 
 async function playAction() {
@@ -154,15 +187,18 @@ async function playAction() {
   animation.clampWhenFinished = true;
   animation.setLoop(THREE.LoopOnce);
   animator.addEventListener("finished", returnToIdle);
+  cameraBusy = true;
+  camera.introTime = 1;
   anime({
     targets: camera,
-    easing: "easeOutExpo",
-    distance: 10,
-    duration: 500,
+    introTime: 0,
+    duration: 1000,
+    easing: "easeInOutExpo",
     update: () => {
-      camera.position.setComponent(1, camera.distance*0.6);
-      camera.lookAt(0, 1, 0);
-      camera.position.setLength(camera.distance);
+      moveCameraAlongPath(camera.introTime);
+    },
+    complete: () => {
+      cameraBusy = false;
     },
   });
 }
@@ -170,16 +206,19 @@ async function playAction() {
 async function returnToIdle() {
   animator.removeEventListener("finished", returnToIdle);
   fadeToAction("idle", 0.25);
+  cameraBusy = true;
+  console.log("returnToIdle");
+  camera.introTime = 0;
   anime({
     targets: camera,
-    easing: "easeOutInElastic",
-    distance: 5,
+    introTime: 1,
     duration: 3000,
+    easing: "easeInOutExpo",
     update: () => {
-      return;
-      camera.position.setComponent(1, camera.distance*0.6);
-      camera.lookAt(0, 1, 0);
-      camera.position.setLength(camera.distance);
+      moveCameraAlongPath(camera.introTime);
+    },
+    complete: () => {
+      cameraBusy = false;
     },
   });
 }

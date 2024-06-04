@@ -14,9 +14,9 @@
 <main class="container-lg">
   <Lego />
   <Rubik />
-  <Dragon />
-  <Taiji />
   <Warrior />
+  <Taiji />
+  <Dragon />
 </main>
 
 <style>

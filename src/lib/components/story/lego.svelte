@@ -18,7 +18,7 @@
 
   function onScroll(e) {
     let r = e.detail;
-    animateCamera(Math.max(1, r));
+    animateCamera(Math.min(1, r));
     if (r > 0 && frameID === 0) {
       frameID = requestAnimationFrame(loop);
     }
