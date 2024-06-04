@@ -64,41 +64,4 @@
 </section>
 
 <style>
-  .explain {
-    display: flex;
-    width: 100%;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-  .explain p {
-    color: var(--color-neutral-600);
-  }
-  section {
-    width: 100%;
-    height: 80vh;
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    justify-content: center;
-    align-items: center;
-  }
-  section {
-    flex-direction: row-reverse;
-    text-align: right;
-  }
-  canvas {
-    width: 100%;
-    aspect-ratio: 4/3;
-    max-width: 640px;
-    max-height: 480px;
-    margin: auto;
-  }
-  @media (max-width: 768px) {
-    section {
-      flex-direction: column;
-    }
-  }
 </style>

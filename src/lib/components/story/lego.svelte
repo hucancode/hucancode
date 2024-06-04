@@ -48,7 +48,7 @@
   }
 </script>
 <section>
-  <div class="greetings">
+  <div class="explain">
     <h1 rainbow="1" class="xl">
       Greetings!
     </h1>
@@ -86,19 +86,8 @@
     display: none;
   }
   section {
-    display: flex;
+    height: auto;
     flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-  .greetings {
-    display: flex;
-    width: 100%;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
     padding-top: 2.5rem;
     padding-bottom: 2.5rem;
   }
@@ -117,13 +106,5 @@
   p {
     text-align: center;
     max-width: 640px;
-    color: var(--color-neutral-600);
-  }
-  canvas {
-    margin: auto;
-    width: 100%;
-    aspect-ratio: 4/3;
-    max-width: 640px;
-    max-height: 480px;
   }
 </style>
