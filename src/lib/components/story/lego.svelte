@@ -88,8 +88,6 @@
   section {
     height: auto;
     flex-direction: column;
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
   }
   h1.xl {
     font-size: 3.5rem;

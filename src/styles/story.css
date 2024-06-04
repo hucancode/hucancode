@@ -52,6 +52,12 @@ main section:not(:first-child) {
     text-align: right;
   }
 }
+main section:first-child {
+  margin-top: 10vh;
+}
+main section:last-child {
+  margin-bottom: 10vh;
+}
 main section {
   width: 100%;
   height: 80vh;
