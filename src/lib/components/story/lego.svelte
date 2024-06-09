@@ -10,7 +10,7 @@
     setCameraControl,
     animateCamera,
     render,
-  } from "$lib/scenes/lego";
+  } from "$lib/scenes/lego-rubik";
 
   let frameID;
   let canvas;
