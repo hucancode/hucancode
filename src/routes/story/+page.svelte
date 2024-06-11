@@ -13,10 +13,10 @@
 <Nav />
 <main class="container-lg">
   <Lego />
-  <Rubik />
+  <!-- <Rubik />
   <Warrior />
   <Taiji />
-  <Dragon />
+  <Dragon /> -->
 </main>
 
 <style>

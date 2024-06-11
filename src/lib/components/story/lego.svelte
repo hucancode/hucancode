@@ -4,20 +4,26 @@
   import { onMount, onDestroy } from "svelte";
   import ScrollObserver from "$lib/components/scroll-observer.svelte";
   import {
-    CANVAS_ID,
+    enter as rubikEnter,
+    leave as rubikLeave,
+  } from "$lib/scenes/story/rubik";
+  import {
+    enter as legoEnter,
+    leave as legoLeave,
+  } from "$lib/scenes/story/lego";
+  import {
     init,
     destroy,
-    setCameraControl,
-    animateCamera,
     render,
-  } from "$lib/scenes/lego-rubik";
-
+    scene,
+    camera,
+  } from "$lib/scenes/story/scene"
   let frameID;
   let canvas;
 
   function onScroll(e) {
     let r = e.detail;
-    animateCamera(Math.min(1, r));
+    // animateCamera(Math.min(1, r));
     if (r > 0 && frameID === 0) {
       frameID = requestAnimationFrame(loop);
     }
@@ -28,14 +34,14 @@
   }
   onMount(async () => {
     if (!browser) return;
-    if (!canvas) return;
-    setCameraControl(false);
-    await init();
+    await init(canvas);
+    rubikEnter(scene);
     frameID = requestAnimationFrame(loop);
   });
 
   onDestroy(() => {
     if (!browser) return;
+    rubikLeave(scene);
     cancelAnimationFrame(frameID);
     frameID = 0;
     destroy();
@@ -57,10 +63,20 @@
       <label for="expander">...</label>
       <span>and I use Arch by the way 😎</span>
     </h1>
-    <p>Here are something I do for fun. Hope you enjoy them as much as I enjoy making them</p>
+    <p>Let's build something amazing together!</p>
+  </div>
+  <div>
+    <button on:click={() => {
+      legoEnter(scene);
+      rubikLeave(scene);
+    }}>Lego Enter</button>
+    <button on:click={() => {
+      legoLeave(scene);
+      rubikEnter(scene);
+    }}>Lego Leave</button>
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
-    <canvas id={CANVAS_ID} bind:this={canvas} />
+    <canvas bind:this={canvas} />
   </ScrollObserver>
 </section>
 

@@ -13,7 +13,6 @@
   } from "$lib/scenes/rubik";
 
   let frameID;
-  let canvas;
 
   function onScroll(e) {
     let r = e.detail;
@@ -29,7 +28,6 @@
 
   onMount(async () => {
     if (!browser) return;
-    if (!canvas) return;
     setCameraControl(false);
     await init();
     frameID = requestAnimationFrame(loop);
@@ -58,7 +56,7 @@
     </p>
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
-    <canvas id={CANVAS_ID} bind:this={canvas} />
+    <canvas id={CANVAS_ID} />
   </ScrollObserver>
 </section>
 

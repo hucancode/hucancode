@@ -12,7 +12,6 @@
   } from "$lib/scenes/dragon";
 
   let frameID;
-  let canvas;
 
   function onScroll(e) {
     let r = e.detail;
@@ -28,7 +27,6 @@
 
   onMount(async () => {
     if (!browser) return;
-    if (!canvas) return;
     await init();
     frameID = requestAnimationFrame(loop);
   });
@@ -49,15 +47,17 @@
 <section class="-blueprint">
   <div class="explain">
     <h1>
-      It's a good day to create something great!
+      Let's create something amazing together! 🚀
     </h1>
-    <p>
-      This is a dragon, a creature that is both feared and revered in many cultures.
-      It is a symbol of power, strength, and wisdom.
-    </p>
+    <ul>
+      <li>Github</li>
+      <li>Email</li>
+      <li>Blog</li>
+      <li>Resume</li>
+    </ul>
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
-    <canvas id={CANVAS_ID} bind:this={canvas} />
+    <canvas id={CANVAS_ID} />
   </ScrollObserver>
 </section>
 
