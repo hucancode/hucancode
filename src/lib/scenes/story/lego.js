@@ -35,7 +35,7 @@ function makeLegoRing() {
     };
     ringParticles.push(particle);
   }
-  ring.scale.set(5,5,5);
+  ring.scale.set(5, 5, 5);
 }
 
 function makeCenterPiece() {
@@ -166,7 +166,7 @@ function scroll(r, scene, camera) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
     let distance = 100 - 25 * t;
-    if(camera.distance === undefined) {
+    if (camera.distance === undefined) {
       camera.distance = camera.position.length();
     }
     anime({
@@ -178,11 +178,11 @@ function scroll(r, scene, camera) {
         camera.lookAt(0, 0, 0);
       },
       onComplete: () => {
-        if(t >= 0.9) {
+        if (t >= 0.9) {
           controls.enableRotate = true;
           controls.autoRotate = true;
         }
-      }
+      },
     });
   }
 }
@@ -215,7 +215,7 @@ function enter(scene) {
           });
         },
       });
-    }
+    },
   });
   anime({
     targets: cube.rotation,
@@ -250,7 +250,7 @@ function enter(scene) {
     easing: "easeInOutQuad",
   });
   const RADIUS = 25;
-  for(let particle of ringParticles) {
+  for (let particle of ringParticles) {
     const duration = Math.random() * 4000 + 20000;
     anime({
       targets: particle,
@@ -278,25 +278,23 @@ function enter(scene) {
   anime({
     targets: hemiLight.position,
     y: 30,
-    duration: 500
+    duration: 500,
   });
   anime({
     targets: backLight.position,
     y: 20,
     delay: 100,
-    duration: 600
+    duration: 600,
   });
   anime({
     targets: light.position,
     y: 0,
     delay: 300,
-    duration: 800
+    duration: 800,
   });
 }
 
-function update(scene) {
-
-}
+function update(scene) {}
 
 function leave(scene) {
   // animate objects out of the scene
@@ -312,7 +310,7 @@ function leave(scene) {
     complete: () => {
       anime.remove(cube.rotation);
       cube.removeFromParent();
-    }
+    },
   });
   anime({
     targets: ring.scale,
@@ -324,7 +322,7 @@ function leave(scene) {
     easing: "easeInOutQuad",
     complete: () => {
       ring.removeFromParent();
-    }
+    },
   });
   // animate light out of the scene
   anime.remove(hemiLight.position);
@@ -336,7 +334,7 @@ function leave(scene) {
     duration: 500,
     complete: () => {
       hemiLight.removeFromParent();
-    }
+    },
   });
   anime({
     targets: backLight.position,
@@ -345,7 +343,7 @@ function leave(scene) {
     duration: 500,
     complete: () => {
       backLight.removeFromParent();
-    }
+    },
   });
   anime({
     targets: light.position,
@@ -354,9 +352,8 @@ function leave(scene) {
     duration: 600,
     complete: () => {
       light.removeFromParent();
-    }
+    },
   });
 }
-
 
 export { scroll, enter, leave, update, playAnimation };

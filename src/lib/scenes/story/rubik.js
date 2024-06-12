@@ -115,10 +115,10 @@ function makeRubik() {
       }
     }
   }
-  console.log("made cube",rubik.children.length);
+  console.log("made cube", rubik.children.length);
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   rubik.scale.setScalar(RUBIK_SIZE);
-  rubik.position.setScalar(-k*RUBIK_SIZE);
+  rubik.position.setScalar(-k * RUBIK_SIZE);
   //addDebugArrow(pivot);
 }
 
@@ -129,10 +129,8 @@ function rearrangeRubik() {
     for (let y = 0; y < cubeNum; y++) {
       for (let z = 0; z < cubeNum; z++) {
         const cube = cubes[i];
-        cube.position
-          .set(x, y, z)
-          .multiplyScalar(1 + CUBE_MARGIN);
-        cube.rotation.set(0,0,0);
+        cube.position.set(x, y, z).multiplyScalar(1 + CUBE_MARGIN);
+        cube.rotation.set(0, 0, 0);
         i++;
       }
     }
@@ -141,7 +139,7 @@ function rearrangeRubik() {
 
 function transferCubes() {
   anime.remove(pivot.rotation);
-  for(var i = pivot.children.length - 1; i >= 0; i--) {
+  for (var i = pivot.children.length - 1; i >= 0; i--) {
     rubik.attach(pivot.children[i]);
   }
   pivot.rotation.set(0, 0, 0);
@@ -157,7 +155,7 @@ function enter(scene) {
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   anime({
     targets: rubik.position,
-    y: -k*RUBIK_SIZE,
+    y: -k * RUBIK_SIZE,
     duration: 2000,
     complete: () => {
       startMove(
@@ -165,17 +163,13 @@ function enter(scene) {
         Math.floor(Math.random() * cubeNum),
         Math.floor(Math.random() * 5) - 2
       );
-    }
+    },
   });
 }
 
-function update() {
+function update() {}
 
-}
-
-function scroll() {
-
-}
+function scroll() {}
 
 function leave(scene) {
   anime.remove(pivot.rotation);
@@ -189,7 +183,7 @@ function leave(scene) {
     complete: () => {
       scene.remove(rubik);
       scene.remove(pivot);
-    }
+    },
   });
 }
 
@@ -209,13 +203,13 @@ function addDebugArrow(object) {
 }
 
 function startMove(face, depth, magnitude) {
-  for(var i = rubik.children.length - 1; i >= 0; i--) {
+  for (var i = rubik.children.length - 1; i >= 0; i--) {
     let cube = rubik.children[i];
     let p = new THREE.Vector3();
     cube.getWorldPosition(p);
     p.sub(rubik.position)
       .divide(rubik.scale)
-      .divideScalar(1+CUBE_MARGIN)
+      .divideScalar(1 + CUBE_MARGIN)
       .round();
     if (isInFace(p.x, p.y, p.z, face, depth)) {
       console.log(cube.position);
@@ -254,4 +248,4 @@ function startMove(face, depth, magnitude) {
   });
 }
 
-export { scroll, enter, leave, update, };
+export { scroll, enter, leave, update };

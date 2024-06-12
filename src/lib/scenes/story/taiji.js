@@ -30,7 +30,7 @@ async function makeDragon() {
   let model = await loadModelStatic("dragon.glb");
   dragon = new Flow(model);
   const points = [];
-  if(DRAGON_RANDOM_PATH) {
+  if (DRAGON_RANDOM_PATH) {
     const MIN_X = -40;
     const VAR_X = 80;
     const MIN_Y = -5;
@@ -38,19 +38,21 @@ async function makeDragon() {
     const MIN_Z = -40;
     const VAR_Z = 80;
     const SAMPLE_COUNT = 20;
-    for(var i = 0;i<SAMPLE_COUNT;i++) {
-      points.push(new THREE.Vector3(
-        Math.random() * VAR_X + MIN_X,
-        Math.random() * VAR_Y + MIN_Y,
-        Math.random() * VAR_Z + MIN_Z,
-      ));
+    for (var i = 0; i < SAMPLE_COUNT; i++) {
+      points.push(
+        new THREE.Vector3(
+          Math.random() * VAR_X + MIN_X,
+          Math.random() * VAR_Y + MIN_Y,
+          Math.random() * VAR_Z + MIN_Z
+        )
+      );
     }
   } else {
     const RADIUS = 30;
     const SAMPLE_COUNT = 20;
     const ELEVATION = 8;
-    for(var i = 0;i<SAMPLE_COUNT;i++) {
-      const theta = i * Math.PI * 2 / SAMPLE_COUNT;
+    for (var i = 0; i < SAMPLE_COUNT; i++) {
+      const theta = (i * Math.PI * 2) / SAMPLE_COUNT;
       const x = RADIUS * Math.cos(theta);
       const z = RADIUS * Math.sin(theta);
       const y = Math.sin(theta * 2) * ELEVATION;
@@ -175,7 +177,7 @@ function enter(scene) {
     easing: "linear",
     loop: true,
   });
-  scene.add(dragon.object3D)
+  scene.add(dragon.object3D);
 }
 
 function update() {
@@ -183,7 +185,7 @@ function update() {
   if (background) {
     background.material.uniforms.time.value = time * 4;
   }
-  dragon.moveAlongCurve(DRAGON_SPEED_PERCENT_PER_FRAME*0.01);
+  dragon.moveAlongCurve(DRAGON_SPEED_PERCENT_PER_FRAME * 0.01);
   if (dynamicLight) {
     dynamicLight.position.x = Math.sin(time * 0.7) * 30 + 20;
     dynamicLight.position.y = Math.cos(time * 0.5) * 40;
@@ -208,7 +210,7 @@ function leave(scene) {
     easing: "easeOutExpo",
     complete: () => {
       scene.remove(taiji);
-    }
+    },
   });
   anime({
     targets: bagua.scale,
@@ -218,7 +220,7 @@ function leave(scene) {
     easing: "easeOutExpo",
     complete: () => {
       scene.remove(bagua);
-    }
+    },
   });
   anime({
     targets: background.material.uniforms.alpha,
@@ -227,7 +229,7 @@ function leave(scene) {
     easing: "easeOutExpo",
     complete: () => {
       scene.remove(background);
-    }
+    },
   });
   scene.remove(ambientLight);
   scene.remove(dynamicLight);
