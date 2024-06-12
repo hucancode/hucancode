@@ -48,11 +48,10 @@
 
 <section class="-blueprint">
   <div class="explain">
-    <h1>
-      It's a good day to create something great!
-    </h1>
+    <h1>It's a good day to create something great!</h1>
     <p>
-      This is a Rubik's Cube, a 3D combination puzzle invented in 1974 by Hungarian sculptor and professor of architecture Ernő Rubik
+      This is a Rubik's Cube, a 3D combination puzzle invented in 1974 by
+      Hungarian sculptor and professor of architecture Ernő Rubik
     </p>
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>

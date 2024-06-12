@@ -50,11 +50,10 @@
 
 <section class="-blueprint">
   <div class="explain">
-    <h1>
-      It's a good day to create something great!
-    </h1>
+    <h1>It's a good day to create something great!</h1>
     <p>
-      This is a warrior, a fighter who is skilled in combat and warfare. They are known for their courage, strength, and honor.
+      This is a warrior, a fighter who is skilled in combat and warfare. They
+      are known for their courage, strength, and honor.
     </p>
   </div>
   <ScrollObserver class="relative" on:scroll={onScroll} threshold={30}>

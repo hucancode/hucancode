@@ -4,7 +4,7 @@
   import { createEventDispatcher } from "svelte";
   export let threshold = 1;
   let className;
-	export { className as class };
+  export { className as class };
   let container;
   let observer;
   let dispatch = createEventDispatcher();
@@ -14,7 +14,7 @@
       ([entry]) => {
         let towardTop = entry.boundingClientRect.top < 0;
         let r = towardTop
-          ? (2 - entry.intersectionRatio)
+          ? 2 - entry.intersectionRatio
           : entry.intersectionRatio;
         dispatch("scroll", r);
       },

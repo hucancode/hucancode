@@ -1,13 +1,12 @@
 <script>
-
 </script>
 
 <section class="container">
   <div class="primary">
-    <slot name="primary"></slot>
+    <slot name="primary" />
   </div>
   <div class="secondary">
-    <slot name="secondary"></slot>
+    <slot name="secondary" />
   </div>
 </section>
 

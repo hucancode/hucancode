@@ -50,12 +50,11 @@
 
 <section class="-blueprint">
   <div class="explain">
-    <h1>
-      It's a good day to create something great!
-    </h1>
+    <h1>It's a good day to create something great!</h1>
     <p>
-      This is a Taiji, a symbol of the philosophy of yin and yang.
-      It represents the idea that everything in the universe consists of two forces that are opposing but complementary.
+      This is a Taiji, a symbol of the philosophy of yin and yang. It represents
+      the idea that everything in the universe consists of two forces that are
+      opposing but complementary.
     </p>
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>

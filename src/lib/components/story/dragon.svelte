@@ -46,9 +46,7 @@
 
 <section class="-blueprint">
   <div class="explain">
-    <h1>
-      Let's create something amazing together! 🚀
-    </h1>
+    <h1>Let's create something amazing together! 🚀</h1>
     <ul>
       <li>Github</li>
       <li>Email</li>
