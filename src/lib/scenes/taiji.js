@@ -126,7 +126,7 @@ export function animateCamera(t) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
     let distance = 25 * t + 2;
-    if(camera.distance === undefined) {
+    if (camera.distance === undefined) {
       camera.distance = camera.position.length();
     }
     anime({
@@ -138,11 +138,11 @@ export function animateCamera(t) {
         camera.lookAt(0, 0, 0);
       },
       onComplete: () => {
-        if(t >= 0.9) {
+        if (t >= 0.9) {
           controls.enableRotate = true;
           controls.autoRotate = true;
         }
-      }
+      },
     });
   }
 }

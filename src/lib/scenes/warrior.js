@@ -62,13 +62,13 @@ function moveCameraAlongPath(t) {
   console.log("moveCameraAlongPath", t);
   let k = t * CAMERA_CINEMATIC.length;
   let n = CAMERA_CINEMATIC.length;
-  let i = Math.max(0, Math.min(n-1, Math.floor(k)));
-  let j = Math.min(n-1, i+1);
+  let i = Math.max(0, Math.min(n - 1, Math.floor(k)));
+  let j = Math.min(n - 1, i + 1);
   const a = CAMERA_CINEMATIC[i];
   const b = CAMERA_CINEMATIC[j];
   const alpha = k - Math.floor(k);
   camera.position.lerpVectors(a, b, alpha);
-  let distance = 10-t*6;
+  let distance = 10 - t * 6;
   camera.position.setLength(distance);
   camera.lookAt(0, 2, 0);
 }

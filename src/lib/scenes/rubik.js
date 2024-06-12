@@ -148,7 +148,7 @@ function rebuildOrbitControl() {
 export function animateCamera(t) {
   if (camera) {
     let distance = 20 - 10 * t;
-    if(camera.distance === undefined) {
+    if (camera.distance === undefined) {
       camera.distance = camera.position.length();
     }
     anime({
@@ -161,11 +161,11 @@ export function animateCamera(t) {
         camera.lookAt(k, k, k);
       },
       complete: () => {
-        if(t >= 0.9) {
+        if (t >= 0.9) {
           controls.enableRotate = true;
           controls.autoRotate = true;
         }
-      }
+      },
     });
   }
 }

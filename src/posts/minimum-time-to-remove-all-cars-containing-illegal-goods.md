@@ -18,7 +18,7 @@ As the train conductor, you would like to get rid of all the cars containing ill
 2. Remove a train car from the right end (i.e., remove $s_{n-1}$) which takes $1$ unit of time.
 3. Remove a train car from anywhere in the sequence which takes $2$ units of time.
 
-Return the __minimum__ time to remove all the cars containing illegal goods.
+Return the **minimum** time to remove all the cars containing illegal goods.
 
 _Note that an empty sequence of cars is considered to have no cars containing illegal goods._
 
@@ -27,19 +27,19 @@ _Note that an empty sequence of cars is considered to have no cars containing il
 ```
 Input: s = "1100101"
 Output: 5
-Explanation: 
+Explanation:
 One way to remove all the cars containing illegal goods from the sequence is to
 - remove a car from the left end 2 times. Time taken is 2 * 1 = 2.
 - remove a car from the right end. Time taken is 1.
 - remove the car containing illegal goods found in the middle. Time taken is 2.
-This obtains a total time of 2 + 1 + 2 = 5. 
+This obtains a total time of 2 + 1 + 2 = 5.
 
 An alternative way is to
 - remove a car from the left end 2 times. Time taken is 2 * 1 = 2.
 - remove a car from the right end 3 times. Time taken is 3 * 1 = 3.
 This also obtains a total time of 2 + 3 = 5.
 
-5 is the minimum time taken to remove all the cars containing illegal goods. 
+5 is the minimum time taken to remove all the cars containing illegal goods.
 There are no other ways to remove them with less time.
 ```
 
@@ -55,11 +55,11 @@ Another way to remove all the cars containing illegal goods from the sequence is
 - remove the car containing illegal goods found in the middle. Time taken is 2.
 This obtains a total time of 2.
 
-Another way to remove all the cars containing illegal goods from the sequence is to 
-- remove a car from the right end 2 times. Time taken is 2 * 1 = 2. 
+Another way to remove all the cars containing illegal goods from the sequence is to
+- remove a car from the right end 2 times. Time taken is 2 * 1 = 2.
 This obtains a total time of 2.
 
-2 is the minimum time taken to remove all the cars containing illegal goods. 
+2 is the minimum time taken to remove all the cars containing illegal goods.
 There are no other ways to remove them with less time.
 ```
 
@@ -73,23 +73,27 @@ Submit your solution at [here](https://leetcode.com/problems/minimum-time-to-rem
 ## Solution
 
 ### Intuition
+
 - We split the train into 3 parts. Left & Mid & Right
 - We apply operation 1 on Left, operation 3 on Mid, and operation 2 on Right
 - That naive split will have us ended up with $O(n^2)$ solution, which is unfeasible with $n = 10^5$
 - We will optimize further by split the train into 2 parts. Left and Right. We apply operation 1 or 3 on Left, operation 2 on Right
 
 ### Approach
+
 - Let $f(1,i)$ is the cost to use operation 1 at position i to clear all car in the range $[0,i]$. By that definition $f(1,i) = i+1$ since we have to eleminate everything came before i to be able to use operation 1.
 - Let $f(2,i)$ is the cost to use operation 2 at position i to clear all car in the range $(i, n)$. By that definition $f(2,i) = n-i-1$
-- Let $f(3,i)$ is the cost to use operation 3 at position i to clear all _illegal_ car in the range $[0,i]$. 
+- Let $f(3,i)$ is the cost to use operation 3 at position i to clear all _illegal_ car in the range $[0,i]$.
 - Let's say we are at car $i$ and up until car $i-1$ we know the cost to clear all _illegal_ car using method 1 is $f(1,i-1)$ and using method 3 is $f(3, i-1)$ then $f(3,i) = min(f(1,i-1), f(3,i-1))$
 - Loop through all middle position $i$ and calculate the cost if we were to split the train at $i$. We use operation 1 and 3 on the left part and operation 2 on the right part.
 
 ### Complexity
+
 - Time complexity: $O(n)$
 - Space complexity: $O(n)$, but can be optimized to $O(1)$
 
 ### Code
+
 ```rust
 impl Solution {
     pub fn minimum_time(s: String) -> i32 {
@@ -115,7 +119,9 @@ impl Solution {
     }
 }
 ```
+
 $O(1)$ space solution
+
 ```rust
 impl Solution {
     pub fn minimum_time(s: String) -> i32 {

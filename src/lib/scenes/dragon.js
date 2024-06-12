@@ -77,7 +77,7 @@ function makeDragon() {
 export function animateCamera(t) {
   if (camera) {
     let distance = 230 * t + 20;
-    if(camera.distance === undefined) {
+    if (camera.distance === undefined) {
       camera.distance = camera.position.length();
     }
     anime({
