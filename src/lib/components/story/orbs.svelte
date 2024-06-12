@@ -1,50 +1,27 @@
-    <div class="blueprint">
-      <div class="card">
-        <div class="icons">
-          <div class="icon-container">
-            <div class="halo">
-              <div class="icon">
-                <img src="https://api.iconify.design/simple-icons:grafana.svg" />
-              </div>
-            </div>
-          </div>
+<script>
+  import { onMount, onDestroy } from "svelte";
+  import { createEventDispatcher } from "svelte";
+  let dispatch = createEventDispatcher();
+  export let iconSources = [];
+  export let active = 0;
+</script>
 
-          <div class="icon-container">
-            <div class="halo">
-              <div class="icon">
-                <img src="https://api.iconify.design/simple-icons:firefox.svg" />
-              </div>
-            </div>
-          </div>
-          <div class="icon-container" active>
-            <div class="halo">
-              <div class="icon">
-                <img
-                  src="https://api.iconify.design/simple-icons:apachekylin.svg"
-                />
-              </div>
-            </div>
-          </div>
-          <div class="icon-container">
-            <div class="halo">
-              <div class="icon">
-                <img
-                  src="https://api.iconify.design/simple-icons:paperlessngx.svg"
-                />
-              </div>
-            </div>
-          </div>
-          <div class="icon-container">
-            <div class="halo">
-              <div class="icon">
-                <img src="https://api.iconify.design/simple-icons:reactivex.svg" />
-              </div>
+<div class="blueprint">
+  <div class="card">
+    <div class="icons">
+      {#each iconSources as icon, index}
+        <div class="icon-container">
+          <div class="halo">
+            <div class="icon" active={index == active}>
+              {@html icon}
             </div>
           </div>
         </div>
-      </div>
+      {/each}
     </div>
-  <svg>
+  </div>
+</div>
+<svg>
   <defs>
     <pattern
       id="pattern-stripe"

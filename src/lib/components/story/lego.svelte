@@ -3,6 +3,7 @@
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import ScrollObserver from "$lib/components/scroll-observer.svelte";
+  // import Orbs from "$lib/components/story/orbs.svelte";
   import {
     enter as rubikEnter,
     leave as rubikLeave,
@@ -23,9 +24,34 @@
     render,
     scene,
     camera,
-  } from "$lib/scenes/story/scene"
+  } from "$lib/scenes/story/scene";
   let frameID;
   let canvas;
+
+  let showcases = [
+    {
+      title: $_("story.lego.title"),
+      description: $_("story.lego.description"),
+      icon: "🧱",
+      enter: legoEnter,
+      leave: legoLeave,
+    },
+    {
+      title: $_("story.rubik.title"),
+      description: $_("story.rubik.description"),
+      icon: "🧩",
+      enter: rubikEnter,
+      leave: rubikLeave,
+    },
+    {
+      title: $_("story.taiji.title"),
+      description: $_("story.taiji.description"),
+      icon: "🐉",
+      enter: taijiEnter,
+      leave: taijiLeave,
+    },
+  ];
+  let currentShowcase = 0;
 
   function onScroll(e) {
     let r = e.detail;
@@ -60,11 +86,10 @@
     render();
   }
 </script>
+
 <section>
   <div class="explain">
-    <h1 rainbow="1" class="xl">
-      Greetings!
-    </h1>
+    <h1 rainbow="1" class="xl">Greetings!</h1>
     <h1>
       My name is Bang, I am a creative software engineer
       <input type="checkbox" id="expander" />
@@ -74,14 +99,19 @@
     <p>Let's build something amazing together!</p>
   </div>
   <div>
-    <button on:click={() => {
-      legoEnter(scene);
-      taijiLeave(scene);
-    }}>Lego Enter</button>
-    <button on:click={() => {
-      legoLeave(scene);
-      taijiEnter(scene);
-    }}>Lego Leave</button>
+  <!-- <Orbs iconSources={[]} /> -->
+    <button
+      on:click={() => {
+        legoEnter(scene);
+        taijiLeave(scene);
+      }}>Lego Enter</button
+    >
+    <button
+      on:click={() => {
+        legoLeave(scene);
+        taijiEnter(scene);
+      }}>Lego Leave</button
+    >
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas bind:this={canvas} />
