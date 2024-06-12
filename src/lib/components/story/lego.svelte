@@ -8,6 +8,12 @@
     leave as rubikLeave,
   } from "$lib/scenes/story/rubik";
   import {
+    makeDragon,
+    update as taijiUpdate,
+    enter as taijiEnter,
+    leave as taijiLeave,
+  } from "$lib/scenes/story/taiji";
+  import {
     enter as legoEnter,
     leave as legoLeave,
   } from "$lib/scenes/story/lego";
@@ -35,13 +41,14 @@
   onMount(async () => {
     if (!browser) return;
     await init(canvas);
-    rubikEnter(scene);
+    await makeDragon();
+    taijiEnter(scene);
     frameID = requestAnimationFrame(loop);
   });
 
   onDestroy(() => {
     if (!browser) return;
-    rubikLeave(scene);
+    taijiLeave(scene);
     cancelAnimationFrame(frameID);
     frameID = 0;
     destroy();
@@ -49,6 +56,7 @@
 
   function loop() {
     frameID = requestAnimationFrame(loop);
+    taijiUpdate();
     render();
   }
 </script>
@@ -68,11 +76,11 @@
   <div>
     <button on:click={() => {
       legoEnter(scene);
-      rubikLeave(scene);
+      taijiLeave(scene);
     }}>Lego Enter</button>
     <button on:click={() => {
       legoLeave(scene);
-      rubikEnter(scene);
+      taijiEnter(scene);
     }}>Lego Leave</button>
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>

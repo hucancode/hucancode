@@ -12,15 +12,61 @@ import {
   BAGUA_FRAGMENT_SHADER,
 } from "./taiji-shaders";
 
-let scene, camera, renderer, controls;
 let taiji;
 let bagua;
 let background;
+let dragon = null;
+let curve = null;
+let ambientLight = null;
+let dynamicLight = null;
 const clock = new THREE.Clock();
 var time = 0;
 
 const TAIJI_ROTATION_CIRCLE = 23000;
 const BAGUA_ROTATION_CIRCLE = 43000;
+const DRAGON_RANDOM_PATH = false;
+async function makeDragon() {
+  let model = await loadModelStatic("dragon.glb");
+  dragon = new Flow(model);
+  const points = [];
+  if(DRAGON_RANDOM_PATH) {
+    const MIN_X = -40;
+    const VAR_X = 80;
+    const MIN_Y = -5;
+    const VAR_Y = 10;
+    const MIN_Z = -40;
+    const VAR_Z = 80;
+    for(var i = 0;i<20;i++) {
+      points.push(new THREE.Vector3(
+        Math.random() * VAR_X + MIN_X,
+        Math.random() * VAR_Y + MIN_Y,
+        Math.random() * VAR_Z + MIN_Z,
+      ));
+    }
+  } else {
+    const RADIUS = 35;
+    for(var i = 0;i<20;i++) {
+      const theta = i * Math.PI / 10;
+      const x = RADIUS * Math.cos(theta);
+      const z = RADIUS * Math.sin(theta);
+      points.push(new THREE.Vector3(x, 0, z));
+    }
+  }
+  curve = new THREE.CatmullRomCurve3(points);
+  curve.curveType = "centripetal";
+  curve.closed = true;
+  dragon = new Flow(model);
+  dragon.updateCurve(0, curve);
+  dragon.object3D.scale.set(0.5, 0.5, 0.5);
+  ambientLight = new THREE.AmbientLight(0x003973);
+  dynamicLight = new THREE.PointLight(0xffffff);
+  dynamicLight.add(
+    new THREE.Mesh(
+      new THREE.SphereGeometry(2, 16, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    )
+  );
+}
 
 function makeBackground() {
   const material = new THREE.ShaderMaterial({
@@ -51,9 +97,9 @@ function makeTaiji() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(1, 1);
+  const geometry = new THREE.PlaneGeometry(20, 20);
   const ret = new THREE.Mesh(geometry, material);
-  ret.scale.x = ret.scale.y = 9;
+  ret.scale.x = ret.scale.y = 0;
   ret.rotation.x = -Math.PI / 2;
   return ret;
 }
@@ -68,9 +114,9 @@ function makeBagua() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(35, 35);
+  const geometry = new THREE.PlaneGeometry(65, 65);
   const ret = new THREE.Mesh(geometry, material);
-  ret.scale.x = ret.scale.y = 1;
+  ret.scale.x = ret.scale.y = 30;
   ret.rotation.x = -Math.PI / 2;
   ret.position.y = -0.01;
   return ret;
@@ -81,11 +127,42 @@ function setupObject() {
   // scene.add(axesHelper);
   taiji = makeTaiji();
   taiji.material.uniforms.alpha.value = 0.9;
-  scene.add(taiji);
   bagua = makeBagua();
-  scene.add(bagua);
   background = makeBackground();
+}
+
+setupObject();
+
+function enter(scene) {
+  scene.add(taiji);
+  scene.add(bagua);
   scene.add(background);
+  scene.add(ambientLight);
+  scene.add(dynamicLight);
+  anime.remove(taiji.scale);
+  anime.remove(bagua.scale);
+  anime.remove(background.material.uniforms.alpha);
+  anime({
+    targets: taiji.scale,
+    x: 1,
+    y: 1,
+    duration: 1000,
+    easing: "easeOutExpo",
+  });
+  anime({
+    targets: bagua.scale,
+    x: 1,
+    y: 1,
+    duration: 1000,
+    easing: "easeOutExpo",
+  });
+  anime({
+    targets: background.material.uniforms.alpha,
+    value: 1,
+    duration: 1000,
+    easing: "easeOutExpo",
+  });
+  anime.remove(taiji.rotation);
   anime({
     targets: taiji.rotation,
     z: Math.PI * 2,
@@ -93,21 +170,65 @@ function setupObject() {
     easing: "linear",
     loop: true,
   });
+  scene.add(dragon.object3D)
 }
 
-
-function render() {
+function update() {
   time += clock.getDelta();
   if (background) {
     background.material.uniforms.time.value = time * 4;
   }
-  if (renderer && scene && camera) {
-    renderer.render(scene, camera);
+  dragon.moveAlongCurve(0.004);
+  if (dynamicLight) {
+    dynamicLight.position.x = Math.sin(time * 0.7) * 30 + 20;
+    dynamicLight.position.y = Math.cos(time * 0.5) * 40;
+    dynamicLight.position.z = Math.cos(time * 0.3) * 30 + 20;
+    dynamicLight.color.r = (Math.sin(time * 0.3) + 1.0) * 0.5;
+    dynamicLight.color.g = (Math.sin(time * 0.7) + 1.0) * 0.5;
+    dynamicLight.color.b = (Math.sin(time * 0.2) + 1.0) * 0.5;
   }
-  if (controls) {
-    controls.update();
+  if (ambientLight) {
+    ambientLight.color.r = (Math.sin(time * 0.1) + 1.0) * 0.5;
+    ambientLight.color.g = (Math.sin(time * 0.07) + 1.0) * 0.5;
+    ambientLight.color.b = (Math.sin(time * 0.03) + 1.0) * 0.5;
   }
 }
+
+function leave(scene) {
+  anime({
+    targets: taiji.scale,
+    x: 0,
+    y: 0,
+    duration: 1000,
+    easing: "easeOutExpo",
+    complete: () => {
+      scene.remove(taiji);
+    }
+  });
+  anime({
+    targets: bagua.scale,
+    x: 30,
+    y: 30,
+    duration: 1000,
+    easing: "easeOutExpo",
+    complete: () => {
+      scene.remove(bagua);
+    }
+  });
+  anime({
+    targets: background.material.uniforms.alpha,
+    value: 0,
+    duration: 1000,
+    easing: "easeOutExpo",
+    complete: () => {
+      scene.remove(background);
+    }
+  });
+  scene.remove(ambientLight);
+  scene.remove(dynamicLight);
+  scene.remove(dragon.object3D);
+}
+
 function playAnimation() {
   const particle = makeTaiji();
   particle.scale.x = particle.scale.y = 6;
@@ -166,4 +287,4 @@ function playAnimation() {
   animation.play();
 }
 
-export { CANVAS_ID, init, destroy, render, playAnimation };
+export { makeDragon, enter, leave, update, playAnimation };
