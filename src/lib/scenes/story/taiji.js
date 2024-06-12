@@ -25,6 +25,7 @@ var time = 0;
 const TAIJI_ROTATION_CIRCLE = 23000;
 const BAGUA_ROTATION_CIRCLE = 43000;
 const DRAGON_RANDOM_PATH = false;
+const DRAGON_SPEED_PERCENT_PER_FRAME = 0.6;
 async function makeDragon() {
   let model = await loadModelStatic("dragon.glb");
   dragon = new Flow(model);
@@ -44,12 +45,14 @@ async function makeDragon() {
       ));
     }
   } else {
-    const RADIUS = 35;
-    for(var i = 0;i<20;i++) {
-      const theta = i * Math.PI / 10;
+    const RADIUS = 40;
+    const SAMPLE = 20;
+    const ELEVATION = -5;
+    for(var i = 0;i<SAMPLE;i++) {
+      const theta = i * Math.PI * 2 / SAMPLE;
       const x = RADIUS * Math.cos(theta);
       const z = RADIUS * Math.sin(theta);
-      points.push(new THREE.Vector3(x, 0, z));
+      points.push(new THREE.Vector3(x, ELEVATION, z));
     }
   }
   curve = new THREE.CatmullRomCurve3(points);
@@ -178,7 +181,7 @@ function update() {
   if (background) {
     background.material.uniforms.time.value = time * 4;
   }
-  dragon.moveAlongCurve(0.004);
+  dragon.moveAlongCurve(DRAGON_SPEED_PERCENT_PER_FRAME*0.01);
   if (dynamicLight) {
     dynamicLight.position.x = Math.sin(time * 0.7) * 30 + 20;
     dynamicLight.position.y = Math.cos(time * 0.5) * 40;
