@@ -37,7 +37,8 @@ async function makeDragon() {
     const VAR_Y = 10;
     const MIN_Z = -40;
     const VAR_Z = 80;
-    for(var i = 0;i<20;i++) {
+    const SAMPLE_COUNT = 20;
+    for(var i = 0;i<SAMPLE_COUNT;i++) {
       points.push(new THREE.Vector3(
         Math.random() * VAR_X + MIN_X,
         Math.random() * VAR_Y + MIN_Y,
@@ -45,14 +46,15 @@ async function makeDragon() {
       ));
     }
   } else {
-    const RADIUS = 40;
-    const SAMPLE = 20;
-    const ELEVATION = -5;
-    for(var i = 0;i<SAMPLE;i++) {
-      const theta = i * Math.PI * 2 / SAMPLE;
+    const RADIUS = 30;
+    const SAMPLE_COUNT = 20;
+    const ELEVATION = 8;
+    for(var i = 0;i<SAMPLE_COUNT;i++) {
+      const theta = i * Math.PI * 2 / SAMPLE_COUNT;
       const x = RADIUS * Math.cos(theta);
       const z = RADIUS * Math.sin(theta);
-      points.push(new THREE.Vector3(x, ELEVATION, z));
+      const y = Math.sin(theta * 2) * ELEVATION;
+      points.push(new THREE.Vector3(x, y, z));
     }
   }
   curve = new THREE.CatmullRomCurve3(points);
@@ -60,7 +62,7 @@ async function makeDragon() {
   curve.closed = true;
   dragon = new Flow(model);
   dragon.updateCurve(0, curve);
-  dragon.object3D.scale.set(0.5, 0.5, 0.5);
+  dragon.object3D.scale.set(0.65, 0.65, 0.65);
   ambientLight = new THREE.AmbientLight(0x003973);
   dynamicLight = new THREE.PointLight(0xffffff);
   dynamicLight.add(
