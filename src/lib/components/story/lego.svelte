@@ -3,7 +3,10 @@
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import ScrollObserver from "$lib/components/scroll-observer.svelte";
-  // import Orbs from "$lib/components/story/orbs.svelte";
+  import Orbs from "$lib/components/story/orbs.svelte";
+  import planetIcon from "$icons/ph/planet.svg?raw";
+  import dragonIcon from "$icons/game-icons/dragon.svg?raw";
+  import cubeIcon from "$icons/mdi/cube.svg?raw";
   import {
     enter as rubikEnter,
     leave as rubikLeave,
@@ -27,28 +30,28 @@
   } from "$lib/scenes/story/scene";
   let frameID;
   let canvas;
+  let activeShowcase = 0;
 
   let showcases = [
     {
       title: $_("story.lego.title"),
       description: $_("story.lego.description"),
-      icon: "🧱",
       enter: legoEnter,
       leave: legoLeave,
     },
     {
       title: $_("story.rubik.title"),
       description: $_("story.rubik.description"),
-      icon: "🧩",
       enter: rubikEnter,
       leave: rubikLeave,
     },
     {
       title: $_("story.taiji.title"),
       description: $_("story.taiji.description"),
-      icon: "🐉",
+      init: makeDragon,
       enter: taijiEnter,
       leave: taijiLeave,
+      update: taijiUpdate,
     },
   ];
   let currentShowcase = 0;
@@ -67,14 +70,18 @@
   onMount(async () => {
     if (!browser) return;
     await init(canvas);
-    await makeDragon();
-    taijiEnter(scene);
+    for (let showcase of showcases) {
+      if (showcase.init) {
+        await showcase.init();
+      }
+    }
+    onShowcaseChange({ detail: currentShowcase });
     frameID = requestAnimationFrame(loop);
   });
 
   onDestroy(() => {
     if (!browser) return;
-    taijiLeave(scene);
+    showcaseLeave();
     cancelAnimationFrame(frameID);
     frameID = 0;
     destroy();
@@ -82,8 +89,30 @@
 
   function loop() {
     frameID = requestAnimationFrame(loop);
-    taijiUpdate();
+    showcaseUpdate();
     render();
+  }
+
+  function showcaseEnter() {
+    showcases[currentShowcase].enter(scene);
+  }
+
+  function showcaseLeave() {
+    showcases[currentShowcase].leave(scene);
+  }
+
+  function showcaseUpdate() {
+    if (!showcases[currentShowcase].update) {
+      return;
+    }
+    showcases[currentShowcase].update(scene);
+  }
+
+  function onShowcaseChange(e) {
+    let index = e.detail;
+    showcaseLeave();
+    currentShowcase = index;
+    showcaseEnter();
   }
 </script>
 
@@ -99,19 +128,10 @@
     <p>Let's build something amazing together!</p>
   </div>
   <div>
-  <!-- <Orbs iconSources={[]} /> -->
-    <button
-      on:click={() => {
-        legoEnter(scene);
-        taijiLeave(scene);
-      }}>Lego Enter</button
-    >
-    <button
-      on:click={() => {
-        legoLeave(scene);
-        taijiEnter(scene);
-      }}>Lego Leave</button
-    >
+    <Orbs
+      iconSources={[planetIcon, cubeIcon, dragonIcon]}
+      on:change={onShowcaseChange}
+    />
   </div>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas bind:this={canvas} />

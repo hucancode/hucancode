@@ -101,6 +101,10 @@ nav {
   padding-right: 1rem;
 }
 
+.relative {
+  position: relative;
+}
+
 .container {
   width: 100%;
 }
