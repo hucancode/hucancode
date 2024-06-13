@@ -53,9 +53,11 @@ async function makeDragon() {
     const RADIUS = 30;
     const SAMPLE_COUNT = 60;
     const ELEVATION = 8;
+    const ELEVATION_CYCLE = 5;
+    const MOVING_CYCLE = 3;
     for (var i = 0; i < SAMPLE_COUNT; i++) {
-      const theta = (i * Math.PI * 6) / SAMPLE_COUNT;
-      const alpha = (i * Math.PI * 10) / SAMPLE_COUNT;
+      const theta = (i * Math.PI * 2 * MOVING_CYCLE) / SAMPLE_COUNT;
+      const alpha = (i * Math.PI * 2 * ELEVATION_CYCLE) / SAMPLE_COUNT;
       const x = RADIUS * Math.cos(theta);
       const z = RADIUS * Math.sin(theta);
       const y = Math.sin(alpha) * ELEVATION;
