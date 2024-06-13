@@ -7,10 +7,16 @@ let scene, camera, renderer, controls;
 let pieces = [];
 let materials = [];
 let animation = null;
+let use_camera_control = true;
 const CANVAS_ID = "lego";
-const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
 const POOL_SIZE = 20;
+const GRADIENT_STEP = 3;
+
+export function setCameraControl(use) {
+  use_camera_control = use;
+  rebuildOrbitControl();
+}
 
 function makeLegoRing() {
   const PIECE_COUNT = 30;
@@ -24,7 +30,7 @@ function makeLegoRing() {
     );
     const rotation = Math.random() * Math.PI * 2;
     const elevation = (Math.random() - 0.5) * ELEVATION;
-    const duration = Math.random() * 2000 + 5000;
+    const duration = Math.random() * 4000 + 20000;
     ring.add(node);
     const particle = {
       node: node,
@@ -139,17 +145,17 @@ function setupLight() {
 
   const backLight = new THREE.PointLight(0x5599ff, 1);
   // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 1, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
-  backLight.position.set(0, 30, 0);
+  backLight.position.set(0, 20, 0);
   scene.add(backLight);
 
-  anime({
-    targets: backLight.position,
-    y: 15,
-    duration: 3000,
-    easing: "easeOutInCubic",
-    direction: "alternate",
-    loop: true,
-  });
+  // anime({
+  //   targets: backLight.position,
+  //   y: 15,
+  //   duration: 3000,
+  //   easing: "easeOutInCubic",
+  //   direction: "alternate",
+  //   loop: true,
+  // });
 }
 
 function buildPiecePool() {
@@ -165,10 +171,23 @@ function buildPiecePool() {
     0xef4444, //red
     0xfe640b, //orange
   ];
+  const gradients = new Uint8Array(GRADIENT_STEP);
+  for (var i = 0; i < gradients.length; i++) {
+    gradients[i] = (i / gradients.length) * 256;
+  }
+  const gradientMap = new THREE.DataTexture(
+    gradients,
+    gradients.length,
+    1,
+    THREE.RedFormat
+  );
+  gradientMap.needsUpdate = true;
 
   materials = colors
     .map((v) => new THREE.Color(v))
-    .map((color) => new THREE.MeshStandardMaterial({ color: color }));
+    .map(
+      (color) => new THREE.MeshToonMaterial({ color, gradientMap, fog: true })
+    );
 }
 
 function getRandomPieceFromPool() {
@@ -219,12 +238,18 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 50, 100);
   camera.position.set(40, 40, 40);
+  camera.lookAt(0, 0, 0);
   rebuildOrbitControl();
 }
 
 function rebuildOrbitControl() {
-  if (!USE_CAMERA_CONTROL) {
+  if (!use_camera_control) {
+    controls = null;
+    return;
+  }
+  if (!renderer || !renderer.domElement || !camera) {
     return;
   }
   controls = new OrbitControls(camera, renderer.domElement);
@@ -234,8 +259,33 @@ function rebuildOrbitControl() {
   controls.maxDistance = 100; // the maximum distance the camera must have from center
   //controls.update();
   controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
-  controls.enableRotate = true;
+  //controls.enableRotate = true;
   // controls.autoRotate = true;
+}
+
+export function animateCamera(t) {
+  // rotate camera around camera target for an amount based on t
+  if (camera) {
+    let distance = 100 - 25 * t;
+    if (camera.distance === undefined) {
+      camera.distance = camera.position.length();
+    }
+    anime({
+      targets: camera,
+      distance: distance,
+      duration: 1000,
+      update: () => {
+        camera.position.setLength(camera.distance);
+        camera.lookAt(0, 0, 0);
+      },
+      onComplete: () => {
+        if (t >= 0.9) {
+          controls.enableRotate = true;
+          controls.autoRotate = true;
+        }
+      },
+    });
+  }
 }
 
 function init() {

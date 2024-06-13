@@ -1,8 +1,7 @@
 <script>
-  import Nav from "$lib/components/nav.svelte";
-  import Contact from "$lib/components/contact.svelte";
+  import "$styles/story.css";
+  import "$styles/main-section.css";
+  import "$styles/github-icon.css";
 </script>
 
-<Nav />
 <slot />
-<Contact />

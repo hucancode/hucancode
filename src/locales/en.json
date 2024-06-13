@@ -6,8 +6,8 @@
       "contact": "Contact",
       "github": "Github",
       "blog": "Blog",
-      "sendMail": "Send me an email",
-      "downloadResume": "Download my resume"
+      "sendMail": "Email",
+      "downloadResume": "Resume"
     },
     "note": {
       "madeWith": "Made with love using Svelte, Three.js"
@@ -16,7 +16,7 @@
   "home": {
     "landing": {
       "hello": "Greetings!",
-      "about": "I am Bang, a problem solver with a strong passion for computer graphics and animation"
+      "about": "My name is Bang, I am a creative software engineer"
     },
     "showcase": {
       "rubik": "Rubik",

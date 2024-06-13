@@ -17,7 +17,7 @@
   <figure>
     <Scene bind:this={sceneInstance} />
   </figure>
-  <div role="group">
+  <div role="group" class="square">
     <a role="button" href="/">
       {@html Return}
       {$_("home.showcase.goback")}

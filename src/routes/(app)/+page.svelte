@@ -1,12 +1,20 @@
 <script>
-  import Landing from "$lib/components/landing.svelte";
-  import Skills from "$lib/components/skills.svelte";
-  export let data;
+  import Nav from "$lib/components/nav.svelte";
+  import Greetings from "$lib/components/story/greetings.svelte";
+  import Showcase from "$lib/components/story/showcase.svelte";
 </script>
 
 <svelte:head>
   <title>hucancode</title>
 </svelte:head>
+<Nav />
+<main class="container-lg">
+  <Greetings />
+  <Showcase />
+</main>
 
-<Landing />
-<Skills {data} />
+<style>
+  main {
+    padding-top: 5vh;
+  }
+</style>

@@ -1,3 +1,4 @@
+import anime from "animejs";
 import * as THREE from "three";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
@@ -73,6 +74,23 @@ function makeDragon() {
   curves.push(curve);
 }
 
+export function animateCamera(t) {
+  if (camera) {
+    let distance = 230 * t + 20;
+    if (camera.distance === undefined) {
+      camera.distance = camera.position.length();
+    }
+    anime({
+      targets: camera,
+      distance: distance,
+      duration: 1000,
+      update: () => {
+        camera.position.setLength(camera.distance);
+        camera.lookAt(0, 0, 0);
+      },
+    });
+  }
+}
 async function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
