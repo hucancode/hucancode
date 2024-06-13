@@ -27,7 +27,7 @@ let previousAutoRotation = false;
 const TAIJI_ROTATION_CIRCLE = 23000;
 const BAGUA_ROTATION_CIRCLE = 43000;
 const DRAGON_RANDOM_PATH = false;
-const DRAGON_SPEED_PERCENT_PER_FRAME = 0.6;
+const DRAGON_SPEED_PERCENT_PER_FRAME = 0.1;
 async function makeDragon() {
   let model = await loadModelStatic("dragon.glb");
   dragon = new Flow(model);
@@ -51,13 +51,14 @@ async function makeDragon() {
     }
   } else {
     const RADIUS = 30;
-    const SAMPLE_COUNT = 20;
+    const SAMPLE_COUNT = 60;
     const ELEVATION = 8;
     for (var i = 0; i < SAMPLE_COUNT; i++) {
-      const theta = (i * Math.PI * 2) / SAMPLE_COUNT;
+      const theta = (i * Math.PI * 6) / SAMPLE_COUNT;
+      const alpha = (i * Math.PI * 10) / SAMPLE_COUNT;
       const x = RADIUS * Math.cos(theta);
       const z = RADIUS * Math.sin(theta);
-      const y = Math.sin(theta * 2) * ELEVATION;
+      const y = Math.sin(alpha) * ELEVATION;
       points.push(new THREE.Vector3(x, y, z));
     }
   }
