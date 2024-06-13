@@ -6,8 +6,8 @@
       "contact": "連絡先",
       "github": "Github",
       "blog": "ブログ",
-      "sendMail": "私にメールを送る",
-      "downloadResume": "経歴書をダウンロード"
+      "sendMail": "メール",
+      "downloadResume": "経歴書"
     },
     "note": {
       "madeWith": "愛を込めてSvelte、Three.jsで作りました"

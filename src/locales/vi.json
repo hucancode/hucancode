@@ -6,8 +6,8 @@
       "contact": "Liên hệ",
       "github": "Github",
       "blog": "Blog",
-      "sendMail": "Gửi thư cho mình",
-      "downloadResume": "Tải xuống resume của mình"
+      "sendMail": "Hòm thư",
+      "downloadResume": "Lịch sử làm việc"
     },
     "note": {
       "madeWith": "Hân hạnh được tài trợ bởi Svelte, Three.js"
