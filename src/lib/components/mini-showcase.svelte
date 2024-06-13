@@ -41,7 +41,7 @@
 </script>
 
 <figure>
-  <div role="group">
+  <div role="group" class="square">
     {#each showcases as showcase}
       <label>
         <input
@@ -55,7 +55,7 @@
     {/each}
   </div>
   <svelte:component this={scene} bind:this={sceneInstance} />
-  <div role="group">
+  <div role="group" class="square">
     <button on:click={performMagic}>
       {@html Idea}
       {$_("home.showcase.surprise")}

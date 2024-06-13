@@ -29,7 +29,7 @@
 <!-- For some reason, the pagination wasn't re-rendering properly during navigation without the #key block -->
 {#key page}
   {#if lastPage > 1}
-    <div role="group">
+    <div role="group" class="square">
       {#each pages as p}
         <a
           role="button"
@@ -43,3 +43,9 @@
     </div>
   {/if}
 {/key}
+
+<style>
+  div {
+    margin-bottom: 10vh;
+  }
+</style>

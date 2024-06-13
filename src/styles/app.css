@@ -101,6 +101,10 @@ nav {
   padding-right: 1rem;
 }
 
+.relative {
+  position: relative;
+}
+
 .container {
   width: 100%;
 }
@@ -265,53 +269,78 @@ small {
   color: var(--color-neutral-800);
   background-color: var(--color-primary-50);
 }
-div[role="group"]:has(input[type="radio"]),
-div[role="group"]:has(:is(button, a[role="button"])) {
-  display: flex;
-}
 input[type="radio"] {
   display: none;
 }
-label:has(input[type="radio"]),
-:is(button, a[role="button"]) {
-  padding: 0.5em 1em;
-  font-size: medium;
+div[role="group"].square {
+  &:has(input[type="radio"], button, a[role="button"]) {
+    display: flex;
+  }
+  & :is(label:has(input[type="radio"]), button, a[role="button"]) {
+    padding: 0.5em 1em;
+    font-size: medium;
+    border-style: solid;
+    border-width: 0.075em;
+    border-color: var(--color-neutral-200);
+    color: var(--color-neutral-700);
+    background-color: var(--color-neutral-0);
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+    cursor: pointer;
+    font-size: small;
+    font-weight: 500;
+    &[small] {
+      font-size: small;
+      padding: 0.25em 0.5em;
+    }
+  }
+  & label:active:has(input[type="radio"]),
+  & :is(button, a[role="button"]):active {
+    color: var(--color-primary-900);
+  }
+  & :is(button, a[role="button"]) svg {
+    font-size: larger;
+  }
+  & label:has(input[type="radio"]:checked) {
+    background-color: var(--color-primary-50);
+  }
+  & label:hover:has(input[type="radio"]),
+  & :is(button, a[role="button"]):hover {
+    background-color: var(--color-primary-50);
+    border-color: var(--color-primary-200);
+    color: var(--color-primary-700);
+  }
+  & :is(button, a[role="button"])[disabled="true"] {
+    pointer-events: none;
+    color: var(--color-neutral-800);
+    background-color: var(--color-primary-50);
+  }
 }
 :is(h1, h2, h3, p, a, small, label, button) svg {
   height: 1.5em;
 }
-label:has(input[type="radio"])[small],
-:is(button, a[role="button"])[small] {
-  font-size: small;
-  padding: 0.25em 0.5em;
+
+.container,
+.container-sm,
+.container-md,
+.container-lg,
+.container-xl,
+.container-xxl {
+  width: 100%;
 }
-label:has(input[type="radio"]),
-:is(button, a[role="button"]) {
-  border-style: solid;
-  border-width: 0.075em;
-  border-color: var(--color-neutral-200);
-  color: var(--color-neutral-700);
-  background-color: var(--color-neutral-0);
-  display: flex;
-  gap: 0.5em;
-  align-items: center;
-  cursor: pointer;
-  font-size: small;
-  font-weight: 500;
+.container-sm {
+  max-width: 640px;
 }
-label:hover:has(input[type="radio"]),
-:is(button, a[role="button"]):hover {
-  background-color: var(--color-primary-50);
-  border-color: var(--color-primary-200);
-  color: var(--color-primary-700);
+.container-md {
+  max-width: 768px;
 }
-label:active:has(input[type="radio"]),
-:is(button, a[role="button"]):active {
-  color: var(--color-primary-900);
+.container-lg {
+  max-width: 1024px;
 }
-:is(button, a[role="button"]) svg {
-  font-size: larger;
+.container-xl {
+  max-width: 1280px;
 }
-div label:has(input[type="radio"]:checked) {
-  background-color: var(--color-primary-50);
+.container-xxl {
+  max-width: 1536px;
 }

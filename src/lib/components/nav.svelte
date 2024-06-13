@@ -8,7 +8,7 @@
 </script>
 
 <nav>
-  <div role="group">
+  <div role="group" class="square">
     <label small>
       <input bind:group={$locale} type="radio" name="language" value="en" />
       {@html Us}

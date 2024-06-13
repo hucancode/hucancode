@@ -6,8 +6,8 @@
       "contact": "連絡先",
       "github": "Github",
       "blog": "ブログ",
-      "sendMail": "私にメールを送る",
-      "downloadResume": "経歴書をダウンロード"
+      "sendMail": "メール",
+      "downloadResume": "経歴書"
     },
     "note": {
       "madeWith": "愛を込めてSvelte、Three.jsで作りました"
@@ -16,7 +16,7 @@
   "home": {
     "landing": {
       "hello": "こんにちは!",
-      "about": "バンと申します、コンピューター グラフィックスとアニメーションに強い情熱を持つ問題解決者です"
+      "about": "クリエイティブなエンジニアのバンです、よろしく"
     },
     "showcase": {
       "rubik": "ルービック",
