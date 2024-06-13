@@ -33,26 +33,19 @@
   } from "$lib/scenes/story/scene";
   let frameID;
   let canvas;
-  let activeShowcase = 0;
 
   let showcases = [
     {
-      title: $_("story.lego.title"),
-      description: $_("story.lego.description"),
       init: legoInit,
       enter: legoEnter,
       leave: legoLeave,
     },
     {
-      title: $_("story.rubik.title"),
-      description: $_("story.rubik.description"),
       init: rubikInit,
       enter: rubikEnter,
       leave: rubikLeave,
     },
     {
-      title: $_("story.taiji.title"),
-      description: $_("story.taiji.description"),
       init: taijiInit,
       enter: taijiEnter,
       leave: taijiLeave,
@@ -122,12 +115,6 @@
 </script>
 
 <section>
-  <div class="explain">
-    <h1 rainbow="1" class="xl">Greetings!</h1>
-    <h1>
-      My name is Bang, I am a creative software engineer
-    </h1>
-  </div>
   <Orbs
     iconSources={[planetIcon, cubeIcon, dragonIcon]}
     on:change={onShowcaseChange}
@@ -158,23 +145,9 @@
     }
   }
   section {
+    padding: 5rem 2rem;
+    min-height: 60vh;
     height: auto;
     flex-direction: column;
-  }
-  h1.xl {
-    font-size: 3.5rem;
-  }
-  h1 {
-    animation: bg-pingpong 2.5s ease infinite alternate;
-    background-size: 200% 100%;
-    cursor: default;
-    display: flex;
-    gap: 0.5em;
-    align-items: center;
-    text-align: center;
-  }
-  p {
-    text-align: center;
-    max-width: 640px;
   }
 </style>

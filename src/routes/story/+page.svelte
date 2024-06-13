@@ -1,10 +1,8 @@
 <script>
   import Nav from "$lib/components/nav.svelte";
-  import Lego from "$lib/components/story/lego.svelte";
-  import Rubik from "$lib/components/story/rubik.svelte";
-  import Dragon from "$lib/components/story/dragon.svelte";
-  import Taiji from "$lib/components/story/taiji.svelte";
-  import Warrior from "$lib/components/story/warrior.svelte";
+  import Greetings from "$lib/components/story/greetings.svelte";
+  import Showcase from "$lib/components/story/Showcase.svelte";
+  import Contact from "$lib/components/story/contact.svelte";
 </script>
 
 <svelte:head>
@@ -12,11 +10,9 @@
 </svelte:head>
 <Nav />
 <main class="container-lg">
-  <Lego />
-  <!-- <Rubik />
-  <Warrior />
-  <Taiji />
-  <Dragon /> -->
+  <Greetings />
+  <Showcase />
+  <Contact />
 </main>
 
 <style>

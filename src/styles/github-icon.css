@@ -39,8 +39,8 @@
     &:has(input[type="radio"]) {
       &:before {
         content: "";
-        background-color: rgb(165, 202, 254);
-        filter: blur(8em);
+        background-color: var(--color-primary-900);
+        filter: blur(3em);
         display: block;
         position: absolute;
         width: 200%;
@@ -49,7 +49,7 @@
         border-radius: 9999px;
       }
       & .halo {
-        padding: 0.08em;
+        padding: 0.04em;
         line-height: 0;
         aspect-ratio: 1;
         border-radius: 9999px;
@@ -59,7 +59,7 @@
       & .halo:before {
         content: "";
         display: block;
-        animation: spin 2s linear infinite;
+        animation: spin 10s linear infinite;
         width: 100%;
         height: 100%;
         top: 0;
@@ -110,19 +110,4 @@
 }
 .text {
   z-index: 1;
-}
-
-a {
-  text-decoration: none;
-  color: skyblue;
-  vertical-align: middle;
-}
-
-a:after {
-  margin-left: 0.5em;
-  font-size: 1.2em;
-  content: "⇢";
-}
-a:hover:after {
-  content: "⤳";
 }
