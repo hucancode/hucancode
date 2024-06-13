@@ -126,11 +126,7 @@
     <h1 rainbow="1" class="xl">Greetings!</h1>
     <h1>
       My name is Bang, I am a creative software engineer
-      <input type="checkbox" id="expander" />
-      <label for="expander">...</label>
-      <span>and I use Arch by the way 😎</span>
     </h1>
-    <p>Let's build something amazing together!</p>
   </div>
   <Orbs
     iconSources={[planetIcon, cubeIcon, dragonIcon]}

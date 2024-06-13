@@ -90,7 +90,7 @@ function makeBackground() {
   const geometry = new THREE.PlaneGeometry(50, 50);
   const ret = new THREE.Mesh(geometry, material);
   ret.rotation.x = -Math.PI / 2;
-  ret.position.y = -1;
+  ret.position.y = -3.0;
   return ret;
 }
 
@@ -139,10 +139,12 @@ function setupObject() {
   bagua = makeBagua();
   background = makeBackground();
 }
+
 async function init() {
   setupObject();
   await makeDragon();
 }
+
 function enter(scene, camera, controls) {
   previousAutoRotation = controls.autoRotate;
   controls.autoRotate = false;
@@ -212,7 +214,7 @@ function leave(scene) {
     targets: taiji.scale,
     x: 0,
     y: 0,
-    duration: 1000,
+    duration: 800,
     easing: "easeOutExpo",
     complete: () => {
       scene.remove(taiji);
@@ -220,23 +222,23 @@ function leave(scene) {
   });
   anime({
     targets: bagua.scale,
-    x: 30,
-    y: 30,
+    x: 10,
+    y: 10,
     duration: 1000,
-    easing: "easeOutExpo",
+    easing: "easeInExpo",
     complete: () => {
       scene.remove(bagua);
     },
   });
-  anime({
-    targets: background.material.uniforms.alpha,
-    value: 0,
-    duration: 1000,
-    easing: "easeOutExpo",
-    complete: () => {
-      scene.remove(background);
-    },
-  });
+  // anime({
+  //   targets: background.material.uniforms.alpha,
+  //   value: 0,
+  //   duration: 1000,
+  //   easing: "easeOutExpo",
+  //   complete: () => {
+  //     scene.remove(background);
+  //   },
+  // });
   scene.remove(background);
   scene.remove(ambientLight);
   scene.remove(dynamicLight);

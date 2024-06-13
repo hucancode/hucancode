@@ -33,21 +33,4 @@
 </div>
 
 <style>
-  .blueprint {
-    width: 100%;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    align-items: center;
-    flex: 1;
-  }
-
-  @media (max-width: 768px) {
-    .blueprint {
-      flex-direction: column;
-    }
-  }
-  .-card {
-    mask: url(#mask-stripe);
-  }
 </style>

@@ -175,6 +175,7 @@ function update() {}
 function scroll() {}
 
 function leave(scene) {
+  transferCubes();
   anime.remove(pivot.rotation);
   anime.remove(rubik.position);
   let y = rubik.position.y + 100;
