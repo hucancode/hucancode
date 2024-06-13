@@ -31,28 +31,6 @@
     </div>
   </div>
 </div>
-<svg>
-  <defs>
-    <pattern
-      id="pattern-stripe"
-      width="4"
-      height="4"
-      patternUnits="userSpaceOnUse"
-      patternTransform="rotate(45)"
-    >
-      <rect width="2" height="4" transform="translate(0,0)" fill="white" />
-    </pattern>
-    <mask id="mask-stripe">
-      <rect
-        x="0"
-        y="0"
-        width="9999px"
-        height="9999px"
-        fill="url(#pattern-stripe)"
-      />
-    </mask>
-  </defs>
-</svg>
 
 <style>
   .blueprint {

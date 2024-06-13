@@ -115,10 +115,10 @@ function makeRubik() {
       }
     }
   }
-  console.log("made cube", rubik.children.length);
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   rubik.scale.setScalar(RUBIK_SIZE);
   rubik.position.setScalar(-k * RUBIK_SIZE);
+  rubik.position.setComponent(1, rubik.position.y + 100);
   //addDebugArrow(pivot);
 }
 
@@ -145,7 +145,9 @@ function transferCubes() {
   pivot.rotation.set(0, 0, 0);
 }
 
-makeRubik();
+async function init() {
+  makeRubik();
+}
 
 function enter(scene) {
   anime.remove(rubik.position);
@@ -156,6 +158,7 @@ function enter(scene) {
   anime({
     targets: rubik.position,
     y: -k * RUBIK_SIZE,
+    easing: "easeOutElastic",
     duration: 2000,
     complete: () => {
       startMove(
@@ -187,21 +190,6 @@ function leave(scene) {
   });
 }
 
-function addDebugArrow(object) {
-  const dirZ = new THREE.Vector3(0, 0, 1);
-  const dirY = new THREE.Vector3(0, 1, 0);
-  const dirX = new THREE.Vector3(1, 0, 0);
-  const origin = THREE.Vector3.Zero; //object.position;
-  const length = 2;
-  const hex = 0x0077ff;
-  const zArrow = new THREE.ArrowHelper(dirZ, origin, length, hex);
-  object.add(zArrow);
-  const yArrow = new THREE.ArrowHelper(dirY, origin, length, hex);
-  object.add(yArrow);
-  const xArrow = new THREE.ArrowHelper(dirX, origin, length, hex);
-  object.add(xArrow);
-}
-
 function startMove(face, depth, magnitude) {
   for (var i = rubik.children.length - 1; i >= 0; i--) {
     let cube = rubik.children[i];
@@ -212,7 +200,6 @@ function startMove(face, depth, magnitude) {
       .divideScalar(1 + CUBE_MARGIN)
       .round();
     if (isInFace(p.x, p.y, p.z, face, depth)) {
-      console.log(cube.position);
       pivot.attach(cube);
     }
   }
@@ -248,4 +235,4 @@ function startMove(face, depth, magnitude) {
   });
 }
 
-export { scroll, enter, leave, update };
+export { init, scroll, enter, leave, update };

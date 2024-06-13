@@ -8,16 +8,18 @@
   import dragonIcon from "$icons/game-icons/dragon.svg?raw";
   import cubeIcon from "$icons/mdi/cube.svg?raw";
   import {
+    init as rubikInit,
     enter as rubikEnter,
     leave as rubikLeave,
   } from "$lib/scenes/story/rubik";
   import {
-    makeDragon,
+    init as taijiInit,
     update as taijiUpdate,
     enter as taijiEnter,
     leave as taijiLeave,
   } from "$lib/scenes/story/taiji";
   import {
+    init as legoInit,
     enter as legoEnter,
     leave as legoLeave,
   } from "$lib/scenes/story/lego";
@@ -27,6 +29,7 @@
     render,
     scene,
     camera,
+    controls,
   } from "$lib/scenes/story/scene";
   let frameID;
   let canvas;
@@ -36,19 +39,21 @@
     {
       title: $_("story.lego.title"),
       description: $_("story.lego.description"),
+      init: legoInit,
       enter: legoEnter,
       leave: legoLeave,
     },
     {
       title: $_("story.rubik.title"),
       description: $_("story.rubik.description"),
+      init: rubikInit,
       enter: rubikEnter,
       leave: rubikLeave,
     },
     {
       title: $_("story.taiji.title"),
       description: $_("story.taiji.description"),
-      init: makeDragon,
+      init: taijiInit,
       enter: taijiEnter,
       leave: taijiLeave,
       update: taijiUpdate,
@@ -94,18 +99,18 @@
   }
 
   function showcaseEnter() {
-    showcases[currentShowcase].enter(scene);
+    showcases[currentShowcase].enter(scene, camera, controls);
   }
 
   function showcaseLeave() {
-    showcases[currentShowcase].leave(scene);
+    showcases[currentShowcase].leave(scene, camera, controls);
   }
 
   function showcaseUpdate() {
     if (!showcases[currentShowcase].update) {
       return;
     }
-    showcases[currentShowcase].update(scene);
+    showcases[currentShowcase].update(scene, camera, controls);
   }
 
   function onShowcaseChange(e) {
@@ -127,12 +132,10 @@
     </h1>
     <p>Let's build something amazing together!</p>
   </div>
-  <div>
-    <Orbs
-      iconSources={[planetIcon, cubeIcon, dragonIcon]}
-      on:change={onShowcaseChange}
-    />
-  </div>
+  <Orbs
+    iconSources={[planetIcon, cubeIcon, dragonIcon]}
+    on:change={onShowcaseChange}
+  />
   <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas bind:this={canvas} />
   </ScrollObserver>

@@ -11,6 +11,7 @@ import {
   BAGUA_VERTEX_SHADER,
   BAGUA_FRAGMENT_SHADER,
 } from "./taiji-shaders";
+import { controls } from "./scene";
 
 let taiji;
 let bagua;
@@ -21,6 +22,7 @@ let ambientLight = null;
 let dynamicLight = null;
 const clock = new THREE.Clock();
 var time = 0;
+let previousAutoRotation = false;
 
 const TAIJI_ROTATION_CIRCLE = 23000;
 const BAGUA_ROTATION_CIRCLE = 43000;
@@ -85,10 +87,10 @@ function makeBackground() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(18, 18);
+  const geometry = new THREE.PlaneGeometry(50, 50);
   const ret = new THREE.Mesh(geometry, material);
   ret.rotation.x = -Math.PI / 2;
-  ret.position.y = -2;
+  ret.position.y = -1;
   return ret;
 }
 
@@ -137,10 +139,13 @@ function setupObject() {
   bagua = makeBagua();
   background = makeBackground();
 }
-
-setupObject();
-
-function enter(scene) {
+async function init() {
+  setupObject();
+  await makeDragon();
+}
+function enter(scene, camera, controls) {
+  previousAutoRotation = controls.autoRotate;
+  controls.autoRotate = false;
   scene.add(taiji);
   scene.add(bagua);
   scene.add(background);
@@ -202,6 +207,7 @@ function update() {
 }
 
 function leave(scene) {
+  controls.autoRotate = previousAutoRotation;
   anime({
     targets: taiji.scale,
     x: 0,
@@ -231,6 +237,7 @@ function leave(scene) {
       scene.remove(background);
     },
   });
+  scene.remove(background);
   scene.remove(ambientLight);
   scene.remove(dynamicLight);
   scene.remove(dragon.object3D);
@@ -294,4 +301,4 @@ function playAnimation() {
   animation.play();
 }
 
-export { makeDragon, enter, leave, update, playAnimation };
+export { init, enter, leave, update, playAnimation };

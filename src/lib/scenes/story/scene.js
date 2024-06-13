@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-let renderer, controls, canvas;
-export let scene, camera;
+let renderer, canvas;
+export let scene, camera, controls;
 
 export function init(element) {
   canvas = element;

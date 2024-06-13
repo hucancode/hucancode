@@ -153,10 +153,11 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
   const geometry = mergeBufferGeometries(pieces);
   return geometry;
 }
-
-buildPiecePool();
-makeLegoRing();
-makeCenterPiece();
+async function init() {
+  buildPiecePool();
+  makeLegoRing();
+  makeCenterPiece();
+}
 
 function playAnimation() {
   animation.restart();
@@ -356,4 +357,4 @@ function leave(scene) {
   });
 }
 
-export { scroll, enter, leave, update, playAnimation };
+export { init, scroll, enter, leave, update, playAnimation };
