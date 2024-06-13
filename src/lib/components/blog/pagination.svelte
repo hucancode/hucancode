@@ -43,3 +43,9 @@
     </div>
   {/if}
 {/key}
+
+<style>
+  div {
+    margin-bottom: 10vh;
+  }
+</style>

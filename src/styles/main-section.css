@@ -1,7 +1,7 @@
 main {
   gap: 5vh;
+  padding-bottom: 20vh;
   & section {
-
     width: 100%;
     min-height: 40vh;
     display: flex;
