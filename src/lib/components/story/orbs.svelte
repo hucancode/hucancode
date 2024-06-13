@@ -49,7 +49,7 @@
       }
       &:has(input[type="radio"]):hover .icon,
       &:has(input[type="radio"]:checked) .icon {
-        color: var(--color-neutral-950);
+        color: white;
       }
       &:has(input[type="radio"]:checked) {
         &:before {
@@ -72,7 +72,7 @@
           border-radius: 9999px;
         }
         & .halo {
-          padding: 0.04em;
+          padding: 0.06em;
           line-height: 0;
           aspect-ratio: 1;
           border-radius: 9999px;
@@ -107,7 +107,7 @@
         transition-duration: 300ms;
         font-size: 2rem;
         border-radius: 9999px;
-        background-color: var(--color-neutral-50);
+        background-color: black;
         line-height: 0;
         padding: 0.5em;
         aspect-ratio: 1;
@@ -115,7 +115,7 @@
         z-index: 1;
         width: 100%;
         height: 100%;
-        color: var(--color-neutral-400);
+        color: gray;
         & svg {
           width: 1em;
           height: 1em;
