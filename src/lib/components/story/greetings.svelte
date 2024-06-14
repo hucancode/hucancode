@@ -15,6 +15,7 @@
     }
   });
 </script>
+
 <section>
   <div class="explain">
     <h1 rainbow="1" class="xl">{$_("home.landing.hello")}</h1>
@@ -40,6 +41,7 @@
     </p>
   </div>
 </section>
+
 <style>
   section {
     min-height: unset;

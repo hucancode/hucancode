@@ -125,25 +125,6 @@
 </section>
 
 <style>
-  input[type="checkbox"] {
-    display: none;
-    & + label {
-      display: contents;
-      cursor: pointer;
-    }
-    & + label:hover {
-      color: var(--color-primary-500);
-    }
-    &:checked + label {
-      display: none;
-    }
-    &:checked ~ span {
-      display: contents;
-    }
-    & ~ span {
-      display: none;
-    }
-  }
   section {
     padding: 5rem 2rem;
     min-height: 60vh;
