@@ -20,9 +20,11 @@
         }}
       />
       <div class="halo">
-        <div class="icon">
-          {@html icon}
-        </div>
+      </div>
+      <div class="border">
+      </div>
+      <div class="icon">
+        {@html icon}
       </div>
     </label>
   {/each}
@@ -38,14 +40,9 @@
       aspect-ratio: 1;
       position: relative;
       &:has(input[type="radio"]) {
-        &:before {
+        & .border {
           opacity: 0;
           transition-duration: 500ms;
-        }
-        & .halo:before {
-          opacity: 0;
-          transition-delay: 300ms;
-          transition-duration: 400ms;
         }
       }
       &:has(input[type="radio"]):hover .icon,
@@ -53,40 +50,25 @@
         color: white;
       }
       &:has(input[type="radio"]:checked) {
-        &:before {
-          opacity: 1;
-        }
-        & .halo:before {
+        & .border {
           opacity: 1;
         }
       }
       &:has(input[type="radio"]) {
-        &:before {
-          content: "";
-          background-color: var(--color-primary-900);
-          filter: blur(3rem);
-          display: block;
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 9999px;
-        }
-        & .halo {
-          width: 100%;
-          height: 100%;
-          padding: 0.2rem;
-          border-radius: 9999px;
+        overflow: hidden;
+        border-radius: 9999px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        & .border {
           overflow: hidden;
-          position: relative;
-        }
-        & .halo:before {
-          content: "";
-          display: block;
           animation: spin 10s linear infinite;
+          transform-origin: 50% 50%;
           width: 100%;
           height: 100%;
           top: 0;
           left: 0;
+          z-index: -1;
           position: absolute;
           border-radius: 9999px;
           filter: blur(9px);
@@ -104,20 +86,19 @@
         }
       }
       & .icon {
+        margin: auto;
         overflow: hidden;
         display: grid;
         place-items: center;
         transition-duration: 300ms;
-        font-size: 2rem;
         border-radius: 9999px;
         background-color: black;
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        height: 100%;
+        z-index: 2;
+        width: 92%;
+        height: 92%;
         color: gray;
         & svg {
-          height: 1em;
+          height: 2rem;
         }
       }
     }
