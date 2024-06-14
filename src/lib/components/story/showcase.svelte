@@ -126,7 +126,7 @@
 
 <style>
   section {
-    padding: 5rem 2rem;
+    padding: 5rem 1rem;
     min-height: 60vh;
     height: auto;
     flex-direction: column;

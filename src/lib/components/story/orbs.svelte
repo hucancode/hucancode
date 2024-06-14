@@ -19,10 +19,9 @@
           }
         }}
       />
-      <div class="halo">
-        <div class="icon">
-          {@html icon}
-        </div>
+      <div class="border" />
+      <div class="icon">
+        {@html icon}
       </div>
     </label>
   {/each}
@@ -32,19 +31,28 @@
   .icons {
     display: flex;
     flex-wrap: wrap;
-    font-size: 3.5rem;
-    gap: 0.1em;
+    gap: 0.1rem;
+    position: relative;
+    &::before {
+      content: "";
+      position: absolute;
+      height: 100%;
+      aspect-ratio: 1;
+      translate: -50% -50%;
+      left: 50%;
+      top: 50%;
+      border-radius: 9999px;
+      background-color: white;
+      filter: blur(3rem);
+    }
     & .icon-container {
+      width: 5rem;
+      aspect-ratio: 1;
       position: relative;
       &:has(input[type="radio"]) {
-        &:before {
+        & .border {
           opacity: 0;
           transition-duration: 500ms;
-        }
-        & .halo:before {
-          opacity: 0;
-          transition-delay: 300ms;
-          transition-duration: 400ms;
         }
       }
       &:has(input[type="radio"]):hover .icon,
@@ -52,41 +60,25 @@
         color: white;
       }
       &:has(input[type="radio"]:checked) {
-        &:before {
-          opacity: 1;
-        }
-        & .halo:before {
+        & .border {
           opacity: 1;
         }
       }
       &:has(input[type="radio"]) {
-        &:before {
-          content: "";
-          background-color: var(--color-primary-900);
-          filter: blur(1em);
-          display: block;
-          position: absolute;
-          width: 200%;
-          height: 200%;
-          translate: -25% -25%;
-          border-radius: 9999px;
-        }
-        & .halo {
-          padding: 0.06em;
-          line-height: 0;
-          aspect-ratio: 1;
-          border-radius: 9999px;
+        overflow: hidden;
+        border-radius: 9999px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        & .border {
           overflow: hidden;
-          position: relative;
-        }
-        & .halo:before {
-          content: "";
-          display: block;
           animation: spin 10s linear infinite;
+          transform-origin: 50% 50%;
           width: 100%;
           height: 100%;
           top: 0;
           left: 0;
+          z-index: -1;
           position: absolute;
           border-radius: 9999px;
           filter: blur(9px);
@@ -104,21 +96,19 @@
         }
       }
       & .icon {
+        margin: auto;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
         transition-duration: 300ms;
-        font-size: 2rem;
         border-radius: 9999px;
         background-color: black;
-        line-height: 0;
-        padding: 0.5em;
-        aspect-ratio: 1;
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        height: 100%;
+        z-index: 2;
+        width: 92%;
+        height: 92%;
         color: gray;
         & svg {
-          width: 1em;
-          height: 1em;
+          height: 2rem;
         }
       }
     }
