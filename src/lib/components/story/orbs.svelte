@@ -32,7 +32,7 @@
   .icons {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.1em;
+    gap: 0.1rem;
     & .icon-container {
       width: 5rem;
       aspect-ratio: 1;
@@ -64,20 +64,17 @@
         &:before {
           content: "";
           background-color: var(--color-primary-900);
-          filter: blur(1em);
+          filter: blur(3rem);
           display: block;
           position: absolute;
-          width: 200%;
-          height: 200%;
-          translate: -25% -25%;
+          width: 100%;
+          height: 100%;
           border-radius: 9999px;
         }
         & .halo {
           width: 100%;
           height: 100%;
-          padding: 0.06em;
-          line-height: 0;
-          aspect-ratio: 1;
+          padding: 0.2rem;
           border-radius: 9999px;
           overflow: hidden;
           position: relative;
@@ -107,20 +104,19 @@
         }
       }
       & .icon {
+        overflow: hidden;
         display: grid;
         place-items: center;
         transition-duration: 300ms;
         font-size: 2rem;
         border-radius: 9999px;
         background-color: black;
-        line-height: 0;
         position: relative;
         z-index: 1;
         width: 100%;
         height: 100%;
         color: gray;
         & svg {
-          width: 1em;
           height: 1em;
         }
       }
