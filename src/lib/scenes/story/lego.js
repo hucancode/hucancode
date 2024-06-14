@@ -4,7 +4,6 @@ import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
 
 let pieces = [];
 let materials = [];
-let animation = null;
 const POOL_SIZE = 20;
 const GRADIENT_STEP = 3;
 // objects
@@ -159,10 +158,6 @@ async function init() {
   makeCenterPiece();
 }
 
-function playAnimation() {
-  animation.restart();
-}
-
 function scroll(r, scene, camera) {
   // rotate camera around camera target for an amount based on t
   if (camera) {
@@ -195,6 +190,7 @@ function enter(scene) {
   scene.add(ring);
   scene.add(cube);
   cube.scale.set(0, 0, 0);
+  const OFFSET = 5;
   anime({
     targets: cube.scale,
     y: 1,
@@ -202,13 +198,12 @@ function enter(scene) {
     z: 1,
     duration: 1500,
     complete: () => {
-      animation = anime({
+      anime({
         targets: cubePieces,
         offsetScale: 3,
         duration: 500,
         delay: anime.stagger(60),
         direction: "alternate",
-        autoplay: false,
         easing: "easeInOutElastic",
         update: () => {
           cubePieces.forEach((e) => {
@@ -357,4 +352,4 @@ function leave(scene) {
   });
 }
 
-export { init, scroll, enter, leave, update, playAnimation };
+export { init, scroll, enter, leave, update };
