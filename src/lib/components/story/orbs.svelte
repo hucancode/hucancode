@@ -32,9 +32,10 @@
   .icons {
     display: flex;
     flex-wrap: wrap;
-    font-size: 3.5rem;
     gap: 0.1em;
     & .icon-container {
+      width: 5rem;
+      aspect-ratio: 1;
       position: relative;
       &:has(input[type="radio"]) {
         &:before {
@@ -72,6 +73,8 @@
           border-radius: 9999px;
         }
         & .halo {
+          width: 100%;
+          height: 100%;
           padding: 0.06em;
           line-height: 0;
           aspect-ratio: 1;
@@ -104,13 +107,13 @@
         }
       }
       & .icon {
+        display: grid;
+        place-items: center;
         transition-duration: 300ms;
         font-size: 2rem;
         border-radius: 9999px;
         background-color: black;
         line-height: 0;
-        padding: 0.5em;
-        aspect-ratio: 1;
         position: relative;
         z-index: 1;
         width: 100%;
