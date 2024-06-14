@@ -35,6 +35,10 @@
         {$_("common.contact.github")}
       </a>
       /
+      <a target="_blank" rel="noreferrer" href="https://leetcode.com/u/hucancode">
+        {$_("common.contact.leetcode")}
+      </a>
+      /
       <a href="/blog">
         {$_("common.contact.blog")}
       </a>

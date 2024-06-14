@@ -42,8 +42,8 @@
       left: 50%;
       top: 50%;
       border-radius: 9999px;
-      background-color: white;
-      filter: blur(3rem);
+      background-color: var(--color-neutral-950);
+      filter: blur(2.5rem);
     }
     & .icon-container {
       width: 5rem;
