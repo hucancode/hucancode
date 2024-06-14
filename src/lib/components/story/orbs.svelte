@@ -19,10 +19,7 @@
           }
         }}
       />
-      <div class="halo">
-      </div>
-      <div class="border">
-      </div>
+      <div class="border" />
       <div class="icon">
         {@html icon}
       </div>
@@ -35,6 +32,19 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.1rem;
+    position: relative;
+    &::before {
+      content: "";
+      position: absolute;
+      height: 100%;
+      aspect-ratio: 1;
+      translate: -50% -50%;
+      left: 50%;
+      top: 50%;
+      border-radius: 9999px;
+      background-color: white;
+      filter: blur(3rem);
+    }
     & .icon-container {
       width: 5rem;
       aspect-ratio: 1;
