@@ -36,16 +36,19 @@
 
   let showcases = [
     {
+      icon: planetIcon,
       init: legoInit,
       enter: legoEnter,
       leave: legoLeave,
     },
     {
+      icon: cubeIcon,
       init: rubikInit,
       enter: rubikEnter,
       leave: rubikLeave,
     },
     {
+      icon: dragonIcon,
       init: taijiInit,
       enter: taijiEnter,
       leave: taijiLeave,
@@ -116,7 +119,7 @@
 
 <section>
   <Orbs
-    iconSources={[planetIcon, cubeIcon, dragonIcon]}
+    iconSources={showcases.map((showcase) => showcase.icon)}
     on:change={onShowcaseChange}
   />
   <ScrollObserver on:scroll={onScroll} threshold={30}>
