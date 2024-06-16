@@ -264,30 +264,6 @@ function enter(scene) {
       },
     });
   }
-  // animate light into the scene
-  anime.remove(hemiLight.position);
-  anime.remove(backLight.position);
-  anime.remove(light.position);
-  scene.add(backLight);
-  scene.add(hemiLight);
-  scene.add(light);
-  anime({
-    targets: hemiLight.position,
-    y: 30,
-    duration: 500,
-  });
-  anime({
-    targets: backLight.position,
-    y: 20,
-    delay: 100,
-    duration: 600,
-  });
-  anime({
-    targets: light.position,
-    y: 0,
-    delay: 300,
-    duration: 800,
-  });
 }
 
 function update(scene) {}
@@ -302,7 +278,7 @@ function leave(scene) {
     x: 0,
     z: 0,
     duration: 700,
-    easing: "easeInOutSine",
+    easing: "easeOutExpo",
     complete: () => {
       anime.remove(cube.rotation);
       cube.removeFromParent();
@@ -310,44 +286,14 @@ function leave(scene) {
   });
   anime({
     targets: ring.scale,
-    x: 5,
-    y: 5,
-    z: 5,
+    x: 10,
+    y: 10,
+    z: 10,
     delay: 300,
     duration: 1000,
     easing: "easeInOutQuad",
     complete: () => {
       ring.removeFromParent();
-    },
-  });
-  // animate light out of the scene
-  anime.remove(hemiLight.position);
-  anime.remove(backLight.position);
-  anime.remove(light.position);
-  anime({
-    targets: hemiLight.position,
-    y: 200,
-    duration: 500,
-    complete: () => {
-      hemiLight.removeFromParent();
-    },
-  });
-  anime({
-    targets: backLight.position,
-    y: -200,
-    delay: 300,
-    duration: 500,
-    complete: () => {
-      backLight.removeFromParent();
-    },
-  });
-  anime({
-    targets: light.position,
-    y: 100,
-    delay: 400,
-    duration: 600,
-    complete: () => {
-      light.removeFromParent();
     },
   });
 }
