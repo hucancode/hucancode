@@ -136,22 +136,34 @@ function setupObject() {
     easing: "easeOutExpo",
     begin: () => {
       taiji.material.uniforms.alpha.value = 1;
-    }
+    },
   });
   taiji.scale.setScalar(0.5);
   taiji.position.y = 120;
-  taijiEnterTimeline.add({
-    targets: taiji.scale,
-    x: 1,
-    y: 1,
-  }, 500).add({
-    targets: taiji.rotation,
-    z: Math.PI * 10,
-  }, 0).add({
-    targets: taiji.position,
-    y: 0.1,
-    duration: 1000,
-  }, 0);
+  taijiEnterTimeline
+    .add(
+      {
+        targets: taiji.scale,
+        x: 1,
+        y: 1,
+      },
+      500
+    )
+    .add(
+      {
+        targets: taiji.rotation,
+        z: Math.PI * 10,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taiji.position,
+        y: 0.1,
+        duration: 1000,
+      },
+      0
+    );
   taijiLeaveTimeline = anime.timeline({
     autoplay: false,
     duration: 2000,
@@ -159,18 +171,30 @@ function setupObject() {
   });
   taiji.position.y = 0.1;
   taiji.scale.setScalar(1);
-  taijiLeaveTimeline.add({
-    targets: taiji.scale,
-    x: 3,
-    y: 3,
-  }, 0).add({
-    targets: taiji.rotation,
-    z: Math.PI * 2,
-  }, 0).add({
-    targets: taiji.material.uniforms.alpha,
-    value: 0,
-    easing: "easeOutExpo",
-  }, 0);
+  taijiLeaveTimeline
+    .add(
+      {
+        targets: taiji.scale,
+        x: 3,
+        y: 3,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taiji.rotation,
+        z: Math.PI * 2,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taiji.material.uniforms.alpha,
+        value: 0,
+        easing: "easeOutExpo",
+      },
+      0
+    );
   bagua = makeBagua();
   background = makeBackground();
 }
@@ -236,7 +260,7 @@ function leave(scene) {
   taijiLeaveTimeline.restart();
   taijiLeaveTimeline.finished.then(() => {
     scene.remove(taiji);
-  })
+  });
   anime({
     targets: bagua.scale,
     x: 10,
