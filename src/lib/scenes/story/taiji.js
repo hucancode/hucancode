@@ -102,7 +102,7 @@ function makeTaiji() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(30, 30);
+  const geometry = new THREE.PlaneGeometry(27, 27);
   const ret = new THREE.Mesh(geometry, material);
   ret.scale.x = ret.scale.y = 0;
   ret.rotation.x = -Math.PI / 2;
@@ -176,8 +176,8 @@ function setupObject() {
     .add(
       {
         targets: taiji.scale,
-        x: 3,
-        y: 3,
+        x: 4,
+        y: 4,
       },
       0
     )
