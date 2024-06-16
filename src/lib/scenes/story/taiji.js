@@ -76,6 +76,7 @@ function makeBackground() {
   const material = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0.0 },
+      alpha: { value: 1.0 },
     },
     vertexShader: BACKGROUND_VERTEX_SHADER,
     fragmentShader: BACKGROUND_FRAGMENT_SHADER,
@@ -221,11 +222,12 @@ function enter(scene, camera, controls) {
     duration: 1000,
     easing: "easeOutExpo",
   });
+  background.material.uniforms.alpha.value = 0.0;
   anime({
     targets: background.material.uniforms.alpha,
     value: 1,
     duration: 1000,
-    easing: "easeOutExpo",
+    easing: "linear",
   });
   scene.add(dragon.object3D);
   anime.remove(dragon.object3D.scale);
@@ -271,7 +273,19 @@ function leave(scene) {
       scene.remove(bagua);
     },
   });
-  scene.remove(background);
+  anime({
+    targets: background.material.uniforms.alpha,
+    value: 0,
+    duration: 1000,
+    easing: "linear",
+    complete: () => {
+      scene.remove(background);
+    },
+    update: () => {
+      time += clock.getDelta();
+      background.material.uniforms.time.value = time * 4;
+    },
+  });
   anime.remove(dragon.object3D.scale);
   anime({
     targets: dragon.object3D.scale,

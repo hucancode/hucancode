@@ -101,7 +101,7 @@ float fbm ( in vec2 _st) {
 void main() {
     vec2 st = vUV*3.0;
     float d = length(st - vec2(1.5));
-    float circle = 1.0-smoothstep(0.3,1.5, d);
+    float circle = smoothstep(1.5,0.3, d) * alpha;
     // st += st * abs(sin(time*0.1)*3.0);
     vec3 color = vec3(0.0);
 
@@ -178,7 +178,7 @@ float bar(int x, vec2 uv) {
 // stem = bar x3
 float stem(int x, vec2 uv) {
     // eliminated a for loop, thanks https://www.shadertoy.com/user/FabriceNeyret2
-    int bit = int(0.5 - (uv.y + CIRCLE_RADIUS * 0.5)/(BAR_HEIGHT+BAR_MARGIN)); 
+    int bit = int(0.5 - (uv.y + CIRCLE_RADIUS * 0.5)/(BAR_HEIGHT+BAR_MARGIN));
     if(bit < 0 || bit >= BIT_COUNT) {
         return 0.0;
     }
@@ -200,7 +200,7 @@ float bagua(vec2 uv) {
     // eliminated a for loop, thanks https://www.shadertoy.com/user/FabriceNeyret2
     int n = (1<<BIT_COUNT);
     float i = round(float(n)*(0.75 - atan(uv.y,uv.x)/PIX2));
-    return stem(int(i), uv * rotateMat(i*PIX2/float(n))); 
+    return stem(int(i), uv * rotateMat(i*PIX2/float(n)));
     // naive approach
     float ret = 0.0;
     for(int i = 0;i<n;i++) {
