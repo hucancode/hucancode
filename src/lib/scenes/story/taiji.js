@@ -48,7 +48,7 @@ async function makeDragon() {
       );
     }
   } else {
-    const RADIUS = 30;
+    const RADIUS = 34;
     const SAMPLE_COUNT = 60;
     const ELEVATION = 8;
     const ELEVATION_CYCLE = 5;
@@ -82,10 +82,10 @@ function makeBackground() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(50, 50);
+  const geometry = new THREE.PlaneGeometry(60, 60);
   const ret = new THREE.Mesh(geometry, material);
   ret.rotation.x = -Math.PI / 2;
-  ret.position.y = -3.0;
+  ret.position.y = -0.1;
   return ret;
 }
 
@@ -101,7 +101,7 @@ function makeTaiji() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(20, 20);
+  const geometry = new THREE.PlaneGeometry(30, 30);
   const ret = new THREE.Mesh(geometry, material);
   ret.scale.x = ret.scale.y = 0;
   ret.rotation.x = -Math.PI / 2;
@@ -118,7 +118,7 @@ function makeBagua() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(65, 65);
+  const geometry = new THREE.PlaneGeometry(90, 90);
   const ret = new THREE.Mesh(geometry, material);
   ret.scale.x = ret.scale.y = 30;
   ret.rotation.x = -Math.PI / 2;
@@ -156,7 +156,7 @@ function enter(scene, camera, controls) {
     duration: 1000,
     easing: "easeOutExpo",
     complete: () => {
-      playAnimation(scene);
+      dropTaiji(scene);
     },
   });
   anime({
@@ -265,9 +265,9 @@ function leave(scene) {
   });
 }
 
-function playAnimation(scene) {
+function dropTaiji(scene) {
   const particle = makeTaiji();
-  particle.scale.x = particle.scale.y = 1;
+  particle.scale.x = particle.scale.y = 0.75;
   particle.position.y = 30;
   // use HSL to guaranteed 2 colors has acceptable contrast
   particle.material.uniforms.color1.value.setHSL(
@@ -306,8 +306,8 @@ function playAnimation(scene) {
       {
         targets: particle.scale,
         easing: "easeInOutQuad",
-        x: 6,
-        y: 6,
+        x: 3,
+        y: 3,
       },
       400
     )
