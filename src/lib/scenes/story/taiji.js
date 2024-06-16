@@ -21,9 +21,9 @@ let curve = null;
 const clock = new THREE.Clock();
 var time = 0;
 let previousAutoRotation = false;
+let taijiEnterTimeline = null;
+let taijiLeaveTimeline = null;
 
-const TAIJI_ROTATION_CIRCLE = 23000;
-const BAGUA_ROTATION_CIRCLE = 43000;
 const DRAGON_RANDOM_PATH = false;
 const DRAGON_SPEED_PERCENT_PER_FRAME = 0.1;
 async function makeDragon() {
@@ -130,7 +130,71 @@ function setupObject() {
   // const axesHelper = new THREE.AxesHelper(5);
   // scene.add(axesHelper);
   taiji = makeTaiji();
-  taiji.material.uniforms.alpha.value = 0.9;
+  taijiEnterTimeline = anime.timeline({
+    autoplay: false,
+    duration: 2000,
+    easing: "easeOutExpo",
+    begin: () => {
+      taiji.material.uniforms.alpha.value = 1;
+    },
+  });
+  taiji.scale.setScalar(0.5);
+  taiji.position.y = 120;
+  taijiEnterTimeline
+    .add(
+      {
+        targets: taiji.scale,
+        x: 1,
+        y: 1,
+      },
+      500
+    )
+    .add(
+      {
+        targets: taiji.rotation,
+        z: Math.PI * 10,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taiji.position,
+        y: 0.1,
+        duration: 1000,
+      },
+      0
+    );
+  taijiLeaveTimeline = anime.timeline({
+    autoplay: false,
+    duration: 2000,
+    easing: "linear",
+  });
+  taiji.position.y = 0.1;
+  taiji.scale.setScalar(1);
+  taijiLeaveTimeline
+    .add(
+      {
+        targets: taiji.scale,
+        x: 3,
+        y: 3,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taiji.rotation,
+        z: Math.PI * 2,
+      },
+      0
+    )
+    .add(
+      {
+        targets: taiji.material.uniforms.alpha,
+        value: 0,
+        easing: "easeOutExpo",
+      },
+      0
+    );
   bagua = makeBagua();
   background = makeBackground();
 }
@@ -146,19 +210,10 @@ function enter(scene, camera, controls) {
   scene.add(taiji);
   scene.add(bagua);
   scene.add(background);
-  anime.remove(taiji.scale);
+  taijiLeaveTimeline.pause();
+  taijiEnterTimeline.restart();
   anime.remove(bagua.scale);
   anime.remove(background.material.uniforms.alpha);
-  anime({
-    targets: taiji.scale,
-    x: 1,
-    y: 1,
-    duration: 1000,
-    easing: "easeOutExpo",
-    complete: () => {
-      dropTaiji(scene);
-    },
-  });
   anime({
     targets: bagua.scale,
     x: 1,
@@ -171,14 +226,6 @@ function enter(scene, camera, controls) {
     value: 1,
     duration: 1000,
     easing: "easeOutExpo",
-  });
-  anime.remove(taiji.rotation);
-  anime({
-    targets: taiji.rotation,
-    z: Math.PI * 2,
-    duration: TAIJI_ROTATION_CIRCLE,
-    easing: "linear",
-    loop: true,
   });
   scene.add(dragon.object3D);
   anime.remove(dragon.object3D.scale);
@@ -209,15 +256,10 @@ function update() {
 
 function leave(scene) {
   controls.autoRotate = previousAutoRotation;
-  anime({
-    targets: taiji.scale,
-    x: 0,
-    y: 0,
-    duration: 800,
-    easing: "easeOutExpo",
-    complete: () => {
-      scene.remove(taiji);
-    },
+  taijiEnterTimeline.pause();
+  taijiLeaveTimeline.restart();
+  taijiLeaveTimeline.finished.then(() => {
+    scene.remove(taiji);
   });
   anime({
     targets: bagua.scale,
@@ -229,15 +271,6 @@ function leave(scene) {
       scene.remove(bagua);
     },
   });
-  // anime({
-  //   targets: background.material.uniforms.alpha,
-  //   value: 0,
-  //   duration: 1000,
-  //   easing: "easeOutExpo",
-  //   complete: () => {
-  //     scene.remove(background);
-  //   },
-  // });
   scene.remove(background);
   anime.remove(dragon.object3D.scale);
   anime({
@@ -263,64 +296,6 @@ function leave(scene) {
       dragon.moveAlongCurve(dragon.speed);
     },
   });
-}
-
-function dropTaiji(scene) {
-  const particle = makeTaiji();
-  particle.scale.x = particle.scale.y = 0.75;
-  particle.position.y = 30;
-  // use HSL to guaranteed 2 colors has acceptable contrast
-  particle.material.uniforms.color1.value.setHSL(
-    Math.random(),
-    Math.random(),
-    Math.random() * 0.2 + 0.8
-  );
-  particle.material.uniforms.color2.value.setHSL(
-    Math.random(),
-    Math.random(),
-    Math.random() * 0.2
-  );
-  const animation = anime.timeline({
-    duration: 1500,
-    easing: "easeOutExpo",
-    complete: () => {
-      particle.removeFromParent();
-    },
-  });
-  animation
-    .add(
-      {
-        targets: particle.rotation,
-        z: Math.PI * 6,
-      },
-      0
-    )
-    .add(
-      {
-        targets: particle.position,
-        y: Math.random(), // avoid z-fighting
-      },
-      0
-    )
-    .add(
-      {
-        targets: particle.scale,
-        easing: "easeInOutQuad",
-        x: 3,
-        y: 3,
-      },
-      400
-    )
-    .add(
-      {
-        targets: particle.material.uniforms.alpha,
-        easing: "easeInOutQuad",
-        value: 0,
-      },
-      100
-    );
-  scene.add(particle);
-  animation.play();
 }
 
 export { init, enter, leave, update };
