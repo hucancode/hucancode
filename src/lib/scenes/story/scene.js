@@ -22,7 +22,25 @@ export function init(element) {
     return;
   }
   setupCamera(w, h);
+  setupLights();
   window.addEventListener("resize", onWindowResize);
+}
+
+function setupLights() {
+  const ambientLight = new THREE.AmbientLight(0x003973);
+  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 1);
+  const dynamicLight = new THREE.PointLight(0xffffff);
+  // dynamicLight.add(
+  //   new THREE.Mesh(
+  //     new THREE.SphereGeometry(2, 16, 8),
+  //     new THREE.MeshBasicMaterial({ color: 0xffffff })
+  //   )
+  // );
+  hemiLight.position.set(0, 30, 0);
+  dynamicLight.position.set(0, 25, 0);
+  scene.add(ambientLight);
+  scene.add(hemiLight);
+  scene.add(dynamicLight);
 }
 
 function onWindowResize() {
