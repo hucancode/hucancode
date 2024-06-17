@@ -146,6 +146,7 @@
     position: relative;
     width: 100%;
     aspect-ratio: 4/3;
+    display: flex;
   }
   section {
     padding: 5rem 1rem;
