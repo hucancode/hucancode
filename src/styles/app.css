@@ -26,31 +26,33 @@
   --color-primary-950: rgb(30 39 54);
 }
 
-:host,
-.dark {
-  --color-neutral-950: rgb(215, 224, 254);
-  --color-neutral-950: rgb(215, 224, 254);
-  --color-neutral-900: rgb(166, 173, 200);
-  --color-neutral-800: rgb(147, 153, 178);
-  --color-neutral-700: rgb(127, 132, 156);
-  --color-neutral-600: rgb(108, 112, 134);
-  --color-neutral-500: rgb(88, 91, 112);
-  --color-neutral-400: rgb(69, 71, 90);
-  --color-neutral-300: rgb(49, 50, 68);
-  --color-neutral-200: rgb(30, 30, 46);
-  --color-neutral-100: rgb(24, 24, 37);
-  --color-neutral-50: rgb(17, 17, 27);
-  --color-primary-950: rgb(248 249 255);
-  --color-primary-900: rgb(232 235 255);
-  --color-primary-800: rgb(215 220 254);
-  --color-primary-700: rgb(196 204 254);
-  --color-primary-600: rgb(173 182 244);
-  --color-primary-500: rgb(148 157 210);
-  --color-primary-400: rgb(123 129 173);
-  --color-primary-300: rgb(100 106 142);
-  --color-primary-200: rgb(83 87 117);
-  --color-primary-100: rgb(59 62 83);
-  --color-primary-50: rgb(36 38 51);
+@media (prefers-color-scheme: dark) {
+  :root,
+  :host {
+    --color-neutral-950: rgb(215, 224, 254);
+    --color-neutral-950: rgb(215, 224, 254);
+    --color-neutral-900: rgb(166, 173, 200);
+    --color-neutral-800: rgb(147, 153, 178);
+    --color-neutral-700: rgb(127, 132, 156);
+    --color-neutral-600: rgb(108, 112, 134);
+    --color-neutral-500: rgb(88, 91, 112);
+    --color-neutral-400: rgb(69, 71, 90);
+    --color-neutral-300: rgb(49, 50, 68);
+    --color-neutral-200: rgb(30, 30, 46);
+    --color-neutral-100: rgb(24, 24, 37);
+    --color-neutral-50: rgb(17, 17, 27);
+    --color-primary-950: rgb(248 249 255);
+    --color-primary-900: rgb(232 235 255);
+    --color-primary-800: rgb(215 220 254);
+    --color-primary-700: rgb(196 204 254);
+    --color-primary-600: rgb(173 182 244);
+    --color-primary-500: rgb(148 157 210);
+    --color-primary-400: rgb(123 129 173);
+    --color-primary-300: rgb(100 106 142);
+    --color-primary-200: rgb(83 87 117);
+    --color-primary-100: rgb(59 62 83);
+    --color-primary-50: rgb(36 38 51);
+  }
 }
 
 :not(:defined) {
@@ -99,6 +101,10 @@ nav {
   justify-content: space-between;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+nav:has(> :only-child) {
+  justify-content: center;
 }
 
 .relative {

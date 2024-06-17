@@ -1,5 +1,5 @@
 <script>
-  import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
+  // import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
 </script>
 
 <nav>
@@ -14,7 +14,6 @@
       <h2>About</h2>
     </a>
   </div>
-  <ThemeSwitcher />
 </nav>
 
 <style>
