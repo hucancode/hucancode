@@ -50,9 +50,14 @@
       aspect-ratio: 1;
       position: relative;
       &:has(input[type="radio"]) {
+        &:hover .border {
+          opacity: 0.2;
+        }
         & .border {
           opacity: 0;
-          transition-duration: 500ms;
+          transform: rotate(-90deg);
+          transition-duration: 800ms;
+          transition-timing-function: ease-in-out;
         }
       }
       &:has(input[type="radio"]):hover .icon,
@@ -62,6 +67,7 @@
       &:has(input[type="radio"]:checked) {
         & .border {
           opacity: 1;
+          transform: rotate(0deg);
         }
       }
       &:has(input[type="radio"]) {
@@ -71,24 +77,18 @@
         display: flex;
         align-items: center;
         & .border {
-          overflow: hidden;
-          animation: spin 10s linear infinite;
-          transform-origin: 50% 50%;
           width: 100%;
           height: 100%;
-          top: 0;
-          left: 0;
           z-index: -1;
           position: absolute;
-          border-radius: 9999px;
           filter: blur(9px);
           background-repeat: no-repeat;
           background-size: 50% 50%, 50% 50%;
           background-position: 0 0, 100% 0, 100% 100%, 0 100%;
-          --color-1: rgb(220, 250, 19);
-          --color-2: rgb(131, 66, 251);
-          --color-3: rgb(38, 23, 249);
-          --color-4: rgb(245, 19, 32);
+          --color-1: rgb(17, 255, 108);
+          --color-2: rgb(192, 181, 255);
+          --color-3: rgb(0, 13, 255);
+          --color-4: rgb(23, 112, 255);
           background-image: linear-gradient(var(--color-1), var(--color-1)),
             linear-gradient(var(--color-2), var(--color-2)),
             linear-gradient(var(--color-3), var(--color-3)),
@@ -111,15 +111,6 @@
           height: 2rem;
         }
       }
-    }
-  }
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
     }
   }
 </style>

@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
-  import Moon from "$icons/line-md/moon.svg?raw";
-  import Sun from "$icons/line-md/sunny.svg?raw";
+  import Moon from "$icons/google-material/dark-mode.svg?raw";
+  import Sun from "$icons/google-material/light-mode.svg?raw";
 
   let isDarkMode = false;
 

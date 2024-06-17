@@ -4,7 +4,7 @@
   import Us from "$icons/openmoji/flag-us.svg?raw";
   import Vi from "$icons/openmoji/flag-vi.svg?raw";
   import Banana from "$icons/fluent/banana.svg?raw";
-  import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
+  // import ThemeSwitcher from "$lib/components/theme-switcher.svelte";
 </script>
 
 <nav>
@@ -26,5 +26,4 @@
       {@html Banana}
     </label>
   </div>
-  <ThemeSwitcher />
 </nav>
