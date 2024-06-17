@@ -17,7 +17,9 @@
   "home": {
     "landing": {
       "hello": "Bellō!!",
-      "about": "Bang taki suki banana! taru maruhiko underwear!"
+      "about": "Bang taki suki banana! taru maruhiko underwear!",
+      "noscript": "Ka watermelon banana tem tot makit anime ohoi, wang zhong yang Javascript da majik",
+      "enablejs": "Oke JavaScript moak ottoke"
     },
     "showcase": {
       "rubik": "Cucumber",

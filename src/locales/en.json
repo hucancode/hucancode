@@ -17,7 +17,9 @@
   "home": {
     "landing": {
       "hello": "Greetings!",
-      "about": "My name is Bang, I am a creative software engineer"
+      "about": "My name is Bang, I am a creative software engineer",
+      "noscript": "I have prepared some cool 3D animations for you, but you need to enable JavaScript to see them",
+      "enablejs": "See how to enable JavaScript in your browser here"
     },
     "showcase": {
       "rubik": "Rubik",
