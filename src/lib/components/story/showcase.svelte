@@ -122,6 +122,11 @@
     iconSources={showcases.map((showcase) => showcase.icon)}
     on:change={onShowcaseChange}
   />
+  <noscript>
+    <p>{$_("home.landing.noscript")}<br/>
+    <a href="https://www.enable-javascript.com/">{$_("home.landing.enablejs")}</a>
+    </p>
+  </noscript>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
     <canvas bind:this={canvas} />
   </ScrollObserver>
@@ -133,5 +138,9 @@
     min-height: 60vh;
     height: auto;
     flex-direction: column;
+  }
+  p {
+    text-align: center;
+    margin-top: 1rem;
   }
 </style>
