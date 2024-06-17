@@ -2,6 +2,7 @@
   import { _ } from "$lib/i18n";
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
+  import { scale } from "svelte/transition";
   import ScrollObserver from "$lib/components/scroll-observer.svelte";
   import Orbs from "$lib/components/story/orbs.svelte";
   import planetIcon from "$icons/ph/planet.svg?raw";
@@ -33,6 +34,7 @@
   } from "$lib/scenes/story/scene";
   let frameID;
   let canvas;
+  let ready = false;
 
   let showcases = [
     {
@@ -70,6 +72,7 @@
   }
   onMount(async () => {
     if (!browser) return;
+    ready = false;
     await init(canvas);
     for (let showcase of showcases) {
       if (showcase.init) {
@@ -78,6 +81,7 @@
     }
     onShowcaseChange({ detail: currentShowcase });
     frameID = requestAnimationFrame(loop);
+    ready = true;
   });
 
   onDestroy(() => {
@@ -128,11 +132,21 @@
     </p>
   </noscript>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
-    <canvas bind:this={canvas} />
+    <div>
+      <canvas bind:this={canvas} />
+      {#if !ready}
+        <span out:scale={{ start: 3.0, duration: 800 }} />
+      {/if}
+    </div>
   </ScrollObserver>
 </section>
 
 <style>
+  div {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+  }
   section {
     padding: 5rem 1rem;
     min-height: 60vh;
@@ -142,5 +156,26 @@
   p {
     text-align: center;
     margin-top: 1rem;
+  }
+  span {
+    z-index: 10;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 4rem;
+    aspect-ratio: 1;
+    border: 0.8rem solid var(--color-primary-500);
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    animation: rotation 1s linear infinite;
+  }
+  @keyframes rotation {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
