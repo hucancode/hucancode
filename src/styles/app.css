@@ -153,11 +153,11 @@ hr {
 
 a {
   text-decoration: none;
-  color: var(--color-primary-500);
+  color: var(--color-primary-700);
 }
 
 a:hover {
-  color: var(--color-primary-600);
+  color: var(--color-primary-800);
 }
 
 h1 {
