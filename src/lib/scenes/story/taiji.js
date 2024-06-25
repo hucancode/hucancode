@@ -7,21 +7,24 @@ import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
 import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
 import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
 import { controls } from "./scene";
-
+import { wait } from "$lib/utils.js";
 let taiji;
 let bagua;
 let background;
 let dragon = null;
 let curve = null;
+let dragonScene = null;
 const clock = new THREE.Clock();
 var time = 0;
 let previousAutoRotation = false;
+let dragonComeLate = false;
 let taijiEnterTimeline = null;
 let taijiLeaveTimeline = null;
 
 const DRAGON_RANDOM_PATH = false;
 const DRAGON_SPEED_PERCENT_PER_FRAME = 0.1;
 async function makeDragon() {
+  await wait(3000); // simulate loading time
   let model = await loadModelStatic("dragon.glb");
   dragon = new Flow(model);
   const points = [];
@@ -65,6 +68,9 @@ async function makeDragon() {
   // dragon.object3D.scale.set(0.65, 0.65, 0.65);
   dragon.object3D.scale.set(7, 7, 7);
   dragon.speed = 0;
+  if (dragonComeLate) {
+    animateDragon(dragonScene);
+  }
 }
 
 function makeBackground() {
@@ -195,14 +201,12 @@ function setupObject() {
   background = makeBackground();
 }
 
-async function init() {
+function init() {
   setupObject();
-  await makeDragon();
+  makeDragon();
 }
 
-function enter(scene, camera, controls) {
-  previousAutoRotation = controls.autoRotate;
-  controls.autoRotate = false;
+function animateTaiji(scene) {
   scene.add(taiji);
   scene.add(bagua);
   scene.add(background);
@@ -224,6 +228,15 @@ function enter(scene, camera, controls) {
     duration: 1000,
     easing: "linear",
   });
+}
+
+function animateDragon(scene) {
+  if(!dragon || !dragon.object3D) {
+    dragonComeLate = true;
+    dragonScene = scene;
+    return;
+  }
+  dragonComeLate = false;
   scene.add(dragon.object3D);
   anime.remove(dragon.object3D.scale);
   anime({
@@ -242,16 +255,25 @@ function enter(scene, camera, controls) {
     duration: 1000,
   });
 }
+function enter(scene, camera, controls) {
+  previousAutoRotation = controls.autoRotate;
+  controls.autoRotate = false;
+  animateTaiji(scene);
+  animateDragon(scene);
+}
 
 function update() {
   time += clock.getDelta();
   if (background) {
     background.material.uniforms.time.value = time * 4;
   }
-  dragon.moveAlongCurve(dragon.speed);
+  if(dragon) {
+    dragon.moveAlongCurve(dragon.speed);
+  }
 }
 
 function leave(scene) {
+  dragonComeLate = false;
   controls.autoRotate = previousAutoRotation;
   taijiEnterTimeline.pause();
   taijiLeaveTimeline.restart();

@@ -152,7 +152,7 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
   const geometry = mergeBufferGeometries(pieces);
   return geometry;
 }
-async function init() {
+function init() {
   buildPiecePool();
   makeLegoRing();
   makeCenterPiece();

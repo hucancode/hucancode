@@ -76,7 +76,7 @@
     await init(canvas);
     for (let showcase of showcases) {
       if (showcase.init) {
-        await showcase.init();
+        showcase.init();
       }
     }
     onShowcaseChange({ detail: currentShowcase });
