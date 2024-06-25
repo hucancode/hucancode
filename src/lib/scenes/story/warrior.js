@@ -8,21 +8,22 @@ let isWaitingForResource = false;
 let loading = true;
 let waitingScene = null;
 const clock = new THREE.Clock();
+const POSITION_Y = -18;
+const SCALE = 15;
+const FIRST_LOAD_DELAY = 750;
 let warriorParams = {
   y: -50,
   scale: 1,
 };
-const SCALE = 11;
-const FIRST_LOAD_DELAY = 500;
 
 async function buildScene() {
   hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
   // hemiLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0x0400ff } ) ) );
-  hemiLight.position.set(0, 30, 0);
+  hemiLight.position.set(0, POSITION_Y + 30, 0);
   hemiLight.intensity = 0;
   backLight = new THREE.PointLight(0xffffff, 1, 600);
   // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
-  backLight.position.set(0, 18, -10);
+  backLight.position.set(0, POSITION_Y + 18, -10);
   backLight.intensity = 0;
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
@@ -73,7 +74,7 @@ async function animateWarriorIn(scene) {
     return;
   }
   isWaitingForResource = false;
-  warriorParams.y = -50;
+  warriorParams.y = POSITION_Y - 50;
   warriorParams.scale = 0;
   scene.add(warrior.scene);
   if(loading) {
@@ -83,7 +84,7 @@ async function animateWarriorIn(scene) {
   anime.remove(warriorParams);
   anime({
     targets: warriorParams,
-    y: 0,
+    y: POSITION_Y,
     scale: SCALE*0.1,
     duration: 750,
     easing: "easeInElastic",
@@ -139,7 +140,7 @@ function animateWarriorOut(scene) {
   anime.remove(warriorParams);
   anime({
     targets: warriorParams,
-    y: 50,
+    y: POSITION_Y + 50,
     scale: 0,
     duration: 1000,
     easing: "easeInElastic",
