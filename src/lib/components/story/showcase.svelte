@@ -135,6 +135,10 @@
   }
 </script>
 
+<svelte:head>
+  <link rel="preload" href="/assets/gltf/dragon.glb" as="fetch" />
+  <link rel="preload" href="/assets/gltf/warrior.glb" as="fetch" />
+</svelte:head>
 <section>
   <Orbs
     iconSources={showcases.map((showcase) => showcase.icon)}
