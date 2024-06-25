@@ -1,15 +1,19 @@
 import * as THREE from "three";
 import anime from "animejs";
-import { loadModel } from "$lib/utils.js";
+import { loadModel, wait } from "$lib/utils.js";
+
 let warrior, animator;
 let hemiLight, backLight;
 let isWaitingForResource = false;
+let loading = true;
 let waitingScene = null;
 const clock = new THREE.Clock();
 let warriorParams = {
   y: -50,
   scale: 1,
 };
+const SCALE = 11;
+const FIRST_LOAD_DELAY = 500;
 
 async function buildScene() {
   hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
@@ -22,7 +26,8 @@ async function buildScene() {
   backLight.intensity = 0;
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
-  warrior.scene.scale.set(10, 10, 10);
+  warrior.scene.position.set(0,-50, 0);
+  // warrior.scene.scale.set(1, 1, 1);
   if (isWaitingForResource) {
     animateWarriorIn(waitingScene);
   }
@@ -57,11 +62,11 @@ async function playAction(callback) {
   animator.addEventListener("finished", callback);
 }
 
-function init() {
-  buildScene();
+async function init() {
+  await buildScene();
 }
 
-function animateWarriorIn(scene) {
+async function animateWarriorIn(scene) {
   if (!warrior || !warrior.scene) {
     isWaitingForResource = true;
     waitingScene = scene;
@@ -69,27 +74,30 @@ function animateWarriorIn(scene) {
   }
   isWaitingForResource = false;
   warriorParams.y = -50;
+  warriorParams.scale = 0;
+  scene.add(warrior.scene);
+  if(loading) {
+    await wait(FIRST_LOAD_DELAY);
+    loading = false;
+  }
   anime.remove(warriorParams);
   anime({
     targets: warriorParams,
     y: 0,
-    scale: 2,
+    scale: SCALE*0.1,
     duration: 750,
     easing: "easeInElastic",
-    begin: () => {
-      scene.add(warrior.scene);
-    },
     update: () => {
       warrior.scene.position.set(0, warriorParams.y, 0);
-      warrior.scene.scale.set(warriorParams.scale, 10, warriorParams.scale);
+      warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
     },
     complete: () => {
       anime({
         targets: warriorParams,
-        scale: 10,
+        scale: SCALE,
         duration: 1000,
         update: () => {
-          warrior.scene.scale.set(warriorParams.scale, 10, warriorParams.scale);
+          warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
         },
       });
       playIntro();
@@ -138,7 +146,7 @@ function animateWarriorOut(scene) {
     update: () => {
       update();
       warrior.scene.position.set(0, warriorParams.y, 0);
-      warrior.scene.scale.set(warriorParams.scale, 10, warriorParams.scale);
+      warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
     },
     complete: () => {
       scene.remove(warrior.scene);
@@ -182,7 +190,7 @@ function leave(scene) {
 
 function update() {
   const delta = clock.getDelta();
-  if (animator) {
+  if (animator && !loading) {
     animator.update(delta);
   }
 }

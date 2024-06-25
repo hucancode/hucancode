@@ -5,6 +5,9 @@ let renderer, canvas;
 export let scene, camera, controls;
 
 export function init(element) {
+  if(element == null) {
+    return;
+  }
   canvas = element;
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
@@ -57,9 +60,9 @@ function onWindowResize() {
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x000000, 50, 100);
+  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   camera.position.set(40, 40, 40);
   camera.lookAt(0, 0, 0);
   rebuildOrbitControl();

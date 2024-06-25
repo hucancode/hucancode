@@ -199,7 +199,7 @@ function setupObject() {
   background = makeBackground();
 }
 
-function init() {
+async function init() {
   setupObject();
   makeDragon();
 }
