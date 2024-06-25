@@ -253,7 +253,7 @@ function animateDragon(scene) {
     duration: 1000,
   });
 }
-function enter(scene, camera, controls) {
+function enter(scene, _camera, controls) {
   previousAutoRotation = controls.autoRotate;
   controls.autoRotate = false;
   animateTaiji(scene);
