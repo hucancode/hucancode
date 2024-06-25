@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import anime from "animejs";
 import { loadModel } from "$lib/utils.js";
-
 let warrior, animator;
 let hemiLight, backLight;
 let isWaitingForResource = false;
@@ -10,7 +9,7 @@ const clock = new THREE.Clock();
 let warriorParams = {
   y: -50,
   scale: 1,
-}
+};
 
 async function buildScene() {
   hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
@@ -24,13 +23,13 @@ async function buildScene() {
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
   warrior.scene.scale.set(10, 10, 10);
-  if(isWaitingForResource) {
+  if (isWaitingForResource) {
     animateWarriorIn(waitingScene);
   }
 }
 
 function playIntro() {
-  if(!animator) {
+  if (!animator) {
     return;
   }
   animator.stopAllAction();
@@ -42,11 +41,11 @@ function playIntro() {
 }
 
 async function playAction(callback) {
-  if(!animator) {
+  if (!animator) {
     return;
   }
   animator.stopAllAction();
-  if(!callback) {
+  if (!callback) {
     callback = returnToIdle;
   }
   animator.removeEventListener("finished", callback);
@@ -63,13 +62,14 @@ function init() {
 }
 
 function animateWarriorIn(scene) {
-  if(!warrior || !warrior.scene) {
+  if (!warrior || !warrior.scene) {
     isWaitingForResource = true;
     waitingScene = scene;
     return;
   }
   isWaitingForResource = false;
   warriorParams.y = -50;
+  anime.remove(warriorParams);
   anime({
     targets: warriorParams,
     y: 0,
@@ -91,16 +91,18 @@ function animateWarriorIn(scene) {
         update: () => {
           warrior.scene.scale.set(warriorParams.scale, 10, warriorParams.scale);
         },
-      })
+      });
       playIntro();
-    }
+    },
   });
 }
 
 function animateLightIn(scene) {
-  if(!hemiLight || !backLight) {
+  if (!hemiLight || !backLight) {
     return;
   }
+  anime.remove(hemiLight);
+  anime.remove(backLight);
   anime({
     targets: hemiLight,
     intensity: 1.2,
@@ -108,7 +110,7 @@ function animateLightIn(scene) {
     duration: 1000,
     begin: () => {
       scene.add(hemiLight);
-    }
+    },
   });
   anime({
     targets: backLight,
@@ -117,15 +119,16 @@ function animateLightIn(scene) {
     duration: 1000,
     begin: () => {
       scene.add(backLight);
-    }
+    },
   });
 }
 
 function animateWarriorOut(scene) {
-  if(!warrior || !warrior.scene) {
+  if (!warrior || !warrior.scene) {
     return;
   }
   playAction();
+  anime.remove(warriorParams);
   anime({
     targets: warriorParams,
     y: 50,
@@ -139,14 +142,16 @@ function animateWarriorOut(scene) {
     },
     complete: () => {
       scene.remove(warrior.scene);
-    }
+    },
   });
 }
 
 function animateLightOut(scene) {
-  if(!hemiLight || !backLight) {
+  if (!hemiLight || !backLight) {
     return;
   }
+  anime.remove(hemiLight);
+  anime.remove(backLight);
   anime({
     targets: hemiLight,
     intensity: 0,
@@ -183,7 +188,7 @@ function update() {
 }
 
 async function returnToIdle() {
-  if(!animator) {
+  if (!animator) {
     return;
   }
   animator.removeEventListener("finished", returnToIdle);
@@ -191,18 +196,16 @@ async function returnToIdle() {
 }
 
 function fadeToAction(name, duration) {
-  if(!animator) {
+  if (!animator) {
     return;
   }
   const animation = animator.clipAction(
     warrior.animations.find((e) => e.name === name)
   );
-  if(!animation) {
+  if (!animation) {
     return;
   }
-  return animation.reset()
-    .fadeIn(duration)
-    .play();
+  return animation.reset().fadeIn(duration).play();
 }
 
 export { init, enter, update, leave };
