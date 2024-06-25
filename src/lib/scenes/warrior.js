@@ -1,8 +1,7 @@
 import * as THREE from "three";
 import anime from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { loadModel, wait } from "$lib/utils.js";
-import { is } from "date-fns/locale";
+import { loadModel } from "$lib/utils.js";
 
 let camera, scene, renderer, animator, controls;
 let model;
@@ -59,7 +58,6 @@ function rebuildOrbitControl() {
 }
 
 function moveCameraAlongPath(t) {
-  console.log("moveCameraAlongPath", t);
   let k = t * CAMERA_CINEMATIC.length;
   let n = CAMERA_CINEMATIC.length;
   let i = Math.max(0, Math.min(n - 1, Math.floor(k)));
@@ -207,7 +205,6 @@ async function returnToIdle() {
   animator.removeEventListener("finished", returnToIdle);
   fadeToAction("idle", 0.25);
   cameraBusy = true;
-  console.log("returnToIdle");
   camera.introTime = 0;
   anime({
     targets: camera,

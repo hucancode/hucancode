@@ -12,13 +12,9 @@
     "@sveltejs/kit": "^2.5.0",
     "animejs": "^3.2.1",
     "axios": "^1.6.7",
-    "chart.js": "^4.0.1",
-    "chartjs-adapter-date-fns": "^3.0.0",
-    "date-fns": "^2.29.3",
     "mdsvex": "^0.11.0",
     "rehype-katex-svelte": "^1.1.2",
     "remark-math": "^3.0.0",
-    "roughjs": "^4.6.6",
     "svelte": "^4.2.9",
     "three": "^0.150.0",
     "vite": "^5.0.12"
