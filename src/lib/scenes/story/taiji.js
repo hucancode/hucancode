@@ -7,24 +7,22 @@ import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
 import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
 import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
 import { controls } from "./scene";
-import { wait } from "$lib/utils.js";
 let taiji;
 let bagua;
 let background;
 let dragon = null;
 let curve = null;
-let dragonScene = null;
 const clock = new THREE.Clock();
 var time = 0;
 let previousAutoRotation = false;
-let dragonComeLate = false;
+let isWaitingForResource = false;
+let waitingScene = null;
 let taijiEnterTimeline = null;
 let taijiLeaveTimeline = null;
 
 const DRAGON_RANDOM_PATH = false;
 const DRAGON_SPEED_PERCENT_PER_FRAME = 0.1;
 async function makeDragon() {
-  await wait(3000); // simulate loading time
   let model = await loadModelStatic("dragon.glb");
   dragon = new Flow(model);
   const points = [];
@@ -68,8 +66,8 @@ async function makeDragon() {
   // dragon.object3D.scale.set(0.65, 0.65, 0.65);
   dragon.object3D.scale.set(7, 7, 7);
   dragon.speed = 0;
-  if (dragonComeLate) {
-    animateDragon(dragonScene);
+  if (isWaitingForResource) {
+    animateDragon(waitingScene);
   }
 }
 
@@ -232,11 +230,11 @@ function animateTaiji(scene) {
 
 function animateDragon(scene) {
   if(!dragon || !dragon.object3D) {
-    dragonComeLate = true;
-    dragonScene = scene;
+    isWaitingForResource = true;
+    waitingScene = scene;
     return;
   }
-  dragonComeLate = false;
+  isWaitingForResource = false;
   scene.add(dragon.object3D);
   anime.remove(dragon.object3D.scale);
   anime({
@@ -273,7 +271,7 @@ function update() {
 }
 
 function leave(scene) {
-  dragonComeLate = false;
+  isWaitingForResource = false;
   controls.autoRotate = previousAutoRotation;
   taijiEnterTimeline.pause();
   taijiLeaveTimeline.restart();
@@ -299,8 +297,7 @@ function leave(scene) {
       scene.remove(background);
     },
     update: () => {
-      time += clock.getDelta();
-      background.material.uniforms.time.value = time * 4;
+      update();
     },
   });
   anime.remove(dragon.object3D.scale);

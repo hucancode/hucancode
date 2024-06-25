@@ -7,6 +7,7 @@
   import Orbs from "$lib/components/story/orbs.svelte";
   import planetIcon from "$icons/ph/planet.svg?raw";
   import dragonIcon from "$icons/game-icons/dragon.svg?raw";
+  import warriorIcon from "$icons/game-icons/lizard-tongue.svg?raw";
   import cubeIcon from "$icons/mdi/cube.svg?raw";
   import {
     init as rubikInit,
@@ -24,6 +25,12 @@
     enter as legoEnter,
     leave as legoLeave,
   } from "$lib/scenes/story/lego";
+  import {
+    init as warriorInit,
+    enter as warriorEnter,
+    update as warriorUpdate,
+    leave as warriorLeave,
+  } from "$lib/scenes/story/warrior";
   import {
     init,
     destroy,
@@ -55,6 +62,13 @@
       enter: taijiEnter,
       leave: taijiLeave,
       update: taijiUpdate,
+    },
+    {
+      icon: warriorIcon,
+      init: warriorInit,
+      enter: warriorEnter,
+      update: warriorUpdate,
+      leave: warriorLeave,
     },
   ];
   let currentShowcase = 0;

@@ -3,7 +3,7 @@
   import { onMount, onDestroy } from "svelte";
   import { createEventDispatcher } from "svelte";
   export let threshold = 1;
-  let className;
+  let className = "";
   export { className as class };
   let container;
   let observer;
