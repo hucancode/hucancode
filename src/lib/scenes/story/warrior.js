@@ -27,7 +27,7 @@ async function buildScene() {
   backLight.intensity = 0;
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
-  warrior.scene.position.set(0,-50, 0);
+  warrior.scene.position.set(0, -50, 0);
   // warrior.scene.scale.set(1, 1, 1);
   if (isWaitingForResource) {
     animateWarriorIn(waitingScene);
@@ -77,7 +77,7 @@ async function animateWarriorIn(scene) {
   warriorParams.y = POSITION_Y - 50;
   warriorParams.scale = 0;
   scene.add(warrior.scene);
-  if(loading) {
+  if (loading) {
     await wait(FIRST_LOAD_DELAY);
     loading = false;
   }
@@ -85,7 +85,7 @@ async function animateWarriorIn(scene) {
   anime({
     targets: warriorParams,
     y: POSITION_Y,
-    scale: SCALE*0.1,
+    scale: SCALE * 0.1,
     duration: 750,
     easing: "easeInElastic",
     update: () => {
@@ -98,7 +98,11 @@ async function animateWarriorIn(scene) {
         scale: SCALE,
         duration: 1000,
         update: () => {
-          warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
+          warrior.scene.scale.set(
+            warriorParams.scale,
+            SCALE,
+            warriorParams.scale
+          );
         },
       });
       playIntro();

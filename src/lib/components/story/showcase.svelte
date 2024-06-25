@@ -88,7 +88,7 @@
     if (!browser) return;
     ready = false;
     await init(canvas);
-    if(!scene) {
+    if (!scene) {
       return;
     }
     for (let showcase of showcases) {
