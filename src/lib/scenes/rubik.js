@@ -6,11 +6,12 @@ let scene, camera, renderer, controls;
 const clock = new THREE.Clock();
 const material = new THREE.MeshBasicMaterial({
   vertexColors: true,
-  fog: true,
 });
+let cameraTarget;
+let isInIntro = false;
 var time = 0;
 const CANVAS_ID = "rubik";
-let use_camera_control = true;
+const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
 const FACE_RIGHT = 0;
 const FACE_LEFT = 1;
@@ -21,11 +22,6 @@ const FACE_BACK = 5;
 const CUBE_NUM_DEFAULT = 3;
 let cubeNum = CUBE_NUM_DEFAULT;
 const CUBE_MARGIN = 0.1;
-
-export function setCameraControl(use) {
-  use_camera_control = use;
-  //rebuildOrbitControl();
-}
 
 function isInFace(x, y, z, face, depth) {
   return (
@@ -105,11 +101,11 @@ function makeRubik() {
   pivot.position.z = k;
   scene.add(pivot);
   camera.lookAt(pivot.position);
-  if (controls) {
-    controls.target.set(k, k, k);
-    controls.enableRotate = false;
-    controls.autoRotate = false;
-  }
+  controls.target.set(k, k, k);
+  controls.enableRotate = false;
+  controls.autoRotate = false;
+  cameraTarget.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
+  isInIntro = true;
   //addDebugArrow(pivot);
 }
 
@@ -125,50 +121,26 @@ function remakeRubik(n) {
 function setupCamera(w, h) {
   camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x000000, 5, 20);
-  camera.position.set(0, 25, 25);
+  camera.position.set(0, 0, 0);
+  cameraTarget = new THREE.Vector3(0, 0, 0);
   rebuildOrbitControl();
 }
 
 function rebuildOrbitControl() {
-  if (!renderer || !renderer.domElement || !camera) {
+  if (!USE_CAMERA_CONTROL) {
     return;
   }
-  const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
-  camera.lookAt(k, k, k);
   controls = new OrbitControls(camera, renderer.domElement);
+  const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   controls.target.set(k, k, k);
+  //controls.enablePan = false;
   controls.minDistance = 4; // the minimum distance the camera must have from center
   controls.maxDistance = 30; // the maximum distance the camera must have from center
-  //controls.enableRotate = true;
-  // controls.autoRotate = false;
-  controls.enabled = false;
+  //controls.update();
+  controls.enableRotate = true;
+  controls.autoRotate = true;
 }
 
-export function animateCamera(t) {
-  if (camera) {
-    let distance = 20 - 10 * t;
-    if (camera.distance === undefined) {
-      camera.distance = camera.position.length();
-    }
-    anime({
-      targets: camera,
-      distance: distance,
-      duration: 1000,
-      update: () => {
-        camera.position.setLength(camera.distance);
-        const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
-        camera.lookAt(k, k, k);
-      },
-      complete: () => {
-        if (t >= 0.9) {
-          controls.enableRotate = true;
-          controls.autoRotate = true;
-        }
-      },
-    });
-  }
-}
 function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
@@ -194,7 +166,6 @@ function init() {
     Math.floor(Math.random() * 5) - 2
   );
   window.addEventListener("resize", onWindowResize);
-  animateCamera(1);
 }
 
 function destroy() {
@@ -302,14 +273,7 @@ function startMove(face, depth, magnitude) {
     round: 100,
     delay: 200,
     easing: easing,
-    complete: () => {
-      cleanUpAfterMove();
-      startMove(
-        Math.floor(Math.random() * 5),
-        Math.floor(Math.random() * cubeNum),
-        Math.floor(Math.random() * 5) - 2
-      );
-    },
+    complete: cleanUpAfterMove,
   });
 }
 
@@ -336,6 +300,11 @@ function cleanUpAfterMove() {
   }
   cubes = newCubes;
   pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
+  startMove(
+    Math.floor(Math.random() * 5),
+    Math.floor(Math.random() * cubeNum),
+    Math.floor(Math.random() * 5) - 2
+  );
 }
 
 function render() {
@@ -345,6 +314,14 @@ function render() {
   }
   if (controls) {
     controls.update();
+  }
+  if (isInIntro && camera) {
+    camera.position.lerp(cameraTarget, 0.1);
+    if (camera.position.distanceTo(cameraTarget) < 0.01) {
+      isInIntro = false;
+      controls.enableRotate = true;
+      controls.autoRotate = true;
+    }
   }
 }
 
