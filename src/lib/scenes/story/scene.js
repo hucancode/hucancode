@@ -5,7 +5,7 @@ let renderer, canvas;
 export let scene, camera, controls;
 
 export function init(element) {
-  if(element == null) {
+  if (element == null) {
     return;
   }
   canvas = element;
