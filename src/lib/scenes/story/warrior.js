@@ -22,7 +22,8 @@ async function buildScene() {
   backLight.intensity = 0;
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
-  warrior.scene.scale.set(10, 10, 10);
+  warrior.scene.position.set(0,-50, 0);
+  // warrior.scene.scale.set(1, 1, 1);
   if (isWaitingForResource) {
     animateWarriorIn(waitingScene);
   }
@@ -57,8 +58,8 @@ async function playAction(callback) {
   animator.addEventListener("finished", callback);
 }
 
-function init() {
-  buildScene();
+async function init() {
+  await buildScene();
 }
 
 function animateWarriorIn(scene) {

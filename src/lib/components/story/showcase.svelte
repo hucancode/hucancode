@@ -88,6 +88,9 @@
     if (!browser) return;
     ready = false;
     await init(canvas);
+    if(!scene) {
+      return;
+    }
     for (let showcase of showcases) {
       if (showcase.init) {
         showcase.init();
@@ -138,6 +141,16 @@
 <svelte:head>
   <link rel="preload" href="/assets/gltf/dragon.glb" as="fetch" />
   <link rel="preload" href="/assets/gltf/warrior.glb" as="fetch" />
+  <link rel="preload" href="/assets/textures/body_Diffuse.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/body_Emissive.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/body_Glossiness.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/body_Normal.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/body_Specular.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/sword_Diffuse.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/sword_Emissive.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/sword_Glossiness.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/sword_Normal.png" as="fetch" />
+  <link rel="preload" href="/assets/textures/sword_Specular.png" as="fetch" />
 </svelte:head>
 <section>
   <Orbs
