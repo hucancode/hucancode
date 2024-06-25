@@ -2,10 +2,10 @@ import * as THREE from "three";
 import anime from "animejs";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
-import VERTEX_SHADER from "$lib/scenes/story/basic.vert.glsl?raw";
-import TAIJI_FRAGMENT_SHADER from "$lib/scenes/story/taiji.frag.glsl?raw";
-import CLOUD_FRAGMENT_SHADER from "$lib/scenes/story/cloud.frag.glsl?raw";
-import BAGUA_FRAGMENT_SHADER from "$lib/scenes/story/bagua.frag.glsl?raw";
+import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
+import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
+import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
+import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
 import { controls } from "./scene";
 
 let taiji;
