@@ -10,7 +10,7 @@ let waitingScene = null;
 const clock = new THREE.Clock();
 const POSITION_Y = -18;
 const SCALE = 15;
-const FIRST_LOAD_DELAY = 750;
+const FIRST_LOAD_DELAY = 500;
 let warriorParams = {
   y: -50,
   scale: 1,
@@ -85,9 +85,9 @@ async function animateWarriorIn(scene) {
   anime({
     targets: warriorParams,
     y: POSITION_Y,
-    scale: SCALE * 0.1,
-    duration: 750,
-    easing: "easeInElastic",
+    scale: SCALE * 0.3,
+    duration: 500,
+    easing: "easeInQuad",
     update: () => {
       warrior.scene.position.set(0, warriorParams.y, 0);
       warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
