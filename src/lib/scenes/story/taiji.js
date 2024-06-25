@@ -229,7 +229,7 @@ function animateTaiji(scene) {
 }
 
 function animateDragon(scene) {
-  if(!dragon || !dragon.object3D) {
+  if (!dragon || !dragon.object3D) {
     isWaitingForResource = true;
     waitingScene = scene;
     return;
@@ -265,7 +265,7 @@ function update() {
   if (background) {
     background.material.uniforms.time.value = time * 4;
   }
-  if(dragon) {
+  if (dragon) {
     dragon.moveAlongCurve(dragon.speed);
   }
 }

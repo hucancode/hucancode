@@ -560,8 +560,8 @@ function render() {
 }
 
 export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };
-
 ```
+
 </details>
 
 <style>

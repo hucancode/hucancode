@@ -141,8 +141,11 @@
     on:change={onShowcaseChange}
   />
   <noscript>
-    <p>{$_("home.landing.noscript")}<br/>
-    <a href="https://www.enable-javascript.com/">{$_("home.landing.enablejs")}</a>
+    <p>
+      {$_("home.landing.noscript")}<br />
+      <a href="https://www.enable-javascript.com/"
+        >{$_("home.landing.enablejs")}</a
+      >
     </p>
   </noscript>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
