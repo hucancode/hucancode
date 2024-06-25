@@ -6,9 +6,6 @@
       case "ja":
         resumeUrl = "/resume-ja.pdf";
         break;
-      case "vi":
-        resumeUrl = "/resume-vi.pdf";
-        break;
       default:
         resumeUrl = "/resume.pdf";
         break;

@@ -2,17 +2,11 @@ import * as THREE from "three";
 import anime from "animejs";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
-
-import {
-  TAIJI_VERTEX_SHADER,
-  TAIJI_FRAGMENT_SHADER,
-  BACKGROUND_VERTEX_SHADER,
-  BACKGROUND_FRAGMENT_SHADER,
-  BAGUA_VERTEX_SHADER,
-  BAGUA_FRAGMENT_SHADER,
-} from "./taiji-shaders";
+import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
+import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
+import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
+import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
 import { controls } from "./scene";
-
 let taiji;
 let bagua;
 let background;
@@ -21,6 +15,8 @@ let curve = null;
 const clock = new THREE.Clock();
 var time = 0;
 let previousAutoRotation = false;
+let isWaitingForResource = false;
+let waitingScene = null;
 let taijiEnterTimeline = null;
 let taijiLeaveTimeline = null;
 
@@ -70,6 +66,9 @@ async function makeDragon() {
   // dragon.object3D.scale.set(0.65, 0.65, 0.65);
   dragon.object3D.scale.set(7, 7, 7);
   dragon.speed = 0;
+  if (isWaitingForResource) {
+    animateDragon(waitingScene);
+  }
 }
 
 function makeBackground() {
@@ -78,8 +77,8 @@ function makeBackground() {
       time: { value: 0.0 },
       alpha: { value: 1.0 },
     },
-    vertexShader: BACKGROUND_VERTEX_SHADER,
-    fragmentShader: BACKGROUND_FRAGMENT_SHADER,
+    vertexShader: VERTEX_SHADER,
+    fragmentShader: CLOUD_FRAGMENT_SHADER,
   });
   material.clipping = true;
   material.transparent = true;
@@ -97,7 +96,7 @@ function makeTaiji() {
       color1: { value: new THREE.Color(1, 1, 1) },
       color2: { value: new THREE.Color(0, 0, 0) },
     },
-    vertexShader: TAIJI_VERTEX_SHADER,
+    vertexShader: VERTEX_SHADER,
     fragmentShader: TAIJI_FRAGMENT_SHADER,
   });
   material.clipping = true;
@@ -114,7 +113,7 @@ function makeBagua() {
     uniforms: {
       alpha: { value: 1.0 },
     },
-    vertexShader: BAGUA_VERTEX_SHADER,
+    vertexShader: VERTEX_SHADER,
     fragmentShader: BAGUA_FRAGMENT_SHADER,
   });
   material.clipping = true;
@@ -200,14 +199,12 @@ function setupObject() {
   background = makeBackground();
 }
 
-async function init() {
+function init() {
   setupObject();
-  await makeDragon();
+  makeDragon();
 }
 
-function enter(scene, camera, controls) {
-  previousAutoRotation = controls.autoRotate;
-  controls.autoRotate = false;
+function animateTaiji(scene) {
   scene.add(taiji);
   scene.add(bagua);
   scene.add(background);
@@ -229,6 +226,15 @@ function enter(scene, camera, controls) {
     duration: 1000,
     easing: "linear",
   });
+}
+
+function animateDragon(scene) {
+  if (!dragon || !dragon.object3D) {
+    isWaitingForResource = true;
+    waitingScene = scene;
+    return;
+  }
+  isWaitingForResource = false;
   scene.add(dragon.object3D);
   anime.remove(dragon.object3D.scale);
   anime({
@@ -247,16 +253,25 @@ function enter(scene, camera, controls) {
     duration: 1000,
   });
 }
+function enter(scene, camera, controls) {
+  previousAutoRotation = controls.autoRotate;
+  controls.autoRotate = false;
+  animateTaiji(scene);
+  animateDragon(scene);
+}
 
 function update() {
   time += clock.getDelta();
   if (background) {
     background.material.uniforms.time.value = time * 4;
   }
-  dragon.moveAlongCurve(dragon.speed);
+  if (dragon) {
+    dragon.moveAlongCurve(dragon.speed);
+  }
 }
 
 function leave(scene) {
+  isWaitingForResource = false;
   controls.autoRotate = previousAutoRotation;
   taijiEnterTimeline.pause();
   taijiLeaveTimeline.restart();
@@ -282,8 +297,7 @@ function leave(scene) {
       scene.remove(background);
     },
     update: () => {
-      time += clock.getDelta();
-      background.material.uniforms.time.value = time * 4;
+      update();
     },
   });
   anime.remove(dragon.object3D.scale);

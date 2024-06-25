@@ -29,6 +29,7 @@ export function init(element) {
 function setupLights() {
   const ambientLight = new THREE.AmbientLight(0x003973);
   const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 1);
+  hemiLight.intensity = 1.5;
   const dynamicLight = new THREE.PointLight(0xffffff);
   // dynamicLight.add(
   //   new THREE.Mesh(

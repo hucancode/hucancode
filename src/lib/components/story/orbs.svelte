@@ -86,9 +86,9 @@
           background-size: 50% 50%, 50% 50%;
           background-position: 0 0, 100% 0, 100% 100%, 0 100%;
           --color-1: rgb(17, 255, 108);
-          --color-2: rgb(192, 181, 255);
-          --color-3: rgb(0, 13, 255);
-          --color-4: rgb(23, 112, 255);
+          --color-2: rgb(112, 124, 255);
+          --color-3: rgb(0, 6, 126);
+          --color-4: rgb(0, 92, 240);
           background-image: linear-gradient(var(--color-1), var(--color-1)),
             linear-gradient(var(--color-2), var(--color-2)),
             linear-gradient(var(--color-3), var(--color-3)),
@@ -104,9 +104,9 @@
         border-radius: 9999px;
         background-color: black;
         z-index: 2;
-        width: 92%;
-        height: 92%;
-        color: gray;
+        width: 90%;
+        height: 90%;
+        color: rgb(80, 80, 90);
         & svg {
           height: 2rem;
         }

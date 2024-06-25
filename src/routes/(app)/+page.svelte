@@ -7,7 +7,7 @@
 
 <svelte:head>
   <title>hucancode</title>
-  <meta name="description" content={$_("home.landing.about")}>
+  <meta name="description" content={$_("home.landing.about")} />
 </svelte:head>
 <Nav />
 <main class="container-lg">

@@ -7,6 +7,7 @@
   import Orbs from "$lib/components/story/orbs.svelte";
   import planetIcon from "$icons/ph/planet.svg?raw";
   import dragonIcon from "$icons/game-icons/dragon.svg?raw";
+  import warriorIcon from "$icons/game-icons/lizard-tongue.svg?raw";
   import cubeIcon from "$icons/mdi/cube.svg?raw";
   import {
     init as rubikInit,
@@ -24,6 +25,12 @@
     enter as legoEnter,
     leave as legoLeave,
   } from "$lib/scenes/story/lego";
+  import {
+    init as warriorInit,
+    enter as warriorEnter,
+    update as warriorUpdate,
+    leave as warriorLeave,
+  } from "$lib/scenes/story/warrior";
   import {
     init,
     destroy,
@@ -56,6 +63,13 @@
       leave: taijiLeave,
       update: taijiUpdate,
     },
+    {
+      icon: warriorIcon,
+      init: warriorInit,
+      enter: warriorEnter,
+      update: warriorUpdate,
+      leave: warriorLeave,
+    },
   ];
   let currentShowcase = 0;
 
@@ -76,7 +90,7 @@
     await init(canvas);
     for (let showcase of showcases) {
       if (showcase.init) {
-        await showcase.init();
+        showcase.init();
       }
     }
     onShowcaseChange({ detail: currentShowcase });
@@ -127,8 +141,11 @@
     on:change={onShowcaseChange}
   />
   <noscript>
-    <p>{$_("home.landing.noscript")}<br/>
-    <a href="https://www.enable-javascript.com/">{$_("home.landing.enablejs")}</a>
+    <p>
+      {$_("home.landing.noscript")}<br />
+      <a href="https://www.enable-javascript.com/"
+        >{$_("home.landing.enablejs")}</a
+      >
     </p>
   </noscript>
   <ScrollObserver on:scroll={onScroll} threshold={30}>

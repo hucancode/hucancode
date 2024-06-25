@@ -145,7 +145,7 @@ function transferCubes() {
   pivot.rotation.set(0, 0, 0);
 }
 
-async function init() {
+function init() {
   makeRubik();
 }
 

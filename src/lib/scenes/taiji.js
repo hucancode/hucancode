@@ -2,14 +2,10 @@ import * as THREE from "three";
 import anime from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-import {
-  TAIJI_VERTEX_SHADER,
-  TAIJI_FRAGMENT_SHADER,
-  BACKGROUND_VERTEX_SHADER,
-  BACKGROUND_FRAGMENT_SHADER,
-  BAGUA_VERTEX_SHADER,
-  BAGUA_FRAGMENT_SHADER,
-} from "./taiji-shaders";
+import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
+import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
+import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
+import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
 
 let scene, camera, renderer, controls;
 let taiji;
@@ -33,8 +29,8 @@ function makeBackground() {
     uniforms: {
       time: { value: 0.0 },
     },
-    vertexShader: BACKGROUND_VERTEX_SHADER,
-    fragmentShader: BACKGROUND_FRAGMENT_SHADER,
+    vertexShader: VERTEX_SHADER,
+    fragmentShader: CLOUD_FRAGMENT_SHADER,
   });
   material.clipping = true;
   material.transparent = true;
@@ -52,7 +48,7 @@ function makeTaiji() {
       color1: { value: new THREE.Color(1, 1, 1) },
       color2: { value: new THREE.Color(0, 0, 0) },
     },
-    vertexShader: TAIJI_VERTEX_SHADER,
+    vertexShader: VERTEX_SHADER,
     fragmentShader: TAIJI_FRAGMENT_SHADER,
   });
   material.clipping = true;
@@ -69,7 +65,7 @@ function makeBagua() {
     uniforms: {
       alpha: { value: 1.0 },
     },
-    vertexShader: BAGUA_VERTEX_SHADER,
+    vertexShader: VERTEX_SHADER,
     fragmentShader: BAGUA_FRAGMENT_SHADER,
   });
   material.clipping = true;

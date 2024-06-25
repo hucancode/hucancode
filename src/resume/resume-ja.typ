@@ -11,12 +11,16 @@
 
 #resume_heading("技術的なスキル")
 #skill_item(
-  category: "プログラミング言語　＆　フレームワーク",
-  skills: "Rust、C++、C#、GLSL、Typescript、Java、Kotlin、SQL・ReactiveX、React、Svelte、Tailwind、NestJS、Flutter、Axum、WebGPU、OpenGL"
+  category: "言語",
+  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL"
+)
+#skill_item(
+  category: "フレームワーク",
+  skills: "Qt, ReactiveX, React, Svelte, Tailwind, NestJS, Flutter, WebGPU, OpenGL"
 )
 #skill_item(
   category: "ツール　＆　OS",
-  skills: "Mac、Linux (Debian、Arch)、Android、iOS、Docker、nginx、MySQL、Redis、AWS、GCP"
+  skills: "NodeJS, Docker, nginx, Redis, Linux (CentOS, Debian, Arch), Android, iOS, AWS, GCP"
 )
 
 #resume_heading[経歴]
@@ -25,7 +29,7 @@
   name: "NTQ Japan",
   location: "岐阜県、日本",
   date: "2022年8月～現在",
-  [バスや電車で使用される複雑で高性能な組み込みアプリケーションを構築],
+  [複雑でパフォーマンスの高い組み込みアプリケーションを構築],
 )
 #exp_item(
   role: "エンジニアマネージャー",
@@ -55,10 +59,12 @@
 #project_item(
   name: "Hi-ABT",
   skills: "Linux、Android、Java、C++、TCP/IP、Serial",
-  date: "2022年3月～現在",
-  [バス運賃を管理するソフトウェアシステムを構築。 Java、C++、組み込みデバイスで動作],
-  [リモート制御によるソフトウェア更新メカニズムの実装。TCP、シリアル、HTTP などのさまざまな接続戦略を使用して、多くのデバイス間の複雑な通信を処理します],
-  [Android OSの起動手順を調整しました。さまざまな修正を実行し、システムの安定性を維持しました],
+  date: "2022年8月～現在",
+  [バス運賃を管理するソフトウェアシステムを構築],
+  [リモート ソフトウェア アップデートの仕組みを実装],
+  [TCP、シリアル、HTTPS を使用して、4 つの異なる OS を実行するデバイス間の複雑な通信を処理],
+  [OSネットワーク設定手順の実装、静的IP、ルートテーブル、インターネットゲートウェイ、DNSの管理],
+  [カスタマイズされた Android OS 起動手順、さまざまな修正を適用し、システムの安定性を維持],
 )
 #project_item(
   name: "Toxy",
@@ -82,7 +88,7 @@
   date: "2017年2月～2017年11月",
   [Qtを使用した自動車車載インフォテインメント (IVI) システム用のメディア再生アプリケーションの構築],
   [遅延読み込みメカニズムを実装し、少ないメモリ使用量で数千の曲を処理],
-  [大規模な C++ コード ベースで動作しました。Coverity を静的解析に活用],
+  [メモリ リークを修正し、オブジェクト コピーを削減し、システム パフォーマンスを最適化しました。 Coverity を静的解析に活用],
 )
 #project_item(
   name: "NSP64Bit",
@@ -93,12 +99,6 @@
 )
 
 #resume_heading[学歴、証明書]
-#edu_item(
-  name: "水野外語学院",
-  degree: "日本語",
-  location: "日本",
-  date: "2019"
-)
 #edu_item(
   name: "フンヤン技術師範大学",
   degree: "ソフトウェアエンジニアリング学士号",
