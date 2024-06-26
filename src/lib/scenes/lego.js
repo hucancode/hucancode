@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import anime from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
+import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
 let scene, camera, renderer, controls;
 let pieces = [];
@@ -133,11 +133,11 @@ function makeCenterPiece() {
 function setupLight() {
   const light = new THREE.AmbientLight(0x666666); // soft white light
   scene.add(light);
-  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 1);
+  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 10);
   hemiLight.position.set(0, 30, 0);
   scene.add(hemiLight);
 
-  const backLight = new THREE.PointLight(0x5599ff, 1);
+  const backLight = new THREE.PointLight(0x5599ff, 20);
   // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 1, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, 30, 0);
   scene.add(backLight);
@@ -212,7 +212,7 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
       pieces.push(button);
     }
   }
-  const geometry = mergeBufferGeometries(pieces);
+  const geometry = BufferGeometryUtils.mergeGeometries(pieces);
   return geometry;
 }
 

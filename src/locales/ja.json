@@ -1,17 +1,11 @@
 {
   "common": {
     "contact": {
-      "home": "ホーム",
-      "social": "もっと見る",
-      "contact": "連絡先",
       "github": "Github",
       "leetcode": "Leetcode",
       "blog": "ブログ",
       "sendMail": "メール",
       "downloadResume": "経歴書"
-    },
-    "note": {
-      "madeWith": "愛を込めてSvelte、Three.jsで作りました"
     }
   },
   "home": {
@@ -22,23 +16,8 @@
       "enablejs": "ブラウザでJavaScriptを有効にする方法をご参考に"
     },
     "showcase": {
-      "rubik": "ルービック",
-      "dragon": "飛龍",
-      "lego": "レゴ",
-      "taiji": "太極",
-      "warrior": "戦士",
       "surprise": "何か見せて",
-      "fullscreen": "拡大して",
       "goback": "戻る"
-    },
-    "stats": {
-      "title": "お気に入りテック",
-      "rating": "成績",
-      "topPercentage": "トップ"
     }
-  },
-  "creative": {
-    "return": "戻る",
-    "buymeacoffee": "コーヒーを一杯あげる"
   }
 }

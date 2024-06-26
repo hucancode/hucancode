@@ -34,7 +34,6 @@
   import {
     init,
     destroy,
-    render,
     scene,
     camera,
     controls,
@@ -42,6 +41,20 @@
   let frameID;
   let canvas;
   let ready = false;
+  const preloadAssets = [
+    "/assets/gltf/dragon.glb",
+    "/assets/gltf/warrior.glb",
+    "/assets/textures/body_Diffuse.png",
+    "/assets/textures/body_Emissive.png",
+    "/assets/textures/body_Glossiness.png",
+    "/assets/textures/body_Normal.png",
+    "/assets/textures/body_Specular.png",
+    "/assets/textures/sword_Diffuse.png",
+    "/assets/textures/sword_Emissive.png",
+    "/assets/textures/sword_Glossiness.png",
+    "/assets/textures/sword_Normal.png",
+    "/assets/textures/sword_Specular.png",
+  ];
 
   let showcases = [
     {
@@ -92,9 +105,7 @@
       return;
     }
     for (let showcase of showcases) {
-      if (showcase.init) {
-        showcase.init();
-      }
+      showcase.init();
     }
     onShowcaseChange({ detail: currentShowcase });
     frameID = requestAnimationFrame(loop);
@@ -112,7 +123,6 @@
   function loop() {
     frameID = requestAnimationFrame(loop);
     showcaseUpdate();
-    render();
   }
 
   function showcaseEnter() {
@@ -139,22 +149,13 @@
 </script>
 
 <svelte:head>
-  <link rel="preload" href="/assets/gltf/dragon.glb" as="fetch" />
-  <link rel="preload" href="/assets/gltf/warrior.glb" as="fetch" />
-  <link rel="preload" href="/assets/textures/body_Diffuse.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/body_Emissive.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/body_Glossiness.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/body_Normal.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/body_Specular.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/sword_Diffuse.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/sword_Emissive.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/sword_Glossiness.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/sword_Normal.png" as="fetch" />
-  <link rel="preload" href="/assets/textures/sword_Specular.png" as="fetch" />
+  {#each preloadAssets as asset}
+    <link rel="preload" href={asset} as="fetch" />
+  {/each}
 </svelte:head>
 <section>
   <Orbs
-    iconSources={showcases.map((showcase) => showcase.icon)}
+    iconSources={showcases.map((e) => e.icon)}
     on:change={onShowcaseChange}
   />
   <noscript>
