@@ -123,7 +123,7 @@ function makeRubik() {
 }
 
 function rearrangeRubik(offsetY) {
-  if(!offsetY) {
+  if (!offsetY) {
     offsetY = 0;
   }
   transferCubes();
@@ -132,7 +132,7 @@ function rearrangeRubik(offsetY) {
     for (let x = 0; x < cubeNum; x++) {
       for (let z = 0; z < cubeNum; z++) {
         const cube = cubes[i];
-        cube.position.set(x, y+offsetY, z).multiplyScalar(1 + CUBE_MARGIN);
+        cube.position.set(x, y + offsetY, z).multiplyScalar(1 + CUBE_MARGIN);
         cube.rotation.set(0, 0, 0);
         i++;
       }
@@ -161,16 +161,17 @@ function enter(scene) {
   anime({
     targets,
     y: (e, i) => {
-      let y = Math.floor(i/cubeNum/cubeNum);
-      return y * (1+ CUBE_MARGIN);
+      let y = Math.floor(i / cubeNum / cubeNum);
+      return y * (1 + CUBE_MARGIN);
     },
     easing: "easeOutElastic",
     delay: anime.stagger(50),
     duration: 1500,
     complete: () => {
       const face = Math.floor(Math.random() * 5);
-      const depth = Math.floor(Math.random() * (cubeNum-1))+1;
-      const magnitude = (Math.random() > 0.5?1:-1) * (Math.floor(Math.random() * 2) + 1);
+      const depth = Math.floor(Math.random() * (cubeNum - 1)) + 1;
+      const magnitude =
+        (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1);
       startMove(face, depth, magnitude);
     },
   });
@@ -188,7 +189,7 @@ function leave(scene) {
   anime({
     targets,
     y: (e, i) => {
-      let y = Math.floor(i/cubeNum/cubeNum);
+      let y = Math.floor(i / cubeNum / cubeNum);
       return y * (1 + CUBE_MARGIN) + 100;
     },
     duration: 500,
