@@ -168,11 +168,7 @@ function enter(scene) {
     delay: anime.stagger(50),
     duration: 1500,
     complete: () => {
-      const face = Math.floor(Math.random() * 5);
-      const depth = Math.floor(Math.random() * (cubeNum - 1)) + 1;
-      const magnitude =
-        (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1);
-      startMove(face, depth, magnitude);
+      startMoveRandom();
     },
   });
 }
@@ -200,6 +196,14 @@ function leave(scene) {
       scene.remove(pivot);
     },
   });
+}
+
+function startMoveRandom() {
+  const face = Math.floor(Math.random() * 5);
+  const depth = Math.floor(Math.random() * (cubeNum - 1)) + 1;
+  const magnitude =
+    (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1);
+  startMove(face, depth, magnitude);
 }
 
 function startMove(face, depth, magnitude) {
@@ -238,11 +242,7 @@ function startMove(face, depth, magnitude) {
     easing: easing,
     complete: () => {
       transferCubes();
-      startMove(
-        Math.floor(Math.random() * 5),
-        Math.floor(Math.random() * cubeNum),
-        Math.floor(Math.random() * 5) - 2
-      );
+      startMoveRandom();
     },
   });
 }
