@@ -132,6 +132,7 @@ function setupObject() {
   taiji = makeTaiji();
   taijiEnterTimeline = anime.timeline({
     autoplay: false,
+    delay: 500,
     duration: 2000,
     easing: "easeOutExpo",
     begin: () => {
