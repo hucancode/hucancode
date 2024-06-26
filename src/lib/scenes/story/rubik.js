@@ -104,11 +104,12 @@ function makeSingleCube(x, y, z) {
 }
 
 function makeRubik() {
-  for (let x = 0; x < cubeNum; x++) {
-    for (let y = 0; y < cubeNum; y++) {
+  for (let y = 0; y < cubeNum; y++) {
+    for (let x = 0; x < cubeNum; x++) {
       for (let z = 0; z < cubeNum; z++) {
         const geometry = makeSingleCube(x, y, z);
         const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(x, y, z).multiplyScalar(1 + CUBE_MARGIN);
         rubik.add(cube);
         cubes.push(cube);
         //addDebugArrow(cube);
@@ -118,18 +119,20 @@ function makeRubik() {
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   rubik.scale.setScalar(RUBIK_SIZE);
   rubik.position.setScalar(-k * RUBIK_SIZE);
-  rubik.position.setComponent(1, rubik.position.y + 100);
   //addDebugArrow(pivot);
 }
 
-function rearrangeRubik() {
+function rearrangeRubik(offsetY) {
+  if(!offsetY) {
+    offsetY = 0;
+  }
   transferCubes();
   var i = 0;
-  for (let x = 0; x < cubeNum; x++) {
-    for (let y = 0; y < cubeNum; y++) {
+  for (let y = 0; y < cubeNum; y++) {
+    for (let x = 0; x < cubeNum; x++) {
       for (let z = 0; z < cubeNum; z++) {
         const cube = cubes[i];
-        cube.position.set(x, y, z).multiplyScalar(1 + CUBE_MARGIN);
+        cube.position.set(x, y+offsetY, z).multiplyScalar(1 + CUBE_MARGIN);
         cube.rotation.set(0, 0, 0);
         i++;
       }
@@ -150,22 +153,25 @@ function init() {
 }
 
 function enter(scene) {
-  anime.remove(rubik.position);
-  rearrangeRubik();
+  const targets = cubes.map((e) => e.position);
+  anime.remove(targets);
+  rearrangeRubik(-100);
   scene.add(rubik);
   scene.add(pivot);
-  const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   anime({
-    targets: rubik.position,
-    y: -k * RUBIK_SIZE,
+    targets,
+    y: (e, i) => {
+      let y = Math.floor(i/cubeNum/cubeNum);
+      return y * (1+ CUBE_MARGIN);
+    },
     easing: "easeOutElastic",
-    duration: 2000,
+    delay: anime.stagger(50),
+    duration: 1500,
     complete: () => {
-      startMove(
-        Math.floor(Math.random() * 5),
-        Math.floor(Math.random() * cubeNum),
-        Math.floor(Math.random() * 5) - 2
-      );
+      const face = Math.floor(Math.random() * 5);
+      const depth = Math.floor(Math.random() * (cubeNum-1))+1;
+      const magnitude = (Math.random() > 0.5?1:-1) * (Math.floor(Math.random() * 2) + 1);
+      startMove(face, depth, magnitude);
     },
   });
 }
@@ -176,13 +182,17 @@ function scroll() {}
 
 function leave(scene) {
   transferCubes();
+  let targets = cubes.map((e) => e.position);
   anime.remove(pivot.rotation);
-  anime.remove(rubik.position);
-  let y = rubik.position.y + 100;
+  anime.remove(targets);
   anime({
-    targets: rubik.position,
-    y,
+    targets,
+    y: (e, i) => {
+      let y = Math.floor(i/cubeNum/cubeNum);
+      return y * (1 + CUBE_MARGIN) + 100;
+    },
     duration: 500,
+    delay: anime.stagger(30),
     easing: "easeInOutQuad",
     complete: () => {
       scene.remove(rubik);
