@@ -28,7 +28,7 @@ function setupCamera(w, h) {
 function setupLightning() {
   ambientLight = new THREE.AmbientLight(0x003973);
   scene.add(ambientLight);
-  dynamicLight = new THREE.PointLight(0xffffff);
+  dynamicLight = new THREE.PointLight(0xffffff, 5, 0, 0.2);
   dynamicLight.add(
     new THREE.Mesh(
       new THREE.SphereGeometry(2, 16, 8),

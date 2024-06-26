@@ -11,20 +11,19 @@ const clock = new THREE.Clock();
 const POSITION_Y = -18;
 const SCALE = 15;
 const FIRST_LOAD_DELAY = 500;
+const LIGHT_INTENSITY = 1500;
 let warriorParams = {
   y: -50,
   scale: 1,
 };
 
 async function buildScene() {
-  hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+  hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0);
   // hemiLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0x0400ff } ) ) );
   hemiLight.position.set(0, POSITION_Y + 30, 0);
-  hemiLight.intensity = 0;
-  backLight = new THREE.PointLight(0xffffff, 1, 600);
+  backLight = new THREE.PointLight(0xffffff, 0);
   // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
-  backLight.position.set(0, POSITION_Y + 18, -10);
-  backLight.intensity = 0;
+  backLight.position.set(0, POSITION_Y + 30, -10);
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
   warrior.scene.position.set(0, -50, 0);
@@ -127,9 +126,9 @@ function animateLightIn(scene) {
   });
   anime({
     targets: backLight,
-    intensity: 5,
+    intensity: LIGHT_INTENSITY,
     delay: 800,
-    duration: 1000,
+    duration: 2000,
     begin: () => {
       scene.add(backLight);
     },
@@ -176,7 +175,7 @@ function animateLightOut(scene) {
   anime({
     targets: backLight,
     intensity: 0,
-    duration: 1000,
+    duration: 2000,
     complete: () => {
       scene.remove(backLight);
     },

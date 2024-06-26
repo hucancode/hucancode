@@ -30,21 +30,11 @@ export function init(element) {
 }
 
 function setupLights() {
-  const ambientLight = new THREE.AmbientLight(0x003973);
-  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 1);
-  hemiLight.intensity = 1.5;
-  const dynamicLight = new THREE.PointLight(0xffffff);
-  // dynamicLight.add(
-  //   new THREE.Mesh(
-  //     new THREE.SphereGeometry(2, 16, 8),
-  //     new THREE.MeshBasicMaterial({ color: 0xffffff })
-  //   )
-  // );
+  const ambientLight = new THREE.AmbientLight(0x003973, 6);
+  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 10);
   hemiLight.position.set(0, 30, 0);
-  dynamicLight.position.set(0, 25, 0);
   scene.add(ambientLight);
   scene.add(hemiLight);
-  scene.add(dynamicLight);
 }
 
 function onWindowResize() {

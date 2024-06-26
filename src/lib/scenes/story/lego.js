@@ -1,20 +1,18 @@
 import * as THREE from "three";
 import anime from "animejs";
-import { mergeBufferGeometries } from "$lib/three/BufferGeometryUtils";
+import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
 let pieces = [];
 let materials = [];
 const POOL_SIZE = 20;
-const GRADIENT_STEP = 3;
+const GRADIENT_STEP = 5;
 // objects
 const cube = new THREE.Object3D();
 const ring = new THREE.Object3D();
 const ringParticles = [];
 const cubePieces = [];
-// lights
-const light = new THREE.AmbientLight(0x666666); // soft white light
-const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 1);
-const backLight = new THREE.PointLight(0x5599ff, 1);
+const LIGHT_INTENSITY = 10;
+const pointLight = new THREE.PointLight(0xffffff, LIGHT_INTENSITY, 800, 0.25);
 
 function makeLegoRing() {
   const PIECE_COUNT = 30;
@@ -149,13 +147,15 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
       pieces.push(button);
     }
   }
-  const geometry = mergeBufferGeometries(pieces);
+  const geometry = BufferGeometryUtils.mergeGeometries(pieces);
   return geometry;
 }
 function init() {
   buildPiecePool();
   makeLegoRing();
   makeCenterPiece();
+  pointLight.position.set(0, 20, 0);
+  // pointLight.add(new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })));
 }
 
 function scroll(r, scene, camera) {
@@ -264,6 +264,15 @@ function enter(scene) {
       },
     });
   }
+  anime.remove(pointLight);
+  anime({
+    targets: pointLight,
+    intensity: LIGHT_INTENSITY,
+    duration: 4000,
+    begin: () => {
+      scene.add(pointLight);
+    },
+  });
 }
 
 function update(scene) {}
@@ -294,6 +303,15 @@ function leave(scene) {
     easing: "easeInOutQuad",
     complete: () => {
       ring.removeFromParent();
+    },
+  });
+  anime.remove(pointLight);
+  anime({
+    targets: pointLight,
+    intensity: 0,
+    duration: 4000,
+    complete: () => {
+      scene.remove(pointLight);
     },
   });
 }

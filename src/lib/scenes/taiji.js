@@ -23,6 +23,7 @@ function makeBackground() {
   const material = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0.0 },
+      alpha: { value: 1.0 },
     },
     vertexShader: VERTEX_SHADER,
     fragmentShader: CLOUD_FRAGMENT_SHADER,

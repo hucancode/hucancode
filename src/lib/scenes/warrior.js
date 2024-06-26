@@ -28,8 +28,8 @@ function onWindowResize() {
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
-  cameraPositionNear = new THREE.Vector3(2.5, 3, 2.5);
+  camera = new THREE.PerspectiveCamera(45, w / h, 0.001, 1000);
+  cameraPositionNear = new THREE.Vector3(2.8, 3.9, 2.8);
   cameraPositionFar = new THREE.Vector3(4, 6, 4);
   isZoomingIn = false;
   isZoomingOut = false;
@@ -44,7 +44,7 @@ function rebuildOrbitControl() {
   }
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 1, 0);
-  controls.minDistance = 2; // the minimum distance the camera must have from center
+  controls.minDistance = 0.1; // the minimum distance the camera must have from center
   controls.maxDistance = 10; // the maximum distance the camera must have from center
   controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.33;
   controls.enablePan = false;
@@ -81,12 +81,11 @@ function destroy() {
 async function buildScene() {
   scene = new THREE.Scene();
 
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
   hemiLight.position.set(0, 2, 0);
-  hemiLight.intensity = 2;
   scene.add(hemiLight);
 
-  const backLight = new THREE.PointLight(0xffffff, 1, 600);
+  const backLight = new THREE.PointLight(0xffffff, 50, 600);
   //backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 15, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, 2.5, -0.7);
   scene.add(backLight);
