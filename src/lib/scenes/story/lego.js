@@ -215,7 +215,7 @@ function enter(scene) {
     y: 1,
     x: 1,
     z: 1,
-    delay: 500,
+    delay: 1000,
     duration: 1500,
     complete: () => {
       anime({
