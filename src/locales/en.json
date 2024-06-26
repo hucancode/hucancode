@@ -1,17 +1,11 @@
 {
   "common": {
     "contact": {
-      "home": "Home",
-      "social": "See more from me!",
-      "contact": "Contact",
       "github": "Github",
       "leetcode": "Leetcode",
       "blog": "Blog",
       "sendMail": "Email",
       "downloadResume": "Resume"
-    },
-    "note": {
-      "madeWith": "Made with love using Svelte, Three.js"
     }
   },
   "home": {
@@ -22,23 +16,8 @@
       "enablejs": "See how to enable JavaScript in your browser here"
     },
     "showcase": {
-      "rubik": "Rubik",
-      "dragon": "Dragon",
-      "lego": "Lego",
-      "taiji": "Taiji",
-      "warrior": "Warrior",
       "surprise": "Surprise me!",
-      "fullscreen": "Fullscreen",
       "goback": "Go back"
-    },
-    "stats": {
-      "title": "Tech I love",
-      "rating": "Rating",
-      "topPercentage": "Top"
     }
-  },
-  "creative": {
-    "return": "Return",
-    "buymeacoffee": "Buy me a coffee"
   }
 }

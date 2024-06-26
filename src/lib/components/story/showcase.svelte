@@ -105,9 +105,7 @@
       return;
     }
     for (let showcase of showcases) {
-      if (showcase.init) {
-        showcase.init();
-      }
+      showcase.init();
     }
     onShowcaseChange({ detail: currentShowcase });
     frameID = requestAnimationFrame(loop);
@@ -157,7 +155,7 @@
 </svelte:head>
 <section>
   <Orbs
-    iconSources={showcases.map((showcase) => showcase.icon)}
+    iconSources={showcases.map((e) => e.icon)}
     on:change={onShowcaseChange}
   />
   <noscript>

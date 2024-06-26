@@ -1,17 +1,11 @@
 {
   "common": {
     "contact": {
-      "home": "Uchi",
-      "social": "Tatata bala tu!",
-      "contact": "Gelato!",
       "github": "Github",
       "leetcode": "Leetcode",
       "blog": "Blogar",
       "sendMail": "Mah email",
       "downloadResume": "Resume muak"
-    },
-    "note": {
-      "madeWith": "Underwear para tu kanpai Svelte, Three.js"
     }
   },
   "home": {
@@ -22,23 +16,8 @@
       "enablejs": "Oke JavaScript moak ottoke"
     },
     "showcase": {
-      "rubik": "Cucumber",
-      "dragon": "Peach",
-      "lego": "Avocado",
-      "taiji": "Apple",
-      "warrior": "Mango",
       "surprise": "Waaaaaa!!",
-      "fullscreen": "Big banana!",
       "goback": "Overware"
-    },
-    "stats": {
-      "title": "Me want banana!",
-      "rating": "Potato",
-      "topPercentage": "Tara"
     }
-  },
-  "creative": {
-    "return": "Lukatuu",
-    "buymeacoffee": "Banana ageru"
   }
 }
