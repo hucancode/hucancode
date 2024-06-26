@@ -54,7 +54,7 @@
     "/assets/textures/sword_Glossiness.png",
     "/assets/textures/sword_Normal.png",
     "/assets/textures/sword_Specular.png",
-  ]
+  ];
 
   let showcases = [
     {
