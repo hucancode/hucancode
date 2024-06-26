@@ -18,6 +18,7 @@ export function init(element) {
   });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
+  renderer.setAnimationLoop(render);
   if (scene != null) {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -78,7 +79,7 @@ export function destroy() {
   renderer.dispose();
 }
 
-export function render() {
+function render() {
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }

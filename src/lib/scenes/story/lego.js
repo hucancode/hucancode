@@ -33,6 +33,25 @@ function makeLegoRing() {
     ringParticles.push(particle);
   }
   ring.scale.set(5, 5, 5);
+  const RADIUS = 25;
+  for (let particle of ringParticles) {
+    const duration = Math.random() * 4000 + 20000;
+    anime({
+      targets: particle,
+      rotation: particle.rotation + Math.PI * 2,
+      duration,
+      easing: "linear",
+      direction: "reverse",
+      loop: true,
+      update: (_) => {
+        const x = Math.sin(particle.rotation) * RADIUS;
+        const z = Math.cos(particle.rotation) * RADIUS;
+        const y = particle.elevation;
+        particle.node.position.set(x, y, z);
+        particle.node.lookAt(0, 0, 0);
+      },
+    });
+  }
 }
 
 function makeCenterPiece() {
@@ -196,6 +215,7 @@ function enter(scene) {
     y: 1,
     x: 1,
     z: 1,
+    delay: 500,
     duration: 1500,
     complete: () => {
       anime({
@@ -245,25 +265,6 @@ function enter(scene) {
     duration: 1000,
     easing: "easeInOutQuad",
   });
-  const RADIUS = 25;
-  for (let particle of ringParticles) {
-    const duration = Math.random() * 4000 + 20000;
-    anime({
-      targets: particle,
-      rotation: particle.rotation + Math.PI * 2,
-      duration,
-      easing: "linear",
-      direction: "reverse",
-      loop: true,
-      update: (_) => {
-        const x = Math.sin(particle.rotation) * RADIUS;
-        const z = Math.cos(particle.rotation) * RADIUS;
-        const y = particle.elevation;
-        particle.node.position.set(x, y, z);
-        particle.node.lookAt(0, 0, 0);
-      },
-    });
-  }
   anime.remove(pointLight);
   anime({
     targets: pointLight,

@@ -10,8 +10,8 @@ let waitingScene = null;
 const clock = new THREE.Clock();
 const POSITION_Y = -18;
 const SCALE = 15;
-const FIRST_LOAD_DELAY = 500;
-const LIGHT_INTENSITY = 1500;
+const FIRST_LOAD_DELAY = 250;
+const BACK_LIGHT_INTENSITY = 1500;
 let warriorParams = {
   y: -50,
   scale: 1,
@@ -126,7 +126,7 @@ function animateLightIn(scene) {
   });
   anime({
     targets: backLight,
-    intensity: LIGHT_INTENSITY,
+    intensity: BACK_LIGHT_INTENSITY,
     delay: 800,
     duration: 2000,
     begin: () => {

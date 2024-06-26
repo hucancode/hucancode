@@ -34,7 +34,6 @@
   import {
     init,
     destroy,
-    render,
     scene,
     camera,
     controls,
@@ -126,7 +125,6 @@
   function loop() {
     frameID = requestAnimationFrame(loop);
     showcaseUpdate();
-    render();
   }
 
   function showcaseEnter() {
