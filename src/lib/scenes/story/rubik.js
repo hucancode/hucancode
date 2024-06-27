@@ -122,9 +122,15 @@ function makeRubik() {
   //addDebugArrow(pivot);
 }
 
-function rearrangeRubik(offsetY) {
+function rearrangeRubik(offsetX, offsetY, offsetZ) {
+  if (!offsetX) {
+    offsetX = 0;
+  }
   if (!offsetY) {
     offsetY = 0;
+  }
+  if (!offsetZ) {
+    offsetZ = 0;
   }
   transferCubes();
   var i = 0;
@@ -132,7 +138,9 @@ function rearrangeRubik(offsetY) {
     for (let x = 0; x < cubeNum; x++) {
       for (let z = 0; z < cubeNum; z++) {
         const cube = cubes[i];
-        cube.position.set(x, y + offsetY, z).multiplyScalar(1 + CUBE_MARGIN);
+        cube.position
+          .set(x + offsetX, y + offsetY, z + offsetZ)
+          .multiplyScalar(1 + CUBE_MARGIN);
         cube.rotation.set(0, 0, 0);
         i++;
       }
@@ -155,18 +163,27 @@ function init() {
 function enter(scene) {
   const targets = cubes.map((e) => e.position);
   anime.remove(targets);
-  rearrangeRubik(-100);
+  rearrangeRubik(-5, -20, 0);
   scene.add(rubik);
   scene.add(pivot);
   anime({
     targets,
-    y: (e, i) => {
-      let y = Math.floor(i / cubeNum / cubeNum);
-      return y * (1 + CUBE_MARGIN);
+    y: {
+      value: (e, i) => {
+        let y = Math.floor(i / cubeNum / cubeNum);
+        return y * (1 + CUBE_MARGIN);
+      },
+      easing: "easeOutElastic",
     },
-    easing: "easeOutElastic",
-    delay: anime.stagger(50),
-    duration: 1500,
+    x: {
+      value: (e, i) => {
+        let x = Math.floor(i / cubeNum) % cubeNum;
+        return x * (1 + CUBE_MARGIN);
+      },
+      easing: "easeOutSine",
+    },
+    delay: anime.stagger(20),
+    duration: 1000,
     complete: () => {
       startMoveRandom();
     },
@@ -184,12 +201,22 @@ function leave(scene) {
   anime.remove(targets);
   anime({
     targets,
-    y: (e, i) => {
-      let y = Math.floor(i / cubeNum / cubeNum);
-      return y * (1 + CUBE_MARGIN) + 100;
+    y: {
+      value: (e, i) => {
+        let y = Math.floor(i / cubeNum / cubeNum);
+        return y * (1 + CUBE_MARGIN) - 20;
+      },
+      easing: "easeInElastic",
+    },
+    x: {
+      value: (e, i) => {
+        let x = Math.floor(i / cubeNum) % cubeNum;
+        return x * (1 + CUBE_MARGIN) - 5;
+      },
+      easing: "easeInSine",
     },
     duration: 500,
-    delay: anime.stagger(30),
+    delay: anime.stagger(20),
     easing: "easeInOutQuad",
     complete: () => {
       scene.remove(rubik);
