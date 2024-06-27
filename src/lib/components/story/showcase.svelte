@@ -59,18 +59,21 @@
 
   let showcases = [
     {
+      name: "lego",
       icon: planetIcon,
       init: legoInit,
       enter: legoEnter,
       leave: legoLeave,
     },
     {
+      name: "rubik",
       icon: cubeIcon,
       init: rubikInit,
       enter: rubikEnter,
       leave: rubikLeave,
     },
     {
+      name: "taiji",
       icon: dragonIcon,
       init: taijiInit,
       enter: taijiEnter,
@@ -78,6 +81,7 @@
       update: taijiUpdate,
     },
     {
+      name: "warrior",
       icon: warriorIcon,
       init: warriorInit,
       enter: warriorEnter,
@@ -89,6 +93,12 @@
 
   function onScroll(e) {
     let r = e.detail;
+    if(!e.automatic && gtag) {
+      let selected = showcases[currentShowcase].name;
+      gtag('event', 'showcase_selected', {
+        value: selected,
+      });
+    }
     // animateCamera(Math.min(1, r));
     if (r > 0 && frameID === 0) {
       frameID = requestAnimationFrame(loop);
@@ -108,7 +118,7 @@
     for (let showcase of showcases) {
       showcase.init(scene, camera, renderer);
     }
-    onShowcaseChange({ detail: currentShowcase });
+    onShowcaseChange({ detail: currentShowcase, automatic: true });
     frameID = requestAnimationFrame(loop);
     ready = true;
   });
