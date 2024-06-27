@@ -16,7 +16,7 @@ Here is a preview of what we will be creating in this tutorial
 
 <div style="width: 100%;text-align: center;">
     <video autoplay loop controls>
-    <source src="/blog/post/animated-dragon/dragon-600-20s.webm">
+    <source src="/blog/post/animated-dragon/dragon-600-20s.webm" type="video/webm" >
     </video>
 </div>
 
@@ -672,7 +672,7 @@ export {
 
 <div style="width: 100%;text-align: center;">
     <video autoplay loop controls>
-    <source src="/blog/post/animated-dragon/dragon-rust.mp4">
+    <source src="/blog/post/animated-dragon/dragon-rust.mp4" type="video/mp4" >
     </video>
 </div>
 

@@ -45,16 +45,16 @@
   const preloadAssets = [
     "/assets/gltf/dragon.glb",
     "/assets/gltf/warrior.glb",
-    "/assets/textures/body_Diffuse.png",
-    "/assets/textures/body_Emissive.png",
-    "/assets/textures/body_Glossiness.png",
-    "/assets/textures/body_Normal.png",
-    "/assets/textures/body_Specular.png",
-    "/assets/textures/sword_Diffuse.png",
-    "/assets/textures/sword_Emissive.png",
-    "/assets/textures/sword_Glossiness.png",
-    "/assets/textures/sword_Normal.png",
-    "/assets/textures/sword_Specular.png",
+    // "/assets/textures/body_Diffuse.png",
+    // "/assets/textures/body_Emissive.png",
+    // "/assets/textures/body_Glossiness.png",
+    // "/assets/textures/body_Normal.png",
+    // "/assets/textures/body_Specular.png",
+    // "/assets/textures/sword_Diffuse.png",
+    // "/assets/textures/sword_Emissive.png",
+    // "/assets/textures/sword_Glossiness.png",
+    // "/assets/textures/sword_Normal.png",
+    // "/assets/textures/sword_Specular.png",
   ];
 
   let showcases = [
@@ -161,7 +161,7 @@
 
 <svelte:head>
   {#each preloadAssets as asset}
-    <link rel="preload" href={asset} as="fetch" />
+    <link rel="preload" href={asset} as="fetch" crossorigin />
   {/each}
 </svelte:head>
 <section>
