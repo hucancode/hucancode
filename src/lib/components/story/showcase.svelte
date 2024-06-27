@@ -146,12 +146,6 @@
   }
 
   function onShowcaseChange(e) {
-    if (!e.automatic && window.dataLayer) {
-      let selected = showcases[currentShowcase].name;
-      window.dataLayer.push(["event", "showcase_selected", {
-        value: selected,
-      }]);
-    }
     let index = e.detail;
     showcaseLeave();
     currentShowcase = index;
