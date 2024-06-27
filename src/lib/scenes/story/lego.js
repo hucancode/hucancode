@@ -10,7 +10,7 @@ import {
   RedFormat,
 } from "three";
 import anime from "animejs";
-import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 let pieces = [];
 let materials = [];
@@ -174,7 +174,7 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
       pieces.push(button);
     }
   }
-  const geometry = BufferGeometryUtils.mergeGeometries(pieces);
+  const geometry = mergeGeometries(pieces);
   return geometry;
 }
 function init() {

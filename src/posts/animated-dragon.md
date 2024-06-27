@@ -32,22 +32,24 @@ The first step is to set up the basic components of our 3D scene: the scene itse
 ### Initializing the Scene
 
 ```js
-import * as THREE from "three";
+import { Scene } from "three";
 
 let scene, camera, renderer;
 
 function buildScene() {
-  scene = new THREE.Scene();
+  scene = new Scene();
 }
 ```
 
-Here, we create a new scene using `THREE.Scene()`.
+Here, we create a new scene using `Scene`.
 
 ### Setting Up the Camera
 
 ```js
+import { PerspectiveCamera } from "three";
+
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
   camera.position.set(0, 20, 200);
   camera.lookAt(scene.position);
 }
@@ -58,11 +60,12 @@ We use a perspective camera to create a realistic 3D view. The camera is positio
 ### Initializing the Renderer
 
 ```js
+import { WebGLRenderer } from "three";
 function init() {
   let canvas = document.getElementById("dragon");
   let w = canvas.clientWidth;
   let h = canvas.clientHeight;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,
@@ -82,16 +85,12 @@ The renderer is initialized with antialiasing and alpha settings to improve visu
 We add two types of lights: ambient light for general illumination and a dynamic point light for more dramatic effects.
 
 ```js
+import { AmbientLight, PointLight } from "three";
+
 function setupLightning() {
-  ambientLight = new THREE.AmbientLight(0x003973);
+  ambientLight = new AmbientLight(0x003973);
   scene.add(ambientLight);
-  dynamicLight = new THREE.PointLight(0xffffff, 5, 0, 0.2);
-  dynamicLight.add(
-    new THREE.Mesh(
-      new THREE.SphereGeometry(2, 16, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff })
-    )
-  );
+  dynamicLight = new PointLight(0xffffff, 5, 0, 0.2);
   scene.add(dynamicLight);
 }
 ```
@@ -105,6 +104,7 @@ To load the dragon model, we use a utility function loadModelStatic (assumed to 
 ```js
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
+import { CatmullRomCurve3, Vector3 } from "three";
 
 let model, dragon, curve;
 
@@ -122,7 +122,7 @@ export async function loadModelStatic(url) {
 }
 
 async function buildScene() {
-  scene = new THREE.Scene();
+  scene = new Scene();
   model = await loadModelStatic("dragon.glb");
 }
 
@@ -135,9 +135,7 @@ function makeDragon() {
     z: Math.random() * 160 - 80,
   }));
 
-  curve = new THREE.CatmullRomCurve3(
-    points.map((p) => new THREE.Vector3(p.x, p.y, p.z))
-  );
+  curve = new CatmullRomCurve3(points.map((p) => new Vector3(p.x, p.y, p.z)));
   curve.curveType = "centripetal";
   curve.closed = true;
 
@@ -664,7 +662,6 @@ export {
   clearDragon,
   makeDragon,
 };
-
 ```
 
 </details>

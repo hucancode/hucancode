@@ -44,23 +44,27 @@ We need to consider 2 things
 Thank to `ThreeJS` we can make a cube geometry easily with
 
 ```js
-const piece = new THREE.BoxGeometry();
+import { BoxGeometry } from "three";
+
+const piece = new BoxGeometry();
 ```
 
 Then we need to give color to each face
 
 ```js
+import { Color, Float32BufferAttribute } from "three";
+
 const vertices = piece.getAttribute("position").count;
 const faces = vertices / 6;
 const buffer = [];
-const color = new THREE.Color();
+const color = new Color();
 for (let f = 0; f < faces; i++) {
   color.setHex(getColor(x, y, z, f));
   for (let j = 0; j < 6; j++) {
     buffer.push(color.r, color.g, color.b);
   }
 }
-piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
+piece.setAttribute("color", new Float32BufferAttribute(buffer, 3));
 ```
 
 If you have experience with OpenGL or something similar before, this code will looks obvious to your eyes. But if you don't, here is a brief explaination about what the code done:
@@ -84,11 +88,13 @@ Some small details to look out for:
 - Avoid wasting resource by reusing material
 
 ```js
+import { Mesh } from "three";
+
 for (let x = 0; x < cubeNum; x++) {
   for (let y = 0; y < cubeNum; y++) {
     for (let z = 0; z < cubeNum; z++) {
       const geometry = makeSingleCube(x, y, z);
-      const cube = new THREE.Mesh(geometry, material);
+      const cube = new Mesh(geometry, material);
       cube.position.x = x * (1 + CUBE_MARGIN);
       cube.position.y = y * (1 + CUBE_MARGIN);
       cube.position.z = z * (1 + CUBE_MARGIN);
@@ -169,7 +175,7 @@ function cleanUpAfterMove() {
   let newCubes = cubes;
   for (let i = pivot.children.length - 1; i >= 0; i--) {
     const cube = pivot.children[i];
-    const pos = new THREE.Vector3();
+    const pos = new Vector3();
     scene.attach(cube);
     cube.getWorldPosition(pos);
     const x = posToIndex(pos.x);
@@ -549,7 +555,6 @@ function render() {
 }
 
 export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };
-
 ```
 
 </details>

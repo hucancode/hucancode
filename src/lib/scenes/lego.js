@@ -14,7 +14,7 @@ import {
   WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 let scene, camera, renderer, controls;
 let pieces = [];
@@ -225,7 +225,7 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
       pieces.push(button);
     }
   }
-  const geometry = BufferGeometryUtils.mergeGeometries(pieces);
+  const geometry = mergeGeometries(pieces);
   return geometry;
 }
 
