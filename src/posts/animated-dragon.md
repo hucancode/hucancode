@@ -1,6 +1,6 @@
 ---
-title:  Creating a Dynamic 3D Dragon Scene with Three.js
-excerpt: I'll walk you through the process of creating a dynamic 3D dragon scene using Three.js
+title:  Creating a 3D Dynamic Dragon with Three.js
+excerpt: I'll walk you through the process of creating a dynamic dragon scene using Three.js
 date: 2024-06-27
 cover: /blog/post/animated-dragon/10024398.png
 categories:
@@ -8,9 +8,9 @@ categories:
   - threejs
 ---
 
-In this blog post, I'll walk you through the process of creating a dynamic 3D dragon scene using Three.js. We'll cover how to set up the scene, load models, create animations, and add lighting effects. Additionally, we'll dive into an ingenious trick to animate any static 3D model along a curve path using data textures.
-
 ## What we will be creating today
+
+In this blog post, I'll walk you through the process of creating a dynamic dragon scene using Three.js. We'll cover how to set up the scene, load models, create animations, and add lighting effects. Additionally, we'll dive into an ingenious trick to animate any static 3D model along a curve path using data textures.
 
 Here is a preview of what we will be creating in this tutorial
 
@@ -490,6 +490,7 @@ This script uses data textures to transfer curve information to the GPU, allowin
 ## Final code
 
 You can check out the final result at [here](/dragon)
+
 The full implementation is as follow
 
 <details>
@@ -648,6 +649,17 @@ export {
 ```
 
 </details>
+
+## Learn more
+
+[Here](https://github.com/hucancode/flying-dragon) is a **Rust** version for this animated dragon, powered by **WebGPU**. We follow the same principle of passing a curve from CPU to GPU and then let the GPU take over the animation.
+
+<div style="width: 100%;text-align: center;">
+    <video autoplay loop controls>
+    <source src="/blog/post/animated-dragon/dragon-rust.mp4">
+    </video>
+</div>
+
 
 ## Conclusion
 
