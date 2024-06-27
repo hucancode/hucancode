@@ -31,13 +31,17 @@ function setupLights() {
 async function makeWarrior(scene, camera, renderer) {
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
-  if(PRECOMPILE_SHADER) {
+  if (PRECOMPILE_SHADER) {
     console.log("Precompiling shader...");
     warrior.scene.position.set(0, 0, 0);
     warrior.scene.scale.set(SCALE, SCALE, SCALE);
     scene.add(warrior.scene);
+    scene.add(hemiLight);
+    scene.add(backLight);
     renderer.compile(scene, camera);
     scene.remove(warrior.scene);
+    scene.remove(hemiLight);
+    scene.remove(backLight);
   }
   warrior.scene.scale.set(0, 0, 0);
   warrior.scene.position.set(0, -50, 0);
