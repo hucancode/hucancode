@@ -15,9 +15,9 @@ In this blog post, I'll walk you through the process of creating a dynamic 3D dr
 You can check out the final result at [here](/dragon)
 
 <div style="width: 100%;text-align: center;">
-<video autoplay controls>
-  <source src="/blog/post/animated-dragon/dragon-600-20s.webm">
-</video>
+    <video autoplay loop controls>
+    <source src="/blog/post/animated-dragon/dragon-600-20s.webm">
+    </video>
 </div>
 
 ## Prerequisites
