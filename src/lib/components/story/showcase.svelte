@@ -106,7 +106,7 @@
       return;
     }
     for (let showcase of showcases) {
-      await showcase.init(scene, camera, renderer);
+      showcase.init(scene, camera, renderer);
     }
     onShowcaseChange({ detail: currentShowcase });
     frameID = requestAnimationFrame(loop);

@@ -19,13 +19,16 @@ let warriorParams = {
   scale: 1,
 };
 
-async function buildScene(scene, camera, renderer) {
+function setupLights() {
   hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0);
   // hemiLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0x0400ff } ) ) );
   hemiLight.position.set(0, POSITION_Y + 30, 0);
   backLight = new THREE.PointLight(0xffffff, 0);
   // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, POSITION_Y + 30, -10);
+}
+
+async function makeWarrior(scene, camera, renderer) {
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
   if(PRECOMPILE_SHADER) {
@@ -73,8 +76,9 @@ async function playAction(callback) {
   animator.addEventListener("finished", callback);
 }
 
-async function init(scene, camera, renderer) {
-  await buildScene(scene, camera, renderer);
+function init(scene, camera, renderer) {
+  setupLights();
+  makeWarrior(scene, camera, renderer);
 }
 
 async function animateWarriorIn(scene) {
