@@ -38,7 +38,7 @@ async function makeWarrior(scene, camera, renderer) {
   warrior = await loadModel("warrior.glb");
   animator = new AnimationMixer(warrior.scene);
   if (PRECOMPILE_SHADER) {
-    console.log("Precompiling shader...");
+    // console.log("Precompiling shader...");
     warrior.scene.position.set(0, 0, 0);
     warrior.scene.scale.set(SCALE, SCALE, SCALE);
     scene.add(warrior.scene);
