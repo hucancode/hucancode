@@ -8,9 +8,9 @@ categories:
   - threejs
 ---
 
-In this blog post, I'll walk you through the process of creating a dynamic 3D dragon scene using Three.js. We'll cover how to set up the scene, load models, create animations, and add lighting effects. Additionally, we'll dive into an ingenious trick to animate any static 3D model along a curve path using data textures.
-
 ## What we will be creating today
+
+In this blog post, I'll walk you through the process of creating a dynamic 3D dragon scene using Three.js. We'll cover how to set up the scene, load models, create animations, and add lighting effects. Additionally, we'll dive into an ingenious trick to animate any static 3D model along a curve path using data textures.
 
 Here is a preview of what we will be creating in this tutorial
 
@@ -490,6 +490,7 @@ This script uses data textures to transfer curve information to the GPU, allowin
 ## Final code
 
 You can check out the final result at [here](/dragon)
+
 The full implementation is as follow
 
 <details>
