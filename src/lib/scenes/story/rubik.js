@@ -217,7 +217,6 @@ function leave(scene) {
     },
     duration: 500,
     delay: anime.stagger(20),
-    easing: "easeInOutQuad",
     complete: () => {
       scene.remove(rubik);
       scene.remove(pivot);
