@@ -12,12 +12,14 @@ const POSITION_Y = -18;
 const SCALE = 15;
 const FIRST_LOAD_DELAY = 250;
 const BACK_LIGHT_INTENSITY = 1500;
+const PRECOMPILE_SHADER = true;
+
 let warriorParams = {
   y: -50,
   scale: 1,
 };
 
-async function buildScene() {
+async function buildScene(scene, renderer) {
   hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0);
   // hemiLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0x0400ff } ) ) );
   hemiLight.position.set(0, POSITION_Y + 30, 0);
@@ -27,6 +29,14 @@ async function buildScene() {
   warrior = await loadModel("warrior.glb");
   animator = new THREE.AnimationMixer(warrior.scene);
   warrior.scene.position.set(0, -50, 0);
+  if(PRECOMPILE_SHADER) {
+    const camera = new THREE.PerspectiveCamera(45, 4 / 3, 1, 2000);
+    camera.position.subVectors(warrior.scene.position, new THREE.Vector3(0, 0, 50));
+    camera.lookAt(warrior.scene.position);
+    scene.add(warrior.scene);
+    renderer.compile(scene, camera);
+    scene.remove(warrior.scene);
+  }
   // warrior.scene.scale.set(1, 1, 1);
   if (isWaitingForResource) {
     animateWarriorIn(waitingScene);
@@ -62,8 +72,8 @@ async function playAction(callback) {
   animator.addEventListener("finished", callback);
 }
 
-async function init() {
-  await buildScene();
+async function init(scene, renderer) {
+  await buildScene(scene, renderer);
 }
 
 async function animateWarriorIn(scene) {

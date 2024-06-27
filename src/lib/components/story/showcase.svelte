@@ -34,6 +34,7 @@
   import {
     init,
     destroy,
+    renderer,
     scene,
     camera,
     controls,
@@ -105,7 +106,7 @@
       return;
     }
     for (let showcase of showcases) {
-      showcase.init();
+      showcase.init(scene, renderer);
     }
     onShowcaseChange({ detail: currentShowcase });
     frameID = requestAnimationFrame(loop);
