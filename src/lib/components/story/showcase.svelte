@@ -93,12 +93,6 @@
 
   function onScroll(e) {
     let r = e.detail;
-    if (!e.automatic && gtag) {
-      let selected = showcases[currentShowcase].name;
-      gtag("event", "showcase_selected", {
-        value: selected,
-      });
-    }
     // animateCamera(Math.min(1, r));
     if (r > 0 && frameID === 0) {
       frameID = requestAnimationFrame(loop);
@@ -152,6 +146,12 @@
   }
 
   function onShowcaseChange(e) {
+    if (!e.automatic && window.dataLayer) {
+      let selected = showcases[currentShowcase].name;
+      window.dataLayer.push(["event", "showcase_selected", {
+        value: selected,
+      }]);
+    }
     let index = e.detail;
     showcaseLeave();
     currentShowcase = index;
