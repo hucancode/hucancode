@@ -7,13 +7,18 @@
     %sveltekit.head%
   </head>
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FV5C3T8B5Y"></script>
+  <script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-FV5C3T8B5Y"
+  ></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
 
-    gtag('config', 'G-FV5C3T8B5Y');
+    gtag("config", "G-FV5C3T8B5Y");
   </script>
   <body data-sveltekit-preload-data="hover">
     <div style="display: contents">%sveltekit.body%</div>

@@ -1,4 +1,14 @@
-import * as THREE from "three";
+import {
+  BoxGeometry,
+  Color,
+  CylinderGeometry,
+  DataTexture,
+  Mesh,
+  MeshToonMaterial,
+  Object3D,
+  PointLight,
+  RedFormat,
+} from "three";
 import anime from "animejs";
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
@@ -7,18 +17,18 @@ let materials = [];
 const POOL_SIZE = 20;
 const GRADIENT_STEP = 5;
 // objects
-const cube = new THREE.Object3D();
-const ring = new THREE.Object3D();
+const cube = new Object3D();
+const ring = new Object3D();
 const ringParticles = [];
 const cubePieces = [];
 const LIGHT_INTENSITY = 10;
-const pointLight = new THREE.PointLight(0xffffff, LIGHT_INTENSITY, 800, 0.25);
+const pointLight = new PointLight(0xffffff, LIGHT_INTENSITY, 800, 0.25);
 
 function makeLegoRing() {
   const PIECE_COUNT = 30;
   const ELEVATION = 5;
   for (let i = 0; i < PIECE_COUNT; i++) {
-    const node = new THREE.Mesh(
+    const node = new Mesh(
       getRandomPieceFromPool(),
       getRandomMaterialFromPool()
     );
@@ -58,32 +68,32 @@ function makeCenterPiece() {
   const material = getRandomMaterialFromPool();
   const OFFSET = 5;
   const geometry = makeLegoPiece(2, 2, 1);
-  const nodeA = new THREE.Mesh(geometry, material);
+  const nodeA = new Mesh(geometry, material);
   nodeA.position.set(0, OFFSET, 0);
   nodeA.scale.set(8, 8, 8);
-  const nodeB = new THREE.Mesh(geometry, material);
+  const nodeB = new Mesh(geometry, material);
   nodeB.position.set(0, -OFFSET, 0);
   nodeB.scale.set(8, 8, 8);
   nodeB.rotation.set(Math.PI, 0, 0);
   cube.add(nodeA);
   cube.add(nodeB);
 
-  const nodeC = new THREE.Mesh(geometry, material);
+  const nodeC = new Mesh(geometry, material);
   nodeC.position.set(0, 0, -OFFSET);
   nodeC.scale.set(8, 8, 8);
   nodeC.rotation.set(-Math.PI / 2, 0, 0);
-  const nodeD = new THREE.Mesh(geometry, material);
+  const nodeD = new Mesh(geometry, material);
   nodeD.position.set(0, 0, OFFSET);
   nodeD.scale.set(8, 8, 8);
   nodeD.rotation.set(Math.PI / 2, 0, 0);
   cube.add(nodeC);
   cube.add(nodeD);
 
-  const nodeE = new THREE.Mesh(geometry, material);
+  const nodeE = new Mesh(geometry, material);
   nodeE.position.set(OFFSET, 0, 0);
   nodeE.scale.set(8, 8, 8);
   nodeE.rotation.set(0, 0, -Math.PI / 2);
-  const nodeF = new THREE.Mesh(geometry, material);
+  const nodeF = new Mesh(geometry, material);
   nodeF.position.set(-OFFSET, 0, 0);
   nodeF.scale.set(8, 8, 8);
   nodeF.rotation.set(0, 0, Math.PI / 2);
@@ -110,19 +120,17 @@ function buildPiecePool() {
   for (var i = 0; i < gradients.length; i++) {
     gradients[i] = (i / gradients.length) * 256;
   }
-  const gradientMap = new THREE.DataTexture(
+  const gradientMap = new DataTexture(
     gradients,
     gradients.length,
     1,
-    THREE.RedFormat
+    RedFormat
   );
   gradientMap.needsUpdate = true;
 
   materials = colors
-    .map((v) => new THREE.Color(v))
-    .map(
-      (color) => new THREE.MeshToonMaterial({ color, gradientMap, fog: true })
-    );
+    .map((v) => new Color(v))
+    .map((color) => new MeshToonMaterial({ color, gradientMap, fog: true }));
 }
 
 function getRandomPieceFromPool() {
@@ -137,22 +145,22 @@ function getRandomMaterialFromPool() {
 function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
   const hh = (height - thickness) / 2;
   const hw = (width - thickness) / 2;
-  const ab = new THREE.BoxGeometry(width, depth, thickness);
+  const ab = new BoxGeometry(width, depth, thickness);
   ab.translate(0, 0, -hh);
-  const bc = new THREE.BoxGeometry(thickness, depth, height);
+  const bc = new BoxGeometry(thickness, depth, height);
   bc.translate(hw, 0, 0);
-  const cd = new THREE.BoxGeometry(width, depth, thickness);
+  const cd = new BoxGeometry(width, depth, thickness);
   cd.translate(0, 0, hh);
-  const da = new THREE.BoxGeometry(thickness, depth, height);
+  const da = new BoxGeometry(thickness, depth, height);
   da.translate(-hw, 0, 0);
-  const plank = new THREE.BoxGeometry(width, thickness, height);
+  const plank = new BoxGeometry(width, thickness, height);
   plank.translate(0, depth / 2, 0);
   const pieces = [ab, bc, cd, da, plank];
   const BUTTON_RADIUS = 0.4;
   const BUTTON_HEIGHT = 0.3;
   for (let i = 0; i < width; i++) {
     for (let j = 0; j < height; j++) {
-      const button = new THREE.CylinderGeometry(
+      const button = new CylinderGeometry(
         BUTTON_RADIUS,
         BUTTON_RADIUS,
         BUTTON_HEIGHT,
@@ -174,7 +182,7 @@ function init() {
   makeLegoRing();
   makeCenterPiece();
   pointLight.position.set(0, 20, 0);
-  // pointLight.add(new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })));
+  // pointLight.add(new Mesh(new SphereGeometry(1, 16, 8), new MeshBasicMaterial({ color: 0xffffff })));
 }
 
 function scroll(r, scene, camera) {

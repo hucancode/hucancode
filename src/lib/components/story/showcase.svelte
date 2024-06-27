@@ -93,9 +93,9 @@
 
   function onScroll(e) {
     let r = e.detail;
-    if(!e.automatic && gtag) {
+    if (!e.automatic && gtag) {
       let selected = showcases[currentShowcase].name;
-      gtag('event', 'showcase_selected', {
+      gtag("event", "showcase_selected", {
         value: selected,
       });
     }

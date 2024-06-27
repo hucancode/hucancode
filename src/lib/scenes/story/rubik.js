@@ -1,10 +1,18 @@
-import * as THREE from "three";
 import anime from "animejs";
+import {
+  BoxGeometry,
+  Color,
+  Float32BufferAttribute,
+  Mesh,
+  MeshBasicMaterial,
+  Object3D,
+  Vector3,
+} from "three";
 
-const rubik = new THREE.Object3D();
-const pivot = new THREE.Object3D();
+const rubik = new Object3D();
+const pivot = new Object3D();
 const cubes = [];
-const material = new THREE.MeshBasicMaterial({
+const material = new MeshBasicMaterial({
   vertexColors: true,
   fog: true,
 });
@@ -89,17 +97,17 @@ function getColor(x, y, z, face) {
 }
 
 function makeSingleCube(x, y, z) {
-  const piece = new THREE.BoxGeometry().toNonIndexed();
+  const piece = new BoxGeometry().toNonIndexed();
   const n = piece.getAttribute("position").count / 6;
   const buffer = [];
-  const color = new THREE.Color();
+  const color = new Color();
   for (let i = 0; i < n; i++) {
     color.setHex(getColor(x, y, z, i));
     for (let j = 0; j < 6; j++) {
       buffer.push(color.r, color.g, color.b);
     }
   }
-  piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
+  piece.setAttribute("color", new Float32BufferAttribute(buffer, 3));
   return piece;
 }
 
@@ -108,7 +116,7 @@ function makeRubik() {
     for (let x = 0; x < cubeNum; x++) {
       for (let z = 0; z < cubeNum; z++) {
         const geometry = makeSingleCube(x, y, z);
-        const cube = new THREE.Mesh(geometry, material);
+        const cube = new Mesh(geometry, material);
         cube.position.set(x, y, z).multiplyScalar(1 + CUBE_MARGIN);
         rubik.add(cube);
         cubes.push(cube);
@@ -235,7 +243,7 @@ function startMoveRandom() {
 function startMove(face, depth, magnitude) {
   for (var i = rubik.children.length - 1; i >= 0; i--) {
     let cube = rubik.children[i];
-    let p = new THREE.Vector3();
+    let p = new Vector3();
     cube.getWorldPosition(p);
     p.sub(rubik.position)
       .divide(rubik.scale)

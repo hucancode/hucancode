@@ -1,9 +1,21 @@
-import * as THREE from "three";
+import {
+  BoxGeometry,
+  Clock,
+  Color,
+  Float32BufferAttribute,
+  Mesh,
+  MeshBasicMaterial,
+  Object3D,
+  PerspectiveCamera,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
-const clock = new THREE.Clock();
-const material = new THREE.MeshBasicMaterial({
+const clock = new Clock();
+const material = new MeshBasicMaterial({
   vertexColors: true,
 });
 var time = 0;
@@ -52,17 +64,17 @@ function getCurrentSize() {
 }
 
 function makeSingleCube(x, y, z) {
-  const piece = new THREE.BoxGeometry().toNonIndexed();
+  const piece = new BoxGeometry().toNonIndexed();
   const n = piece.getAttribute("position").count / 6;
   const buffer = [];
-  const color = new THREE.Color();
+  const color = new Color();
   for (let i = 0; i < n; i++) {
     color.setHex(getColor(x, y, z, i));
     for (let j = 0; j < 6; j++) {
       buffer.push(color.r, color.g, color.b);
     }
   }
-  piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
+  piece.setAttribute("color", new Float32BufferAttribute(buffer, 3));
   return piece;
 }
 
@@ -81,7 +93,7 @@ function makeRubik() {
     for (let y = 0; y < cubeNum; y++) {
       for (let z = 0; z < cubeNum; z++) {
         const geometry = makeSingleCube(x, y, z);
-        const cube = new THREE.Mesh(geometry, material);
+        const cube = new Mesh(geometry, material);
         cube.position.x = x * (1 + CUBE_MARGIN);
         cube.position.y = y * (1 + CUBE_MARGIN);
         cube.position.z = z * (1 + CUBE_MARGIN);
@@ -90,7 +102,7 @@ function makeRubik() {
       }
     }
   }
-  pivot = new THREE.Object3D();
+  pivot = new Object3D();
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   pivot.position.x = k;
   pivot.position.y = k;
@@ -108,8 +120,8 @@ function remakeRubik(n) {
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new THREE.Scene();
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
+  scene = new Scene();
   camera.position.set(0, 2 + cubeNum * 2, 5 + cubeNum * 2);
   rebuildOrbitControl();
 }
@@ -133,7 +145,7 @@ function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,

@@ -1,5 +1,5 @@
 ---
-title:  Creating a 3D Dynamic Dragon with Three.js
+title: Creating a 3D Dynamic Dragon with Three.js
 excerpt: I'll walk you through the process of creating a dynamic dragon scene using Three.js
 date: 2024-06-27
 cover: /blog/post/animated-dragon/10024398.png
@@ -21,6 +21,7 @@ Here is a preview of what we will be creating in this tutorial
 </div>
 
 ## Prerequisites
+
 - Basic knowledge of JavaScript
 - Some basic usage of Three.js library
 
@@ -61,7 +62,11 @@ function init() {
   let canvas = document.getElementById("dragon");
   let w = canvas.clientWidth;
   let h = canvas.clientHeight;
-  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true,
+    alpha: true,
+  });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h);
   addEventListener("resize", onWindowResize);
@@ -69,6 +74,7 @@ function init() {
   setupCamera(w, h);
 }
 ```
+
 The renderer is initialized with antialiasing and alpha settings to improve visual quality. It is then sized to match the canvas dimensions.
 
 ### Adding Lighting
@@ -89,6 +95,7 @@ function setupLightning() {
   scene.add(dynamicLight);
 }
 ```
+
 Ambient light provides a soft light throughout the scene, while the dynamic light moves and changes color over time, adding a dynamic element to the lighting.
 
 ### Loading and Animating the Dragon Model
@@ -128,7 +135,9 @@ function makeDragon() {
     z: Math.random() * 160 - 80,
   }));
 
-  curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
+  curve = new THREE.CatmullRomCurve3(
+    points.map((p) => new THREE.Vector3(p.x, p.y, p.z))
+  );
   curve.curveType = "centripetal";
   curve.closed = true;
 
@@ -136,7 +145,6 @@ function makeDragon() {
   dragon.updateCurve(0, curve);
   scene.add(dragon.object3D);
 }
-
 ```
 
 The makeDragon function creates a set of random points to form a curved path and uses the Flow class to animate the dragon model along this path.
@@ -144,7 +152,6 @@ The makeDragon function creates a set of random points to form a curved path and
 ### Animating Models Along a Curve Using Data Textures
 
 Here's where the magic happens. The `CurveModifier.js` contains a clever trick to animate any static 3D model along a curve path by transferring curve data from the CPU to the GPU via a data texture.
-
 
 <details>
 
@@ -482,8 +489,8 @@ export class InstancedFlow extends Flow {
   }
 }
 ```
-</details>
 
+</details>
 
 This script uses data textures to transfer curve information to the GPU, allowing for smooth and efficient animation of models along curves.
 
@@ -497,14 +504,26 @@ The full implementation is as follow
 <summary>dragon.js</summary>
 
 ```js
-import * as THREE from "three";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
+import {
+  AmbientLight,
+  CatmullRomCurve3,
+  Clock,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  PointLight,
+  Scene,
+  SphereGeometry,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 
 let scene, camera, renderer, model;
 let dragons = [];
 let curves = [];
-const clock = new THREE.Clock();
+const clock = new Clock();
 var time = 0;
 let dynamicLight, ambientLight;
 const CANVAS_ID = "dragon";
@@ -515,23 +534,23 @@ function getCurrentDragonCount() {
 }
 
 async function buildScene() {
-  scene = new THREE.Scene();
+  scene = new Scene();
   model = await loadModelStatic("dragon.glb");
 }
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
   camera.position.set(0, 20, 200);
   camera.lookAt(scene.position);
 }
 
 function setupLightning() {
-  ambientLight = new THREE.AmbientLight(0x003973);
+  ambientLight = new AmbientLight(0x003973);
   scene.add(ambientLight);
-  dynamicLight = new THREE.PointLight(0xffffff, 5, 0, 0.2);
+  dynamicLight = new PointLight(0xffffff, 5, 0, 0.2);
   dynamicLight.add(
-    new THREE.Mesh(
-      new THREE.SphereGeometry(2, 16, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    new Mesh(
+      new SphereGeometry(2, 16, 8),
+      new MeshBasicMaterial({ color: 0xffffff })
     )
   );
   scene.add(dynamicLight);
@@ -560,8 +579,8 @@ function makeDragon() {
       z: Math.random() * VAR_Z + MIN_Z,
     };
   });
-  let curve = new THREE.CatmullRomCurve3(
-    points.map((e) => new THREE.Vector3(e.x, e.y, e.z))
+  let curve = new CatmullRomCurve3(
+    points.map((e) => new Vector3(e.x, e.y, e.z))
   );
   curve.curveType = "centripetal";
   curve.closed = true;
@@ -576,7 +595,7 @@ async function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,
@@ -659,7 +678,6 @@ export {
     <source src="/blog/post/animated-dragon/dragon-rust.mp4">
     </video>
 </div>
-
 
 ## Conclusion
 
