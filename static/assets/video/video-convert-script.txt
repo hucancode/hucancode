@@ -1,1 +1,0 @@
-ffmpeg -c:v libvpx -i input.webm -c:v libvpx -vf scale=600:-1 -auto-alt-ref 0 output.webm
