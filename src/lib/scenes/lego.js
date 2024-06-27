@@ -1,7 +1,20 @@
-import * as THREE from "three";
 import anime from "animejs";
+import {
+  AmbientLight,
+  BoxGeometry,
+  Color,
+  CylinderGeometry,
+  HemisphereLight,
+  Mesh,
+  MeshStandardMaterial,
+  Object3D,
+  PerspectiveCamera,
+  PointLight,
+  Scene,
+  WebGLRenderer,
+} from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 let scene, camera, renderer, controls;
 let pieces = [];
@@ -16,9 +29,9 @@ function makeLegoRing() {
   const PIECE_COUNT = 30;
   const ELEVATION = 5;
   const RADIUS = 25;
-  const ring = new THREE.Object3D();
+  const ring = new Object3D();
   for (let i = 0; i < PIECE_COUNT; i++) {
-    const node = new THREE.Mesh(
+    const node = new Mesh(
       getRandomPieceFromPool(),
       getRandomMaterialFromPool()
     );
@@ -53,34 +66,34 @@ function makeLegoRing() {
 function makeCenterPiece() {
   const material = getRandomMaterialFromPool();
   const OFFSET = 5;
-  const cube = new THREE.Object3D();
+  const cube = new Object3D();
   const geometry = makeLegoPiece(2, 2, 1);
-  const nodeA = new THREE.Mesh(geometry, material);
+  const nodeA = new Mesh(geometry, material);
   nodeA.position.set(0, OFFSET, 0);
   nodeA.scale.set(8, 8, 8);
-  const nodeB = new THREE.Mesh(geometry, material);
+  const nodeB = new Mesh(geometry, material);
   nodeB.position.set(0, -OFFSET, 0);
   nodeB.scale.set(8, 8, 8);
   nodeB.rotation.set(Math.PI, 0, 0);
   cube.add(nodeA);
   cube.add(nodeB);
 
-  const nodeC = new THREE.Mesh(geometry, material);
+  const nodeC = new Mesh(geometry, material);
   nodeC.position.set(0, 0, -OFFSET);
   nodeC.scale.set(8, 8, 8);
   nodeC.rotation.set(-Math.PI / 2, 0, 0);
-  const nodeD = new THREE.Mesh(geometry, material);
+  const nodeD = new Mesh(geometry, material);
   nodeD.position.set(0, 0, OFFSET);
   nodeD.scale.set(8, 8, 8);
   nodeD.rotation.set(Math.PI / 2, 0, 0);
   cube.add(nodeC);
   cube.add(nodeD);
 
-  const nodeE = new THREE.Mesh(geometry, material);
+  const nodeE = new Mesh(geometry, material);
   nodeE.position.set(OFFSET, 0, 0);
   nodeE.scale.set(8, 8, 8);
   nodeE.rotation.set(0, 0, -Math.PI / 2);
-  const nodeF = new THREE.Mesh(geometry, material);
+  const nodeF = new Mesh(geometry, material);
   nodeF.position.set(-OFFSET, 0, 0);
   nodeF.scale.set(8, 8, 8);
   nodeF.rotation.set(0, 0, Math.PI / 2);
@@ -131,14 +144,14 @@ function makeCenterPiece() {
 }
 
 function setupLight() {
-  const light = new THREE.AmbientLight(0x666666); // soft white light
+  const light = new AmbientLight(0x666666); // soft white light
   scene.add(light);
-  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 10);
+  const hemiLight = new HemisphereLight(0x999999, 0x000000, 10);
   hemiLight.position.set(0, 30, 0);
   scene.add(hemiLight);
 
-  const backLight = new THREE.PointLight(0x5599ff, 20);
-  // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 1, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
+  const backLight = new PointLight(0x5599ff, 20);
+  // backLight.add( new Mesh( new SphereGeometry( 1, 1, 8 ), new MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, 30, 0);
   scene.add(backLight);
 
@@ -167,8 +180,8 @@ function buildPiecePool() {
   ];
 
   materials = colors
-    .map((v) => new THREE.Color(v))
-    .map((color) => new THREE.MeshStandardMaterial({ color: color }));
+    .map((v) => new Color(v))
+    .map((color) => new MeshStandardMaterial({ color: color }));
 }
 
 function getRandomPieceFromPool() {
@@ -183,22 +196,22 @@ function getRandomMaterialFromPool() {
 function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
   const hh = (height - thickness) / 2;
   const hw = (width - thickness) / 2;
-  const ab = new THREE.BoxGeometry(width, depth, thickness);
+  const ab = new BoxGeometry(width, depth, thickness);
   ab.translate(0, 0, -hh);
-  const bc = new THREE.BoxGeometry(thickness, depth, height);
+  const bc = new BoxGeometry(thickness, depth, height);
   bc.translate(hw, 0, 0);
-  const cd = new THREE.BoxGeometry(width, depth, thickness);
+  const cd = new BoxGeometry(width, depth, thickness);
   cd.translate(0, 0, hh);
-  const da = new THREE.BoxGeometry(thickness, depth, height);
+  const da = new BoxGeometry(thickness, depth, height);
   da.translate(-hw, 0, 0);
-  const plank = new THREE.BoxGeometry(width, thickness, height);
+  const plank = new BoxGeometry(width, thickness, height);
   plank.translate(0, depth / 2, 0);
   const pieces = [ab, bc, cd, da, plank];
   const BUTTON_RADIUS = 0.4;
   const BUTTON_HEIGHT = 0.3;
   for (let i = 0; i < width; i++) {
     for (let j = 0; j < height; j++) {
-      const button = new THREE.CylinderGeometry(
+      const button = new CylinderGeometry(
         BUTTON_RADIUS,
         BUTTON_RADIUS,
         BUTTON_HEIGHT,
@@ -212,13 +225,13 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
       pieces.push(button);
     }
   }
-  const geometry = BufferGeometryUtils.mergeGeometries(pieces);
+  const geometry = mergeGeometries(pieces);
   return geometry;
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new THREE.Scene();
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
+  scene = new Scene();
   camera.position.set(40, 40, 40);
   rebuildOrbitControl();
 }
@@ -242,7 +255,7 @@ function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,

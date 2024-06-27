@@ -44,23 +44,27 @@ We need to consider 2 things
 Thank to `ThreeJS` we can make a cube geometry easily with
 
 ```js
-const piece = new THREE.BoxGeometry();
+import { BoxGeometry } from "three";
+
+const piece = new BoxGeometry();
 ```
 
 Then we need to give color to each face
 
 ```js
+import { Color, Float32BufferAttribute } from "three";
+
 const vertices = piece.getAttribute("position").count;
 const faces = vertices / 6;
 const buffer = [];
-const color = new THREE.Color();
+const color = new Color();
 for (let f = 0; f < faces; i++) {
   color.setHex(getColor(x, y, z, f));
   for (let j = 0; j < 6; j++) {
     buffer.push(color.r, color.g, color.b);
   }
 }
-piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
+piece.setAttribute("color", new Float32BufferAttribute(buffer, 3));
 ```
 
 If you have experience with OpenGL or something similar before, this code will looks obvious to your eyes. But if you don't, here is a brief explaination about what the code done:
@@ -84,11 +88,13 @@ Some small details to look out for:
 - Avoid wasting resource by reusing material
 
 ```js
+import { Mesh } from "three";
+
 for (let x = 0; x < cubeNum; x++) {
   for (let y = 0; y < cubeNum; y++) {
     for (let z = 0; z < cubeNum; z++) {
       const geometry = makeSingleCube(x, y, z);
-      const cube = new THREE.Mesh(geometry, material);
+      const cube = new Mesh(geometry, material);
       cube.position.x = x * (1 + CUBE_MARGIN);
       cube.position.y = y * (1 + CUBE_MARGIN);
       cube.position.z = z * (1 + CUBE_MARGIN);
@@ -169,7 +175,7 @@ function cleanUpAfterMove() {
   let newCubes = cubes;
   for (let i = pivot.children.length - 1; i >= 0; i--) {
     const cube = pivot.children[i];
-    const pos = new THREE.Vector3();
+    const pos = new Vector3();
     scene.attach(cube);
     cube.getWorldPosition(pos);
     const x = posToIndex(pos.x);
@@ -209,13 +215,25 @@ Check out this [page](/rubik) and the code below
 <summary>Full implementation</summary>
 
 ```js
-import * as THREE from "three";
 import anime from "animejs";
+import {
+  BoxGeometry,
+  Clock,
+  Color,
+  Float32BufferAttribute,
+  Mesh,
+  MeshBasicMaterial,
+  Object3D,
+  PerspectiveCamera,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
-const clock = new THREE.Clock();
-const material = new THREE.MeshBasicMaterial({
+const clock = new Clock();
+const material = new MeshBasicMaterial({
   vertexColors: true,
 });
 let cameraTarget;
@@ -266,17 +284,17 @@ function getCurrentSize() {
 }
 
 function makeSingleCube(x, y, z) {
-  const piece = new THREE.BoxGeometry().toNonIndexed();
+  const piece = new BoxGeometry().toNonIndexed();
   const n = piece.getAttribute("position").count / 6;
   const buffer = [];
-  const color = new THREE.Color();
+  const color = new Color();
   for (let i = 0; i < n; i++) {
     color.setHex(getColor(x, y, z, i));
     for (let j = 0; j < 6; j++) {
       buffer.push(color.r, color.g, color.b);
     }
   }
-  piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
+  piece.setAttribute("color", new Float32BufferAttribute(buffer, 3));
   return piece;
 }
 
@@ -295,7 +313,7 @@ function makeRubik() {
     for (let y = 0; y < cubeNum; y++) {
       for (let z = 0; z < cubeNum; z++) {
         const geometry = makeSingleCube(x, y, z);
-        const cube = new THREE.Mesh(geometry, material);
+        const cube = new Mesh(geometry, material);
         cube.position.x = x * (1 + CUBE_MARGIN);
         cube.position.y = y * (1 + CUBE_MARGIN);
         cube.position.z = z * (1 + CUBE_MARGIN);
@@ -305,7 +323,7 @@ function makeRubik() {
       }
     }
   }
-  pivot = new THREE.Object3D();
+  pivot = new Object3D();
   const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
   pivot.position.x = k;
   pivot.position.y = k;
@@ -330,10 +348,10 @@ function remakeRubik(n) {
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new THREE.Scene();
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
+  scene = new Scene();
   camera.position.set(0, 0, 0);
-  cameraTarget = new THREE.Vector3(0, 0, 0);
+  cameraTarget = new Vector3(0, 0, 0);
   rebuildOrbitControl();
 }
 
@@ -356,7 +374,7 @@ function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,
@@ -395,20 +413,20 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
 }
-function addDebugArrow(object) {
-  const dirZ = new THREE.Vector3(0, 0, 1);
-  const dirY = new THREE.Vector3(0, 1, 0);
-  const dirX = new THREE.Vector3(1, 0, 0);
-  const origin = THREE.Vector3.Zero; //object.position;
-  const length = 2;
-  const hex = 0x0077ff;
-  const zArrow = new THREE.ArrowHelper(dirZ, origin, length, hex);
-  object.add(zArrow);
-  const yArrow = new THREE.ArrowHelper(dirY, origin, length, hex);
-  object.add(yArrow);
-  const xArrow = new THREE.ArrowHelper(dirX, origin, length, hex);
-  object.add(xArrow);
-}
+// function addDebugArrow(object) {
+//   const dirZ = new Vector3(0, 0, 1);
+//   const dirY = new Vector3(0, 1, 0);
+//   const dirX = new Vector3(1, 0, 0);
+//   const origin = Vector3.Zero; //object.position;
+//   const length = 2;
+//   const hex = 0x0077ff;
+//   const zArrow = new ArrowHelper(dirZ, origin, length, hex);
+//   object.add(zArrow);
+//   const yArrow = new ArrowHelper(dirY, origin, length, hex);
+//   object.add(yArrow);
+//   const xArrow = new ArrowHelper(dirX, origin, length, hex);
+//   object.add(xArrow);
+// }
 
 function startMove(face, depth, magnitude) {
   for (let x = 0; x < cubeNum; x++) {
@@ -498,7 +516,7 @@ function cleanUpAfterMove() {
   const newCubes = cubes;
   for (let i = pivot.children.length - 1; i >= 0; i--) {
     const cube = pivot.children[i];
-    const pos = new THREE.Vector3();
+    const pos = new Vector3();
     scene.attach(cube);
     cube.getWorldPosition(pos);
     const x = posToIndex(pos.x);

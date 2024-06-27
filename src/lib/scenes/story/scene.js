@@ -1,4 +1,11 @@
-import * as THREE from "three";
+import {
+  AmbientLight,
+  Fog,
+  HemisphereLight,
+  PerspectiveCamera,
+  Scene,
+  WebGLRenderer,
+} from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let canvas;
@@ -11,7 +18,7 @@ export function init(element) {
   canvas = element;
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,
@@ -31,8 +38,8 @@ export function init(element) {
 }
 
 function setupLights() {
-  const ambientLight = new THREE.AmbientLight(0x003973, 6);
-  const hemiLight = new THREE.HemisphereLight(0x999999, 0x000000, 10);
+  const ambientLight = new AmbientLight(0x003973, 6);
+  const hemiLight = new HemisphereLight(0x999999, 0x000000, 10);
   hemiLight.position.set(0, 30, 0);
   scene.add(ambientLight);
   scene.add(hemiLight);
@@ -51,9 +58,9 @@ function onWindowResize() {
 }
 
 function setupCamera(w, h) {
-  scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x000000, 50, 100);
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
+  scene = new Scene();
+  scene.fog = new Fog(0x000000, 50, 100);
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
   camera.position.set(40, 40, 40);
   camera.lookAt(0, 0, 0);
   rebuildOrbitControl();

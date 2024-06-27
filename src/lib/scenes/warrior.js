@@ -1,6 +1,16 @@
-import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { loadModel, wait } from "$lib/utils.js";
+import {
+  AnimationMixer,
+  Clock,
+  HemisphereLight,
+  LoopOnce,
+  PerspectiveCamera,
+  PointLight,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 
 let camera, scene, renderer, animator, controls;
 let model;
@@ -8,7 +18,7 @@ let cameraPositionNear;
 let cameraPositionFar;
 let isZoomingIn;
 let isZoomingOut;
-const clock = new THREE.Clock();
+const clock = new Clock();
 const CANVAS_ID = "warrior";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
@@ -28,9 +38,9 @@ function onWindowResize() {
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 0.001, 1000);
-  cameraPositionNear = new THREE.Vector3(2.8, 3.9, 2.8);
-  cameraPositionFar = new THREE.Vector3(4, 6, 4);
+  camera = new PerspectiveCamera(45, w / h, 0.001, 1000);
+  cameraPositionNear = new Vector3(2.8, 3.9, 2.8);
+  cameraPositionFar = new Vector3(4, 6, 4);
   isZoomingIn = false;
   isZoomingOut = false;
   camera.position.copy(cameraPositionFar);
@@ -55,7 +65,7 @@ async function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,
@@ -79,31 +89,19 @@ function destroy() {
 }
 
 async function buildScene() {
-  scene = new THREE.Scene();
+  scene = new Scene();
 
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
+  const hemiLight = new HemisphereLight(0xffffff, 0x444444, 3);
   hemiLight.position.set(0, 2, 0);
   scene.add(hemiLight);
 
-  const backLight = new THREE.PointLight(0xffffff, 50, 600);
-  //backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 15, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
+  const backLight = new PointLight(0xffffff, 50, 600);
+  //backLight.add( new Mesh( new SphereGeometry( 15, 16, 8 ), new MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, 2.5, -0.7);
   scene.add(backLight);
 
-  // ground
-  if (USE_GROUND) {
-    const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(2, 50, 0, Math.PI * 2),
-      new THREE.MeshPhongMaterial({ color: 0x11111f, depthWrite: false })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.material.opacity = 0.4;
-    ground.material.transparent = true;
-    scene.add(ground);
-  }
-
   model = await loadModel("warrior.glb");
-  animator = new THREE.AnimationMixer(model.scene);
+  animator = new AnimationMixer(model.scene);
   model.scene.position.z = 0.5;
   scene.add(model.scene);
 }
@@ -135,7 +133,7 @@ function render() {
 function playIntro() {
   const animation = fadeToAction("intro", 0.0);
   animation.clampWhenFinished = true;
-  animation.setLoop(THREE.LoopOnce);
+  animation.setLoop(LoopOnce);
   animator.addEventListener("finished", returnToIdle);
   isZoomingOut = true;
 }
@@ -148,7 +146,7 @@ async function playAction() {
   const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
   const animation = fadeToAction(action, 0.0);
   animation.clampWhenFinished = true;
-  animation.setLoop(THREE.LoopOnce);
+  animation.setLoop(LoopOnce);
   animator.addEventListener("finished", returnToIdle);
 }
 

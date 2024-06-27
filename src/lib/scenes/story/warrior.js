@@ -1,13 +1,19 @@
-import * as THREE from "three";
 import anime from "animejs";
 import { loadModel, wait } from "$lib/utils.js";
+import {
+  AnimationMixer,
+  Clock,
+  HemisphereLight,
+  LoopOnce,
+  PointLight,
+} from "three";
 
 let warrior, animator;
 let hemiLight, backLight;
 let isWaitingForResource = false;
 let loading = true;
 let waitingScene = null;
-const clock = new THREE.Clock();
+const clock = new Clock();
 const POSITION_Y = -18;
 const SCALE = 15;
 const FIRST_LOAD_DELAY = 250;
@@ -20,19 +26,19 @@ let warriorParams = {
 };
 
 function setupLights() {
-  hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0);
-  // hemiLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0x0400ff } ) ) );
+  hemiLight = new HemisphereLight(0xffffff, 0x444444, 0);
+  // hemiLight.add( new Mesh( new SphereGeometry( 1, 16, 8 ), new MeshBasicMaterial( { color: 0x0400ff } ) ) );
   hemiLight.position.set(0, POSITION_Y + 30, 0);
-  backLight = new THREE.PointLight(0xffffff, 0);
-  // backLight.add( new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 8 ), new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
+  backLight = new PointLight(0xffffff, 0);
+  // backLight.add( new Mesh( new SphereGeometry( 1, 16, 8 ), new MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, POSITION_Y + 30, -10);
 }
 
 async function makeWarrior(scene, camera, renderer) {
   warrior = await loadModel("warrior.glb");
-  animator = new THREE.AnimationMixer(warrior.scene);
+  animator = new AnimationMixer(warrior.scene);
   if (PRECOMPILE_SHADER) {
-    console.log("Precompiling shader...");
+    // console.log("Precompiling shader...");
     warrior.scene.position.set(0, 0, 0);
     warrior.scene.scale.set(SCALE, SCALE, SCALE);
     scene.add(warrior.scene);
@@ -59,7 +65,7 @@ function playIntro() {
   animator.removeEventListener("finished", returnToIdle);
   const animation = fadeToAction("intro", 0.0);
   animation.clampWhenFinished = true;
-  animation.setLoop(THREE.LoopOnce);
+  animation.setLoop(LoopOnce);
   animator.addEventListener("finished", returnToIdle);
 }
 
@@ -76,7 +82,7 @@ async function playAction(callback) {
   const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
   const animation = fadeToAction(action, 0.0);
   animation.clampWhenFinished = true;
-  animation.setLoop(THREE.LoopOnce);
+  animation.setLoop(LoopOnce);
   animator.addEventListener("finished", callback);
 }
 

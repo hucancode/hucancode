@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import anime from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
@@ -6,12 +5,22 @@ import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
 import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
 import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
 import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
+import {
+  Clock,
+  Color,
+  Mesh,
+  PerspectiveCamera,
+  PlaneGeometry,
+  Scene,
+  ShaderMaterial,
+  WebGLRenderer,
+} from "three";
 
 let scene, camera, renderer, controls;
 let taiji;
 let bagua;
 let background;
-const clock = new THREE.Clock();
+const clock = new Clock();
 var time = 0;
 
 const CANVAS_ID = "taiji";
@@ -20,7 +29,7 @@ const TAIJI_ROTATION_CIRCLE = 23000;
 const BAGUA_ROTATION_CIRCLE = 43000;
 
 function makeBackground() {
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       time: { value: 0.0 },
       alpha: { value: 1.0 },
@@ -30,34 +39,34 @@ function makeBackground() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(18, 18);
-  const ret = new THREE.Mesh(geometry, material);
+  const geometry = new PlaneGeometry(18, 18);
+  const ret = new Mesh(geometry, material);
   ret.rotation.x = -Math.PI / 2;
   ret.position.y = -2;
   return ret;
 }
 
 function makeTaiji() {
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       alpha: { value: 1.0 },
-      color1: { value: new THREE.Color(1, 1, 1) },
-      color2: { value: new THREE.Color(0, 0, 0) },
+      color1: { value: new Color(1, 1, 1) },
+      color2: { value: new Color(0, 0, 0) },
     },
     vertexShader: VERTEX_SHADER,
     fragmentShader: TAIJI_FRAGMENT_SHADER,
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(1, 1);
-  const ret = new THREE.Mesh(geometry, material);
+  const geometry = new PlaneGeometry(1, 1);
+  const ret = new Mesh(geometry, material);
   ret.scale.x = ret.scale.y = 9;
   ret.rotation.x = -Math.PI / 2;
   return ret;
 }
 
 function makeBagua() {
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       alpha: { value: 1.0 },
     },
@@ -66,8 +75,8 @@ function makeBagua() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(35, 35);
-  const ret = new THREE.Mesh(geometry, material);
+  const geometry = new PlaneGeometry(35, 35);
+  const ret = new Mesh(geometry, material);
   ret.scale.x = ret.scale.y = 1;
   ret.rotation.x = -Math.PI / 2;
   ret.position.y = -0.01;
@@ -75,7 +84,7 @@ function makeBagua() {
 }
 
 function setupObject() {
-  // const axesHelper = new THREE.AxesHelper(5);
+  // const axesHelper = new AxesHelper(5);
   // scene.add(axesHelper);
   taiji = makeTaiji();
   taiji.material.uniforms.alpha.value = 0.9;
@@ -94,8 +103,8 @@ function setupObject() {
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new THREE.Scene();
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
+  scene = new Scene();
   camera.position.set(0, 16, 16);
   rebuildOrbitControl();
 }
@@ -119,7 +128,7 @@ function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,
