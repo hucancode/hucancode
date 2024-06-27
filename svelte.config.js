@@ -11,7 +11,7 @@ const config = {
       directives: {
         "default-src": ["self"],
         "img-src": ["self", "blob:", "https:"],
-        "script-src": ["self"],
+        "script-src": ["self", "googletagmanager.com", "www.googletagmanager.com"],
         "connect-src": ["self", "data:", "blob:"],
         "style-src": ["self", "unsafe-inline", "fonts.googleapis.com"],
         "font-src": ["self", "data:", "fonts.gstatic.com"],
