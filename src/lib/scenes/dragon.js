@@ -1,11 +1,23 @@
-import * as THREE from "three";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
+import {
+  AmbientLight,
+  CatmullRomCurve3,
+  Clock,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  PointLight,
+  Scene,
+  SphereGeometry,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 
 let scene, camera, renderer, model;
 let dragons = [];
 let curves = [];
-const clock = new THREE.Clock();
+const clock = new Clock();
 var time = 0;
 let dynamicLight, ambientLight;
 const CANVAS_ID = "dragon";
@@ -16,23 +28,23 @@ function getCurrentDragonCount() {
 }
 
 async function buildScene() {
-  scene = new THREE.Scene();
+  scene = new Scene();
   model = await loadModelStatic("dragon.glb");
 }
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
   camera.position.set(0, 20, 200);
   camera.lookAt(scene.position);
 }
 
 function setupLightning() {
-  ambientLight = new THREE.AmbientLight(0x003973);
+  ambientLight = new AmbientLight(0x003973);
   scene.add(ambientLight);
-  dynamicLight = new THREE.PointLight(0xffffff, 5, 0, 0.2);
+  dynamicLight = new PointLight(0xffffff, 5, 0, 0.2);
   dynamicLight.add(
-    new THREE.Mesh(
-      new THREE.SphereGeometry(2, 16, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    new Mesh(
+      new SphereGeometry(2, 16, 8),
+      new MeshBasicMaterial({ color: 0xffffff })
     )
   );
   scene.add(dynamicLight);
@@ -61,8 +73,8 @@ function makeDragon() {
       z: Math.random() * VAR_Z + MIN_Z,
     };
   });
-  let curve = new THREE.CatmullRomCurve3(
-    points.map((e) => new THREE.Vector3(e.x, e.y, e.z))
+  let curve = new CatmullRomCurve3(
+    points.map((e) => new Vector3(e.x, e.y, e.z))
   );
   curve.curveType = "centripetal";
   curve.closed = true;
@@ -77,7 +89,7 @@ async function init() {
   let canvas = document.getElementById(CANVAS_ID);
   let w = canvas.clientWidth;
   let h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,

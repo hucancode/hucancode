@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import anime from "animejs";
 import { Flow } from "$lib/three/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
@@ -7,12 +6,21 @@ import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
 import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
 import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
 import { controls } from "./scene";
+import {
+  CatmullRomCurve3,
+  Clock,
+  Color,
+  Mesh,
+  PlaneGeometry,
+  ShaderMaterial,
+  Vector3,
+} from "three";
 let taiji;
 let bagua;
 let background;
 let dragon = null;
 let curve = null;
-const clock = new THREE.Clock();
+const clock = new Clock();
 var time = 0;
 let previousAutoRotation = false;
 let isWaitingForResource = false;
@@ -36,7 +44,7 @@ async function makeDragon() {
     const SAMPLE_COUNT = 20;
     for (var i = 0; i < SAMPLE_COUNT; i++) {
       points.push(
-        new THREE.Vector3(
+        new Vector3(
           Math.random() * VAR_X + MIN_X,
           Math.random() * VAR_Y + MIN_Y,
           Math.random() * VAR_Z + MIN_Z
@@ -55,10 +63,10 @@ async function makeDragon() {
       const x = RADIUS * Math.cos(theta);
       const z = RADIUS * Math.sin(theta);
       const y = Math.sin(alpha) * ELEVATION;
-      points.push(new THREE.Vector3(x, y, z));
+      points.push(new Vector3(x, y, z));
     }
   }
-  curve = new THREE.CatmullRomCurve3(points);
+  curve = new CatmullRomCurve3(points);
   curve.curveType = "centripetal";
   curve.closed = true;
   dragon = new Flow(model);
@@ -72,7 +80,7 @@ async function makeDragon() {
 }
 
 function makeBackground() {
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       time: { value: 0.0 },
       alpha: { value: 1.0 },
@@ -82,34 +90,34 @@ function makeBackground() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(60, 60);
-  const ret = new THREE.Mesh(geometry, material);
+  const geometry = new PlaneGeometry(60, 60);
+  const ret = new Mesh(geometry, material);
   ret.rotation.x = -Math.PI / 2;
   ret.position.y = -0.1;
   return ret;
 }
 
 function makeTaiji() {
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       alpha: { value: 1.0 },
-      color1: { value: new THREE.Color(1, 1, 1) },
-      color2: { value: new THREE.Color(0, 0, 0) },
+      color1: { value: new Color(1, 1, 1) },
+      color2: { value: new Color(0, 0, 0) },
     },
     vertexShader: VERTEX_SHADER,
     fragmentShader: TAIJI_FRAGMENT_SHADER,
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(27, 27);
-  const ret = new THREE.Mesh(geometry, material);
+  const geometry = new PlaneGeometry(27, 27);
+  const ret = new Mesh(geometry, material);
   ret.scale.x = ret.scale.y = 0;
   ret.rotation.x = -Math.PI / 2;
   return ret;
 }
 
 function makeBagua() {
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       alpha: { value: 1.0 },
     },
@@ -118,8 +126,8 @@ function makeBagua() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new THREE.PlaneGeometry(90, 90);
-  const ret = new THREE.Mesh(geometry, material);
+  const geometry = new PlaneGeometry(90, 90);
+  const ret = new Mesh(geometry, material);
   ret.scale.x = ret.scale.y = 30;
   ret.rotation.x = -Math.PI / 2;
   ret.position.y = -0.01;
@@ -127,7 +135,7 @@ function makeBagua() {
 }
 
 function setupObject() {
-  // const axesHelper = new THREE.AxesHelper(5);
+  // const axesHelper = new AxesHelper(5);
   // scene.add(axesHelper);
   taiji = makeTaiji();
   taijiEnterTimeline = anime.timeline({

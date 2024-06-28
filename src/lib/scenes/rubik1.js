@@ -1,10 +1,20 @@
-import * as THREE from "three";
-import anime from "animejs";
+import {
+  BoxGeometry,
+  Clock,
+  Color,
+  Float32BufferAttribute,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
-const clock = new THREE.Clock();
-const material = new THREE.MeshBasicMaterial({
+const clock = new Clock();
+const material = new MeshBasicMaterial({
   vertexColors: true,
 });
 let cameraTarget;
@@ -54,23 +64,23 @@ function getCurrentSize() {
 }
 
 function makeSingleCube(x, y, z) {
-  const piece = new THREE.BoxGeometry().toNonIndexed();
+  const piece = new BoxGeometry().toNonIndexed();
   const n = piece.getAttribute("position").count / 6;
   const buffer = [];
-  const color = new THREE.Color();
+  const color = new Color();
   for (let i = 0; i < n; i++) {
     color.setHex(getColor(x, y, z, i));
     for (let j = 0; j < 6; j++) {
       buffer.push(color.r, color.g, color.b);
     }
   }
-  piece.setAttribute("color", new THREE.Float32BufferAttribute(buffer, 3));
+  piece.setAttribute("color", new Float32BufferAttribute(buffer, 3));
   return piece;
 }
 
 function makeRubik() {
   const geometry = makeSingleCube(0, 0, 0);
-  const cube = new THREE.Mesh(geometry, material);
+  const cube = new Mesh(geometry, material);
   cube.position.x = 0;
   cube.position.y = 0;
   cube.position.z = 0;
@@ -87,10 +97,10 @@ function remakeRubik(n) {
 }
 
 function setupCamera(w, h) {
-  camera = new THREE.PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new THREE.Scene();
+  camera = new PerspectiveCamera(45, w / h, 1, 2000);
+  scene = new Scene();
   camera.position.set(0, 2, 5);
-  cameraTarget = new THREE.Vector3(0, 0, 0);
+  cameraTarget = new Vector3(0, 0, 0);
   rebuildOrbitControl();
 }
 
@@ -113,7 +123,7 @@ function init() {
   const canvas = document.getElementById(CANVAS_ID);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvas,
     antialias: true,
     alpha: true,
