@@ -1,8 +1,9 @@
 <script>
-  import { _ } from "$lib/i18n";
   import { browser } from "$app/environment";
+  import { _ } from "$lib/i18n";
   import { onMount, onDestroy } from "svelte";
   import { scale } from "svelte/transition";
+  import { gtag } from "$lib/ga";
   import ScrollObserver from "$lib/components/scroll-observer.svelte";
   import Orbs from "$lib/components/story/orbs.svelte";
   import planetIcon from "$icons/ph/planet.svg?raw";
@@ -45,32 +46,35 @@
   const preloadAssets = [
     "/assets/gltf/dragon.glb",
     "/assets/gltf/warrior.glb",
-    "/assets/textures/body_Diffuse.png",
-    "/assets/textures/body_Emissive.png",
-    "/assets/textures/body_Glossiness.png",
-    "/assets/textures/body_Normal.png",
-    "/assets/textures/body_Specular.png",
-    "/assets/textures/sword_Diffuse.png",
-    "/assets/textures/sword_Emissive.png",
-    "/assets/textures/sword_Glossiness.png",
-    "/assets/textures/sword_Normal.png",
-    "/assets/textures/sword_Specular.png",
+    // "/assets/textures/body_Diffuse.png",
+    // "/assets/textures/body_Emissive.png",
+    // "/assets/textures/body_Glossiness.png",
+    // "/assets/textures/body_Normal.png",
+    // "/assets/textures/body_Specular.png",
+    // "/assets/textures/sword_Diffuse.png",
+    // "/assets/textures/sword_Emissive.png",
+    // "/assets/textures/sword_Glossiness.png",
+    // "/assets/textures/sword_Normal.png",
+    // "/assets/textures/sword_Specular.png",
   ];
 
   let showcases = [
     {
+      name: "lego",
       icon: planetIcon,
       init: legoInit,
       enter: legoEnter,
       leave: legoLeave,
     },
     {
+      name: "rubik",
       icon: cubeIcon,
       init: rubikInit,
       enter: rubikEnter,
       leave: rubikLeave,
     },
     {
+      name: "taiji",
       icon: dragonIcon,
       init: taijiInit,
       enter: taijiEnter,
@@ -78,6 +82,7 @@
       update: taijiUpdate,
     },
     {
+      name: "warrior",
       icon: warriorIcon,
       init: warriorInit,
       enter: warriorEnter,
@@ -108,7 +113,7 @@
     for (let showcase of showcases) {
       showcase.init(scene, camera, renderer);
     }
-    onShowcaseChange({ detail: currentShowcase });
+    onShowcaseChange({ detail: currentShowcase, automatic: true });
     frameID = requestAnimationFrame(loop);
     ready = true;
   });
@@ -146,12 +151,18 @@
     showcaseLeave();
     currentShowcase = index;
     showcaseEnter();
+    if(!e.automatic) {
+      let name = showcases[currentShowcase].name;
+      gtag("event", "select_showcase", {
+        value: name,
+      });
+    }
   }
 </script>
 
 <svelte:head>
   {#each preloadAssets as asset}
-    <link rel="preload" href={asset} as="fetch" />
+    <link rel="preload" href={asset} as="fetch" crossorigin />
   {/each}
 </svelte:head>
 <section>

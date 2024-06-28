@@ -1,5 +1,7 @@
 <script>
   import { _, locale } from "$lib/i18n";
+  import { gtag } from "$lib/ga";
+
   let resumeUrl = "/resume.pdf";
   locale.subscribe((value) => {
     switch (value) {
@@ -11,6 +13,12 @@
         break;
     }
   });
+  function trackResumeDownload() {
+    gtag("event", "resume_download", {
+      language: $locale,
+      url: resumeUrl,
+    });
+  }
 </script>
 
 <section>
@@ -24,7 +32,7 @@
         {$_("common.contact.sendMail")}
       </a>
       /
-      <a target="_blank" rel="noreferrer" href={resumeUrl}>
+      <a target="_blank" rel="noreferrer" href={resumeUrl} on:click={trackResumeDownload}>
         {$_("common.contact.downloadResume")}
       </a>
       /
