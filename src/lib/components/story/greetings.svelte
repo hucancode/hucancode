@@ -32,7 +32,12 @@
         {$_("common.contact.sendMail")}
       </a>
       /
-      <a target="_blank" rel="noreferrer" href={resumeUrl} on:click={trackResumeDownload}>
+      <a
+        target="_blank"
+        rel="noreferrer"
+        href={resumeUrl}
+        on:click={trackResumeDownload}
+      >
         {$_("common.contact.downloadResume")}
       </a>
       /

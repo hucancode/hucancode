@@ -1,14 +1,14 @@
 <script>
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate } from "$app/navigation";
   import { initGA, gtag, GA_MEASUREMENT_ID } from "$lib/ga";
   import "$styles/app.css";
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
   onMount(() => {
     initGA();
   });
   afterNavigate(() => {
-    gtag('event', 'page_view', {
-        page_path: window.location.pathname,
+    gtag("event", "page_view", {
+      page_path: window.location.pathname,
     });
   });
 </script>
@@ -20,7 +20,10 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap"
     rel="stylesheet"
   />
-  <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
+  <script
+    async
+    src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+  ></script>
 </svelte:head>
 
 <slot />

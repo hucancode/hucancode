@@ -10,9 +10,26 @@ const config = {
     csp: {
       directives: {
         "default-src": ["self"],
-        "img-src": ["self", "https:", "blob:", "https://*.google-analytics.com", "https://*.googletagmanager.com", "https://*.google.com", "https://*.g.doubleclick.net"],
+        "img-src": [
+          "self",
+          "https:",
+          "blob:",
+          "https://*.google-analytics.com",
+          "https://*.googletagmanager.com",
+          "https://*.google.com",
+          "https://*.g.doubleclick.net",
+        ],
         "script-src": ["self", "https://*.googletagmanager.com"],
-        "connect-src": ["self", "data:", "blob:", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://*.google.com", "https://*.g.doubleclick.net"],
+        "connect-src": [
+          "self",
+          "data:",
+          "blob:",
+          "https://*.google-analytics.com",
+          "https://*.analytics.google.com",
+          "https://*.googletagmanager.com",
+          "https://*.google.com",
+          "https://*.g.doubleclick.net",
+        ],
         "style-src": ["self", "unsafe-inline", "fonts.googleapis.com"],
         "font-src": ["self", "data:", "fonts.gstatic.com"],
       },

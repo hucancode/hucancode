@@ -151,7 +151,7 @@
     showcaseLeave();
     currentShowcase = index;
     showcaseEnter();
-    if(!e.automatic) {
+    if (!e.automatic) {
       let name = showcases[currentShowcase].name;
       gtag("event", "select_showcase", {
         value: name,
