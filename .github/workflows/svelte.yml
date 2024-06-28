@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Production
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -47,6 +48,8 @@ jobs:
         run: bun install --production
         working-directory: ${{ env.BUILD_PATH }}
       - name: Build SvelteKit app
+        env:
+          PUBLIC_GA_MEASUREMENT_ID: ${{ vars.PUBLIC_GA_MEASUREMENT_ID }}
         run: bun run build
       - name: Add .nojekyll
         run: touch ./build/.nojekyll
