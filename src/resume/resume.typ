@@ -104,7 +104,7 @@
 #edu_item(
   name: "University of Technology and Education",
   degree: "BSc Software Engineering",
-  location: "Hung Yen, VN",
+  location: "Hungyen, VN",
   date: "2014"
 )
 #cert_item(
