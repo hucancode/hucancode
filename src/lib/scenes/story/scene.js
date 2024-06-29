@@ -72,7 +72,7 @@ function rebuildOrbitControl() {
   }
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0, 0);
-  //controls.enablePan = false;
+  controls.enablePan = false;
   controls.minDistance = 40; // the minimum distance the camera must have from center
   controls.maxDistance = 100; // the maximum distance the camera must have from center
   //controls.update();
