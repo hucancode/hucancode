@@ -12,11 +12,7 @@
 #resume_heading("技術的なスキル")
 #skill_item(
   category: "言語",
-  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL"
-)
-#skill_item(
-  category: "フレームワーク",
-  skills: "Qt, ReactiveX, React, Svelte, Tailwind, NestJS, Flutter, WebGPU, OpenGL"
+  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
 )
 #skill_item(
   category: "ツール　＆　OS",
@@ -38,6 +34,7 @@
   date: "2020年7月～2022年8月",
   [クライアントとコミュニケーションをとり、レスポンシブで機能豊富な EC ウェブサイトを構築します],
   [Flutter、NodeJS、nginx を使用して作成されたフル機能のパフォーマンスの高いクロスプラットフォーム モバイル アプリケーションと Web バックエンドを構築],
+  [エンジニアリング生産性を担当。HTML/CSS/JS、Flutter、iOSのトレーニング活動を実施],
 )
 #exp_item(
   role: "C++エンジニア",
@@ -58,7 +55,7 @@
 #resume_heading("注目案件")
 #project_item(
   name: "Hi-ABT",
-  skills: "Linux、Android、Java、C++、TCP/IP、Serial",
+  skills: "Linux、Android、μITRON、Java、C、C++、TCP/IP、Serial",
   date: "2022年8月～現在",
   [バス運賃を管理するソフトウェアシステムを構築],
   [リモート ソフトウェア アップデートの仕組みを実装],
@@ -106,12 +103,17 @@
   date: "2014"
 )
 #cert_item(
-  name: "プロフェッショナル部門 奨励賞",
+  name: "奨励賞プロフェッショナル部門",
   description: "全国情報オリンピック",
   date: "2012"
 )
 #cert_item(
-  name: "C++ 認定プロフェッショナル プログラマー",
+  name: "C & C++ 認定プロフェッショナル プログラマー",
   description: "C++ Institute",
   date: "2023"
+)
+#cert_item(
+  name: "認定ソリューションアーキテクト アソシエイト",
+  description: "Amazon Web Services",
+  date: "2024"
 )

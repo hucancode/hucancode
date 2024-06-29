@@ -12,11 +12,7 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL"
-)
-#skill_item(
-  category: "Frameworks",
-  skills: "Qt, ReactiveX, React, Svelte, Tailwind, NestJS, Flutter, WebGPU, OpenGL"
+  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
@@ -36,8 +32,9 @@
   name: "GoodCreate",
   location: "Kagawa, JP",
   date: "Jul 2020 - Aug 2022",
-  [Communicated with end clients to to build responsive feature-rich EC websites],
+  [Communicated with end clients to build responsive feature-rich EC websites],
   [Built cross platform mobile applications and web backend written using Flutter, NodeJS, nginx],
+  [In charge of engineering productivity. Conducted HTML/CSS/JS, Flutter, iOS training activity],
 )
 #exp_item(
   role: "C++ Engineer",
@@ -58,13 +55,13 @@
 #resume_heading("Notable Projects")
 #project_item(
   name: "Hi-ABT",
-  skills: "Linux, Android, Micro Itron, Java, C, C++, TCP, Serial Communication",
+  skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
   date: "Aug 2022 - Present",
   [Built software system to manage bus fare],
   [Implemented remote software update mechanics],
   [Handled complex communications between devices running 4 different OS, using TCP, Serial, HTTPS],
   [Implemented OS network setup procedure, managing static IP, route table, internet gateway, DNS],
-  [Customized Android OS boot procedure, applied various fixes and maintained system stabability],
+  [Customized Android OS boot procedure, applied various fixes and maintained system stability],
 )
 #project_item(
   name: "Toxy",
@@ -86,8 +83,8 @@
   name: "HKMC",
   skills: "Qt, Linux, Coverity, IVI, Embedded",
   date: "Feb 2017 - Nov 2017",
-  [Built media playing application for automotive in-vehicle infortainment (IVI) system using Qt],
-  [Implemented lazy loading mechanic, optimized to handling thousands of song with small memory footprint],
+  [Built media playing application for automotive in-vehicle infotainment (IVI) system using Qt],
+  [Implemented lazy loading mechanic, optimized to handling thousands of songs with small memory footprint],
   [Fixed memory leaks, reduced object copy, optimized system performance. Utilized Coverity for static analysis]
 )
 #project_item(
@@ -99,6 +96,11 @@
 )
 
 #resume_heading[Education & Certifications]
+#cert_item(
+  name: "Incentive Prize, Professional Division",
+  description: "National Olympiad of Informatics",
+  date: "2012"
+)
 #edu_item(
   name: "University of Technology and Education",
   degree: "BSc Software Engineering",
@@ -106,12 +108,7 @@
   date: "2014"
 )
 #cert_item(
-  name: "Incentive Prize, Professional Division",
-  description: "National Olympiad of Informatics",
-  date: "2012"
-)
-#cert_item(
-  name: "C++ Certified Professional Programmer",
+  name: "C & C++ Certified Professional Programmer",
   description: "C++ Institute",
   date: "2023"
 )
