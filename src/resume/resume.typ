@@ -40,7 +40,7 @@
   role: "C++ Engineer",
   name: "FPT Software",
   location: "Hanoi, VN",
-  date: "May 2019 - Jul 2019",
+  date: "Apr 2016 - Mar 2018",
   [Developed performant and feature-rich embedded applications],
 )
 #exp_item(
