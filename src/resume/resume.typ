@@ -16,73 +16,81 @@
 )
 #skill_item(
   category: "Tools & OS",
-  skills: "NodeJS, Docker, nginx, Redis, Linux (CentOS, Debian, Arch), Android, iOS, AWS, GCP"
+  skills: "NodeJS, Docker, nginx, Redis, Linux, Android, iOS, AWS, GCP, Unreal Engine"
 )
 
 #resume_heading[Experience]
 #exp_item(
-  role: "Software Engineer",
+  role: "Onsite Leader",
   name: "NTQ Japan",
-  location: "Gifu, JP",
-  date: "Aug 2022 - Present",
+  location: "Gifu",
+  date: "2022/08 - Present",
   [Built complex and performant embedded applications],
 )
 #exp_item(
   role: "Engineering Manager",
   name: "GoodCreate",
-  location: "Kagawa, JP",
-  date: "Jul 2020 - Aug 2022",
-  [Communicated with end clients to build responsive feature-rich EC websites],
-  [Built cross platform mobile applications and web backend written using Flutter, NodeJS, nginx],
-  [In charge of engineering productivity. Conducted HTML/CSS/JS, Flutter, iOS training activity],
+  location: "Kagawa",
+  date: "2020/07 - 2022/07",
+  [Communicated with end clients to build responsive feature-rich EC websites, cross platform mobile applications],
+  [In charge of engineering productivity. Conducted NodeJS, Flutter, iOS training activity],
 )
 #exp_item(
-  role: "C++ Engineer",
+  role: "C++ Programmer",
   name: "FPT Software",
-  location: "Hanoi, VN",
-  date: "Apr 2016 - Mar 2018",
+  location: "Hanoi",
+  date: "2016/04 - 2018/03",
   [Developed performant and feature-rich embedded applications],
 )
 #exp_item(
   role: "Game Programmer",
   name: "Gameloft",
-  location: "Hanoi, VN",
-  date: "Mar 2014 - 2016, Apr - Nov 2018",
-  [Developed, and optimized games for low-end mobile devices using C++, OpenGL, Unity3D],
-  [Contributed in: Order and Chaos 2, Brothers in Arms 3, Ice Age Adventure, Disney Magic Kingdom, Shark Dash and other games],
+  location: "Hanoi",
+  date: "2014/03 - 2016/03",
+  [Developed, and optimized games for low-end mobile devices using C++, OpenGL],
+  [Contributed in: Order and Chaos 2, Brothers in Arms 3, Ice Age Adventure, and many other games],
 )
 
 #resume_heading("Notable Projects")
 #project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
-  date: "Aug 2022 - Present",
-  [Built software system to manage bus fare],
-  [Implemented remote software update mechanics],
-  [Handled complex communications between devices running 4 different OS, using TCP, Serial, HTTPS],
-  [Implemented OS network setup procedure, managing static IP, route table, internet gateway, DNS],
+  date: "2022/08 - Present",
+  [Built software system to manage bus fare, with remote software update mechanics],
+  [Handled complex communications between many embedded devices of 3 types, using TCP, Serial, HTTPS],
   [Customized Android OS boot procedure, applied various fixes and maintained system stability],
+)
+#project_item(
+  name: "Poker Simulator",
+  skills: "Rust, WASM, Svelte",
+  date: "2023/11 - 2023/12",
+  [Built a tool to calculate winning odds in a poker game *fast*. Try it #link("https://poker.lamsaoquenem.day")[live]],
+)
+#project_item(
+  name: "Rubik & Dragon",
+  skills: "Rust, WebGPU",
+  date: "2023/11 - 2024/02",
+  [Built complex animated scene using WebGPU. See more: github/hucancode/#link("https://github.com/hucancode/rubik")[rubik] and #link("https://github.com/hucancode/flying-dragon")[dragon]],
 )
 #project_item(
   name: "Toxy",
   skills: "Flutter, NextJS, NestJS, Google Cloud, Fastlane, Github Actions",
-  date: "Aug 2021 - Jul 2022",
+  date: "2021/08 - 2022/07",
   [Collect requirements, design and built a location-based coupon offering app with Flutter, NextJS, NestJS],
-  [Optimized server cost with Cloud Run. Reduced about 40% running cost compared to on-premise method],
-  [Utilized API caching/UI hydration mechanic, resulting in highly snappy UX after first load],
-  [Built a fully automated CI pipeline with Fastlane and Github Actions/Gitlab CI]
+  [Optimized 40% server cost by migrating to Cloud Run. Built a fully automated CI pipeline with Fastlane],
+  [Utilized caching/UI hydration mechanic, resulting in highly snappy UX after first load],
 )
 #project_item(
   name: "AtCreator",
   skills: "Laravel, Fastlane, React Native, XCode CLI",
-  date: "Jul 2020 - Jul 2022",
+  date: "2020/07 - 2022/07",
   [Developed an app making system using ReactNative, allowing users to build and publish custom Android/iOS application with no technical prerequisite. Similar to Wix, but for mobile application],
   [Developed an automated app building system, using Fastlane, NodeJS, XCode CLI]
 )
 #project_item(
   name: "HKMC",
   skills: "Qt, Linux, Coverity, IVI, Embedded",
-  date: "Feb 2017 - Nov 2017",
+  date: "2017/02 - 2017/11",
   [Built media playing application for automotive in-vehicle infotainment (IVI) system using Qt],
   [Implemented lazy loading mechanic, optimized to handling thousands of songs with small memory footprint],
   [Fixed memory leaks, reduced object copy, optimized system performance. Utilized Coverity for static analysis]
@@ -90,7 +98,7 @@
 #project_item(
   name: "NSP64Bit",
   skills: "C++, Migration, Static Analysis",
-  date: "Apr 2016 - Jan 2017",
+  date: "2016/04 - 2017/01",
   [Worked with C++, memory management, 64bit coding patterns in a large code base with 2M LOC],
   [Developed a static analyzer to help cutting about 90% of human effort. Analyzed C++ code content, process structured content with Regular Expression]
 )
@@ -104,7 +112,7 @@
 #edu_item(
   name: "University of Technology and Education",
   degree: "BSc Software Engineering",
-  location: "Hungyen, VN",
+  location: "Vietnam",
   date: "2014"
 )
 #cert_item(

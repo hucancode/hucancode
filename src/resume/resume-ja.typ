@@ -4,116 +4,124 @@
 
 #header(
   name: "Bang Nguyen Huu",
-  address: "岐阜県、日本",
+  address: "岐阜",
   email: "hucancode@gmail.com",
   site: "hucanco.de",
 )
 
-#resume_heading("技術的なスキル")
+#resume_heading("スキル")
 #skill_item(
   category: "言語",
   skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
 )
 #skill_item(
-  category: "ツール　＆　OS",
-  skills: "NodeJS, Docker, nginx, Redis, Linux (CentOS, Debian, Arch), Android, iOS, AWS, GCP"
+  category: "ツール & OS",
+  skills: "NodeJS, Docker, nginx, Redis, Linux, Android, iOS, AWS, GCP, Unreal Engine"
 )
 
-#resume_heading[経歴]
+#resume_heading[職歴]
 #exp_item(
-  role: "システムエンジニア",
+  role: "Onsite Leader",
   name: "NTQ Japan",
-  location: "岐阜県、日本",
-  date: "2022年8月～現在",
-  [複雑でパフォーマンスの高い組み込みアプリケーションを構築],
+  location: "岐阜",
+  date: "2022/08～現在",
+  [複雑で高性能な組み込みアプリケーションを開発],
 )
 #exp_item(
-  role: "エンジニアマネージャー",
-  name: "グッドクリエイト",
-  location: "香川県、日本",
-  date: "2020年7月～2022年8月",
-  [クライアントとコミュニケーションをとり、レスポンシブで機能豊富な EC ウェブサイトを構築します],
-  [Flutter、NodeJS、nginx を使用して作成されたフル機能のパフォーマンスの高いクロスプラットフォーム モバイル アプリケーションと Web バックエンドを構築],
-  [エンジニアリング生産性を担当。HTML/CSS/JS、Flutter、iOSのトレーニング活動を実施],
+  role: "Engineering Manager",
+  name: "GoodCreate",
+  location: "香川",
+  date: "2020/07～2022/07",
+  [顧客と相談してレスポンシブで機能豊富なECウェブサイト、多プラットフォーム携帯アプリを構築],
+  [エンジニアリングの生産性向上を担当。NodeJS、Flutter、iOSのトレーニング活動を実施],
 )
 #exp_item(
-  role: "C++エンジニア",
+  role: "C++ Programmer",
   name: "FPT Software",
-  location: "ハノイ、ベトナム",
-  date: "2016年4月～2018年3月",
+  location: "ハノイ",
+  date: "2016/04～2018/03",
   [高性能で機能豊富な組み込みアプリケーションを開発],
 )
 #exp_item(
-  role: "ゲームプログラマー",
-  name: "Gameloft HAN",
-  location: "ハノイ、ベトナム",
-  date: "2014年～2016年3月、2018年4月～11月",
-  [C++、OpenGL、Android NDK、Unity3D を使用し、大規模なコード ベースと複雑なビルド システムを使用してローエンド モバイル デバイス向けにゲームを開発および最適化],
-  [貢献作品: Order and Chaos 2、Brothers in Arms 3、Ice Age Adventure、Shark Dash、その他多くのゲーム],
+  role: "Game Programmer",
+  name: "Gameloft",
+  location: "ハノイ",
+  date: "2014/03～2016/03",
+  [C++、OpenGLを使用して低スペックのモバイルデバイス向けにゲームを開発、最適化],
+  [Order and Chaos 2, Brothers in Arms 3, Ice Age Adventureなどの多くのゲームに貢献],
 )
 
-#resume_heading("注目案件")
+#resume_heading("注目のプロジェクト")
 #project_item(
   name: "Hi-ABT",
-  skills: "Linux、Android、μITRON、Java、C、C++、TCP/IP、Serial",
-  date: "2022年8月～現在",
-  [バス運賃を管理するソフトウェアシステムを構築],
-  [リモート ソフトウェア アップデートの仕組みを実装],
-  [TCP、シリアル、HTTPS を使用して、4 つの異なる OS を実行するデバイス間の複雑な通信を処理],
-  [OSネットワーク設定手順の実装、静的IP、ルートテーブル、インターネットゲートウェイ、DNSの管理],
-  [カスタマイズされた Android OS 起動手順、さまざまな修正を適用し、システムの安定性を維持],
+  skills: "Linux, Android, μITRON, Java, C, C++, TCP, シリアル",
+  date: "2022/08～現在",
+  [バス料金管理ソフトウェアシステムを構築し、リモートソフトウェア更新機構を提供],
+  [TCP、シリアル、HTTPSを使用して、3種類の多くの組み込みデバイス間の複雑な通信を処理],
+  [Android OSのブート手順をカスタマイズし、さまざまな修正を適用してシステムの安定性を維持],
+)
+#project_item(
+  name: "Poker Simulator",
+  skills: "Rust, WASM, Svelte",
+  date: "2023/11～2023/12",
+  [ポーカーゲームの勝率を*高速に*計算するツールを構築。#link("https://poker.lamsaoquenem.day")[poker]をお試しください ],
+)
+#project_item(
+  name: "Rubik & Dragon",
+  skills: "Rust, WebGPU",
+  date: "2023/11～2024/02",
+  [WebGPUを使用して複雑なアニメーションシーンを構築。詳細はこちら: github/hucancode/#link("https://github.com/hucancode/rubik")[rubik]と#link("https://github.com/hucancode/flying-dragon")[dragon]],
 )
 #project_item(
   name: "Toxy",
-  skills: "Flutter、NextJS、NestJS、Google Cloud、Fastlane、Github Actions",
-  date: "2021年8月～2022年8月",
-  [ユーザーの位置情報に基づいてクーポンを提供するアプリを構築しました。 NestJS を備えたスケーラブルなバックエンド サーバーを搭載し],
-  [マイクロサービス アーキテクチャを設計し、Docker と Cloud Run を利用することで、潜在的なサーバー コストを削減します。 従来の方法と比較して推定約 40% の節約],
-  [API キャッシュ/UI ハイドレーション メカニズムを利用し、最初の初期読み込み後の UX の読み込みが実質的に、応答性の高いアプリが実現しました],
-  [Fastlane と Github Actions を使用して完全に自動化された CI パイプラインを構築],
+  skills: "Flutter, NextJS, NestJS, Google Cloud, Fastlane, Github Actions",
+  date: "2021/08～2022/07",
+  [要求を収集し、設計し、Flutter、NextJS、NestJSを使用して位置ベースのクーポン提供アプリを構築],
+  [Cloud Runへの移行でコスト4割を減少。Fastlaneを使用して完全に自動化されたCIパイプラインを構築],
+  [キャッシング/UIハイドレーションメカニズムを活用し、初回ロード後のUXを非常にスナッピーに],
 )
 #project_item(
   name: "AtCreator",
-  skills: "Laravel、Fastlane、React Native、XCode CLI",
-  date: "2020年7月～2022年7月",
-  [ReactNative を使用したアプリ作成システムを開発し、ユーザーが技術的な前提条件なしでカスタム Android/iOS アプリケーションを構築および公開できるようにしました。 Wix に似ていますが、モバイル アプリケーション向けです],
-  [Fastlane、Nodejs、XCode を使用して自動化されたアプリ構築システムを保守],
+  skills: "Laravel, Fastlane, React Native, XCode CLI",
+  date: "2020/07～2022/07",
+  [ReactNativeを使用してアプリ作成システムを開発し、技術的な前提条件なしでカスタムAndroid/iOSアプリケーションを構築および公開できるようにしました。Wixのように、モバイルアプリケーション用],
+  [Fastlane、NodeJS、XCode CLIを使用して自動化されたアプリ構築システムを開発]
 )
 #project_item(
   name: "HKMC",
-  skills: "Qt、Linux、IVI、組み込み",
-  date: "2017年2月～2017年11月",
-  [Qtを使用した自動車車載インフォテインメント (IVI) システム用のメディア再生アプリケーションの構築],
-  [遅延読み込みメカニズムを実装し、少ないメモリ使用量で数千の曲を処理],
-  [メモリ リークを修正し、オブジェクト コピーを削減し、システム パフォーマンスを最適化しました。 Coverity を静的解析に活用],
+  skills: "Qt, Linux, Coverity, IVI, 組み込み",
+  date: "2017/02～2017/11",
+  [Qtを使用して自動車の車載インフォテインメント(IVI)システム向けのメディア再生アプリケーションを構築],
+  [レイジーローディングメカニズムを実装し、少ないメモリフットプリントで数千の曲を扱うように最適化],
+  [メモリリークを修正し、オブジェクトコピーを減らし、システムパフォーマンスを最適化。Coverityを使用して静的解析を実施]
 )
 #project_item(
   name: "NSP64Bit",
-  skills: "C++、マイグレーション、文字列マッチング",
-  date: "2016年4月～2017年1月",
-  [200万行のコードを含む大規模なコードベースでC++、メモリ管理、64ビットコーディングパターンを使用],
-  [手作業の約 90% を削減できる静的アナライザーを単独で開発しました。 分析された C++ コード コンテンツ、正規表現を使用した構造化コンテンツの処理],
+  skills: "C++, マイグレーション, 静的解析",
+  date: "2016/04～2017/01",
+  [C++、メモリ管理、コード行数が200万の大規模コードベースでの64ビットコーディングパターンを扱う],
+  [人の労力の約9割を削減する静的解析ツールを開発。C++コードを分析、正規表現で構造化コンテンツを処理]
 )
 
-#resume_heading[学歴、証明書]
+#resume_heading[学歴と資格]
+#cert_item(
+  name: "インセンティブ賞、プロフェッショナル部門",
+  description: "全国情報学オリンピック",
+  date: "2012"
+)
 #edu_item(
-  name: "フンヤン技術師範大学",
-  degree: "ソフトウェアエンジニアリング学士号",
-  location: "フンヤン、ベトナム",
+  name: "技術師範大学",
+  degree: "ソフトエンジニアリング学士",
+  location: "ベトナム",
   date: "2014"
 )
 #cert_item(
-  name: "奨励賞プロフェッショナル部門",
-  description: "全国情報オリンピック",
-  date: "2012"
-)
-#cert_item(
-  name: "C & C++ 認定プロフェッショナル プログラマー",
+  name: "認定C & C++プロフェッショナルプログラマー",
   description: "C++ Institute",
   date: "2023"
 )
 #cert_item(
-  name: "認定ソリューションアーキテクト アソシエイト",
+  name: "認定ソリューションアーキテクトアソシエイト",
   description: "Amazon Web Services",
   date: "2024"
 )

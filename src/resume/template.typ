@@ -64,7 +64,7 @@
       *#name* _#description _
     ],
     align(right)[
-      _#date _
+      *#date*
     ]
   ))
 }
@@ -80,10 +80,10 @@
     columns: (9fr, 1fr),
     align(left)[
       *#name*
-      _#degree _ (#location)
+      _#degree _
     ],
     align(right)[
-      _#date _
+      *#date*
     ]
   ))
 }
@@ -98,12 +98,12 @@
     set block(above: 0.7em, below: 1em)
     pad(left: 1em, right: 0.5em, box[
       #grid(
-        columns: (3fr, 2fr),
+        columns: (2fr, 2fr),
         align(left)[
           *#role* _#name _ (#location)
         ],
         align(right)[
-          #date
+          *#date*
         ]
       )
       #list(..points)
@@ -118,7 +118,7 @@
 ) = {
   set block(above: 0.7em, below: 1em)
   pad(left: 1em, right: 0.5em, box[
-    *#name* _#skills _ #h(1fr) #date
+    *#name* _#skills _ #h(1fr) *#date*
     #list(..points)
   ])
 }
