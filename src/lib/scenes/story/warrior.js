@@ -245,4 +245,13 @@ function fadeToAction(name, duration) {
   return animation.reset().fadeIn(duration).play();
 }
 
-export { init, enter, update, leave };
+function destroy() {
+  if (warrior) {
+    warrior.scene.removeFromParent();
+  }
+  if (animator) {
+    animator.stopAllAction();
+  }
+}
+
+export { init, enter, update, leave, destroy };

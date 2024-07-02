@@ -11,7 +11,7 @@ import {
 
 const rubik = new Object3D();
 const pivot = new Object3D();
-const cubes = [];
+let cubes = [];
 const material = new MeshBasicMaterial({
   vertexColors: true,
   fog: true,
@@ -281,4 +281,13 @@ function startMove(face, depth, magnitude) {
   });
 }
 
-export { init, scroll, enter, leave, update };
+function destroy() {
+  cubes.forEach((e) => e.geometry.dispose());
+  cubes = [];
+  rubik.children = [];
+  pivot.children = [];
+  rubik.removeFromParent();
+  pivot.removeFromParent();
+}
+
+export { init, scroll, enter, leave, update, destroy };
