@@ -14,23 +14,27 @@
     init as rubikInit,
     enter as rubikEnter,
     leave as rubikLeave,
+    destroy as rubikDestroy,
   } from "$lib/scenes/story/rubik";
   import {
     init as taijiInit,
     update as taijiUpdate,
     enter as taijiEnter,
     leave as taijiLeave,
+    destroy as taijiDestroy,
   } from "$lib/scenes/story/taiji";
   import {
     init as legoInit,
     enter as legoEnter,
     leave as legoLeave,
+    destroy as legoDestroy,
   } from "$lib/scenes/story/lego";
   import {
     init as warriorInit,
     enter as warriorEnter,
     update as warriorUpdate,
     leave as warriorLeave,
+    destroy as warriorDestroy,
   } from "$lib/scenes/story/warrior";
   import {
     init,
@@ -65,6 +69,7 @@
       init: legoInit,
       enter: legoEnter,
       leave: legoLeave,
+      destroy: legoDestroy,
     },
     {
       name: "rubik",
@@ -72,6 +77,7 @@
       init: rubikInit,
       enter: rubikEnter,
       leave: rubikLeave,
+      destroy: rubikDestroy,
     },
     {
       name: "taiji",
@@ -80,6 +86,7 @@
       enter: taijiEnter,
       leave: taijiLeave,
       update: taijiUpdate,
+      destroy: taijiDestroy,
     },
     {
       name: "warrior",
@@ -88,6 +95,7 @@
       enter: warriorEnter,
       update: warriorUpdate,
       leave: warriorLeave,
+      destroy: warriorDestroy,
     },
   ];
   let currentShowcase = 0;
@@ -121,6 +129,9 @@
   onDestroy(() => {
     if (!browser) return;
     showcaseLeave();
+    for (let showcase of showcases) {
+      showcase.destroy && showcase.destroy();
+    }
     cancelAnimationFrame(frameID);
     frameID = 0;
     destroy();

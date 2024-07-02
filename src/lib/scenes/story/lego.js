@@ -19,8 +19,8 @@ const GRADIENT_STEP = 5;
 // objects
 const cube = new Object3D();
 const ring = new Object3D();
-const ringParticles = [];
-const cubePieces = [];
+let ringParticles = [];
+let cubePieces = [];
 const LIGHT_INTENSITY = 10;
 const pointLight = new PointLight(0xffffff, LIGHT_INTENSITY, 800, 0.25);
 
@@ -325,4 +325,11 @@ function leave(scene) {
   });
 }
 
-export { init, scroll, enter, leave, update };
+function destroy() {
+  pieces = [];
+  materials = [];
+  cubePieces = [];
+  ringParticles = [];
+}
+
+export { init, scroll, enter, leave, update, destroy };

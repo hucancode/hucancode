@@ -335,4 +335,10 @@ function leave(scene) {
   });
 }
 
-export { init, enter, leave, update };
+function destroy() {
+  if (dragon) {
+    dragon.object3D.removeFromParent();
+  }
+}
+
+export { init, enter, leave, update, destroy };
