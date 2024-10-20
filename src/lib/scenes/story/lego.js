@@ -33,7 +33,7 @@ function makeLegoRing() {
   for (let i = 0; i < PIECE_COUNT; i++) {
     const node = new Mesh(
       getRandomPieceFromPool(),
-      getRandomMaterialFromPool()
+      getRandomMaterialFromPool(),
     );
     const rotation = Math.random() * Math.PI * 2;
     const elevation = (Math.random() - 0.5) * ELEVATION;
@@ -129,7 +129,7 @@ function buildPiecePool() {
     gradients,
     gradients.length,
     1,
-    RedFormat
+    RedFormat,
   );
   gradientMap.needsUpdate = true;
 
@@ -169,12 +169,12 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
         BUTTON_RADIUS,
         BUTTON_RADIUS,
         BUTTON_HEIGHT,
-        24
+        24,
       );
       button.translate(
         i - (width - 1) / 2,
         BUTTON_HEIGHT * 2,
-        j - (height - 1) / 2
+        j - (height - 1) / 2,
       );
       pieces.push(button);
     }

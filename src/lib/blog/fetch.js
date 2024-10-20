@@ -10,8 +10,8 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
         const { metadata } = await resolver();
         const slug = path.split("/").pop().slice(0, -3);
         return { ...metadata, slug };
-      }
-    )
+      },
+    ),
   );
   if (category) {
     posts = posts.filter((post) => post.categories.includes(category));
@@ -32,7 +32,7 @@ export default async function fetchPosts({ page = 1, category = "" } = {}) {
         date: post.date,
         categories: post.categories,
       };
-    })
+    }),
   );
   return { posts: posts };
 }
@@ -44,7 +44,7 @@ export async function fetchPostCount({ category = "" } = {}) {
       Object.entries(posts).map(async ([path, resolver]) => {
         const { metadata } = await resolver();
         return { ...metadata };
-      })
+      }),
     );
     posts = posts.filter((post) => post.categories.includes(category));
   }

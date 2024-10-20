@@ -181,14 +181,14 @@ import {
  */
 export function initSplineTexture(numberOfCurves = 1) {
   const dataArray = new Uint16Array(
-    TEXTURE_WIDTH * TEXTURE_HEIGHT * numberOfCurves * CHANNELS
+    TEXTURE_WIDTH * TEXTURE_HEIGHT * numberOfCurves * CHANNELS,
   );
   const dataTexture = new DataTexture(
     dataArray,
     TEXTURE_WIDTH,
     TEXTURE_HEIGHT * numberOfCurves,
     RGBAFormat,
-    HalfFloatType
+    HalfFloatType,
   );
 
   dataTexture.wrapS = RepeatWrapping;
@@ -225,7 +225,7 @@ export function updateSplineTexture(texture, splineCurve, offset = 0) {
       pt.x,
       pt.y,
       pt.z,
-      0 + rowOffset + TEXTURE_HEIGHT * offset
+      0 + rowOffset + TEXTURE_HEIGHT * offset,
     );
     pt = frenetFrames.tangents[i];
     setTextureValue(
@@ -234,7 +234,7 @@ export function updateSplineTexture(texture, splineCurve, offset = 0) {
       pt.x,
       pt.y,
       pt.z,
-      1 + rowOffset + TEXTURE_HEIGHT * offset
+      1 + rowOffset + TEXTURE_HEIGHT * offset,
     );
     pt = frenetFrames.normals[i];
     setTextureValue(
@@ -243,7 +243,7 @@ export function updateSplineTexture(texture, splineCurve, offset = 0) {
       pt.x,
       pt.y,
       pt.z,
-      2 + rowOffset + TEXTURE_HEIGHT * offset
+      2 + rowOffset + TEXTURE_HEIGHT * offset,
     );
     pt = frenetFrames.binormals[i];
     setTextureValue(
@@ -252,7 +252,7 @@ export function updateSplineTexture(texture, splineCurve, offset = 0) {
       pt.x,
       pt.y,
       pt.z,
-      3 + rowOffset + TEXTURE_HEIGHT * offset
+      3 + rowOffset + TEXTURE_HEIGHT * offset,
     );
   }
 
@@ -358,12 +358,12 @@ vec3 transformed = basis
 	+ spinePos;
 
 vec3 transformedNormal = normalMatrix * (basis * objectNormal);
-			`
+			`,
       )
       .replace(
         "#include <project_vertex>",
         `vec4 mvPosition = modelViewMatrix * vec4( transformed, 1.0 );
-				gl_Position = projectionMatrix * mvPosition;`
+				gl_Position = projectionMatrix * mvPosition;`,
       );
 
     shader.vertexShader = vertexShader;
@@ -456,7 +456,7 @@ export class InstancedFlow extends Flow {
     matrix.makeTranslation(
       this.curveLengthArray[this.whichCurve[index]],
       this.whichCurve[index],
-      this.offsets[index]
+      this.offsets[index],
     );
     this.object3D.setMatrixAt(index, matrix);
     this.object3D.instanceMatrix.needsUpdate = true;
@@ -548,8 +548,8 @@ function setupLightning() {
   dynamicLight.add(
     new Mesh(
       new SphereGeometry(2, 16, 8),
-      new MeshBasicMaterial({ color: 0xffffff })
-    )
+      new MeshBasicMaterial({ color: 0xffffff }),
+    ),
   );
   scene.add(dynamicLight);
 }
@@ -578,7 +578,7 @@ function makeDragon() {
     };
   });
   let curve = new CatmullRomCurve3(
-    points.map((e) => new Vector3(e.x, e.y, e.z))
+    points.map((e) => new Vector3(e.x, e.y, e.z)),
   );
   curve.curveType = "centripetal";
   curve.closed = true;

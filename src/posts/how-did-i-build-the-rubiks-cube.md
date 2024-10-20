@@ -392,7 +392,7 @@ function init() {
   startMove(
     Math.floor(Math.random() * 5),
     Math.floor(Math.random() * cubeNum),
-    Math.floor(Math.random() * 5) - 2
+    Math.floor(Math.random() * 5) - 2,
   );
   window.addEventListener("resize", onWindowResize);
 }
@@ -532,7 +532,7 @@ function cleanUpAfterMove() {
   startMove(
     Math.floor(Math.random() * 5),
     Math.floor(Math.random() * cubeNum),
-    Math.floor(Math.random() * 5) - 2
+    Math.floor(Math.random() * 5) - 2,
   );
 }
 

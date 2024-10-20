@@ -47,8 +47,8 @@ async function makeDragon() {
         new Vector3(
           Math.random() * VAR_X + MIN_X,
           Math.random() * VAR_Y + MIN_Y,
-          Math.random() * VAR_Z + MIN_Z
-        )
+          Math.random() * VAR_Z + MIN_Z,
+        ),
       );
     }
   } else {
@@ -156,14 +156,14 @@ function setupObject() {
         x: 1,
         y: 1,
       },
-      500
+      500,
     )
     .add(
       {
         targets: taiji.rotation,
         z: Math.PI * 10,
       },
-      0
+      0,
     )
     .add(
       {
@@ -171,7 +171,7 @@ function setupObject() {
         y: 0.1,
         duration: 1000,
       },
-      0
+      0,
     );
   taijiLeaveTimeline = anime.timeline({
     autoplay: false,
@@ -187,14 +187,14 @@ function setupObject() {
         x: 4,
         y: 4,
       },
-      0
+      0,
     )
     .add(
       {
         targets: taiji.rotation,
         z: Math.PI * 2,
       },
-      0
+      0,
     )
     .add(
       {
@@ -202,7 +202,7 @@ function setupObject() {
         value: 0,
         easing: "easeOutExpo",
       },
-      0
+      0,
     );
   bagua = makeBagua();
   background = makeBackground();

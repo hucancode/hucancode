@@ -63,6 +63,7 @@
 <style>
   section {
     min-height: unset;
+    line-height: 1em;
   }
   h1.xl {
     font-size: 3.5rem;

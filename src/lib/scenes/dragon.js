@@ -44,8 +44,8 @@ function setupLightning() {
   dynamicLight.add(
     new Mesh(
       new SphereGeometry(2, 16, 8),
-      new MeshBasicMaterial({ color: 0xffffff })
-    )
+      new MeshBasicMaterial({ color: 0xffffff }),
+    ),
   );
   scene.add(dynamicLight);
 }
@@ -74,7 +74,7 @@ function makeDragon() {
     };
   });
   let curve = new CatmullRomCurve3(
-    points.map((e) => new Vector3(e.x, e.y, e.z))
+    points.map((e) => new Vector3(e.x, e.y, e.z)),
   );
   curve.curveType = "centripetal";
   curve.closed = true;

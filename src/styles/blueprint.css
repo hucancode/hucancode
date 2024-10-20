@@ -36,8 +36,10 @@
       transparent var(--major-grid-stroke)
     ),
     radial-gradient(circle, rgb(128, 200, 255) 0%, rgb(64, 128, 255) 75%);
-  background-size: var(--minor-grid-size) var(--minor-grid-size),
+  background-size:
+    var(--minor-grid-size) var(--minor-grid-size),
     var(--minor-grid-size) var(--minor-grid-size),
     var(--major-grid-size) var(--major-grid-size),
-    var(--major-grid-size) var(--major-grid-size), 100% 100%;
+    var(--major-grid-size) var(--major-grid-size),
+    100% 100%;
 }

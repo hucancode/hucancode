@@ -32,7 +32,7 @@ export const _ = derived(
   locale,
   ($locale) =>
     (key, vars = {}) =>
-      translate($locale, key, vars)
+      translate($locale, key, vars),
 );
 
 export function formatDateRelative(locale, date) {
