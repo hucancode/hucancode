@@ -11,7 +11,13 @@
   import Lightbulb from "$icons/google-material/lightbulb.svg?raw";
   import Book from "$icons/google-material/menu-book.svg?raw";
 
-  export let posts = [];
+  /**
+   * @typedef {Object} Props
+   * @property {any} [posts]
+   */
+
+  /** @type {Props} */
+  let { posts = [] } = $props();
 
   function convertDate(date) {
     return formatDateRelative("en", new Date(date));

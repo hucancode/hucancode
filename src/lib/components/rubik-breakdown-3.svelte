@@ -4,7 +4,7 @@
   import Canvas3D from "./canvas3d.svelte";
   import { CANVAS_ID, init, render, destroy } from "$lib/scenes/rubik3";
 
-  let ready = false;
+  let ready = $state(false);
 
   onMount(async () => {
     await init();

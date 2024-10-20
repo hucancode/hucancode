@@ -2,7 +2,7 @@
   import { _, locale } from "$lib/i18n";
   import { gtag } from "$lib/ga";
 
-  let resumeUrl = "/resume.pdf";
+  let resumeUrl = $state("/resume.pdf");
   locale.subscribe((value) => {
     switch (value) {
       case "ja":
@@ -36,7 +36,7 @@
         target="_blank"
         rel="noreferrer"
         href={resumeUrl}
-        on:click={trackResumeDownload}
+        onclick={trackResumeDownload}
       >
         {$_("common.contact.downloadResume")}
       </a>

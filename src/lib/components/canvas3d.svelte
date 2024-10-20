@@ -1,11 +1,17 @@
 <script>
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
-  export let id;
-  export let render;
   let frameID = 0;
-  let canvas;
-  export let ready = false;
+  let canvas = $state();
+  /**
+   * @typedef {Object} Props
+   * @property {any} id
+   * @property {any} render
+   * @property {boolean} [ready]
+   */
+
+  /** @type {Props} */
+  let { id, render, ready = false } = $props();
   let observer;
   function loop() {
     frameID = requestAnimationFrame(loop);
@@ -28,11 +34,11 @@
 </script>
 
 <div class="container">
-  <div class="backdrop" />
+  <div class="backdrop"></div>
   {#if !ready}
-    <span class="spinner" transition:fade={{ duration: 300 }} />
+    <span class="spinner" transition:fade={{ duration: 300 }}></span>
   {/if}
-  <canvas {id} bind:this={canvas} />
+  <canvas {id} bind:this={canvas}></canvas>
 </div>
 
 <style>

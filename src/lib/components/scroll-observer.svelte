@@ -2,10 +2,17 @@
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import { createEventDispatcher } from "svelte";
-  export let threshold = 1;
-  let className = "";
-  export { className as class };
-  let container;
+  /**
+   * @typedef {Object} Props
+   * @property {number} [threshold]
+   * @property {string} [class]
+   * @property {import('svelte').Snippet} [children]
+   */
+
+  /** @type {Props} */
+  let { threshold = 1, class: className = "", children } = $props();
+  
+  let container = $state();
   let observer;
   let dispatch = createEventDispatcher();
   onMount(() => {
@@ -34,7 +41,7 @@
 </script>
 
 <div bind:this={container} class={className}>
-  <slot />
+  {@render children?.()}
 </div>
 
 <style>

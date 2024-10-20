@@ -10,7 +10,7 @@
     playAction,
   } from "$lib/scenes/warrior";
 
-  let ready = false;
+  let ready = $state(false);
 
   onMount(async () => {
     await init();

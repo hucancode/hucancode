@@ -27,6 +27,9 @@ const pointLight = new PointLight(0xffffff, LIGHT_INTENSITY, 800, 0.25);
 function makeLegoRing() {
   const PIECE_COUNT = 30;
   const ELEVATION = 5;
+  ringParticles = [];
+  ring.children = [];
+
   for (let i = 0; i < PIECE_COUNT; i++) {
     const node = new Mesh(
       getRandomPieceFromPool(),
@@ -65,6 +68,7 @@ function makeLegoRing() {
 }
 
 function makeCenterPiece() {
+  cube.children = [];
   const material = getRandomMaterialFromPool();
   const OFFSET = 5;
   const geometry = makeLegoPiece(2, 2, 1);
@@ -104,6 +108,7 @@ function makeCenterPiece() {
 }
 
 function buildPiecePool() {
+  pieces = [];
   for (let i = 0; i < POOL_SIZE; i++) {
     const w = Math.floor(Math.random() * 6) + 2;
     const h = Math.floor(Math.random() * 2) + 2;
@@ -330,6 +335,7 @@ function destroy() {
   cubePieces.forEach((e) => e.geometry.dispose());
   materials.forEach((e) => e.dispose());
   cube.children = [];
+  ring.children = [];
   cube.removeFromParent();
   ring.removeFromParent();
   ringParticles.forEach((e) => e.node.geometry.dispose());

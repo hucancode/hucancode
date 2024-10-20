@@ -12,7 +12,7 @@
     makeDragon,
   } from "$lib/scenes/dragon";
 
-  let ready = false;
+  let ready = $state(false);
 
   onMount(async () => {
     await init();

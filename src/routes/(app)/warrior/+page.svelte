@@ -3,7 +3,7 @@
   import Scene from "$lib/components/warrior.svelte";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
   import Return from "$icons/line-md/chevron-left.svg?raw";
-  let sceneInstance;
+  let sceneInstance = $state();
   function performMagic() {
     sceneInstance.performMagic();
   }
@@ -22,7 +22,7 @@
       {@html Return}
       {$_("home.showcase.goback")}
     </a>
-    <button on:click={performMagic}>
+    <button onclick={performMagic}>
       {@html Idea}
       {$_("home.showcase.surprise")}
     </button>

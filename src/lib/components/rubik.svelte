@@ -11,9 +11,15 @@
     remakeRubik,
   } from "$lib/scenes/rubik";
 
-  let ready = false;
+  let ready = $state(false);
 
-  export let size = getCurrentSize();
+  /**
+   * @typedef {Object} Props
+   * @property {any} [size]
+   */
+
+  /** @type {Props} */
+  let { size = $bindable(getCurrentSize()) } = $props();
   const MAX_SIZE = 6;
   const MIN_SIZE = 2;
 
