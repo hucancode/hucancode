@@ -125,7 +125,7 @@ async function animateWarriorIn(scene) {
           warrior.scene.scale.set(
             warriorParams.scale,
             SCALE,
-            warriorParams.scale
+            warriorParams.scale,
           );
         },
       });
@@ -237,7 +237,7 @@ function fadeToAction(name, duration) {
     return;
   }
   const animation = animator.clipAction(
-    warrior.animations.find((e) => e.name === name)
+    warrior.animations.find((e) => e.name === name),
   );
   if (!animation) {
     return;

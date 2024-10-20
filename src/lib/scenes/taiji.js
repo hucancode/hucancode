@@ -183,12 +183,12 @@ function playAnimation() {
   particle.material.uniforms.color1.value.setHSL(
     Math.random(),
     Math.random(),
-    Math.random() * 0.2 + 0.8
+    Math.random() * 0.2 + 0.8,
   );
   particle.material.uniforms.color2.value.setHSL(
     Math.random(),
     Math.random(),
-    Math.random() * 0.2
+    Math.random() * 0.2,
   );
   const animation = anime.timeline({
     duration: 1500,
@@ -203,14 +203,14 @@ function playAnimation() {
         targets: particle.rotation,
         z: Math.PI * 6,
       },
-      0
+      0,
     )
     .add(
       {
         targets: particle.position,
         y: Math.random(), // avoid z-fighting
       },
-      0
+      0,
     )
     .add(
       {
@@ -219,7 +219,7 @@ function playAnimation() {
         x: 22,
         y: 22,
       },
-      400
+      400,
     )
     .add(
       {
@@ -227,7 +227,7 @@ function playAnimation() {
         easing: "easeInOutQuad",
         value: 0,
       },
-      100
+      100,
     );
   scene.add(particle);
   animation.play();

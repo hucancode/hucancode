@@ -161,7 +161,7 @@ async function returnToIdle() {
 
 function fadeToAction(name, duration) {
   const animation = animator.clipAction(
-    model.animations.find((e) => e.name === name)
+    model.animations.find((e) => e.name === name),
   );
   return animation.reset().fadeIn(duration).play();
 }
