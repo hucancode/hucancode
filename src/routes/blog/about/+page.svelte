@@ -22,8 +22,7 @@
       href="https://freepik.com">freepik</a
     >, thanks to wonderful contribution by
     <strong
-      >freepik, pressfoto, dcstudio, rawpixel, wirestock, starline<strong
-      /></strong
+      >freepik, pressfoto, dcstudio, rawpixel, wirestock, starline</strong
     >
   </small>
   <a

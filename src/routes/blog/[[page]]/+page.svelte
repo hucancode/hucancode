@@ -2,7 +2,13 @@
   import PostsList from "$lib/components/blog/posts.svelte";
   import Pagination from "$lib/components/blog/pagination.svelte";
 
-  export let data;
+  /**
+   * @typedef {Object} Props
+   * @property {any} data
+   */
+
+  /** @type {Props} */
+  let { data } = $props();
 </script>
 
 <svelte:head>

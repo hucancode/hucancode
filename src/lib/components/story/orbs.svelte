@@ -1,8 +1,14 @@
 <script>
   import { createEventDispatcher } from "svelte";
   let dispatch = createEventDispatcher();
-  export let iconSources = [];
-  export let active = 0;
+  /**
+   * @typedef {Object} Props
+   * @property {any} [iconSources]
+   * @property {number} [active]
+   */
+
+  /** @type {Props} */
+  let { iconSources = [], active = $bindable(0) } = $props();
 </script>
 
 <div class="icons">
@@ -12,14 +18,14 @@
         type="radio"
         name="icon"
         checked={active == index}
-        on:change={(e) => {
+        onchange={(e) => {
           if (e.target.checked && active != index) {
             active = index;
             dispatch("change", index);
           }
         }}
       />
-      <div class="border" />
+      <div class="border"></div>
       <div class="icon">
         {@html icon}
       </div>
@@ -49,9 +55,9 @@
       width: 5rem;
       aspect-ratio: 1;
       position: relative;
-      &:has(input[type="radio"]) {
+      :global(&:has(input[type="radio"])) {
         &:hover .border {
-          opacity: 0.2;
+          opacity: 0.6;
         }
         & .border {
           opacity: 0;
@@ -60,17 +66,17 @@
           transition-timing-function: ease-in-out;
         }
       }
-      &:has(input[type="radio"]):hover .icon,
-      &:has(input[type="radio"]:checked) .icon {
+      :global(&:has(input[type="radio"]):hover .icon),
+      :global(&:has(input[type="radio"]:checked) .icon) {
         color: white;
       }
-      &:has(input[type="radio"]:checked) {
+      :global(&:has(input[type="radio"]:checked)) {
         & .border {
           opacity: 1;
           transform: rotate(0deg);
         }
       }
-      &:has(input[type="radio"]) {
+      :global(&:has(input[type="radio"])) {
         overflow: hidden;
         border-radius: 9999px;
         position: relative;
@@ -107,7 +113,7 @@
         width: 90%;
         height: 90%;
         color: rgb(80, 80, 90);
-        & svg {
+        :global(& svg) {
           height: 2rem;
         }
       }

@@ -45,8 +45,8 @@
     controls,
   } from "$lib/scenes/story/scene";
   let frameID;
-  let canvas;
-  let ready = false;
+  let canvas = $state();
+  let ready = $state(false);
   const preloadAssets = [
     "/assets/gltf/dragon.glb",
     "/assets/gltf/warrior.glb",
@@ -191,9 +191,9 @@
   </noscript>
   <ScrollObserver on:scroll={onScroll} threshold={30}>
     <div>
-      <canvas bind:this={canvas} />
+      <canvas bind:this={canvas}></canvas>
       {#if !ready}
-        <span out:scale={{ start: 3.0, duration: 800 }} />
+        <span out:scale={{ start: 3.0, duration: 800 }}></span>
       {/if}
     </div>
   </ScrollObserver>

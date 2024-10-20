@@ -2,22 +2,17 @@
   import "$styles/markdown.css";
   import { onMount } from "svelte";
   import { formatDateRelative } from "$lib/i18n";
-  import { afterUpdate } from "svelte";
   import Nav from "$lib/components/blog/nav-bottom.svelte";
 
-  export let data;
-  let title, excerpt, date, cover, categories, dateString;
-  function update() {
-    title = data.meta.title;
-    excerpt = data.meta.excerpt;
-    cover = data.meta.cover;
-    date = data.meta.date;
-    categories = data.meta.categories;
-    if (!date) return;
-    dateString = formatDateRelative("en", new Date(date));
-  }
-  update();
-  afterUpdate(update);
+  /**
+   * @typedef {Object} Props
+   * @property {any} [data]
+   */
+
+  /** @type {Props} */  let { data } = $props();
+  let { title, excerpt, cover, date, categories } = $derived(data.meta);
+  let Content = $derived(data.content);
+  let dateString = $derived(date && formatDateRelative("en", new Date(date)));
 </script>
 
 <svelte:head>
@@ -54,7 +49,7 @@
     <img src={cover} alt="cover" />
   {/if}
   <div>
-    <svelte:component this={data.content} />
+    <Content />
   </div>
 </article>
 <Nav />

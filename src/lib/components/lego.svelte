@@ -10,7 +10,7 @@
     playAnimation,
   } from "$lib/scenes/lego";
 
-  let ready = false;
+  let ready = $state(false);
 
   onMount(async () => {
     await init();

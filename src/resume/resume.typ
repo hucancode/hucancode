@@ -99,8 +99,8 @@
   name: "NSP64Bit",
   skills: "C++, Migration, Static Analysis",
   date: "2016/04 - 2017/01",
-  [Worked with C++, memory management, 64bit coding patterns in a large code base with 2M LOC],
-  [Developed a static analyzer to help cutting about 90% of human effort. Analyzed C++ code content, process structured content with Regular Expression]
+  [Migrated 2M lines of code in C++ from 32bit to 64bit environment],
+  [Built a RegExp-based static analyzer for C++ source code, automated about 90% of human effort]
 )
 
 #resume_heading[Education & Certifications]
