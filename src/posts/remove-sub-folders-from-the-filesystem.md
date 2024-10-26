@@ -10,10 +10,6 @@ categories:
 
 ## Problem
 
-### [Problem Link](https://leetcode.com/problems/remove-sub-folders-from-the-filesystem/)
-
-**Description**:
-
 Given a list of folders `folder`, return the folders after removing all sub-folders in those folders. You may return the answer in any order.
 
 If a folder `/a` is in the folder list, then it will also be in the answer, but if a folder `/a/b` is in the folder list, it will not be in the answer because it is a sub-folder of `/a`.
