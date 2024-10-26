@@ -31,12 +31,14 @@ Output: true
 Explanation: Map 'S'-> 9, 'E'->5, 'N'->6, 'D'->7, 'M'->1, 'O'->0, 'R'->8, 'Y'->'2'
 Such that: "SEND" + "MORE" = "MONEY" ,  9567 + 1085 = 10652
 ```
+
 ```
 Input: words = ["SIX","SEVEN","SEVEN"], result = "TWENTY"
 Output: true
 Explanation: Map 'S'-> 6, 'I'->5, 'X'->0, 'E'->8, 'V'->7, 'N'->2, 'T'->1, 'W'->'3', 'Y'->4
 Such that: "SIX" + "SEVEN" + "SEVEN" = "TWENTY" ,  650 + 68782 + 68782 = 138214
 ```
+
 ```
 Input: words = ["LEET","CODE"], result = "POINT"
 Output: false
@@ -56,27 +58,34 @@ Submit your solution at [here](https://leetcode.com/problems/verbal-arithmetic-p
 ## Solution
 
 ### Intuition
+
 The goal is to have `sum(left) = right`, which is `sum(left) - right = 0`. Let's build a weight map $w$ to see how each individual letter contribute to the sum. For example:
+
 ```
 ["SEND", "MORE"] = "MONEY"
 weights:
 D = 1, E = 91, M = -9000, N = -90,
 O = -900, R = 10, S = 1000, Y = -1,
 ```
+
 The problem becomes, find a set of values $v$ to assign to each letter so that $\Sigma_0^n(v_i \times w_i) = 0$
 
 ### Approach 1 (Backtracking)
+
 - By default this would TLE, so we need to add some early prunning
 - Sort the weight, then travel from lowest weight to the highest and keep track of the $sum$, our goal is to find an answer that has $sum = 0$
   - If $sum > 0$, we stop because $sum$ will only increase onward
   - If $sum < 0$, and even if we assign largest $v$ available to largest $w$ and still $sum < 0$, we stop because there are no point trying
 
 ### Complexity
+
 - Time complexity: $O(\frac{10!}{(10-n)!})$
 - Space complexity: $O(n)$
 
 ### Code
+
 C++ (1687ms)
+
 ```cpp
 #define UNUSED(mask, pos) ((mask & (1<<pos)) == 0)
 class Solution {
@@ -165,22 +174,26 @@ public:
 ```
 
 ### Approach 2 (Left-Right Split, DFS), 50X Faster
+
 - I found a new approach which 50x faster compared to the above
 - Sort the weight, then travel from lowest weight to the highest and keep track of the $sum$, our goal is to find an answer that has $sum = 0$
 - Divide the variables into 2 parts with length = $n/2$. the left and the right part. Because our weight is sorted, the following is true:
-    - We handle separately the special case where $Left = Right = 0$
-    - We have $Left + Right = 0$ and $Left < Right$, thus $Left < 0$
+  - We handle separately the special case where $Left = Right = 0$
+  - We have $Left + Right = 0$ and $Left < Right$, thus $Left < 0$
 - We calculate all possible combination for $Left$ parts.
-    - There are at most $10 \div 2 = 5$ variables on the left. So we choose 5 number from 0 to 9 ordered to assign to 5 variables
-    - There are at most $10P5 = \frac{10!}{5!} = 30240$ way to assign 5 variables. Some of them will end up making $Left > 0$. We ignore those cases
+
+  - There are at most $10 \div 2 = 5$ variables on the left. So we choose 5 number from 0 to 9 ordered to assign to 5 variables
+  - There are at most $10P5 = \frac{10!}{5!} = 30240$ way to assign 5 variables. Some of them will end up making $Left > 0$. We ignore those cases
 
 - With all the possiblity of the $Left$ calculated. We traverse all the possibility of the $Right$. Find the maching value on the $Left$ to see if they sum to $0$
 
 ### Complexity
+
 - Time complexity: $O(\frac{10!}{(10-n \div 2)!})$
 - Space complexity: $O(n)$
 
 ### Code
+
 Rust (30ms)
 
 ```rust
