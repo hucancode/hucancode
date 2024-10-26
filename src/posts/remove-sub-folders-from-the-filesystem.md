@@ -57,8 +57,8 @@ We will be doing 2 steps:
 
 1. Sort the folder paths by length, since the sub-folder is always longer than its parent folders. We will not missing any sub-folder travel from folder with shorter path to longer path
 2. Travel the folder list and check the current folder
-3. If it doesn't match any previous folder, it is a new folder. Insert it to the Trie
-4. Else, it is a sub-folder, ignore it
+   a. If it doesn't match any previous folder, it is a new folder. Insert it to the Trie
+   b. Else, it is a sub-folder, ignore it
 
 ### Complexity
 
