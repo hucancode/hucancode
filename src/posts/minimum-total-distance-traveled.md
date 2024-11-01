@@ -105,7 +105,7 @@ $g(i,j,k) = f(i-k,j-1) + cost(i-k+1,i,j)$
 ### Complexity
 
 - Time complexity: $O(n^3)$
-- Space complexity: $O(n^2)$, $O(n)$ if needed
+- Space complexity: $O(n^2)$, can be optimized to $O(n)$ if needed
 
 ## Code
 
