@@ -10,6 +10,7 @@ article {
   margin-bottom: 5rem;
   max-width: 768px;
   padding: 0 1.5rem;
+  line-height: 1.6em;
 }
 
 article small img {
@@ -50,7 +51,7 @@ article :is(span.math) {
 }
 
 article :is(p, ol, ul, table) {
-  color: var(--color-neutral-800);
+  color: var(--color-neutral-900);
 }
 
 article table {
