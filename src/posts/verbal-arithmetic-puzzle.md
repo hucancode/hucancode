@@ -18,7 +18,7 @@ You need to check if the equation is solvable under the following rules:
 
 - Each character is decoded as one digit (0 - 9).
 - No two characters can map to the same digit.
-- Each words[i] and result are decoded as one number without leading zeros.
+- Each $words_i$ and result are decoded as one number without leading zeros.
 - Sum of numbers on the left side (words) will equal to the number on the right side (result).
 
 Return true if the equation is solvable, otherwise return false.
@@ -50,7 +50,7 @@ Note that two different characters cannot map to the same digit.
 
 - $2 \leq words.length \leq 5$
 - $1 \leq words[i].length, result.length \leq 7$
-- $words[i], result$ contain only uppercase English letters
+- $words_i, result$ contain only uppercase English letters
 - The number of different characters used in the expression is at most $10$
 
 Submit your solution at [here](https://leetcode.com/problems/verbal-arithmetic-puzzle/)
