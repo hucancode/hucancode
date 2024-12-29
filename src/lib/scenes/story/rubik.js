@@ -130,16 +130,7 @@ function makeRubik() {
   //addDebugArrow(pivot);
 }
 
-function rearrangeRubik(offsetX, offsetY, offsetZ) {
-  if (!offsetX) {
-    offsetX = 0;
-  }
-  if (!offsetY) {
-    offsetY = 0;
-  }
-  if (!offsetZ) {
-    offsetZ = 0;
-  }
+function rearrangeRubik(offsetX=0, offsetY=0, offsetZ=0) {
   transferCubes();
   var i = 0;
   for (let y = 0; y < cubeNum; y++) {
@@ -171,7 +162,7 @@ function init() {
 function enter(scene) {
   const targets = cubes.map((e) => e.position);
   anime.remove(targets);
-  rearrangeRubik(-5, -20, 0);
+  rearrangeRubik(-5, -20);
   scene.add(rubik);
   scene.add(pivot);
   anime({
