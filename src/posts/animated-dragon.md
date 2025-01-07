@@ -676,6 +676,8 @@ export {
     </video>
 </div>
 
+See it live at here ([/dragon-rs](/dragon-rs))
+
 ## Conclusion
 
 In this tutorial, we covered how to create a dynamic 3D dragon scene in Three.js. We set up a basic scene, added lighting, loaded and animated a dragon model, and used data textures to efficiently animate models along a curve. This technique opens up a wide range of possibilities for creating complex and dynamic animations in 3D scenes.

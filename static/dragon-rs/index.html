@@ -5,6 +5,14 @@
       import init from "./flying-dragon.js";
       async function run() {
         try {
+          if (!navigator.gpu) {
+            document.getElementById("canvas").remove();
+            document.body.appendChild(
+              document.createElement("h1"),
+            ).textContent =
+              "WebGPU not supported in this browser. Please use Chrome Canary with --enable-unsafe-webgpu flag.";
+            throw Error("WebGPU not supported.");
+          }
           await init();
         } catch (e) {
           console.error("Something wrong when initialize graphics: " + e);
@@ -22,13 +30,13 @@
         height: 100%;
         overflow: hidden;
         display: grid;
+        place-items: center;
       }
       canvas {
         display: block;
         margin: auto;
       }
       #loading {
-        margin: auto;
         font-size: 24px;
       }
     </style>
