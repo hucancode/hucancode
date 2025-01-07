@@ -1,0 +1,4 @@
+[submodule "flying-dragon"]
+	path = flying-dragon
+	branch = master
+	url = git@github.com:hucancode/flying-dragon.git
