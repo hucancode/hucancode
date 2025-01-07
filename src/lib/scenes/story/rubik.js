@@ -130,7 +130,7 @@ function makeRubik() {
   //addDebugArrow(pivot);
 }
 
-function rearrangeRubik(offsetX=0, offsetY=0, offsetZ=0) {
+function rearrangeRubik(offsetX = 0, offsetY = 0, offsetZ = 0) {
   transferCubes();
   var i = 0;
   for (let y = 0; y < cubeNum; y++) {

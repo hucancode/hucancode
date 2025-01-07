@@ -172,14 +172,14 @@ Here is the 8 triagrams of bagua
 
 | Triagram Figure | Binary Value | Decimal Value | Name    | Meaning                   |
 | --------------- | ------------ | ------------- | ------- | ------------------------- |
-| ☰               | 111          | 7             | 乾/qián | Creative, (natural) force |
-| ☱               | 110          | 6             | 兌/duì  | Joyous, open (reflection) |
-| ☲               | 101          | 5             | 離/lí   | Clinging, radiance        |
-| ☳               | 100          | 4             | 震/zhèn | Arousing, shake           |
-| ☴               | 011          | 3             | 巽/xùn  | Gentle, ground            |
-| ☵               | 010          | 2             | 坎/kǎn  | Abysmal, gorge            |
-| ☶               | 001          | 1             | 艮/gèn  | Keeping Still, bound      |
-| ☷               | 000          | 0             | 坤/kūn  | Receptive, field          |
+| ☰              | 111          | 7             | 乾/qián | Creative, (natural) force |
+| ☱              | 110          | 6             | 兌/duì  | Joyous, open (reflection) |
+| ☲              | 101          | 5             | 離/lí   | Clinging, radiance        |
+| ☳              | 100          | 4             | 震/zhèn | Arousing, shake           |
+| ☴              | 011          | 3             | 巽/xùn  | Gentle, ground            |
+| ☵              | 010          | 2             | 坎/kǎn  | Abysmal, gorge            |
+| ☶              | 001          | 1             | 艮/gèn  | Keeping Still, bound      |
+| ☷              | 000          | 0             | 坤/kūn  | Receptive, field          |
 
 ### Draw a bar
 

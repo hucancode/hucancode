@@ -19,7 +19,7 @@ const config = {
           "https://*.google.com",
           "https://*.g.doubleclick.net",
         ],
-        "script-src": ["self", "https://*.googletagmanager.com"],
+        "script-src": ["self", "unsafe-eval", "https://*.googletagmanager.com"],
         "connect-src": [
           "self",
           "data:",

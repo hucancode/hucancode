@@ -58,7 +58,7 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
         env:
           WASM_OUTPUT: flying-dragon/target/wasm32-unknown-unknown/release/flying-dragon.wasm
-          WEB_OUTPUT: static/dragon-rs
+          WEB_OUTPUT: src/lib/wasm/dragon
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
