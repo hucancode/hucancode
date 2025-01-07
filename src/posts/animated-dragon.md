@@ -669,14 +669,13 @@ export {
 ## Learn more
 
 [Here](https://github.com/hucancode/flying-dragon) is a **Rust** version for this animated dragon, powered by **WebGPU**. We follow the same principle of passing a curve from CPU to GPU and then let the GPU take over the animation.
+See it live at here ([/dragon-rs](/dragon-rs))
 
 <div style="width: 100%;text-align: center;">
     <video autoplay loop controls>
     <source src="/blog/post/animated-dragon/dragon-rust.mp4" type="video/mp4" >
     </video>
 </div>
-
-See it live at here ([/dragon-rs](/dragon-rs))
 
 ## Conclusion
 

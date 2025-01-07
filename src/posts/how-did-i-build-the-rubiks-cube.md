@@ -559,6 +559,17 @@ export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };
 
 </details>
 
+## Learn more
+
+[Here](https://github.com/hucancode/rubik) is a **Rust** implementation of this scene. It is a bit more complex than this one but the idea still remains.
+See it live at here ([/rubik-rs](/rubik-rs))
+
+<div style="width: 100%;text-align: center;">
+    <video autoplay loop controls>
+    <source src="/blog/post/how-did-i-build-the-rubiks-cube/rubik-rust.mp4" type="video/mp4" >
+    </video>
+</div>
+
 <style>
   .rubik {
     aspect-ratio: 1/1;
