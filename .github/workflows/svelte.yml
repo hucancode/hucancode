@@ -64,7 +64,6 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}/rubik
       - name: Make Rubik loader script
         run: wasm-bindgen $WASM_OUTPUT --out-dir $WEB_OUTPUT --target web --no-typescript
-        working-directory: ${{ env.BUILD_PATH }}
         env:
           WASM_OUTPUT: rubik/target/wasm32-unknown-unknown/release/rubik.wasm
           WEB_OUTPUT: src/lib/wasm/rubik
@@ -73,14 +72,12 @@ jobs:
         uses: actions/configure-pages@v3
       - name: Install dependencies
         run: bun install --production
-        working-directory: ${{ env.BUILD_PATH }}
       - name: Build SvelteKit app
         env:
           PUBLIC_GA_MEASUREMENT_ID: ${{ vars.PUBLIC_GA_MEASUREMENT_ID }}
         run: bun run build
       - name: Add .nojekyll
         run: touch ./build/.nojekyll
-        working-directory: ${{ env.BUILD_PATH }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
