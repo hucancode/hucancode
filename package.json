@@ -3,6 +3,8 @@
   "version": "0.3.0",
   "scripts": {
     "dev": "vite dev",
+    "build:dragon": "cd flying-dragon && cargo build --release --target wasm32-unknown-unknown && wasm-bindgen target/wasm32-unknown-unknown/release/flying-dragon.wasm --out-dir ../src/lib/wasm/dragon --no-typescript",
+    "build:rubik": "cd rubik && cargo build --release --target wasm32-unknown-unknown && wasm-bindgen target/wasm32-unknown-unknown/release/rubik.wasm --out-dir ../src/lib/wasm/rubik --no-typescript",
     "build": "vite build",
     "preview": "vite preview",
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. ."
