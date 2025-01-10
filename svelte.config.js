@@ -30,6 +30,7 @@ const config = {
           "https://*.google.com",
           "https://*.g.doubleclick.net",
         ],
+        "frame-src": ["*.doubleclick.net"],
         "style-src": ["self", "unsafe-inline", "fonts.googleapis.com"],
         "font-src": ["self", "data:", "fonts.gstatic.com"],
       },
