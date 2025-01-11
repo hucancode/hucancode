@@ -36,11 +36,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
       - name: Setup Rust toolchain
@@ -67,9 +67,6 @@ jobs:
         env:
           WASM_OUTPUT: rubik/target/wasm32-unknown-unknown/release/rubik.wasm
           WEB_OUTPUT: src/lib/wasm/rubik
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v3
       - name: Install dependencies
         run: bun install --production
       - name: Build SvelteKit app
@@ -78,8 +75,11 @@ jobs:
         run: bun run build
       - name: Add .nojekyll
         run: touch ./build/.nojekyll
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ env.BUILD_PATH }}/build
 
@@ -90,4 +90,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
