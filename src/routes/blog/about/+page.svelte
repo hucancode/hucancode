@@ -7,7 +7,7 @@
 </svelte:head>
 <header>
   <div>
-    <img alt="logo" src="/assets/logo-source.svg" />
+    <img alt="logo" src="/panda.svg" />
   </div>
   <small>
     Welcome to my blog, I am a Vietnamese software engineer based in Japan and a <s
@@ -21,15 +21,9 @@
     Most illustration images on this blog are taken from <a
       href="https://freepik.com">freepik</a
     >, thanks to wonderful contribution by
-    <strong
-      >freepik, pressfoto, dcstudio, rawpixel, wirestock, starline</strong
-    >
+    <strong>freepik, pressfoto, dcstudio, rawpixel, wirestock, starline</strong>
   </small>
-  <a
-    target="_blank"
-    rel="noreferrer"
-    href="https://www.buymeacoffee.com/hucancode"
-  >
+  <a target="_blank" rel="noreferrer" href="https://buymeacoffee.com/hucancode">
     <h2 rainbow>
       Buy me a coffee
       {@html BuyMeACoffee}

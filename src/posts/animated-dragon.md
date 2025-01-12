@@ -15,7 +15,7 @@ In this blog post, I'll walk you through the process of creating a dynamic drago
 Here is a preview of what we will be creating in this tutorial
 
 <div style="width: 100%;text-align: center;">
-    <video autoplay loop controls>
+    <video autoplay loop controls muted>
     <source src="/blog/post/animated-dragon/dragon-600-20s.webm" type="video/webm" >
     </video>
 </div>
@@ -672,7 +672,7 @@ export {
 See it live at here ([/dragon-rs](/dragon-rs))
 
 <div style="width: 100%;text-align: center;">
-    <video autoplay loop controls>
+    <video autoplay loop controls muted>
     <source src="/blog/post/animated-dragon/dragon-rust.webm" type="video/webm" >
     </video>
 </div>
