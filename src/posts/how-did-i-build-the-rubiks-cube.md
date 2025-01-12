@@ -565,8 +565,8 @@ export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };
 See it live at here ([/rubik-rs](/rubik-rs))
 
 <div style="width: 100%;text-align: center;">
-    <video autoplay loop controls>
-    <source src="/blog/post/how-did-i-build-the-rubiks-cube/rubik-rust.mp4" type="video/mp4" >
+    <video autoplay loop controls muted>
+    <source src="/blog/post/how-did-i-build-the-rubiks-cube/rubik-rust.webm" type="video/webm" >
     </video>
 </div>
 
