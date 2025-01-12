@@ -103,7 +103,7 @@ To load the dragon model, we use a utility function loadModelStatic (assumed to 
 
 ```js
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { Flow } from "$lib/three/modifiers/CurveModifier.js";
+import { Flow } from "three/addons/modifiers/CurveModifier.js";
 import { CatmullRomCurve3, Vector3 } from "three";
 
 let model, dragon, curve;
@@ -502,7 +502,7 @@ The full implementation is as follow
 <summary>dragon.js</summary>
 
 ```js
-import { Flow } from "$lib/three/modifiers/CurveModifier.js";
+import { Flow } from "three/addons/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
 import {
   AmbientLight,
@@ -673,7 +673,7 @@ See it live at here ([/dragon-rs](/dragon-rs))
 
 <div style="width: 100%;text-align: center;">
     <video autoplay loop controls>
-    <source src="/blog/post/animated-dragon/dragon-rust.mp4" type="video/mp4" >
+    <source src="/blog/post/animated-dragon/dragon-rust.webm" type="video/webm" >
     </video>
 </div>
 

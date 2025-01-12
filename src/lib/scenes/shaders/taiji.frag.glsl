@@ -17,12 +17,12 @@ void main() {
     vec2 center = vec2(0.0);
     vec2 centerTop = center + vec2(0.0, BIG_CIRCLE_RADIUS);
     vec2 centerBottom = center + vec2(0.0, -BIG_CIRCLE_RADIUS);
-    v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS*2.0, center) * SMOOTH(0.0, uv.x);
+    v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS * 2.0, center) * SMOOTH(0.0, uv.x);
     v += WHITE_CIRCLE(BIG_CIRCLE_RADIUS, centerTop);
     v *= BLACK_CIRCLE(BIG_CIRCLE_RADIUS, centerBottom);
     v += WHITE_CIRCLE(SMALL_CIRCLE_RADIUS, centerBottom);
     v *= BLACK_CIRCLE(SMALL_CIRCLE_RADIUS, centerTop);
     v = clamp(v, 0.0, 1.0);
-    float mask = WHITE_CIRCLE(BIG_CIRCLE_RADIUS*2.0 + STROKE_WIDTH, center);
+    float mask = WHITE_CIRCLE(BIG_CIRCLE_RADIUS * 2.0 + STROKE_WIDTH, center);
     gl_FragColor = vec4(color1 * v + color2 * (1.0 - v), mask * alpha);
 }

@@ -1,4 +1,4 @@
-import { Flow } from "$lib/three/modifiers/CurveModifier.js";
+import { Flow } from "three/addons/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
 import {
   AmbientLight,
