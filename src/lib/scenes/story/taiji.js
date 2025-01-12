@@ -29,9 +29,9 @@ let taijiEnterTimeline = null;
 let taijiLeaveTimeline = null;
 
 const DRAGON_RANDOM_PATH = false;
-const DRAGON_SPEED_PERCENT_PER_FRAME = 0.1;
+const DRAGON_SPEED_PERCENT_PER_FRAME = 0.03;
 async function makeDragon() {
-  let model = await loadModelStatic("dragon.glb");
+  let model = await loadModelStatic("dragon-low.glb");
   dragon = new Flow(model);
   const points = [];
   if (DRAGON_RANDOM_PATH) {
@@ -55,8 +55,8 @@ async function makeDragon() {
     const RADIUS = 34;
     const SAMPLE_COUNT = 60;
     const ELEVATION = 8;
-    const ELEVATION_CYCLE = 5;
-    const MOVING_CYCLE = 3;
+    const ELEVATION_CYCLE = 11;
+    const MOVING_CYCLE = 5;
     for (var i = 0; i < SAMPLE_COUNT; i++) {
       const theta = (i * Math.PI * 2 * MOVING_CYCLE) / SAMPLE_COUNT;
       const alpha = (i * Math.PI * 2 * ELEVATION_CYCLE) / SAMPLE_COUNT;

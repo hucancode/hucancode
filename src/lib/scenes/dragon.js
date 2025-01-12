@@ -129,7 +129,7 @@ function render() {
   time += clock.getDelta();
   for (let i = 0; i < dragons.length; i++) {
     dragons[i].updateCurve(0, curves[i]);
-    dragons[i].moveAlongCurve(0.002);
+    dragons[i].moveAlongCurve(0.0008);
   }
   if (dynamicLight) {
     dynamicLight.position.x = Math.sin(time * 0.7) * 30 + 20;
