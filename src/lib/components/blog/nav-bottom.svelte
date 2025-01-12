@@ -7,13 +7,10 @@
   <a href="/blog"
     ><h2 rainbow>
       {@html GoBack}
-      Return to blog
+      Blog
     </h2></a
   >
-  <a
-    target="_blank"
-    rel="noreferrer"
-    href="https://www.buymeacoffee.com/hucancode"
+  <a target="_blank" rel="noreferrer" href="https://buymeacoffee.com/hucancode"
     ><h2 rainbow="0">
       Buy me a coffee
       {@html BuyMeACoffee}

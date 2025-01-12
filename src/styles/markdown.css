@@ -1,8 +1,7 @@
-article img {
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-  margin: 0 auto;
-  display: block;
+@media (min-width: 640px) {
+  article div p img:only-of-type {
+    max-width: 50%;
+  }
 }
 
 article {
@@ -11,70 +10,73 @@ article {
   max-width: 768px;
   padding: 0 1.5rem;
   line-height: 1.6em;
-}
-
-article small img {
-  margin: 0 auto;
-  display: inline-block;
-}
-
-article img + em {
-  margin: 0 auto;
-  display: block;
-  text-align: center;
-}
-
-article div img {
-  max-width: 80%;
-}
-
-article div p img:only-of-type {
-  max-width: 80%;
-}
-
-@media (min-width: 640px) {
-  article div p img:only-of-type {
-    max-width: 50%;
+  video {
+    max-width: 100%;
   }
-}
+  img {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    margin: 0 auto;
+    display: block;
+  }
 
-article :is(h1, h2, h3) {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
+  small img {
+    margin: 0 auto;
+    display: inline-block;
+  }
 
-article :is(h1, h2, h3, strong) {
-  color: var(--color-neutral-950);
-}
-article :is(span.math) {
-  color: var(--color-neutral-900);
-}
+  img + em {
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+  }
 
-article :is(p, ol, ul, table) {
-  color: var(--color-neutral-900);
-}
+  div img {
+    max-width: 80%;
+  }
 
-article table {
-  width: 100%;
-  padding: 0.5rem;
-}
+  div p img:only-of-type {
+    max-width: 80%;
+  }
 
-article table thead {
-  background-color: var(--color-neutral-200);
-}
+  :is(h1, h2, h3) {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
 
-article table td {
-  padding: 0.25rem 0.5rem;
-}
+  :is(h1, h2, h3, strong) {
+    color: var(--color-neutral-950);
+  }
+  :is(span.math) {
+    color: var(--color-neutral-900);
+  }
 
-article table th {
-  padding: 0.5rem;
-}
+  :is(p, ol, ul, table) {
+    color: var(--color-neutral-900);
+  }
 
-article table tbody tr:nth-child(even) {
-  background-color: var(--color-neutral-100);
-}
+  table {
+    width: 100%;
+    padding: 0.5rem;
+    thead {
+      background-color: var(--color-neutral-200);
+    }
 
-article table tbody tr:nth-child(odd) {
-  background-color: var(--color-neutral-0);
+    td {
+      padding: 0.25rem 0.5rem;
+    }
+
+    th {
+      padding: 0.5rem;
+    }
+
+    tbody {
+      tr:nth-child(even) {
+        background-color: var(--color-neutral-100);
+      }
+      tr:nth-child(odd) {
+        background-color: var(--color-neutral-0);
+      }
+    }
+  }
 }
