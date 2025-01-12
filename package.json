@@ -10,6 +10,7 @@
   "dependencies": {
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.15.2",
+    "@yushijinhun/three-minifier-rollup": "^0.4.0",
     "animejs": "^3.2.2",
     "mdsvex": "^0.12.3",
     "rehype-katex-svelte": "^1.2.0",

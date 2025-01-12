@@ -48,7 +48,7 @@
   let canvas = $state();
   let ready = $state(false);
   const preloadAssets = [
-    "/assets/gltf/dragon.glb",
+    "/assets/gltf/dragon-low.glb",
     "/assets/gltf/warrior.glb",
     // "/assets/textures/body_Diffuse.png",
     // "/assets/textures/body_Emissive.png",

@@ -23,10 +23,10 @@
 
 <section>
   <div class="explain">
-    <h1 rainbow="1" class="xl">{$_("home.landing.hello")}</h1>
-    <h1>
+    <h1 rainbow="1">{$_("home.landing.hello")}</h1>
+    <h2>
       {$_("home.landing.about")}
-    </h1>
+    </h2>
     <p>
       <a rel="external" href="mailto:hucancode@gmail.com">
         {$_("common.contact.sendMail")}
@@ -45,14 +45,6 @@
         {$_("common.contact.github")}
       </a>
       /
-      <a
-        target="_blank"
-        rel="noreferrer"
-        href="https://leetcode.com/u/hucancode"
-      >
-        {$_("common.contact.leetcode")}
-      </a>
-      /
       <a href="/blog">
         {$_("common.contact.blog")}
       </a>
@@ -64,8 +56,9 @@
   section {
     min-height: unset;
   }
-  h1.xl {
-    font-size: 3.5rem;
+  h2 {
+    font-weight: 600;
+    text-align: center;
   }
   h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
@@ -75,6 +68,7 @@
     gap: 0.5em;
     align-items: center;
     text-align: center;
+    font-size: 3.5rem;
   }
   p {
     text-align: center;
