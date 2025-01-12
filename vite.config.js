@@ -1,4 +1,5 @@
 import { sveltekit } from "@sveltejs/kit/vite";
+import { threeMinifier } from "@yushijinhun/three-minifier-rollup";
 import path from "path";
 
 /** @type {import('vite').UserConfig} */
@@ -11,7 +12,7 @@ const config = {
       $locales: path.resolve(__dirname, "./src/locales"),
     },
   },
-  plugins: [sveltekit()],
+  plugins: [sveltekit(), { ...threeMinifier(), enforce: "pre" }],
 };
 
 export default config;
