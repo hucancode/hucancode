@@ -1,13 +1,18 @@
 <script>
+  import { _ } from "$lib/i18n";
   import init from "$lib/wasm/dragon/flying-dragon.js";
   import { onMount } from "svelte";
+  import Return from "$icons/line-md/chevron-left.svg?raw";
+  import Idea from "$icons/line-md/lightbulb.svg?raw";
 
   let loading = $state(true);
+  let notSupported = $state(false);
   let message = $state("Loading...");
   onMount(async () => {
     if (!navigator.gpu) {
       message =
-        "WebGPU not supported in this browser. Please use Chrome Canary with --enable-unsafe-webgpu flag.";
+        "WebGPU not supported in this browser. Here is what the dragon supposed to look like";
+      notSupported = true;
       throw Error("WebGPU not supported.");
     }
     try {
@@ -23,27 +28,55 @@
 <svelte:head>
   <title>Dragon</title>
 </svelte:head>
-<div>
-  {#if loading}
-    <h1>{message}</h1>
-  {/if}
-  <canvas></canvas>
-</div>
+
+<section>
+  <figure>
+    {#if loading}
+      <h1>{message}</h1>
+    {/if}
+    <video autoplay loop controls muted class:enabled={notSupported}>
+      <source
+        src="/blog/post/animated-dragon/dragon-rust.webm"
+        type="video/webm"
+      />
+    </video>
+    <canvas> </canvas>
+  </figure>
+  <div role="group" class="square">
+    <a role="button" href="/">
+      {@html Return}
+      {$_("home.showcase.goback")}
+    </a>
+    <button>
+      {@html Idea}
+      {$_("home.showcase.surprise")}
+    </button>
+  </div>
+</section>
 
 <style>
-  div {
-    margin: 0;
+  .enabled {
+    display: block;
+  }
+  video {
+    display: none;
+  }
+  section {
+    flex-grow: 1;
+    justify-content: space-around;
+  }
+  figure {
+    aspect-ratio: 4/3;
     width: 100%;
-    height: 100%;
-    overflow: hidden;
     display: grid;
     place-items: center;
   }
   canvas {
-    display: block;
-    margin: auto;
+    outline: none;
   }
   h1 {
     font-size: 24px;
+    text-align: center;
+    margin-bottom: 1rem;
   }
 </style>
