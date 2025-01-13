@@ -9,6 +9,7 @@
 
   let loading = $state(true);
   let notSupported = $state(false);
+  let canvas = $state();
   onMount(async () => {
     try {
       if (!navigator.gpu) {
@@ -24,6 +25,7 @@
       console.error("Something wrong when initialize graphics: " + e);
     } finally {
       loading = false;
+      canvas.style = undefined;
     }
   });
 </script>
@@ -51,7 +53,7 @@
         />
       </video>
     {/if}
-    <canvas> </canvas>
+    <canvas bind:this={canvas}> </canvas>
   </figure>
   <div role="group" class="square">
     <a role="button" href="/">
@@ -73,13 +75,18 @@
   figure {
     aspect-ratio: 4/3;
     width: 100%;
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-items: center;
+    align-items: center;
     position: relative;
     gap: 1rem;
+    overflow: hidden;
   }
   canvas {
     outline: none;
+    width: 100%;
+    height: auto;
   }
   h1 {
     font-size: 24px;

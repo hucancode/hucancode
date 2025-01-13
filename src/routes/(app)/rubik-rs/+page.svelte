@@ -24,6 +24,7 @@
       console.error("Something wrong when initialize graphics: " + e);
     } finally {
       loading = false;
+      canvas.style = undefined;
     }
   });
 </script>
@@ -53,7 +54,7 @@
         type="video/webm" />
       </video>
     {/if}
-    <canvas> </canvas>
+    <canvas bind:this={canvas}> </canvas>
   </figure>
   <div role="group" class="square">
     <a role="button" href="/">
@@ -75,12 +76,16 @@
   figure {
     aspect-ratio: 4/3;
     width: 100%;
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-items: center;
+    align-items: center;
     gap: 1rem;
   }
   canvas {
     outline: none;
+    width: 100%;
+    height: auto;
   }
   h1 {
     font-size: 24px;

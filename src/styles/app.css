@@ -105,6 +105,10 @@ nav:has(> :only-child) {
   justify-content: center;
 }
 
+video {
+  max-width: 100%;
+}
+
 .relative {
   position: relative;
 }
