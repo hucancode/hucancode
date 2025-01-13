@@ -11,8 +11,7 @@
   onMount(async () => {
     if (!navigator.gpu) {
       message =
-        $_("home.showcase.webgpuNotSupported") +
-        $_("home.showcase.rubikFallback");
+        $_("home.showcase.noWebGPU") + $_("home.showcase.rubikFallback");
       notSupported = true;
       throw Error("WebGPU not supported.");
     }
