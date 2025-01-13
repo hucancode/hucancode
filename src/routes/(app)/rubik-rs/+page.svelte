@@ -1,21 +1,19 @@
 <script>
   import { _ } from "$lib/i18n";
-  import init from "$lib/wasm/rubik/rubik.js";
   import { onMount } from "svelte";
+  import { fade } from "svelte/transition";
+  import init from "$lib/wasm/rubik/rubik.js";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
 
   let loading = $state(true);
   let notSupported = $state(false);
-  let message = $state("Loading...");
   onMount(async () => {
-    if (!navigator.gpu) {
-      message =
-        $_("home.showcase.noWebGPU") + $_("home.showcase.rubikFallback");
-      notSupported = true;
-      throw Error("WebGPU not supported.");
-    }
     try {
+      if (!navigator.gpu) {
+        notSupported = true;
+        throw Error("WebGPU not supported.");
+      }
       await init();
     } catch (e) {
       console.error("Something wrong when initialize graphics: " + e);
@@ -32,16 +30,24 @@
 <section>
   <figure>
     {#if loading}
-      <h1>{message}</h1>
+      <span class="spinner" transition:fade={{ duration: 300 }}></span>
     {/if}
-    <video autoplay loop controls muted class:enabled={notSupported}>
-      <source
+    {#if notSupported}
+      <h1>
+        {$_("home.showcase.noWebGPU")}
+      </h1>
+      <p>
+        {$_("home.showcase.rubikFallback")}
+      </p>
+      <video autoplay loop muted>
         <source
-        src="/blog/post/how-did-i-build-the-rubiks-cube/rubik-rust.webm"
-        type="video/webm"
-      />
-      type="video/webm" />
-    </video>
+          <source
+          src="/blog/post/how-did-i-build-the-rubiks-cube/rubik-rust.webm"
+          type="video/webm"
+        />
+        type="video/webm" />
+      </video>
+    {/if}
     <canvas> </canvas>
   </figure>
   <div role="group" class="square">
@@ -57,12 +63,6 @@
 </section>
 
 <style>
-  .enabled {
-    display: block;
-  }
-  video {
-    display: none;
-  }
   section {
     flex-grow: 1;
     justify-content: space-around;
@@ -72,6 +72,7 @@
     width: 100%;
     display: grid;
     place-items: center;
+    gap: 1rem;
   }
   canvas {
     outline: none;
@@ -79,6 +80,9 @@
   h1 {
     font-size: 24px;
     text-align: center;
-    margin-bottom: 1rem;
+  }
+  p {
+    text-align: center;
+    font-style: italic;
   }
 </style>

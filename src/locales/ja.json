@@ -18,7 +18,7 @@
     "showcase": {
       "surprise": "何か見せて",
       "goback": "戻る",
-      "noWebGPU": "このブラウザではWebGPUが対応されていません。",
+      "noWebGPU": "このブラウザではWebGPUが対応されていません",
       "dragonFallback": "正常の場合、ドラゴンはこう見えます",
       "rubikFallback": "正常の場合、ルービックキューブはこう見えます"
     }
