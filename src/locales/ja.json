@@ -11,16 +11,16 @@
   "home": {
     "landing": {
       "hello": "こんにちは!",
-      "about": "創造なエンジニアのバンです",
-      "noscript": "面白いな3Dアニメーションをいくつか用意しましたが、表示するにはJavaScriptを有効にする必要です",
+      "about": "創造なソフトウェアエンジニアのバンです",
+      "noscript": "面白いな3Dアニメーションをいくつか用意しましたが、表示するにはJavaScriptを有効にする必要があります",
       "enablejs": "ブラウザでJavaScriptを有効にする方法をご参考に"
     },
     "showcase": {
       "surprise": "何か見せて",
       "goback": "戻る",
-      "noWebGPU": "このブラウザではWebGPUが対応されていません。",
-      "dragonFallback": "正常の場合、ドラゴンはこう見えます",
-      "rubikFallback": "正常の場合、ルービックキューブはこう見えます"
+      "noWebGPU": "このブラウザではWebGPUが対応されていません",
+      "dragonFallback": "ドラゴンはこのように見えるはずです",
+      "rubikFallback": "ルービックキューブはこのように見えるはずです"
     }
   }
 }

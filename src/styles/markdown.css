@@ -10,9 +10,6 @@ article {
   max-width: 768px;
   padding: 0 1.5rem;
   line-height: 1.6em;
-  video {
-    max-width: 100%;
-  }
   img {
     margin-top: 2rem;
     margin-bottom: 2rem;

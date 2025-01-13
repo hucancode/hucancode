@@ -18,7 +18,7 @@
     "showcase": {
       "surprise": "Surprise me!",
       "goback": "Go back",
-      "noWebGPU": "WebGPU not supported in this browser. ",
+      "noWebGPU": "WebGPU is not supported in this browser",
       "dragonFallback": "Here is how the dragon supposed to looks",
       "rubikFallback": "Here is how the Rubik's cube supposed to looks"
     }
