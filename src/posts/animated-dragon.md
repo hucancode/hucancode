@@ -49,6 +49,7 @@ function setupLightning() {
   scene.add(dynamicLight);
 }
 ```
+
 Setting up camera
 
 ```js
@@ -60,6 +61,7 @@ function setupCamera(w, h) {
   camera.lookAt(scene.position);
 }
 ```
+
 Setting up renderer
 
 ```js
