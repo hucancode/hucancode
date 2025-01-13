@@ -10,8 +10,7 @@
   let message = $state("Loading...");
   onMount(async () => {
     if (!navigator.gpu) {
-      message =
-        "WebGPU not supported in this browser. Here is what the dragon supposed to look like";
+      message = $_("home.showcase.webgpuNotSupported");
       notSupported = true;
       throw Error("WebGPU not supported.");
     }
