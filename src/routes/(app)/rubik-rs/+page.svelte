@@ -2,6 +2,7 @@
   import { _ } from "$lib/i18n";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
+  import { gtag } from "$lib/ga";
   import init from "$lib/wasm/rubik/rubik.js";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
@@ -12,6 +13,10 @@
     try {
       if (!navigator.gpu) {
         notSupported = true;
+        gtag("event", "error", {
+          event_category: "WebGPU",
+          event_label: "Not Supported",
+        });
         throw Error("WebGPU not supported.");
       }
       await init();
