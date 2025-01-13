@@ -28,22 +28,28 @@ Here is a preview of what we will be creating in this tutorial
 ## Setting Up the Scene
 
 The first step is to set up the basic components of our 3D scene: the scene itself, the camera, and the renderer.
+These are pretty basic Three.js codes, I will not go too much into details here.
 
-### Initializing the Scene
+Initializing scene
 
 ```js
-import { Scene } from "three";
+import { Scene, AmbientLight, PointLight } from "three";
 
 let scene, camera, renderer;
 
 function buildScene() {
   scene = new Scene();
+  setupLightning();
+}
+
+function setupLightning() {
+  ambientLight = new AmbientLight(0x003973);
+  scene.add(ambientLight);
+  dynamicLight = new PointLight(0xffffff, 5, 0, 0.2);
+  scene.add(dynamicLight);
 }
 ```
-
-Here, we create a new scene using `Scene`.
-
-### Setting Up the Camera
+Setting up camera
 
 ```js
 import { PerspectiveCamera } from "three";
@@ -54,10 +60,7 @@ function setupCamera(w, h) {
   camera.lookAt(scene.position);
 }
 ```
-
-We use a perspective camera to create a realistic 3D view. The camera is positioned at `(0, 20, 200)` and points towards the scene's center.
-
-### Initializing the Renderer
+Setting up renderer
 
 ```js
 import { WebGLRenderer } from "three";
@@ -78,28 +81,9 @@ function init() {
 }
 ```
 
-The renderer is initialized with antialiasing and alpha settings to improve visual quality. It is then sized to match the canvas dimensions.
-
-### Adding Lighting
-
-We add two types of lights: ambient light for general illumination and a dynamic point light for more dramatic effects.
-
-```js
-import { AmbientLight, PointLight } from "three";
-
-function setupLightning() {
-  ambientLight = new AmbientLight(0x003973);
-  scene.add(ambientLight);
-  dynamicLight = new PointLight(0xffffff, 5, 0, 0.2);
-  scene.add(dynamicLight);
-}
-```
-
-Ambient light provides a soft light throughout the scene, while the dynamic light moves and changes color over time, adding a dynamic element to the lighting.
-
 ### Loading and Animating the Dragon Model
 
-To load the dragon model, we use a utility function loadModelStatic (assumed to be defined elsewhere in your project). We then create a flow object to animate the dragon along a curved path.
+To load the dragon model, we use a utility function `loadModelStatic`. We then create a flow object to animate the dragon along a curved path.
 
 ```js
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -676,9 +660,3 @@ See it live at here ([/dragon-rs](/dragon-rs))
     <source src="/blog/post/animated-dragon/dragon-rust.webm" type="video/webm" >
     </video>
 </div>
-
-## Conclusion
-
-In this tutorial, we covered how to create a dynamic 3D dragon scene in Three.js. We set up a basic scene, added lighting, loaded and animated a dragon model, and used data textures to efficiently animate models along a curve. This technique opens up a wide range of possibilities for creating complex and dynamic animations in 3D scenes.
-
-Happy coding! If you have any questions or run into issues, feel free to leave me a comment via `hucancode[at]gmail.com `.
