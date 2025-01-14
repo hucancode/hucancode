@@ -9,6 +9,7 @@
 
   let loading = $state(true);
   let notSupported = $state(false);
+  let canvas = $state();
   onMount(async () => {
     try {
       if (!navigator.gpu) {
