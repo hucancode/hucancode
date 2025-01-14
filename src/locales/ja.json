@@ -19,6 +19,7 @@
       "surprise": "何か見せて",
       "goback": "戻る",
       "noWebGPU": "このブラウザではWebGPUが対応されていません",
+      "appError": "何かエラーが発生しました",
       "dragonFallback": "ドラゴンはこのように見えるはずです",
       "rubikFallback": "ルービックキューブはこのように見えるはずです"
     }

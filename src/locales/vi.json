@@ -19,6 +19,7 @@
       "surprise": "Chỉ vậy thôi à?",
       "goback": "Quay lại",
       "noWebGPU": "Trình duyệt này không hỗ trợ WebGPU",
+      "appError": "Có gì đó không đúng ở đây",
       "dragonFallback": "Nếu vẽ thành công thì con rồng trông như thế này",
       "rubikFallback": "Nếu vẽ thành công thì Rubik trông như thế này"
     }

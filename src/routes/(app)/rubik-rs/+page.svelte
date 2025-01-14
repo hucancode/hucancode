@@ -7,8 +7,10 @@
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
 
+  const whiteList = ["This isn't actually an error!"];
   let loading = $state(true);
   let notSupported = $state(false);
+  let error = $state(false);
   let canvas = $state();
   onMount(async () => {
     try {
@@ -22,7 +24,11 @@
       }
       await init();
     } catch (e) {
-      console.error("Something wrong when initialize graphics: " + e);
+      let real = whiteList.every((token) => e.message.indexOf(token) < 0);
+      if (real) {
+        error = true;
+        throw e;
+      }
     } finally {
       loading = false;
       canvas.style = undefined;
@@ -39,10 +45,16 @@
     {#if loading}
       <span class="spinner" transition:fade={{ duration: 300 }}></span>
     {/if}
-    {#if notSupported}
-      <h1>
-        {$_("home.showcase.noWebGPU")}
-      </h1>
+    {#if notSupported || error}
+      {#if notSupported}
+        <h1>
+          {$_("home.showcase.noWebGPU")}
+        </h1>
+      {:else if error}
+        <h1>
+          {$_("home.showcase.appError")}
+        </h1>
+      {/if}
       <p>
         {$_("home.showcase.rubikFallback")}
       </p>
