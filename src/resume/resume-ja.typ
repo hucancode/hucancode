@@ -53,9 +53,18 @@
 
 #resume_heading("注目のプロジェクト")
 #project_item(
+  name: "SDA",
+  skills: "Terraform, Ansible, Kubernetes, Kafka, Go, Postgres, AWS",
+  date: "2024/10～現在",
+  [Leveraged ELK stack to ingress and analyze application logs data],
+  [Built a fast data processor using Go to analyze proprietary dynamic binary data format],
+  [Utilized Kafka Connect to support data ingress from Oracle, MSSQL, CSV, JSON],
+  [Processed millions of new record daily, on just 2 medium AWS EC2 nodes],
+)
+#project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, シリアル",
-  date: "2022/08～現在",
+  date: "2022/08～2024/07",
   [バス料金管理ソフトウェアシステムを構築し、リモートソフトウェア更新機構を提供],
   [TCP、シリアル、HTTPSを使用して、3種類の多くの組み込みデバイス間の複雑な通信を処理],
   [Android OSのブート手順をカスタマイズし、さまざまな修正を適用してシステムの安定性を維持],

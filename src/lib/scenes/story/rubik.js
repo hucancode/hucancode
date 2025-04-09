@@ -1,4 +1,4 @@
-import anime from "animejs";
+import { stagger, utils, animate, eases } from "animejs";
 import {
   BoxGeometry,
   Color,
@@ -26,46 +26,46 @@ const RUBIK_SIZE = 8;
 const CUBE_NUM_DEFAULT = 3;
 const CUBE_MARGIN = 0.1;
 const EASING_FUNCTIONS = [
-  "easeInElastic",
-  "easeOutElastic",
-  "easeInOutElastic",
-  "easeOutInElastic",
-  "easeInQuad",
-  "easeInCubic",
-  "easeInQuart",
-  "easeInQuint",
-  "easeInSine",
-  "easeInExpo",
-  "easeInCirc",
-  "easeInBack",
-  "easeOutQuad",
-  "easeOutCubic",
-  "easeOutQuart",
-  "easeOutQuint",
-  "easeOutSine",
-  "easeOutExpo",
-  "easeOutCirc",
-  "easeOutBack",
-  "easeInBounce",
-  "easeInOutQuad",
-  "easeInOutCubic",
-  "easeInOutQuart",
-  "easeInOutQuint",
-  "easeInOutSine",
-  "easeInOutExpo",
-  "easeInOutCirc",
-  "easeInOutBack",
-  "easeInOutBounce",
-  "easeOutBounce",
-  "easeOutInQuad",
-  "easeOutInCubic",
-  "easeOutInQuart",
-  "easeOutInQuint",
-  "easeOutInSine",
-  "easeOutInExpo",
-  "easeOutInCirc",
-  "easeOutInBack",
-  "easeOutInBounce",
+  eases.inElastic(),
+  eases.outElastic(),
+  eases.inOutElastic(),
+  eases.outInElastic(),
+  eases.inQuad,
+  eases.inCubic,
+  eases.inQuart,
+  eases.inQuint,
+  eases.inSine,
+  eases.inExpo,
+  eases.inCirc,
+  eases.inBack,
+  eases.outQuad,
+  eases.outCubic,
+  eases.outQuart,
+  eases.outQuint,
+  eases.outSine,
+  eases.outExpo,
+  eases.outCirc,
+  eases.outBack,
+  eases.inBounce,
+  eases.inOutQuad,
+  eases.inOutCubic,
+  eases.inOutQuart,
+  eases.inOutQuint,
+  eases.inOutSine,
+  eases.inOutExpo,
+  eases.inOutCirc,
+  eases.inOutBack,
+  eases.inOutBounce,
+  eases.outBounce,
+  eases.outInQuad,
+  eases.outInCubic,
+  eases.outInQuart,
+  eases.outInQuint,
+  eases.outInSine,
+  eases.outInExpo,
+  eases.outInCirc,
+  eases.outInBack,
+  eases.outInBounce,
 ];
 let cubeNum = CUBE_NUM_DEFAULT;
 
@@ -148,7 +148,7 @@ function rearrangeRubik(offsetX = 0, offsetY = 0, offsetZ = 0) {
 }
 
 function transferCubes() {
-  anime.remove(pivot.rotation);
+  utils.remove(pivot.rotation);
   for (var i = pivot.children.length - 1; i >= 0; i--) {
     rubik.attach(pivot.children[i]);
   }
@@ -160,30 +160,29 @@ function init() {
 }
 
 function enter(scene) {
-  const targets = cubes.map((e) => e.position);
-  anime.remove(targets);
+  const targets = cubes.map(e => e.position);
+  utils.remove(targets);
   rearrangeRubik(-5, -20);
   scene.add(rubik);
   scene.add(pivot);
-  anime({
-    targets,
+  animate(targets, {
     y: {
-      value: (e, i) => {
+      to: (e, i) => {
         let y = Math.floor(i / cubeNum / cubeNum);
         return y * (1 + CUBE_MARGIN);
       },
-      easing: "easeOutElastic",
+      ease: eases.outElastic(),
     },
     x: {
-      value: (e, i) => {
+      to: (e, i) => {
         let x = Math.floor(i / cubeNum) % cubeNum;
         return x * (1 + CUBE_MARGIN);
       },
-      easing: "easeOutSine",
+      ease: eases.outSine,
     },
-    delay: anime.stagger(20),
+    delay: stagger(20),
     duration: 1000,
-    complete: () => {
+    onComplete: () => {
       startMoveRandom();
     },
   });
@@ -196,27 +195,26 @@ function scroll() {}
 function leave(scene) {
   transferCubes();
   let targets = cubes.map((e) => e.position);
-  anime.remove(pivot.rotation);
-  anime.remove(targets);
-  anime({
-    targets,
+  utils.remove(pivot.rotation);
+  utils.remove(targets);
+  animate(targets, {
     y: {
-      value: (e, i) => {
+      to: (e, i) => {
         let y = Math.floor(i / cubeNum / cubeNum);
         return y * (1 + CUBE_MARGIN) - 20;
       },
-      easing: "easeInElastic",
+      ease: eases.inElastic(),
     },
     x: {
-      value: (e, i) => {
+      to: (e, i) => {
         let x = Math.floor(i / cubeNum) % cubeNum;
         return x * (1 + CUBE_MARGIN) - 5;
       },
-      easing: "easeInSine",
+      ease: eases.inSine,
     },
     duration: 500,
-    delay: anime.stagger(20),
-    complete: () => {
+    delay: stagger(20),
+    onComplete: () => {
       scene.remove(rubik);
       scene.remove(pivot);
     },
@@ -256,16 +254,15 @@ function startMove(face, depth, magnitude) {
   }
   const easing =
     EASING_FUNCTIONS[Math.floor(Math.random() * EASING_FUNCTIONS.length)];
-  anime({
-    targets: pivot.rotation,
+  animate(pivot.rotation, {
     x: targetX,
     y: targetY,
     z: targetZ,
     duration: 600 * Math.abs(magnitude),
     round: 100,
     delay: 200,
-    easing: easing,
-    complete: () => {
+    ease: easing,
+    onComplete: () => {
       transferCubes();
       startMoveRandom();
     },

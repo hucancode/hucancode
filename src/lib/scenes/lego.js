@@ -1,4 +1,4 @@
-import anime from "animejs";
+import { stagger, animate, timeline, eases } from "animejs";
 import {
   AmbientLight,
   BoxGeometry,
@@ -44,14 +44,13 @@ function makeLegoRing() {
       elevation: elevation,
       rotation: rotation,
     };
-    anime({
-      targets: particle,
+    animate(particle, {
       rotation: rotation + Math.PI * 2,
       duration: duration,
-      easing: "linear",
-      direction: "reverse",
+      ease: eases.linear(),
+      reversed: true,
       loop: true,
-      update: (_) => {
+      onUpdate: () => {
         const x = Math.sin(particle.rotation) * RADIUS;
         const z = Math.cos(particle.rotation) * RADIUS;
         const y = particle.elevation;
@@ -101,41 +100,37 @@ function makeCenterPiece() {
   cube.add(nodeF);
   scene.add(cube);
 
-  anime({
-    targets: cube.rotation,
+  anime(cube.rotation, {
     x: Math.PI * 2,
     duration: 23000,
-    easing: "easeOutInQuart",
-    direction: "reverse",
+    ease: eases.outInQuart,
+    reversed: true,
     loop: true,
   });
-  anime({
-    targets: cube.rotation,
+  anime(cube.rotation,{
     y: Math.PI * 2,
     duration: 31000,
-    easing: "easeOutInQuart",
-    direction: "reverse",
+    ease: eases.outInQuart,
+    reversed: true,
     loop: true,
   });
-  anime({
-    targets: cube.rotation,
+  anime(cube.rotation,{
     z: Math.PI * 2,
     duration: 43000,
-    easing: "easeOutInQuart",
+    ease: eases.outInQuart,
     direction: "reverse",
     loop: true,
   });
   const nodes = [nodeA, nodeB, nodeC, nodeD, nodeE, nodeF];
   nodes.forEach((e) => (e.offsetScale = 1));
-  animation = anime({
-    targets: nodes,
+  animation = animate(nodes,{
     offsetScale: 3,
     duration: 500,
-    delay: anime.stagger(60),
-    direction: "alternate",
+    delay: stagger(60),
+    alternate: true,
     autoplay: false,
-    easing: "easeInOutElastic",
-    update: () => {
+    ease: eases.inOutElastic(),
+    onUpdate: () => {
       nodes.forEach((e) => {
         e.position.setLength(e.offsetScale * OFFSET);
       });
@@ -155,12 +150,11 @@ function setupLight() {
   backLight.position.set(0, 30, 0);
   scene.add(backLight);
 
-  anime({
-    targets: backLight.position,
+  animate(backLight.position, {
     y: 15,
     duration: 3000,
-    easing: "easeOutInCubic",
-    direction: "alternate",
+    ease: eases.outInCubic,
+    alternate: true,
     loop: true,
   });
 }

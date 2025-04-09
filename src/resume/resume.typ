@@ -12,7 +12,7 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
@@ -53,10 +53,19 @@
 
 #resume_heading("Notable Projects")
 #project_item(
+  name: "SDA",
+  skills: "Terraform, Ansible, Kubernetes, AWS, ELK, Kafka, Go, Postgres",
+  date: "2024/10 - Present",
+  [Leveraged ELK stack to ingress and analyze application logs data],
+  [Built a fast data processor using Go to analyze proprietary dynamic binary data format],
+  [Utilized Kafka Connect to support data ingress from Oracle, MSSQL, CSV, JSON],
+  [Processed millions of new record daily, on just 2 medium AWS EC2 nodes],
+)
+#project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
-  date: "2022/08 - Present",
-  [Built software system to manage bus fare, with remote software update mechanics],
+  date: "2022/08 - 2024/07",
+  [Closely work with hardware team building software system to manage bus fare, with remote software update mechanics],
   [Handled complex communications between many embedded devices of 3 types, using TCP, Serial, HTTPS],
   [Customized Android OS boot procedure, applied various fixes and maintained system stability],
 )

@@ -1,4 +1,4 @@
-import anime from "animejs";
+import { stagger, animate, timeline } from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
@@ -93,11 +93,10 @@ function setupObject() {
   scene.add(bagua);
   background = makeBackground();
   scene.add(background);
-  anime({
-    targets: taiji.rotation,
+  animate(taiji.rotation, {
     z: Math.PI * 2,
     duration: TAIJI_ROTATION_CIRCLE,
-    easing: "linear",
+    easing: eases.linear(),
     loop: true,
   });
 }
@@ -192,8 +191,8 @@ function playAnimation() {
   );
   const animation = anime.timeline({
     duration: 1500,
-    easing: "easeOutExpo",
-    complete: () => {
+    easing: eases.outExpo,
+    onComplete: () => {
       particle.removeFromParent();
     },
   });
@@ -215,7 +214,7 @@ function playAnimation() {
     .add(
       {
         targets: particle.scale,
-        easing: "easeInOutQuad",
+        easing: eases.inOutQuad,
         x: 22,
         y: 22,
       },
@@ -224,7 +223,7 @@ function playAnimation() {
     .add(
       {
         targets: particle.material.uniforms.alpha,
-        easing: "easeInOutQuad",
+        easing: eases.inOutQuad,
         value: 0,
       },
       100,
