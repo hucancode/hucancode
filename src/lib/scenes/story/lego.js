@@ -9,7 +9,7 @@ import {
   PointLight,
   RedFormat,
 } from "three";
-import anime from "animejs";
+import { stagger, animate, utils, eases } from "animejs";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 let pieces = [];
@@ -49,14 +49,13 @@ function makeLegoRing() {
   const RADIUS = 25;
   for (let particle of ringParticles) {
     const duration = Math.random() * 4000 + 20000;
-    anime({
-      targets: particle,
+    animate(particle, {
       rotation: particle.rotation + Math.PI * 2,
       duration,
-      easing: "linear",
-      direction: "reverse",
+      ease: eases.linear(),
+      reversed: true,
       loop: true,
-      update: (_) => {
+      onUpdate: (_) => {
         const x = Math.sin(particle.rotation) * RADIUS;
         const z = Math.cos(particle.rotation) * RADIUS;
         const y = particle.elevation;
@@ -104,7 +103,9 @@ function makeCenterPiece() {
   cube.add(nodeE);
   cube.add(nodeF);
   cubePieces.push(nodeA, nodeB, nodeC, nodeD, nodeE, nodeF);
-  cubePieces.forEach((e) => (e.offsetScale = 1));
+  cubePieces.forEach(e => {
+    e.number = 1.0;
+  });
 }
 
 function buildPiecePool() {
@@ -197,11 +198,10 @@ function scroll(r, scene, camera) {
     if (camera.distance === undefined) {
       camera.distance = camera.position.length();
     }
-    anime({
-      targets: camera,
+    animate(camera, {
       distance: distance,
       duration: 1000,
-      update: () => {
+      onUpdate: () => {
         camera.position.setLength(camera.distance);
         camera.lookAt(0, 0, 0);
       },
@@ -217,73 +217,67 @@ function scroll(r, scene, camera) {
 
 function enter(scene) {
   // animate objects into the scene
-  anime.remove(cube.scale);
-  anime.remove(ring.scale);
+  utils.remove(cube.scale);
+  utils.remove(ring.scale);
   scene.add(ring);
   scene.add(cube);
   cube.scale.set(0, 0, 0);
-  const OFFSET = 5;
-  anime({
-    targets: cube.scale,
+  const OFFSET = 5.0;
+  animate(cube.scale, {
     y: 1,
     x: 1,
     z: 1,
     delay: 1000,
     duration: 1500,
-    complete: () => {
-      anime({
-        targets: cubePieces,
-        offsetScale: 3,
+    onComplete: () => {
+      animate(cubePieces, {
+        number: 3.0,
         duration: 500,
-        delay: anime.stagger(60),
-        direction: "alternate",
-        easing: "easeInOutElastic",
-        update: () => {
-          cubePieces.forEach((e) => {
-            e.position.setLength(e.offsetScale * OFFSET);
+        delay: stagger(60),
+        loop: 1,
+        alternate: true,
+        ease: eases.inOutElastic(),
+        onUpdate: (anim) => {
+          cubePieces.forEach(e => {
+            e.position.setLength(e.number * OFFSET);
           });
         },
       });
     },
   });
-  anime({
-    targets: cube.rotation,
+  animate(cube.rotation, {
     x: Math.PI * 2,
     duration: 23000,
-    easing: "easeOutInQuart",
+    ease: eases.outInQuart,
     direction: "reverse",
     loop: true,
   });
-  anime({
-    targets: cube.rotation,
+  animate(cube.rotation, {
     y: Math.PI * 2,
     duration: 31000,
-    easing: "easeOutInQuart",
+    ease: eases.outInQuart,
     direction: "reverse",
     loop: true,
   });
-  anime({
-    targets: cube.rotation,
+  animate(cube.rotation, {
     z: Math.PI * 2,
     duration: 43000,
-    easing: "easeOutInQuart",
+    ease: eases.outInQuart,
     direction: "reverse",
     loop: true,
   });
-  anime({
-    targets: ring.scale,
+  animate(ring.scale, {
     x: 1,
     y: 1,
     z: 1,
     duration: 1000,
-    easing: "easeInOutQuad",
+    ease: eases.inOutQuad,
   });
-  anime.remove(pointLight);
-  anime({
-    targets: pointLight,
+  utils.remove(pointLight);
+  animate(pointLight, {
     intensity: LIGHT_INTENSITY,
     duration: 4000,
-    begin: () => {
+    onBegin: () => {
       scene.add(pointLight);
     },
   });
@@ -293,38 +287,35 @@ function update(scene) {}
 
 function leave(scene) {
   // animate objects out of the scene
-  anime.remove(cube.scale);
-  anime.remove(ring.scale);
-  anime({
-    targets: cube.scale,
+  utils.remove(cube.scale);
+  utils.remove(ring.scale);
+  animate(cube.scale, {
     y: 0,
     x: 0,
     z: 0,
     duration: 700,
-    easing: "easeOutExpo",
-    complete: () => {
-      anime.remove(cube.rotation);
+    ease: eases.outExpo,
+    onComplete: () => {
+      utils.remove(cube.rotation);
       cube.removeFromParent();
     },
   });
-  anime({
-    targets: ring.scale,
+  animate(ring.scale, {
     x: 10,
     y: 10,
     z: 10,
     delay: 300,
     duration: 1000,
-    easing: "easeInOutQuad",
-    complete: () => {
+    ease: eases.inOutQuad,
+    onComplete: () => {
       ring.removeFromParent();
     },
   });
-  anime.remove(pointLight);
-  anime({
-    targets: pointLight,
+  utils.remove(pointLight);
+  animate(pointLight, {
     intensity: 0,
     duration: 4000,
-    complete: () => {
+    onComplete: () => {
       scene.remove(pointLight);
     },
   });
