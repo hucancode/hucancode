@@ -39,7 +39,7 @@ function onWindowResize() {
 
 function setupCamera(w, h) {
   camera = new PerspectiveCamera(45, w / h, 0.001, 1000);
-  cameraPositionNear = new Vector3(2.8, 3.9, 2.8);
+  cameraPositionNear = new Vector3(3.2, 3.9, 3.2);
   cameraPositionFar = new Vector3(4, 6, 4);
   isZoomingIn = false;
   isZoomingOut = false;
@@ -54,7 +54,7 @@ function rebuildOrbitControl() {
   }
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 1, 0);
-  controls.minDistance = 0.1; // the minimum distance the camera must have from center
+  controls.minDistance = 0.01; // the minimum distance the camera must have from center
   controls.maxDistance = 10; // the maximum distance the camera must have from center
   controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.33;
   controls.enablePan = false;
