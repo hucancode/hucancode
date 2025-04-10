@@ -11,7 +11,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
-import { stagger, remove, animate } from "animejs";
+import { animate } from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
@@ -205,7 +205,7 @@ function startMove(face, depth, magnitude) {
   } else if (face == FACE_FRONT || face == FACE_BACK) {
     targetZ += (Math.PI / 2) * magnitude;
   }
-  anime(pivot.rotation, {
+  animate(pivot.rotation, {
     x: targetX,
     y: targetY,
     z: targetZ,

@@ -1,4 +1,4 @@
-import { stagger, animate, utils, createTimeline, eases } from "animejs";
+import { animate, utils, eases } from "animejs";
 import { Flow } from "three/addons/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
 import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
@@ -15,6 +15,7 @@ import {
   ShaderMaterial,
   Vector3,
 } from "three";
+import { mx_bilerp_0 } from "three/src/nodes/materialx/lib/mx_noise.js";
 let taiji;
 let bagua;
 let background;
@@ -25,8 +26,6 @@ var time = 0;
 let previousAutoRotation = false;
 let isWaitingForResource = false;
 let waitingScene = null;
-let taijiEnterTimeline = null;
-let taijiLeaveTimeline = null;
 
 const DRAGON_RANDOM_PATH = false;
 const DRAGON_SPEED_PERCENT_PER_FRAME = 0.03;
@@ -71,7 +70,6 @@ async function makeDragon() {
   curve.closed = true;
   dragon = new Flow(model);
   dragon.updateCurve(0, curve);
-  // dragon.object3D.scale.set(0.65, 0.65, 0.65);
   dragon.object3D.scale.set(7, 7, 7);
   dragon.speed = 0;
   if (isWaitingForResource) {
@@ -111,7 +109,6 @@ function makeTaiji() {
   material.transparent = true;
   const geometry = new PlaneGeometry(27, 27);
   const ret = new Mesh(geometry, material);
-  ret.scale.x = ret.scale.y = 0;
   ret.rotation.x = -Math.PI / 2;
   return ret;
 }
@@ -137,101 +134,47 @@ function makeBagua() {
 function setupObject() {
   // const axesHelper = new AxesHelper(5);
   // scene.add(axesHelper);
-  taiji = makeTaiji();
-  taijiEnterTimeline = createTimeline({
-    autoplay: false,
-    delay: 500,
-    duration: 2000,
-    ease: eases.outExpo,
-    begin: () => {
-      taiji.material.uniforms.alpha.value = 1;
-    },
-  });
-  taiji.scale.setScalar(0.5);
-  taiji.position.y = 120;
-  taijiEnterTimeline
-    .add(
-      {
-        targets: taiji.scale,
-        x: 1,
-        y: 1,
-      },
-      500,
-    )
-    .add(
-      {
-        targets: taiji.rotation,
-        z: Math.PI * 10,
-      },
-      0,
-    )
-    .add(
-      {
-        targets: taiji.position,
-        y: 0.1,
-        duration: 1000,
-      },
-      0,
-    );
-  taijiLeaveTimeline = createTimeline({
-    autoplay: false,
-    duration: 2000,
-    ease: eases.linear(),
-  });
-  taiji.position.y = 0.1;
-  taiji.scale.setScalar(1);
-  taijiLeaveTimeline
-    .add(
-      {
-        targets: taiji.scale,
-        x: 4,
-        y: 4,
-      },
-      0,
-    )
-    .add(
-      {
-        targets: taiji.rotation,
-        z: Math.PI * 2,
-      },
-      0,
-    )
-    .add(
-      {
-        targets: taiji.material.uniforms.alpha,
-        value: 0,
-        ease: eases.outExpo,
-      },
-      0,
-    );
   bagua = makeBagua();
   background = makeBackground();
+  taiji = makeTaiji();
 }
 
 function init() {
-  setupObject();
   makeDragon();
+  setupObject();
 }
 
 function animateTaiji(scene) {
   scene.add(taiji);
   scene.add(bagua);
   scene.add(background);
-  taijiLeaveTimeline.pause();
-  taijiEnterTimeline.restart();
-  utils.remove(bagua.scale);
-  utils.remove(background.material.uniforms.alpha);
+  animate(background.material.uniforms.alpha, {
+    value: { from: 0.1, to: 1 },
+    duration: 1000,
+    ease: eases.linear(),
+  });
   animate(bagua.scale, {
     x: 1,
     y: 1,
     duration: 1000,
     ease: eases.outExpo,
   });
-  background.material.uniforms.alpha.value = 0.0;
-  animate(background.material.uniforms.alpha, {
+  animate(taiji.material.uniforms.alpha, {
     value: 1,
+    ease: eases.outExpo,
+  });
+  animate(taiji.rotation, {
+    z: { from: 0, to: Math.PI * 10 },
+    delay: 500,
+  });
+  animate(taiji.position, {
+    y: { from: 120, to: 0.01 },
     duration: 1000,
-    ease: eases.linear(),
+  });
+  animate(taiji.scale, {
+    x: { from: 0, to: 1 },
+    y: { from: 0, to: 1 },
+    delay: 500,
   });
 }
 
@@ -278,10 +221,19 @@ function update() {
 function leave(scene) {
   isWaitingForResource = false;
   controls.autoRotate = previousAutoRotation;
-  taijiEnterTimeline.pause();
-  taijiLeaveTimeline.restart();
-  taijiLeaveTimeline.then(() => {
-    scene.remove(taiji);
+  animate(taiji.scale, {
+    x: { from: 1, to: 4 },
+    y: { from: 1, to: 4 },
+    onComplete: () => {
+      scene.remove(taiji);
+    }
+  });
+  animate(taiji.rotation, {
+    z: Math.PI * 2,
+  });
+  animate(taiji.material.uniforms.alpha, {
+    value: 0,
+    ease: eases.outExpo,
   });
   animate(bagua.scale, {
     x: 10,

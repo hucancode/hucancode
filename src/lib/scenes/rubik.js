@@ -1,4 +1,4 @@
-import { stagger, animate, timeline, eases } from "animejs";
+import { animate, eases } from "animejs";
 import {
   BoxGeometry,
   Clock,
@@ -276,7 +276,7 @@ function startMove(face, depth, magnitude) {
   ];
   const easing =
     easingFunctions[Math.floor(Math.random() * easingFunctions.length)];
-  anime(pivot.rotation, {
+  animate(pivot.rotation, {
     x: targetX,
     y: targetY,
     z: targetZ,

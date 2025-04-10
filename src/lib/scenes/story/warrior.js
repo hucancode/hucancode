@@ -1,4 +1,4 @@
-import { stagger, animate, utils, eases } from "animejs";
+import { animate, utils, eases } from "animejs";
 import { loadModel, wait } from "$lib/utils.js";
 import {
   AnimationMixer,
@@ -150,7 +150,7 @@ function animateLightIn(scene) {
     intensity: BACK_LIGHT_INTENSITY,
     delay: 800,
     duration: 2000,
-    begin: () => {
+    onBegin: () => {
       scene.add(backLight);
     },
   });

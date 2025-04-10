@@ -54,7 +54,7 @@ function makeLegoRing() {
       duration,
       ease: eases.linear(),
       reversed: true,
-      loop: true,
+      iterations: true,
       onUpdate: (_) => {
         const x = Math.sin(particle.rotation) * RADIUS;
         const z = Math.cos(particle.rotation) * RADIUS;
@@ -103,9 +103,7 @@ function makeCenterPiece() {
   cube.add(nodeE);
   cube.add(nodeF);
   cubePieces.push(nodeA, nodeB, nodeC, nodeD, nodeE, nodeF);
-  cubePieces.forEach(e => {
-    e.number = 1.0;
-  });
+  cubePieces.forEach(e => e.number = 1.0);
 }
 
 function buildPiecePool() {
@@ -221,14 +219,15 @@ function enter(scene) {
   utils.remove(ring.scale);
   scene.add(ring);
   scene.add(cube);
-  cube.scale.set(0, 0, 0);
+  cube.scale.setScalar(0);
   const OFFSET = 5.0;
   animate(cube.scale, {
     y: 1,
     x: 1,
     z: 1,
     delay: 1000,
-    duration: 1500,
+    duration: 1000,
+    ease: eases.outBounce,
     onComplete: () => {
       animate(cubePieces, {
         number: 3.0,
@@ -238,7 +237,7 @@ function enter(scene) {
         alternate: true,
         ease: eases.inOutElastic(),
         onUpdate: (anim) => {
-          cubePieces.forEach(e => {
+          anim.targets.forEach(e => {
             e.position.setLength(e.number * OFFSET);
           });
         },

@@ -1,4 +1,4 @@
-import { stagger, animate, timeline, eases } from "animejs";
+import { stagger, animate, eases } from "animejs";
 import {
   AmbientLight,
   BoxGeometry,
@@ -100,21 +100,21 @@ function makeCenterPiece() {
   cube.add(nodeF);
   scene.add(cube);
 
-  anime(cube.rotation, {
+  animate(cube.rotation, {
     x: Math.PI * 2,
     duration: 23000,
     ease: eases.outInQuart,
     reversed: true,
     loop: true,
   });
-  anime(cube.rotation,{
+  animate(cube.rotation,{
     y: Math.PI * 2,
     duration: 31000,
     ease: eases.outInQuart,
     reversed: true,
     loop: true,
   });
-  anime(cube.rotation,{
+  animate(cube.rotation,{
     z: Math.PI * 2,
     duration: 43000,
     ease: eases.outInQuart,
@@ -122,17 +122,17 @@ function makeCenterPiece() {
     loop: true,
   });
   const nodes = [nodeA, nodeB, nodeC, nodeD, nodeE, nodeF];
-  nodes.forEach((e) => (e.offsetScale = 1));
-  animation = animate(nodes,{
-    offsetScale: 3,
+  nodes.forEach(e => e.number = 1);
+  animation = animate(nodes, {
+    number: 3.0,
     duration: 500,
     delay: stagger(60),
+    loop: 1,
     alternate: true,
-    autoplay: false,
     ease: eases.inOutElastic(),
-    onUpdate: () => {
-      nodes.forEach((e) => {
-        e.position.setLength(e.offsetScale * OFFSET);
+    onUpdate: (anim) => {
+      anim.targets.forEach(e => {
+        e.position.setLength(e.number * OFFSET);
       });
     },
   });

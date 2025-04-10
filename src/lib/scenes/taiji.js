@@ -1,4 +1,4 @@
-import { stagger, animate, timeline } from "animejs";
+import { animate, createTimeline } from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
@@ -189,7 +189,7 @@ function playAnimation() {
     Math.random(),
     Math.random() * 0.2,
   );
-  const animation = anime.timeline({
+  const animation = createTimeline({
     duration: 1500,
     easing: eases.outExpo,
     onComplete: () => {
