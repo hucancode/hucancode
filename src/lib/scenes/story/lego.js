@@ -248,21 +248,21 @@ function enter(scene) {
     x: Math.PI * 2,
     duration: 23000,
     ease: eases.outInQuart,
-    direction: "reverse",
+    reversed: true,
     loop: true,
   });
   animate(cube.rotation, {
     y: Math.PI * 2,
     duration: 31000,
     ease: eases.outInQuart,
-    direction: "reverse",
+    reversed: true,
     loop: true,
   });
   animate(cube.rotation, {
     z: Math.PI * 2,
     duration: 43000,
     ease: eases.outInQuart,
-    direction: "reverse",
+    reversed: true,
     loop: true,
   });
   animate(ring.scale, {
