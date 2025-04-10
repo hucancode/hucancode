@@ -118,7 +118,7 @@ function makeCenterPiece() {
     z: Math.PI * 2,
     duration: 43000,
     ease: eases.outInQuart,
-    direction: "reverse",
+    reversed: true,
     loop: true,
   });
   const nodes = [nodeA, nodeB, nodeC, nodeD, nodeE, nodeF];
