@@ -54,12 +54,11 @@
 #resume_heading("注目のプロジェクト")
 #project_item(
   name: "SDA",
-  skills: "Terraform, Ansible, Kubernetes, Kafka, Go, Postgres, AWS",
+  skills: "Terraform, Ansible, K8S, Kafka, Go, Postgres, AWS",
   date: "2024/10～現在",
-  [Leveraged ELK stack to ingress and analyze application logs data],
-  [Built a fast data processor using Go to analyze proprietary dynamic binary data format],
-  [Utilized Kafka Connect to support data ingress from Oracle, MSSQL, CSV, JSON],
-  [Processed millions of new record daily, on just 2 medium AWS EC2 nodes],
+  [Go を使用してフォールト トレラントなデータ抽出プログラムを構築し、動的スキーマ バイナリ データ (20 MB/秒) を分析する],
+  [Kafka Connect を利用して、Oracle、MSSQL、CSV、JSON からのデータ入力をサポートしました],
+  [2 つの t3a.large AWS EC2 ノードで 100 万件/時を処理],
 )
 #project_item(
   name: "Hi-ABT",

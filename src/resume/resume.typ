@@ -12,7 +12,7 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter"
 )
 #skill_item(
   category: "Tools & OS",
@@ -56,10 +56,9 @@
   name: "SDA",
   skills: "Terraform, Ansible, Kubernetes, AWS, ELK, Kafka, Go, Postgres",
   date: "2024/10 - Present",
-  [Leveraged ELK stack to ingress and analyze application logs data],
-  [Built a fast data processor using Go to analyze proprietary dynamic binary data format],
+  [Built a fault-tolerant data extractor using Go to analyze dynamic schema binary data (20MB/s) ],
   [Utilized Kafka Connect to support data ingress from Oracle, MSSQL, CSV, JSON],
-  [Processed millions of new record daily, on just 2 medium AWS EC2 nodes],
+  [Processed 1M record/hour, on 2 t3a.large AWS EC2 nodes],
 )
 #project_item(
   name: "Hi-ABT",
