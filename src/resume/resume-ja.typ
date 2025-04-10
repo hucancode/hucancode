@@ -4,7 +4,7 @@
 
 #header(
   name: "Bang Nguyen Huu",
-  address: "岐阜",
+  address: "千葉",
   email: "hucancode@gmail.com",
   site: "hucanco.de",
 )
@@ -12,18 +12,18 @@
 #resume_heading("スキル")
 #skill_item(
   category: "言語",
-  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter"
 )
 #skill_item(
   category: "ツール & OS",
-  skills: "NodeJS, Docker, nginx, Redis, Linux, Android, iOS, AWS, GCP, Unreal Engine"
+  skills: "Docker, K8S, Terraform, Kafka, nginx, Redis, Linux, Android, iOS, AWS, GCP"
 )
 
 #resume_heading[職歴]
 #exp_item(
-  role: "Onsite Leader",
+  role: "Technical Leader",
   name: "NTQ Japan",
-  location: "岐阜",
+  location: "岐阜/東京",
   date: "2022/08～現在",
   [複雑で高性能な組み込みアプリケーションを開発],
 )
@@ -53,6 +53,14 @@
 
 #resume_heading("注目のプロジェクト")
 #project_item(
+  name: "SDA",
+  skills: "Terraform, Ansible, K8S, Kafka, Go, Postgres, AWS",
+  date: "2024/10～現在",
+  [Go を使用してフォールト トレラントなデータ抽出プログラムを構築し、動的スキーマ バイナリ データ (20 MB/秒) を分析する],
+  [Kafka Connect を利用して、Oracle、MSSQL、CSV、JSON からのデータ入力をサポートしました],
+  [2 つの t3a.large AWS EC2 ノードで 100 万件/時を処理],
+)
+#project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, シリアル",
   date: "2022/08～現在",
@@ -64,7 +72,7 @@
   name: "Poker Simulator",
   skills: "Rust, WASM, Svelte",
   date: "2023/11～2023/12",
-  [ポーカーゲームの勝率を*高速に*計算するツールを構築。#link("https://poker.lamsaoquenem.day")[poker]をお試しください ],
+  [ポーカーゲームの勝利率計算機を作成しました（1秒あたり0.25Mゲーム）。#link("https://poker.lamsaoquenem.day")[poker]をお試しください ],
 )
 #project_item(
   name: "Rubik & Dragon",
