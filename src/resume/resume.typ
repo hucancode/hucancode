@@ -4,7 +4,7 @@
 
 #header(
   name: "Bang Nguyen Huu",
-  address: "Gifu, Japan",
+  address: "Chiba, Japan",
   email: "hucancode@gmail.com",
   site: "hucanco.de",
 )
@@ -12,18 +12,18 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter"
 )
 #skill_item(
   category: "Tools & OS",
-  skills: "NodeJS, Docker, nginx, Redis, Linux, Android, iOS, AWS, GCP, Unreal Engine"
+  skills: "Docker, K8S, Terraform, Kafka, nginx, Redis, Linux, Android, iOS, AWS, GCP"
 )
 
 #resume_heading[Experience]
 #exp_item(
-  role: "Onsite Leader",
+  role: "Technical Leader",
   name: "NTQ Japan",
-  location: "Gifu",
+  location: "Gifu/Tokyo",
   date: "2022/08 - Present",
   [Built complex and performant embedded applications],
 )
@@ -56,10 +56,9 @@
   name: "SDA",
   skills: "Terraform, Ansible, Kubernetes, AWS, ELK, Kafka, Go, Postgres",
   date: "2024/10 - Present",
-  [Leveraged ELK stack to ingress and analyze application logs data],
-  [Built a fast data processor using Go to analyze proprietary dynamic binary data format],
+  [Built a fault-tolerant data extractor using Go to analyze dynamic schema binary data (20MB/s) ],
   [Utilized Kafka Connect to support data ingress from Oracle, MSSQL, CSV, JSON],
-  [Processed millions of new record daily, on just 2 medium AWS EC2 nodes],
+  [Processed 1M record/hour, on 2 t3a.large AWS EC2 nodes],
 )
 #project_item(
   name: "Hi-ABT",
@@ -73,7 +72,7 @@
   name: "Poker Simulator",
   skills: "Rust, WASM, Svelte",
   date: "2023/11 - 2023/12",
-  [Built a tool to calculate winning odds in a poker game *fast*. Try it #link("https://poker.lamsaoquenem.day")[live]],
+  [Built a winning odds calculator for poker game (0.25M game per second). Try it #link("https://poker.lamsaoquenem.day")[live]],
 )
 #project_item(
   name: "Rubik & Dragon",
