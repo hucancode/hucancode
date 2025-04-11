@@ -4,7 +4,7 @@
 
 #header(
   name: "Bang Nguyen Huu",
-  address: "Gifu, Japan",
+  address: "Chiba, Japan",
   email: "hucancode@gmail.com",
   site: "hucanco.de",
 )
@@ -12,18 +12,18 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter"
 )
 #skill_item(
   category: "Tools & OS",
-  skills: "NodeJS, Docker, nginx, Redis, Linux, Android, iOS, AWS, GCP, Unreal Engine"
+  skills: "Docker, K8S, Terraform, Kafka, nginx, Redis, Linux, Android, iOS, AWS, GCP"
 )
 
 #resume_heading[Experience]
 #exp_item(
-  role: "Onsite Leader",
+  role: "Technical Leader",
   name: "NTQ Japan",
-  location: "Gifu",
+  location: "Gifu/Tokyo",
   date: "2022/08 - Present",
   [Built complex and performant embedded applications],
 )
@@ -53,10 +53,18 @@
 
 #resume_heading("Notable Projects")
 #project_item(
+  name: "SDA",
+  skills: "Terraform, Ansible, Kubernetes, AWS, ELK, Kafka, Go, Postgres",
+  date: "2024/10 - Present",
+  [Built a fault-tolerant data extractor using Go to analyze dynamic schema binary data (20MB/s) ],
+  [Utilized Kafka Connect to support data ingress from Oracle, MSSQL, CSV, JSON],
+  [Processed 1M record/hour, on 2 t3a.large AWS EC2 nodes],
+)
+#project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
-  date: "2022/08 - Present",
-  [Built software system to manage bus fare, with remote software update mechanics],
+  date: "2022/08 - 2024/07",
+  [Closely work with hardware team building software system to manage bus fare, with remote software update mechanics],
   [Handled complex communications between many embedded devices of 3 types, using TCP, Serial, HTTPS],
   [Customized Android OS boot procedure, applied various fixes and maintained system stability],
 )
@@ -64,7 +72,7 @@
   name: "Poker Simulator",
   skills: "Rust, WASM, Svelte",
   date: "2023/11 - 2023/12",
-  [Built a tool to calculate winning odds in a poker game *fast*. Try it #link("https://poker.lamsaoquenem.day")[live]],
+  [Built a winning odds calculator for poker game (0.25M game per second). Try it #link("https://poker.lamsaoquenem.day")[live]],
 )
 #project_item(
   name: "Rubik & Dragon",

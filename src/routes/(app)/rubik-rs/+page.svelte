@@ -14,14 +14,6 @@
   let canvas = $state();
   onMount(async () => {
     try {
-      if (!navigator.gpu) {
-        notSupported = true;
-        gtag("event", "error", {
-          event_category: "WebGPU",
-          event_label: "Not Supported",
-        });
-        throw Error("WebGPU not supported.");
-      }
       await init();
     } catch (e) {
       let real = whiteList.every((token) => e.message.indexOf(token) < 0);
