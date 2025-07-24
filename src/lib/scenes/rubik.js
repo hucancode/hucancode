@@ -283,7 +283,7 @@ function startMove(face, depth, magnitude) {
     duration: 600 * Math.abs(magnitude),
     round: 100,
     delay: 200,
-    easing: easing,
+    easing: easing(),
     onComplete: cleanUpAfterMove,
   });
 }

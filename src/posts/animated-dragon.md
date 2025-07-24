@@ -14,11 +14,7 @@ In this blog post, I'll walk you through the process of creating a dynamic drago
 
 Here is a preview of what we will be creating in this tutorial
 
-<div style="width: 100%;text-align: center;">
-    <video autoplay loop controls muted>
-    <source src="/blog/post/animated-dragon/dragon-600-20s.webm" type="video/webm" >
-    </video>
-</div>
+{% video src="/blog/post/animated-dragon/dragon-600-20s.webm" autoplay=true loop=true muted=true /%}
 
 ## Prerequisites
 
@@ -137,9 +133,7 @@ The makeDragon function creates a set of random points to form a curved path and
 
 Here's where the magic happens. The `CurveModifier.js` contains a clever trick to animate any static 3D model along a curve path by transferring curve data from the CPU to the GPU via a data texture.
 
-<details>
-
-<summary>CurveModifier.js</summary>
+{% accordion title="CurveModifier.js" %}
 
 ```js
 // Original src: https://github.com/zz85/threejs-path-flow
@@ -474,7 +468,7 @@ export class InstancedFlow extends Flow {
 }
 ```
 
-</details>
+{% /accordion %}
 
 This script uses data textures to transfer curve information to the GPU, allowing for smooth and efficient animation of models along curves.
 
@@ -482,10 +476,11 @@ This script uses data textures to transfer curve information to the GPU, allowin
 
 You can check out the final result at [here](/dragon)
 
+{% dragon speed=1 color="#ffffff" /%}
+
 The full implementation is as follow
 
-<details>
-<summary>dragon.js</summary>
+{% accordion title="dragon.js" %}
 
 ```js
 import { Flow } from "three/addons/modifiers/CurveModifier.js";
@@ -650,15 +645,11 @@ export {
 };
 ```
 
-</details>
+{% /accordion %}
 
 ## Learn more
 
 [Here](https://github.com/hucancode/flying-dragon) is a **Rust** version for this animated dragon, powered by **WebGPU**. We follow the same principle of passing a curve from CPU to GPU and then let the GPU take over the animation.
 See it live at here ([/dragon-rs](/dragon-rs))
 
-<div style="width: 100%;text-align: center;">
-    <video autoplay loop controls muted>
-    <source src="/blog/post/animated-dragon/dragon-rust.webm" type="video/webm" >
-    </video>
-</div>
+{% video src="/blog/post/animated-dragon/dragon-rust.webm" autoplay=true loop=true muted=true /%}
