@@ -87,7 +87,7 @@ graph TD
     D --> E[Transform Vertices Along Curve]
 {% /mermaid %}
 
-#### Here is a transformed dragon using a sin-like curve
+#### Here is a transformed dragon using a circle
 
 {% dragon style="curved" /%}
 
