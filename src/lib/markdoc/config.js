@@ -189,6 +189,10 @@ export const config = {
     dragon: {
       render: 'Dragon',
       attributes: {
+        style: {
+          type: String,
+          default: 'animated'
+        },
         speed: {
           type: Number,
           default: 1

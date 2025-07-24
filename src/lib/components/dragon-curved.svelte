@@ -7,10 +7,7 @@
     init,
     render,
     destroy,
-    getCurrentDragonCount,
-    clearDragon,
-    makeDragon,
-  } from "$lib/scenes/dragon";
+  } from "$lib/scenes/dragon-curved";
 
   let ready = $state(false);
 
@@ -24,15 +21,6 @@
       destroy();
     }
   });
-
-  const MAX_DRAGON = 5;
-
-  export function performMagic() {
-    if (getCurrentDragonCount() > MAX_DRAGON) {
-      clearDragon();
-    }
-    makeDragon();
-  }
 </script>
 
 <Canvas3D {ready} id={CANVAS_ID} {render} />

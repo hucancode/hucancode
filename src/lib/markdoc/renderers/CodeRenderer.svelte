@@ -13,6 +13,7 @@
   import 'prismjs/components/prism-bash';
   import 'prismjs/components/prism-json';
   import 'prismjs/components/prism-markdown';
+  import 'prismjs/components/prism-glsl';
 
   /** @type {{ content: string, language?: string, filename?: string, showLineNumbers?: boolean, highlightLines?: string, inline?: boolean }} */
   let { content, language = 'text', filename, showLineNumbers = false, highlightLines, inline = false } = $props();
