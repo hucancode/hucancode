@@ -1,4 +1,4 @@
-import anime from "animejs";
+import { animate, utils, eases } from "animejs";
 import { loadModel, wait } from "$lib/utils.js";
 import {
   AnimationMixer,
@@ -105,23 +105,21 @@ async function animateWarriorIn(scene) {
     await wait(FIRST_LOAD_DELAY);
     loading = false;
   }
-  anime.remove(warriorParams);
-  anime({
-    targets: warriorParams,
+  utils.remove(warriorParams);
+  animate(warriorParams, {
     y: POSITION_Y,
     scale: SCALE * 0.3,
     duration: 500,
-    easing: "easeInQuad",
-    update: () => {
+    ease: eases.inQuad,
+    onUpdate: () => {
       warrior.scene.position.set(0, warriorParams.y, 0);
       warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
     },
-    complete: () => {
-      anime({
-        targets: warriorParams,
+    onComplete: () => {
+      animate(warriorParams, {
         scale: SCALE,
         duration: 1000,
-        update: () => {
+        onUpdate: () => {
           warrior.scene.scale.set(
             warriorParams.scale,
             SCALE,
@@ -138,23 +136,21 @@ function animateLightIn(scene) {
   if (!hemiLight || !backLight) {
     return;
   }
-  anime.remove(hemiLight);
-  anime.remove(backLight);
-  anime({
-    targets: hemiLight,
+  utils.remove(hemiLight);
+  utils.remove(backLight);
+  animate(hemiLight, {
     intensity: 1.2,
     delay: 300,
     duration: 1000,
-    begin: () => {
+    onBegin: () => {
       scene.add(hemiLight);
     },
   });
-  anime({
-    targets: backLight,
+  animate(backLight, {
     intensity: BACK_LIGHT_INTENSITY,
     delay: 800,
     duration: 2000,
-    begin: () => {
+    onBegin: () => {
       scene.add(backLight);
     },
   });
@@ -165,19 +161,18 @@ function animateWarriorOut(scene) {
     return;
   }
   playAction();
-  anime.remove(warriorParams);
-  anime({
-    targets: warriorParams,
+  utils.remove(warriorParams);
+  animate(warriorParams, {
     y: POSITION_Y + 50,
     scale: 0,
     duration: 1000,
-    easing: "easeInElastic",
-    update: () => {
+    ease: eases.inElastic(),
+    onUpdate: () => {
       update();
       warrior.scene.position.set(0, warriorParams.y, 0);
       warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
     },
-    complete: () => {
+    onComplete: () => {
       scene.remove(warrior.scene);
     },
   });
@@ -187,21 +182,19 @@ function animateLightOut(scene) {
   if (!hemiLight || !backLight) {
     return;
   }
-  anime.remove(hemiLight);
-  anime.remove(backLight);
-  anime({
-    targets: hemiLight,
+  utils.remove(hemiLight);
+  utils.remove(backLight);
+  animate(hemiLight, {
     intensity: 0,
     duration: 1000,
-    complete: () => {
+    onComplete: () => {
       scene.remove(hemiLight);
     },
   });
-  anime({
-    targets: backLight,
+  animate(backLight, {
     intensity: 0,
     duration: 2000,
-    complete: () => {
+    onComplete: () => {
       scene.remove(backLight);
     },
   });

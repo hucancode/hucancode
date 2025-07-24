@@ -11,8 +11,11 @@
 
   /** @type {Props} */  let { data } = $props();
   let { title, excerpt, cover, date, categories } = $derived(data.meta);
-  let Content = $derived(data.content);
+  let content = $derived(data.content);
   let dateString = $derived(date && formatDateRelative("en", new Date(date)));
+  
+  let Content = $derived(content?.render ? content.render().component : null);
+  let contentProps = $derived(content?.render ? content.render().props : {});
 </script>
 
 <svelte:head>
@@ -49,7 +52,9 @@
     <img src={cover} alt="cover" />
   {/if}
   <div>
-    <Content />
+    {#if Content}
+      <Content {...contentProps} />
+    {/if}
   </div>
 </article>
 <Nav />

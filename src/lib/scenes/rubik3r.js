@@ -11,7 +11,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
-import anime from "animejs";
+import { animate, eases } from "animejs";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
@@ -33,6 +33,7 @@ const CUBE_NUM_DEFAULT = 3;
 let cubeNum = CUBE_NUM_DEFAULT;
 const CUBE_MARGIN = 0.1;
 let move = 0;
+let isInIntro = false;
 
 function isInFace(x, y, z, face, depth) {
   return (
@@ -185,6 +186,7 @@ function onWindowResize() {
 }
 
 function startMove(face, depth, magnitude) {
+  move++; // Increment to prevent concurrent animations
   for (let x = 0; x < cubeNum; x++) {
     for (let y = 0; y < cubeNum; y++) {
       for (let z = 0; z < cubeNum; z++) {
@@ -205,16 +207,15 @@ function startMove(face, depth, magnitude) {
   } else if (face == FACE_FRONT || face == FACE_BACK) {
     targetZ += (Math.PI / 2) * magnitude;
   }
-  anime({
-    targets: pivot.rotation,
+  animate(pivot.rotation, {
     x: targetX,
     y: targetY,
     z: targetZ,
-    easing: "linear",
+    easing: eases.linear(),
     duration: 600 * Math.abs(magnitude),
     round: 100,
     delay: 200,
-    complete: cleanUpAfterMove,
+    onComplete: cleanUpAfterMove,
   });
 }
 
@@ -241,11 +242,21 @@ function cleanUpAfterMove() {
   }
   cubes = newCubes;
   pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
-  startMove(move++ % 6, 1, 1);
+  move = 0; // Reset to allow next animation
 }
 
 function render() {
   time += clock.getDelta();
+  
+  // Automatic rotation
+  if (move === 0 && Math.random() < 0.02) {
+    const faces = [FACE_RIGHT, FACE_LEFT, FACE_TOP, FACE_BOTTOM, FACE_FRONT, FACE_BACK];
+    const face = faces[Math.floor(Math.random() * faces.length)];
+    const depth = Math.floor(Math.random() * cubeNum) + 1;
+    const magnitude = Math.random() < 0.5 ? 1 : -1;
+    startMove(face, depth, magnitude);
+  }
+  
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }

@@ -1,4 +1,4 @@
-import anime from "animejs";
+import { animate, utils, eases } from "animejs";
 import { Flow } from "three/addons/modifiers/CurveModifier.js";
 import { loadModelStatic } from "$lib/utils.js";
 import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
@@ -15,6 +15,7 @@ import {
   ShaderMaterial,
   Vector3,
 } from "three";
+
 let taiji;
 let bagua;
 let background;
@@ -25,8 +26,6 @@ var time = 0;
 let previousAutoRotation = false;
 let isWaitingForResource = false;
 let waitingScene = null;
-let taijiEnterTimeline = null;
-let taijiLeaveTimeline = null;
 
 const DRAGON_RANDOM_PATH = false;
 const DRAGON_SPEED_PERCENT_PER_FRAME = 0.03;
@@ -71,7 +70,6 @@ async function makeDragon() {
   curve.closed = true;
   dragon = new Flow(model);
   dragon.updateCurve(0, curve);
-  // dragon.object3D.scale.set(0.65, 0.65, 0.65);
   dragon.object3D.scale.set(7, 7, 7);
   dragon.speed = 0;
   if (isWaitingForResource) {
@@ -111,7 +109,6 @@ function makeTaiji() {
   material.transparent = true;
   const geometry = new PlaneGeometry(27, 27);
   const ret = new Mesh(geometry, material);
-  ret.scale.x = ret.scale.y = 0;
   ret.rotation.x = -Math.PI / 2;
   return ret;
 }
@@ -137,103 +134,47 @@ function makeBagua() {
 function setupObject() {
   // const axesHelper = new AxesHelper(5);
   // scene.add(axesHelper);
-  taiji = makeTaiji();
-  taijiEnterTimeline = anime.timeline({
-    autoplay: false,
-    delay: 500,
-    duration: 2000,
-    easing: "easeOutExpo",
-    begin: () => {
-      taiji.material.uniforms.alpha.value = 1;
-    },
-  });
-  taiji.scale.setScalar(0.5);
-  taiji.position.y = 120;
-  taijiEnterTimeline
-    .add(
-      {
-        targets: taiji.scale,
-        x: 1,
-        y: 1,
-      },
-      500,
-    )
-    .add(
-      {
-        targets: taiji.rotation,
-        z: Math.PI * 10,
-      },
-      0,
-    )
-    .add(
-      {
-        targets: taiji.position,
-        y: 0.1,
-        duration: 1000,
-      },
-      0,
-    );
-  taijiLeaveTimeline = anime.timeline({
-    autoplay: false,
-    duration: 2000,
-    easing: "linear",
-  });
-  taiji.position.y = 0.1;
-  taiji.scale.setScalar(1);
-  taijiLeaveTimeline
-    .add(
-      {
-        targets: taiji.scale,
-        x: 4,
-        y: 4,
-      },
-      0,
-    )
-    .add(
-      {
-        targets: taiji.rotation,
-        z: Math.PI * 2,
-      },
-      0,
-    )
-    .add(
-      {
-        targets: taiji.material.uniforms.alpha,
-        value: 0,
-        easing: "easeOutExpo",
-      },
-      0,
-    );
   bagua = makeBagua();
   background = makeBackground();
+  taiji = makeTaiji();
 }
 
 function init() {
-  setupObject();
   makeDragon();
+  setupObject();
 }
 
 function animateTaiji(scene) {
   scene.add(taiji);
   scene.add(bagua);
   scene.add(background);
-  taijiLeaveTimeline.pause();
-  taijiEnterTimeline.restart();
-  anime.remove(bagua.scale);
-  anime.remove(background.material.uniforms.alpha);
-  anime({
-    targets: bagua.scale,
+  animate(background.material.uniforms.alpha, {
+    value: { from: 0.1, to: 1 },
+    duration: 1000,
+    ease: eases.linear(),
+  });
+  animate(bagua.scale, {
     x: 1,
     y: 1,
     duration: 1000,
-    easing: "easeOutExpo",
+    ease: eases.outExpo,
   });
-  background.material.uniforms.alpha.value = 0.0;
-  anime({
-    targets: background.material.uniforms.alpha,
+  animate(taiji.material.uniforms.alpha, {
     value: 1,
+    ease: eases.outExpo,
+  });
+  animate(taiji.rotation, {
+    z: { from: 0, to: Math.PI * 10 },
+    delay: 500,
+  });
+  animate(taiji.position, {
+    y: { from: 120, to: 0.01 },
     duration: 1000,
-    easing: "linear",
+  });
+  animate(taiji.scale, {
+    x: { from: 0, to: 1 },
+    y: { from: 0, to: 1 },
+    delay: 500,
   });
 }
 
@@ -245,20 +186,18 @@ function animateDragon(scene) {
   }
   isWaitingForResource = false;
   scene.add(dragon.object3D);
-  anime.remove(dragon.object3D.scale);
-  anime({
-    targets: dragon.object3D.scale,
+  utils.remove(dragon.object3D.scale);
+  animate(dragon.object3D.scale, {
     x: 0.65,
     y: 0.65,
     z: 0.65,
-    easing: "easeOutExpo",
+    ease: eases.outExpo,
     duration: 500,
   });
-  anime.remove(dragon);
-  anime({
-    targets: dragon,
+  utils.remove(dragon);
+  animate(dragon, {
     speed: DRAGON_SPEED_PERCENT_PER_FRAME * 0.01,
-    easing: "linear",
+    ease: eases.linear(),
     duration: 1000,
   });
 }
@@ -282,52 +221,57 @@ function update() {
 function leave(scene) {
   isWaitingForResource = false;
   controls.autoRotate = previousAutoRotation;
-  taijiEnterTimeline.pause();
-  taijiLeaveTimeline.restart();
-  taijiLeaveTimeline.finished.then(() => {
-    scene.remove(taiji);
+  animate(taiji.scale, {
+    x: { from: 1, to: 4 },
+    y: { from: 1, to: 4 },
+    onComplete: () => {
+      scene.remove(taiji);
+    }
   });
-  anime({
-    targets: bagua.scale,
+  animate(taiji.rotation, {
+    z: Math.PI * 2,
+  });
+  animate(taiji.material.uniforms.alpha, {
+    value: 0,
+    ease: eases.outExpo,
+  });
+  animate(bagua.scale, {
     x: 10,
     y: 10,
     duration: 1000,
-    easing: "easeInExpo",
-    complete: () => {
+    ease: eases.inExpo,
+    onComplete: () => {
       scene.remove(bagua);
     },
   });
-  anime({
-    targets: background.material.uniforms.alpha,
+  animate(background.material.uniforms.alpha, {
     value: 0,
     duration: 1000,
-    easing: "linear",
-    complete: () => {
+    ease: eases.linear(),
+    onComplete: () => {
       scene.remove(background);
     },
-    update: () => {
+    onUpdate: () => {
       update();
     },
   });
-  anime.remove(dragon.object3D.scale);
-  anime({
-    targets: dragon.object3D.scale,
+  utils.remove(dragon.object3D.scale);
+  animate(dragon.object3D.scale, {
     x: 7,
     y: 7,
     z: 7,
-    easing: "easeInExpo",
+    ease: eases.inExpo,
     duration: 1000,
-    complete: () => {
+    onComplete: () => {
       scene.remove(dragon.object3D);
     },
   });
-  anime.remove(dragon);
-  anime({
-    targets: dragon,
+  utils.remove(dragon);
+  animate(dragon, {
     speed: 0,
-    easing: "easeInExpo",
+    ease: eases.inExpo,
     duration: 1000,
-    update: () => {
+    onUpdate: () => {
       // when leave is called, the update function is no longer called
       // so we need to manually update the dragon position
       dragon.moveAlongCurve(dragon.speed);

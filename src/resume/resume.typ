@@ -12,7 +12,6 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, OpenGL"
   skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter"
 )
 #skill_item(
@@ -64,8 +63,8 @@
 #project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
-  date: "2022/08 - Present",
-  [Built software system to manage bus fare, with remote software update mechanics],
+  date: "2022/08 - 2024/07",
+  [Closely work with hardware team building software system to manage bus fare, with remote software update mechanics],
   [Handled complex communications between many embedded devices of 3 types, using TCP, Serial, HTTPS],
   [Customized Android OS boot procedure, applied various fixes and maintained system stability],
 )

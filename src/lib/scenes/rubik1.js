@@ -59,10 +59,6 @@ function getColor(x, y, z, face) {
   return BLACK;
 }
 
-function getCurrentSize() {
-  return cubeNum;
-}
-
 function makeSingleCube(x, y, z) {
   const piece = new BoxGeometry().toNonIndexed();
   const n = piece.getAttribute("position").count / 6;
@@ -88,12 +84,6 @@ function makeRubik() {
   camera.lookAt(0, 0, 0);
   controls.target.set(0, 0, 0);
   cameraTarget.set(0, 2, 5);
-}
-
-function remakeRubik(n) {
-  scene.clear();
-  cubeNum = n;
-  makeRubik();
 }
 
 function setupCamera(w, h) {

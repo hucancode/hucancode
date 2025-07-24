@@ -67,6 +67,10 @@ jobs:
         env:
           WASM_OUTPUT: rubik/target/wasm32-unknown-unknown/release/rubik.wasm
           WEB_OUTPUT: src/lib/wasm/rubik
+      - name: Setup Typst
+        uses: yusancky/setup-typst@v2
+        with:
+          version: 'latest'
       - name: Install dependencies
         run: bun install --production
       - name: Build SvelteKit app

@@ -1,6 +1,6 @@
 ---
-title: How Did I Build The Rubik Cube
-excerpt: Detailed break down on how I built the rubik cube with ThreeJS
+title: How Did I Build The Rubik's Cube
+excerpt: Building an interactive 3D Rubik's Cube with Three.js - from single cube to rotating puzzle
 cover: /blog/post/how-did-i-build-the-rubiks-cube/top-view-little-kid-playing-with-rubics-cube-orange-desk.jpg
 date: 2023-01-19
 categories:
@@ -9,248 +9,223 @@ categories:
   - creative-coding
 ---
 
-<script>
-  import Rubik from '$lib/components/rubik.svelte';
-  import Rubik1 from '$lib/components/rubik-breakdown-1.svelte';
-  import Rubik3 from '$lib/components/rubik-breakdown-3.svelte';
-  import Rubik3R from '$lib/components/rubik-breakdown-3r.svelte';
-</script>
+## The Challenge
 
-## Concept & Idea
+Building a 3D Rubik's Cube that can rotate realistically is more complex than it seems. The cube has {% math %}4.3 \times 10^{19}{% /math %} possible combinations, making it one of the most fascinating puzzles ever created.
 
-The Rubik's Cube is a 3-D combination puzzle that has been around since 1974. One of it's interesting property is that there are so many combinations. Somebody has done the math and apparently it is indeed alot
+![cube art](/blog/post/how-did-i-build-the-rubiks-cube/3d-render-rainbow-coloured-cubes.jpg)
 
-$$
-8! \times 3^7 \times \frac{12!}{2} \times 2^{11} \approx 4.3 \times 10^{19}
-$$
+In this post, I'll show you how I built an interactive Rubik's Cube using Three.js, breaking down the process into simple steps.
 
-The Rubik's Cube is not only interesting, it is also beautiful aesthetically. Let's take a look at some art people have done with cubes
+## Step 1: Building a Single Cube
 
-<img class="w-full sm:w-1/2 mx-auto" alt="cube" src="how-did-i-build-the-rubiks-cube/3d-render-rainbow-coloured-cubes.jpg" />
+First, let's create one colorful cube. Each face needs its own color based on the Rubik's Cube color scheme.
 
-Today I will use `ThreeJS` to build a Rubik's Cube. Our Cube would be able to rotate like a real cube. We will not cover manual rotation here because a good controller would be very tricky to get right. We will also not cover Cube solving because I am not too smart, I just want to look at the Cube not solving them.
-
-## Breakdown
-
-### Build single cube
-
-![cube](how-did-i-build-the-rubiks-cube/single-cube.png)
-
-We need to consider 2 things
-
-1. The cube geometry
-2. The cube's color data
-
-Thank to `ThreeJS` we can make a cube geometry easily with
+![single cube](/blog/post/how-did-i-build-the-rubiks-cube/single-cube.png)
 
 ```js
-import { BoxGeometry } from "three";
-
-const piece = new BoxGeometry();
-```
-
-Then we need to give color to each face
-
-```js
-import { Color, Float32BufferAttribute } from "three";
-
-const vertices = piece.getAttribute("position").count;
-const faces = vertices / 6;
-const buffer = [];
-const color = new Color();
-for (let f = 0; f < faces; i++) {
-  color.setHex(getColor(x, y, z, f));
-  for (let j = 0; j < 6; j++) {
-    buffer.push(color.r, color.g, color.b);
-  }
-}
-piece.setAttribute("color", new Float32BufferAttribute(buffer, 3));
-```
-
-If you have experience with OpenGL or something similar before, this code will looks obvious to your eyes. But if you don't, here is a brief explaination about what the code done:
-
-- Get the number of $faces$ by taking $vertices \div 6$. Because 3 $vertices$ make up a $triangle$, 2 $triangle$ make up a $face$
-- For each face, calculate color based on that face, push the result to the buffer. Notice that we have to push 6 times for 6 vertices
-- Send the color buffer back to vertices data
-
-Here is our completed cube
-
-<div class="rubik">
-    <Rubik1 />
-</div>
-
-### Add more cubes (build 3x3 cubes)
-
-When you have done making a single cube, it's trivial to build more cubes. Just throw a loop and check out your new creation!
-Some small details to look out for:
-
-- Remember to a little gap between cubes
-- Avoid wasting resource by reusing material
-
-```js
-import { Mesh } from "three";
-
-for (let x = 0; x < cubeNum; x++) {
-  for (let y = 0; y < cubeNum; y++) {
-    for (let z = 0; z < cubeNum; z++) {
-      const geometry = makeSingleCube(x, y, z);
-      const cube = new Mesh(geometry, material);
-      cube.position.x = x * (1 + CUBE_MARGIN);
-      cube.position.y = y * (1 + CUBE_MARGIN);
-      cube.position.z = z * (1 + CUBE_MARGIN);
-      cubes[x][y][z] = cube;
-      scene.add(cube);
+// Create geometry and apply vertex colors
+function makeSingleCube(x, y, z) {
+  const geometry = new BoxGeometry().toNonIndexed();
+  const faceCount = geometry.getAttribute("position").count / 6;
+  const colors = [];
+  
+  // Color each face based on position
+  for (let face = 0; face < faceCount; face++) {
+    const color = new Color(getColor(x, y, z, face));
+    // Each face has 6 vertices (2 triangles)
+    for (let v = 0; v < 6; v++) {
+      colors.push(color.r, color.g, color.b);
     }
   }
+  
+  geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
+  return geometry;
 }
 ```
 
-Here is the finished 3x3 Cube
+The color scheme follows the standard Rubik's Cube:
+- Right: Green
+- Left: Blue  
+- Top: Yellow
+- Bottom: White
+- Front: Red
+- Back: Orange
 
-<div class="rubik">
-    <Rubik3 />
-  </div>
+{% rubik size="small" cubes=1 /%}
 
-### Rotate the cube
+## Step 2: Assembling the 3×3×3 Cube
 
-Here is the tricky part, obviously the cubes do not rotate one by one. There has to be a parent-child relation here. At first I was confused but later I figured it out.
-
-My approach is based on some observation:
-
-- Rotations has to be done in group
-- We need to group relevant pieces together each time we rotate
-- After we done rotating, ungroup them
-- Rotation pivot stay the same at the center of the Cube
-
-![cube](how-did-i-build-the-rubiks-cube/rotation.png)
-
-Group & rotate function
+Now we'll create 27 cubes arranged in a 3×3×3 grid. The key is maintaining proper spacing and storing references for rotation.
 
 ```js
-function startMove(face, depth, magnitude) {
-  for (let x = 0; x < cubeNum; x++) {
-    for (let y = 0; y < cubeNum; y++) {
-      for (let z = 0; z < cubeNum; z++) {
-        if (!isInFace(x, y, z, face, depth)) {
-          continue;
-        }
-        pivot.attach(cubes[x][y][z]);
+const CUBE_MARGIN = 0.1;  // Gap between cubes
+const material = new MeshBasicMaterial({ vertexColors: true });
+
+function makeRubik() {
+  // Initialize 3D array to store cube references
+  const cubes = Array(3).fill().map(() => 
+    Array(3).fill().map(() => Array(3))
+  );
+  
+  // Create and position each cube
+  for (let x = 0; x < 3; x++) {
+    for (let y = 0; y < 3; y++) {
+      for (let z = 0; z < 3; z++) {
+        const geometry = makeSingleCube(x, y, z);
+        const cube = new Mesh(geometry, material);
+        
+        // Position with gap
+        cube.position.set(
+          x * (1 + CUBE_MARGIN),
+          y * (1 + CUBE_MARGIN),
+          z * (1 + CUBE_MARGIN)
+        );
+        
+        cubes[x][y][z] = cube;
+        scene.add(cube);
       }
     }
   }
-  let targetX = pivot.rotation.x;
-  let targetY = pivot.rotation.y;
-  let targetZ = pivot.rotation.z;
-  if (face == FACE_LEFT || face == FACE_RIGHT) {
-    targetX += (Math.PI / 2) * magnitude;
-  } else if (face == FACE_TOP || face == FACE_BOTTOM) {
-    targetY += (Math.PI / 2) * magnitude;
-  } else if (face == FACE_FRONT || face == FACE_BACK) {
-    targetZ += (Math.PI / 2) * magnitude;
-  }
-  anime({
-    targets: pivot.rotation,
-    x: targetX,
-    y: targetY,
-    z: targetZ,
-    easing: "linear",
-    duration: 600 * Math.abs(magnitude),
-    round: 100,
-    delay: 200,
-    complete: cleanUpAfterMove,
-  });
+  
+  return cubes;
 }
 ```
 
-Ungroup function
+{% rubik size="medium" cubes=3 /%}
+
+## Step 3: The Rotation System
+
+The trickiest part is implementing realistic rotations. A Rubik's Cube doesn't rotate individual pieces - entire layers move together.
+
+{% mermaid %}
+graph LR
+    A[Select Layer] --> B[Group Cubes]
+    B --> C[Rotate Group]
+    C --> D[Ungroup]
+    D --> E[Update Positions]
+{% /mermaid %}
+
+### The Rotation Algorithm
+
+![rotation diagram](/blog/post/how-did-i-build-the-rubiks-cube/rotation.png)
+
+Here's how the rotation works:
 
 ```js
+// Create pivot at cube center
+const pivot = new Object3D();
+const k = ((cubeNum - 1) / 2) * (1 + CUBE_MARGIN);
+pivot.position.set(k, k, k);
+
+function startMove(face, depth, magnitude) {
+  // 1. Group cubes in the selected layer
+  for (let x = 0; x < cubeNum; x++) {
+    for (let y = 0; y < cubeNum; y++) {
+      for (let z = 0; z < cubeNum; z++) {
+        if (isInFace(x, y, z, face, depth)) {
+          pivot.attach(cubes[x][y][z]);
+        }
+      }
+    }
+  }
+  
+  // 2. Calculate rotation target
+  let target = { x: 0, y: 0, z: 0 };
+  const angle = (Math.PI / 2) * magnitude;
+  
+  if (face === FACE_LEFT || face === FACE_RIGHT) {
+    target.x = angle;
+  } else if (face === FACE_TOP || face === FACE_BOTTOM) {
+    target.y = angle;
+  } else {
+    target.z = angle;
+  }
+  
+  // 3. Animate rotation
+  animate({
+    targets: pivot.rotation,
+    ...target,
+    duration: 600,
+    easing: eases.linear,
+    complete: cleanUpAfterMove
+  });
+}
+
 function cleanUpAfterMove() {
-  const clamp = function (n, l, r) {
-    return Math.min(r, Math.max(l, n));
-  };
-  const posToIndex = function (n) {
-    return clamp(Math.round(n / (1 + CUBE_MARGIN)), 0, cubeNum - 1);
-  };
-  let newCubes = cubes;
+  // 4. Ungroup and update positions
+  const newCubes = Array.from(cubes);
+  
   for (let i = pivot.children.length - 1; i >= 0; i--) {
     const cube = pivot.children[i];
-    const pos = new Vector3();
     scene.attach(cube);
-    cube.getWorldPosition(pos);
-    const x = posToIndex(pos.x);
-    const y = posToIndex(pos.y);
-    const z = posToIndex(pos.z);
-    cube.position.x = x * (1 + CUBE_MARGIN);
-    cube.position.y = y * (1 + CUBE_MARGIN);
-    cube.position.z = z * (1 + CUBE_MARGIN);
+    
+    // Get world position and snap to grid
+    const pos = cube.getWorldPosition(new Vector3());
+    const x = Math.round(pos.x / (1 + CUBE_MARGIN));
+    const y = Math.round(pos.y / (1 + CUBE_MARGIN));
+    const z = Math.round(pos.z / (1 + CUBE_MARGIN));
+    
+    // Update position and array reference
+    cube.position.set(
+      x * (1 + CUBE_MARGIN),
+      y * (1 + CUBE_MARGIN),
+      z * (1 + CUBE_MARGIN)
+    );
     newCubes[x][y][z] = cube;
   }
+  
   cubes = newCubes;
-  pivot.rotation.x = pivot.rotation.y = pivot.rotation.z = 0;
+  pivot.rotation.set(0, 0, 0);
 }
 ```
 
-The result will looks somewhere like this
+### See it in action
 
-<div class="rubik">
-    <Rubik3R />
-</div>
+{% rubik size="large" cubes=3 rotating=true /%}
 
-### And finally let's add some variations
+## Step 4: Adding Variations
 
-At this point, it's up to your creativity to add more interesting features.
-I would like to add more dimension, then add some goofy easing curve to spice up the rotation.
+Once the core mechanics work, you can experiment with different features:
 
-<div class="rubik">
-    <Rubik size={5} />
-</div>
+### Different Cube Sizes
 
-## Code
+The same logic works for any NxNxN cube. Here's a 5x5x5 cube with playful easing animations:
 
-Check out this [page](/rubik) and the code below
+{% rubik size="large" cubes=5 /%}
 
-<details>
+### Key Features Added
 
-<summary>Full implementation</summary>
+- **Auto-rotation**: Cubes rotate randomly when idle
+- **Smooth animations**: Using anime.js for fluid movements
+- **Dynamic easing**: Random easing functions for variety
+- **Camera controls**: OrbitControls for user interaction
+
+## Complete Implementation
+
+{% accordion title="View full source code" %}
 
 ```js
 import anime from "animejs";
-import {
-  BoxGeometry,
-  Clock,
-  Color,
-  Float32BufferAttribute,
-  Mesh,
-  MeshBasicMaterial,
-  Object3D,
-  PerspectiveCamera,
-  Scene,
-  Vector3,
-  WebGLRenderer,
-} from "three";
+import { BoxGeometry, Color, Float32BufferAttribute, Mesh, MeshBasicMaterial, 
+         Object3D, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-let scene, camera, renderer, controls;
-const clock = new Clock();
-const material = new MeshBasicMaterial({
-  vertexColors: true,
-});
-let cameraTarget;
-let isInIntro = false;
-var time = 0;
-const CANVAS_ID = "rubik";
-const USE_CAMERA_CONTROL = true;
-const ASPECT_RATIO = 0.75;
-const FACE_RIGHT = 0;
-const FACE_LEFT = 1;
-const FACE_TOP = 2;
-const FACE_BOTTOM = 3;
-const FACE_FRONT = 4;
-const FACE_BACK = 5;
-const CUBE_NUM_DEFAULT = 3;
-let cubeNum = CUBE_NUM_DEFAULT;
+// Constants
+const FACE_RIGHT = 0, FACE_LEFT = 1, FACE_TOP = 2;
+const FACE_BOTTOM = 3, FACE_FRONT = 4, FACE_BACK = 5;
 const CUBE_MARGIN = 0.1;
+const FACE_COLORS = [
+  0x40a02b, // right - green
+  0x89b4fa, // left - blue
+  0xf9e2af, // top - yellow
+  0xf8fafc, // bottom - white
+  0xef4444, // front - red
+  0xfe640b, // back - orange
+];
+
+let scene, camera, renderer, controls;
+let cubes = [], pivot, cubeNum = 3;
 
 function isInFace(x, y, z, face, depth) {
   return (
@@ -557,24 +532,11 @@ function render() {
 export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };
 ```
 
-</details>
+{% /accordion %}
 
 ## Learn more
 
 [Here](https://github.com/hucancode/rubik) is a **Rust** implementation of this scene. It is a bit more complex than this one but the idea still remains.
 See it live at here ([/rubik-rs](/rubik-rs))
 
-<div style="width: 100%;text-align: center;">
-    <video autoplay loop controls muted>
-    <source src="/blog/post/how-did-i-build-the-rubiks-cube/rubik-rust.webm" type="video/webm" >
-    </video>
-</div>
-
-<style>
-  .rubik {
-    aspect-ratio: 1/1;
-    max-width: 400px;
-    width: 80%;
-    margin: 0 auto;
-  }
-</style>
+{% video src="/blog/post/how-did-i-build-the-rubiks-cube/rubik-rust.webm" autoplay=true loop=true muted=true /%}

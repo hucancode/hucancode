@@ -55,3 +55,25 @@ export async function fetchPageCount(props) {
   const count = await fetchPostCount(props);
   return Math.ceil(count / POST_PER_PAGE);
 }
+
+export async function fetchAllCategories() {
+  const posts = await Promise.all(
+    Object.entries(import.meta.glob("/src/posts/*.md")).map(
+      async ([path, resolver]) => {
+        const { metadata } = await resolver();
+        return metadata.categories || [];
+      },
+    ),
+  );
+  
+  // Flatten all categories and count occurrences
+  const categoryCount = {};
+  posts.flat().forEach(category => {
+    categoryCount[category] = (categoryCount[category] || 0) + 1;
+  });
+  
+  // Convert to array and sort by count (descending) then name
+  return Object.entries(categoryCount)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
