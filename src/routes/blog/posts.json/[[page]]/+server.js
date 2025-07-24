@@ -1,4 +1,4 @@
-import fetchPosts, { fetchPageCount } from "$lib/blog/fetch";
+import fetchPosts, { fetchPageCount, fetchAllCategories } from "$lib/blog/fetch";
 import { json } from "@sveltejs/kit";
 
 export async function GET({ params }) {
@@ -6,5 +6,6 @@ export async function GET({ params }) {
   let page = parseInt(params.page) || 1;
   page = Math.min(page, lastPage);
   const { posts } = await fetchPosts({ page });
-  return json({ lastPage, page, posts });
+  const categories = page === 1 ? await fetchAllCategories() : [];
+  return json({ lastPage, page, posts, categories });
 }
