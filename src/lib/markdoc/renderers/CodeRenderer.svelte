@@ -5,25 +5,23 @@
   import 'prismjs/components/prism-cpp';
   import 'prismjs/components/prism-javascript';
   import 'prismjs/components/prism-typescript';
-  import 'prismjs/components/prism-jsx';
-  import 'prismjs/components/prism-tsx';
   import 'prismjs/components/prism-css';
   import 'prismjs/components/prism-python';
   import 'prismjs/components/prism-rust';
   import 'prismjs/components/prism-bash';
   import 'prismjs/components/prism-json';
   import 'prismjs/components/prism-markdown';
-  
+
   /** @type {{ content: string, language?: string, filename?: string, showLineNumbers?: boolean, highlightLines?: string, inline?: boolean }} */
   let { content, language = 'text', filename, showLineNumbers = false, highlightLines, inline = false } = $props();
-  
+
   let codeElement = $state();
   let highlightedLines = $derived(highlightLines ? parseHighlightLines(highlightLines) : new Set());
-  
+
   function parseHighlightLines(lines) {
     const result = new Set();
     const parts = lines.split(',');
-    
+
     parts.forEach(part => {
       if (part.includes('-')) {
         const [start, end] = part.split('-').map(n => parseInt(n.trim()));
@@ -34,10 +32,10 @@
         result.add(parseInt(part.trim()));
       }
     });
-    
+
     return result;
   }
-  
+
   onMount(() => {
     if (codeElement && language !== 'text' && !inline) {
       Prism.highlightElement(codeElement);
@@ -64,7 +62,7 @@
     overflow: hidden;
     background: var(--color-code-bg, #1e1e1e);
   }
-  
+
   .code-filename {
     padding: 0.5rem 1rem;
     background: var(--color-code-header-bg, #2d2d2d);
@@ -73,24 +71,24 @@
     font-family: monospace;
     border-bottom: 1px solid var(--color-code-border, #444);
   }
-  
+
   pre {
     margin: 0;
     padding: 1rem;
     overflow-x: auto;
   }
-  
+
   pre.line-numbers {
     padding-left: 3.5rem;
     position: relative;
     counter-reset: line;
   }
-  
+
   .line {
     display: block;
     position: relative;
   }
-  
+
   .line::before {
     counter-increment: line;
     content: counter(line);
@@ -101,17 +99,17 @@
     color: var(--color-code-line-number, #666);
     user-select: none;
   }
-  
+
   .line.highlighted {
     background: var(--color-code-highlight, rgba(255, 255, 255, 0.1));
     margin: 0 -1rem;
     padding: 0 1rem;
   }
-  
+
   code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   }
-  
+
   .inline-code {
     background: var(--color-neutral-200);
     color: var(--color-neutral-950);
@@ -119,7 +117,7 @@
     border-radius: 0.25rem;
     font-size: 0.875em;
   }
-  
+
   :global(.dark) .inline-code {
     background: var(--color-neutral-800);
     color: var(--color-neutral-50);

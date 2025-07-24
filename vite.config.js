@@ -1,5 +1,4 @@
 import { sveltekit } from "@sveltejs/kit/vite";
-import { threeMinifier } from "@yushijinhun/three-minifier-rollup";
 import { markdocPlugin } from "./src/lib/markdoc/vite-plugin.js";
 import path from "path";
 
@@ -13,7 +12,7 @@ const config = {
       $locales: path.resolve(__dirname, "./src/locales"),
     },
   },
-  plugins: [markdocPlugin(), sveltekit(), { ...threeMinifier(), enforce: "pre" }],
+  plugins: [markdocPlugin(), sveltekit()],
 };
 
 export default config;

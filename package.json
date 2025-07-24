@@ -12,7 +12,6 @@
     "@markdoc/markdoc": "^0.5.2",
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.20.5",
-    "@yushijinhun/three-minifier-rollup": "^0.4.0",
     "animejs": "^4.0.1",
     "katex": "^0.16.22",
     "mermaid": "^11.9.0",
