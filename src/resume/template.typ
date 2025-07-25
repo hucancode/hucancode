@@ -6,7 +6,7 @@
 
   set page(
     paper: "us-letter",
-    margin: (x: 0.5in, y: 0.35in)
+    margin: (x: 0.5in, y: 0.3in)
   )
 
   set text(
@@ -130,4 +130,3 @@
   set text(size: 0.91em)
   pad(left: 1em, right: 0.5em, block[*#category*: #skills])
 }
-
