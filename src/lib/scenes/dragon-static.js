@@ -5,10 +5,13 @@ import {
   PointLight,
   Scene,
   WebGLRenderer,
+  Clock,
 } from "three";
 
 let scene, camera, renderer, model;
 let dynamicLight, ambientLight;
+const clock = new Clock();
+let time = 0;
 const CANVAS_ID = "dragon-static";
 const ASPECT_RATIO = 0.75;
 
@@ -86,6 +89,16 @@ function onWindowResize() {
 }
 
 function render() {
+  time += clock.getDelta();
+  
+  // Rotate camera around the dragon
+  const radius = 150;
+  const speed = 0.5;
+  camera.position.x = Math.cos(time * speed) * radius;
+  camera.position.z = Math.sin(time * speed) * radius;
+  camera.position.y = 0;
+  camera.lookAt(scene.position);
+  
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
