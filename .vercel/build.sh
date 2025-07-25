@@ -1,5 +1,6 @@
 !#/usr/bin/bash
 source $HOME/.cargo/env
+RUSTFLAGS='--cfg getrandom_backend="wasm_js"' 
 cd flying-dragon
 cargo build --target wasm32-unknown-unknown --release
 wasm-bindgen target/wasm32-unknown-unknown/release/flying-dragon.wasm --out-dir ../src/lib/wasm/dragon --no-typescript --target web
