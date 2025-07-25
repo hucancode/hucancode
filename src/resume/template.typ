@@ -31,11 +31,10 @@
   grid(
     columns: (1fr, 1fr),
     align(left)[
-      #name_header(name) \
-      #address
+      #name_header(name) ///#address
     ],
     align(right)[
-      #link("mailto:" + email)[#email] \
+      #link("mailto:" + email)[#email] /
       #link("https://" + site)[#site]
     ]
   )
@@ -100,7 +99,7 @@
       #grid(
         columns: (2fr, 2fr),
         align(left)[
-          *#role* _#name _ (#location)
+          *#role*
         ],
         align(right)[
           *#date*
@@ -131,3 +130,4 @@
   set text(size: 0.91em)
   pad(left: 1em, right: 0.5em, block[*#category*: #skills])
 }
+

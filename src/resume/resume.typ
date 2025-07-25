@@ -12,7 +12,7 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, Vulkan, OpenGL
 )
 #skill_item(
   category: "Tools & OS",
@@ -56,15 +56,15 @@
   name: "SDA",
   skills: "Terraform, Ansible, Kubernetes, AWS, ELK, Kafka, Go, Postgres",
   date: "2024/10 - Present",
-  [Built a fault-tolerant data extractor using Go to analyze dynamic schema binary data (20MB/s) ],
-  [Utilized Kafka Connect to support data ingress from Oracle, MSSQL, CSV, JSON],
-  [Processed 1M record/hour, on 2 t3a.large AWS EC2 nodes],
+  [Leveraged ELK stack to ingress and analyze application logs data],
+  [Built a fast data processor using Go to analyze proprietary dynamic binary data format],
+  [Processed millions of new record daily, on just 2  t3.large AWS EC2 nodes],
 )
 #project_item(
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
   date: "2022/08 - 2024/07",
-  [Closely work with hardware team building software system to manage bus fare, with remote software update mechanics],
+  [Closely work with hardware team building bus fare payment system , with remote software update],
   [Handled complex communications between many embedded devices of 3 types, using TCP, Serial, HTTPS],
   [Customized Android OS boot procedure, applied various fixes and maintained system stability],
 )
@@ -103,14 +103,6 @@
   [Implemented lazy loading mechanic, optimized to handling thousands of songs with small memory footprint],
   [Fixed memory leaks, reduced object copy, optimized system performance. Utilized Coverity for static analysis]
 )
-#project_item(
-  name: "NSP64Bit",
-  skills: "C++, Migration, Static Analysis",
-  date: "2016/04 - 2017/01",
-  [Migrated 2M lines of code in C++ from 32bit to 64bit environment],
-  [Built a RegExp-based static analyzer for C++ source code, automated about 90% of human effort]
-)
-
 #resume_heading[Education & Certifications]
 #cert_item(
   name: "Incentive Prize, Professional Division",
@@ -133,3 +125,4 @@
   description: "Amazon Web Services",
   date: "2024"
 )
+
