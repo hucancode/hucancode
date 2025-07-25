@@ -12,7 +12,7 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, Vulkan, OpenGL
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
@@ -125,4 +125,3 @@
   description: "Amazon Web Services",
   date: "2024"
 )
-
