@@ -12,7 +12,7 @@
 #resume_heading("スキル")
 #skill_item(
   category: "言語",
-  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "ツール & OS",
@@ -56,9 +56,9 @@
   name: "SDA",
   skills: "Terraform, Ansible, K8S, Kafka, Go, Postgres, AWS",
   date: "2024/10～現在",
-  [Go を使用してフォールト トレラントなデータ抽出プログラムを構築し、動的スキーマ バイナリ データ (20 MB/秒) を分析する],
-  [Kafka Connect を利用して、Oracle、MSSQL、CSV、JSON からのデータ入力をサポートしました],
-  [2 つの t3a.large AWS EC2 ノードで 100 万件/時を処理],
+  [ELKスタックを活用してアプリケーションログデータの入力と分析を実施],
+  [Goを使用して高速データプロセッサを構築し、独自の動的バイナリデータ形式を分析],
+  [わずか2つのt3.large AWS EC2ノードで、毎日数百万件の新規レコードを処理]
 )
 #project_item(
   name: "Hi-ABT",
@@ -103,14 +103,6 @@
   [レイジーローディングメカニズムを実装し、少ないメモリフットプリントで数千の曲を扱うように最適化],
   [メモリリークを修正し、オブジェクトコピーを減らし、システムパフォーマンスを最適化。Coverityを使用して静的解析を実施]
 )
-#project_item(
-  name: "NSP64Bit",
-  skills: "C++, マイグレーション, 静的解析",
-  date: "2016/04～2017/01",
-  [C++ の 200 万行のコードを 32 ビットから 64 ビット環境に移行しました],
-  [C++ソースコード用の正規表現ベースの静的アナライザーを構築し、人間労力の約90%を自動化しました]
-)
-
 #resume_heading[学歴と資格]
 #cert_item(
   name: "インセンティブ賞、プロフェッショナル部門",
