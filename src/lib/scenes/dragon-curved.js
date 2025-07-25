@@ -130,6 +130,15 @@ function onWindowResize() {
 
 function render() {
   time += clock.getDelta();
+  
+  // Rotate camera around the dragon
+  const radius = 140;
+  const speed = 0.5;
+  camera.position.x = Math.cos(time * speed) * radius;
+  camera.position.z = Math.sin(time * speed) * radius;
+  camera.position.y = 20;
+  camera.lookAt(scene.position);
+  
   for (let i = 0; i < dragons.length; i++) {
     dragons[i].updateCurve(0, curves[i]);
   }
