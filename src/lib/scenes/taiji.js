@@ -1,32 +1,81 @@
-import { animate, createTimeline } from "animejs";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-
+import { animate, utils, eases } from "animejs";
+import { Flow } from "three/addons/modifiers/CurveModifier.js";
+import { loadModelStatic } from "$lib/utils.js";
 import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
 import TAIJI_FRAGMENT_SHADER from "$lib/scenes/shaders/taiji.frag.glsl?raw";
 import CLOUD_FRAGMENT_SHADER from "$lib/scenes/shaders/cloud.frag.glsl?raw";
 import BAGUA_FRAGMENT_SHADER from "$lib/scenes/shaders/bagua.frag.glsl?raw";
+// Note: controls import is only used when in story mode
 import {
+  CatmullRomCurve3,
   Clock,
   Color,
   Mesh,
-  PerspectiveCamera,
   PlaneGeometry,
-  Scene,
   ShaderMaterial,
-  WebGLRenderer,
+  Vector3,
 } from "three";
 
-let scene, camera, renderer, controls;
 let taiji;
 let bagua;
 let background;
+let dragon = null;
+let curve = null;
 const clock = new Clock();
 var time = 0;
+let previousAutoRotation = false;
+let isWaitingForResource = false;
+let waitingScene = null;
 
-const CANVAS_ID = "taiji";
-const USE_CAMERA_CONTROL = true;
-const TAIJI_ROTATION_CIRCLE = 23000;
-const BAGUA_ROTATION_CIRCLE = 43000;
+const DRAGON_RANDOM_PATH = false;
+const DRAGON_SPEED_PERCENT_PER_FRAME = 0.03;
+async function makeDragon() {
+  let model = await loadModelStatic("dragon-low.glb");
+  dragon = new Flow(model);
+  const points = [];
+  if (DRAGON_RANDOM_PATH) {
+    const MIN_X = -40;
+    const VAR_X = 80;
+    const MIN_Y = -5;
+    const VAR_Y = 10;
+    const MIN_Z = -40;
+    const VAR_Z = 80;
+    const SAMPLE_COUNT = 20;
+    for (var i = 0; i < SAMPLE_COUNT; i++) {
+      points.push(
+        new Vector3(
+          Math.random() * VAR_X + MIN_X,
+          Math.random() * VAR_Y + MIN_Y,
+          Math.random() * VAR_Z + MIN_Z,
+        ),
+      );
+    }
+  } else {
+    const RADIUS = 34;
+    const SAMPLE_COUNT = 60;
+    const ELEVATION = 8;
+    const ELEVATION_CYCLE = 11;
+    const MOVING_CYCLE = 5;
+    for (var i = 0; i < SAMPLE_COUNT; i++) {
+      const theta = (i * Math.PI * 2 * MOVING_CYCLE) / SAMPLE_COUNT;
+      const alpha = (i * Math.PI * 2 * ELEVATION_CYCLE) / SAMPLE_COUNT;
+      const x = RADIUS * Math.cos(theta);
+      const z = RADIUS * Math.sin(theta);
+      const y = Math.sin(alpha) * ELEVATION;
+      points.push(new Vector3(x, y, z));
+    }
+  }
+  curve = new CatmullRomCurve3(points);
+  curve.curveType = "centripetal";
+  curve.closed = true;
+  dragon = new Flow(model);
+  dragon.updateCurve(0, curve);
+  dragon.object3D.scale.set(7, 7, 7);
+  dragon.speed = 0;
+  if (isWaitingForResource) {
+    animateDragon(waitingScene);
+  }
+}
 
 function makeBackground() {
   const material = new ShaderMaterial({
@@ -39,10 +88,10 @@ function makeBackground() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new PlaneGeometry(18, 18);
+  const geometry = new PlaneGeometry(60, 60);
   const ret = new Mesh(geometry, material);
   ret.rotation.x = -Math.PI / 2;
-  ret.position.y = -2;
+  ret.position.y = -0.1;
   return ret;
 }
 
@@ -58,9 +107,8 @@ function makeTaiji() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new PlaneGeometry(1, 1);
+  const geometry = new PlaneGeometry(27, 27);
   const ret = new Mesh(geometry, material);
-  ret.scale.x = ret.scale.y = 9;
   ret.rotation.x = -Math.PI / 2;
   return ret;
 }
@@ -75,9 +123,9 @@ function makeBagua() {
   });
   material.clipping = true;
   material.transparent = true;
-  const geometry = new PlaneGeometry(35, 35);
+  const geometry = new PlaneGeometry(90, 90);
   const ret = new Mesh(geometry, material);
-  ret.scale.x = ret.scale.y = 1;
+  ret.scale.x = ret.scale.y = 30;
   ret.rotation.x = -Math.PI / 2;
   ret.position.y = -0.01;
   return ret;
@@ -86,150 +134,158 @@ function makeBagua() {
 function setupObject() {
   // const axesHelper = new AxesHelper(5);
   // scene.add(axesHelper);
-  taiji = makeTaiji();
-  taiji.material.uniforms.alpha.value = 0.9;
-  scene.add(taiji);
   bagua = makeBagua();
-  scene.add(bagua);
   background = makeBackground();
-  scene.add(background);
-  animate(taiji.rotation, {
-    z: Math.PI * 2,
-    duration: TAIJI_ROTATION_CIRCLE,
-    easing: eases.linear(),
-    loop: true,
-  });
-}
-
-function setupCamera(w, h) {
-  camera = new PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new Scene();
-  camera.position.set(0, 16, 16);
-  rebuildOrbitControl();
-}
-
-function rebuildOrbitControl() {
-  if (!USE_CAMERA_CONTROL) {
-    return;
-  }
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 0, 0);
-  //controls.enablePan = false;
-  controls.minDistance = 4; // the minimum distance the camera must have from center
-  controls.maxDistance = 30; // the maximum distance the camera must have from center
-  //controls.update();
-  controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
-  controls.enableRotate = true;
-  controls.autoRotate = true;
+  taiji = makeTaiji();
 }
 
 function init() {
-  const canvas = document.getElementById(CANVAS_ID);
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new WebGLRenderer({
-    canvas: canvas,
-    antialias: true,
-    alpha: true,
-  });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(w, h);
-  if (scene != null) {
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    rebuildOrbitControl();
-    return;
-  }
-  setupCamera(w, h);
+  makeDragon();
   setupObject();
-  window.addEventListener("resize", onWindowResize);
 }
 
-function destroy() {
-  renderer.dispose();
+function animateTaiji(scene) {
+  scene.add(taiji);
+  scene.add(bagua);
+  scene.add(background);
+  animate(background.material.uniforms.alpha, {
+    value: { from: 0.1, to: 1 },
+    duration: 1000,
+    ease: eases.linear(),
+  });
+  animate(bagua.scale, {
+    x: 1,
+    y: 1,
+    duration: 1000,
+    ease: eases.outExpo,
+  });
+  animate(taiji.material.uniforms.alpha, {
+    value: 1,
+    ease: eases.outExpo,
+  });
+  animate(taiji.rotation, {
+    z: { from: 0, to: Math.PI * 10 },
+    delay: 500,
+  });
+  animate(taiji.position, {
+    y: { from: 120, to: 0.01 },
+    duration: 1000,
+  });
+  animate(taiji.scale, {
+    x: { from: 0, to: 1 },
+    y: { from: 0, to: 1 },
+    delay: 500,
+  });
 }
 
-function onWindowResize() {
-  const canvas = document.getElementById(CANVAS_ID);
-  if (!canvas) {
+function animateDragon(scene) {
+  if (!dragon || !dragon.object3D) {
+    isWaitingForResource = true;
+    waitingScene = scene;
     return;
   }
-  canvas.style = "";
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
+  isWaitingForResource = false;
+  scene.add(dragon.object3D);
+  utils.remove(dragon.object3D.scale);
+  animate(dragon.object3D.scale, {
+    x: 0.65,
+    y: 0.65,
+    z: 0.65,
+    ease: eases.outExpo,
+    duration: 500,
+  });
+  utils.remove(dragon);
+  animate(dragon, {
+    speed: DRAGON_SPEED_PERCENT_PER_FRAME * 0.01,
+    ease: eases.linear(),
+    duration: 1000,
+  });
+}
+function enter(scene, _camera, controls) {
+  if (controls) {
+    previousAutoRotation = controls.autoRotate;
+    controls.autoRotate = false;
+  }
+  animateTaiji(scene);
+  animateDragon(scene);
 }
 
-function render() {
+function update() {
   time += clock.getDelta();
   if (background) {
     background.material.uniforms.time.value = time * 4;
   }
-  if (renderer && scene && camera) {
-    renderer.render(scene, camera);
+  if (dragon) {
+    dragon.moveAlongCurve(dragon.speed);
   }
-  if (controls) {
-    controls.update();
-  }
-}
-function playAnimation() {
-  const particle = makeTaiji();
-  particle.scale.x = particle.scale.y = 6;
-  particle.position.y = 10;
-  // use HSL to guaranteed 2 colors has acceptable contrast
-  particle.material.uniforms.color1.value.setHSL(
-    Math.random(),
-    Math.random(),
-    Math.random() * 0.2 + 0.8,
-  );
-  particle.material.uniforms.color2.value.setHSL(
-    Math.random(),
-    Math.random(),
-    Math.random() * 0.2,
-  );
-  const animation = createTimeline({
-    duration: 1500,
-    easing: eases.outExpo,
-    onComplete: () => {
-      particle.removeFromParent();
-    },
-  });
-  animation
-    .add(
-      {
-        targets: particle.rotation,
-        z: Math.PI * 6,
-      },
-      0,
-    )
-    .add(
-      {
-        targets: particle.position,
-        y: Math.random(), // avoid z-fighting
-      },
-      0,
-    )
-    .add(
-      {
-        targets: particle.scale,
-        easing: eases.inOutQuad,
-        x: 22,
-        y: 22,
-      },
-      400,
-    )
-    .add(
-      {
-        targets: particle.material.uniforms.alpha,
-        easing: eases.inOutQuad,
-        value: 0,
-      },
-      100,
-    );
-  scene.add(particle);
-  animation.play();
 }
 
-export { CANVAS_ID, init, destroy, render, playAnimation };
+function leave(scene) {
+  isWaitingForResource = false;
+  // Only restore controls if they were provided
+  // (this is used when in story mode)
+  animate(taiji.scale, {
+    x: { from: 1, to: 4 },
+    y: { from: 1, to: 4 },
+    onComplete: () => {
+      scene.remove(taiji);
+    }
+  });
+  animate(taiji.rotation, {
+    z: Math.PI * 2,
+  });
+  animate(taiji.material.uniforms.alpha, {
+    value: 0,
+    ease: eases.outExpo,
+  });
+  animate(bagua.scale, {
+    x: 10,
+    y: 10,
+    duration: 1000,
+    ease: eases.inExpo,
+    onComplete: () => {
+      scene.remove(bagua);
+    },
+  });
+  animate(background.material.uniforms.alpha, {
+    value: 0,
+    duration: 1000,
+    ease: eases.linear(),
+    onComplete: () => {
+      scene.remove(background);
+    },
+    onUpdate: () => {
+      update();
+    },
+  });
+  utils.remove(dragon.object3D.scale);
+  animate(dragon.object3D.scale, {
+    x: 7,
+    y: 7,
+    z: 7,
+    ease: eases.inExpo,
+    duration: 1000,
+    onComplete: () => {
+      scene.remove(dragon.object3D);
+    },
+  });
+  utils.remove(dragon);
+  animate(dragon, {
+    speed: 0,
+    ease: eases.inExpo,
+    duration: 1000,
+    onUpdate: () => {
+      // when leave is called, the update function is no longer called
+      // so we need to manually update the dragon position
+      dragon.moveAlongCurve(dragon.speed);
+    },
+  });
+}
+
+function destroy() {
+  if (dragon) {
+    dragon.object3D.removeFromParent();
+  }
+}
+
+export { init, enter, leave, update, destroy };
