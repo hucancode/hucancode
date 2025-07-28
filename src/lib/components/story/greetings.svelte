@@ -59,6 +59,7 @@
   h2 {
     font-weight: 600;
     text-align: center;
+    min-height: 2.8em;
   }
   h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
