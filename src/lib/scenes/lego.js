@@ -1,35 +1,35 @@
-import { stagger, animate, eases } from "animejs";
 import {
-  AmbientLight,
   BoxGeometry,
   Color,
   CylinderGeometry,
-  HemisphereLight,
+  DataTexture,
   Mesh,
-  MeshStandardMaterial,
+  MeshToonMaterial,
   Object3D,
-  PerspectiveCamera,
   PointLight,
-  Scene,
-  WebGLRenderer,
+  RedFormat,
 } from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { stagger, animate, utils, eases } from "animejs";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
-let scene, camera, renderer, controls;
 let pieces = [];
 let materials = [];
-let animation = null;
-const CANVAS_ID = "lego";
-const USE_CAMERA_CONTROL = true;
-const ASPECT_RATIO = 0.75;
 const POOL_SIZE = 20;
+const GRADIENT_STEP = 5;
+// objects
+const cube = new Object3D();
+const ring = new Object3D();
+let ringParticles = [];
+let cubePieces = [];
+const LIGHT_INTENSITY = 10;
+const pointLight = new PointLight(0xffffff, LIGHT_INTENSITY, 800, 0.25);
 
 function makeLegoRing() {
   const PIECE_COUNT = 30;
   const ELEVATION = 5;
-  const RADIUS = 25;
-  const ring = new Object3D();
+  ringParticles = [];
+  ring.children = [];
+
   for (let i = 0; i < PIECE_COUNT; i++) {
     const node = new Mesh(
       getRandomPieceFromPool(),
@@ -37,20 +37,25 @@ function makeLegoRing() {
     );
     const rotation = Math.random() * Math.PI * 2;
     const elevation = (Math.random() - 0.5) * ELEVATION;
-    const duration = Math.random() * 2000 + 5000;
     ring.add(node);
     const particle = {
-      node: node,
-      elevation: elevation,
-      rotation: rotation,
+      node,
+      elevation,
+      rotation,
     };
+    ringParticles.push(particle);
+  }
+  ring.scale.set(5, 5, 5);
+  const RADIUS = 25;
+  for (let particle of ringParticles) {
+    const duration = Math.random() * 4000 + 20000;
     animate(particle, {
-      rotation: rotation + Math.PI * 2,
-      duration: duration,
+      rotation: particle.rotation + Math.PI * 2,
+      duration,
       ease: eases.linear(),
       reversed: true,
-      loop: true,
-      onUpdate: () => {
+      iterations: true,
+      onUpdate: (_) => {
         const x = Math.sin(particle.rotation) * RADIUS;
         const z = Math.cos(particle.rotation) * RADIUS;
         const y = particle.elevation;
@@ -59,13 +64,12 @@ function makeLegoRing() {
       },
     });
   }
-  scene.add(ring);
 }
 
 function makeCenterPiece() {
+  cube.children = [];
   const material = getRandomMaterialFromPool();
   const OFFSET = 5;
-  const cube = new Object3D();
   const geometry = makeLegoPiece(2, 2, 1);
   const nodeA = new Mesh(geometry, material);
   nodeA.position.set(0, OFFSET, 0);
@@ -98,68 +102,12 @@ function makeCenterPiece() {
   nodeF.rotation.set(0, 0, Math.PI / 2);
   cube.add(nodeE);
   cube.add(nodeF);
-  scene.add(cube);
-
-  animate(cube.rotation, {
-    x: Math.PI * 2,
-    duration: 23000,
-    ease: eases.outInQuart,
-    reversed: true,
-    loop: true,
-  });
-  animate(cube.rotation,{
-    y: Math.PI * 2,
-    duration: 31000,
-    ease: eases.outInQuart,
-    reversed: true,
-    loop: true,
-  });
-  animate(cube.rotation,{
-    z: Math.PI * 2,
-    duration: 43000,
-    ease: eases.outInQuart,
-    reversed: true,
-    loop: true,
-  });
-  const nodes = [nodeA, nodeB, nodeC, nodeD, nodeE, nodeF];
-  nodes.forEach(e => e.number = 1);
-  animation = animate(nodes, {
-    number: 3.0,
-    duration: 500,
-    delay: stagger(60),
-    loop: 1,
-    alternate: true,
-    ease: eases.inOutElastic(),
-    onUpdate: (anim) => {
-      anim.targets.forEach(e => {
-        e.position.setLength(e.number * OFFSET);
-      });
-    },
-  });
-}
-
-function setupLight() {
-  const light = new AmbientLight(0x666666); // soft white light
-  scene.add(light);
-  const hemiLight = new HemisphereLight(0x999999, 0x000000, 10);
-  hemiLight.position.set(0, 30, 0);
-  scene.add(hemiLight);
-
-  const backLight = new PointLight(0x5599ff, 20);
-  // backLight.add( new Mesh( new SphereGeometry( 1, 1, 8 ), new MeshBasicMaterial( { color: 0xff0040 } ) ) );
-  backLight.position.set(0, 30, 0);
-  scene.add(backLight);
-
-  animate(backLight.position, {
-    y: 15,
-    duration: 3000,
-    ease: eases.outInCubic,
-    alternate: true,
-    loop: true,
-  });
+  cubePieces.push(nodeA, nodeB, nodeC, nodeD, nodeE, nodeF);
+  cubePieces.forEach(e => e.number = 1.0);
 }
 
 function buildPiecePool() {
+  pieces = [];
   for (let i = 0; i < POOL_SIZE; i++) {
     const w = Math.floor(Math.random() * 6) + 2;
     const h = Math.floor(Math.random() * 2) + 2;
@@ -172,10 +120,21 @@ function buildPiecePool() {
     0xef4444, //red
     0xfe640b, //orange
   ];
+  const gradients = new Uint8Array(GRADIENT_STEP);
+  for (var i = 0; i < gradients.length; i++) {
+    gradients[i] = (i / gradients.length) * 256;
+  }
+  const gradientMap = new DataTexture(
+    gradients,
+    gradients.length,
+    1,
+    RedFormat,
+  );
+  gradientMap.needsUpdate = true;
 
   materials = colors
     .map((v) => new Color(v))
-    .map((color) => new MeshStandardMaterial({ color: color }));
+    .map((color) => new MeshToonMaterial({ color, gradientMap, fog: true }));
 }
 
 function getRandomPieceFromPool() {
@@ -222,82 +181,158 @@ function makeLegoPiece(width, height, depth = 1, thickness = 0.2) {
   const geometry = mergeGeometries(pieces);
   return geometry;
 }
-
-function setupCamera(w, h) {
-  camera = new PerspectiveCamera(45, w / h, 1, 2000);
-  scene = new Scene();
-  camera.position.set(40, 40, 40);
-  rebuildOrbitControl();
-}
-
-function rebuildOrbitControl() {
-  if (!USE_CAMERA_CONTROL) {
-    return;
-  }
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 0, 0);
-  //controls.enablePan = false;
-  controls.minDistance = 40; // the minimum distance the camera must have from center
-  controls.maxDistance = 100; // the maximum distance the camera must have from center
-  //controls.update();
-  controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.25;
-  controls.enableRotate = true;
-  // controls.autoRotate = true;
-}
-
 function init() {
-  const canvas = document.getElementById(CANVAS_ID);
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new WebGLRenderer({
-    canvas: canvas,
-    antialias: true,
-    alpha: true,
-  });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(w, h);
-  if (scene != null) {
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    rebuildOrbitControl();
-    return;
-  }
-  setupCamera(w, h);
   buildPiecePool();
   makeLegoRing();
   makeCenterPiece();
-  setupLight();
-  window.addEventListener("resize", onWindowResize);
+  pointLight.position.set(0, 20, 0);
+  // pointLight.add(new Mesh(new SphereGeometry(1, 16, 8), new MeshBasicMaterial({ color: 0xffffff })));
+}
+
+function scroll(r, scene, camera) {
+  // rotate camera around camera target for an amount based on t
+  if (camera) {
+    let distance = 100 - 25 * t;
+    if (camera.distance === undefined) {
+      camera.distance = camera.position.length();
+    }
+    animate(camera, {
+      distance: distance,
+      duration: 1000,
+      onUpdate: () => {
+        camera.position.setLength(camera.distance);
+        camera.lookAt(0, 0, 0);
+      },
+      onComplete: () => {
+        if (t >= 0.9) {
+          controls.enableRotate = true;
+          controls.autoRotate = true;
+        }
+      },
+    });
+  }
+}
+
+function enter(scene) {
+  // animate objects into the scene
+  utils.remove(cube.scale);
+  utils.remove(ring.scale);
+  scene.add(ring);
+  scene.add(cube);
+  cube.scale.setScalar(0);
+  const OFFSET = 5.0;
+  animate(cube.scale, {
+    y: 1,
+    x: 1,
+    z: 1,
+    delay: 1000,
+    duration: 1000,
+    ease: eases.outBounce,
+    onComplete: () => {
+      animate(cubePieces, {
+        number: 3.0,
+        duration: 500,
+        delay: stagger(60),
+        loop: 1,
+        alternate: true,
+        ease: eases.inOutElastic(),
+        onUpdate: (anim) => {
+          anim.targets.forEach(e => {
+            e.position.setLength(e.number * OFFSET);
+          });
+        },
+      });
+    },
+  });
+  animate(cube.rotation, {
+    x: Math.PI * 2,
+    duration: 23000,
+    ease: eases.outInQuart,
+    reversed: true,
+    loop: true,
+  });
+  animate(cube.rotation, {
+    y: Math.PI * 2,
+    duration: 31000,
+    ease: eases.outInQuart,
+    reversed: true,
+    loop: true,
+  });
+  animate(cube.rotation, {
+    z: Math.PI * 2,
+    duration: 43000,
+    ease: eases.outInQuart,
+    reversed: true,
+    loop: true,
+  });
+  animate(ring.scale, {
+    x: 1,
+    y: 1,
+    z: 1,
+    duration: 1000,
+    ease: eases.inOutQuad,
+  });
+  utils.remove(pointLight);
+  animate(pointLight, {
+    intensity: LIGHT_INTENSITY,
+    duration: 4000,
+    onBegin: () => {
+      scene.add(pointLight);
+    },
+  });
+}
+
+function update(scene) {}
+
+function leave(scene) {
+  // animate objects out of the scene
+  utils.remove(cube.scale);
+  utils.remove(ring.scale);
+  animate(cube.scale, {
+    y: 0,
+    x: 0,
+    z: 0,
+    duration: 700,
+    ease: eases.outExpo,
+    onComplete: () => {
+      utils.remove(cube.rotation);
+      cube.removeFromParent();
+    },
+  });
+  animate(ring.scale, {
+    x: 10,
+    y: 10,
+    z: 10,
+    delay: 300,
+    duration: 1000,
+    ease: eases.inOutQuad,
+    onComplete: () => {
+      ring.removeFromParent();
+    },
+  });
+  utils.remove(pointLight);
+  animate(pointLight, {
+    intensity: 0,
+    duration: 4000,
+    onComplete: () => {
+      scene.remove(pointLight);
+    },
+  });
 }
 
 function destroy() {
-  renderer.dispose();
+  pieces.forEach((e) => e.dispose());
+  cubePieces.forEach((e) => e.geometry.dispose());
+  materials.forEach((e) => e.dispose());
+  cube.children = [];
+  ring.children = [];
+  cube.removeFromParent();
+  ring.removeFromParent();
+  ringParticles.forEach((e) => e.node.geometry.dispose());
+  pieces = [];
+  materials = [];
+  cubePieces = [];
+  ringParticles = [];
 }
 
-function onWindowResize() {
-  const canvas = document.getElementById(CANVAS_ID);
-  if (!canvas) {
-    return;
-  }
-  canvas.style = "";
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-}
-
-function render() {
-  if (renderer && scene && camera) {
-    renderer.render(scene, camera);
-  }
-  if (controls) {
-    controls.update();
-  }
-}
-
-function playAnimation() {
-  animation.restart();
-}
-
-export { CANVAS_ID, init, destroy, render, playAnimation };
+export { init, scroll, enter, leave, update, destroy };

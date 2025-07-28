@@ -1,169 +1,250 @@
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { animate, utils, eases } from "animejs";
 import { loadModel, wait } from "$lib/utils.js";
 import {
   AnimationMixer,
   Clock,
   HemisphereLight,
   LoopOnce,
-  PerspectiveCamera,
   PointLight,
-  Scene,
-  Vector3,
-  WebGLRenderer,
 } from "three";
 
-let camera, scene, renderer, animator, controls;
-let model;
-let cameraPositionNear;
-let cameraPositionFar;
-let isZoomingIn;
-let isZoomingOut;
+let warrior, animator;
+let hemiLight, backLight;
+let isWaitingForResource = false;
+let loading = true;
+let waitingScene = null;
 const clock = new Clock();
-const CANVAS_ID = "warrior";
-const USE_CAMERA_CONTROL = true;
-const ASPECT_RATIO = 0.75;
-const USE_GROUND = false;
+const POSITION_Y = -18;
+const SCALE = 15;
+const FIRST_LOAD_DELAY = 250;
+const BACK_LIGHT_INTENSITY = 1500;
+const PRECOMPILE_SHADER = true;
 
-function onWindowResize() {
-  const canvas = document.getElementById(CANVAS_ID);
-  if (!canvas) {
-    return;
-  }
-  canvas.style = "";
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
+let warriorParams = {
+  y: -50,
+  scale: 1,
+};
+
+function setupLights() {
+  hemiLight = new HemisphereLight(0xffffff, 0x444444, 0);
+  // hemiLight.add( new Mesh( new SphereGeometry( 1, 16, 8 ), new MeshBasicMaterial( { color: 0x0400ff } ) ) );
+  hemiLight.position.set(0, POSITION_Y + 30, 0);
+  backLight = new PointLight(0xffffff, 0);
+  // backLight.add( new Mesh( new SphereGeometry( 1, 16, 8 ), new MeshBasicMaterial( { color: 0xff0040 } ) ) );
+  backLight.position.set(0, POSITION_Y + 30, -10);
 }
 
-function setupCamera(w, h) {
-  camera = new PerspectiveCamera(45, w / h, 0.001, 1000);
-  cameraPositionNear = new Vector3(3.2, 3.9, 3.2);
-  cameraPositionFar = new Vector3(4, 6, 4);
-  isZoomingIn = false;
-  isZoomingOut = false;
-  camera.position.copy(cameraPositionFar);
-  camera.lookAt(0, 1, 0);
-  rebuildOrbitControl();
-}
-
-function rebuildOrbitControl() {
-  if (!USE_CAMERA_CONTROL) {
-    return;
+async function makeWarrior(scene, camera, renderer) {
+  warrior = await loadModel("warrior.glb");
+  animator = new AnimationMixer(warrior.scene);
+  if (PRECOMPILE_SHADER) {
+    // console.log("Precompiling shader...");
+    warrior.scene.position.set(0, 0, 0);
+    warrior.scene.scale.set(SCALE, SCALE, SCALE);
+    scene.add(warrior.scene);
+    scene.add(hemiLight);
+    scene.add(backLight);
+    renderer.compile(scene, camera);
+    scene.remove(warrior.scene);
+    scene.remove(hemiLight);
+    scene.remove(backLight);
   }
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 1, 0);
-  controls.minDistance = 0.01; // the minimum distance the camera must have from center
-  controls.maxDistance = 10; // the maximum distance the camera must have from center
-  controls.maxPolarAngle = controls.minPolarAngle = Math.PI * 0.33;
-  controls.enablePan = false;
-  controls.update();
-}
-
-async function init() {
-  const canvas = document.getElementById(CANVAS_ID);
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight; //w * ASPECT_RATIO;
-  renderer = new WebGLRenderer({
-    canvas: canvas,
-    antialias: true,
-    alpha: true,
-  });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(w, h);
-  addEventListener("resize", onWindowResize);
-  if (scene != null) {
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    rebuildOrbitControl();
-    return;
-  }
-  setupCamera(w, h);
-  await buildScene();
-  playIntro();
-}
-
-function destroy() {
-  renderer.dispose();
-}
-
-async function buildScene() {
-  scene = new Scene();
-
-  const hemiLight = new HemisphereLight(0xffffff, 0x444444, 3);
-  hemiLight.position.set(0, 2, 0);
-  scene.add(hemiLight);
-
-  const backLight = new PointLight(0xffffff, 50, 600);
-  //backLight.add( new Mesh( new SphereGeometry( 15, 16, 8 ), new MeshBasicMaterial( { color: 0xff0040 } ) ) );
-  backLight.position.set(0, 2.5, -0.7);
-  scene.add(backLight);
-
-  model = await loadModel("warrior.glb");
-  animator = new AnimationMixer(model.scene);
-  model.scene.position.z = 0.5;
-  scene.add(model.scene);
-}
-
-function render() {
-  const delta = clock.getDelta();
-  if (animator) {
-    animator.update(delta);
-  }
-  if (renderer && scene && camera) {
-    renderer.render(scene, camera);
-  }
-  if (controls) {
-    controls.update();
-  }
-  if (isZoomingOut) {
-    camera.position.lerp(cameraPositionFar, 0.1);
-    if (camera.position.distanceTo(cameraPositionFar) < 0.001) {
-      isZoomingOut = false;
-    }
-  } else if (isZoomingIn) {
-    camera.position.lerp(cameraPositionNear, 0.1);
-    if (camera.position.distanceTo(cameraPositionNear) < 0.001) {
-      isZoomingIn = false;
-    }
+  warrior.scene.scale.set(0, 0, 0);
+  warrior.scene.position.set(0, -50, 0);
+  // warrior.scene.scale.set(1, 1, 1);
+  if (isWaitingForResource) {
+    animateWarriorIn(waitingScene);
   }
 }
 
 function playIntro() {
+  if (!animator) {
+    return;
+  }
+  animator.stopAllAction();
+  animator.removeEventListener("finished", returnToIdle);
   const animation = fadeToAction("intro", 0.0);
   animation.clampWhenFinished = true;
   animation.setLoop(LoopOnce);
   animator.addEventListener("finished", returnToIdle);
-  isZoomingOut = true;
 }
 
-async function playAction() {
-  isZoomingOut = true;
-  await wait(250);
+async function playAction(callback) {
+  if (!animator) {
+    return;
+  }
   animator.stopAllAction();
+  if (!callback) {
+    callback = returnToIdle;
+  }
+  animator.removeEventListener("finished", callback);
   const ACTIONS = ["jump", "jump_lick"];
   const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
   const animation = fadeToAction(action, 0.0);
   animation.clampWhenFinished = true;
   animation.setLoop(LoopOnce);
-  animator.addEventListener("finished", returnToIdle);
+  animator.addEventListener("finished", callback);
+}
+
+function init(scene, camera, renderer) {
+  setupLights();
+  makeWarrior(scene, camera, renderer);
+}
+
+async function animateWarriorIn(scene) {
+  if (!warrior || !warrior.scene) {
+    isWaitingForResource = true;
+    waitingScene = scene;
+    return;
+  }
+  isWaitingForResource = false;
+  warriorParams.y = POSITION_Y - 50;
+  warriorParams.scale = 0;
+  scene.add(warrior.scene);
+  if (loading) {
+    await wait(FIRST_LOAD_DELAY);
+    loading = false;
+  }
+  utils.remove(warriorParams);
+  animate(warriorParams, {
+    y: POSITION_Y,
+    scale: SCALE * 0.3,
+    duration: 500,
+    ease: eases.inQuad,
+    onUpdate: () => {
+      warrior.scene.position.set(0, warriorParams.y, 0);
+      warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
+    },
+    onComplete: () => {
+      animate(warriorParams, {
+        scale: SCALE,
+        duration: 1000,
+        onUpdate: () => {
+          warrior.scene.scale.set(
+            warriorParams.scale,
+            SCALE,
+            warriorParams.scale,
+          );
+        },
+      });
+      playIntro();
+    },
+  });
+}
+
+function animateLightIn(scene) {
+  if (!hemiLight || !backLight) {
+    return;
+  }
+  utils.remove(hemiLight);
+  utils.remove(backLight);
+  animate(hemiLight, {
+    intensity: 1.2,
+    delay: 300,
+    duration: 1000,
+    onBegin: () => {
+      scene.add(hemiLight);
+    },
+  });
+  animate(backLight, {
+    intensity: BACK_LIGHT_INTENSITY,
+    delay: 800,
+    duration: 2000,
+    onBegin: () => {
+      scene.add(backLight);
+    },
+  });
+}
+
+function animateWarriorOut(scene) {
+  if (!warrior || !warrior.scene) {
+    return;
+  }
+  playAction();
+  utils.remove(warriorParams);
+  animate(warriorParams, {
+    y: POSITION_Y + 50,
+    scale: 0,
+    duration: 1000,
+    ease: eases.inElastic(),
+    onUpdate: () => {
+      update();
+      warrior.scene.position.set(0, warriorParams.y, 0);
+      warrior.scene.scale.set(warriorParams.scale, SCALE, warriorParams.scale);
+    },
+    onComplete: () => {
+      scene.remove(warrior.scene);
+    },
+  });
+}
+
+function animateLightOut(scene) {
+  if (!hemiLight || !backLight) {
+    return;
+  }
+  utils.remove(hemiLight);
+  utils.remove(backLight);
+  animate(hemiLight, {
+    intensity: 0,
+    duration: 1000,
+    onComplete: () => {
+      scene.remove(hemiLight);
+    },
+  });
+  animate(backLight, {
+    intensity: 0,
+    duration: 2000,
+    onComplete: () => {
+      scene.remove(backLight);
+    },
+  });
+}
+
+function enter(scene, camera) {
+  animateWarriorIn(scene);
+  animateLightIn(scene);
+}
+
+function leave(scene) {
+  animateLightOut(scene);
+  animateWarriorOut(scene);
+}
+
+function update() {
+  const delta = clock.getDelta();
+  if (animator && !loading) {
+    animator.update(delta);
+  }
 }
 
 async function returnToIdle() {
+  if (!animator) {
+    return;
+  }
   animator.removeEventListener("finished", returnToIdle);
   fadeToAction("idle", 0.25);
-  isZoomingOut = false;
-  isZoomingIn = true;
-  await wait(500);
-  isZoomingIn = false;
 }
 
 function fadeToAction(name, duration) {
+  if (!animator) {
+    return;
+  }
   const animation = animator.clipAction(
-    model.animations.find((e) => e.name === name),
+    warrior.animations.find((e) => e.name === name),
   );
+  if (!animation) {
+    return;
+  }
   return animation.reset().fadeIn(duration).play();
 }
 
-export { CANVAS_ID, init, destroy, render, playAction };
+function destroy() {
+  if (warrior) {
+    warrior.scene.removeFromParent();
+  }
+  if (animator) {
+    animator.stopAllAction();
+  }
+}
+
+export { init, enter, update, leave, destroy };

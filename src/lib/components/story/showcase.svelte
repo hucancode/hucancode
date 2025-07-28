@@ -15,27 +15,27 @@
     enter as rubikEnter,
     leave as rubikLeave,
     destroy as rubikDestroy,
-  } from "$lib/scenes/story/rubik";
+  } from "$lib/scenes/rubik";
   import {
     init as taijiInit,
     update as taijiUpdate,
     enter as taijiEnter,
     leave as taijiLeave,
     destroy as taijiDestroy,
-  } from "$lib/scenes/story/taiji";
+  } from "$lib/scenes/taiji";
   import {
     init as legoInit,
     enter as legoEnter,
     leave as legoLeave,
     destroy as legoDestroy,
-  } from "$lib/scenes/story/lego";
+  } from "$lib/scenes/lego";
   import {
     init as warriorInit,
     enter as warriorEnter,
     update as warriorUpdate,
     leave as warriorLeave,
     destroy as warriorDestroy,
-  } from "$lib/scenes/story/warrior";
+  } from "$lib/scenes/warrior";
   import {
     init,
     destroy,
