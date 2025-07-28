@@ -12,7 +12,7 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, Vulkan, OpenGL
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
@@ -64,7 +64,7 @@
   name: "Hi-ABT",
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
   date: "2022/08 - 2024/07",
-  [Closely work with hardware team building bus fare payment system , with remote software update],
+  [Closely work with hardware team building bus fare payment system with remote software update],
   [Handled complex communications between many embedded devices of 3 types, using TCP, Serial, HTTPS],
   [Customized Android OS boot procedure, applied various fixes and maintained system stability],
 )
@@ -125,4 +125,3 @@
   description: "Amazon Web Services",
   date: "2024"
 )
-
