@@ -5,7 +5,8 @@
       "leetcode": "Leetcode",
       "blog": "ブログ",
       "sendMail": "メール",
-      "downloadResume": "経歴書"
+      "downloadResume": "経歴書",
+      "certifications": "資格認定"
     }
   },
   "home": {
@@ -23,5 +24,10 @@
       "dragonFallback": "ドラゴンはこのように見えるはずです",
       "rubikFallback": "ルービックキューブはこのように見えるはずです"
     }
+  },
+  "cert": {
+    "title": "資格認定",
+    "technical": "技術資格",
+    "languages": "言語能力"
   }
 }
