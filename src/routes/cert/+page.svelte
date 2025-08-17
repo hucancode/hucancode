@@ -43,6 +43,16 @@
     }
   ];
 
+  const competitiveProgramming = [
+    {
+      image: "/certs/lc.svg",
+      label: "LeetCode",
+      rating: "2033",
+      rank: "Knight",
+      url: "https://leetcode.com/u/hucancode/"
+    }
+  ];
+
   function trackCertClick(cert) {
     gtag("event", "cert_click", {
       cert_name: cert.label,
@@ -86,6 +96,28 @@
           <span class="cert-date">{cert.date}</span>
         </div>
       </div>
+    {/each}
+  </div>
+
+  <h2 class="section-title">{$_("cert.competition") || "Competitive Programming"}</h2>
+  <div class="competition-grid">
+    {#each competitiveProgramming as platform}
+      <a 
+        href={platform.url}
+        class="competition-card"
+        target="_blank"
+        rel="noreferrer"
+        onclick={() => trackCertClick(platform)}
+      >
+        <img src={platform.image} alt={platform.label} class="competition-icon" />
+        <div class="competition-info">
+          <h3 class="competition-label">{platform.label}</h3>
+          <div class="competition-rating">
+            <span class="rating-number">{platform.rating}</span>
+            <span class="rating-rank">({platform.rank})</span>
+          </div>
+        </div>
+      </a>
     {/each}
   </div>
 
@@ -244,9 +276,75 @@
     color: var(--color-neutral-600);
   }
 
+  .competition-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    margin-bottom: 2rem;
+  }
+
+  .competition-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.75rem;
+    background: var(--color-neutral-100);
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: var(--color-neutral-950);
+  }
+
+  .competition-card:hover {
+    background: var(--color-primary-100);
+    border-color: var(--color-primary-300);
+  }
+
+  .competition-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    min-width: 3.5rem;
+    object-fit: contain;
+  }
+
+  .competition-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .competition-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0;
+    color: var(--color-neutral-950);
+  }
+
+  .competition-rating {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0.25rem 0;
+  }
+
+  .rating-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffa116;
+  }
+
+  .rating-rank {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-neutral-700);
+  }
+
   @media (prefers-color-scheme: dark) {
     .cert-card,
-    .lang-card {
+    .lang-card,
+    .competition-card {
       background: var(--color-neutral-100);
     }
 
@@ -255,7 +353,8 @@
     }
 
     .cert-card:hover,
-    .lang-card:hover {
+    .lang-card:hover,
+    .competition-card:hover {
       background: var(--color-primary-100);
       border-color: var(--color-primary-400);
     }

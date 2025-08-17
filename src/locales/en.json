@@ -28,6 +28,7 @@
   "cert": {
     "title": "Certifications & Qualifications",
     "technical": "Technical Certifications",
+    "competition": "Competitive Programming",
     "languages": "Language Proficiency"
   }
 }

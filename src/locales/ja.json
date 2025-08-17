@@ -28,6 +28,7 @@
   "cert": {
     "title": "資格認定",
     "technical": "技術資格",
+    "competition": "競技プログラミング",
     "languages": "言語能力"
   }
 }
