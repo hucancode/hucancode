@@ -67,7 +67,7 @@
 </svelte:head>
 
 <section class="cert-container">
-  <h1>{$_("cert.title") || "Certifications & Qualifications"}</h1>
+  <h1 rainbow="1">{$_("cert.title") || "Certifications & Qualifications"}</h1>
 
   <h2 class="section-title">{$_("cert.technical") || "Technical Certifications"}</h2>
   <div class="cert-grid">
@@ -100,36 +100,47 @@
   </div>
 
   <h2 class="section-title">{$_("cert.competition") || "Competitive Programming"}</h2>
-  <div class="competition-grid">
+  <div class="cert-grid">
     {#each competitiveProgramming as platform}
-      <a 
-        href={platform.url}
-        class="competition-card"
-        target="_blank"
-        rel="noreferrer"
-        onclick={() => trackCertClick(platform)}
-      >
-        <img src={platform.image} alt={platform.label} class="competition-icon" />
-        <div class="competition-info">
-          <h3 class="competition-label">{platform.label}</h3>
-          <div class="competition-rating">
-            <span class="rating-number">{platform.rating}</span>
-            <span class="rating-rank">({platform.rank})</span>
-          </div>
+      <div class="cert-card">
+        <a 
+          href={platform.url}
+          class="cert-image-link"
+          target="_blank"
+          rel="noreferrer"
+          onclick={() => trackCertClick(platform)}
+        >
+          <img src={platform.image} alt={platform.label} class="cert-image" />
+        </a>
+        <div class="cert-info">
+          <a 
+            href={platform.url}
+            class="cert-label"
+            target="_blank"
+            rel="noreferrer"
+            onclick={() => trackCertClick(platform)}
+          >
+            {platform.label}
+          </a>
+          <span class="cert-issuer">Rating: {platform.rating} ({platform.rank})</span>
         </div>
-      </a>
+      </div>
     {/each}
   </div>
 
   <h2 class="section-title">{$_("cert.languages") || "Language Proficiency"}</h2>
-  <div class="lang-grid">
+  <div class="cert-grid">
     {#each languageCertifications as lang}
-      <div class="lang-card">
-        <span class="lang-icon">{lang.icon}</span>
-        <div class="lang-info">
-          <h3 class="lang-label">{lang.label}</h3>
-          <div class="lang-score">{lang.score}</div>
-          <span class="lang-issuer">{lang.issuer} • {lang.date}</span>
+      <div class="cert-card">
+        <div class="cert-image-link lang-icon-container">
+          <span class="lang-icon-large">{lang.icon}</span>
+        </div>
+        <div class="cert-info">
+          <span class="cert-label">
+            {lang.label}
+          </span>
+          <span class="cert-issuer">{lang.issuer}</span>
+          <span class="cert-date">Score: {lang.score} • {lang.date}</span>
         </div>
       </div>
     {/each}
@@ -148,22 +159,46 @@
     text-align: center;
     font-size: 2.5rem;
     margin-bottom: 3rem;
-    color: var(--color-neutral-950);
     font-weight: 600;
+    animation: bg-pingpong 2.5s ease infinite alternate;
+    background-size: 200% 100%;
+    cursor: default;
   }
 
   .section-title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     margin: 2.5rem 0 1.5rem;
-    color: var(--color-neutral-800);
-    font-weight: 500;
+    color: var(--color-neutral-600);
+    font-weight: 400;
+    opacity: 0.8;
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .section-title::before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-neutral-200);
+    margin-right: 1rem;
+  }
+
+  .section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-neutral-200);
+    margin-left: 1rem;
   }
 
   .cert-grid {
-    display: grid;
-    gap: 2rem;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
     margin-bottom: 3rem;
+    width: 100%;
   }
 
   .cert-card {
@@ -171,16 +206,24 @@
     overflow: hidden;
     transition: all 0.3s ease;
     border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
   }
 
   .cert-card:hover {
     border-color: var(--color-primary-300);
+    background: var(--color-primary-100);
   }
 
   .cert-image-link {
-    display: block;
-    width: 100%;
-    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    min-width: 150px;
+    height: 120px;
     overflow: hidden;
     background: white;
   }
@@ -193,10 +236,11 @@
   }
 
   .cert-info {
-    padding: 1.25rem;
+    padding: 1.5rem 1.5rem 1.5rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
+    flex: 1;
   }
 
   .cert-label {
@@ -222,149 +266,131 @@
     color: var(--color-neutral-600);
   }
 
-  .lang-grid {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  }
-
-  .lang-card {
+  .lang-icon-container {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    padding: 1.75rem;
-    background: var(--color-neutral-100);
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
+    justify-content: center;
+    background: transparent;
   }
 
-  .lang-card:hover {
-    background: var(--color-primary-100);
-    border-color: var(--color-primary-300);
+  .lang-icon-large {
+    font-size: 4rem;
   }
 
-  .lang-icon {
-    font-size: 3rem;
-    min-width: 4rem;
-    text-align: center;
+  @media (max-width: 768px) {
+    .cert-image-link {
+      width: 120px;
+      min-width: 120px;
+      height: 100px;
+    }
+
+    .cert-info {
+      padding: 1rem 1rem 1rem 0;
+    }
   }
 
-  .lang-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
+  @media (max-width: 640px) {
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      margin: 2rem 0 1rem;
+    }
+
+    .cert-card {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1rem;
+    }
+
+    .cert-image-link {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 0.5rem;
+    }
+
+    .lang-icon-container {
+      width: 100%;
+      height: 120px;
+      margin-bottom: 0.5rem;
+    }
+
+    .cert-info {
+      padding: 0;
+      width: 100%;
+    }
+
+    .cert-label {
+      font-size: 1rem;
+    }
+
+    .cert-issuer,
+    .cert-date {
+      font-size: 0.8rem;
+    }
+
+    .lang-icon-large {
+      font-size: 3rem;
+    }
   }
 
-  .lang-label {
-    font-size: 1.1rem;
-    font-weight: 600;
-    line-height: 1.3;
-    margin: 0;
-    color: var(--color-neutral-950);
+  @media (max-width: 480px) {
+    .cert-container {
+      padding: 1rem 0.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    .section-title::before,
+    .section-title::after {
+      margin-left: 0.5rem;
+      margin-right: 0.5rem;
+    }
   }
 
-  .lang-score {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-primary-600);
-    margin: 0.25rem 0;
-  }
-
-  .lang-issuer {
-    font-size: 0.85rem;
-    color: var(--color-neutral-600);
-  }
-
-  .competition-grid {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    margin-bottom: 2rem;
-  }
-
-  .competition-card {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 1.75rem;
-    background: var(--color-neutral-100);
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-    text-decoration: none;
-    color: var(--color-neutral-950);
-  }
-
-  .competition-card:hover {
-    background: var(--color-primary-100);
-    border-color: var(--color-primary-300);
-  }
-
-  .competition-icon {
-    width: 3.5rem;
-    height: 3.5rem;
-    min-width: 3.5rem;
-    object-fit: contain;
-  }
-
-  .competition-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
-  }
-
-  .competition-label {
-    font-size: 1.1rem;
-    font-weight: 600;
-    line-height: 1.3;
-    margin: 0;
-    color: var(--color-neutral-950);
-  }
-
-  .competition-rating {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin: 0.25rem 0;
-  }
-
-  .rating-number {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #ffa116;
-  }
-
-  .rating-rank {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--color-neutral-700);
+  @keyframes bg-pingpong {
+    from {
+      background-position: 0% 50%;
+    }
+    to {
+      background-position: 100% 50%;
+    }
   }
 
   @media (prefers-color-scheme: dark) {
-    .cert-card,
-    .lang-card,
-    .competition-card {
+    .cert-card {
       background: var(--color-neutral-100);
     }
 
     .cert-image-link {
       background: var(--color-neutral-200);
     }
+    
+    .lang-icon-container {
+      background: transparent;
+    }
 
-    .cert-card:hover,
-    .lang-card:hover,
-    .competition-card:hover {
+    .cert-card:hover {
       background: var(--color-primary-100);
       border-color: var(--color-primary-400);
     }
 
     .section-title {
-      color: var(--color-neutral-900);
+      color: var(--color-neutral-500);
+      opacity: 0.7;
     }
 
-    .cert-issuer,
-    .lang-issuer {
+    .section-title::before,
+    .section-title::after {
+      background: var(--color-neutral-300);
+    }
+
+    .cert-issuer {
       color: var(--color-neutral-500);
     }
 
