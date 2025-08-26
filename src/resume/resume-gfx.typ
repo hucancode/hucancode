@@ -63,7 +63,7 @@
 #project_item(
   name: "Raytracer",
   skills: "Rust, WebGPU",
-  date: "2024/11 - 2025/02",
+  date: "2024/02 - 2024/05",
   [Built a Raytracer with BVH that can handle 100K triangles in realtime. See more: github/hucancode/#link("https://github.com/hucancode/raytracer")[raytracer]],
 )
 #project_item(
@@ -81,7 +81,7 @@
 #project_item(
   name: "SDA",
   skills: "Terraform, Ansible, Kubernetes, AWS, ELK, Kafka, Go, Postgres",
-  date: "2024/10 - Present",
+  date: "2024/10 - 2025/03",
   [Leveraged ELK stack to ingress and analyze application logs data],
   [Built a fast data processor using Go to analyze proprietary dynamic binary data format],
   [Processed millions of new record daily, on just 2  t3.large AWS EC2 nodes],
