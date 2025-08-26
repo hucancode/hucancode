@@ -5,7 +5,8 @@
       "leetcode": "Leetcode",
       "blog": "Blog",
       "sendMail": "Email",
-      "downloadResume": "Resume"
+      "downloadResume": "Resume",
+      "certifications": "Certifications"
     }
   },
   "home": {
@@ -23,5 +24,11 @@
       "dragonFallback": "Here is how the dragon supposed to looks",
       "rubikFallback": "Here is how the Rubik's cube supposed to looks"
     }
+  },
+  "cert": {
+    "title": "Certifications & Qualifications",
+    "technical": "Technical Certifications",
+    "competition": "Competitive Programming",
+    "languages": "Language Proficiency"
   }
 }

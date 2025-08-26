@@ -5,7 +5,8 @@
       "leetcode": "Leetcode",
       "blog": "Blog",
       "sendMail": "Hòm thư",
-      "downloadResume": "Lý lịch"
+      "downloadResume": "Lý lịch",
+      "certifications": "Chứng chỉ"
     }
   },
   "home": {
@@ -23,5 +24,11 @@
       "dragonFallback": "Nếu vẽ thành công thì con rồng trông như thế này",
       "rubikFallback": "Nếu vẽ thành công thì Rubik trông như thế này"
     }
+  },
+  "cert": {
+    "title": "Chứng chỉ & Bằng cấp",
+    "technical": "Chứng chỉ kỹ thuật",
+    "competition": "Lập trình thi đấu",
+    "languages": "Năng lực ngôn ngữ"
   }
 }
