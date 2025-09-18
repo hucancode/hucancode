@@ -103,7 +103,7 @@
   <div class="cert-grid">
     {#each competitiveProgramming as platform}
       <div class="cert-card">
-        <a 
+        <a
           href={platform.url}
           class="cert-image-link"
           target="_blank"
@@ -113,7 +113,7 @@
           <img src={platform.image} alt={platform.label} class="cert-image" />
         </a>
         <div class="cert-info">
-          <a 
+          <a
             href={platform.url}
             class="cert-label"
             target="_blank"
@@ -151,14 +151,13 @@
   .cert-container {
     min-height: calc(100vh - 8rem);
     padding: 2rem 1rem;
-    max-width: 1024px;
+    max-width: 64rem;
     margin: 0 auto;
   }
 
   h1 {
     text-align: center;
     font-size: 2.5rem;
-    margin-bottom: 3rem;
     font-weight: 600;
     animation: bg-pingpong 2.5s ease infinite alternate;
     background-size: 200% 100%;
@@ -167,7 +166,7 @@
 
   .section-title {
     font-size: 1.25rem;
-    margin: 2.5rem 0 1.5rem;
+    margin: 2.5rem 0 0.5rem;
     color: var(--color-neutral-600);
     font-weight: 400;
     opacity: 0.8;
@@ -221,9 +220,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 150px;
-    min-width: 150px;
-    height: 120px;
+    width: 9.375rem;
+    min-width: 9.375rem;
+    height: 7.5rem;
     overflow: hidden;
     background: white;
   }
@@ -279,9 +278,9 @@
 
   @media (max-width: 768px) {
     .cert-image-link {
-      width: 120px;
-      min-width: 120px;
-      height: 100px;
+      width: 7.5rem;
+      min-width: 7.5rem;
+      height: 6.25rem;
     }
 
     .cert-info {
@@ -308,13 +307,13 @@
 
     .cert-image-link {
       width: 100%;
-      height: 150px;
+      height: 9.375rem;
       margin-bottom: 0.5rem;
     }
 
     .lang-icon-container {
       width: 100%;
-      height: 120px;
+      height: 7.5rem;
       margin-bottom: 0.5rem;
     }
 
@@ -370,7 +369,7 @@
     .cert-image-link {
       background: var(--color-neutral-200);
     }
-    
+
     .lang-icon-container {
       background: transparent;
     }
