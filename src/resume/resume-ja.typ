@@ -21,14 +21,14 @@
 
 #resume_heading("職務経歴")
 #exp_item(
-  role: "テクニカルリーダー",
+  role: "技術リーダー",
   name: "NTQ Japan",
   location: "岐阜 / 東京",
   date: "2022/08 - 現在",
   [複雑で高性能な組込み・Webアプリ開発チームを統括],
 )
 #exp_item(
-  role: "エンジニアリングマネージャー",
+  role: "シニアソフト開発者",
   name: "GoodCreate",
   location: "香川",
   date: "2020/07 - 2022/07",
@@ -36,14 +36,14 @@
   [開発生産性向上の施策と社内研修を主導],
 )
 #exp_item(
-  role: "C++プログラマ",
+  role: "C++開発者",
   name: "FPT Software",
   location: "ハノイ",
   date: "2016/04 - 2018/03",
   [車載向け組込みアプリを高機能化し性能を最適化],
 )
 #exp_item(
-  role: "ゲームプログラマ",
+  role: "ゲーム開発者",
   name: "Gameloft",
   location: "ハノイ",
   date: "2014/03 - 2016/03",
@@ -56,7 +56,7 @@
   name: "Mjolnir",
   skills: "Odin, Vulkan",
   date: "2025/01 - 現在",
-  [OdinとVulkanでレンダリングエンジンを構築し、PBR・ポストプロセス・スキンドアニメ・遅延レンダリング・バインドレス管理を実装。github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
+  [Vulkanを使用したレンダリングエンジンを構築しました。主な機能は以下のとおりです：PBR、ポストプロセス処理、スキニングアニメーション、遅延レンダリング、バインドレスレンダリング、2Dスプライト、UIシステム。。github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
   [RenderDocとXcodeで描画コールを解析・最適化],
   [Computeシェーダーでオクルージョンカリングとパーティクルシミュレーションを実現],
 )
