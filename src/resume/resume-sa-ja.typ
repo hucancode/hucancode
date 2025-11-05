@@ -21,14 +21,14 @@
 
 #resume_heading[職歴]
 #exp_item(
-  role: "Technical Leader",
+  role: "技術リーダー",
   name: "NTQ Japan",
   location: "岐阜/東京",
   date: "2022/08～現在",
   [複雑で高性能な組み込みアプリケーションを開発],
 )
 #exp_item(
-  role: "Engineering Manager",
+  role: "シニアソフト開発者",
   name: "GoodCreate",
   location: "香川",
   date: "2020/07～2022/07",
@@ -36,14 +36,14 @@
   [エンジニアリングの生産性向上を担当。NodeJS、Flutter、iOSのトレーニング活動を実施],
 )
 #exp_item(
-  role: "C++ Programmer",
+  role: "C++開発者",
   name: "FPT Software",
   location: "ハノイ",
   date: "2016/04～2018/03",
   [高性能で機能豊富な組み込みアプリケーションを開発],
 )
 #exp_item(
-  role: "Game Programmer",
+  role: "ゲーム開発者",
   name: "Gameloft",
   location: "ハノイ",
   date: "2014/03～2016/03",
