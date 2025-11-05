@@ -22,7 +22,7 @@ let background;
 let dragon = null;
 let curve = null;
 const clock = new Clock();
-var time = 0;
+let time = 0;
 let previousAutoRotation = false;
 let isWaitingForResource = false;
 let waitingScene = null;
@@ -132,8 +132,6 @@ function makeBagua() {
 }
 
 function setupObject() {
-  // const axesHelper = new AxesHelper(5);
-  // scene.add(axesHelper);
   bagua = makeBagua();
   background = makeBackground();
   taiji = makeTaiji();
@@ -283,8 +281,43 @@ function leave(scene) {
 }
 
 function destroy() {
+  // Clean up all animations
+  if (background) {
+    utils.remove(background.material.uniforms.alpha);
+  }
+  if (bagua) {
+    utils.remove(bagua.scale);
+  }
+  if (taiji) {
+    utils.remove(taiji.material.uniforms.alpha);
+    utils.remove(taiji.rotation);
+    utils.remove(taiji.position);
+    utils.remove(taiji.scale);
+  }
   if (dragon) {
+    utils.remove(dragon.object3D.scale);
+    utils.remove(dragon);
     dragon.object3D.removeFromParent();
+  }
+  // Dispose materials
+  if (background && background.material) {
+    background.material.dispose();
+  }
+  if (taiji && taiji.material) {
+    taiji.material.dispose();
+  }
+  if (bagua && bagua.material) {
+    bagua.material.dispose();
+  }
+  // Dispose geometries
+  if (background && background.geometry) {
+    background.geometry.dispose();
+  }
+  if (taiji && taiji.geometry) {
+    taiji.geometry.dispose();
+  }
+  if (bagua && bagua.geometry) {
+    bagua.geometry.dispose();
   }
 }
 

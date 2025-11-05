@@ -48,10 +48,6 @@
       <a href="/blog">
         {$_("common.contact.blog")}
       </a>
-      /
-      <a href="/cert">
-        {$_("common.contact.certifications") || "Certifications"}
-      </a>
     </p>
   </div>
 </section>

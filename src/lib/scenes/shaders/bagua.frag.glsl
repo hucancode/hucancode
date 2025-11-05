@@ -32,7 +32,6 @@ float bar(int x, vec2 uv) {
 
 // stem = bar x3
 float stem(int x, vec2 uv) {
-    // eliminated a for loop, thanks https://www.shadertoy.com/user/FabriceNeyret2
     int bit = int(0.5 - (uv.y + CIRCLE_RADIUS * 0.5) / (BAR_HEIGHT + BAR_MARGIN));
     if (bit < 0 || bit >= BIT_COUNT) {
         return 0.0;
@@ -40,28 +39,13 @@ float stem(int x, vec2 uv) {
     int k = (x >> bit) & 1;
     vec2 offset = vec2(0.0, CIRCLE_RADIUS * 0.5 + float(bit) * (BAR_HEIGHT + BAR_MARGIN));
     return bar(k, uv + offset);
-    // naive approach
-    float ret = 0.0;
-    for (int bit = 0; bit < BIT_COUNT; bit++) {
-        int k = (x >> bit) & 1;
-        vec2 offset = vec2(0.0, CIRCLE_RADIUS * 0.5 + float(bit) * (BAR_HEIGHT + BAR_MARGIN));
-        ret += bar(k, uv + offset);
-    }
-    return ret;
 }
 
 // bagua = stem x8
 float bagua(vec2 uv) {
-    // eliminated a for loop, thanks https://www.shadertoy.com/user/FabriceNeyret2
     int n = (1 << BIT_COUNT);
     float i = round(float(n) * (0.75 - atan(uv.y, uv.x) / PIX2));
     return stem(int(i), uv * rotateMat(i * PIX2 / float(n)));
-    // naive approach
-    float ret = 0.0;
-    for (int i = 0; i < n; i++) {
-        ret += stem(i, uv * rotateMat(float(i) * PIX2 / float(n)));
-    }
-    return ret;
 }
 
 void main()

@@ -18,7 +18,7 @@ let scene, camera, renderer, model;
 let dragons = [];
 let curves = [];
 const clock = new Clock();
-var time = 0;
+let time = 0;
 let dynamicLight, ambientLight;
 const CANVAS_ID = "dragon";
 const ASPECT_RATIO = 0.75;
@@ -51,7 +51,22 @@ function setupLightning() {
 }
 
 function clearDragon() {
-  dragons.forEach((dragon) => scene.remove(dragon.object3D));
+  dragons.forEach((dragon) => {
+    scene.remove(dragon.object3D);
+    // Dispose geometries and materials
+    dragon.object3D.traverse((child) => {
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat) => mat.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+  });
   dragons = [];
   curves = [];
 }
@@ -109,7 +124,11 @@ async function init() {
 }
 
 function destroy() {
-  renderer.dispose();
+  clearDragon();
+  if (renderer) {
+    renderer.renderLists.dispose();
+    renderer.dispose();
+  }
 }
 
 function onWindowResize() {
@@ -128,21 +147,31 @@ function onWindowResize() {
 function render() {
   time += clock.getDelta();
   for (let i = 0; i < dragons.length; i++) {
-    dragons[i].updateCurve(0, curves[i]);
+    // Remove redundant updateCurve call - curve doesn't change
     dragons[i].moveAlongCurve(0.0008);
   }
   if (dynamicLight) {
-    dynamicLight.position.x = Math.sin(time * 0.7) * 30 + 20;
-    dynamicLight.position.y = Math.cos(time * 0.5) * 40;
-    dynamicLight.position.z = Math.cos(time * 0.3) * 30 + 20;
-    dynamicLight.color.r = (Math.sin(time * 0.3) + 1.0) * 0.5;
-    dynamicLight.color.g = (Math.sin(time * 0.7) + 1.0) * 0.5;
-    dynamicLight.color.b = (Math.sin(time * 0.2) + 1.0) * 0.5;
-  }
-  if (ambientLight) {
-    ambientLight.color.r = (Math.sin(time * 0.1) + 1.0) * 0.5;
-    ambientLight.color.g = (Math.sin(time * 0.07) + 1.0) * 0.5;
-    ambientLight.color.b = (Math.sin(time * 0.03) + 1.0) * 0.5;
+    // Cache trig calculations
+    const t07 = time * 0.7;
+    const t05 = time * 0.5;
+    const t03 = time * 0.3;
+    const t02 = time * 0.2;
+    const t01 = time * 0.1;
+    const t007 = time * 0.07;
+    const t003 = time * 0.03;
+
+    dynamicLight.position.x = Math.sin(t07) * 30 + 20;
+    dynamicLight.position.y = Math.cos(t05) * 40;
+    dynamicLight.position.z = Math.cos(t03) * 30 + 20;
+    dynamicLight.color.r = (Math.sin(t03) + 1.0) * 0.5;
+    dynamicLight.color.g = (Math.sin(t07) + 1.0) * 0.5;
+    dynamicLight.color.b = (Math.sin(t02) + 1.0) * 0.5;
+
+    if (ambientLight) {
+      ambientLight.color.r = (Math.sin(t01) + 1.0) * 0.5;
+      ambientLight.color.g = (Math.sin(t007) + 1.0) * 0.5;
+      ambientLight.color.b = (Math.sin(t003) + 1.0) * 0.5;
+    }
   }
   if (renderer && scene && camera) {
     renderer.render(scene, camera);

@@ -28,7 +28,7 @@
   [Lead teams building complex and performant embedded and web applications],
 )
 #exp_item(
-  role: "Engineering Manager",
+  role: "Senior Software Developer",
   name: "GoodCreate",
   location: "Kagawa",
   date: "2020/07 - 2022/07",
@@ -56,7 +56,7 @@
   name: "Mjolnir",
   skills: "Odin, Vulkan",
   date: "2025/01 - Present",
-  [Built a rendering engine using Vulkan and #link("https://odin-lang.org/")[Odin] featuring: PBR, Post Processing, Skinned Animation, Deferred Rendering, Bindless Resource Management. See more: github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
+  [Built a rendering engine using Vulkan featuring: PBR, Post Processing, Skinned Animation, Deferred Rendering, Bindless Rendering, 2D Sprite, UI System. See more: github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
   [Utilized XCode and RenderDoc to analyze and optimize render calls],
   [Utilized compute shader to build occlusion culling and particle simulation engine],
 )

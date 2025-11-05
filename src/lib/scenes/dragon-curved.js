@@ -17,8 +17,9 @@ import {
 let scene, camera, renderer, model;
 let dragons = [];
 let curves = [];
+let curveLines = [];
 const clock = new Clock();
-var time = 0;
+let time = 0;
 let dynamicLight, ambientLight;
 const CANVAS_ID = "dragon-curved";
 const ASPECT_RATIO = 0.75;
@@ -46,9 +47,34 @@ function setupLightning() {
 }
 
 function clearDragon() {
-  dragons.forEach((dragon) => scene.remove(dragon.object3D));
+  dragons.forEach((dragon) => {
+    scene.remove(dragon.object3D);
+    // Dispose geometries and materials
+    dragon.object3D.traverse((child) => {
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat) => mat.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+  });
+  curveLines.forEach((line) => {
+    scene.remove(line);
+    if (line.geometry) {
+      line.geometry.dispose();
+    }
+    if (line.material) {
+      line.material.dispose();
+    }
+  });
   dragons = [];
   curves = [];
+  curveLines = [];
 }
 
 function makeDragon() {
@@ -86,6 +112,7 @@ function makeDragon() {
   const material = new LineBasicMaterial({ color: 0x00ff88, linewidth: 2 });
   const curveObject = new Line(geometry, material);
   scene.add(curveObject);
+  curveLines.push(curveObject);
 }
 
 async function init() {
@@ -112,7 +139,11 @@ async function init() {
 }
 
 function destroy() {
-  renderer.dispose();
+  clearDragon();
+  if (renderer) {
+    renderer.renderLists.dispose();
+    renderer.dispose();
+  }
 }
 
 function onWindowResize() {
@@ -130,18 +161,15 @@ function onWindowResize() {
 
 function render() {
   time += clock.getDelta();
-  
+
   // Rotate camera around the dragon
   const radius = 140;
   const speed = 0.5;
-  camera.position.x = Math.cos(time * speed) * radius;
-  camera.position.z = Math.sin(time * speed) * radius;
+  const timeSpeed = time * speed;
+  camera.position.x = Math.cos(timeSpeed) * radius;
+  camera.position.z = Math.sin(timeSpeed) * radius;
   camera.position.y = 20;
   camera.lookAt(scene.position);
-  
-  for (let i = 0; i < dragons.length; i++) {
-    dragons[i].updateCurve(0, curves[i]);
-  }
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }

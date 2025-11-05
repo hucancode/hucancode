@@ -27,18 +27,21 @@ let warriorParams = {
 
 function setupLights() {
   hemiLight = new HemisphereLight(0xffffff, 0x444444, 0);
-  // hemiLight.add( new Mesh( new SphereGeometry( 1, 16, 8 ), new MeshBasicMaterial( { color: 0x0400ff } ) ) );
   hemiLight.position.set(0, POSITION_Y + 30, 0);
   backLight = new PointLight(0xffffff, 0);
-  // backLight.add( new Mesh( new SphereGeometry( 1, 16, 8 ), new MeshBasicMaterial( { color: 0xff0040 } ) ) );
   backLight.position.set(0, POSITION_Y + 30, -10);
 }
 
 async function makeWarrior(scene, camera, renderer) {
   warrior = await loadModel("warrior.glb");
   animator = new AnimationMixer(warrior.scene);
+  // Enable frustum culling
+  warrior.scene.traverse((child) => {
+    if (child.isMesh) {
+      child.frustumCulled = true;
+    }
+  });
   if (PRECOMPILE_SHADER) {
-    // console.log("Precompiling shader...");
     warrior.scene.position.set(0, 0, 0);
     warrior.scene.scale.set(SCALE, SCALE, SCALE);
     scene.add(warrior.scene);
@@ -51,7 +54,6 @@ async function makeWarrior(scene, camera, renderer) {
   }
   warrior.scene.scale.set(0, 0, 0);
   warrior.scene.position.set(0, -50, 0);
-  // warrior.scene.scale.set(1, 1, 1);
   if (isWaitingForResource) {
     animateWarriorIn(waitingScene);
   }
@@ -239,11 +241,35 @@ function fadeToAction(name, duration) {
 }
 
 function destroy() {
+  // Clean up all animations
+  if (warriorParams) {
+    utils.remove(warriorParams);
+  }
+  if (hemiLight) {
+    utils.remove(hemiLight);
+  }
+  if (backLight) {
+    utils.remove(backLight);
+  }
   if (warrior) {
     warrior.scene.removeFromParent();
+    // Dispose geometries and materials
+    warrior.scene.traverse((child) => {
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat) => mat.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
   }
   if (animator) {
     animator.stopAllAction();
+    animator.removeEventListener("finished", returnToIdle);
   }
 }
 

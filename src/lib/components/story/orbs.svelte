@@ -61,9 +61,9 @@
         }
         & .border {
           opacity: 0;
-          transform: rotate(-90deg);
+          transform: rotate(-200deg);
           transition-duration: 800ms;
-          transition-timing-function: ease-in-out;
+          transition-timing-function: ease-out;
         }
       }
       :global(&:has(input[type="radio"]):hover .icon),
