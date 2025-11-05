@@ -18,7 +18,7 @@ const material = new MeshBasicMaterial({
   vertexColors: true,
 });
 let cameraTarget;
-var time = 0;
+let time = 0;
 const CANVAS_ID = "rubik1";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;

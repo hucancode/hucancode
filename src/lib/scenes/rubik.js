@@ -270,7 +270,13 @@ function startMove(face, depth, magnitude) {
 }
 
 function destroy() {
+  // Clean up all animations
+  utils.remove(pivot.rotation);
+  const targets = cubes.map((e) => e.position);
+  utils.remove(targets);
+
   cubes.forEach((e) => e.geometry.dispose());
+  material.dispose();
   cubes = [];
   rubik.children = [];
   pivot.children = [];

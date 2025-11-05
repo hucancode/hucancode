@@ -81,7 +81,15 @@ function rebuildOrbitControl() {
 }
 
 export function destroy() {
-  renderer.dispose();
+  if (controls) {
+    controls.dispose();
+    controls = null;
+  }
+  if (renderer) {
+    renderer.setAnimationLoop(null);
+    renderer.renderLists.dispose();
+    renderer.dispose();
+  }
 }
 
 function render() {

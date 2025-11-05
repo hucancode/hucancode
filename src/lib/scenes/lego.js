@@ -74,10 +74,12 @@ function makeCenterPiece() {
   const nodeA = new Mesh(geometry, material);
   nodeA.position.set(0, OFFSET, 0);
   nodeA.scale.set(8, 8, 8);
+  nodeA.frustumCulled = true;
   const nodeB = new Mesh(geometry, material);
   nodeB.position.set(0, -OFFSET, 0);
   nodeB.scale.set(8, 8, 8);
   nodeB.rotation.set(Math.PI, 0, 0);
+  nodeB.frustumCulled = true;
   cube.add(nodeA);
   cube.add(nodeB);
 
@@ -85,10 +87,12 @@ function makeCenterPiece() {
   nodeC.position.set(0, 0, -OFFSET);
   nodeC.scale.set(8, 8, 8);
   nodeC.rotation.set(-Math.PI / 2, 0, 0);
+  nodeC.frustumCulled = true;
   const nodeD = new Mesh(geometry, material);
   nodeD.position.set(0, 0, OFFSET);
   nodeD.scale.set(8, 8, 8);
   nodeD.rotation.set(Math.PI / 2, 0, 0);
+  nodeD.frustumCulled = true;
   cube.add(nodeC);
   cube.add(nodeD);
 
@@ -96,10 +100,12 @@ function makeCenterPiece() {
   nodeE.position.set(OFFSET, 0, 0);
   nodeE.scale.set(8, 8, 8);
   nodeE.rotation.set(0, 0, -Math.PI / 2);
+  nodeE.frustumCulled = true;
   const nodeF = new Mesh(geometry, material);
   nodeF.position.set(-OFFSET, 0, 0);
   nodeF.scale.set(8, 8, 8);
   nodeF.rotation.set(0, 0, Math.PI / 2);
+  nodeF.frustumCulled = true;
   cube.add(nodeE);
   cube.add(nodeF);
   cubePieces.push(nodeA, nodeB, nodeC, nodeD, nodeE, nodeF);
@@ -186,7 +192,6 @@ function init() {
   makeLegoRing();
   makeCenterPiece();
   pointLight.position.set(0, 20, 0);
-  // pointLight.add(new Mesh(new SphereGeometry(1, 16, 8), new MeshBasicMaterial({ color: 0xffffff })));
 }
 
 function scroll(r, scene, camera) {
@@ -321,6 +326,16 @@ function leave(scene) {
 }
 
 function destroy() {
+  // Clean up all animations
+  utils.remove(cube.scale);
+  utils.remove(ring.scale);
+  utils.remove(cube.rotation);
+  utils.remove(pointLight);
+  utils.remove(cubePieces);
+  ringParticles.forEach((particle) => {
+    utils.remove(particle);
+  });
+
   pieces.forEach((e) => e.dispose());
   cubePieces.forEach((e) => e.geometry.dispose());
   materials.forEach((e) => e.dispose());

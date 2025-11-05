@@ -22,16 +22,14 @@ float noise(in vec2 _st) {
         (d - b) * u.x * u.y;
 }
 #define NUM_OCTAVES 5
+const mat2 ROT = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
 float fbm(in vec2 _st) {
     float v = 0.0;
     float a = 0.5;
     vec2 shift = vec2(100.0);
-    // Rotate to reduce axial bias
-    mat2 rot = mat2(cos(0.5), sin(0.5),
-            -sin(0.5), cos(0.50));
     for (int i = 0; i < NUM_OCTAVES; ++i) {
         v += a * noise(_st);
-        _st = rot * _st * 2.0 + shift;
+        _st = ROT * _st * 2.0 + shift;
         a *= 0.5;
     }
     return v;

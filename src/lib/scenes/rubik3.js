@@ -18,7 +18,7 @@ const clock = new Clock();
 const material = new MeshBasicMaterial({
   vertexColors: true,
 });
-var time = 0;
+let time = 0;
 const CANVAS_ID = "rubik3";
 const USE_CAMERA_CONTROL = true;
 const ASPECT_RATIO = 0.75;
