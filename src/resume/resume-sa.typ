@@ -28,7 +28,7 @@
   [Built complex and performant embedded applications],
 )
 #exp_item(
-  role: "Engineering Manager",
+  role: "Senior Software Developer",
   name: "GoodCreate",
   location: "Kagawa",
   date: "2020/07 - 2022/07",
