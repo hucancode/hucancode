@@ -54,9 +54,9 @@
 #resume_heading("Notable Projects")
 #project_item(
   name: "Mjolnir",
-  skills: "Odin, Vulkan",
+  skills: "Odin, Vulkan, PBR, Bindless, IK, Physics, Procedural Animation",
   date: "2025/01 - Present",
-  [Built a rendering engine using Vulkan featuring: PBR, Post Processing, Skinned Animation, Deferred Rendering, Bindless Rendering, 2D Sprite, UI System. See more: github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
+  [Built a game engine from scratch using Vulkan featuring: PBR, Post Processing, Skinned Animation, IK/FK, Deferred Rendering, Bindless Rendering, Occlusion Culling, 2D Sprite, UI System, Physics Simulation, Procedural Animation. See more: github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
   [Utilized XCode and RenderDoc to analyze and optimize render calls],
   [Utilized compute shader to build occlusion culling and particle simulation engine],
 )
