@@ -91,7 +91,7 @@ graph TD
 
 {% dragon style="curved" /%}
 
-Notice how the dragon now follows the curve shape. This is the result of the GPU transformation without any animation.
+Notice how the dragon now follows the curve shape. This is the result of the transformation happening on shader.
 
 ### 4. Animation Loop
 
