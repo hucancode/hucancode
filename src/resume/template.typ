@@ -99,7 +99,7 @@
       #grid(
         columns: (2fr, 2fr),
         align(left)[
-          *#role*
+          *#role*・*#name*
         ],
         align(right)[
           *#date*
