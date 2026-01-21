@@ -69,6 +69,10 @@ const EASING_FUNCTIONS = [
 ];
 let cubeNum = CUBE_NUM_DEFAULT;
 
+function setCubeSize(size) {
+  cubeNum = size;
+}
+
 function isInFace(x, y, z, face, depth) {
   return (
     (face == FACE_TOP && y >= cubeNum - depth) ||
@@ -284,4 +288,4 @@ function destroy() {
   pivot.removeFromParent();
 }
 
-export { init, scroll, enter, leave, update, destroy };
+export { init, scroll, enter, leave, update, destroy, setCubeSize };
