@@ -12,11 +12,11 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, WebGPU, Vulkan, OpenGL"
+  skills: "C, C++, Rust, Go, Odin, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
-  skills: "Unreal Engine, RenderDoc, Linux, AWS, GCP"
+  skills: "Unreal Engine, RenderDoc, perf, Linux, AWS"
 )
 
 #resume_heading[Experience]
@@ -54,10 +54,10 @@
 #resume_heading("Notable Projects")
 #project_item(
   name: "Mjolnir",
-  skills: "Odin, Vulkan, PBR, Bindless, IK, Physics, Procedural Animation",
+  skills: "Vulkan, PBR, Bindless, IK, Physics, Procedural Animation, SIMD, perf",
   date: "2025/01 - Present",
   [Built a game engine from scratch using Vulkan featuring: PBR, Post Processing, Skinned Animation, IK/FK, Deferred Rendering, Bindless Rendering, Occlusion Culling, 2D Sprite, UI System, Physics Simulation, Procedural Animation. See more: github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
-  [Utilized XCode and RenderDoc to analyze and optimize render calls],
+  [Utilized XCode/RenderDoc to analyze and optimize render calls, perf to analyze and optimize physics engine],
   [Utilized compute shader to build occlusion culling and particle simulation engine],
 )
 #project_item(

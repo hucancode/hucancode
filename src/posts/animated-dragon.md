@@ -8,13 +8,13 @@ categories:
   - threejs
 ---
 
-## The Result
+## Result
 
 A dragon that smoothly flies along random curved paths, with dynamic lighting that creates an ethereal atmosphere.
 
 {% video src="/blog/post/animated-dragon/dragon-600-20s.webm" autoplay=true loop=true muted=true /%}
 
-## Starting Point: The Static Model
+## The Static Model
 
 Before applying any transformations, we have a static 3D dragon model:
 
@@ -24,29 +24,7 @@ The model is initially positioned along the X-axis. Our goal is to bend and anim
 
 ## Implementation
 
-### 1. Scene Setup
-
-Basic Three.js setup with ambient and dynamic point lighting:
-
-```js
-function setupLightning() {
-  // Blue ambient light for atmosphere
-  ambientLight = new AmbientLight(0x003973);
-  scene.add(ambientLight);
-
-  // Dynamic white point light with visual indicator
-  dynamicLight = new PointLight(0xffffff, 5, 0, 0.2);
-  dynamicLight.add(
-    new Mesh(
-      new SphereGeometry(2, 16, 8),
-      new MeshBasicMaterial({ color: 0xffffff })
-    )
-  );
-  scene.add(dynamicLight);
-}
-```
-
-### 2. Creating the Flight Path
+### 1. Creating the Flight Path
 
 Generate a smooth, closed curve using random control points:
 
@@ -75,9 +53,9 @@ function makeDragon() {
 }
 ```
 
-### 3. Pipeline
+### 2. Transformation Pipeline
 
-The `Flow` class from Three.js's CurveModifier performs the heavy lifting:
+The `Flow` class from Three.js's CurveModifier performs the transformation:
 
 {% mermaid %}
 graph TD
@@ -91,31 +69,17 @@ graph TD
 
 {% dragon style="curved" /%}
 
-Notice how the dragon now follows the curve shape. This is the result of the GPU transformation without any animation.
+Notice how the dragon now follows the curve shape. This is the result of the transformation happening on shader.
 
-### 4. Animation Loop
+### 3. Animation Loop
 
-The render function updates the dragon position and creates dynamic lighting:
+The render function updates the dragon position:
 
 ```js
 function render() {
   time += clock.getDelta();
-
   // Move dragon along curve
   dragon.moveAlongCurve(0.002);
-
-  // Animate lights for atmosphere
-  if (dynamicLight) {
-    dynamicLight.position.x = Math.sin(time * 0.7) * 30 + 20;
-    dynamicLight.position.y = Math.cos(time * 0.5) * 40;
-    dynamicLight.position.z = Math.cos(time * 0.3) * 30 + 20;
-
-    // Cycle light colors
-    dynamicLight.color.r = (Math.sin(time * 0.3) + 1.0) * 0.5;
-    dynamicLight.color.g = (Math.sin(time * 0.7) + 1.0) * 0.5;
-    dynamicLight.color.b = (Math.sin(time * 0.2) + 1.0) * 0.5;
-  }
-
   renderer.render(scene, camera);
 }
 ```

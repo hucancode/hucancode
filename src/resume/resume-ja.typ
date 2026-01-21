@@ -12,11 +12,11 @@
 #resume_heading("スキル")
 #skill_item(
   category: "言語",
-  skills: "C, C++, Rust, Go, WebGPU, Vulkan, OpenGL"
+  skills: "C, C++, Rust, Go, Odin, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "ツール・OS",
-  skills: "Unreal Engine, RenderDoc, Linux, AWS, GCP"
+  skills: "Unreal Engine, RenderDoc, perf, Linux, AWS"
 )
 
 #resume_heading("職務経歴")
@@ -56,27 +56,27 @@
   name: "Mjolnir",
   skills: "Odin, Vulkan",
   date: "2025/01 - 現在",
-  [Vulkanを使用したレンダリングエンジンを構築しました。主な機能は以下のとおりです：PBR、ポストプロセス処理、スキニングアニメーション、遅延レンダリング、バインドレスレンダリング、2Dスプライト、UIシステム。。github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
-  [RenderDocとXcodeで描画コールを解析・最適化],
-  [Computeシェーダーでオクルージョンカリングとパーティクルシミュレーションを実現],
+  [Vulkan を使用してゲームエンジンをスクラッチから設計・実装。 PBR、ポストプロセス処理、スキニングアニメーション、IK/FK、遅延レンダリング、 バインドレスレンダリング、オクルージョンカリング、2D スプライト、UI システム、 物理シミュレーション、プロシージャルアニメーションを実装。 詳細：github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
+  [RenderDoc/Xcodeで描画コールを解析・最適化、perfで物理エンジンを最適化],
+  [Compute Shaderでオクルージョンカリングとパーティクルシミュレーションを実現],
 )
 #project_item(
   name: "Raytracer",
   skills: "Rust, WebGPU",
   date: "2024/02 - 2024/05",
-  [BVHレイトレーサーをRust+WebGPUで実装し10万ポリゴンをリアルタイム描画。github/hucancode/#link("https://github.com/hucancode/raytracer")[raytracer]],
+  [BVHを使ってレイトレーサーをWebGPUで実装し10万ポリゴンをリアルタイムに描画。github/hucancode/#link("https://github.com/hucancode/raytracer")[raytracer]],
 )
 #project_item(
   name: "Dragon",
   skills: "Rust, WebGPU",
   date: "2023/11 - 2024/02",
-  [手続きアニメのドラゴン飛行シーンをWebGPUで制作。github/hucancode/#link("https://github.com/hucancode/flying-dragon")[dragon]],
+  [WebGPUでプロシージャルアニメーションによるドラゴンの飛行シーンを制作。 github/hucancode/#link("https://github.com/hucancode/flying-dragon")[dragon]],
 )
 #project_item(
   name: "Poker Simulator",
   skills: "Rust, WASM, Svelte",
   date: "2023/11 - 2023/12",
-  [Rust+WASMで0.25M局/秒のポーカー勝率シミュレータを構築。お試しは #link("https://poker.lamsaoquenem.day")[こちら]],
+  [Rust/WASMで0.25M件/秒のポーカー勝率シミュレータを構築。お試しは #link("https://poker.lamsaoquenem.day")[こちら]],
 )
 #project_item(
   name: "SDA",
@@ -91,7 +91,7 @@
   skills: "Linux, Android, μITRON, Java, C, C++, TCP, Serial",
   date: "2022/08 - 2024/07",
   [ハードウェアチームと連携し遠隔更新対応のバス運賃決済端末を開発],
-  [TCP / Serial / HTTPSで3種の組込み機器間の複雑な通信を制御],
+  [TCP/Serial/HTTPSで3種の組込み機器間の複雑な通信を制御],
 )
 #project_item(
   name: "HKMC",
