@@ -7,13 +7,17 @@
     destroy,
     update,
     enter,
-    leave
+    leave,
+    setCubeSize
   } from "$lib/scenes/rubik";
   import {
     PerspectiveCamera,
     Scene,
     WebGLRenderer,
   } from "three";
+
+  /** @type {number} */
+  let { size = 3 } = $props();
 
   const CANVAS_ID = "rubik";
   let ready = $state(false);
@@ -45,6 +49,7 @@
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
     
+    setCubeSize(size);
     await init();
     enter(scene);
     ready = true;

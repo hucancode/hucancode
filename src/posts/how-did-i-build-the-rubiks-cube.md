@@ -13,15 +13,11 @@ categories:
 
 Building a 3D Rubik's Cube that can rotate realistically is more complex than it seems. The cube has {% math %}4.3 \times 10^{19}{% /math %} possible combinations, making it one of the most fascinating puzzles ever created.
 
-![cube art](/blog/post/how-did-i-build-the-rubiks-cube/3d-render-rainbow-coloured-cubes.jpg)
-
 In this post, I'll show you how I built an interactive Rubik's Cube using Three.js, breaking down the process into simple steps.
 
 ## Step 1: Building a Single Cube
 
 First, let's create one colorful cube. Each face needs its own color based on the Rubik's Cube color scheme.
-
-![single cube](/blog/post/how-did-i-build-the-rubiks-cube/single-cube.png)
 
 ```js
 // Create geometry and apply vertex colors
@@ -106,11 +102,7 @@ graph LR
     D --> E[Update Positions]
 {% /mermaid %}
 
-### The Rotation Algorithm
-
-![rotation diagram](/blog/post/how-did-i-build-the-rubiks-cube/rotation.png)
-
-Here's how the rotation works:
+Here's how the rotation implemented:
 
 ```js
 // Create pivot at cube center
