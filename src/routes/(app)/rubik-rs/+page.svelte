@@ -66,10 +66,6 @@
       {@html Return}
       {$_("home.showcase.goback")}
     </a>
-    <button>
-      {@html Idea}
-      {$_("home.showcase.surprise")}
-    </button>
   </div>
 </section>
 
