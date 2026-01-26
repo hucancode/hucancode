@@ -8,9 +8,6 @@
       <h2 rainbow="1">Blog</h2>
     </a>
     <a href="/">
-      <h2>Home</h2>
-    </a>
-    <a href="/blog/about">
       <h2>About</h2>
     </a>
   </div>
