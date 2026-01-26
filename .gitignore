@@ -25,3 +25,7 @@ yarn-error.log*
 
 .svelte-kit
 .vercel
+static/resume.pdf
+static/resume-ja.pdf
+static/resume-sa.pdf
+static/resume-sa-ja.pdf
