@@ -218,10 +218,12 @@ function update() {
   }
 }
 
-function leave(scene) {
+function leave(scene, _camera, controls) {
   isWaitingForResource = false;
-  // Only restore controls if they were provided
-  // (this is used when in story mode)
+  // Restore controls if they were provided
+  if (controls) {
+    controls.autoRotate = previousAutoRotation;
+  }
   animate(taiji.scale, {
     x: { from: 1, to: 4 },
     y: { from: 1, to: 4 },
