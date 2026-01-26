@@ -214,12 +214,19 @@ export const config = {
         },
         cubes: {
           type: Number,
-          default: 3,
-          matches: [1, 3, 5]
+          default: 5
         },
         rotating: {
           type: Boolean,
           default: false
+        },
+        showControls: {
+          type: Boolean,
+          default: true
+        },
+        canvasId: {
+          type: String,
+          required: true
         }
       },
       selfClosing: true

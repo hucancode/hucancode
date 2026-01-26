@@ -2,12 +2,13 @@
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import Canvas3D from "./canvas3d.svelte";
-  import { CANVAS_ID, init, render, destroy } from "$lib/scenes/rubik3";
+  import { init, render, destroy } from "$lib/scenes/rubik3";
 
+  let { canvasId = "rubik3" } = $props();
   let ready = $state(false);
 
   onMount(async () => {
-    await init();
+    await init(canvasId);
     ready = true;
   });
 
@@ -18,4 +19,4 @@
   });
 </script>
 
-<Canvas3D {ready} id={CANVAS_ID} {render} />
+<Canvas3D {ready} id={canvasId} {render} />
