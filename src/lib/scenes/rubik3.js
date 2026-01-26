@@ -141,8 +141,11 @@ function rebuildOrbitControl() {
   controls.autoRotate = true;
 }
 
-function init() {
-  const canvas = document.getElementById(CANVAS_ID);
+let canvasId = "rubik3";
+
+function init(customCanvasId = "rubik3") {
+  canvasId = customCanvasId;
+  const canvas = document.getElementById(canvasId);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight; //w * ASPECT_RATIO;
   renderer = new WebGLRenderer({
@@ -168,7 +171,7 @@ function destroy() {
 }
 
 function onWindowResize() {
-  const canvas = document.getElementById(CANVAS_ID);
+  const canvas = document.getElementById(canvasId);
   if (!canvas) {
     return;
   }
@@ -190,4 +193,4 @@ function render() {
   }
 }
 
-export { CANVAS_ID, init, destroy, render, getCurrentSize, remakeRubik };
+export { init, destroy, render, getCurrentSize, remakeRubik };

@@ -15,7 +15,7 @@
 
   onMount(async () => {
     await init();
-    setOffset(offset)
+    setOffset(offset);
     ready = true;
   });
 
@@ -40,80 +40,32 @@
   });
 </script>
 
-<div class="container">
-    <Canvas3D {ready} id={CANVAS_ID} {render} />
-  <div class="controls">
-    <label for="offset-slider">
-      Position on curve: {(offset * 100).toFixed(0)}%
-    </label>
-    <input
-      id="offset-slider"
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value={offset}
-      oninput={handleSliderChange}
-      style="--slider-progress: {offset * 100}%"
-    />
-  </div>
-</div>
+<Canvas3D {ready} id={CANVAS_ID} {render} />
+<label for="offset-slider">
+  Position on curve:
+  <input
+    id="offset-slider"
+    type="range"
+    min="0"
+    max="1"
+    step="0.01"
+    value={offset}
+    oninput={handleSliderChange}
+    style="--slider-progress: {offset * 100}%"
+  />
+  {(offset * 100).toFixed(0)}%
+</label>
 
 <style>
-  .controls {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
-    max-width: 100%;
-  }
-
   label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
     font-size: 0.9rem;
-    color: var(--text-secondary, #666);
+    margin: 1.5rem 0;
   }
 
   input[type="range"] {
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    background: linear-gradient(
-      to right,
-      #00ff88 0%,
-      #00ff88 var(--slider-progress, 0%),
-      #ddd var(--slider-progress, 0%),
-      #ddd 100%
-    );
-    outline: none;
-    -webkit-appearance: none;
-  }
-
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #00ff88;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #00ff88;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  input[type="range"]::-webkit-slider-thumb:hover {
-    background: #00cc6a;
-  }
-
-  input[type="range"]::-moz-range-thumb:hover {
-    background: #00cc6a;
+    flex: 1;
   }
 </style>

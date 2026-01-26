@@ -13,7 +13,7 @@ categories:
 
 Building a 3D Rubik's Cube that can rotate realistically is more complex than it seems. The cube has {% math %}4.3 \times 10^{19}{% /math %} possible combinations, making it one of the most fascinating puzzles ever created.
 
-In this post, I'll show you how I built an interactive Rubik's Cube using Three.js, breaking down the process into simple steps.
+In this post, I'll show you how I built an animated Rubik's Cube using Three.js, breaking down the process into simple steps.
 
 ## Step 1: Building a Single Cube
 
@@ -48,7 +48,7 @@ The color scheme follows the standard Rubik's Cube:
 - Front: Red
 - Back: Orange
 
-{% rubik size="small" cubes=1 /%}
+{% rubik size="small" cubes=1 canvasId="rubik-single" /%}
 
 ## Step 2: Assembling the 3×3×3 Cube
 
@@ -88,7 +88,7 @@ function makeRubik() {
 }
 ```
 
-{% rubik size="medium" cubes=3 /%}
+{% rubik size="medium" cubes=3 showControls=false canvasId="rubik-static" /%}
 
 ## Step 3: The Rotation System
 
@@ -174,24 +174,17 @@ function cleanUpAfterMove() {
 
 ### See it in action
 
-{% rubik size="large" cubes=3 rotating=true /%}
+{% rubik size="large" cubes=3 rotating=true showControls=false canvasId="rubik-rotating" /%}
 
 ## Step 4: Adding Variations
 
 Once the core mechanics work, you can experiment with different features:
 
-### Different Cube Sizes
+### Interactive Dimension Control
 
-The same logic works for any NxNxN cube. Here's a 5x5x5 cube with playful easing animations:
+The same logic works for any NxNxN cube. Try adjusting the dimension with the slider below:
 
-{% rubik size="large" cubes=5 /%}
-
-### Key Features Added
-
-- **Auto-rotation**: Cubes rotate randomly when idle
-- **Smooth animations**: Using anime.js for fluid movements
-- **Dynamic easing**: Random easing functions for variety
-- **Camera controls**: OrbitControls for user interaction
+{% rubik size="large" cubes=5 rotating=true canvasId="rubik-interactive" /%}
 
 ## Complete Implementation
 
@@ -286,7 +279,6 @@ function makeRubik() {
         cube.position.z = z * (1 + CUBE_MARGIN);
         cubes[x][y][z] = cube;
         scene.add(cube);
-        //addDebugArrow(cube);
       }
     }
   }
