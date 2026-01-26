@@ -71,9 +71,21 @@ graph TD
 
 Notice how the dragon now follows the curve shape. This is the result of the transformation happening on shader.
 
+#### Dragon on a Figure-8 Path
+
+Now let's try a more complex curve - a figure-8 (lemniscate). Use the slider below to manually position the dragon along the path:
+
+{% dragon style="figure8" /%}
+
+The figure-8 curve is created using parametric equations:
+- $x(t) = r \times cos(t)$
+- $y(t) = r \times sin(2t) / 2$
+
+As you move the slider, you can see how the dragon maintains its orientation along the curve, demonstrating how the Frenet frames keep the model properly aligned at every point.
+
 ### 3. Animation Loop
 
-The render function updates the dragon position:
+Finally, the render function updates the dragon position:
 
 ```js
 function render() {
@@ -144,13 +156,13 @@ mat3 orientation = mat3(forward, up, right);
 vec3 finalPosition = orientation * vertex + curvePoint;
 ```
 
-## See it live!
+## See it [live](/dragon)!
 
 {% dragon speed=1 color="#ffffff" /%}
 
 ## Faster rust version
 
-I've also created a **Rust + WebGPU** version that follows the same GPU animation principles.
+I've also created a **Rust + WebGPU** version that follows the same GPU animation principles. This version also features a hand made transformation shader 😎.
 
 - [GitHub Repository](https://github.com/hucancode/flying-dragon)
 - [Live Demo](/dragon-rs)

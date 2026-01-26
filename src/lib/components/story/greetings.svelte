@@ -57,9 +57,11 @@
     min-height: unset;
   }
   h2 {
-    font-weight: 600;
+    font-weight: 400;
     text-align: center;
     min-height: 2.8em;
+    max-width: 30em;
+    color: var(--color-neutral-600);
   }
   h1 {
     animation: bg-pingpong 2.5s ease infinite alternate;
