@@ -15,7 +15,7 @@
 
   onMount(async () => {
     await init();
-    setOffset(offset)
+    setOffset(offset);
     ready = true;
   });
 
@@ -41,7 +41,7 @@
 </script>
 
 <div class="container">
-    <Canvas3D {ready} id={CANVAS_ID} {render} />
+  <Canvas3D {ready} id={CANVAS_ID} {render} />
   <div class="controls">
     <label for="offset-slider">
       Position on curve: {(offset * 100).toFixed(0)}%
@@ -86,6 +86,7 @@
     );
     outline: none;
     -webkit-appearance: none;
+    appearance: none;
   }
 
   input[type="range"]::-webkit-slider-thumb {
