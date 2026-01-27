@@ -5,7 +5,7 @@ categories:
   - rust
   - webassembly
   - svelte
-  - algorithms
+  - algorithm
 excerpt: How I built a Texas Hold'em poker simulator that calculates winning odds using bit manipulation
 ---
 

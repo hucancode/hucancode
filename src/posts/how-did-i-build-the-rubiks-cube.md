@@ -5,6 +5,7 @@ cover: /blog/post/how-did-i-build-the-rubiks-cube/top-view-little-kid-playing-wi
 date: 2023-01-19
 categories:
   - 3d
+  - graphics
   - threejs
   - creative-coding
 ---
