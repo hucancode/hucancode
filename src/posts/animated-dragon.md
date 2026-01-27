@@ -5,6 +5,7 @@ date: 2024-06-27
 cover: /blog/post/animated-dragon/10024398.png
 categories:
   - 3d
+  - graphics
   - threejs
 ---
 
