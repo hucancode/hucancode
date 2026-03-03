@@ -40,7 +40,6 @@
   location: "Kagawa",
   date: "2020/07 - 2022/07",
   [Communicated with end clients to build responsive feature-rich EC websites, cross platform mobile applications],
-  [In charge of engineering productivity. Conducted various training activity],
 )
 #exp_item(
   role: "C++ Programmer",
