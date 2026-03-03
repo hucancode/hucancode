@@ -21,10 +21,17 @@
 
 #resume_heading[Experience]
 #exp_item(
+  role: "Software Engineer",
+  name: "FPT Japan",
+  location: "Tokyo",
+  date: "2025/09 - Present",
+  [Lead teams building complex and performant embedded and web applications],
+)
+#exp_item(
   role: "Technical Leader",
   name: "NTQ Japan",
   location: "Gifu/Tokyo",
-  date: "2022/08 - Present",
+  date: "2022/08 - 2025/09",
   [Lead teams building complex and performant embedded and web applications],
 )
 #exp_item(

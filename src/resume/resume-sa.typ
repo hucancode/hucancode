@@ -12,7 +12,7 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, React, Svelte, NestJS, Flutter, WebGPU, Vulkan, OpenGL"
+  skills: "C, C++, Rust, Go, Typescript, Java, Kotlin, SQL / Qt, Svelte, Flutter, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
@@ -21,11 +21,18 @@
 
 #resume_heading[Experience]
 #exp_item(
+  role: "Software Engineer",
+  name: "FPT Japan",
+  location: "Tokyo",
+  date: "2025/09 - Present",
+  [Lead teams building complex and performant embedded and web applications],
+)
+#exp_item(
   role: "Technical Leader",
   name: "NTQ Japan",
   location: "Gifu/Tokyo",
-  date: "2022/08 - Present",
-  [Built complex and performant embedded applications],
+  date: "2022/08 - 2025/09",
+  [Lead teams building complex and performant embedded and web applications],
 )
 #exp_item(
   role: "Senior Software Developer",
@@ -48,7 +55,6 @@
   location: "Hanoi",
   date: "2014/03 - 2016/03",
   [Developed, and optimized games for low-end mobile devices using C++, OpenGL],
-  [Contributed in: Order and Chaos 2, Brothers in Arms 3, Ice Age Adventure, and many other games],
 )
 
 #resume_heading("Notable Projects")
