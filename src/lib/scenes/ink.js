@@ -23,7 +23,7 @@ const uniforms = {
   uWobble:     { value: 0.25 },
   uWidthEnd:   { value: 1.0 },
   uWidthTaperPow: { value: 1.0 },
-  uWidthAlign: { value: 0.0 },
+  uWidthAnchor: { value: 0.5 },
   uBrushColor: { value: [0.0, 0.0, 0.0, 0.9] },
   uBgColor:    { value: [1.0, 1.0, 0.875, 1.0] },
 };
@@ -65,7 +65,7 @@ export function setTaper(v)      { uniforms.uTaper.value = v; }
 export function setWobble(v)     { uniforms.uWobble.value = v; }
 export function setWidthEnd(v)   { uniforms.uWidthEnd.value = v; }
 export function setWidthTaperPow(v) { uniforms.uWidthTaperPow.value = v; }
-export function setWidthAlign(v) { uniforms.uWidthAlign.value = v; }
+export function setWidthAnchor(v) { uniforms.uWidthAnchor.value = v; }
 
 export function destroy() {
   if (mesh) {

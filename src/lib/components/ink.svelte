@@ -15,7 +15,7 @@
     setWobble,
     setWidthEnd,
     setWidthTaperPow,
-    setWidthAlign,
+    setWidthAnchor,
   } from "$lib/scenes/ink";
 
   let canvasEl;
@@ -33,9 +33,7 @@
   let widthPreset = $state("uniform");
   let widthEnd = $state(1.0);
   let widthTaperPow = $state(1.0);
-  let widthAlign = $state("center"); // inside | center | outside
-
-  const widthAlignMap = { inside: 1, center: 0, outside: -1 };
+  let widthAnchor = $state(0.5); // 0 = inside, 0.5 = center, 1 = outside
 
   const widthPresets = {
     uniform:    { end: 1.0,  pow: 1.0 },
@@ -62,7 +60,7 @@
   $effect(() => { if (ready) setWobble(wobble); });
   $effect(() => { if (ready) setWidthEnd(widthEnd); });
   $effect(() => { if (ready) setWidthTaperPow(widthTaperPow); });
-  $effect(() => { if (ready) setWidthAlign(widthAlignMap[widthAlign] ?? 0); });
+  $effect(() => { if (ready) setWidthAnchor(widthAnchor); });
 
   function loop() {
     frameID = requestAnimationFrame(loop);
@@ -165,13 +163,9 @@
       <output>{widthTaperPow.toFixed(2)}</output>
     </label>
     <label>
-      <span>Align</span>
-      <select bind:value={widthAlign}>
-        <option value="inside">Inside</option>
-        <option value="center">Center</option>
-        <option value="outside">Outside</option>
-      </select>
-      <output></output>
+      <span>Anchor</span>
+      <input type="range" min="0" max="1" step="0.001" bind:value={widthAnchor} />
+      <output>{widthAnchor.toFixed(2)}</output>
     </label>
     <hr />
     <label class="check">

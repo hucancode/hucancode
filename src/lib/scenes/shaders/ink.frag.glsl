@@ -10,7 +10,7 @@ uniform float uTaper;          // taper exponent (1.5 = mild, 16 = sharp)
 uniform float uWobble;         // 0..1 multiplier on humanize displacements
 uniform float uWidthEnd;       // tail width as fraction of tip width (1.0 = uniform, 0.0 = pinch to nothing)
 uniform float uWidthTaperPow;  // width-distribution curve exponent (1=linear, >1=stays thick longer, <1=drops fast)
-uniform float uWidthAlign;     // stroke alignment vs base radius: -1=inside, 0=center, +1=outside
+uniform float uWidthAnchor;    // stroke edge anchor vs base radius: 0=inside, 0.5=center, 1=outside
 uniform vec4  uBrushColor;
 uniform vec4  uBgColor;
 
@@ -126,12 +126,20 @@ vec3 colorBrushStrokeDonut(vec2 uv, vec3 inpColor, vec4 brushColor,
     // Body geometry: ring SDF. Unswept arc is killed by taper alpha (posInLineY > 1
     // drives strokeAlpha to 0), so no hard distance clip — that would re-introduce
     // the tail cut.
-    // uWidthAlign shifts ring center inward/outward. Scaled by (1 - widthEnd) so
-    // uniform strokes (widthEnd ≈ 1) get no shift — align is only meaningful when
-    // there's a taper to anchor against the base radius.
+    // uWidthAlign shifts ring centerline by a fixed offset (full lineWidth-based),
+    // independent of taper. This keeps the alignment anchor stable as the tail
+    // shrinks — otherwise the offset collapses with width and tail converges back
+    // to huR regardless of align mode.
+    // uWidthAnchor (0..1) pins one EDGE of the stroke. 0 = inside (inner edge
+    // anchored), 1 = outside (outer edge anchored), 0.5 = centered. Remap to
+    // signed [-1,1] internally. The anchored edge stays fixed at
+    // (huR + s*lineWidth/2); the opposite edge tapers in as width shrinks.
+    //   → bodyCenterR = huR + s*0.5*(lineWidth - lineWidth1)
+    // Uniform width (lineWidth1=lineWidth) → no offset (anchor irrelevant).
+    // Tail (lineWidth1→0) → point lands on the anchored edge.
     float bodyHalfW = lineWidth1 * 0.5;
-    float alignFactor = 1.0 - clamp(uWidthEnd, 0.0, 1.0);
-    float bodyCenterR = huR + clamp(uWidthAlign, -1.0, 1.0) * alignFactor * (lineWidth * 0.5);
+    float anchorS = clamp(uWidthAnchor, 0.0, 1.0) * 2.0 - 1.0;
+    float bodyCenterR = huR + anchorS * 0.5 * (lineWidth - lineWidth1);
     float d_body = abs(length(rel) - bodyCenterR) - bodyHalfW;
 
     // lineSize.y = strokeLen so posInLineY reaches 1.0 (full taper fade-out)
@@ -146,9 +154,9 @@ vec3 colorBrushStrokeDonut(vec2 uv, vec3 inpColor, vec4 brushColor,
     // hole (start pixel maps to along=lineLength → outside [0,strokeLen]).
     vec2 startUVLine = vec2(0.0, 0.0);
     vec3 huStart = humanizeBrushStrokeDonut(startUVLine, radius_, lineLength);
-    // shift cap center by same scaled align offset so cap seams with body
-    // (alignFactor=0 when uniform → cap stays at base radius)
-    float capCenterR = huStart.z + clamp(uWidthAlign, -1.0, 1.0) * alignFactor * (lineWidth * 0.5);
+    // Cap is full-width and sits at the tip where body width = lineWidth, so
+    // body offset = anchor*0.5*(lineWidth - lineWidth) = 0. Cap stays at huR.
+    float capCenterR = huStart.z;
     vec2 startPos = o + vec2(sin(angleStart), cos(angleStart)) * capCenterR;
     float dStart = distance(uv, startPos) - lineWidth * 0.5;
     vec2 capUV = vec2(huUV.x, 0.0);
