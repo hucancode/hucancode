@@ -69,13 +69,27 @@ vec3 segProject(vec2 p, vec2 a, vec2 b) {
 
 // returns vec3(signedDist, arcLenAtClosest, _)
 vec3 sdPolyline(vec2 p) {
+    // Coarse: sample every STRIDE-th point to find nearest region
+    const int STRIDE = 8;
+    float coarseBest = 1e9;
+    int coarseI = 0;
+    for (int i = 0; i < 32; i++) {
+        int idx = i * STRIDE;
+        if (idx >= curveLen) break;
+        float d = length(p - sampleCurve(idx).xy);
+        if (d < coarseBest) { coarseBest = d; coarseI = idx; }
+    }
+    // Fine: full segment check within ±STRIDE of closest point
     float bestAbs = 1e9;
     float bestSigned = 1e9;
     float bestArc = 0.0;
-    for (int i = 0; i < 256; i++) {
-        if (i >= curveLen - 1) break;
-        vec3 a3 = sampleCurve(i);
-        vec3 b3 = sampleCurve(i + 1);
+    int flo = max(0, coarseI - STRIDE);
+    int fhi = min(curveLen - 1, coarseI + STRIDE);
+    for (int i = 0; i < 16; i++) {
+        int idx = flo + i;
+        if (idx >= fhi) break;
+        vec3 a3 = sampleCurve(idx);
+        vec3 b3 = sampleCurve(idx + 1);
         vec3 r  = segProject(p, a3.xy, b3.xy);
         float ad = abs(r.x);
         if (ad < bestAbs) {
@@ -88,16 +102,18 @@ vec3 sdPolyline(vec2 p) {
 }
 
 vec2 curvePointAtArc(float s) {
-    for (int i = 0; i < 256; i++) {
-        if (i >= curveLen - 1) break;
-        vec3 a = sampleCurve(i);
-        vec3 b = sampleCurve(i + 1);
-        if (s <= b.z) {
-            float t = (s - a.z) / max(b.z - a.z, 1e-6);
-            return mix(a.xy, b.xy, t);
-        }
+    // Binary search — arc lengths are monotonically increasing
+    int lo = 0;
+    int hi = curveLen - 2;
+    for (int i = 0; i < 9; i++) {
+        if (lo >= hi) break;
+        int mid = (lo + hi) / 2;
+        if (sampleCurve(mid + 1).z < s) lo = mid + 1;
+        else hi = mid;
     }
-    return sampleCurve(curveLen - 1).xy;
+    vec3 a = sampleCurve(lo);
+    vec3 b = sampleCurve(lo + 1);
+    return mix(a.xy, b.xy, (s - a.z) / max(b.z - a.z, 1e-6));
 }
 
 float brushStrokeAlpha(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
