@@ -1,5 +1,4 @@
 import {
-  Color,
   DataTexture,
   FloatType,
   Mesh,
@@ -37,8 +36,9 @@ const uniforms = {
   uWidth: { value: 0.12 },
   uTaper: { value: 4.0 },
   uInkFlow: { value: 1.0 },
+  uOpacity: { value: 1.0 },
   uBrushColor: { value: [0.05, 0.05, 0.05, 0.95] },
-  uBgColor: { value: new Color(1.0, 1.0, 0.875) },
+  uBgColor: { value: [1.0, 1.0, 0.875, 1.0] },
 };
 
 function allocTexture() {

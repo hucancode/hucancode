@@ -9,8 +9,9 @@ uniform float uArcLength;     // 0..1 portion drawn
 uniform float uWidth;         // world units
 uniform float uTaper;         // 1..16, higher = less taper / sharper end
 uniform float uInkFlow;       // 0..1, 1=consistent, 0=blacker at tip, fades to tail
+uniform float uOpacity;       // global multiplier on stroke alpha
 uniform vec4  uBrushColor;
-uniform vec3  uBgColor;
+uniform vec4  uBgColor;
 
 varying vec2 vUV;
 
@@ -99,9 +100,8 @@ vec2 curvePointAtArc(float s) {
     return sampleCurve(curveLen - 1).xy;
 }
 
-// ---------- brush ----------
-vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
-                      float sdGeometry, vec3 inpColor, vec4 brushColor) {
+float brushStrokeAlpha(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
+                       float sdGeometry, float brushAlpha) {
     float posInLineY = uvLine.y / max(lineSize.y, 1e-6);
     float rawPosInLineY = clamp(posInLineY, 0.0, 1.0);
 
@@ -128,11 +128,10 @@ vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
 
     float paperBleedAmt = 60.0 + (rand(uvPaper.yy) * 30.0) + (rand(uvPaper.xx) * 30.0);
     paperBleedAmt *= 5.0;
-    float alpha = strokeAlpha * brushColor.a * dtoa(sdGeometry, paperBleedAmt);
+    float alpha = strokeAlpha * brushAlpha * dtoa(sdGeometry, paperBleedAmt);
     float flowMul = mix(smoothstep(1.0, 0.0, rawPosInLineY), 1.0, uInkFlow);
     alpha *= flowMul;
-    alpha = clamp(alpha, 0.0, 1.0);
-    return mix(inpColor, brushColor.rgb, alpha);
+    return clamp(alpha, 0.0, 1.0);
 }
 
 void main() {
@@ -140,10 +139,8 @@ void main() {
     float aspect = iResolution.x / iResolution.y;
     vec2 p = vec2((vUV.x * 2.0 - 1.0) * aspect, vUV.y * 2.0 - 1.0);
 
-    vec3 col = uBgColor;
-
     if (curveLen < 2) {
-        gl_FragColor = vec4(col, 1.0);
+        gl_FragColor = uBgColor;
         return;
     }
 
@@ -177,7 +174,10 @@ void main() {
     float d = abs(sd) - w * 0.5;
 
     vec2 uvLine = vec2(sd, relArc);
-    col = colorBrushStroke(uvLine, p, vec2(w, visibleLen), d, col, uBrushColor);
+    float strokeA = brushStrokeAlpha(uvLine, p, vec2(w, visibleLen), d, uBrushColor.a) * uOpacity;
 
-    gl_FragColor = vec4(col, 1.0);
+    // 'over' composite: stroke over background
+    float outA = strokeA + uBgColor.a * (1.0 - strokeA);
+    vec3 outRGB = (strokeA * uBrushColor.rgb + uBgColor.rgb * uBgColor.a * (1.0 - strokeA)) / max(outA, 1e-6);
+    gl_FragColor = vec4(outRGB, outA);
 }

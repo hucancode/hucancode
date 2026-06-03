@@ -345,6 +345,17 @@ div[role="group"].square {
   height: 1.5em;
 }
 
+fieldset {
+  border: 1px solid rgba(128,128,128,0.25);
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+legend {
+  padding: 0 0.4rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
 .container,
 .container-sm,
 .container-md,
