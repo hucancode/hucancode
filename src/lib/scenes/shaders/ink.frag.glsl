@@ -80,8 +80,12 @@ vec3 humanizeBrushStrokeDonut(vec2 uvLine, float radius_, float lineLength) {
     float linePosY = h.y / max(lineLength, 1e-6);
     h.x += linePosY * twistAmt;
 
+    // humanizedRadius must depend ONLY on uvLine.y (along-stroke position).
+    // If it depended on uvLine.x (perp), every body pixel at the same angle would
+    // see a different ring radius — making the ring a fuzzy band and the cap
+    // (single huR) detached from it as wobble grows.
     float humanizedRadius = radius_;
-    humanizedRadius += (noise01(uvLine * 1.0) - 0.5) * 0.04 * w;
+    humanizedRadius += (noise01(vec2(0.0, uvLine.y) * 1.0) - 0.5) * 0.04 * w;
     humanizedRadius += sin(uvLine.y * 3.0) * 0.019 * w;
     h.x += sin(uvLine.x * 30.0) * 0.02 * w;
     h.x += (noise01(uvLine * 5.0) - 0.5) * 0.005 * w;
