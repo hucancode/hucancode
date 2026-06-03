@@ -8,7 +8,6 @@
   import Orbs from "$lib/components/story/orbs.svelte";
   import planetIcon from "$icons/ph/planet.svg?raw";
   import dragonIcon from "$icons/game-icons/dragon.svg?raw";
-  import warriorIcon from "$icons/game-icons/lizard-tongue.svg?raw";
   import cubeIcon from "$icons/mdi/cube.svg?raw";
   import {
     init as rubikInit,
@@ -30,13 +29,6 @@
     destroy as legoDestroy,
   } from "$lib/scenes/lego";
   import {
-    init as warriorInit,
-    enter as warriorEnter,
-    update as warriorUpdate,
-    leave as warriorLeave,
-    destroy as warriorDestroy,
-  } from "$lib/scenes/warrior";
-  import {
     init,
     destroy,
     renderer,
@@ -49,17 +41,6 @@
   let ready = $state(false);
   const preloadAssets = [
     "/assets/gltf/dragon-low.glb",
-    "/assets/gltf/warrior.glb",
-    // "/assets/textures/body_Diffuse.png",
-    // "/assets/textures/body_Emissive.png",
-    // "/assets/textures/body_Glossiness.png",
-    // "/assets/textures/body_Normal.png",
-    // "/assets/textures/body_Specular.png",
-    // "/assets/textures/sword_Diffuse.png",
-    // "/assets/textures/sword_Emissive.png",
-    // "/assets/textures/sword_Glossiness.png",
-    // "/assets/textures/sword_Normal.png",
-    // "/assets/textures/sword_Specular.png",
   ];
 
   let showcases = [
@@ -87,15 +68,6 @@
       leave: taijiLeave,
       update: taijiUpdate,
       destroy: taijiDestroy,
-    },
-    {
-      name: "warrior",
-      icon: warriorIcon,
-      init: warriorInit,
-      enter: warriorEnter,
-      update: warriorUpdate,
-      leave: warriorLeave,
-      destroy: warriorDestroy,
     },
   ];
   let currentShowcase = 0;

@@ -37,6 +37,7 @@ const uniforms = {
   uTaper: { value: 4.0 },
   uInkFlow: { value: 1.0 },
   uOpacity: { value: 1.0 },
+  uWobble: { value: 0.3 },
   uBrushColor: { value: [0.05, 0.05, 0.05, 0.95] },
   uBgColor: { value: [1.0, 1.0, 0.875, 1.0] },
 };
@@ -186,6 +187,7 @@ export function setArcLength(v) { uniforms.uArcLength.value = v; }
 export function setWidth(v)     { uniforms.uWidth.value = v; }
 export function setTaper(v)     { uniforms.uTaper.value = v; }
 export function setInkFlow(v)   { uniforms.uInkFlow.value = v; }
+export function setWobble(v)    { uniforms.uWobble.value = v; }
 
 export function setControlPoints(points) {
   rebuildCurve(points);

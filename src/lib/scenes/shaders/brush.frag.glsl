@@ -10,6 +10,7 @@ uniform float uWidth;         // world units
 uniform float uTaper;         // 1..16, higher = less taper / sharper end
 uniform float uInkFlow;       // 0..1, 1=consistent, 0=blacker at tip, fades to tail
 uniform float uOpacity;       // global multiplier on stroke alpha
+uniform float uWobble;        // 0..1 scale on edge wobble amplitude
 uniform vec4  uBrushColor;
 uniform vec4  uBgColor;
 
@@ -183,11 +184,13 @@ void main() {
     float relArc = visibleLen - (arc - startArc);
     float w = uWidth * mix(0.9, 1.0, smoothstep(0.0, 1.0, relArc / visibleLen));
 
-    // humanize
-    float wobble = (noise01(vec2(arc * 8.0, 0.0)) - 0.5) * uWidth * 0.25;
-    sd += wobble;
-
-    float d = abs(sd) - w * 0.5;
+    // humanize: modulate stroke half-width using a continuous function of arc.
+    // applied identically in body and cap branches so the SDF stays continuous
+    // across the body/cap boundary — shifting sd asymmetrically (signed perp
+    // dist in body vs unsigned radial dist in caps) makes tip visibly detach.
+    float wobble = (noise01(vec2(arc * 8.0, 0.0)) - 0.5) * uWidth * 0.25 * uWobble;
+    float halfW = max(0.0, w * 0.5 + wobble);
+    float d = abs(sd) - halfW;
 
     vec2 uvLine = vec2(sd, relArc);
     float strokeA = brushStrokeAlpha(uvLine, p, vec2(w, visibleLen), d, uBrushColor.a) * uOpacity;

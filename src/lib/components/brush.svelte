@@ -11,6 +11,7 @@
     setWidth,
     setTaper,
     setInkFlow,
+    setWobble,
     setControlPoints,
     screenToWorld,
   } from "$lib/scenes/brush";
@@ -25,6 +26,7 @@
   let width = $state(0.05);
   let taper = $state(4);
   let inkFlow = $state(0.25);
+  let wobble = $state(0.9);
   let showPoints = $state(true);
 
   let vertexCount = $state(10);
@@ -44,6 +46,7 @@
   $effect(() => { if (ready) setWidth(width); });
   $effect(() => { if (ready) setTaper(taper); });
   $effect(() => { if (ready) setInkFlow(inkFlow); });
+  $effect(() => { if (ready) setWobble(wobble); });
   $effect(() => {
     if (ready && points.length >= 2) setControlPoints(points);
   });
@@ -254,6 +257,11 @@
       <span>ink flow</span>
       <input type="range" min="0" max="1" step="0.001" bind:value={inkFlow} />
       <output>{inkFlow.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>wobble</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={wobble} />
+      <output>{wobble.toFixed(2)}</output>
     </label>
     <hr />
     <label>
