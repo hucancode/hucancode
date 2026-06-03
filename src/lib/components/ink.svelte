@@ -13,6 +13,9 @@
     setClockwise,
     setTaper,
     setWobble,
+    setWidthEnd,
+    setWidthTaperPow,
+    setWidthAlign,
   } from "$lib/scenes/ink";
 
   let canvasEl;
@@ -27,6 +30,28 @@
   let clockwise = $state(false);
   let taper = $state(10.0);
   let wobble = $state(0.8);
+  let widthPreset = $state("uniform");
+  let widthEnd = $state(1.0);
+  let widthTaperPow = $state(1.0);
+  let widthAlign = $state("center"); // inside | center | outside
+
+  const widthAlignMap = { inside: 1, center: 0, outside: -1 };
+
+  const widthPresets = {
+    uniform:    { end: 1.0,  pow: 1.0 },
+    linear:     { end: 0.0,  pow: 1.0 },
+    easeOut:    { end: 0.0,  pow: 2.5 },   // stays thick, drops near tail
+    easeIn:     { end: 0.0,  pow: 0.4 },   // drops fast, thin most of stroke
+    custom:     null,
+  };
+
+  $effect(() => {
+    if (widthPreset === "custom") return;
+    const p = widthPresets[widthPreset];
+    if (!p) return;
+    widthEnd = p.end;
+    widthTaperPow = p.pow;
+  });
 
   $effect(() => { if (ready) setRadius(radius); });
   $effect(() => { if (ready) setAngleStart(angleStart); });
@@ -35,6 +60,9 @@
   $effect(() => { if (ready) setClockwise(clockwise); });
   $effect(() => { if (ready) setTaper(taper); });
   $effect(() => { if (ready) setWobble(wobble); });
+  $effect(() => { if (ready) setWidthEnd(widthEnd); });
+  $effect(() => { if (ready) setWidthTaperPow(widthTaperPow); });
+  $effect(() => { if (ready) setWidthAlign(widthAlignMap[widthAlign] ?? 0); });
 
   function loop() {
     frameID = requestAnimationFrame(loop);
@@ -77,35 +105,75 @@
 
   <div class="controls">
     <label>
-      <span>radius</span>
+      <span>Radius</span>
       <input type="range" min="0.1" max="0.95" step="0.001" bind:value={radius} />
       <output>{radius.toFixed(3)}</output>
     </label>
     <label>
-      <span>angle start</span>
+      <span>Angle Start</span>
       <input type="range" min="0" max="6.283" step="0.001" bind:value={angleStart} />
       <output>{angleStart.toFixed(2)}</output>
     </label>
     <label>
-      <span>sweep amt</span>
+      <span>Sweep Amt</span>
       <input type="range" min="0" max="1" step="0.001" bind:value={sweepAmt} />
       <output>{sweepAmt.toFixed(2)}</output>
     </label>
     <label>
-      <span>line width</span>
+      <span>Line Width</span>
       <input type="range" min="0.01" max="0.6" step="0.001" bind:value={lineWidth} />
       <output>{lineWidth.toFixed(3)}</output>
     </label>
     <label>
-      <span>taper</span>
+      <span>Taper</span>
       <input type="range" min="1" max="16" step="0.1" bind:value={taper} />
       <output>{taper.toFixed(1)}</output>
     </label>
     <label>
-      <span>wobble</span>
+      <span>Wobble</span>
       <input type="range" min="0" max="1" step="0.01" bind:value={wobble} />
       <output>{wobble.toFixed(2)}</output>
     </label>
+    <hr />
+    <label>
+      <span>Width Shape</span>
+      <select bind:value={widthPreset}>
+        <option value="uniform">Uniform</option>
+        <option value="linear">Linear</option>
+        <option value="easeOut">Ease-out</option>
+        <option value="easeIn">Ease-in</option>
+        <option value="custom">Custom</option>
+      </select>
+      <output></output>
+    </label>
+    <label>
+      <span>Tail width</span>
+      <input
+        type="range" min="0" max="1" step="0.01"
+        bind:value={widthEnd}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthEnd.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Taper curve</span>
+      <input
+        type="range" min="0.1" max="6" step="0.01"
+        bind:value={widthTaperPow}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthTaperPow.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Align</span>
+      <select bind:value={widthAlign}>
+        <option value="inside">Inside</option>
+        <option value="center">Center</option>
+        <option value="outside">Outside</option>
+      </select>
+      <output></output>
+    </label>
+    <hr />
     <label class="check">
       <input type="checkbox" bind:checked={clockwise} />
       <span>clockwise</span>
