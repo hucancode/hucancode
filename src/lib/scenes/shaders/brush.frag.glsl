@@ -4,8 +4,6 @@ uniform vec2  iResolution;
 uniform sampler2D curveTex;   // RGBA float: xy=point(world), z=arcLen, w=unused
 uniform int   curveLen;       // number of points
 uniform float curveTotalLen;
-uniform float uOffset;        // 0..1 start along curve
-uniform float uArcLength;     // 0..1 portion drawn
 uniform float uWidth;         // world units
 uniform float uTaper;         // 1..16, higher = less taper / sharper end
 uniform float uInkFlow;       // 0..1, 1=consistent, 0=blacker at tip, fades to tail
@@ -105,21 +103,6 @@ vec3 sdPolyline(vec2 p) {
     return vec3(bestSigned, bestArc, 0.0);
 }
 
-vec2 curvePointAtArc(float s) {
-    // Binary search — arc lengths are monotonically increasing
-    int lo = 0;
-    int hi = curveLen - 2;
-    for (int i = 0; i < 9; i++) {
-        if (lo >= hi) break;
-        int mid = (lo + hi) / 2;
-        if (sampleCurve(mid + 1).z < s) lo = mid + 1;
-        else hi = mid;
-    }
-    vec3 a = sampleCurve(lo);
-    vec3 b = sampleCurve(lo + 1);
-    return mix(a.xy, b.xy, (s - a.z) / max(b.z - a.z, 1e-6));
-}
-
 float brushStrokeAlpha(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
                        float sdGeometry, float brushAlpha) {
     float posInLineY = uvLine.y / max(lineSize.y, 1e-6);
@@ -168,25 +151,12 @@ void main() {
     float sd = pr.x;
     float arc = pr.y;
 
-    float startArc = uOffset * curveTotalLen;
-    float endArc   = startArc + uArcLength * curveTotalLen;
-    float visibleLen = max(endArc - startArc, 1e-6);
-
-    // clip by replacing dist with cap distance outside [start, end]
-    if (arc < startArc) {
-        vec2 sp = curvePointAtArc(startArc);
-        sd = distance(p, sp);
-        arc = startArc;
-    } else if (arc > endArc) {
-        vec2 ep = curvePointAtArc(endArc);
-        sd = distance(p, ep);
-        arc = endArc;
-    }
+    float visibleLen = max(curveTotalLen, 1e-6);
 
     // brush "head" is the tip (dragged end = high arc), so relArc runs 0 at the
     // head up to visibleLen at the tail. tAlong is the normalized along-stroke
     // distance from the head (0 = head/tip .. 1 = tail).
-    float relArc = visibleLen - (arc - startArc);
+    float relArc = visibleLen - arc;
 
     // width distribution along the stroke (ported from the ink playground):
     // full width (1.0) at the head, uWidthEnd at the tail, blended by a smoothstep

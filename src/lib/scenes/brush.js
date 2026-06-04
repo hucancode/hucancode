@@ -31,8 +31,6 @@ const uniforms = {
   curveLen: { value: 0 },
   curveTexWidth: { value: MAX_POINTS },
   curveTotalLen: { value: 1 },
-  uOffset: { value: 0.0 },
-  uArcLength: { value: 1.0 },
   uWidth: { value: 0.12 },
   uTaper: { value: 4.0 },
   uInkFlow: { value: 1.0 },
@@ -185,8 +183,6 @@ export function render() {
   renderer.render(scene, camera);
 }
 
-export function setOffset(v)    { uniforms.uOffset.value = v; }
-export function setArcLength(v) { uniforms.uArcLength.value = v; }
 export function setWidth(v)     { uniforms.uWidth.value = v; }
 export function setTaper(v)     { uniforms.uTaper.value = v; }
 export function setInkFlow(v)   { uniforms.uInkFlow.value = v; }

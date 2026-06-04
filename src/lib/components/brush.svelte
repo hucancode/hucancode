@@ -6,8 +6,6 @@
     destroy,
     render,
     resize,
-    setOffset,
-    setArcLength,
     setWidth,
     setTaper,
     setInkFlow,
@@ -24,8 +22,6 @@
   let frameID = 0;
   let observer;
 
-  let offset = $state(0);
-  let arcLength = $state(1);
   let width = $state(0.05);
   let taper = $state(4);
   let inkFlow = $state(0.25);
@@ -68,8 +64,6 @@
   let tipTarget = null;
   let dragging = $state(false);
 
-  $effect(() => { if (ready) setOffset(offset); });
-  $effect(() => { if (ready) setArcLength(arcLength); });
   $effect(() => { if (ready) setWidth(width); });
   $effect(() => { if (ready) setTaper(taper); });
   $effect(() => { if (ready) setInkFlow(inkFlow); });
@@ -263,16 +257,6 @@
   </div>
 
   <div class="controls">
-    <label>
-      <span>offset</span>
-      <input type="range" min="0" max="1" step="0.001" bind:value={offset} />
-      <output>{offset.toFixed(2)}</output>
-    </label>
-    <label>
-      <span>arc length</span>
-      <input type="range" min="0" max="1" step="0.001" bind:value={arcLength} />
-      <output>{arcLength.toFixed(2)}</output>
-    </label>
     <label>
       <span>width</span>
       <input type="range" min="0.01" max="0.4" step="0.001" bind:value={width} />
