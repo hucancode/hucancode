@@ -115,7 +115,6 @@
   <div class="stage">
     <canvas bind:this={canvasEl}></canvas>
   </div>
-
   <div class="controls">
     <label>
       <span>Radius</span>
@@ -219,6 +218,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+  @media(min-width: 768px) {
+    .ink-demo {
+      flex-direction: row;
+    }
   }
   .stage {
     position: relative;

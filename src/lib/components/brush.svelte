@@ -12,6 +12,9 @@
     setTaper,
     setInkFlow,
     setWobble,
+    setWidthEnd,
+    setWidthOffset,
+    setWidthRange,
     setControlPoints,
     screenToWorld,
   } from "$lib/scenes/brush";
@@ -28,6 +31,30 @@
   let inkFlow = $state(0.25);
   let wobble = $state(0.9);
   let showPoints = $state(true);
+
+  let widthPreset = $state('custom');
+  let widthEnd = $state(0.1);
+  // smoothstep width step: offset = where the width drops along the stroke
+  // (0 head/tip .. 1 tail), range = how soft the drop is (small = abrupt, large = gradual).
+  let widthOffset = $state(0.5);
+  let widthRange = $state(1.0);
+
+  const widthPresets = {
+    uniform:    { end: 1.0,  offset: 0.5,  range: 1.0 },  // no taper (tail = head width)
+    linear:     { end: 0.0,  offset: 0.5,  range: 1.0 },  // gentle full-length taper
+    easeOut:    { end: 0.0,  offset: 0.75, range: 0.5 },  // stays thick, drops late
+    easeIn:     { end: 0.0,  offset: 0.25, range: 0.5 },  // drops early, thin most
+    custom:     null,
+  };
+
+  $effect(() => {
+    if (widthPreset === "custom") return;
+    const p = widthPresets[widthPreset];
+    if (!p) return;
+    widthEnd = p.end;
+    widthOffset = p.offset;
+    widthRange = p.range;
+  });
 
   let vertexCount = $state(10);
   let chainLen = $state(1.0);
@@ -47,6 +74,9 @@
   $effect(() => { if (ready) setTaper(taper); });
   $effect(() => { if (ready) setInkFlow(inkFlow); });
   $effect(() => { if (ready) setWobble(wobble); });
+  $effect(() => { if (ready) setWidthEnd(widthEnd); });
+  $effect(() => { if (ready) setWidthOffset(widthOffset); });
+  $effect(() => { if (ready) setWidthRange(widthRange); });
   $effect(() => {
     if (ready && points.length >= 2) setControlPoints(points);
   });
@@ -265,6 +295,45 @@
     </label>
     <hr />
     <label>
+      <span>width shape</span>
+      <select bind:value={widthPreset}>
+        <option value="uniform">Uniform</option>
+        <option value="linear">Linear</option>
+        <option value="easeOut">Ease-out</option>
+        <option value="easeIn">Ease-in</option>
+        <option value="custom">Custom</option>
+      </select>
+      <output></output>
+    </label>
+    <label>
+      <span>tail width</span>
+      <input
+        type="range" min="0" max="1" step="0.01"
+        bind:value={widthEnd}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthEnd.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>step offset</span>
+      <input
+        type="range" min="0" max="1" step="0.01"
+        bind:value={widthOffset}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthOffset.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>step range</span>
+      <input
+        type="range" min="0" max="1.5" step="0.01"
+        bind:value={widthRange}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthRange.toFixed(2)}</output>
+    </label>
+    <hr />
+    <label>
       <span>vertex count</span>
       <input type="range" min="2" max="40" step="1" bind:value={vertexCount} />
       <output>{vertexCount}</output>
@@ -301,6 +370,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+  @media(min-width: 768px) {
+    .brush-demo {
+      flex-direction: row;
+    }
   }
   .stage {
     position: relative;

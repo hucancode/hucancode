@@ -22,8 +22,34 @@
 
   // global params
   let width        = $state(0.05);
-  let taper        = $state(1);
+  let taper        = $state(16);
   let inkFlow      = $state(0.25);
+
+  // variable tail width (ported from the ink playground). smoothstep "step":
+  // tail width = widthEnd fraction of head width; offset = where the width drops
+  // (0 head/tip .. 1 tail), range = how soft the drop is (small = abrupt, large = gradual).
+  let widthPreset  = $state('linear');
+  let widthEnd     = $state(0.0);
+  let widthOffset  = $state(0.5);
+  let widthRange   = $state(1.0);
+
+  const widthPresets = {
+    uniform:    { end: 1.0,  offset: 0.5,  range: 1.0 },  // no extra taper
+    linear:     { end: 0.0,  offset: 0.5,  range: 1.0 },  // gentle full-length taper
+    easeOut:    { end: 0.0,  offset: 0.75, range: 0.5 },  // stays thick, drops late
+    easeIn:     { end: 0.0,  offset: 0.25, range: 0.5 },  // drops early, thin most
+    custom:     null,
+  };
+
+  $effect(() => {
+    if (widthPreset === "custom") return;
+    const p = widthPresets[widthPreset];
+    if (!p) return;
+    widthEnd = p.end;
+    widthOffset = p.offset;
+    widthRange = p.range;
+  });
+
   let segmentCount = $state(12);
   let spiritLen     = $state(0.2);
   let propSpeed    = $state(0.4);
@@ -327,6 +353,9 @@
         offset: 0,
         arcLength: 1,
         opacity,
+        widthEnd,
+        widthOffset,
+        widthRange,
       };
     });
     updateSpirits(payload);
@@ -441,11 +470,6 @@
       <span>auto spawn</span>
     </label>
     <label>
-      <span>spawn every</span>
-      <input type="range" min="0.2" max="6" step="0.1" bind:value={spawnEverySec} disabled={!autoSpawn} />
-      <output>{spawnEverySec.toFixed(1)}s</output>
-    </label>
-    <label>
       <span>max spirits</span>
       <input type="range" min="1" max="32" step="1" bind:value={maxSpirits} />
       <output>{maxSpirits}</output>
@@ -550,6 +574,44 @@
       <output>{taper.toFixed(1)}</output>
     </label>
     <label>
+      <span>width shape</span>
+      <select bind:value={widthPreset}>
+        <option value="uniform">Uniform</option>
+        <option value="linear">Linear</option>
+        <option value="easeOut">Ease-out</option>
+        <option value="easeIn">Ease-in</option>
+        <option value="custom">Custom</option>
+      </select>
+      <output></output>
+    </label>
+    <label>
+      <span>tail width</span>
+      <input
+        type="range" min="0" max="1" step="0.01"
+        bind:value={widthEnd}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthEnd.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>step offset</span>
+      <input
+        type="range" min="0" max="1" step="0.01"
+        bind:value={widthOffset}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthOffset.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>step range</span>
+      <input
+        type="range" min="0" max="1.5" step="0.01"
+        bind:value={widthRange}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthRange.toFixed(2)}</output>
+    </label>
+    <label>
       <span>ink flow</span>
       <input type="range" min="0" max="1" step="0.001" bind:value={inkFlow} />
       <output>{inkFlow.toFixed(2)}</output>
@@ -564,6 +626,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+  @media(min-width: 768px) {
+    .brush-demo {
+      flex-direction: row;
+    }
   }
   .stage {
     position: relative;

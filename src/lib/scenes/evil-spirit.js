@@ -53,6 +53,9 @@ function makeSpirit() {
     uTaper: { value: 4.0 },
     uInkFlow: { value: 0.25 },
     uOpacity: { value: 1.0 },
+    uWidthEnd: { value: 0.0 },
+    uWidthOffset: { value: 0.5 },
+    uWidthRange: { value: 1.0 },
     uBrushColor: { value: [0.05, 0.05, 0.05, 0.95] },
     uBgColor: { value: [0.0, 0.0, 0.0, 0.0] },
   };
@@ -194,6 +197,9 @@ export function updateSpirits(spirits) {
     if (src.offset   != null) dst.uniforms.uOffset.value   = src.offset;
     if (src.arcLength!= null) dst.uniforms.uArcLength.value= src.arcLength;
     if (src.opacity  != null) dst.uniforms.uOpacity.value  = src.opacity;
+    if (src.widthEnd    != null) dst.uniforms.uWidthEnd.value    = src.widthEnd;
+    if (src.widthOffset != null) dst.uniforms.uWidthOffset.value = src.widthOffset;
+    if (src.widthRange  != null) dst.uniforms.uWidthRange.value  = src.widthRange;
     if (src.color)            dst.uniforms.uBrushColor.value = src.color;
   }
 }

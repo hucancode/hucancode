@@ -11,6 +11,9 @@ uniform float uTaper;         // 1..16, higher = less taper / sharper end
 uniform float uInkFlow;       // 0..1, 1=consistent, 0=blacker at tip, fades to tail
 uniform float uOpacity;       // global multiplier on stroke alpha
 uniform float uWobble;        // 0..1 scale on edge wobble amplitude
+uniform float uWidthEnd;      // tail width as fraction of head width (1.0 = uniform, 0.0 = pinch to nothing)
+uniform float uWidthOffset;   // width step centre along the stroke (0 = head/tip .. 1 = tail)
+uniform float uWidthRange;    // width step transition width (small = hard step, large = gradual)
 uniform vec4  uBrushColor;
 uniform vec4  uBgColor;
 
@@ -180,9 +183,20 @@ void main() {
         arc = endArc;
     }
 
-    // brush "head" is the tip (dragged end = high arc). flip so head=thick, tail=thin.
+    // brush "head" is the tip (dragged end = high arc), so relArc runs 0 at the
+    // head up to visibleLen at the tail. tAlong is the normalized along-stroke
+    // distance from the head (0 = head/tip .. 1 = tail).
     float relArc = visibleLen - (arc - startArc);
-    float w = uWidth * mix(0.9, 1.0, smoothstep(0.0, 1.0, relArc / visibleLen));
+
+    // width distribution along the stroke (ported from the ink playground):
+    // full width (1.0) at the head, uWidthEnd at the tail, blended by a smoothstep
+    // "step" whose centre (uWidthOffset) and softness (uWidthRange) are controllable.
+    //   uWidthOffset moves where the width drops (low = drops early, high = drops late),
+    //   uWidthRange sets how soft the drop is (small = abrupt step, large = gradual).
+    float tAlong = clamp(relArc / visibleLen, 0.0, 1.0);
+    float halfRange = max(uWidthRange, 1e-3) * 0.5;
+    float widthCurve = smoothstep(uWidthOffset - halfRange, uWidthOffset + halfRange, tAlong);
+    float w = uWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
 
     // humanize: modulate stroke half-width using a continuous function of arc.
     // applied identically in body and cap branches so the SDF stays continuous

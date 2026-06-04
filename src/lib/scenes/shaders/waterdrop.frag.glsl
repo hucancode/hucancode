@@ -8,9 +8,12 @@ uniform float curveTexWidth;
 uniform float uOffset;
 uniform float uArcLength;
 uniform float uWidth;
-uniform float uTaper;
-uniform float uInkFlow;       // unused (API compat)
+uniform float uTaper;         // unused (API compat) — taper is a brush-shader control
+uniform float uInkFlow;       // 0..1, 1=consistent, 0=opaque at head, fades to tail
 uniform float uOpacity;
+uniform float uWidthEnd;      // tail width as fraction of head width (1.0 = uniform, 0.0 = pinch to nothing)
+uniform float uWidthOffset;   // width step centre along the stroke (0 = head/tip .. 1 = tail)
+uniform float uWidthRange;    // width step transition width (small = hard step, large = gradual)
 uniform vec4  uBrushColor;
 uniform vec4  uBgColor;
 
@@ -100,17 +103,28 @@ void main() {
         arc = endArc;
     }
 
-    // t01: 0 at tip (full width), 1 at tail (zero width)
+    // t01: 0 at the head (full width), 1 at the tail
     float t01 = clamp((endArc - arc) / visibleLen, 0.0, 1.0);
-    float taper = max(uTaper, 0.0001);
-    // wide along most of stroke, sharp pointy collapse near tail when taper>1
-    float w = uWidth * (1.0 - pow(t01, taper));
+
+    // variable tail width — identical to the brush shader. A smoothstep "step"
+    // scales the head width down to uWidthEnd at the tail. uWidthOffset moves where
+    // the width drops (0 head .. 1 tail); uWidthRange sets how soft the drop is
+    // (small = abrupt step, large = gradual). uTaper plays no part here.
+    float halfRange = max(uWidthRange, 1e-3) * 0.5;
+    float widthCurve = smoothstep(uWidthOffset - halfRange, uWidthOffset + halfRange, t01);
+    float w = uWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
     float d = sd - w * 0.5;
 
     // antialiased edge
     float aa = 2.0 / iResolution.y;
     float strokeA = smoothstep(aa, -aa, d);
     strokeA *= uOpacity * uBrushColor.a;
+
+    // ink flow (same as the brush shader): uInkFlow=1 keeps alpha consistent along
+    // the stroke; lower values fade the tail out, leaving ink concentrated at the
+    // head. t01 runs 0 at the head .. 1 at the tail.
+    float flowMul = mix(smoothstep(1.0, 0.0, t01), 1.0, clamp(uInkFlow, 0.0, 1.0));
+    strokeA *= flowMul;
 
     // 'over' composite with background
     float outA = strokeA + uBgColor.a * (1.0 - strokeA);
