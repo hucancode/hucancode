@@ -21,9 +21,13 @@ const uniforms = {
   uClockwise:  { value: 0.0 },
   uTaper:      { value: 2.5 },
   uWobble:     { value: 0.25 },
+  uStrands:    { value: 1.0 },
+  uInkFlow:    { value: 1.0 },
   uWidthEnd:   { value: 1.0 },
-  uWidthTaperPow: { value: 1.0 },
+  uWidthOffset: { value: 0.5 },
+  uWidthRange:  { value: 1.0 },
   uWidthAnchor: { value: 0.5 },
+  uCartesian:  { value: 0.0 },
   uBrushColor: { value: [0.0, 0.0, 0.0, 0.9] },
   uBgColor:    { value: [1.0, 1.0, 0.875, 1.0] },
 };
@@ -63,9 +67,13 @@ export function setLineWidth(v)  { uniforms.uLineWidth.value = v; }
 export function setClockwise(b)  { uniforms.uClockwise.value = b ? 1.0 : 0.0; }
 export function setTaper(v)      { uniforms.uTaper.value = v; }
 export function setWobble(v)     { uniforms.uWobble.value = v; }
+export function setStrands(v)    { uniforms.uStrands.value = v; }
+export function setInkFlow(v)    { uniforms.uInkFlow.value = v; }
 export function setWidthEnd(v)   { uniforms.uWidthEnd.value = v; }
-export function setWidthTaperPow(v) { uniforms.uWidthTaperPow.value = v; }
+export function setWidthOffset(v) { uniforms.uWidthOffset.value = v; }
+export function setWidthRange(v)  { uniforms.uWidthRange.value = v; }
 export function setWidthAnchor(v) { uniforms.uWidthAnchor.value = v; }
+export function setCartesian(b)  { uniforms.uCartesian.value = b ? 1.0 : 0.0; }
 
 export function destroy() {
   if (mesh) {

@@ -13,9 +13,13 @@
     setClockwise,
     setTaper,
     setWobble,
+    setStrands,
+    setInkFlow,
     setWidthEnd,
-    setWidthTaperPow,
+    setWidthOffset,
+    setWidthRange,
     setWidthAnchor,
+    setCartesian,
   } from "$lib/scenes/ink";
 
   let canvasEl;
@@ -24,22 +28,28 @@
   let observer;
 
   let radius = $state(0.6);
-  let angleStart = $state(0.2);
-  let sweepAmt = $state(0.92);
+  let angleStart = $state(0.0);
+  let sweepAmt = $state(1.0);
   let lineWidth = $state(0.3);
   let clockwise = $state(false);
-  let taper = $state(10.0);
-  let wobble = $state(0.8);
-  let widthPreset = $state("uniform");
-  let widthEnd = $state(1.0);
-  let widthTaperPow = $state(1.0);
-  let widthAnchor = $state(0.5); // 0 = inside, 0.5 = center, 1 = outside
+  let taper = $state(5.0);
+  let wobble = $state(0.0);
+  let strands = $state(1.5);
+  let inkFlow = $state(0.5);
+  let widthPreset = $state('custom');
+  let widthEnd = $state(0.1);
+  // smoothstep width step: offset = where the width drops along the stroke
+  // (0 tip .. 1 tail), range = how soft the drop is (small = abrupt, large = gradual).
+  let widthOffset = $state(0.5);
+  let widthRange = $state(1.0);
+  let widthAnchor = $state(1.0); // 0 = inside, 0.5 = center, 1 = outside
+  let cartesian = $state(false); // false = polar (arc), true = cartesian (line)
 
   const widthPresets = {
-    uniform:    { end: 1.0,  pow: 1.0 },
-    linear:     { end: 0.0,  pow: 1.0 },
-    easeOut:    { end: 0.0,  pow: 2.5 },   // stays thick, drops near tail
-    easeIn:     { end: 0.0,  pow: 0.4 },   // drops fast, thin most of stroke
+    uniform:    { end: 1.0,  offset: 0.5,  range: 1.0 },  // no taper (end = tip width)
+    linear:     { end: 0.0,  offset: 0.5,  range: 1.0 },  // gentle full-length taper
+    easeOut:    { end: 0.0,  offset: 0.75, range: 0.5 },  // stays thick, drops late
+    easeIn:     { end: 0.0,  offset: 0.25, range: 0.5 },  // drops early, thin most
     custom:     null,
   };
 
@@ -48,7 +58,8 @@
     const p = widthPresets[widthPreset];
     if (!p) return;
     widthEnd = p.end;
-    widthTaperPow = p.pow;
+    widthOffset = p.offset;
+    widthRange = p.range;
   });
 
   $effect(() => { if (ready) setRadius(radius); });
@@ -58,9 +69,13 @@
   $effect(() => { if (ready) setClockwise(clockwise); });
   $effect(() => { if (ready) setTaper(taper); });
   $effect(() => { if (ready) setWobble(wobble); });
+  $effect(() => { if (ready) setStrands(strands); });
+  $effect(() => { if (ready) setInkFlow(inkFlow); });
   $effect(() => { if (ready) setWidthEnd(widthEnd); });
-  $effect(() => { if (ready) setWidthTaperPow(widthTaperPow); });
+  $effect(() => { if (ready) setWidthOffset(widthOffset); });
+  $effect(() => { if (ready) setWidthRange(widthRange); });
   $effect(() => { if (ready) setWidthAnchor(widthAnchor); });
+  $effect(() => { if (ready) setCartesian(cartesian); });
 
   function loop() {
     frameID = requestAnimationFrame(loop);
@@ -109,7 +124,7 @@
     </label>
     <label>
       <span>Angle Start</span>
-      <input type="range" min="0" max="6.283" step="0.001" bind:value={angleStart} />
+      <input type="range" min="-6.283" max="6.283" step="0.001" bind:value={angleStart} />
       <output>{angleStart.toFixed(2)}</output>
     </label>
     <label>
@@ -131,6 +146,16 @@
       <span>Wobble</span>
       <input type="range" min="0" max="1" step="0.01" bind:value={wobble} />
       <output>{wobble.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Strands</span>
+      <input type="range" min="0.1" max="4" step="0.01" bind:value={strands} />
+      <output>{strands.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Ink Flow</span>
+      <input type="range" min="0.2" max="3" step="0.01" bind:value={inkFlow} />
+      <output>{inkFlow.toFixed(2)}</output>
     </label>
     <hr />
     <label>
@@ -154,13 +179,22 @@
       <output>{widthEnd.toFixed(2)}</output>
     </label>
     <label>
-      <span>Taper curve</span>
+      <span>Step offset</span>
       <input
-        type="range" min="0.1" max="6" step="0.01"
-        bind:value={widthTaperPow}
+        type="range" min="0" max="1" step="0.01"
+        bind:value={widthOffset}
         oninput={() => (widthPreset = "custom")}
       />
-      <output>{widthTaperPow.toFixed(2)}</output>
+      <output>{widthOffset.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Step range</span>
+      <input
+        type="range" min="0" max="1.5" step="0.01"
+        bind:value={widthRange}
+        oninput={() => (widthPreset = "custom")}
+      />
+      <output>{widthRange.toFixed(2)}</output>
     </label>
     <label>
       <span>Anchor</span>
@@ -172,6 +206,10 @@
       <input type="checkbox" bind:checked={clockwise} />
       <span>clockwise</span>
     </label>
+    <div class="square" role="group">
+      <label><input type="radio" name="coord" value={false} bind:group={cartesian} /> polar</label>
+      <label><input type="radio" name="coord" value={true}  bind:group={cartesian} /> cartesian</label>
+    </div>
   </div>
 </div>
 

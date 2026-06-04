@@ -3,7 +3,6 @@
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { gtag } from "$lib/ga";
-  import init from "$lib/wasm/dragon/flying-dragon.js";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
   const whiteList = ["This isn't actually an error!"];
@@ -21,9 +20,14 @@
         });
         throw Error("WebGPU not supported.");
       }
+      // Dynamic import so a missing/failed wasm glue module is caught here and
+      // shown as the fallback video, instead of crashing the whole route at
+      // module-evaluation time (a static top-level import can't be try/caught).
+      const { default: init } = await import("$lib/wasm/dragon/flying-dragon.js");
       await init();
     } catch (e) {
-      let real = whiteList.every((token) => e.message.indexOf(token) < 0);
+      const msg = e?.message ?? String(e);
+      let real = whiteList.every((token) => msg.indexOf(token) < 0);
       if (real) {
         error = true;
         throw e;

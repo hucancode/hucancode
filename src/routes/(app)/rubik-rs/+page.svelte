@@ -3,7 +3,6 @@
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { gtag } from "$lib/ga";
-  import init from "$lib/wasm/rubik/rubik.js";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import Idea from "$icons/line-md/lightbulb.svg?raw";
 
@@ -14,9 +13,14 @@
   let canvas = $state();
   onMount(async () => {
     try {
+      // Dynamic import so a missing/failed wasm glue module is caught here and
+      // shown as the fallback video, instead of crashing the whole route at
+      // module-evaluation time (a static top-level import can't be try/caught).
+      const { default: init } = await import("$lib/wasm/rubik/rubik.js");
       await init();
     } catch (e) {
-      let real = whiteList.every((token) => e.message.indexOf(token) < 0);
+      const msg = e?.message ?? String(e);
+      let real = whiteList.every((token) => msg.indexOf(token) < 0);
       if (real) {
         error = true;
         throw e;
