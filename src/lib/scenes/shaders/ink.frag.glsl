@@ -114,9 +114,11 @@ vec3 colorBrushStrokeDonut(vec2 uv, vec3 inpColor, vec4 brushColor,
     float strokeLen = lineLength * sweep;
 
     // width distribution: full at tip (start), uWidthEnd at tail.
-    // pow(1-t, uWidthTaperPow) shapes the falloff curve.
+    // cos(t*PI/2)^p has zero slope at the tip for ANY p>0 — keeps the body
+    // tip flush with the cap disc, no disconnect even for p<1.
+    // p=1 ≈ gentle smooth taper; p>1 stays wide longer; p<1 drops faster near tail.
     float tAlong = clamp(along / max(strokeLen, 1e-6), 0.0, 1.0);
-    float widthCurve = pow(1.0 - tAlong, max(uWidthTaperPow, 1e-3));
+    float widthCurve = pow(cos(tAlong * PI * 0.5), max(uWidthTaperPow, 1e-3));
     float lineWidth1 = lineWidth * mix(clamp(uWidthEnd, 0.0, 1.0), 1.0, widthCurve);
 
     vec3 hu = humanizeBrushStrokeDonut(uvLine, radius_, lineLength);
