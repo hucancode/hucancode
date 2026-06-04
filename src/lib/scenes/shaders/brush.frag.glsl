@@ -1,9 +1,16 @@
 precision highp float;
 
 uniform vec2  iResolution;
-uniform sampler2D curveTex;   // RGBA float: xy=point(world), z=arcLen, w=unused
-uniform int   curveLen;       // number of points
-uniform float curveTotalLen;
+uniform sampler2D curveTex;   // RGBA float: xy=point(world), z=arcLen(per-chain), w=unused
+uniform int   curveLen;       // body sample count
+uniform float curveTotalLen;  // body total arc length
+uniform int   curveW1Start;   // index where whisker 1 samples begin in curveTex
+uniform int   curveW1Len;
+uniform float curveW1TotalLen;
+uniform int   curveW2Start;
+uniform int   curveW2Len;
+uniform float curveW2TotalLen;
+uniform float uWhiskerWidth;  // world units, half-width applied at base
 uniform float uWidth;         // world units
 uniform float uTaper;         // 1..16, higher = less taper / sharper end
 uniform float uInkFlow;       // 0..1, 1=consistent, 0=blacker at tip, fades to tail
@@ -14,6 +21,10 @@ uniform float uWidthOffset;   // width step centre along the stroke (0 = head/ti
 uniform float uWidthRange;    // width step transition width (small = hard step, large = gradual)
 uniform vec4  uBrushColor;
 uniform vec4  uBgColor;
+uniform vec2  uHeadPos;       // world-space tip position
+uniform vec2  uHeadDir;       // normalized chain direction at tip (nose points along this)
+uniform float uHeadSize;      // world units per local-space unit
+uniform float uShowHead;      // 0 = hidden, 1 = visible
 
 varying vec2 vUV;
 
@@ -69,29 +80,28 @@ vec3 segProject(vec2 p, vec2 a, vec2 b) {
     return vec3(length(perp) * side, t / L, L);
 }
 
-// returns vec3(signedDist, arcLenAtClosest, _)
-vec3 sdPolyline(vec2 p) {
-    // Coarse: sample every STRIDE-th point to find nearest region
+// returns vec3(signedDist, arcLenAtClosest, _) over [startIdx, startIdx+len)
+vec3 sdPolylineRange(vec2 p, int startIdx, int len) {
+    if (len < 2) return vec3(1e9, 0.0, 0.0);
     const int STRIDE = 8;
     float coarseBest = 1e9;
     int coarseI = 0;
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 64; i++) {
         int idx = i * STRIDE;
-        if (idx >= curveLen) break;
-        float d = length(p - sampleCurve(idx).xy);
+        if (idx >= len) break;
+        float d = length(p - sampleCurve(startIdx + idx).xy);
         if (d < coarseBest) { coarseBest = d; coarseI = idx; }
     }
-    // Fine: full segment check within ±STRIDE of closest point
     float bestAbs = 1e9;
     float bestSigned = 1e9;
     float bestArc = 0.0;
     int flo = max(0, coarseI - STRIDE);
-    int fhi = min(curveLen - 1, coarseI + STRIDE);
+    int fhi = min(len - 1, coarseI + STRIDE);
     for (int i = 0; i < 16; i++) {
         int idx = flo + i;
         if (idx >= fhi) break;
-        vec3 a3 = sampleCurve(idx);
-        vec3 b3 = sampleCurve(idx + 1);
+        vec3 a3 = sampleCurve(startIdx + idx);
+        vec3 b3 = sampleCurve(startIdx + idx + 1);
         vec3 r  = segProject(p, a3.xy, b3.xy);
         float ad = abs(r.x);
         if (ad < bestAbs) {
@@ -101,6 +111,77 @@ vec3 sdPolyline(vec2 p) {
         }
     }
     return vec3(bestSigned, bestArc, 0.0);
+}
+
+vec3 sdPolyline(vec2 p) {
+    return sdPolylineRange(p, 0, curveLen);
+}
+
+// Thin tapered whisker stroke. arc=0 at anchor (base), arc=totalLen at free end.
+float whiskerAlpha(int startIdx, int len, float totalLen, vec2 p) {
+    if (len < 2) return 0.0;
+    vec3 pr = sdPolylineRange(p, startIdx, len);
+    float t = clamp(pr.y / max(totalLen, 1e-6), 0.0, 1.0);
+    // taper: full base width -> ~25% at tip
+    float halfW = uWhiskerWidth * 0.5 * mix(1.0, 0.25, t);
+    float d = abs(pr.x) - halfW;
+    float aa = 2.5 / iResolution.y;
+    float edge = 1.0 - smoothstep(0.0, aa, d);
+    // slight noise dither along arc so it looks ink-like
+    float n = noise01(vec2(pr.y * 80.0, pr.x * 200.0));
+    edge *= mix(0.85, 1.0, n);
+    return edge * uBrushColor.a;
+}
+
+// ---------- dragon head SDF ----------
+float sdSegment(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+float sdCapsule(vec2 p, vec2 a, vec2 b, float r) {
+    return sdSegment(p, a, b) - r;
+}
+float sdEllipse(vec2 p, vec2 r) {
+    return (length(p / r) - 1.0) * min(r.x, r.y);
+}
+float smin2(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+// Top-down chinese dragon head silhouette.
+// Local frame: nose tip near (0,0), dragon body extends in -x direction.
+float sdDragonHead(vec2 p) {
+    vec2 pm = vec2(p.x, abs(p.y)); // mirror about x axis
+
+    // Snout: long narrow capsule tapering from nose back into head
+    float snout = sdCapsule(p, vec2(0.05, 0.0), vec2(-0.55, 0.0), 0.08);
+    // Head dome at back
+    float dome = sdEllipse(p - vec2(-0.82, 0.0), vec2(0.34, 0.32));
+    // Cheek bumps along sides of head
+    float cheek = sdCapsule(pm, vec2(-0.55, 0.0), vec2(-0.78, 0.26), 0.07);
+    float head = smin2(snout, dome, 0.12);
+    head = smin2(head, cheek, 0.06);
+
+    // Lower jaw chunk (slight protrusion below snout center)
+    float jaw = sdEllipse(p - vec2(-0.30, 0.0), vec2(0.22, 0.13));
+    head = smin2(head, jaw, 0.08);
+
+    // Horns: from back of head, swept out and back
+    float horn = sdCapsule(pm, vec2(-0.85, 0.18), vec2(-1.30, 0.46), 0.040);
+    float hornTip = sdCapsule(pm, vec2(-1.30, 0.46), vec2(-1.48, 0.62), 0.022);
+    float horns = min(horn, hornTip);
+
+    // Mane spikes radiating from back of head
+    float mane1 = sdCapsule(pm, vec2(-1.05, 0.10), vec2(-1.40, 0.18), 0.028);
+    float mane2 = sdCapsule(p,  vec2(-1.10, 0.00), vec2(-1.50, 0.00), 0.030);
+    float mane  = min(mane1, mane2);
+
+    float d = head;
+    d = min(d, horns);
+    d = min(d, mane);
+    return d;
 }
 
 float brushStrokeAlpha(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
@@ -179,8 +260,32 @@ void main() {
     vec2 uvLine = vec2(sd, relArc);
     float strokeA = brushStrokeAlpha(uvLine, p, vec2(w, visibleLen), d, uBrushColor.a) * uOpacity;
 
-    // 'over' composite: stroke over background
-    float outA = strokeA + uBgColor.a * (1.0 - strokeA);
-    vec3 outRGB = (strokeA * uBrushColor.rgb + uBgColor.rgb * uBgColor.a * (1.0 - strokeA)) / max(outA, 1e-6);
+    // Dragon head silhouette at chain tip
+    float headA = 0.0;
+    if (uShowHead > 0.5 && uHeadSize > 1e-4) {
+        vec2 hd = uHeadDir;
+        float hl = length(hd);
+        if (hl > 1e-5) {
+            hd /= hl;
+            vec2 perp = vec2(-hd.y, hd.x);
+            vec2 rel = p - uHeadPos;
+            // local: x = along direction (positive = forward, into nose), y = perpendicular
+            vec2 pLocal = vec2(dot(rel, hd), dot(rel, perp)) / uHeadSize;
+            // pivot at eye: shift so eye lands at chain tip (snout protrudes forward)
+            const float EYE_OFFSET = 0.55;
+            float headSD = sdDragonHead(pLocal - vec2(EYE_OFFSET, 0.0)) * uHeadSize;
+            float aa = 2.0 / iResolution.y;
+            headA = (1.0 - smoothstep(-aa, aa, headSD)) * uBrushColor.a;
+        }
+    }
+
+    float w1A = whiskerAlpha(curveW1Start, curveW1Len, curveW1TotalLen, p);
+    float w2A = whiskerAlpha(curveW2Start, curveW2Len, curveW2TotalLen, p);
+
+    float inkA = max(max(strokeA, headA), max(w1A, w2A));
+
+    // 'over' composite: ink over background
+    float outA = inkA + uBgColor.a * (1.0 - inkA);
+    vec3 outRGB = (inkA * uBrushColor.rgb + uBgColor.rgb * uBgColor.a * (1.0 - inkA)) / max(outA, 1e-6);
     gl_FragColor = vec4(outRGB, outA);
 }

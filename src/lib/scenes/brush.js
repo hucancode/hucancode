@@ -15,8 +15,11 @@ import {
 import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
 import BRUSH_FRAGMENT_SHADER from "$lib/scenes/shaders/brush.frag.glsl?raw";
 
-const MAX_POINTS = 256;
+const MAX_POINTS = 512;
 const SAMPLES_PER_SEGMENT = 12;
+const WHISKER_SAMPLES_PER_SEG = 4;
+const BODY_BUDGET = 320;          // reserved slots for body samples
+const WHISKER_BUDGET = 80;        // reserved slots per whisker (W1 / W2)
 
 let scene, camera, renderer, mesh;
 let curveTex;
@@ -41,6 +44,17 @@ const uniforms = {
   uWidthRange: { value: 1.0 },
   uBrushColor: { value: [0.05, 0.05, 0.05, 0.95] },
   uBgColor: { value: [1.0, 1.0, 0.875, 1.0] },
+  uHeadPos: { value: new Vector2(0, 0) },
+  uHeadDir: { value: new Vector2(1, 0) },
+  uHeadSize: { value: 0.25 },
+  uShowHead: { value: 1.0 },
+  curveW1Start: { value: BODY_BUDGET },
+  curveW1Len: { value: 0 },
+  curveW1TotalLen: { value: 1 },
+  curveW2Start: { value: BODY_BUDGET + WHISKER_BUDGET },
+  curveW2Len: { value: 0 },
+  curveW2TotalLen: { value: 1 },
+  uWhiskerWidth: { value: 0.015 },
 };
 
 function allocTexture() {
@@ -92,60 +106,78 @@ function sampleBezier(seg, t) {
   };
 }
 
-function rebuildCurve(controlPoints) {
-  if (controlPoints.length < 2) {
-    curveLen = 0;
-    curveTotalLen = 0;
-    uniforms.curveLen.value = 0;
-    uniforms.curveTotalLen.value = 1;
-    return;
+// Write a smoothed polyline into curveData[startSlot ... startSlot+budget).
+// Returns { len, totalLen }. Bezier-smooths when perSegment > 1; with perSegment=1
+// the raw control polyline is written directly (used for whiskers).
+function writeChain(controlPoints, startSlot, budget, perSegment) {
+  if (controlPoints.length < 2 || budget < 2) {
+    return { len: 0, totalLen: 0 };
   }
 
-  const segs = buildBezierSegments(controlPoints);
-  // cap per-segment sample count so total samples fit MAX_POINTS even with high N
-  const perSeg = Math.max(1, Math.min(SAMPLES_PER_SEGMENT, Math.floor((MAX_POINTS - 1) / segs.length)));
-  let totalSamples = segs.length * perSeg + 1;
-  if (totalSamples > MAX_POINTS) totalSamples = MAX_POINTS;
-
-  // generate samples
-  const pts = new Array(totalSamples);
-  let idx = 0;
-  for (let s = 0; s < segs.length && idx < totalSamples; s++) {
-    for (let k = 0; k < perSeg && idx < totalSamples; k++) {
-      pts[idx++] = sampleBezier(segs[s], k / perSeg);
+  let pts;
+  if (perSegment <= 1) {
+    pts = controlPoints.slice(0, Math.min(controlPoints.length, budget));
+  } else {
+    const segs = buildBezierSegments(controlPoints);
+    const perSeg = Math.max(1, Math.min(perSegment, Math.floor((budget - 1) / segs.length)));
+    let totalSamples = Math.min(segs.length * perSeg + 1, budget);
+    pts = new Array(totalSamples);
+    let idx = 0;
+    for (let s = 0; s < segs.length && idx < totalSamples; s++) {
+      for (let k = 0; k < perSeg && idx < totalSamples; k++) {
+        pts[idx++] = sampleBezier(segs[s], k / perSeg);
+      }
     }
+    if (idx < totalSamples) {
+      const last = segs[segs.length - 1];
+      pts[idx++] = { x: last.p1.x, y: last.p1.y };
+    }
+    pts.length = idx;
   }
-  if (idx < totalSamples) {
-    const last = segs[segs.length - 1];
-    pts[idx++] = { x: last.p1.x, y: last.p1.y };
-  }
-  totalSamples = idx;
 
-  // cumulative arc length + write to texture
   let acc = 0;
-  for (let i = 0; i < totalSamples; i++) {
+  for (let i = 0; i < pts.length; i++) {
     if (i > 0) {
       const dx = pts[i].x - pts[i - 1].x;
       const dy = pts[i].y - pts[i - 1].y;
       acc += Math.hypot(dx, dy);
     }
-    curveData[i * 4 + 0] = pts[i].x;
-    curveData[i * 4 + 1] = pts[i].y;
-    curveData[i * 4 + 2] = acc;
-    curveData[i * 4 + 3] = 0;
+    const o = (startSlot + i) * 4;
+    curveData[o + 0] = pts[i].x;
+    curveData[o + 1] = pts[i].y;
+    curveData[o + 2] = acc;
+    curveData[o + 3] = 0;
   }
-  // zero remainder
-  for (let i = totalSamples; i < MAX_POINTS; i++) {
-    curveData[i * 4 + 0] = 0;
-    curveData[i * 4 + 1] = 0;
-    curveData[i * 4 + 2] = 0;
-    curveData[i * 4 + 3] = 0;
+  for (let i = pts.length; i < budget; i++) {
+    const o = (startSlot + i) * 4;
+    curveData[o + 0] = 0;
+    curveData[o + 1] = 0;
+    curveData[o + 2] = 0;
+    curveData[o + 3] = 0;
   }
-  curveTex.needsUpdate = true;
-  curveLen = totalSamples;
-  curveTotalLen = acc;
+  return { len: pts.length, totalLen: acc };
+}
+
+function rebuildCurve(controlPoints) {
+  const r = writeChain(controlPoints, 0, BODY_BUDGET, SAMPLES_PER_SEGMENT);
+  curveLen = r.len;
+  curveTotalLen = r.totalLen;
   uniforms.curveLen.value = curveLen;
   uniforms.curveTotalLen.value = Math.max(curveTotalLen, 1e-6);
+  curveTex.needsUpdate = true;
+}
+
+function rebuildWhisker(controlPoints, slot) {
+  const r = writeChain(controlPoints, slot === 0 ? BODY_BUDGET : BODY_BUDGET + WHISKER_BUDGET,
+                       WHISKER_BUDGET, WHISKER_SAMPLES_PER_SEG);
+  if (slot === 0) {
+    uniforms.curveW1Len.value = r.len;
+    uniforms.curveW1TotalLen.value = Math.max(r.totalLen, 1e-6);
+  } else {
+    uniforms.curveW2Len.value = r.len;
+    uniforms.curveW2TotalLen.value = Math.max(r.totalLen, 1e-6);
+  }
+  curveTex.needsUpdate = true;
 }
 
 function makeMesh() {
@@ -193,6 +225,19 @@ export function setWidthRange(v)  { uniforms.uWidthRange.value = v; }
 
 export function setControlPoints(points) {
   rebuildCurve(points);
+}
+
+export function setWhisker(slot, points) {
+  rebuildWhisker(points, slot);
+}
+
+export function setWhiskerWidth(v) { uniforms.uWhiskerWidth.value = v; }
+
+export function setHead(pos, dir, size, show) {
+  if (pos) uniforms.uHeadPos.value.set(pos.x, pos.y);
+  if (dir) uniforms.uHeadDir.value.set(dir.x, dir.y);
+  if (typeof size === "number") uniforms.uHeadSize.value = size;
+  if (typeof show === "boolean") uniforms.uShowHead.value = show ? 1.0 : 0.0;
 }
 
 export function destroy() {
