@@ -114,7 +114,7 @@ vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
     return mix(inpColor, brushColor.rgb, alpha);
 }
 
-vec3 humanizeBrushStroke(vec2 uvLine, float lineLength) {
+vec3 deformLine(vec2 uvLine, float lineLength) {
     vec2 h = uvLine;
     float w = max(uWobble, 0.0);
     float twistAmt = 0.24 * w;
@@ -145,7 +145,7 @@ vec3 drawStroke(vec2 uv, vec3 inpColor, vec4 brushColor,
     float widthCurve = smoothstep(uWidthOffset - halfRange, uWidthOffset + halfRange, tAlong);
     float lineWidth1 = lineWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
 
-    vec3 hu = humanizeBrushStroke(uvLine, lineLength);
+    vec3 hu = deformLine(uvLine, lineLength);
     vec2 huUV = hu.xy;
     float centerOff = hu.z;
 
