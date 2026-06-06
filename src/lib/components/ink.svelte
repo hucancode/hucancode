@@ -11,7 +11,6 @@
     setSweepAmt,
     setLineWidth,
     setClockwise,
-    setTaper,
     setWobble,
     setStrands,
     setInkFlow,
@@ -32,7 +31,6 @@
   let sweepAmt = $state(1.0);
   let lineWidth = $state(0.3);
   let clockwise = $state(false);
-  let taper = $state(5.0);
   let wobble = $state(0.0);
   let strands = $state(1.5);
   let inkFlow = $state(0.5);
@@ -67,7 +65,6 @@
   $effect(() => { if (ready) setSweepAmt(sweepAmt); });
   $effect(() => { if (ready) setLineWidth(lineWidth); });
   $effect(() => { if (ready) setClockwise(clockwise); });
-  $effect(() => { if (ready) setTaper(taper); });
   $effect(() => { if (ready) setWobble(wobble); });
   $effect(() => { if (ready) setStrands(strands); });
   $effect(() => { if (ready) setInkFlow(inkFlow); });
@@ -135,11 +132,6 @@
       <span>Line Width</span>
       <input type="range" min="0.01" max="0.6" step="0.001" bind:value={lineWidth} />
       <output>{lineWidth.toFixed(3)}</output>
-    </label>
-    <label>
-      <span>Taper</span>
-      <input type="range" min="1" max="16" step="0.1" bind:value={taper} />
-      <output>{taper.toFixed(1)}</output>
     </label>
     <label>
       <span>Wobble</span>

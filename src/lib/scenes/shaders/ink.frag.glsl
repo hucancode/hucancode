@@ -6,10 +6,9 @@ uniform float uAngleStart;
 uniform float uSweepAmt;       // 0..1, portion of circle covered by stroke
 uniform float uLineWidth;
 uniform float uClockwise;      // 0.0 = ccw, 1.0 = cw
-uniform float uTaper;          // taper exponent (1.5 = mild, 16 = sharp)
 uniform float uWobble;         // 0..1 multiplier on humanize displacements
 uniform float uStrands;        // density of dry-brush strands across the width (1.0 = default)
-uniform float uInkFlow;        // wet/dry: >1 floods gaps with ink, <1 dries out (1.0 = default)
+uniform float uInkFlow;        // wet/dry: high = floods gaps + sharp tail taper; low = dries early + mild taper
 uniform float uWidthEnd;       // tail width as fraction of tip width (1.0 = uniform, 0.0 = pinch to nothing)
 uniform float uWidthOffset;    // width step centre along the stroke (0 = tip .. 1 = tail)
 uniform float uWidthRange;     // width step transition width (small = hard step, large = gradual)
@@ -42,39 +41,65 @@ float noise(in vec2 p) {
                             dot(c, hash(i+1.0)));
     return dot(n, vec3(70.0));
 }
-float noise01(vec2 p) { return clamp((noise(p) + 0.5) * 0.5, 0.0, 1.0); }
-float rand(vec2 co) { return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453); }
+
+float noise01(vec2 p) {
+    return clamp((noise(p) + 0.5) * 0.5, 0.0, 1.0);
+}
+
+float rand(vec2 co) {
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
 float dtoa(float d, float amount) {
     return clamp(1.0 / (clamp(d, 1.0/amount, 1.0) * amount), 0.0, 1.0);
 }
-float smoothf(float x) { return x*x*x*(x*(x*6.0 - 15.0) + 10.0); }
+
+float smoothf(float x) {
+    return x*x*x*(x*(x*6.0 - 15.0) + 10.0);
+}
 
 vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
                       float sdGeometry, vec3 inpColor, vec4 brushColor) {
-    float posInLineY = uvLine.y / max(lineSize.y, 1e-6);
+    float rawPos = uvLine.y / max(lineSize.y, 1e-6);
+    float posInLineY = rawPos;
 
+    // wet brush (high inkFlow) holds shape longer → sharp tail taper.
+    // dry brush (low inkFlow) fades early → mild taper.
+    float inkFlow = max(uInkFlow, 0.05);
+    float taperEq = mix(1.5, 14.0, smoothstep(0.2, 3.0, inkFlow));
     if (posInLineY > 0.0) {
-        posInLineY = pow(posInLineY, uTaper);
+        posInLineY = pow(posInLineY, taperEq);
     }
 
-    // Dry-brush strands: high frequency ACROSS the width (uvLine.x), ~constant
-    // ALONG (y freq 1), so each band reads as a streak running down the stroke.
-    // uStrands scales that across-width frequency → more/finer (or fewer/coarser)
-    // strands. Clamped low so it can't collapse to a single flat band.
-    float strands = max(uStrands, 0.05);
+    // tip = first contact with paper: bristles loaded with ink, stay close together
+    float tipMask = 1.0 - smoothstep(0.0, 0.5, max(rawPos, 0.0));
+
+    float strandsTail = max(uStrands, 0.05);
+    // head wants fat, chunky bristles; tail wants fine detail.
+    // wider blend than tipMask so density transition stays smooth.
+    float headBlend = 1.0 - smoothstep(0.0, 0.5, max(rawPos, 0.0));
+    float strandsLocal = strandsTail * mix(1.0, 0.15, headBlend);
     float strokeBoundary = dtoa(sdGeometry, 300.0);
-    float strokeTexture = 0.0
-        + noise01(uvLine * vec2(min(iResolution.y, iResolution.x) * 0.2 * strands, 1.0))
-        + noise01(uvLine * vec2(79.0 * strands, 1.0))
-        + noise01(uvLine * vec2(14.0 * strands, 1.0));
-    strokeTexture *= 0.333 * strokeBoundary;
+
+    // weighted octaves: coarse bristles dominate, paper grain minor
+    float tFine   = noise01(uvLine * vec2(min(iResolution.y, iResolution.x) * 0.10 * strandsLocal, 1.0));
+    float tMed    = noise01(uvLine * vec2(34.0 * strandsLocal, 1.0));
+    float tCoarse = noise01(uvLine * vec2(8.0  * strandsLocal, 1.0));
+    float strokeTexture = (tFine * 0.12 + tMed * 0.30 + tCoarse * 0.58) * strokeBoundary;
     strokeTexture = max(0.008, strokeTexture);
 
-    // uInkFlow sets wet/dry. The dry-brush texture is in [~0,1]; raising it to a
-    // smaller exponent lifts it toward solid ink (gaps flood in, wetter/darker),
-    // a larger exponent pushes it toward 0 (more white kasure, drier). Dividing
-    // the existing taper exponent by uInkFlow does exactly that; 1.0 = unchanged.
-    float strokeAlpha = pow(strokeTexture, (max(0.0, posInLineY) + 0.09) / max(uInkFlow, 0.05));
+    // tail: hard bristle edges (smoothstep cuts contrast).
+    // head: pure pow — ink-pooled, feathered, no threshold.
+    float texClamped = clamp(strokeTexture, 0.0, 1.0);
+    float sharp = smoothstep(0.08, 0.55, pow(texClamped, 0.55));
+    float soft  = pow(texClamped, 0.45);
+    strokeTexture = mix(sharp, soft, headBlend);
+
+    // gentle tip lift — bolder ink, no extra contrast
+    float emphasized = pow(strokeTexture, 0.85);
+    strokeTexture = mix(strokeTexture, emphasized, tipMask);
+
+    float strokeAlpha = pow(strokeTexture, (max(0.0, posInLineY) + 0.09) / inkFlow);
     const float strokeAlphaBoost = 1.09;
     if (posInLineY > 0.0)
         strokeAlpha = strokeAlphaBoost * max(0.0, strokeAlpha - pow(posInLineY, 0.5));
@@ -89,12 +114,6 @@ vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
     return mix(inpColor, brushColor.rgb, alpha);
 }
 
-// Per-pixel humanization of the straight stroke. Returns the displaced uvLine in
-// .xy and the centerline PERPENDICULAR wobble (centered on 0) in .z.
-// The centerline wobble must depend ONLY on uvLine.y (along-stroke position).
-// If it depended on uvLine.x (perp), every body pixel at the same along would see
-// a different centerline — smearing the body into a fuzzy band and detaching the
-// cap (single centerOff) from it as wobble grows.
 vec3 humanizeBrushStroke(vec2 uvLine, float lineLength) {
     vec2 h = uvLine;
     float w = max(uWobble, 0.0);
@@ -110,19 +129,7 @@ vec3 humanizeBrushStroke(vec2 uvLine, float lineLength) {
     return vec3(h, centerOff);
 }
 
-// Draws the stroke along the +x axis. The incoming uv is already in stroke space:
-//   uv.x = distance ALONG the stroke (0 at the start cap, growing toward the tail),
-//   uv.y = signed PERPENDICULAR distance from the centerline (0 = on the line).
-// All the width / taper / anchor / wobble / cap logic operates normally here. The
-// stroke is always straight; main() decides whether screen space maps into here as
-// a translation (cartesian) or a wrap around the origin (polar). radius_ only sets
-// the nominal length (= its circumference once wrapped); placement is main()'s job.
-// capAlong is the along-coordinate to use for the round start cap. It matches
-// uv.x for the body, EXCEPT it must be signed around 0 so the whole disc draws.
-// In polar, uv.x = phase*r with phase in [0,2π) never goes negative, so the back
-// half of the cap would wrap to the far end and vanish; main() passes a signed
-// version (the far end wrapped back to small-negative) to keep the cap whole.
-vec3 drawStroke(vec2 uv, float capAlong, vec3 inpColor, vec4 brushColor,
+vec3 drawStroke(vec2 uv, vec3 inpColor, vec4 brushColor,
                 float radius_, float sweepAmt, float lineWidth) {
     float lineLength = radius_ * PI2;
     float along = uv.x;
@@ -133,11 +140,6 @@ vec3 drawStroke(vec2 uv, float capAlong, vec3 inpColor, vec4 brushColor,
     float sweep = clamp(sweepAmt, 0.0, 1.0);
     float strokeLen = lineLength * sweep;
 
-    // width distribution along the stroke: full width (1.0) at the tip (along=0),
-    // uWidthEnd at the tail, blended by a smoothstep "step":
-    //   uWidthOffset moves where the width drops (low = drops early/concave,
-    //     high = stays wide then drops late/convex),
-    //   uWidthRange sets how soft the drop is (small = abrupt step, large = gradual).
     float tAlong = clamp(along / max(strokeLen, 1e-6), 0.0, 1.0);
     float halfRange = max(uWidthRange, 1e-3) * 0.5;
     float widthCurve = smoothstep(uWidthOffset - halfRange, uWidthOffset + halfRange, tAlong);
@@ -147,71 +149,47 @@ vec3 drawStroke(vec2 uv, float capAlong, vec3 inpColor, vec4 brushColor,
     vec2 huUV = hu.xy;
     float centerOff = hu.z;
 
-    // Body geometry: slab around the centerline. Unswept length is killed by taper
-    // alpha (posInLineY > 1 drives strokeAlpha to 0), so no hard far clip.
-    // uWidthAnchor (0..1) pins one EDGE of the stroke. 0 = inside edge anchored,
-    // 1 = outside edge anchored, 0.5 = centered. Remapped to signed [-1,1]. The
-    // anchored edge stays put; the opposite edge tapers in as width shrinks.
     float bodyHalfW = lineWidth1 * 0.5;
     float anchorS = clamp(uWidthAnchor, 0.0, 1.0) * 2.0 - 1.0;
     float bodyCenter = centerOff + anchorS * 0.5 * (lineWidth - lineWidth1);
     float d_body = abs(perp - bodyCenter) - bodyHalfW;
-    // Clip the back half-plane at along=0 so the body doesn't extend behind the
-    // start; the round cap below softens that edge.
-    d_body = max(d_body, -along);
 
-    // lineSize.y = strokeLen so posInLineY reaches 1.0 (full taper fade-out)
-    // exactly at the swept length — eliminates the hard cut at the tail.
-    vec3 ret = colorBrushStroke(huUV, uv, vec2(lineWidth1, max(strokeLen, 1e-6)),
-                                d_body, inpColor, brushColor);
+    // per-strand tip jitter: bristles touch paper at different moments.
+    // primary freq MATCHES texture's coarse bristle octave (8 * strandsHead)
+    // and samples on humanized perp axis (huUV.x) so notches sit on bristles.
+    float strandsHead = max(uStrands, 0.05) * 0.15;
+    float baseFreq = 25.0 * strandsHead;
+    float jPerp = huUV.x;
+    float j1 = noise01(vec2(jPerp * baseFreq,       0.0));
+    float j2 = noise01(vec2(jPerp * baseFreq * 2.3, 11.3));
+    float j3 = noise01(vec2(jPerp * baseFreq * 4.7, 27.7));
+    float jitter = j1 * 0.65 + j2 * 0.22 + j3 * 0.13;
+    float tipPush = pow(jitter, 1.1) * lineWidth * 2.2;
+    d_body = max(d_body, -(along - tipPush));
 
-    // Solid round cap at the stroke START (where brush touches paper).
-    // The faded END needs no cap — taper handles its falloff naturally.
-    // Sits at along=0 on the centerline, measured in stroke space — which is
-    // locally isometric at along=0 in both mappings, so the cap stays round.
-    float capCenter = humanizeBrushStroke(vec2(0.0, 0.0), lineLength).z;
-    vec2 startPos = vec2(0.0, capCenter);
-    float dStart = distance(vec2(capAlong, perp), startPos) - lineWidth * 0.5;
-    vec2 capUV = vec2(huUV.x, 0.0);
-    vec3 startCol = colorBrushStroke(capUV, uv, vec2(lineWidth, lineLength),
-                                     dStart, inpColor, brushColor);
-    return min(ret, startCol);
+    return colorBrushStroke(huUV, uv, vec2(lineWidth1, max(strokeLen, 1e-6)),
+                            d_body, inpColor, brushColor);
 }
 
 void main() {
     float aspect = iResolution.x / iResolution.y;
     vec2 uv = vec2((vUV.x * 2.0 - 1.0) * aspect, vUV.y * 2.0 - 1.0);
 
-    // Map screen space into the stroke's straight (along x, perp y) frame — the
-    // ONLY place polar vs cartesian differ. drawStroke always draws along +x with
-    // along=0 at the start cap and the centerline at perp=0. In BOTH modes:
-    //   uAngleStart translates the stroke along x (start position / sweep phase),
-    //   uRadius     translates the stroke along y (perp offset / ring radius),
-    //   uClockwise  flips the along direction.
-    // Applying the clockwise flip BEFORE the polar wrap keeps along=0 pinned to the
-    // true start (where the wrap is locally isometric), so the cap stays attached.
     vec2 suv;
-    float capAlong;                                 // signed along for the start cap
     if (uCartesian > 0.5) {
         float along = uv.x;
         if (uClockwise > 0.5) along = -along;
-        // x-translation scaled by uRadius so it matches the polar arc-length shift
-        // (in polar the start moves angleStart*r along the arc).
         suv = vec2(along - uAngleStart * uRadius, uv.y - uRadius);
-        capAlong = suv.x;                           // already signed around 0
     } else {
         float r = length(uv);
-        float a = atan(uv.x, uv.y) - uAngleStart;   // angle relative to the start
-        if (uClockwise < 0.5) a = -a;               // CCW is the default
-        float phase = mod(a, PI2);                  // 0 at start, grows along sweep
+        float a = atan(uv.x, uv.y) - uAngleStart;
+        if (uClockwise < 0.5) a = -a;
+        float phase = mod(a, PI2);
         suv = vec2(phase * r, r - uRadius);
-        // wrap the far end (phase near 2π) back to small-negative so the back half
-        // of the cap, which lives just behind the start, draws as part of the disc.
-        capAlong = (phase > PI ? phase - PI2 : phase) * r;
     }
 
     vec3 col = uBgColor.rgb;
-    col = drawStroke(suv, capAlong, col, uBrushColor, uRadius, uSweepAmt, uLineWidth);
+    col = drawStroke(suv, col, uBrushColor, uRadius, uSweepAmt, uLineWidth);
     col.rgb += (rand(uv)-.5)*.08;
     col.rgb = clamp(col.rgb, vec3(0), vec3(1));
     gl_FragColor = vec4(col, 1.0);

@@ -35,7 +35,6 @@ const uniforms = {
   curveTexWidth: { value: MAX_POINTS },
   curveTotalLen: { value: 1 },
   uWidth: { value: 0.12 },
-  uTaper: { value: 4.0 },
   uInkFlow: { value: 1.0 },
   uOpacity: { value: 1.0 },
   uWobble: { value: 0.3 },
@@ -216,7 +215,6 @@ export function render() {
 }
 
 export function setWidth(v)     { uniforms.uWidth.value = v; }
-export function setTaper(v)     { uniforms.uTaper.value = v; }
 export function setInkFlow(v)   { uniforms.uInkFlow.value = v; }
 export function setWobble(v)    { uniforms.uWobble.value = v; }
 export function setWidthEnd(v)    { uniforms.uWidthEnd.value = v; }

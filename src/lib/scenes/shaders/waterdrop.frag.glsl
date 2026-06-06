@@ -8,7 +8,6 @@ uniform float curveTexWidth;
 uniform float uOffset;
 uniform float uArcLength;
 uniform float uWidth;
-uniform float uTaper;         // unused (API compat) — taper is a brush-shader control
 uniform float uInkFlow;       // 0..1, 1=consistent, 0=opaque at head, fades to tail
 uniform float uOpacity;
 uniform float uWidthEnd;      // tail width as fraction of head width (1.0 = uniform, 0.0 = pinch to nothing)
@@ -109,7 +108,7 @@ void main() {
     // variable tail width — identical to the brush shader. A smoothstep "step"
     // scales the head width down to uWidthEnd at the tail. uWidthOffset moves where
     // the width drops (0 head .. 1 tail); uWidthRange sets how soft the drop is
-    // (small = abrupt step, large = gradual). uTaper plays no part here.
+    // (small = abrupt step, large = gradual).
     float halfRange = max(uWidthRange, 1e-3) * 0.5;
     float widthCurve = smoothstep(uWidthOffset - halfRange, uWidthOffset + halfRange, t01);
     float w = uWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);

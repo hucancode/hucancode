@@ -12,8 +12,7 @@ uniform int   curveW2Len;
 uniform float curveW2TotalLen;
 uniform float uWhiskerWidth;  // world units, half-width applied at base
 uniform float uWidth;         // world units
-uniform float uTaper;         // 1..16, higher = less taper / sharper end
-uniform float uInkFlow;       // 0..1, 1=consistent, 0=blacker at tip, fades to tail
+uniform float uInkFlow;       // 0..1 wet/dry: high = flat ink + sharp tail taper; low = head-loaded + early fade
 uniform float uOpacity;       // global multiplier on stroke alpha
 uniform float uWobble;        // 0..1 scale on edge wobble amplitude
 uniform float uWidthEnd;      // tail width as fraction of head width (1.0 = uniform, 0.0 = pinch to nothing)
@@ -189,8 +188,11 @@ float brushStrokeAlpha(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
     float posInLineY = uvLine.y / max(lineSize.y, 1e-6);
     float rawPosInLineY = clamp(posInLineY, 0.0, 1.0);
 
+    // wet (high inkFlow) → sharp taper kept near tail. dry (low) → early fade.
+    float inkFlow = clamp(uInkFlow, 0.0, 1.0);
+    float taperEq = mix(1.5, 14.0, inkFlow);
     if (posInLineY > 0.0) {
-        posInLineY = pow(posInLineY, uTaper);
+        posInLineY = pow(posInLineY, taperEq);
     }
 
     float strokeBoundary = dtoa(sdGeometry, 300.0);
@@ -213,7 +215,7 @@ float brushStrokeAlpha(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
     float paperBleedAmt = 60.0 + (rand(uvPaper.yy) * 30.0) + (rand(uvPaper.xx) * 30.0);
     paperBleedAmt *= 5.0;
     float alpha = strokeAlpha * brushAlpha * dtoa(sdGeometry, paperBleedAmt);
-    float flowMul = mix(smoothstep(1.0, 0.0, rawPosInLineY), 1.0, uInkFlow);
+    float flowMul = mix(smoothstep(1.0, 0.0, rawPosInLineY), 1.0, inkFlow);
     alpha *= flowMul;
     return clamp(alpha, 0.0, 1.0);
 }

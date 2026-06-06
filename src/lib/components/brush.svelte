@@ -7,7 +7,6 @@
     render,
     resize,
     setWidth,
-    setTaper,
     setInkFlow,
     setWobble,
     setWidthEnd,
@@ -26,7 +25,6 @@
   let observer;
 
   let width = $state(0.05);
-  let taper = $state(8);
   let inkFlow = $state(0.25);
   let wobble = $state(0.9);
   let showPoints = $state(true);
@@ -78,7 +76,6 @@
   let dragging = $state(false);
 
   $effect(() => { if (ready) setWidth(width); });
-  $effect(() => { if (ready) setTaper(taper); });
   $effect(() => { if (ready) setInkFlow(inkFlow); });
   $effect(() => { if (ready) setWobble(wobble); });
   $effect(() => { if (ready) setWidthEnd(widthEnd); });
@@ -473,11 +470,6 @@
       <span>width</span>
       <input type="range" min="0.01" max="0.4" step="0.001" bind:value={width} />
       <output>{width.toFixed(3)}</output>
-    </label>
-    <label>
-      <span>taper</span>
-      <input type="range" min="1" max="16" step="0.1" bind:value={taper} />
-      <output>{taper.toFixed(1)}</output>
     </label>
     <label>
       <span>ink flow</span>

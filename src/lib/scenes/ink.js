@@ -19,7 +19,6 @@ const uniforms = {
   uSweepAmt:   { value: 0.92 },
   uLineWidth:  { value: 0.3 },
   uClockwise:  { value: 0.0 },
-  uTaper:      { value: 2.5 },
   uWobble:     { value: 0.25 },
   uStrands:    { value: 1.0 },
   uInkFlow:    { value: 1.0 },
@@ -65,7 +64,6 @@ export function setAngleStart(v) { uniforms.uAngleStart.value = v; }
 export function setSweepAmt(v)   { uniforms.uSweepAmt.value = v; }
 export function setLineWidth(v)  { uniforms.uLineWidth.value = v; }
 export function setClockwise(b)  { uniforms.uClockwise.value = b ? 1.0 : 0.0; }
-export function setTaper(v)      { uniforms.uTaper.value = v; }
 export function setWobble(v)     { uniforms.uWobble.value = v; }
 export function setStrands(v)    { uniforms.uStrands.value = v; }
 export function setInkFlow(v)    { uniforms.uInkFlow.value = v; }

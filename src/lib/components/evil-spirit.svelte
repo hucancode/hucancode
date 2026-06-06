@@ -22,7 +22,6 @@
 
   // global params
   let width        = $state(0.05);
-  let taper        = $state(16);
   let inkFlow      = $state(0.25);
 
   // variable tail width (ported from the ink playground). smoothstep "step":
@@ -348,7 +347,6 @@
       return {
         points: c.segments,
         width,
-        taper,
         inkFlow,
         offset: 0,
         arcLength: 1,
@@ -567,11 +565,6 @@
       <span>width</span>
       <input type="range" min="0.01" max="0.4" step="0.001" bind:value={width} />
       <output>{width.toFixed(3)}</output>
-    </label>
-    <label>
-      <span>taper</span>
-      <input type="range" min="1" max="16" step="0.1" bind:value={taper} />
-      <output>{taper.toFixed(1)}</output>
     </label>
     <label>
       <span>width shape</span>

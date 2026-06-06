@@ -50,7 +50,6 @@ function makeSpirit() {
     uOffset: { value: 0.0 },
     uArcLength: { value: 1.0 },
     uWidth: { value: 0.05 },
-    uTaper: { value: 4.0 },
     uInkFlow: { value: 0.25 },
     uOpacity: { value: 1.0 },
     uWidthEnd: { value: 0.0 },
@@ -176,7 +175,7 @@ export function render() {
   renderer.render(scene, camera);
 }
 
-// spirits: [{points, width, taper, inkFlow, offset, arcLength, color}]
+// spirits: [{points, width, inkFlow, offset, arcLength, color}]
 export function updateSpirits(spirits) {
   while (spiritMeshes.length < spirits.length) {
     const c = makeSpirit();
@@ -192,7 +191,6 @@ export function updateSpirits(spirits) {
     const dst = spiritMeshes[i];
     rebuildCurve(dst, src.points);
     if (src.width    != null) dst.uniforms.uWidth.value    = src.width;
-    if (src.taper    != null) dst.uniforms.uTaper.value    = src.taper;
     if (src.inkFlow  != null) dst.uniforms.uInkFlow.value  = src.inkFlow;
     if (src.offset   != null) dst.uniforms.uOffset.value   = src.offset;
     if (src.arcLength!= null) dst.uniforms.uArcLength.value= src.arcLength;
