@@ -9,6 +9,7 @@ uniform float uClockwise;      // 0.0 = ccw, 1.0 = cw
 uniform float uWobble;         // 0..1 multiplier on humanize displacements
 uniform float uStrands;        // density of dry-brush strands across the width (1.0 = default)
 uniform float uInkFlow;        // wet/dry: high = floods gaps + sharp tail taper; low = dries early + mild taper
+uniform float uWaterFlow;      // 0..1, dry/sparse bristles → wet/solid ink (uniform across stroke)
 uniform float uWidthEnd;       // tail width as fraction of tip width (1.0 = uniform, 0.0 = pinch to nothing)
 uniform float uWidthOffset;    // width step centre along the stroke (0 = tip .. 1 = tail)
 uniform float uWidthRange;     // width step transition width (small = hard step, large = gradual)
@@ -83,8 +84,12 @@ vec3 colorBrushStroke(vec2 uvLine, vec2 paperUV, vec2 lineSize,
     float bristleField = (tFine * 0.12 + tMed * 0.30 + tCoarse * 0.58) * strokeBoundary;
     bristleField = max(0.008, bristleField);
 
+    // uWaterFlow drives thresholds uniformly across stroke → no seam.
+    float water = clamp(uWaterFlow, 0.0, 1.0);
     float texClamped = clamp(bristleField, 0.0, 1.0);
-    float strokeTexture = smoothstep(0.14, 0.55, pow(texClamped, 0.52));
+    float lo = mix(0.58, 0.02, water);
+    float hi = mix(0.78, 0.68, water);
+    float strokeTexture = smoothstep(lo, hi, pow(texClamped, 0.52));
 
     // unified alpha shaping: no if/else. pow(max(0,pos), 0.5) is 0 at cap → cap untouched.
     float strokeAlpha = pow(strokeTexture, (max(0.0, posInLineY) + 0.09) / inkFlow);

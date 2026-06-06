@@ -22,6 +22,7 @@ const uniforms = {
   uWobble:     { value: 0.25 },
   uStrands:    { value: 1.0 },
   uInkFlow:    { value: 1.0 },
+  uWaterFlow:  { value: 0.5 },
   uWidthEnd:   { value: 1.0 },
   uWidthOffset: { value: 0.5 },
   uWidthRange:  { value: 1.0 },
@@ -67,6 +68,7 @@ export function setClockwise(b)  { uniforms.uClockwise.value = b ? 1.0 : 0.0; }
 export function setWobble(v)     { uniforms.uWobble.value = v; }
 export function setStrands(v)    { uniforms.uStrands.value = v; }
 export function setInkFlow(v)    { uniforms.uInkFlow.value = v; }
+export function setWaterFlow(v)  { uniforms.uWaterFlow.value = v; }
 export function setWidthEnd(v)   { uniforms.uWidthEnd.value = v; }
 export function setWidthOffset(v) { uniforms.uWidthOffset.value = v; }
 export function setWidthRange(v)  { uniforms.uWidthRange.value = v; }

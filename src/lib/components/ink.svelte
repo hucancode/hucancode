@@ -14,6 +14,7 @@
     setWobble,
     setStrands,
     setInkFlow,
+    setWaterFlow,
     setWidthEnd,
     setWidthOffset,
     setWidthRange,
@@ -34,6 +35,7 @@
   let wobble = $state(0.0);
   let strands = $state(1.5);
   let inkFlow = $state(0.5);
+  let waterFlow = $state(0.5);
   let widthPreset = $state('custom');
   let widthEnd = $state(0.1);
   // smoothstep width step: offset = where the width drops along the stroke
@@ -68,6 +70,7 @@
   $effect(() => { if (ready) setWobble(wobble); });
   $effect(() => { if (ready) setStrands(strands); });
   $effect(() => { if (ready) setInkFlow(inkFlow); });
+  $effect(() => { if (ready) setWaterFlow(waterFlow); });
   $effect(() => { if (ready) setWidthEnd(widthEnd); });
   $effect(() => { if (ready) setWidthOffset(widthOffset); });
   $effect(() => { if (ready) setWidthRange(widthRange); });
@@ -147,6 +150,11 @@
       <span>Ink Flow</span>
       <input type="range" min="0.2" max="3" step="0.01" bind:value={inkFlow} />
       <output>{inkFlow.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Water Flow</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={waterFlow} />
+      <output>{waterFlow.toFixed(2)}</output>
     </label>
     <hr />
     <label>
