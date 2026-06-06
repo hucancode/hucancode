@@ -108,6 +108,8 @@ vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
 
     strokeAlpha = smoothf(strokeAlpha);
 
+    strokeAlpha *= smoothstep(0.0, lineSize.x * 0.5, uvLine.y);
+
     float paperBleedAmt = 60.0 + (rand(uvPaper.yy) * 30.0) + (rand(uvPaper.xx) * 30.0);
     float alpha = strokeAlpha * brushColor.a * dtoa(sdGeometry, paperBleedAmt);
     alpha = clamp(alpha, 0.0, 1.0);
