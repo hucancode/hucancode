@@ -58,7 +58,7 @@ float smoothf(float x) {
     return x*x*x*(x*(x*6.0 - 15.0) + 10.0);
 }
 
-vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
+vec3 colorBrushStroke(vec2 uvLine, vec2 paperUV, vec2 lineSize,
                       float sdGeometry, vec3 inpColor, vec4 brushColor) {
     float rawPos = uvLine.y / max(lineSize.y, 1e-6);
     float posInLineY = rawPos;
@@ -71,46 +71,29 @@ vec3 colorBrushStroke(vec2 uvLine, vec2 uvPaper, vec2 lineSize,
         posInLineY = pow(posInLineY, taperEq);
     }
 
-    // tip = first contact with paper: bristles loaded with ink, stay close together
-    float tipMask = 1.0 - smoothstep(0.0, 0.5, max(rawPos, 0.0));
-
-    float strandsTail = max(uStrands, 0.05);
-    // head wants fat, chunky bristles; tail wants fine detail.
-    // wider blend than tipMask so density transition stays smooth.
-    float headBlend = 1.0 - smoothstep(0.0, 0.5, max(rawPos, 0.0));
-    float strandsLocal = strandsTail * mix(1.0, 0.15, headBlend);
+    // Uniform bristle field: constant frequency, constant threshold along whole stroke.
+    // Cap "splash" character comes from SDF tipPush jitter (drawStroke), not from a
+    // local fill here. Any per-position density change would re-introduce the seam.
+    float strandsLocal = max(uStrands, 0.05);
     float strokeBoundary = dtoa(sdGeometry, 300.0);
 
-    // weighted octaves: coarse bristles dominate, paper grain minor
     float tFine   = noise01(uvLine * vec2(min(iResolution.y, iResolution.x) * 0.10 * strandsLocal, 1.0));
     float tMed    = noise01(uvLine * vec2(34.0 * strandsLocal, 1.0));
     float tCoarse = noise01(uvLine * vec2(8.0  * strandsLocal, 1.0));
-    float strokeTexture = (tFine * 0.12 + tMed * 0.30 + tCoarse * 0.58) * strokeBoundary;
-    strokeTexture = max(0.008, strokeTexture);
+    float bristleField = (tFine * 0.12 + tMed * 0.30 + tCoarse * 0.58) * strokeBoundary;
+    bristleField = max(0.008, bristleField);
 
-    // tail: hard bristle edges (smoothstep cuts contrast).
-    // head: pure pow — ink-pooled, feathered, no threshold.
-    float texClamped = clamp(strokeTexture, 0.0, 1.0);
-    float sharp = smoothstep(0.08, 0.55, pow(texClamped, 0.55));
-    float soft  = pow(texClamped, 0.45);
-    strokeTexture = mix(sharp, soft, headBlend);
+    float texClamped = clamp(bristleField, 0.0, 1.0);
+    float strokeTexture = smoothstep(0.14, 0.55, pow(texClamped, 0.52));
 
-    // gentle tip lift — bolder ink, no extra contrast
-    float emphasized = pow(strokeTexture, 0.85);
-    strokeTexture = mix(strokeTexture, emphasized, tipMask);
-
+    // unified alpha shaping: no if/else. pow(max(0,pos), 0.5) is 0 at cap → cap untouched.
     float strokeAlpha = pow(strokeTexture, (max(0.0, posInLineY) + 0.09) / inkFlow);
     const float strokeAlphaBoost = 1.09;
-    if (posInLineY > 0.0)
-        strokeAlpha = strokeAlphaBoost * max(0.0, strokeAlpha - pow(posInLineY, 0.5));
-    else
-        strokeAlpha *= strokeAlphaBoost;
-
+    strokeAlpha = strokeAlphaBoost * max(0.0, strokeAlpha - pow(max(0.0, posInLineY), 0.5));
     strokeAlpha = smoothf(strokeAlpha);
 
-    strokeAlpha *= smoothstep(0.0, lineSize.x * 0.5, uvLine.y);
-
-    float paperBleedAmt = 60.0 + (rand(uvPaper.yy) * 30.0) + (rand(uvPaper.xx) * 30.0);
+    // paper bleed in screen-space coords → polar warp can't shear it
+    float paperBleedAmt = 60.0 + (rand(paperUV.yy) * 30.0) + (rand(paperUV.xx) * 30.0);
     float alpha = strokeAlpha * brushColor.a * dtoa(sdGeometry, paperBleedAmt);
     alpha = clamp(alpha, 0.0, 1.0);
     return mix(inpColor, brushColor.rgb, alpha);
@@ -131,7 +114,7 @@ vec3 deformLine(vec2 uvLine, float lineLength) {
     return vec3(h, centerOff);
 }
 
-vec3 drawStroke(vec2 uv, vec3 inpColor, vec4 brushColor,
+vec3 drawStroke(vec2 uv, vec2 paperUV, vec3 inpColor, vec4 brushColor,
                 float radius_, float sweepAmt, float lineWidth) {
     float lineLength = radius_ * PI2;
     float along = uv.x;
@@ -169,7 +152,7 @@ vec3 drawStroke(vec2 uv, vec3 inpColor, vec4 brushColor,
     float tipPush = pow(jitter, 1.1) * lineWidth * 2.2;
     d_body = max(d_body, -(along - tipPush));
 
-    return colorBrushStroke(huUV, uv, vec2(lineWidth1, max(strokeLen, 1e-6)),
+    return colorBrushStroke(huUV, paperUV, vec2(lineWidth1, max(strokeLen, 1e-6)),
                             d_body, inpColor, brushColor);
 }
 
@@ -191,7 +174,7 @@ void main() {
     }
 
     vec3 col = uBgColor.rgb;
-    col = drawStroke(suv, col, uBrushColor, uRadius, uSweepAmt, uLineWidth);
+    col = drawStroke(suv, uv, col, uBrushColor, uRadius, uSweepAmt, uLineWidth);
     col.rgb += (rand(uv)-.5)*.08;
     col.rgb = clamp(col.rgb, vec3(0), vec3(1));
     gl_FragColor = vec4(col, 1.0);
