@@ -25,7 +25,7 @@
     flex-grow: 1;
     justify-content: space-around;
   }
-  figure {
+  figure .stage {
     width: 100%;
     max-width: 720px;
   }

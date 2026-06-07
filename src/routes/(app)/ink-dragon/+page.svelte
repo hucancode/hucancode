@@ -1,11 +1,11 @@
 <script>
   import { _ } from "$lib/i18n";
-  import Scene from "$lib/components/brush.svelte";
+  import Scene from "$lib/components/ink-dragon.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
 </script>
 
 <svelte:head>
-  <title>Brush</title>
+  <title>Ink Dragon</title>
 </svelte:head>
 
 <section>
@@ -25,7 +25,7 @@
     flex-grow: 1;
     justify-content: space-around;
   }
-  figure {
+  figure .stage {
     width: 100%;
     max-width: 720px;
   }

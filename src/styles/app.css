@@ -346,14 +346,19 @@ div[role="group"].square {
 }
 
 fieldset {
-  border: 1px solid rgba(128,128,128,0.25);
-  border-radius: 0.25rem;
-  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(128,128,128,0.3);
+  border-radius: 0.35rem;
+  padding: 0.5rem 0.75rem 0.6rem;
   margin: 0;
+  display: grid;
+  gap: 0.4rem;
 }
 legend {
   padding: 0 0.4rem;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   opacity: 0.7;
 }
 .container,

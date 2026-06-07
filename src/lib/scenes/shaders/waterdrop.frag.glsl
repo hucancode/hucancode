@@ -7,7 +7,7 @@ uniform float curveTotalLen;
 uniform float curveTexWidth;
 uniform float uOffset;
 uniform float uArcLength;
-uniform float uWidth;
+uniform float uLineWidth;
 uniform float uInkFlow;       // 0..1, 1=consistent, 0=opaque at head, fades to tail
 uniform float uOpacity;
 uniform float uWidthEnd;      // tail width as fraction of head width (1.0 = uniform, 0.0 = pinch to nothing)
@@ -111,7 +111,7 @@ void main() {
     // (small = abrupt step, large = gradual).
     float halfRange = max(uWidthRange, 1e-3) * 0.5;
     float widthCurve = smoothstep(uWidthOffset - halfRange, uWidthOffset + halfRange, t01);
-    float w = uWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
+    float w = uLineWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
     float d = sd - w * 0.5;
 
     // antialiased edge
