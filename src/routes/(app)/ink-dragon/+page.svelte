@@ -24,9 +24,11 @@
   section {
     flex-grow: 1;
     justify-content: space-around;
-  }
-  figure .stage {
+    max-width: 1400px;
     width: 100%;
-    max-width: 720px;
+    margin: 0 auto;
+  }
+  figure {
+    width: 100%;
   }
 </style>

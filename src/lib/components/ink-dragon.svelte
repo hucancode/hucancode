@@ -74,6 +74,13 @@
   let canvasSize = $state({ w: 1, h: 1 });
   let overlayView = $state({ body: [], whiskerL: [], whiskerR: [] });
 
+  // auto-fly
+  let autoFly = $state(false);
+  let autoSpeed = $state(0.6);
+  let autoState = null;
+  let autoTip = { x: 0, y: 0 };
+  let autoLastTime = 0;
+
   // shader params
   $effect(() => { if (ready) setWidth(width); });
   $effect(() => { if (ready) setInkFlow(inkFlow); });
@@ -98,8 +105,143 @@
 
   let dragging = false;
 
+  function headFrameFromBody(body) {
+    const n = body.length;
+    if (n < 2) return { pos: { x: 0, y: 0 }, dir: { x: 1, y: 0 } };
+    const tip = body[n - 1];
+    const prev = body[n - 2];
+    let dx = tip.x - prev.x, dy = tip.y - prev.y;
+    const m = Math.hypot(dx, dy);
+    if (m < 1e-6) return { pos: tip, dir: { x: 1, y: 0 } };
+    return { pos: tip, dir: { x: dx / m, y: dy / m } };
+  }
+
+  function pickCircle(from, forward, aspect) {
+    const pad = 0.05;
+    const xMax = Math.max(0.1, aspect - pad);
+    const yMax = 1 - pad;
+    const rMaxBound = Math.min(xMax, yMax) - 0.02;
+    const rMax = Math.max(0.15, Math.min(0.6, rMaxBound));
+    const rFloor = Math.max(0.18, bodyLen / (2 * Math.PI) * 0.6);
+    const rMin = Math.min(rFloor, rMax * 0.6);
+    const lapsFor = (r) =>
+      (2 * Math.PI * r < bodyLen)
+        ? 0.5 + Math.random() * 0.25 // ≤ 0.75
+        : 0.5 + Math.random();        // 0.5–1.5
+    const minTravel = 0.4;
+    const maxTravel = 1.2;
+
+    for (let i = 0; i < 80; i++) {
+      // 1. entry point: forward ±45°, some distance ahead
+      const jitter = (Math.random() * 2 - 1) * (Math.PI / 4);
+      const cj = Math.cos(jitter), sj = Math.sin(jitter);
+      const edx = forward.x * cj - forward.y * sj;
+      const edy = forward.x * sj + forward.y * cj;
+      const travelDist = minTravel + Math.random() * (maxTravel - minTravel);
+      const ex = from.x + edx * travelDist;
+      const ey = from.y + edy * travelDist;
+
+      // 2. circle containing entry, tangent to entry direction
+      const r = rMin + Math.random() * Math.max(0, rMax - rMin);
+      const dir = Math.random() < 0.5 ? 1 : -1; // CCW : CW
+      // center perpendicular to entry direction
+      const cx = ex - edy * r * dir;
+      const cy = ey + edx * r * dir;
+      // viewport check
+      if (cx - r < -xMax || cx + r > xMax) continue;
+      if (cy - r < -yMax || cy + r > yMax) continue;
+
+      const angle = Math.atan2(ey - cy, ex - cx);
+      return {
+        phase: "travel",
+        circle: { cx, cy, r },
+        entry: { x: ex, y: ey },
+        angle,
+        direction: dir,
+        lapsTotal: lapsFor(r),
+        angleTraveled: 0,
+      };
+    }
+
+    // fallback: small circle ahead, tangent entry, clamped
+    const r = Math.max(0.15, Math.min(0.25, rMax));
+    const dir = 1;
+    const ex = from.x + forward.x * 0.5;
+    const ey = from.y + forward.y * 0.5;
+    let cx = ex - forward.y * r * dir;
+    let cy = ey + forward.x * r * dir;
+    cx = Math.max(-xMax + r, Math.min(xMax - r, cx));
+    cy = Math.max(-yMax + r, Math.min(yMax - r, cy));
+    const angle = Math.atan2(ey - cy, ex - cx);
+    return {
+      phase: "travel",
+      circle: { cx, cy, r },
+      entry: { x: ex, y: ey },
+      angle,
+      direction: dir,
+      lapsTotal: lapsFor(r),
+      angleTraveled: 0,
+    };
+  }
+
+  function stepAuto(dt) {
+    const aspect = Math.max(canvasSize.w / canvasSize.h, 0.1);
+    if (!autoState) {
+      const body = getOverlay().body;
+      const f = headFrameFromBody(body);
+      autoTip = { x: f.pos.x, y: f.pos.y };
+      autoState = pickCircle(autoTip, f.dir, aspect);
+    }
+    const speed = autoSpeed;
+    if (autoState.phase === "travel") {
+      const dx = autoState.entry.x - autoTip.x;
+      const dy = autoState.entry.y - autoTip.y;
+      const d = Math.hypot(dx, dy);
+      const move = speed * dt;
+      if (d <= move || d < 1e-4) {
+        autoTip = { x: autoState.entry.x, y: autoState.entry.y };
+        autoState.phase = "lap";
+      } else {
+        autoTip = { x: autoTip.x + (dx / d) * move, y: autoTip.y + (dy / d) * move };
+      }
+    } else {
+      const { circle, direction } = autoState;
+      const dAng = ((speed * dt) / Math.max(circle.r, 1e-3)) * direction;
+      autoState.angle += dAng;
+      autoState.angleTraveled += Math.abs(dAng);
+      autoTip = {
+        x: circle.cx + Math.cos(autoState.angle) * circle.r,
+        y: circle.cy + Math.sin(autoState.angle) * circle.r,
+      };
+      if (autoState.angleTraveled >= autoState.lapsTotal * Math.PI * 2) {
+        const tx = -Math.sin(autoState.angle) * direction;
+        const ty = Math.cos(autoState.angle) * direction;
+        autoState = pickCircle(autoTip, { x: tx, y: ty }, aspect);
+      }
+    }
+    setTipTarget(autoTip);
+  }
+
+  $effect(() => {
+    if (!ready) return;
+    if (autoFly) {
+      autoState = null;
+      autoLastTime = 0;
+    } else {
+      autoState = null;
+      autoLastTime = 0;
+      if (!dragging) setTipTarget(null);
+    }
+  });
+
   function loop() {
     frameID = requestAnimationFrame(loop);
+    if (autoFly) {
+      const now = performance.now();
+      const dt = autoLastTime ? Math.min(0.05, (now - autoLastTime) / 1000) : 0.016;
+      autoLastTime = now;
+      stepAuto(dt);
+    }
     step();
     render();
     if (showPoints) overlayView = getOverlay();
@@ -113,6 +255,7 @@
   }
 
   function onPointerDown(e) {
+    if (autoFly) return;
     dragging = true;
     setTipTarget(eventToWorld(canvasEl, e));
     canvasEl.setPointerCapture(e.pointerId);
@@ -122,6 +265,7 @@
     setTipTarget(eventToWorld(canvasEl, e));
   }
   function onPointerUp(e) {
+    if (!dragging) return;
     dragging = false;
     setTipTarget(null);
     try { canvasEl.releasePointerCapture(e.pointerId); } catch {}
@@ -330,6 +474,19 @@
     </fieldset>
 
     <fieldset>
+      <legend>auto fly</legend>
+      <label class="check">
+        <input type="checkbox" bind:checked={autoFly} />
+        <span>enable</span>
+      </label>
+      <label>
+        <span>speed</span>
+        <input type="range" min="0.05" max="2" step="0.01" bind:value={autoSpeed} />
+        <output>{autoSpeed.toFixed(2)}</output>
+      </label>
+    </fieldset>
+
+    <fieldset>
       <legend>debug</legend>
       <label class="check">
         <input type="checkbox" bind:checked={showPoints} />
@@ -355,7 +512,11 @@
   .stage {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
+  }
+  @media(min-width: 768px) {
+    .brush-demo .stage { flex: 1 1 auto; }
+    .controls { flex: 0 0 18rem; }
   }
   canvas {
     width: 100%;
