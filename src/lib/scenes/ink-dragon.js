@@ -1,6 +1,7 @@
 import {
   DataTexture,
   FloatType,
+  Matrix4,
   Mesh,
   NearestFilter,
   NormalBlending,
@@ -10,6 +11,7 @@ import {
   Scene,
   ShaderMaterial,
   Vector2,
+  Vector3,
   WebGLRenderer,
   ClampToEdgeWrapping,
 } from "three";
@@ -32,13 +34,19 @@ const resolution = new Vector2(1, 1);
 const brushColor = [0.05, 0.05, 0.05, 0.95];
 
 const headUniforms = {
-  iResolution: { value: resolution },
   uBrushColor: { value: brushColor },
-  uHeadPos: { value: new Vector2(0, 0) },
-  uHeadDir: { value: new Vector2(1, 0) },
-  uHeadSize: { value: 0.25 },
-  uShowHead: { value: 1.0 },
 };
+
+const HEAD_PLANE_W = 2.4;
+const HEAD_PLANE_H = 1.6;
+const headState = {
+  pos: new Vector2(0, 0),
+  dir: new Vector2(1, 0),
+  size: 0.25,
+};
+const headMatrixTmp = new Matrix4();
+const headAspectInv = new Matrix4();
+const headScaleVec = new Vector3();
 
 function makeStrokeUniforms({ lineWidth, widthEnd, widthOffset, widthRange,
                               inkFlow, strands, waterFlow, wobble,
@@ -254,6 +262,8 @@ function rebuildStrokeGrid(stroke) {
   buildGrid(stroke.lastPts, margin, stroke.gridData, stroke.gridTex, stroke.uniforms);
 }
 
+let headGeometry = null;
+
 function makeHeadMesh() {
   const material = new ShaderMaterial({
     uniforms: headUniforms,
@@ -262,10 +272,26 @@ function makeHeadMesh() {
     transparent: true,
     depthWrite: false,
     blending: NormalBlending,
+    extensions: { derivatives: true },
   });
-  const m = new Mesh(sharedGeometry, material);
+  headGeometry = new PlaneGeometry(HEAD_PLANE_W, HEAD_PLANE_H);
+  const m = new Mesh(headGeometry, material);
+  m.matrixAutoUpdate = false;
   m.renderOrder = 3;
   return m;
+}
+
+function updateHeadTransform() {
+  if (!headMesh) return;
+  const aspect = resolution.y > 0 ? resolution.x / resolution.y : 1;
+  const theta = Math.atan2(headState.dir.y, headState.dir.x);
+  const s = headState.size;
+  headMatrixTmp.makeRotationZ(theta);
+  headMatrixTmp.setPosition(headState.pos.x, headState.pos.y, 0);
+  headScaleVec.set(s, s, 1);
+  headMatrixTmp.scale(headScaleVec);
+  headAspectInv.makeScale(1 / aspect, 1, 1);
+  headMesh.matrix.multiplyMatrices(headAspectInv, headMatrixTmp);
 }
 
 export function init(canvas) {
@@ -306,6 +332,7 @@ export function init(canvas) {
 
   headMesh = makeHeadMesh();
   scene.add(headMesh);
+  updateHeadTransform();
 }
 
 export function resize(w, h) {
@@ -314,6 +341,7 @@ export function resize(w, h) {
   resolution.set(w * window.devicePixelRatio, h * window.devicePixelRatio);
   rebuildStrokeGrid(bodyStroke);
   for (const s of whiskerStrokes) rebuildStrokeGrid(s);
+  updateHeadTransform();
 }
 
 export function render() {
@@ -355,10 +383,11 @@ export function setWhiskerWidth(v) {
 }
 
 export function setHead(pos, dir, size, show) {
-  if (pos) headUniforms.uHeadPos.value.set(pos.x, pos.y);
-  if (dir) headUniforms.uHeadDir.value.set(dir.x, dir.y);
-  if (typeof size === "number") headUniforms.uHeadSize.value = size;
-  if (typeof show === "boolean") headUniforms.uShowHead.value = show ? 1.0 : 0.0;
+  if (pos) headState.pos.set(pos.x, pos.y);
+  if (dir) headState.dir.set(dir.x, dir.y);
+  if (typeof size === "number") headState.size = size;
+  if (typeof show === "boolean" && headMesh) headMesh.visible = show;
+  updateHeadTransform();
 }
 
 export function destroy() {
@@ -373,6 +402,7 @@ export function destroy() {
     whiskerStrokes[i] = null;
   }
   if (sharedGeometry) { sharedGeometry.dispose(); sharedGeometry = null; }
+  if (headGeometry) { headGeometry.dispose(); headGeometry = null; }
   if (renderer) {
     renderer.dispose();
     renderer = null;

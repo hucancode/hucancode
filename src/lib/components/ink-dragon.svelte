@@ -38,6 +38,7 @@
   let wobble = $state(0.9);
   let showPoints = $state(true);
   let showHead = $state(true);
+  let showPath = $state(false);
   let headSize = $state(0.15);
   let whiskerWidth = $state(0.01);
   let whiskerSegs = $state(5);
@@ -73,11 +74,13 @@
 
   let canvasSize = $state({ w: 1, h: 1 });
   let overlayView = $state({ body: [], whiskerL: [], whiskerR: [] });
+  let pathView = $state({ samples: [], ctrls: [], cursor: null });
 
-  // auto-fly
+  // auto-fly — uniform cubic B-spline, C2 across all junctions
   let autoFly = $state(false);
   let autoSpeed = $state(0.6);
-  let autoState = null;
+  let autoCtrl = null;   // rolling array of control points
+  let autoU = 0;         // param within current segment [0,1)
   let autoTip = { x: 0, y: 0 };
   let autoLastTime = 0;
 
@@ -116,119 +119,115 @@
     return { pos: tip, dir: { x: dx / m, y: dy / m } };
   }
 
-  function pickCircle(from, forward, aspect) {
-    const pad = 0.05;
+  // Uniform cubic B-spline: P(u) over 4 control pts, u in [0,1].
+  function bsplinePos(p0, p1, p2, p3, u) {
+    const u2 = u * u, u3 = u2 * u;
+    const b0 = (-u3 + 3*u2 - 3*u + 1) / 6;
+    const b1 = ( 3*u3 - 6*u2       + 4) / 6;
+    const b2 = (-3*u3 + 3*u2 + 3*u + 1) / 6;
+    const b3 =   u3 / 6;
+    return {
+      x: b0*p0.x + b1*p1.x + b2*p2.x + b3*p3.x,
+      y: b0*p0.y + b1*p1.y + b2*p2.y + b3*p3.y,
+    };
+  }
+
+  // dP/du — needed for arc-speed parameterization.
+  function bsplineVel(p0, p1, p2, p3, u) {
+    const u2 = u * u;
+    const d0 = (-3*u2 + 6*u - 3) / 6;
+    const d1 = ( 9*u2 - 12*u   ) / 6;
+    const d2 = (-9*u2 + 6*u + 3) / 6;
+    const d3 =   3*u2 / 6;
+    return {
+      x: d0*p0.x + d1*p1.x + d2*p2.x + d3*p3.x,
+      y: d0*p0.y + d1*p1.y + d2*p2.y + d3*p3.y,
+    };
+  }
+
+  function pickNextCtrl(last, prev, aspect) {
+    const pad = 0.1;
     const xMax = Math.max(0.1, aspect - pad);
     const yMax = 1 - pad;
-    const rMaxBound = Math.min(xMax, yMax) - 0.02;
-    const rMax = Math.max(0.15, Math.min(0.6, rMaxBound));
-    const rFloor = Math.max(0.18, bodyLen / (2 * Math.PI) * 0.6);
-    const rMin = Math.min(rFloor, rMax * 0.6);
-    const lapsFor = (r) =>
-      (2 * Math.PI * r < bodyLen)
-        ? 0.5 + Math.random() * 0.25 // ≤ 0.75
-        : 0.5 + Math.random();        // 0.5–1.5
-    const minTravel = 0.4;
-    const maxTravel = 1.2;
-
-    for (let i = 0; i < 80; i++) {
-      // 1. entry point: forward ±45°, some distance ahead
-      const jitter = (Math.random() * 2 - 1) * (Math.PI / 4);
-      const cj = Math.cos(jitter), sj = Math.sin(jitter);
-      const edx = forward.x * cj - forward.y * sj;
-      const edy = forward.x * sj + forward.y * cj;
-      const travelDist = minTravel + Math.random() * (maxTravel - minTravel);
-      const ex = from.x + edx * travelDist;
-      const ey = from.y + edy * travelDist;
-
-      // 2. circle containing entry, tangent to entry direction
-      const r = rMin + Math.random() * Math.max(0, rMax - rMin);
-      const dir = Math.random() < 0.5 ? 1 : -1; // CCW : CW
-      // center perpendicular to entry direction
-      const cx = ex - edy * r * dir;
-      const cy = ey + edx * r * dir;
-      // viewport check
-      if (cx - r < -xMax || cx + r > xMax) continue;
-      if (cy - r < -yMax || cy + r > yMax) continue;
-
-      const angle = Math.atan2(ey - cy, ex - cx);
-      return {
-        phase: "travel",
-        circle: { cx, cy, r },
-        entry: { x: ex, y: ey },
-        angle,
-        direction: dir,
-        lapsTotal: lapsFor(r),
-        angleTraveled: 0,
-      };
+    let fx = last.x - prev.x, fy = last.y - prev.y;
+    const m = Math.hypot(fx, fy);
+    if (m < 1e-6) { fx = 1; fy = 0; } else { fx /= m; fy /= m; }
+    // bias forward, ±60° turn, viewport-clamped step
+    for (let i = 0; i < 24; i++) {
+      const ang = (Math.random() * 2 - 1) * (Math.PI / 3);
+      const c = Math.cos(ang), s = Math.sin(ang);
+      const nx = fx * c - fy * s;
+      const ny = fx * s + fy * c;
+      const step = 0.4 + Math.random() * 0.6;
+      const x = last.x + nx * step;
+      const y = last.y + ny * step;
+      if (x < -xMax || x > xMax || y < -yMax || y > yMax) continue;
+      return { x, y };
     }
+    // fallback: reflect forward off bounds
+    let x = last.x + fx * 0.4, y = last.y + fy * 0.4;
+    x = Math.max(-xMax, Math.min(xMax, x));
+    y = Math.max(-yMax, Math.min(yMax, y));
+    return { x, y };
+  }
 
-    // fallback: small circle ahead, tangent entry, clamped
-    const r = Math.max(0.15, Math.min(0.25, rMax));
-    const dir = 1;
-    const ex = from.x + forward.x * 0.5;
-    const ey = from.y + forward.y * 0.5;
-    let cx = ex - forward.y * r * dir;
-    let cy = ey + forward.x * r * dir;
-    cx = Math.max(-xMax + r, Math.min(xMax - r, cx));
-    cy = Math.max(-yMax + r, Math.min(yMax - r, cy));
-    const angle = Math.atan2(ey - cy, ex - cx);
-    return {
-      phase: "travel",
-      circle: { cx, cy, r },
-      entry: { x: ex, y: ey },
-      angle,
-      direction: dir,
-      lapsTotal: lapsFor(r),
-      angleTraveled: 0,
-    };
+  function seedAutoCtrl(pos, dir, aspect) {
+    // 4 collinear seed pts → first segment starts at pos, moves along dir.
+    // B-spline of 4 collinear ctrls = line, smoothly bends as new ctrls join.
+    const s = 0.4;
+    autoCtrl = [
+      { x: pos.x - dir.x * s * 2, y: pos.y - dir.y * s * 2 },
+      { x: pos.x - dir.x * s,     y: pos.y - dir.y * s     },
+      { x: pos.x,                 y: pos.y                 },
+      { x: pos.x + dir.x * s,     y: pos.y + dir.y * s     },
+    ];
+    // append a few more so first sample lies inside a real segment
+    for (let i = 0; i < 2; i++) {
+      const n = autoCtrl.length;
+      autoCtrl.push(pickNextCtrl(autoCtrl[n - 1], autoCtrl[n - 2], aspect));
+    }
+    autoU = 0;
   }
 
   function stepAuto(dt) {
     const aspect = Math.max(canvasSize.w / canvasSize.h, 0.1);
-    if (!autoState) {
+    if (!autoCtrl) {
       const body = getOverlay().body;
       const f = headFrameFromBody(body);
+      seedAutoCtrl(f.pos, f.dir, aspect);
       autoTip = { x: f.pos.x, y: f.pos.y };
-      autoState = pickCircle(autoTip, f.dir, aspect);
     }
-    const speed = autoSpeed;
-    if (autoState.phase === "travel") {
-      const dx = autoState.entry.x - autoTip.x;
-      const dy = autoState.entry.y - autoTip.y;
-      const d = Math.hypot(dx, dy);
-      const move = speed * dt;
-      if (d <= move || d < 1e-4) {
-        autoTip = { x: autoState.entry.x, y: autoState.entry.y };
-        autoState.phase = "lap";
+    let remaining = autoSpeed * dt;
+    // arc-speed walk: advance u by remaining / |dP/du|, refilling ctrls as needed.
+    for (let guard = 0; guard < 8 && remaining > 1e-6; guard++) {
+      const p0 = autoCtrl[0], p1 = autoCtrl[1], p2 = autoCtrl[2], p3 = autoCtrl[3];
+      const v = bsplineVel(p0, p1, p2, p3, autoU);
+      const sp = Math.hypot(v.x, v.y);
+      const du = remaining / Math.max(sp, 1e-3);
+      if (autoU + du < 1) {
+        autoU += du;
+        remaining = 0;
       } else {
-        autoTip = { x: autoTip.x + (dx / d) * move, y: autoTip.y + (dy / d) * move };
-      }
-    } else {
-      const { circle, direction } = autoState;
-      const dAng = ((speed * dt) / Math.max(circle.r, 1e-3)) * direction;
-      autoState.angle += dAng;
-      autoState.angleTraveled += Math.abs(dAng);
-      autoTip = {
-        x: circle.cx + Math.cos(autoState.angle) * circle.r,
-        y: circle.cy + Math.sin(autoState.angle) * circle.r,
-      };
-      if (autoState.angleTraveled >= autoState.lapsTotal * Math.PI * 2) {
-        const tx = -Math.sin(autoState.angle) * direction;
-        const ty = Math.cos(autoState.angle) * direction;
-        autoState = pickCircle(autoTip, { x: tx, y: ty }, aspect);
+        const consumed = (1 - autoU) * Math.max(sp, 1e-3);
+        remaining -= consumed;
+        autoU = 0;
+        autoCtrl.shift();
+        const n = autoCtrl.length;
+        autoCtrl.push(pickNextCtrl(autoCtrl[n - 1], autoCtrl[n - 2], aspect));
       }
     }
+    const p0 = autoCtrl[0], p1 = autoCtrl[1], p2 = autoCtrl[2], p3 = autoCtrl[3];
+    autoTip = bsplinePos(p0, p1, p2, p3, autoU);
     setTipTarget(autoTip);
   }
 
   $effect(() => {
     if (!ready) return;
     if (autoFly) {
-      autoState = null;
+      autoCtrl = null;
       autoLastTime = 0;
     } else {
-      autoState = null;
+      autoCtrl = null;
       autoLastTime = 0;
       if (!dragging) setTipTarget(null);
     }
@@ -245,6 +244,25 @@
     step();
     render();
     if (showPoints) overlayView = getOverlay();
+    if (showPath && autoFly && autoCtrl && autoCtrl.length >= 4) {
+      const samples = [];
+      const SEGS_PER = 24;
+      // sample each interior B-spline segment (window of 4 ctrls slides one each step)
+      for (let i = 0; i + 3 < autoCtrl.length; i++) {
+        const p0 = autoCtrl[i], p1 = autoCtrl[i+1], p2 = autoCtrl[i+2], p3 = autoCtrl[i+3];
+        const start = i === 0 ? 0 : 1; // skip duplicate junction
+        for (let k = start; k <= SEGS_PER; k++) {
+          samples.push(bsplinePos(p0, p1, p2, p3, k / SEGS_PER));
+        }
+      }
+      pathView = {
+        samples,
+        ctrls: autoCtrl.slice(),
+        cursor: { x: autoTip.x, y: autoTip.y },
+      };
+    } else if (showPath) {
+      pathView = { samples: [], ctrls: [], cursor: null };
+    }
   }
 
   function onResize() {
@@ -310,6 +328,32 @@
       onpointerup={onPointerUp}
       onpointercancel={onPointerUp}
     ></canvas>
+    {#if showPath && pathView.samples.length > 1}
+      <svg
+        class="overlay path-overlay"
+        viewBox={`0 0 ${canvasSize.w} ${canvasSize.h}`}
+        preserveAspectRatio="none"
+      >
+        <polyline
+          class="path-curve"
+          points={pathView.samples.map(p => { const s = ws(p); return `${s.x},${s.y}`; }).join(" ")}
+        />
+        {#if pathView.ctrls.length >= 2}
+          <polyline
+            class="path-ctrl-poly"
+            points={pathView.ctrls.map(p => { const s = ws(p); return `${s.x},${s.y}`; }).join(" ")}
+          />
+        {/if}
+        {#each pathView.ctrls as p}
+          {@const s = ws(p)}
+          <circle class="path-ctrl" cx={s.x} cy={s.y} r="4" />
+        {/each}
+        {#if pathView.cursor}
+          {@const s = ws(pathView.cursor)}
+          <circle class="path-cursor" cx={s.x} cy={s.y} r="6" />
+        {/if}
+      </svg>
+    {/if}
     {#if showPoints && overlayView.body.length > 0}
       <svg
         class="overlay"
@@ -492,6 +536,10 @@
         <input type="checkbox" bind:checked={showPoints} />
         <span>show control points</span>
       </label>
+      <label class="check">
+        <input type="checkbox" bind:checked={showPath} />
+        <span>show auto-fly path</span>
+      </label>
       <p class="hint">drag on canvas: tip follows mouse, chain pulls along when stretched</p>
     </fieldset>
   </div>
@@ -554,6 +602,28 @@
     stroke: rgba(180, 60, 60, 0.45);
     stroke-width: 1;
     stroke-dasharray: 4 4;
+  }
+  .path-overlay polyline.path-curve {
+    fill: none;
+    stroke: rgba(80, 160, 255, 0.85);
+    stroke-width: 2;
+    stroke-dasharray: none;
+  }
+  .path-overlay polyline.path-ctrl-poly {
+    fill: none;
+    stroke: rgba(80, 160, 255, 0.35);
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+  }
+  .path-overlay circle.path-ctrl {
+    fill: rgba(80, 160, 255, 0.9);
+    stroke: white;
+    stroke-width: 1.5;
+  }
+  .path-overlay circle.path-cursor {
+    fill: rgba(255, 220, 60, 0.95);
+    stroke: rgba(40, 40, 40, 0.9);
+    stroke-width: 1.5;
   }
   .controls {
     display: grid;

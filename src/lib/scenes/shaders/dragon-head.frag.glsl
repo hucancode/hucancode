@@ -1,13 +1,14 @@
 precision highp float;
 
-uniform vec2  iResolution;
-uniform vec2  uHeadPos;        // world-space tip position
-uniform vec2  uHeadDir;        // normalized chain direction at tip
-uniform float uHeadSize;       // world units per local-space unit
-uniform float uShowHead;       // 0 = hidden, 1 = visible
-uniform vec4  uBrushColor;
+uniform vec4 uBrushColor;
 
 varying vec2 vUV;
+
+// Plane geometry size — keep in sync with HEAD_PLANE_W/H in ink-dragon.js
+const float HEAD_W = 2.4;
+const float HEAD_H = 1.6;
+// SDF x of plane center (snout sits at sdf x = -0.55 → at vUV.x = 0.5)
+const float HEAD_SDF_OFFSET_X = -0.55;
 
 float sdSegment(vec2 p, vec2 a, vec2 b) {
     vec2 pa = p - a, ba = b - a;
@@ -53,25 +54,11 @@ float sdDragonHead(vec2 p) {
 }
 
 void main() {
-    if (uShowHead < 0.5 || uHeadSize < 1e-4) discard;
-
-    vec2 hd = uHeadDir;
-    float hl = length(hd);
-    if (hl < 1e-5) discard;
-    hd /= hl;
-
-    float aspect = iResolution.x / iResolution.y;
-    vec2 p = vec2((vUV.x * 2.0 - 1.0) * aspect, vUV.y * 2.0 - 1.0);
-
-    vec2 perp = vec2(-hd.y, hd.x);
-    vec2 rel = p - uHeadPos;
-    vec2 pLocal = vec2(dot(rel, hd), dot(rel, perp)) / uHeadSize;
-
-    const float EYE_OFFSET = 0.55;
-    float headSD = sdDragonHead(pLocal - vec2(EYE_OFFSET, 0.0)) * uHeadSize;
-    float aa = 2.0 / iResolution.y;
-    float alpha = (1.0 - smoothstep(-aa, aa, headSD)) * uBrushColor.a;
-
+    vec2 p = vec2((vUV.x - 0.5) * HEAD_W + HEAD_SDF_OFFSET_X,
+                  (vUV.y - 0.5) * HEAD_H);
+    float d = sdDragonHead(p);
+    float aa = fwidth(d);
+    float alpha = (1.0 - smoothstep(-aa, aa, d)) * uBrushColor.a;
     if (alpha <= 0.0) discard;
     gl_FragColor = vec4(uBrushColor.rgb, alpha);
 }
