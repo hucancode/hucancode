@@ -1,6 +1,6 @@
 precision highp float;
 
-uniform vec2  iResolution;
+uniform float uAspect;
 uniform sampler2D curveTex;
 uniform int   curveLen;
 uniform float curveTotalLen;
@@ -79,8 +79,7 @@ vec2 curvePointAtArc(float s) {
 }
 
 void main() {
-    float aspect = iResolution.x / iResolution.y;
-    vec2 p = vec2((vUV.x * 2.0 - 1.0) * aspect, vUV.y * 2.0 - 1.0);
+    vec2 p = vec2((vUV.x * 2.0 - 1.0) * uAspect, vUV.y * 2.0 - 1.0);
 
     if (curveLen < 2) {
         gl_FragColor = uBgColor;
@@ -115,7 +114,7 @@ void main() {
     float d = sd - w * 0.5;
 
     // antialiased edge
-    float aa = 2.0 / iResolution.y;
+    float aa = max(fwidth(d), 1e-6);
     float strokeA = smoothstep(aa, -aa, d);
     strokeA *= uOpacity * uBrushColor.a;
 

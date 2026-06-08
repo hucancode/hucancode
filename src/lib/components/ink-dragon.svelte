@@ -14,6 +14,7 @@
     setWidthEnd,
     setWidthOffset,
     setWidthRange,
+    setWireframe,
     setHead,
     setWhiskerWidth,
     setPhysicsParam,
@@ -32,13 +33,14 @@
   let observer;
 
   let width = $state(0.05);
-  let inkFlow = $state(2.0);
+  let inkFlow = $state(2.8);
   let strands = $state(3.0);
-  let waterFlow = $state(0.8);
+  let waterFlow = $state(0.88);
   let wobble = $state(0.9);
   let showPoints = $state(true);
   let showHead = $state(true);
   let showPath = $state(false);
+  let wireframe = $state(false);
   let headSize = $state(0.15);
   let whiskerWidth = $state(0.01);
   let whiskerSegs = $state(5);
@@ -93,6 +95,7 @@
   $effect(() => { if (ready) setWidthEnd(widthEnd); });
   $effect(() => { if (ready) setWidthOffset(widthOffset); });
   $effect(() => { if (ready) setWidthRange(widthRange); });
+  $effect(() => { if (ready) setWireframe(wireframe); });
   $effect(() => { if (ready) setHead(null, null, headSize, showHead); });
   $effect(() => { if (ready) setWhiskerWidth(whiskerWidth); });
 
@@ -539,6 +542,10 @@
       <label class="check">
         <input type="checkbox" bind:checked={showPath} />
         <span>show auto-fly path</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" bind:checked={wireframe} />
+        <span>wireframe body</span>
       </label>
       <p class="hint">drag on canvas: tip follows mouse, chain pulls along when stretched</p>
     </fieldset>

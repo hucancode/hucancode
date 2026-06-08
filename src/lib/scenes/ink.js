@@ -1,64 +1,41 @@
 import {
-  Mesh,
   OrthographicCamera,
-  PlaneGeometry,
   Scene,
-  ShaderMaterial,
-  Vector2,
-  DataTexture,
-  RGBAFormat,
-  FloatType,
-  NearestFilter,
-  ClampToEdgeWrapping,
   WebGLRenderer,
 } from "three";
-import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
-import STROKE_FRAGMENT_SHADER from "$lib/scenes/shaders/stroke.frag.glsl?raw";
-import { allocGridTex, makeGridUniforms, buildGrid } from "$lib/scenes/stroke-grid";
+import {
+  makePolylineStroke,
+  updatePolylineStroke,
+  setStrokeLineWidth,
+  disposePolylineStroke,
+} from "$lib/scenes/stroke-polyline-mesh";
+import {
+  makePaperBackground,
+  disposePaperBackground,
+} from "$lib/scenes/paper-background";
 
 const MAX_POINTS = 256;
-let scene, camera, renderer, mesh, curveTex, curveData;
-let gridTex, gridData;
-let lastPolyline = null;
+const ARC_SAMPLES = 96;
+const PI2 = Math.PI * 2;
 
-const uniforms = {
-  iResolution: { value: new Vector2(1, 1) },
-  uMode:        { value: 0 },       // 0 = polar arc, 1 = cartesian, 2 = polyline
-  uRadius:      { value: 0.6 },
-  uAngleStart:  { value: 0.2 },
-  uSweepAmt:    { value: 0.92 },
-  uLineWidth:   { value: 0.3 },
-  uClockwise:   { value: 0.0 },
-  uWobble:      { value: 0.25 },
-  uStrands:     { value: 1.0 },
-  uInkFlow:     { value: 0.8 },
-  uWaterFlow:   { value: 0.8 },
-  uOpacity:     { value: 1.0 },
-  uWidthEnd:    { value: 1.0 },
-  uWidthOffset: { value: 0.5 },
-  uWidthRange:  { value: 1.0 },
-  uWidthAnchor: { value: 0.5 },
-  uBrushColor:  { value: [0.0, 0.0, 0.0, 0.9] },
-  uBgColor:     { value: [1.0, 1.0, 0.875, 1.0] },
-  // polyline mode (also kept declared for non-polyline modes so sampler stays bound):
-  curveTex:      { value: null },
-  curveTexWidth: { value: MAX_POINTS },
-  curveLen:      { value: 0 },
-  curveTotalLen: { value: 1 },
+let scene, camera, renderer, stroke, background;
+
+// Mode + analytical-shape params drive polar/cartesian polyline generation.
+// In mode 2 (user polyline), `lastUserPolyline` is the source of truth.
+const state = {
+  mode: 0,        // 0 polar, 1 cartesian, 2 user polyline
+  radius: 0.6,
+  angleStart: 0.2,
+  sweep: 0.92,
+  clockwise: false,
+  lineWidth: 0.3,
 };
 
-// grid uniforms attached below after texture allocation
+const aspectUniform = { value: 1 };
+const brushColor = [0.0, 0.0, 0.0, 0.9];
+const bgColor    = [1.0, 1.0, 0.875, 1.0];
 
-function makeCurveTex() {
-  curveData = new Float32Array(MAX_POINTS * 4);
-  const tex = new DataTexture(curveData, MAX_POINTS, 1, RGBAFormat, FloatType);
-  tex.minFilter = NearestFilter;
-  tex.magFilter = NearestFilter;
-  tex.wrapS = ClampToEdgeWrapping;
-  tex.wrapT = ClampToEdgeWrapping;
-  tex.needsUpdate = true;
-  return tex;
-}
+let lastUserPolyline = null;
 
 export function init(canvas) {
   scene = new Scene();
@@ -67,28 +44,36 @@ export function init(canvas) {
   renderer.setPixelRatio(window.devicePixelRatio);
   resize(canvas.clientWidth, canvas.clientHeight);
 
-  curveTex = makeCurveTex();
-  uniforms.curveTex.value = curveTex;
+  background = makePaperBackground({ bgColor, aspectUniform });
+  scene.add(background.mesh);
 
-  const g = allocGridTex();
-  gridTex = g.tex; gridData = g.data;
-  Object.assign(uniforms, makeGridUniforms(gridTex));
-
-  const material = new ShaderMaterial({
-    uniforms,
-    vertexShader: VERTEX_SHADER,
-    fragmentShader: STROKE_FRAGMENT_SHADER,
-    transparent: false,
+  stroke = makePolylineStroke({
+    maxPoints: MAX_POINTS,
+    params: {
+      lineWidth:   state.lineWidth,
+      inkFlow:     0.8,
+      strands:     1.0,
+      waterFlow:   0.8,
+      wobble:      0.25,
+      opacity:     1.0,
+      widthEnd:    1.0,
+      widthOffset: 0.5,
+      widthRange:  1.0,
+      widthAnchor: 0.5,
+    },
+    brushColor,
+    aspectUniform,
   });
-  mesh = new Mesh(new PlaneGeometry(2, 2), material);
-  scene.add(mesh);
+  stroke.mesh.renderOrder = 1;
+  scene.add(stroke.mesh);
+  rebuild();
 }
 
 export function resize(w, h) {
   if (!renderer) return;
   renderer.setSize(w, h, false);
-  uniforms.iResolution.value.set(w * window.devicePixelRatio, h * window.devicePixelRatio);
-  rebuildGrid();
+  aspectUniform.value = h > 0 ? w / h : 1;
+  rebuild();
 }
 
 export function render() {
@@ -96,61 +81,89 @@ export function render() {
   renderer.render(scene, camera);
 }
 
-export function setRadius(v)     { uniforms.uRadius.value = v; }
-export function setAngleStart(v) { uniforms.uAngleStart.value = v; }
-export function setSweepAmt(v)   { uniforms.uSweepAmt.value = v; }
-export function setLineWidth(v)  { uniforms.uLineWidth.value = v; rebuildGrid(); }
-export function setClockwise(b)  { uniforms.uClockwise.value = b ? 1.0 : 0.0; }
-export function setWobble(v)     { uniforms.uWobble.value = v; }
-export function setStrands(v)    { uniforms.uStrands.value = v; }
-export function setInkFlow(v)    { uniforms.uInkFlow.value = v; }
-export function setWaterFlow(v)  { uniforms.uWaterFlow.value = v; }
-export function setWidthEnd(v)    { uniforms.uWidthEnd.value = v; }
-export function setWidthOffset(v) { uniforms.uWidthOffset.value = v; }
-export function setWidthRange(v)  { uniforms.uWidthRange.value = v; }
-export function setWidthAnchor(v) { uniforms.uWidthAnchor.value = v; }
-// 0 = polar, 1 = cartesian, 2 = polyline
-export function setMode(m)       { uniforms.uMode.value = m | 0; }
-// legacy alias
-export function setCartesian(b)  { uniforms.uMode.value = b ? 1 : 0; }
+// ----------------- polyline generation per mode -----------------
+
+function makeArcSamples(radius, angleStart, sweep, clockwise) {
+  const n = ARC_SAMPLES;
+  const pts = new Array(n);
+  const dir = clockwise ? -1 : 1;
+  const s = Math.max(0, Math.min(1, sweep));
+  // tail at i=0 (full sweep behind start), tip at i=n-1 (at angleStart).
+  for (let i = 0; i < n; i++) {
+    const t = 1 - i / (n - 1);                 // 1..0
+    const a = angleStart + dir * PI2 * s * t;
+    pts[i] = { x: Math.sin(a) * radius, y: Math.cos(a) * radius };
+  }
+  return pts;
+}
+
+function makeCartesianSamples(yLevel, angleStart, sweep, clockwise) {
+  // Straight horizontal line at y = yLevel, spanning a fraction of the
+  // canvas width set by sweep, offset by angleStart. Tip at right end
+  // (tail at left), reversed when clockwise.
+  const aspect = aspectUniform.value;
+  const len = 2 * aspect * Math.max(0, Math.min(1, sweep));
+  const xShift = angleStart * yLevel;          // matches old uAngleStart * uRadius semantics
+  const xL = -aspect + xShift;
+  const xR = xL + len;
+  const pts = clockwise
+    ? [{ x: xR, y: yLevel }, { x: xL, y: yLevel }]
+    : [{ x: xL, y: yLevel }, { x: xR, y: yLevel }];
+  return pts;
+}
+
+function rebuild() {
+  if (!stroke) return;
+  let pts;
+  if (state.mode === 2) {
+    pts = lastUserPolyline;
+    if (!pts || pts.length < 2) {
+      stroke.geom.setDrawRange(0, 0);
+      stroke.n = 0;
+      return;
+    }
+  } else if (state.mode === 1) {
+    pts = makeCartesianSamples(state.radius, state.angleStart, state.sweep, state.clockwise);
+  } else {
+    pts = makeArcSamples(state.radius, state.angleStart, state.sweep, state.clockwise);
+  }
+  updatePolylineStroke(stroke, pts);
+}
+
+// ----------------- setters -----------------
+
+export function setRadius(v)     { state.radius = v;     rebuild(); }
+export function setAngleStart(v) { state.angleStart = v; rebuild(); }
+export function setSweepAmt(v)   { state.sweep = v;      rebuild(); }
+export function setClockwise(b)  { state.clockwise = !!b; rebuild(); }
+export function setLineWidth(v) {
+  state.lineWidth = v;
+  if (stroke) setStrokeLineWidth(stroke, v);
+}
+export function setMode(m) {
+  state.mode = m | 0;
+  rebuild();
+}
+export function setCartesian(b) { setMode(b ? 1 : 0); }
+
+function setU(name, v) {
+  if (stroke && stroke.uniforms[name]) stroke.uniforms[name].value = v;
+}
+export function setWobble(v)      { setU("uWobble", v); }
+export function setStrands(v)     { setU("uStrands", v); }
+export function setInkFlow(v)     { setU("uInkFlow", v); }
+export function setWaterFlow(v)   { setU("uWaterFlow", v); }
+export function setWidthEnd(v)    { setU("uWidthEnd", v); }
+export function setWidthOffset(v) { setU("uWidthOffset", v); }
+export function setWidthRange(v)  { setU("uWidthRange", v); }
+export function setWidthAnchor(v) { setU("uWidthAnchor", v); }
 
 // points = [{x, y}, ...] in world space [-aspect..aspect, -1..1]
 export function setPolyline(points) {
-  if (!curveData) return;
-  const n = Math.min(points.length, MAX_POINTS);
-  let acc = 0;
-  for (let i = 0; i < n; i++) {
-    if (i > 0) {
-      const dx = points[i].x - points[i - 1].x;
-      const dy = points[i].y - points[i - 1].y;
-      acc += Math.hypot(dx, dy);
-    }
-    const o = i * 4;
-    curveData[o]     = points[i].x;
-    curveData[o + 1] = points[i].y;
-    curveData[o + 2] = acc;
-    curveData[o + 3] = 0;
-  }
-  for (let i = n; i < MAX_POINTS; i++) {
-    const o = i * 4;
-    curveData[o] = curveData[o+1] = curveData[o+2] = curveData[o+3] = 0;
-  }
-  uniforms.curveLen.value = n;
-  uniforms.curveTotalLen.value = Math.max(acc, 1e-6);
-  curveTex.needsUpdate = true;
-
-  // rebuild spatial grid for SDF acceleration
-  lastPolyline = points.slice(0, n);
-  rebuildGrid();
+  lastUserPolyline = points.slice(0, Math.min(points.length, MAX_POINTS));
+  if (state.mode === 2) rebuild();
 }
 
-function rebuildGrid() {
-  if (!gridData || !lastPolyline) return;
-  const margin = (uniforms.uLineWidth.value || 0) * 0.5 + 0.02;
-  buildGrid(lastPolyline, margin, gridData, gridTex, uniforms);
-}
-
-// screen [0..w, 0..h] -> world [-aspect..aspect, -1..1] (matching shader)
 export function screenToWorld(x, y, w, h) {
   const aspect = w / h;
   const u = x / w;
@@ -164,38 +177,35 @@ export function worldToScreen(p, w, h) {
   return { x: u * w, y: v * h };
 }
 
-// Generate a circular-arc starter polyline. Tail at i=0 (angle near 2π),
-// tip at i=n-1 (angle 0). Matches the polyline arc convention the shader
-// uses (arc=0 at tail).
 export function makeArcPolyline(n = 16, radius = 0.6, sweep = 0.92) {
   const pts = new Array(n);
   for (let i = 0; i < n; i++) {
-    const a = (Math.PI * 2) * (1 - i / (n - 1)) * sweep;
+    const a = PI2 * (1 - i / (n - 1)) * sweep;
     pts[i] = { x: Math.sin(a) * radius, y: Math.cos(a) * radius };
   }
   return pts;
 }
 
-// Append a point near the current tail, nudged so it isn't coincident.
 export function appendPolylinePoint(points, dx = 0.1, dy = 0.1) {
   const last = points[points.length - 1];
   return [...points, { x: last.x + dx, y: last.y + dy }];
 }
 
-// Drop the last point. Caller enforces minimum length.
 export function dropPolylinePoint(points) {
   return points.length > 2 ? points.slice(0, -1) : points;
 }
 
 export function destroy() {
-  if (mesh) {
-    mesh.geometry.dispose();
-    mesh.material.dispose();
-    scene.remove(mesh);
-    mesh = null;
+  if (stroke) {
+    if (scene) scene.remove(stroke.mesh);
+    disposePolylineStroke(stroke);
+    stroke = null;
   }
-  if (curveTex) { curveTex.dispose(); curveTex = null; }
-  if (gridTex) { gridTex.dispose(); gridTex = null; gridData = null; }
+  if (background) {
+    if (scene) scene.remove(background.mesh);
+    disposePaperBackground(background);
+    background = null;
+  }
   if (renderer) {
     renderer.dispose();
     renderer = null;
