@@ -15,15 +15,13 @@ import {
 } from "$lib/scenes/paper-background";
 
 const MAX_POINTS = 256;
-const ARC_SAMPLES = 96;
-const PI2 = Math.PI * 2;
 
 let scene, camera, renderer, stroke, background;
 
-// Mode + analytical-shape params drive polar/cartesian polyline generation.
-// In mode 2 (user polyline), `lastUserPolyline` is the source of truth.
+// Mode drives polyline generation. In mode 1 (user polyline),
+// `lastUserPolyline` is the source of truth.
 const state = {
-  mode: 0,        // 0 polar, 1 cartesian, 2 user polyline
+  mode: 0,        // 0 straight line, 1 user polyline
   radius: 0.6,
   angleStart: 0.2,
   sweep: 0.92,
@@ -83,21 +81,7 @@ export function render() {
 
 // ----------------- polyline generation per mode -----------------
 
-function makeArcSamples(radius, angleStart, sweep, clockwise) {
-  const n = ARC_SAMPLES;
-  const pts = new Array(n);
-  const dir = clockwise ? -1 : 1;
-  const s = Math.max(0, Math.min(1, sweep));
-  // tail at i=0 (full sweep behind start), tip at i=n-1 (at angleStart).
-  for (let i = 0; i < n; i++) {
-    const t = 1 - i / (n - 1);                 // 1..0
-    const a = angleStart + dir * PI2 * s * t;
-    pts[i] = { x: Math.sin(a) * radius, y: Math.cos(a) * radius };
-  }
-  return pts;
-}
-
-function makeCartesianSamples(yLevel, angleStart, sweep, clockwise) {
+function makeLineSamples(yLevel, angleStart, sweep, clockwise) {
   // Straight horizontal line at y = yLevel, spanning a fraction of the
   // canvas width set by sweep, offset by angleStart. Tip at right end
   // (tail at left), reversed when clockwise.
@@ -115,17 +99,15 @@ function makeCartesianSamples(yLevel, angleStart, sweep, clockwise) {
 function rebuild() {
   if (!stroke) return;
   let pts;
-  if (state.mode === 2) {
+  if (state.mode === 1) {
     pts = lastUserPolyline;
     if (!pts || pts.length < 2) {
       stroke.geom.setDrawRange(0, 0);
       stroke.n = 0;
       return;
     }
-  } else if (state.mode === 1) {
-    pts = makeCartesianSamples(state.radius, state.angleStart, state.sweep, state.clockwise);
   } else {
-    pts = makeArcSamples(state.radius, state.angleStart, state.sweep, state.clockwise);
+    pts = makeLineSamples(state.radius, state.angleStart, state.sweep, state.clockwise);
   }
   updatePolylineStroke(stroke, pts);
 }
@@ -144,7 +126,6 @@ export function setMode(m) {
   state.mode = m | 0;
   rebuild();
 }
-export function setCartesian(b) { setMode(b ? 1 : 0); }
 
 function setU(name, v) {
   if (stroke && stroke.uniforms[name]) stroke.uniforms[name].value = v;
@@ -161,7 +142,7 @@ export function setWidthAnchor(v) { setU("uWidthAnchor", v); }
 // points = [{x, y}, ...] in world space [-aspect..aspect, -1..1]
 export function setPolyline(points) {
   lastUserPolyline = points.slice(0, Math.min(points.length, MAX_POINTS));
-  if (state.mode === 2) rebuild();
+  if (state.mode === 1) rebuild();
 }
 
 export function screenToWorld(x, y, w, h) {
@@ -177,11 +158,23 @@ export function worldToScreen(p, w, h) {
   return { x: u * w, y: v * h };
 }
 
-export function makeArcPolyline(n = 16, radius = 0.6, sweep = 0.92) {
+export function makeLinePolyline(n = 16, yLevel = 0.0, sweep = 0.92) {
+  const aspect = aspectUniform.value;
+  const len = 2 * aspect * Math.max(0, Math.min(1, sweep));
+  const xL = -len / 2;
   const pts = new Array(n);
   for (let i = 0; i < n; i++) {
-    const a = PI2 * (1 - i / (n - 1)) * sweep;
-    pts[i] = { x: Math.sin(a) * radius, y: Math.cos(a) * radius };
+    const t = i / (n - 1);
+    pts[i] = { x: xL + len * t, y: yLevel };
+  }
+  return pts;
+}
+
+export function makeCirclePolyline(n = 32, radius = 0.6) {
+  const pts = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = (i / (n - 1)) * Math.PI * 2;
+    pts[i] = { x: Math.cos(a) * radius, y: Math.sin(a) * radius };
   }
   return pts;
 }

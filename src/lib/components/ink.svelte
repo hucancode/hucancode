@@ -23,7 +23,7 @@
     setPolyline,
     screenToWorld,
     worldToScreen,
-    makeArcPolyline,
+    makeCirclePolyline,
     appendPolylinePoint,
     dropPolylinePoint,
   } from "$lib/scenes/ink";
@@ -49,9 +49,9 @@
   let widthOffset = $state(0.5);
   let widthRange = $state(1.0);
   let widthAnchor = $state(1.0); // 0 = inside, 0.5 = center, 1 = outside
-  let mode = $state(0); // 0 = polar, 1 = cartesian, 2 = polyline
+  let mode = $state(0); // 0 = line, 1 = polyline
 
-  let polylinePts = $state(makeArcPolyline());
+  let polylinePts = $state(makeCirclePolyline());
   let dragIdx = null;
   let stageW = $state(300), stageH = $state(300);
 
@@ -89,7 +89,7 @@
 
   // push current control points to shader whenever they change (in polyline mode).
   $effect(() => {
-    if (!ready || mode !== 2) return;
+    if (!ready || mode !== 1) return;
     setPolyline(polylinePts);
   });
 
@@ -148,7 +148,7 @@
 <div class="ink-demo">
   <div class="stage" bind:clientWidth={stageW} bind:clientHeight={stageH}>
     <canvas bind:this={canvasEl}></canvas>
-    {#if mode === 2}
+    {#if mode === 1}
       <svg class="overlay" width={stageW} height={stageH}>
         <polyline
           points={polylinePts.map(p => { const s = ws(p); return `${s.x},${s.y}`; }).join(' ')}
@@ -171,37 +171,36 @@
     <fieldset>
       <legend>mode</legend>
       <div class="square" role="group">
-        <label><input type="radio" name="coord" value={0} bind:group={mode} /> polar</label>
-        <label><input type="radio" name="coord" value={1} bind:group={mode} /> cartesian</label>
-        <label><input type="radio" name="coord" value={2} bind:group={mode} /> polyline</label>
+        <label><input type="radio" name="coord" value={0} bind:group={mode} /> line</label>
+        <label><input type="radio" name="coord" value={1} bind:group={mode} /> polyline</label>
       </div>
       <label class="check">
         <input type="checkbox" bind:checked={clockwise} />
         <span>clockwise</span>
       </label>
-      {#if mode === 2}
+      {#if mode === 1}
         <div class="buttons">
           <button type="button" onclick={addPoint}>+ point</button>
           <button type="button" onclick={removePoint}>− point</button>
         </div>
-        <p class="hint">green = tail (arc 0), blue = tip (arc total). drag to edit.</p>
+        <p class="hint">green = tail (start), blue = tip (end). drag to edit.</p>
       {/if}
     </fieldset>
 
     <fieldset>
-      <legend>arc geometry</legend>
+      <legend>line geometry</legend>
       <label>
-        <span>Radius</span>
-        <input type="range" min="0.1" max="0.95" step="0.001" bind:value={radius} />
+        <span>Y Level</span>
+        <input type="range" min="-0.95" max="0.95" step="0.001" bind:value={radius} />
         <output>{radius.toFixed(3)}</output>
       </label>
       <label>
-        <span>Angle Start</span>
-        <input type="range" min="-6.283" max="6.283" step="0.001" bind:value={angleStart} />
+        <span>X Shift</span>
+        <input type="range" min="-1" max="1" step="0.001" bind:value={angleStart} />
         <output>{angleStart.toFixed(2)}</output>
       </label>
       <label>
-        <span>Sweep Amt</span>
+        <span>Length</span>
         <input type="range" min="0" max="1" step="0.001" bind:value={sweepAmt} />
         <output>{sweepAmt.toFixed(2)}</output>
       </label>
@@ -300,6 +299,8 @@
   .stage {
     position: relative;
     width: 100%;
+    min-width: 50vw;
+    max-width: 1280px;
     aspect-ratio: 1 / 1;
   }
   canvas {
