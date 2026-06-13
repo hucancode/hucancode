@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import {
     makeStrokeRaw, makePoint, insertPointAfter, removePoint,
-    resolveHandles, setUidFloor,
+    resolveControl, setUidFloor,
   } from "$lib/brush/engine";
   import { yongSymbol, yongMaxId } from "$lib/brush/yong";
   import {
@@ -35,8 +35,8 @@
   const color = "#111111";
 
   // drag state
-  // mode: "point" (move single point), "edge" (translate both endpoints),
-  // "h1"/"h2" (move bezier handle)
+  // mode: "point" (move single point), "edge" (translate segment),
+  // "ctrl" (move control point)
   let dragMode = null;
   let dragStrokeId = null;
   let dragIdx = null;
@@ -157,19 +157,14 @@
     dragMode = "edge"; dragStrokeId = strokeId; dragIdx = i;
     dragLastWorld = pointerWorld(e);
   }
-  function onPointerDownHandle(e, strokeId, i, which) {
+  function onPointerDownHandle(e, strokeId, i) {
     e.preventDefault(); e.stopPropagation();
     selectPath(strokeId, i);
-    dragMode = which; dragStrokeId = strokeId; dragIdx = i;
+    dragMode = "ctrl"; dragStrokeId = strokeId; dragIdx = i;
     dragLastWorld = pointerWorld(e);
-    // materialize handle if currently auto
+    // materialize control point if currently auto
     const s = findStroke(strokeId);
-    if (s) {
-      const auto = resolveHandles(s, i);
-      const path = s.paths[i];
-      if (!path.h1) path.h1 = { ...auto.h1 };
-      if (!path.h2) path.h2 = { ...auto.h2 };
-    }
+    if (s && !s.paths[i].ctrl) s.paths[i].ctrl = resolveControl(s, i);
   }
   function onPointerMove(e) {
     if (!dragMode || !canvasEl) return;
@@ -198,11 +193,9 @@
       a.x += dx; a.y += dy;
       b.x += dx; b.y += dy;
       const path = s.paths[dragIdx];
-      if (path.h1) { path.h1.x += dx; path.h1.y += dy; }
-      if (path.h2) { path.h2.x += dx; path.h2.y += dy; }
-    } else if (dragMode === "h1" || dragMode === "h2") {
-      const path = s.paths[dragIdx];
-      path[dragMode] = { x: w.x, y: w.y };
+      if (path.ctrl) { path.ctrl.x += dx; path.ctrl.y += dy; }
+    } else if (dragMode === "ctrl") {
+      s.paths[dragIdx].ctrl = { x: w.x, y: w.y };
     }
     dragLastWorld = w;
   }
@@ -214,11 +207,10 @@
     dragMoved = false;
     if (wasClick) deselectAll();
   }
-  function resetHandles() {
+  function resetControl() {
     const s = findStroke(selStrokeId);
     if (!s || selKind !== "path") return;
-    s.paths[selIdx].h1 = null;
-    s.paths[selIdx].h2 = null;
+    s.paths[selIdx].ctrl = null;
   }
 
   function syncCanvasSize() {
@@ -250,6 +242,19 @@
     render();
   });
 
+  // migrate legacy paths (h1/h2/tension) to single ctrl point in place
+  function migrateSymbol(sym) {
+    for (const s of sym.strokes || []) {
+      for (const p of s.paths || []) {
+        if (p.ctrl !== undefined) continue;
+        p.ctrl = (p.h1 && p.h2)
+          ? { x: (p.h1.x + p.h2.x) / 2, y: (p.h1.y + p.h2.y) / 2 }
+          : null;
+        delete p.h1; delete p.h2; delete p.tension;
+      }
+    }
+  }
+
   function loadState() {
     if (typeof localStorage === "undefined") return;
     try {
@@ -264,6 +269,7 @@
           for (const p of s.points || []) if (p.id > maxId) maxId = p.id;
         }
         setUidFloor(maxId);
+        migrateSymbol(data.symbol);
         symbol = data.symbol;
       }
       if (data.params) {
@@ -373,11 +379,9 @@
           {#each stroke.points.slice(0, -1) as p, i}
             {@const a = ws(p)}
             {@const b = ws(stroke.points[i + 1])}
-            {@const hh = resolveHandles(stroke, i)}
-            {@const h1s = ws(hh.h1)}
-            {@const h2s = ws(hh.h2)}
+            {@const cs = ws(resolveControl(stroke, i))}
             {@const edgeSelected = selKind === "path" && selStrokeId === stroke.id && selIdx === i}
-            <path d={`M ${a.x} ${a.y} C ${h1s.x} ${h1s.y}, ${h2s.x} ${h2s.y}, ${b.x} ${b.y}`}
+            <path d={`M ${a.x} ${a.y} Q ${cs.x} ${cs.y}, ${b.x} ${b.y}`}
                   fill="none"
                   stroke={edgeSelected ? "rgba(220,40,40,0.75)"
                         : isActive    ? "rgba(220,40,40,0.45)"
@@ -385,34 +389,28 @@
                   stroke-width={edgeSelected ? 3 : 1.5}
                   stroke-dasharray="4 3"
                   style="pointer-events:none;" />
-            <path d={`M ${a.x} ${a.y} C ${h1s.x} ${h1s.y}, ${h2s.x} ${h2s.y}, ${b.x} ${b.y}`}
+            <path d={`M ${a.x} ${a.y} Q ${cs.x} ${cs.y}, ${b.x} ${b.y}`}
                   fill="none" stroke="transparent" stroke-width="16"
                   style="cursor:move; pointer-events:stroke;"
                   onpointerdown={(e) => onPointerDownEdge(e, stroke.id, i)} />
           {/each}
         {/each}
 
-        <!-- pass 2: bezier handles of selected edge (rendered on top of all edges) -->
+        <!-- pass 2: control point of selected edge (rendered on top of all edges) -->
         {#if selKind === "path" && selStroke && selPath}
           {@const a = ws(selStroke.points[selIdx])}
           {@const b = ws(selStroke.points[selIdx + 1])}
-          {@const hh = resolveHandles(selStroke, selIdx)}
-          {@const h1s = ws(hh.h1)}
-          {@const h2s = ws(hh.h2)}
-          <line x1={a.x} y1={a.y} x2={h1s.x} y2={h1s.y}
-                stroke="rgba(40,80,220,0.55)" stroke-width="1"
+          {@const cs = ws(resolveControl(selStroke, selIdx))}
+          <line x1={a.x} y1={a.y} x2={cs.x} y2={cs.y}
+                stroke="rgba(40,80,220,0.45)" stroke-width="1"
                 style="pointer-events:none;" />
-          <line x1={b.x} y1={b.y} x2={h2s.x} y2={h2s.y}
-                stroke="rgba(140,80,220,0.55)" stroke-width="1"
+          <line x1={b.x} y1={b.y} x2={cs.x} y2={cs.y}
+                stroke="rgba(40,80,220,0.45)" stroke-width="1"
                 style="pointer-events:none;" />
-          <rect x={h1s.x - 6} y={h1s.y - 6} width="12" height="12"
+          <rect x={cs.x - 6} y={cs.y - 6} width="12" height="12"
                 fill="rgba(40,140,220,0.95)" stroke="white" stroke-width="2"
                 style="cursor:grab; pointer-events:all;"
-                onpointerdown={(e) => onPointerDownHandle(e, selStrokeId, selIdx, "h1")} />
-          <rect x={h2s.x - 6} y={h2s.y - 6} width="12" height="12"
-                fill="rgba(140,80,220,0.95)" stroke="white" stroke-width="2"
-                style="cursor:grab; pointer-events:all;"
-                onpointerdown={(e) => onPointerDownHandle(e, selStrokeId, selIdx, "h2")} />
+                onpointerdown={(e) => onPointerDownHandle(e, selStrokeId, selIdx)} />
         {/if}
 
         <!-- pass 3: points (rendered last, on top of everything) -->
@@ -529,17 +527,12 @@
           <input type="range" min="0.05" max="4" step="0.01" bind:value={selPath.duration} />
           <output>{selPath.duration.toFixed(2)}</output>
         </label>
-        <label>
-          <span>tension</span>
-          <input type="range" min="0" max="1" step="0.01" bind:value={selPath.tension} />
-          <output>{selPath.tension.toFixed(2)}</output>
-        </label>
         <div class="buttons">
-          <button type="button" onclick={resetHandles}
-                  disabled={!selPath.h1 && !selPath.h2}>reset handles</button>
+          <button type="button" onclick={resetControl}
+                  disabled={!selPath.ctrl}>reset curve</button>
         </div>
         <p class="hint">
-          drag blue/purple squares to set bezier handles. tension drives auto handles when not set.
+          drag the blue square to bend the segment. reset returns it to the auto curve.
         </p>
       </fieldset>
     {/if}

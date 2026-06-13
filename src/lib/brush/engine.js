@@ -3,12 +3,13 @@
 //   Symbol = { strokes: Stroke[] }
 //   Stroke = { id, points: Point[], paths: Path[] }   (paths.length === points.length - 1)
 //   Point  = { id, x, y, pressure }                   (pressure 0..1)
-//   Path   = { timeEase, pressureEase, duration, tension }
-//                                                     (catmull-rom tension 0..1)
+//   Path   = { timeEase, pressureEase, duration, ctrl }
+//             ctrl = third point {x,y} steering the segment, or null = auto.
+//             A straight segment has ctrl at the chord midpoint.
 //
 // Sampling:
-//   For each path between point i and i+1, build a cubic bezier via
-//   catmull-rom-to-bezier using neighbouring points (endpoints mirrored).
+//   For each path between point i and i+1, build a quadratic bezier through the
+//   control point: B(t) = (1-t)^2 p1 + 2(1-t)t ctrl + t^2 p2.
 //   Resample the curve so samples are roughly arc-length uniform; for each
 //   arc fraction s in [0..1]:
 //     - position p(s) on the curve
@@ -26,26 +27,25 @@ export const DEFAULT_PATH = () => ({
   timeEase: "linear",
   pressureEase: "linear",
   duration: 1.0,
-  tension: 0.5,
-  h1: null,   // explicit bezier handle (world coord) or null = auto
-  h2: null,
+  ctrl: null,   // third point {x,y}, or null = auto from neighbours
 });
 
-// Resolve handles. Explicit override > catmull-rom-from-tension.
-export function resolveHandles(stroke, segIdx) {
-  const pts = stroke.points;
+const AUTO_TENSION = 0.5;
+
+// Resolve the control point. Explicit override, else catmull-rom auto
+// (midpoint of the two cubic tangent handles → smooth default join).
+export function resolveControl(stroke, segIdx) {
   const path = stroke.paths[segIdx];
+  if (path.ctrl) return { x: path.ctrl.x, y: path.ctrl.y };
+  const pts = stroke.points;
   const p1 = pts[segIdx];
   const p2 = pts[segIdx + 1];
   const p0 = pts[segIdx - 1] || mirror(p2, p1);
   const p3 = pts[segIdx + 2] || mirror(p1, p2);
-  const k = (1 - path.tension) / 6;
-  const autoH1 = { x: p1.x + (p2.x - p0.x) * k, y: p1.y + (p2.y - p0.y) * k };
-  const autoH2 = { x: p2.x - (p3.x - p1.x) * k, y: p2.y - (p3.y - p1.y) * k };
-  return {
-    h1: path.h1 ? { x: path.h1.x, y: path.h1.y } : autoH1,
-    h2: path.h2 ? { x: path.h2.x, y: path.h2.y } : autoH2,
-  };
+  const k = (1 - AUTO_TENSION) / 6;
+  const h1x = p1.x + (p2.x - p0.x) * k, h1y = p1.y + (p2.y - p0.y) * k;
+  const h2x = p2.x - (p3.x - p1.x) * k, h2y = p2.y - (p3.y - p1.y) * k;
+  return { x: (h1x + h2x) / 2, y: (h1y + h2y) / 2 };
 }
 
 export function makePoint(x, y, pressure = 0.5) {
@@ -110,16 +110,16 @@ function samplePath(stroke, segIdx, sampleDensity) {
   const path = stroke.paths[segIdx];
   const p1 = pts[segIdx];
   const p2 = pts[segIdx + 1];
-  const { h1, h2 } = resolveHandles(stroke, segIdx);
+  const c = resolveControl(stroke, segIdx);
 
   // dense pre-sample to estimate arc length
   const dense = 96;
   const xs = new Array(dense + 1);
   const cum = new Float32Array(dense + 1);
-  xs[0] = cubic(p1, h1, h2, p2, 0);
+  xs[0] = cubic(p1, c, c, p2, 0);
   for (let i = 1; i <= dense; i++) {
     const t = i / dense;
-    xs[i] = cubic(p1, h1, h2, p2, t);
+    xs[i] = cubic(p1, c, c, p2, t);
     cum[i] = cum[i - 1] + Math.hypot(xs[i].x - xs[i - 1].x, xs[i].y - xs[i - 1].y);
   }
   const total = cum[dense] || 1e-6;
@@ -135,7 +135,7 @@ function samplePath(stroke, segIdx, sampleDensity) {
     const a = cum[j], b = cum[j + 1];
     const localT = b > a ? (targetArc - a) / (b - a) : 0;
     const tCurve = (j + localT) / dense;
-    const pos = cubic(p1, h1, h2, p2, tCurve);
+    const pos = cubic(p1, c, c, p2, tCurve);
     const pe = applyEasing(path.pressureEase, s);
     const te = applyEasing(path.timeEase, s);
     samples[k] = {
