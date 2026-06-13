@@ -3,9 +3,14 @@
 //   Symbol = { strokes: Stroke[] }
 //   Stroke = { id, points: Point[], paths: Path[] }   (paths.length === points.length - 1)
 //   Point  = { id, x, y, pressure }                   (pressure 0..1)
-//   Path   = { timeEase, pressureEase, duration, ctrl }
-//             ctrl = third point {x,y} steering the segment, or null = auto.
-//             A straight segment has ctrl at the chord midpoint.
+//   Path   = { timeEase, duration, ctrl, pctrl }
+//             ctrl  = third point {x,y} steering the segment, or null = auto.
+//                     A straight segment has ctrl at the chord midpoint.
+//             pctrl = pressure curve control {k}, or null = linear.
+//                     The pressure of a path is a quadratic bezier value curve
+//                     with endpoints (0,A) and (1,B); pctrl bends it so the
+//                     curve passes through value k at the belly — the arc
+//                     position of the geometry control point ctrl.
 //
 // Sampling:
 //   For each path between point i and i+1, build a quadratic bezier through the
@@ -13,7 +18,7 @@
 //   Resample the curve so samples are roughly arc-length uniform; for each
 //   arc fraction s in [0..1]:
 //     - position p(s) on the curve
-//     - pressure = lerp(pi.p, pi1.p, pressureEase(s))     (pressure curve)
+//     - pressure = pressureAt(pctrl, A, B, s)             (pressure curve)
 //     - localTime = timeEase(s) * duration                (time curve; s -> t)
 //   Speed = ds_world / dt. Higher speed -> lower ink, more dither.
 
@@ -25,9 +30,9 @@ export const setUidFloor = (n) => { if (n > _id) _id = n; };
 
 export const DEFAULT_PATH = () => ({
   timeEase: "linear",
-  pressureEase: "linear",
   duration: 1.0,
-  ctrl: null,   // third point {x,y}, or null = auto from neighbours
+  ctrl: null,    // third point {x,y}, or null = auto from neighbours
+  pctrl: null,   // pressure control {k}, or null = linear A->B
 });
 
 const AUTO_TENSION = 0.5;
@@ -124,6 +129,15 @@ function samplePath(stroke, segIdx, sampleDensity) {
   }
   const total = cum[dense] || 1e-6;
 
+  // belly = arc fraction of the curve point nearest the control point.
+  // this is where the pressure curve thins/swells to pctrl.k.
+  let bellyX = 0.5, bestD = Infinity;
+  for (let i = 0; i <= dense; i++) {
+    const dx = xs[i].x - c.x, dy = xs[i].y - c.y;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; bellyX = cum[i] / total; }
+  }
+
   // samples scale with arc length: more length -> more samples
   const samplesPerPath = Math.max(4, Math.ceil(total * sampleDensity));
   const samples = new Array(samplesPerPath + 1);
@@ -136,14 +150,13 @@ function samplePath(stroke, segIdx, sampleDensity) {
     const localT = b > a ? (targetArc - a) / (b - a) : 0;
     const tCurve = (j + localT) / dense;
     const pos = cubic(p1, c, c, p2, tCurve);
-    const pe = applyEasing(path.pressureEase, s);
     const te = applyEasing(path.timeEase, s);
     samples[k] = {
       x: pos.x,
       y: pos.y,
       s,
       arc: targetArc,
-      pressure: lerp(p1.pressure, p2.pressure, pe),
+      pressure: pressureAt(path.pctrl, p1.pressure, p2.pressure, s, bellyX),
       time: te * path.duration,
       duration: path.duration,
     };
@@ -155,6 +168,32 @@ function mirror(a, b) {
   return { x: 2 * b.x - a.x, y: 2 * b.y - a.y };
 }
 function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+// Pressure value along a path at progress s in [0..1].
+// Endpoints (0,A) and (1,B). With pctrl = {k} the curve is the quadratic
+// bezier through control (bellyX,k): the "belly" thins (or swells) to k at the
+// belly position bellyX (arc fraction of the geometry control point).
+// pctrl null -> straight line (linear A->B).
+//   The bezier is P(t) = (1-t)^2 P0 + 2(1-t)t C + t^2 P2 in (progress,value).
+//   Solve bezier_x(t) = s for t, then return bezier_y(t).
+export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
+  if (!pctrl) return A + (B - A) * s;
+  const cx = clamp01(bellyX);
+  const k = pctrl.k;
+  // bezier_x(t) = (1-2cx) t^2 + 2cx t  ; solve = s
+  const a = 1 - 2 * cx, b = 2 * cx, c = -s;
+  let t;
+  if (Math.abs(a) < 1e-6) {
+    t = b > 1e-6 ? -c / b : s;                  // cx≈0.5 -> linear in t
+  } else {
+    const disc = Math.max(0, b * b - 4 * a * c);
+    t = (-b + Math.sqrt(disc)) / (2 * a);
+  }
+  t = clamp01(t);
+  const u = 1 - t;
+  return u * u * A + 2 * u * t * k + t * t * B;
+}
 
 // Returns flat array of samples across all paths with global time and speed.
 export function sampleStroke(stroke, sampleDensity = 80) {

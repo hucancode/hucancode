@@ -213,6 +213,26 @@
     s.paths[selIdx].ctrl = null;
   }
 
+  // pressure curve control {x,k}: belly thins/swells to k at progress x.
+  // materialize from a straight line (k = lerp(A,B,0.5)) on first edit.
+  function ensurePctrl() {
+    const s = findStroke(selStrokeId);
+    if (!s || selKind !== "path") return null;
+    const p = s.paths[selIdx];
+    if (!p.pctrl) {
+      const a = s.points[selIdx].pressure;
+      const b = s.points[selIdx + 1].pressure;
+      p.pctrl = { k: (a + b) / 2 };
+    }
+    return p.pctrl;
+  }
+  function setPctrlK(v) { const c = ensurePctrl(); if (c) c.k = v; }
+  function resetPressure() {
+    const s = findStroke(selStrokeId);
+    if (!s || selKind !== "path") return;
+    s.paths[selIdx].pctrl = null;
+  }
+
   function syncCanvasSize() {
     if (!canvasEl || stageW <= 0 || stageH <= 0) return;
     if (canvasEl.width !== stageW || canvasEl.height !== stageH) {
@@ -246,6 +266,8 @@
   function migrateSymbol(sym) {
     for (const s of sym.strokes || []) {
       for (const p of s.paths || []) {
+        if (p.pctrl === undefined) p.pctrl = null;
+        delete p.pressureEase;
         if (p.ctrl !== undefined) continue;
         p.ctrl = (p.h1 && p.h2)
           ? { x: (p.h1.x + p.h2.x) / 2, y: (p.h1.y + p.h2.y) / 2 }
@@ -516,23 +538,26 @@
           <output></output>
         </label>
         <label>
-          <span>pressure ease</span>
-          <select bind:value={selPath.pressureEase}>
-            {#each EASING_NAMES as n}<option value={n}>{n}</option>{/each}
-          </select>
-          <output></output>
-        </label>
-        <label>
           <span>duration</span>
           <input type="range" min="0.05" max="4" step="0.01" bind:value={selPath.duration} />
           <output>{selPath.duration.toFixed(2)}</output>
         </label>
+        <label>
+          <span>belly thin</span>
+          <input type="range" min="0" max="1" step="0.01"
+                 value={selPath.pctrl?.k ?? ((selStroke.points[selIdx].pressure + selStroke.points[selIdx + 1].pressure) / 2)}
+                 oninput={(e) => setPctrlK(+e.target.value)} />
+          <output>{(selPath.pctrl?.k ?? ((selStroke.points[selIdx].pressure + selStroke.points[selIdx + 1].pressure) / 2)).toFixed(2)}</output>
+        </label>
         <div class="buttons">
           <button type="button" onclick={resetControl}
                   disabled={!selPath.ctrl}>reset curve</button>
+          <button type="button" onclick={resetPressure}
+                  disabled={!selPath.pctrl}>reset pressure</button>
         </div>
         <p class="hint">
-          drag the blue square to bend the segment. reset returns it to the auto curve.
+          drag the blue square to bend the segment — it also sets where the
+          belly sits. belly thin sets how thin the stroke gets there.
         </p>
       </fieldset>
     {/if}
