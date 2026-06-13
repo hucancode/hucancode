@@ -4,7 +4,7 @@
 //
 // World coords: x in [-aspect, +aspect], y in [-1, +1]. Origin centred.
 
-import { sampleStroke } from "./engine";
+import { sampleStroke, strokeDuration } from "./engine";
 
 // view: { zoom, panX, panY } applied as: pScreen = view( (p - pan) * zoom ).
 const IDV = { zoom: 1, panX: 0, panY: 0 };
@@ -46,12 +46,16 @@ export function drawStroke(ctx, w, h, stroke, params) {
   const dither = params.dither ?? 0.5;
   const color = params.color || "#111";
   const view = params.view || IDV;
+  // tMax: local stroke time cutoff (s). undefined = draw whole stroke.
+  const tMax = params.tMax;
   const aspect = w / h;
   const worldToPx = (w / (2 * aspect)) * view.zoom;
 
   ctx.fillStyle = color;
   for (let i = 0; i < samples.length; i++) {
     const s = samples[i];
+    // samples are ascending in gTime; stop once past the cutoff.
+    if (tMax !== undefined && s.gTime > tMax) break;
     const ink = Math.max(0, 1 - s.speed / speedRef);
     if (ink <= 0.01) continue;
     if (dither > 0 && Math.random() > Math.pow(ink, 1.4 * dither)) continue;
@@ -105,8 +109,21 @@ export function drawMiGrid(ctx, w, h, view, side = 1.6) {
   ctx.restore();
 }
 
+// params.playhead: global time (s) for animated draw. Strokes run
+//   sequentially in array order. undefined = draw everything (edit view).
 export function drawSymbol(ctx, w, h, symbol, params) {
   clearCanvas(ctx, w, h, params.bg);
   if (params.showGrid) drawMiGrid(ctx, w, h, params.view || IDV, params.gridSize || 1.6);
-  for (const stroke of symbol.strokes) drawStroke(ctx, w, h, stroke, params);
+  const playhead = params.playhead;
+  if (playhead === undefined) {
+    for (const stroke of symbol.strokes) drawStroke(ctx, w, h, stroke, params);
+    return;
+  }
+  let start = 0;
+  for (const stroke of symbol.strokes) {
+    const dur = strokeDuration(stroke);
+    const localMax = playhead - start;
+    if (localMax > 0) drawStroke(ctx, w, h, stroke, { ...params, tMax: localMax });
+    start += dur;
+  }
 }

@@ -195,6 +195,47 @@ export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
   return u * u * A + 2 * u * t * k + t * t * B;
 }
 
+// Total animation time of one stroke = sum of its path durations.
+export function strokeDuration(stroke) {
+  if (!stroke || !stroke.paths) return 0;
+  let t = 0;
+  for (const p of stroke.paths) t += p.duration || 0;
+  return t;
+}
+
+// Total animation time of a whole symbol (strokes drawn sequentially in order).
+export function symbolDuration(symbol) {
+  if (!symbol || !symbol.strokes) return 0;
+  let t = 0;
+  for (const s of symbol.strokes) t += strokeDuration(s);
+  return t;
+}
+
+// --- Playback ---------------------------------------------------------------
+// A playback state tracks a global time cursor over a symbol's sequential
+// timeline: { t, playing, duration }. Feed it to drawSymbol via { playhead }.
+
+export function makePlayback(symbol) {
+  return { t: 0, playing: false, duration: symbolDuration(symbol) };
+}
+
+// Keep duration in sync with the (possibly edited) symbol, re-clamping t.
+export function syncPlayback(state, symbol) {
+  state.duration = symbolDuration(symbol);
+  if (state.t > state.duration) state.t = state.duration;
+  return state;
+}
+
+// Advance (dt > 0) or rewind (dt < 0) the cursor, clamped to [0, duration].
+// Reaching the end stops playback. Mutates and returns the state.
+export function step(state, dt) {
+  let t = state.t + dt;
+  if (t <= 0) { t = 0; }
+  else if (t >= state.duration) { t = state.duration; state.playing = false; }
+  state.t = t;
+  return state;
+}
+
 // Returns flat array of samples across all paths with global time and speed.
 export function sampleStroke(stroke, sampleDensity = 80) {
   if (!stroke || stroke.points.length < 2) return [];

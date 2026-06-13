@@ -3,6 +3,7 @@
   import {
     makeStrokeRaw, makePoint, insertPointAfter, removePoint,
     resolveControl, setUidFloor,
+    makePlayback, syncPlayback, step, symbolDuration,
   } from "$lib/brush/engine";
   import { yongSymbol, yongMaxId } from "$lib/brush/yong";
   import {
@@ -33,6 +34,12 @@
   let showGrid    = $state(true);
   let view = $state({ zoom: 1, panX: 0, panY: 0 });
   const color = "#111111";
+
+  // playback: anim=true renders partially up to pb.t; false = full edit view.
+  let anim = $state(false);
+  let pb = $state(makePlayback(symbol));
+  let rafId = null;
+  let lastTs = null;
 
   // drag state
   // mode: "point" (move single point), "edge" (translate segment),
@@ -106,6 +113,53 @@
     const newIdx = Math.min(selIdx, s.points.length - 1);
     selectPoint(s.id, newIdx);
   }
+
+  // --- stroke order -----------------------------------------------------------
+  function moveStroke(idx, dir) {
+    const j = idx + dir;
+    const arr = symbol.strokes;
+    if (j < 0 || j >= arr.length) return;
+    [arr[idx], arr[j]] = [arr[j], arr[idx]];
+  }
+
+  // --- playback ---------------------------------------------------------------
+  function stopRaf() {
+    if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; }
+    lastTs = null;
+  }
+  function tick(ts) {
+    if (lastTs == null) lastTs = ts;
+    const dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    syncPlayback(pb, symbol);
+    step(pb, dt);
+    render();
+    if (pb.playing) rafId = requestAnimationFrame(tick);
+    else stopRaf();
+  }
+  function play() {
+    syncPlayback(pb, symbol);
+    if (pb.duration <= 0) return;
+    if (pb.t >= pb.duration) pb.t = 0; // replay from start
+    anim = true;
+    pb.playing = true;
+    lastTs = null;
+    stopRaf();
+    rafId = requestAnimationFrame(tick);
+  }
+  function pause() {
+    pb.playing = false;
+    stopRaf();
+  }
+  function togglePlay() { pb.playing ? pause() : play(); }
+  function seekTo(v) {
+    pause();
+    anim = true;
+    syncPlayback(pb, symbol);
+    pb.t = Math.max(0, Math.min(pb.duration, v));
+    render();
+  }
+  function exitAnim() { pause(); anim = false; render(); }
 
   function ws(p) { return worldToScreen(p, stageW, stageH, view); }
 
@@ -248,6 +302,7 @@
     drawSymbol(ctx, stageW, stageH, symbol, {
       baseRadius, speedRef, dither, sampleDensity, color,
       view, showGrid, bg: "#fffce0",
+      playhead: anim ? pb.t : undefined,
     });
   }
 
@@ -348,6 +403,7 @@
     else _saveReady = true;
   });
 
+  const totalDuration = $derived(symbolDuration(symbol));
   const selStroke = $derived(findStroke(selStrokeId));
   const selPoint = $derived(
     selKind === "point" && selStroke ? selStroke.points[selIdx] : null
@@ -381,10 +437,10 @@
         </svg>
       </button>
       <button type="button" class="vp-btn"
-              class:active={showHandles}
-              title={showHandles ? "hide control points" : "show control points"}
+              class:active={showHandles && !anim}
+              title={anim ? "back to edit" : showHandles ? "hide control points" : "show control points"}
               onpointerdown={(e) => e.stopPropagation()}
-              onclick={() => (showHandles = !showHandles)}
+              onclick={() => { if (anim) { exitAnim(); showHandles = true; } else showHandles = !showHandles; }}
               aria-label="toggle edit">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -393,7 +449,7 @@
         </svg>
       </button>
     </div>
-    {#if showHandles && stageW > 0}
+    {#if showHandles && !anim && stageW > 0}
       <svg class="overlay" width={stageW} height={stageH}>
         <!-- pass 1: edges (preview + hit area) for every segment of every stroke -->
         {#each symbol.strokes as stroke (stroke.id)}
@@ -464,10 +520,51 @@
     <fieldset>
       <legend>symbol</legend>
       <div class="buttons">
-        <button type="button" onclick={spawnPoint}>+ point</button>
+        <button type="button" onclick={spawnPoint}
+                disabled={!showHandles}>+ point</button>
         <button type="button" onclick={despawnPoint}
-                disabled={selKind !== "point"}>− point</button>
+                disabled={!showHandles || selKind !== "point"}>− point</button>
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>strokes</legend>
+      <ol class="stroke-list">
+        {#each symbol.strokes as stroke, i (stroke.id)}
+          <li class:sel={selKind !== "none" && selStrokeId === stroke.id}>
+            <button type="button" class="stroke-pick"
+                    onclick={() => selectStroke(stroke.id)}>
+              <span class="name">stroke {i + 1}</span>
+              <span class="meta">{stroke.points.length} pts</span>
+            </button>
+            <span class="reorder">
+              <button type="button" title="move earlier"
+                      disabled={i === 0}
+                      onclick={() => moveStroke(i, -1)}>▲</button>
+              <button type="button" title="move later"
+                      disabled={i === symbol.strokes.length - 1}
+                      onclick={() => moveStroke(i, 1)}>▼</button>
+            </span>
+          </li>
+        {/each}
+      </ol>
+    </fieldset>
+
+    <fieldset>
+      <legend>playback</legend>
+      <div class="buttons">
+        <button type="button" onclick={togglePlay}
+                disabled={totalDuration <= 0}>
+          {pb.playing ? "⏸ pause" : "▶ play"}
+        </button>
+      </div>
+      <label>
+        <span>seek</span>
+        <input type="range" min="0" max={totalDuration || 0.001} step="0.01"
+               value={pb.t}
+               oninput={(e) => seekTo(+e.target.value)} />
+        <output>{pb.t.toFixed(2)}/{totalDuration.toFixed(2)}s</output>
+      </label>
     </fieldset>
 
     <fieldset>
@@ -664,6 +761,52 @@
     opacity: 0.7;
   }
   .buttons { display: flex; gap: 0.5rem; }
+  .stroke-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.25rem;
+    max-height: 12rem;
+    overflow-y: auto;
+  }
+  .stroke-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid rgba(128,128,128,0.25);
+    border-radius: 0.3rem;
+    padding: 0.1rem 0.1rem 0.1rem 0;
+  }
+  .stroke-list li.sel {
+    border-color: rgba(40,80,220,0.8);
+    background: rgba(40,80,220,0.08);
+  }
+  .stroke-pick {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .stroke-pick .name {
+    font-weight: 600;
+  }
+  .stroke-pick .meta { opacity: 0.6; }
+  .reorder { display: inline-flex; gap: 0.15rem; }
+  .reorder button {
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .reorder button:disabled { opacity: 0.3; cursor: default; }
   .hint {
     font-size: 0.8rem;
     opacity: 0.7;
