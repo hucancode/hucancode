@@ -30,6 +30,7 @@ export const setUidFloor = (n) => { if (n > _id) _id = n; };
 
 export const DEFAULT_PATH = () => ({
   timeEase: "linear",
+  delay: 0.0,    // dead time (s) before this path starts drawing
   duration: 1.0,
   ctrl: null,    // third point {x,y}, or null = auto from neighbours
   pctrl: null,   // pressure control {k}, or null = linear A->B
@@ -199,7 +200,7 @@ export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
 export function strokeDuration(stroke) {
   if (!stroke || !stroke.paths) return 0;
   let t = 0;
-  for (const p of stroke.paths) t += p.duration || 0;
+  for (const p of stroke.paths) t += (p.delay || 0) + (p.duration || 0);
   return t;
 }
 
@@ -242,6 +243,8 @@ export function sampleStroke(stroke, sampleDensity = 80) {
   let tOffset = 0;
   const all = [];
   for (let i = 0; i < stroke.paths.length; i++) {
+    const path = stroke.paths[i];
+    tOffset += path.delay || 0;          // dead time before this path draws
     const { samples } = samplePath(stroke, i, sampleDensity);
     // skip the first sample on subsequent paths (duplicate of prev tail)
     const start = i === 0 ? 0 : 1;
@@ -255,7 +258,7 @@ export function sampleStroke(stroke, sampleDensity = 80) {
         arc: s.arc,
       });
     }
-    tOffset += stroke.paths[i].duration;
+    tOffset += path.duration;
   }
   // compute speed: ds_world / dt (smoothed via neighbour deltas)
   for (let i = 0; i < all.length; i++) {

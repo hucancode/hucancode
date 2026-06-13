@@ -321,6 +321,7 @@
   function migrateSymbol(sym) {
     for (const s of sym.strokes || []) {
       for (const p of s.paths || []) {
+        if (p.delay === undefined) p.delay = 0;
         if (p.pctrl === undefined) p.pctrl = null;
         delete p.pressureEase;
         if (p.ctrl !== undefined) continue;
@@ -633,6 +634,11 @@
             {#each EASING_NAMES as n}<option value={n}>{n}</option>{/each}
           </select>
           <output></output>
+        </label>
+        <label>
+          <span>delay</span>
+          <input type="range" min="0" max="4" step="0.01" bind:value={selPath.delay} />
+          <output>{(selPath.delay ?? 0).toFixed(2)}</output>
         </label>
         <label>
           <span>duration</span>
