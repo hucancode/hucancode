@@ -33,9 +33,9 @@
   let observer;
 
   let width = $state(0.05);
-  let inkFlow = $state(2.8);
+  let inkFlow = $state(1.0);
   let strands = $state(3.0);
-  let waterFlow = $state(0.88);
+  let waterFlow = $state(0.8);
   let wobble = $state(0.9);
   let showPoints = $state(true);
   let showHead = $state(true);
