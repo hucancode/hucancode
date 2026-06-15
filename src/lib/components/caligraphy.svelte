@@ -8,6 +8,7 @@
   } from "$lib/brush/engine";
   import { yongSymbol, yongMaxId } from "$lib/brush/yong";
   import { longSymbol, longMaxId } from "$lib/brush/long";
+  import { fuSymbol, fuMaxId } from "$lib/brush/fu";
   import { bakeGLSL } from "$lib/brush/bake";
   import {
     drawSymbol, worldToScreen, screenToWorld,
@@ -24,6 +25,7 @@
   const SAMPLES = {
     yong: { label: "永 (yong)", make: yongSymbol, maxId: yongMaxId },
     long: { label: "龍 (long)", make: longSymbol, maxId: longMaxId },
+    fu:   { label: "福 (fu)",   make: fuSymbol,   maxId: fuMaxId },
   };
   let sampleKey = $state("yong");
 

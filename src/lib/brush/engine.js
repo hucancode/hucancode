@@ -35,8 +35,7 @@ export const DEFAULT_PATH = () => ({
 
 const AUTO_TENSION = 0.5;
 
-// Resolve the control point. Explicit override, else catmull-rom auto
-// (midpoint of the two cubic tangent handles → smooth default join).
+// Resolve the control point. Explicit override, else G1 catmull-rom auto.
 export function resolveControl(stroke, segIdx) {
   const path = stroke.paths[segIdx];
   if (path.ctrl) return { x: path.ctrl.x, y: path.ctrl.y };
@@ -45,6 +44,30 @@ export function resolveControl(stroke, segIdx) {
   const p2 = pts[segIdx + 1];
   const p0 = pts[segIdx - 1] || mirror(p2, p1);
   const p3 = pts[segIdx + 2] || mirror(p1, p2);
+  return autoControl(p0, p1, p2, p3);
+}
+
+// Auto quad control for segment p1->p2 given neighbours p0,p3.
+// Put it at the intersection of the Catmull-rom endpoint tangent lines
+// (tangent at p1 ∝ p2-p0, at p2 ∝ p3-p1). Adjacent auto segments then share
+// the same tangent at each anchor → G1 (tangent-continuous) joins, no corners.
+// Falls back to the averaged Catmull handles when the intersection is
+// degenerate or overshoots (near-straight, or an inflection inside the segment
+// where one quadratic can't be G1 anyway).
+function autoControl(p0, p1, p2, p3) {
+  const t1x = p2.x - p0.x, t1y = p2.y - p0.y;
+  const t2x = p3.x - p1.x, t2y = p3.y - p1.y;
+  const wx = p2.x - p1.x, wy = p2.y - p1.y;
+  const det = t1x * t2y - t1y * t2x;
+  if (Math.abs(det) > 1e-9) {
+    const a = (wx * t2y - wy * t2x) / det;   // dist along t1 from p1
+    const b = (t1x * wy - t1y * wx) / det;   // dist along t2 back from p2
+    const chord = Math.hypot(wx, wy) || 1e-6;
+    const m1 = Math.hypot(t1x, t1y), m2 = Math.hypot(t2x, t2y);
+    if (a > 0 && b > 0 && a * m1 < 4 * chord && b * m2 < 4 * chord) {
+      return { x: p1.x + t1x * a, y: p1.y + t1y * a };
+    }
+  }
   const k = (1 - AUTO_TENSION) / 6;
   const h1x = p1.x + (p2.x - p0.x) * k, h1y = p1.y + (p2.y - p0.y) * k;
   const h2x = p2.x - (p3.x - p1.x) * k, h2y = p2.y - (p3.y - p1.y) * k;
