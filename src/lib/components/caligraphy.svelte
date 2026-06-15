@@ -2,14 +2,14 @@
   import { onMount } from "svelte";
   import {
     makeStrokeRaw, makePoint, insertPointAfter, removePoint,
-    resolveControl, setUidFloor,
+    resolveControl, setUidFloor, uid,
     makePlayback, syncPlayback, step, symbolDuration,
+    DEFAULT_CONNECT, DEFAULT_TIMING,
   } from "$lib/brush/engine";
   import { yongSymbol, yongMaxId } from "$lib/brush/yong";
   import {
     drawSymbol, worldToScreen, screenToWorld,
   } from "$lib/brush/render2d";
-  import { EASING_NAMES } from "$lib/brush/easing";
 
   const LS_KEY = "brush:state:v1";
 
@@ -26,18 +26,25 @@
   let selIdx = $state(0);
 
   // brush params
-  let baseRadius = $state(0.05);
-  let speedRef   = $state(1.5);
-  let dither     = $state(0.5);
-  let sampleDensity = $state(50); // samples per world unit
+  let baseRadius = $state(0.07);
+  let sampleDensity = $state(80); // samples per world unit
   let showHandles = $state(true);
   let showGrid    = $state(true);
   let view = $state({ zoom: 1, panX: 0, panY: 0 });
   const color = "#111111";
 
+  // auto connectors: derive a thin silk thread between every consecutive
+  // stroke pair. Pure derived geometry — not stored on the symbol.
+  let connect = $state(DEFAULT_CONNECT());
+
+  // auto timing: per-path durations derived from geometry + pressure (slow at
+  // pivots, accelerate leaving them, faster on thin line). Only base speed is
+  // configurable; timing is always auto-computed.
+  let timing = $state(DEFAULT_TIMING());
+
   // playback: anim=true renders partially up to pb.t; false = full edit view.
   let anim = $state(false);
-  let pb = $state(makePlayback(symbol));
+  let pb = $state(makePlayback(symbol, connect, timing));
   let rafId = null;
   let lastTs = null;
 
@@ -122,6 +129,27 @@
     [arr[idx], arr[j]] = [arr[j], arr[idx]];
   }
 
+  // Split the selected stroke at the selected (interior) point, dropping that
+  // point as the lift gap: stroke A keeps points before it, B keeps points
+  // after. The auto-connector then threads the gap. Turns connectors on so the
+  // result is visible immediately.
+  const canSplit = $derived(
+    selKind === "point" && selStroke &&
+    selIdx > 0 && selIdx < selStroke.points.length - 1
+  );
+  function splitStroke() {
+    const s = findStroke(selStrokeId);
+    if (!s || selKind !== "point") return;
+    const i = selIdx;
+    if (i <= 0 || i >= s.points.length - 1) return;
+    const idx = symbol.strokes.findIndex(x => x.id === s.id);
+    const a = { id: s.id, points: s.points.slice(0, i), paths: s.paths.slice(0, i - 1) };
+    const b = { id: uid(), points: s.points.slice(i + 1), paths: s.paths.slice(i + 1) };
+    symbol.strokes.splice(idx, 1, a, b);
+    connect.enabled = true;
+    selectStroke(b.id);
+  }
+
   // --- playback ---------------------------------------------------------------
   function stopRaf() {
     if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; }
@@ -131,14 +159,14 @@
     if (lastTs == null) lastTs = ts;
     const dt = (ts - lastTs) / 1000;
     lastTs = ts;
-    syncPlayback(pb, symbol);
+    syncPlayback(pb, symbol, connect, timing);
     step(pb, dt);
     render();
     if (pb.playing) rafId = requestAnimationFrame(tick);
     else stopRaf();
   }
   function play() {
-    syncPlayback(pb, symbol);
+    syncPlayback(pb, symbol, connect, timing);
     if (pb.duration <= 0) return;
     if (pb.t >= pb.duration) pb.t = 0; // replay from start
     anim = true;
@@ -155,7 +183,7 @@
   function seekTo(v) {
     pause();
     anim = true;
-    syncPlayback(pb, symbol);
+    syncPlayback(pb, symbol, connect, timing);
     pb.t = Math.max(0, Math.min(pb.duration, v));
     render();
   }
@@ -300,8 +328,8 @@
     syncCanvasSize();
     const ctx = canvasEl.getContext("2d");
     drawSymbol(ctx, stageW, stageH, symbol, {
-      baseRadius, speedRef, dither, sampleDensity, color,
-      view, showGrid, bg: "#fffce0",
+      baseRadius, sampleDensity, color,
+      view, showGrid, bg: "#fffce0", connect, timing,
       playhead: anim ? pb.t : undefined,
     });
   }
@@ -310,8 +338,10 @@
   $effect(() => {
     // deep read all state
     void JSON.stringify(symbol);
-    void baseRadius; void speedRef; void dither;
+    void baseRadius;
     void sampleDensity; void showGrid;
+    void connect.enabled; void connect.thread;
+    void timing.speed;
     void view.zoom; void view.panX; void view.panY;
     void stageW; void stageH;
     render();
@@ -353,11 +383,17 @@
       if (data.params) {
         const p = data.params;
         if (typeof p.baseRadius    === "number") baseRadius    = p.baseRadius;
-        if (typeof p.speedRef      === "number") speedRef      = p.speedRef;
-        if (typeof p.dither        === "number") dither        = p.dither;
         if (typeof p.sampleDensity === "number") sampleDensity = p.sampleDensity;
         if (typeof p.showHandles   === "boolean") showHandles  = p.showHandles;
         if (typeof p.showGrid      === "boolean") showGrid     = p.showGrid;
+      }
+      if (data.connect) {
+        const c = data.connect;
+        if (typeof c.enabled === "boolean") connect.enabled = c.enabled;
+        if (typeof c.thread  === "number") connect.thread  = c.thread;
+      }
+      if (data.timing && typeof data.timing.speed === "number") {
+        timing.speed = data.timing.speed;
       }
       if (data.view && typeof data.view.zoom === "number") {
         view.zoom = data.view.zoom;
@@ -384,7 +420,9 @@
     try {
       localStorage.setItem(LS_KEY, JSON.stringify({
         symbol,
-        params: { baseRadius, speedRef, dither, sampleDensity, showHandles, showGrid },
+        params: { baseRadius, sampleDensity, showHandles, showGrid },
+        connect: { enabled: connect.enabled, thread: connect.thread },
+        timing: { speed: timing.speed },
         view: { zoom: view.zoom, panX: view.panX, panY: view.panY },
         selection: { selKind, selStrokeId, selIdx },
       }));
@@ -397,14 +435,16 @@
   let _saveReady = false;
   $effect(() => {
     void JSON.stringify(symbol);
-    void baseRadius; void speedRef; void dither;
+    void baseRadius;
     void sampleDensity; void showHandles;
+    void connect.enabled; void connect.thread;
+    void timing.speed;
     void selKind; void selStrokeId; void selIdx;
     if (_saveReady) saveState();
     else _saveReady = true;
   });
 
-  const totalDuration = $derived(symbolDuration(symbol));
+  const totalDuration = $derived(symbolDuration(symbol, connect, timing));
   const selStroke = $derived(findStroke(selStrokeId));
   const selPoint = $derived(
     selKind === "point" && selStroke ? selStroke.points[selIdx] : null
@@ -447,6 +487,17 @@
              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14.5 4.5 19 9 8 20H3.5v-4.5z" />
           <line x1="13" y1="6" x2="18" y2="11" />
+        </svg>
+      </button>
+    </div>
+    <div class="viewport-zoom" onpointerdown={(e) => e.stopPropagation()}>
+      <span class="zoom-pct">{Math.round(view.zoom * 100)}%</span>
+      <button type="button" class="vp-btn" title="reset zoom"
+              onclick={resetView} aria-label="reset zoom">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 3-6.7" />
+          <path d="M3 4v4h4" />
         </svg>
       </button>
     </div>
@@ -525,6 +576,9 @@
                 disabled={!showHandles}>+ point</button>
         <button type="button" onclick={despawnPoint}
                 disabled={!showHandles || selKind !== "point"}>− point</button>
+        <button type="button" onclick={splitStroke}
+                disabled={!showHandles || !canSplit}
+                title="cut this stroke at the selected point; the gap auto-connects with a silk thread">split</button>
       </div>
     </fieldset>
 
@@ -569,36 +623,34 @@
     </fieldset>
 
     <fieldset>
-      <legend>view</legend>
+      <legend>auto timing</legend>
       <label>
-        <span>zoom</span>
-        <input type="range" min="0.2" max="8" step="0.01" bind:value={view.zoom} />
-        <output>{view.zoom.toFixed(2)}×</output>
+        <span>base speed</span>
+        <input type="range" min="0.2" max="4" step="0.05"
+               bind:value={timing.speed} />
+        <output>{timing.speed.toFixed(2)}</output>
       </label>
-      <div class="buttons">
-        <button type="button" onclick={resetView}>reset view</button>
-      </div>
     </fieldset>
 
     <fieldset>
       <legend>brush</legend>
+      <label class="check">
+        <input type="checkbox" bind:checked={connect.enabled} />
+        <span>auto-thread strokes</span>
+      </label>
+      <label>
+        <span>thread width</span>
+        <input type="range" min="0.0" max="0.6" step="0.01"
+               bind:value={connect.thread} disabled={!connect.enabled} />
+        <output>{connect.thread.toFixed(2)}</output>
+      </label>
       <label>
         <span>base radius</span>
         <input type="range" min="0.005" max="0.2" step="0.001" bind:value={baseRadius} />
         <output>{baseRadius.toFixed(3)}</output>
       </label>
       <label>
-        <span>speed ref</span>
-        <input type="range" min="0.2" max="8" step="0.01" bind:value={speedRef} />
-        <output>{speedRef.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>dither</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={dither} />
-        <output>{dither.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>samples/dist</span>
+        <span>samples</span>
         <input type="range" min="10" max="400" step="1" bind:value={sampleDensity} />
         <output>{sampleDensity}</output>
       </label>
@@ -628,23 +680,6 @@
     {#if selPath}
       <fieldset>
         <legend>path #{selIdx} → {selIdx + 1}</legend>
-        <label>
-          <span>time ease</span>
-          <select bind:value={selPath.timeEase}>
-            {#each EASING_NAMES as n}<option value={n}>{n}</option>{/each}
-          </select>
-          <output></output>
-        </label>
-        <label>
-          <span>delay</span>
-          <input type="range" min="0" max="4" step="0.01" bind:value={selPath.delay} />
-          <output>{(selPath.delay ?? 0).toFixed(2)}</output>
-        </label>
-        <label>
-          <span>duration</span>
-          <input type="range" min="0.05" max="4" step="0.01" bind:value={selPath.duration} />
-          <output>{selPath.duration.toFixed(2)}</output>
-        </label>
         <label>
           <span>belly thin</span>
           <input type="range" min="0" max="1" step="0.01"
@@ -721,6 +756,31 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .viewport-zoom {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    z-index: 2;
+  }
+  .zoom-pct {
+    min-width: 3rem;
+    padding: 0 0.5rem;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #333;
+    border: 1px solid rgba(0,0,0,0.18);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.85);
     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
   }
   .vp-btn:hover { background: rgba(255,255,255,1); }

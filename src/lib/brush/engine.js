@@ -20,7 +20,7 @@
 //     - position p(s) on the curve
 //     - pressure = pressureAt(pctrl, A, B, s)             (pressure curve)
 //     - localTime = timeEase(s) * duration                (time curve; s -> t)
-//   Speed = ds_world / dt. Higher speed -> lower ink, more dither.
+//   Width comes from pressure alone; the renderer stamps solid circles.
 
 import { applyEasing } from "./easing";
 
@@ -170,6 +170,72 @@ function mirror(a, b) {
 }
 function lerp(a, b, t) { return a + (b - a) * t; }
 function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+function clampN(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+// --- Auto timing --------------------------------------------------
+// Instead of authoring each path's duration, derive the brush velocity from the
+// geometry and pressure, then integrate to get time. Calligraphic feel:
+//   - slow down at a pivot (sharp turn between segments)
+//   - accelerate leaving the pivot (speed recovers along the next segment)
+//   - accelerate further on thin line (low pressure → faster, drier stroke)
+// timing = { speed }   (the only user knob)
+//   speed = base brush velocity (world units / sec) on a straight, full ink run.
+// Cornering brake and thin-line boost are fixed internal constants — timing is
+// always auto-computed; only the base speed is configurable.
+export const DEFAULT_TIMING = () => ({ speed: 1.0 });
+
+const MIN_SPEED = 0.05;
+const THIN_GAIN = 2.0;
+const CORNER = 0.7;   // pivot brake strength (0..1)
+const THIN   = 0.6;   // low-pressure speed boost (0..1)
+
+// Arc length of one path's curve (fixed resolution so duration is independent
+// of render sample density → playback timeline stays stable).
+function pathArc(stroke, segIdx) {
+  const pts = stroke.points;
+  const c = resolveControl(stroke, segIdx);
+  const p1 = pts[segIdx], p2 = pts[segIdx + 1];
+  const dense = 64;
+  let prev = cubic(p1, c, c, p2, 0), total = 0;
+  for (let i = 1; i <= dense; i++) {
+    const cur = cubic(p1, c, c, p2, i / dense);
+    total += Math.hypot(cur.x - prev.x, cur.y - prev.y);
+    prev = cur;
+  }
+  return total || 1e-6;
+}
+
+// Pivot sharpness at interior point i: 0 = straight through, 1 = full reversal.
+function turnSharp(stroke, i) {
+  const pts = stroke.points;
+  if (i <= 0 || i >= pts.length - 1) return 0;   // endpoints: no pivot
+  const a = pts[i - 1], b = pts[i], c = pts[i + 1];
+  const ix = b.x - a.x, iy = b.y - a.y;
+  const ox = c.x - b.x, oy = c.y - b.y;
+  const mi = Math.hypot(ix, iy) || 1, mo = Math.hypot(ox, oy) || 1;
+  const dot = clampN((ix * ox + iy * oy) / (mi * mo), -1, 1);
+  return (1 - dot) / 2;
+}
+
+// Target brush speed at point i: braked by pivot sharpness, boosted when thin.
+function pointSpeed(stroke, i, timing) {
+  const cf = 1 - CORNER * turnSharp(stroke, i);          // pivot brake
+  const tf = 1 + THIN * (1 - stroke.points[i].pressure) * THIN_GAIN; // thin boost
+  return Math.max(MIN_SPEED, (timing.speed || 1) * cf * tf);
+}
+
+// Time to travel arc a (0..L) when speed varies linearly sa→sb along the arc.
+// ∫ ds / (sa + (sb-sa)·s/L) — closed form; reduces to a/sa when speed constant.
+function travelTime(L, sa, sb, a) {
+  if (L <= 0) return 0;
+  const d = sb - sa;
+  if (Math.abs(d) < 1e-6) return a / sa;
+  const m = d / L;
+  return Math.log((sa + m * a) / sa) / m;
+}
+
+// Auto timing always applies (incl. connectors) whenever a timing config exists.
+const useAuto = (stroke, timing) => !!timing;
 
 // Pressure value along a path at progress s in [0..1].
 // Endpoints (0,A) and (1,B). With pctrl = {k} the curve is the quadratic
@@ -196,19 +262,127 @@ export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
   return u * u * A + 2 * u * t * k + t * t * B;
 }
 
-// Total animation time of one stroke = sum of its path durations.
-export function strokeDuration(stroke) {
+// --- Auto connectors (牽絲 / trailing silk) ---------------------------------
+// Cursive feel comes from thin threads linking the end of one stroke to the
+// start of the next. Rather than authoring them by hand, derive a connector
+// stroke between every consecutive pair. Connectors are pure derived geometry:
+// never stored on the symbol, never editable, regenerated each frame.
+//
+// connect = { enabled, thread }
+//   thread = max belly thickness — the thin waist. Ends match the stroke's own
+//            end pressure; the belly is capped here and never exceeds an end.
+// Connector timing is auto-computed like any stroke (driven by base speed).
+export const DEFAULT_CONNECT = () => ({ enabled: false, thread: 0.18 });
+
+// Unit tangent leaving a stroke at its last point (quad derivative at t=1).
+function tangentOut(stroke) {
+  const pts = stroke.points;
+  const n = pts.length;
+  if (n < 2) return null;
+  const end = pts[n - 1];
+  const seg = stroke.paths[n - 2];
+  const c = seg && seg.ctrl ? seg.ctrl : resolveControl(stroke, n - 2);
+  const dx = end.x - c.x, dy = end.y - c.y;
+  const m = Math.hypot(dx, dy) || 1;
+  return { x: dx / m, y: dy / m };
+}
+
+// Unit tangent the stroke departs along from its first point (quad deriv at t=0).
+function tangentIn(stroke) {
+  const pts = stroke.points;
+  if (pts.length < 2) return null;
+  const start = pts[0];
+  const seg = stroke.paths[0];
+  const c = seg && seg.ctrl ? seg.ctrl : resolveControl(stroke, 0);
+  const dx = c.x - start.x, dy = c.y - start.y;
+  const m = Math.hypot(dx, dy) || 1;
+  return { x: dx / m, y: dy / m };
+}
+
+// Control point of the connector: the point on A's exit tangent that (for a
+// true intersection) also lies on B's entry tangent — so the thread leaves A
+// and arrives B tangentially. Clamped to the gap; degenerate -> midpoint bow.
+function connectorControl(A, u, B, v, g) {
+  const wx = B.x - A.x, wy = B.y - A.y;
+  const det = u.x * v.y - u.y * v.x;
+  if (Math.abs(det) < 1e-6) {
+    return { x: (A.x + B.x) / 2 - u.y * g * 0.15,
+             y: (A.y + B.y) / 2 + u.x * g * 0.15 };
+  }
+  let a = (wx * v.y - wy * v.x) / det;
+  a = Math.max(0.05 * g, Math.min(0.95 * g, a));
+  return { x: A.x + u.x * a, y: A.y + u.y * a };
+}
+
+// Build the virtual connector stroke from stroke a -> stroke b, or null.
+export function connectorStroke(a, b, connect) {
+  if (!a.points.length || !b.points.length) return null;
+  const A = a.points[a.points.length - 1];
+  const B = b.points[0];
+  const g = Math.hypot(B.x - A.x, B.y - A.y);
+  if (g < 1e-4) return null;                       // coincident: nothing to draw
+  const chord = { x: (B.x - A.x) / g, y: (B.y - A.y) / g };
+  const u = tangentOut(a) || chord;
+  const v = tangentIn(b) || chord;
+  const ctrl = connectorControl(A, u, B, v, g);
+  const pA = A.pressure;                            // ends match stroke pressure exactly
+  const pB = B.pressure;
+  // belly is the thin waist: capped at thread, never thicker than either end,
+  // independent of gap so it never collapses to nothing.
+  const k = Math.min(connect.thread, pA, pB);
+  // duration is a manual-mode fallback only; auto timing overrides it.
+  const duration = Math.max(0.05, g);
+  return {
+    id: `c:${a.id}>${b.id}`,
+    _connector: true,
+    points: [
+      { id: -1, x: A.x, y: A.y, pressure: pA },
+      { id: -2, x: B.x, y: B.y, pressure: pB },
+    ],
+    paths: [{ timeEase: "linear", delay: 0, duration, ctrl, pctrl: { k } }],
+  };
+}
+
+// Real strokes interleaved with derived connectors, in draw/timeline order.
+// connect falsy or disabled -> just the real strokes (back-compat).
+export function expandStrokes(symbol, connect) {
+  const strokes = symbol?.strokes || [];
+  if (!connect || !connect.enabled) return strokes;
+  const out = [];
+  for (let i = 0; i < strokes.length; i++) {
+    out.push(strokes[i]);
+    const b = strokes[i + 1];
+    if (b) {
+      const c = connectorStroke(strokes[i], b, connect);
+      if (c) out.push(c);
+    }
+  }
+  return out;
+}
+
+// Total animation time of one stroke. Auto timing → integrate the speed field
+// per path; manual → sum authored path durations. Authored delays always apply.
+export function strokeDuration(stroke, timing) {
   if (!stroke || !stroke.paths) return 0;
   let t = 0;
-  for (const p of stroke.paths) t += (p.delay || 0) + (p.duration || 0);
+  const auto = useAuto(stroke, timing);
+  for (let i = 0; i < stroke.paths.length; i++) {
+    const p = stroke.paths[i];
+    t += p.delay || 0;
+    if (auto) {
+      const L = pathArc(stroke, i);
+      t += travelTime(L, pointSpeed(stroke, i, timing), pointSpeed(stroke, i + 1, timing), L);
+    } else {
+      t += p.duration || 0;
+    }
+  }
   return t;
 }
 
-// Total animation time of a whole symbol (strokes drawn sequentially in order).
-export function symbolDuration(symbol) {
-  if (!symbol || !symbol.strokes) return 0;
+// Total animation time of a whole symbol (strokes + connectors, in order).
+export function symbolDuration(symbol, connect, timing) {
   let t = 0;
-  for (const s of symbol.strokes) t += strokeDuration(s);
+  for (const s of expandStrokes(symbol, connect)) t += strokeDuration(s, timing);
   return t;
 }
 
@@ -216,13 +390,13 @@ export function symbolDuration(symbol) {
 // A playback state tracks a global time cursor over a symbol's sequential
 // timeline: { t, playing, duration }. Feed it to drawSymbol via { playhead }.
 
-export function makePlayback(symbol) {
-  return { t: 0, playing: false, duration: symbolDuration(symbol) };
+export function makePlayback(symbol, connect, timing) {
+  return { t: 0, playing: false, duration: symbolDuration(symbol, connect, timing) };
 }
 
 // Keep duration in sync with the (possibly edited) symbol, re-clamping t.
-export function syncPlayback(state, symbol) {
-  state.duration = symbolDuration(symbol);
+export function syncPlayback(state, symbol, connect, timing) {
+  state.duration = symbolDuration(symbol, connect, timing);
   if (state.t > state.duration) state.t = state.duration;
   return state;
 }
@@ -238,27 +412,38 @@ export function step(state, dt) {
 }
 
 // Returns flat array of samples across all paths with global time and speed.
-export function sampleStroke(stroke, sampleDensity = 80) {
+export function sampleStroke(stroke, sampleDensity = 80, timing) {
   if (!stroke || stroke.points.length < 2) return [];
+  const auto = useAuto(stroke, timing);
   let tOffset = 0;
   const all = [];
   for (let i = 0; i < stroke.paths.length; i++) {
     const path = stroke.paths[i];
     tOffset += path.delay || 0;          // dead time before this path draws
     const { samples } = samplePath(stroke, i, sampleDensity);
+    // auto: integrate the linear speed field (endpoint speeds) over the arc so
+    // sample time matches strokeDuration's integral exactly.
+    let L = 0, sa = 0, sb = 0, dur = 0;
+    if (auto) {
+      L = pathArc(stroke, i);
+      sa = pointSpeed(stroke, i, timing);
+      sb = pointSpeed(stroke, i + 1, timing);
+      dur = travelTime(L, sa, sb, L);
+    }
     // skip the first sample on subsequent paths (duplicate of prev tail)
     const start = i === 0 ? 0 : 1;
     for (let k = start; k < samples.length; k++) {
       const s = samples[k];
+      const local = auto ? travelTime(L, sa, sb, s.s * L) : s.time;
       all.push({
         x: s.x,
         y: s.y,
         pressure: s.pressure,
-        gTime: tOffset + s.time,
+        gTime: tOffset + local,
         arc: s.arc,
       });
     }
-    tOffset += path.duration;
+    tOffset += auto ? dur : path.duration;
   }
   // compute speed: ds_world / dt (smoothed via neighbour deltas)
   for (let i = 0; i < all.length; i++) {

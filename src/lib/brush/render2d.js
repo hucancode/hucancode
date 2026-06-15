@@ -1,10 +1,10 @@
 // Simple-shape POC renderer. No shader, no GL.
-// For each sample stamp a filled circle: radius = baseRadius * pressure,
-// alpha and stamp density driven by speed (faster -> lower ink + sparser).
+// For each sample stamp a solid filled circle: radius = baseRadius * pressure.
+// No speed-based fade, no jitter.
 //
 // World coords: x in [-aspect, +aspect], y in [-1, +1]. Origin centred.
 
-import { sampleStroke, strokeDuration } from "./engine";
+import { sampleStroke, strokeDuration, expandStrokes } from "./engine";
 
 // view: { zoom, panX, panY } applied as: pScreen = view( (p - pan) * zoom ).
 const IDV = { zoom: 1, panX: 0, panY: 0 };
@@ -35,15 +35,12 @@ export function clearCanvas(ctx, w, h, bg = "#fffce0") {
   ctx.restore();
 }
 
-// brushParams: { baseRadius, speedRef, color, dither }
-//   baseRadius in world units. speedRef = speed value at which ink fully
-//   thins. dither 0..1 (jitter + drop probability scale).
+// brushParams: { baseRadius, color }
+//   baseRadius in world units. Each sample = a solid circle of baseRadius·pressure.
 export function drawStroke(ctx, w, h, stroke, params) {
-  const samples = sampleStroke(stroke, params.sampleDensity || 80);
+  const samples = sampleStroke(stroke, params.sampleDensity || 80, params.timing);
   if (samples.length < 2) return;
   const baseR = (params.baseRadius || 0.04);
-  const speedRef = params.speedRef || 1.5;
-  const dither = params.dither ?? 0.5;
   const color = params.color || "#111";
   const view = params.view || IDV;
   // tMax: local stroke time cutoff (s). undefined = draw whole stroke.
@@ -52,25 +49,18 @@ export function drawStroke(ctx, w, h, stroke, params) {
   const worldToPx = (w / (2 * aspect)) * view.zoom;
 
   ctx.fillStyle = color;
+  ctx.globalAlpha = 1;
   for (let i = 0; i < samples.length; i++) {
     const s = samples[i];
     // samples are ascending in gTime; stop once past the cutoff.
     if (tMax !== undefined && s.gTime > tMax) break;
-    const ink = Math.max(0, 1 - s.speed / speedRef);
-    if (ink <= 0.01) continue;
-    if (dither > 0 && Math.random() > Math.pow(ink, 1.4 * dither)) continue;
     const radiusW = baseR * Math.max(0.05, s.pressure);
-    const jitter = dither * (1 - ink) * radiusW * 0.6;
-    const jx = (Math.random() - 0.5) * jitter;
-    const jy = (Math.random() - 0.5) * jitter;
-    const sp = worldToScreen({ x: s.x + jx, y: s.y + jy }, w, h, view);
+    const sp = worldToScreen({ x: s.x, y: s.y }, w, h, view);
     const rPx = Math.max(0.5, radiusW * worldToPx);
-    ctx.globalAlpha = Math.min(1, ink * 0.95);
     ctx.beginPath();
     ctx.arc(sp.x, sp.y, rPx, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.globalAlpha = 1;
 }
 
 // Chinese calligraphy "米" guide grid: square frame + center cross + two
@@ -114,14 +104,15 @@ export function drawMiGrid(ctx, w, h, view, side = 1.6) {
 export function drawSymbol(ctx, w, h, symbol, params) {
   clearCanvas(ctx, w, h, params.bg);
   if (params.showGrid) drawMiGrid(ctx, w, h, params.view || IDV, params.gridSize || 1.6);
+  const strokes = expandStrokes(symbol, params.connect);
   const playhead = params.playhead;
   if (playhead === undefined) {
-    for (const stroke of symbol.strokes) drawStroke(ctx, w, h, stroke, params);
+    for (const stroke of strokes) drawStroke(ctx, w, h, stroke, params);
     return;
   }
   let start = 0;
-  for (const stroke of symbol.strokes) {
-    const dur = strokeDuration(stroke);
+  for (const stroke of strokes) {
+    const dur = strokeDuration(stroke, params.timing);
     const localMax = playhead - start;
     if (localMax > 0) drawStroke(ctx, w, h, stroke, { ...params, tMax: localMax });
     start += dur;
