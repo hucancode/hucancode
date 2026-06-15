@@ -374,23 +374,6 @@
     render();
   });
 
-  // migrate legacy paths (h1/h2/tension) to single ctrl point in place
-  function migrateSymbol(sym) {
-    for (const s of sym.strokes || []) {
-      for (const p of s.paths || []) {
-        if (p.delay === undefined) p.delay = 0;
-        if (p.pctrl === undefined) p.pctrl = null;
-        delete p.pressureEase;
-        delete p.timeEase;
-        if (p.ctrl !== undefined) continue;
-        p.ctrl = (p.h1 && p.h2)
-          ? { x: (p.h1.x + p.h2.x) / 2, y: (p.h1.y + p.h2.y) / 2 }
-          : null;
-        delete p.h1; delete p.h2; delete p.tension;
-      }
-    }
-  }
-
   // snapshot all editable state into a plain serializable object.
   function serializeState() {
     return {
@@ -414,7 +397,6 @@
         for (const p of s.points || []) if (p.id > maxId) maxId = p.id;
       }
       setUidFloor(maxId);
-      migrateSymbol(data.symbol);
       symbol = data.symbol;
     }
     if (data.params) {
