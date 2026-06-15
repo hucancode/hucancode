@@ -64,7 +64,7 @@ vec3 sdPolyline(vec2 p) {
 }
 
 vec2 curvePointAtArc(float s) {
-    // Binary search — arc lengths are monotonically increasing
+    // Binary search - arc lengths are monotonically increasing
     int lo = 0;
     int hi = curveLen - 2;
     for (int i = 0; i < 9; i++) {
@@ -104,7 +104,7 @@ void main() {
     // t01: 0 at the head (full width), 1 at the tail
     float t01 = clamp((endArc - arc) / visibleLen, 0.0, 1.0);
 
-    // variable tail width — identical to the brush shader. A smoothstep "step"
+    // variable tail width - identical to the brush shader. A smoothstep "step"
     // scales the head width down to uWidthEnd at the tail. uWidthOffset moves where
     // the width drops (0 head .. 1 tail); uWidthRange sets how soft the drop is
     // (small = abrupt step, large = gradual).

@@ -4,7 +4,7 @@ uniform vec4 uBrushColor;
 
 varying vec2 vUV;
 
-// Plane geometry size — keep in sync with HEAD_PLANE_W/H in ink-dragon.js
+// Plane geometry size - keep in sync with HEAD_PLANE_W/H in ink-dragon.js
 const float HEAD_W = 2.4;
 const float HEAD_H = 1.6;
 // SDF x of plane center (snout sits at sdf x = -0.55 → at vUV.x = 0.5)

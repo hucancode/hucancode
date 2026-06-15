@@ -7,18 +7,31 @@
     DEFAULT_CONNECT, DEFAULT_TIMING,
   } from "$lib/brush/engine";
   import { yongSymbol, yongMaxId } from "$lib/brush/yong";
+  import { longSymbol, longMaxId } from "$lib/brush/long";
   import {
     drawSymbol, worldToScreen, screenToWorld,
   } from "$lib/brush/render2d";
 
   const LS_KEY = "brush:state:v1";
+  const LS_SLOTS_KEY = "brush:slots:v1";
+
+  // named save slots: explicit user snapshots, [{ id, name, data }].
+  let slots = $state([]);
+  let activeSlotId = $state(null);
+
+  // seed samples: dropdown picks one to load fresh.
+  const SAMPLES = {
+    yong: { label: "永 (yong)", make: yongSymbol, maxId: yongMaxId },
+    long: { label: "龍 (long)", make: longSymbol, maxId: longMaxId },
+  };
+  let sampleKey = $state("yong");
 
   let canvasEl;
   let stageW = $state(600), stageH = $state(600);
 
   // initial: load yong as seed; uid floor bumped past stored ids.
-  setUidFloor(yongMaxId());
-  let symbol = $state(yongSymbol());
+  setUidFloor(SAMPLES[sampleKey].maxId());
+  let symbol = $state(SAMPLES[sampleKey].make());
 
   // selection
   let selKind = $state("path");
@@ -34,7 +47,7 @@
   const color = "#111111";
 
   // auto connectors: derive a thin silk thread between every consecutive
-  // stroke pair. Pure derived geometry — not stored on the symbol.
+  // stroke pair. Pure derived geometry - not stored on the symbol.
   let connect = $state(DEFAULT_CONNECT());
 
   // auto timing: per-path durations derived from geometry + pressure (slow at
@@ -60,6 +73,20 @@
 
   function findStroke(id) {
     return symbol.strokes.find(s => s.id === id);
+  }
+
+  // load a fresh seed sample, discarding current edits.
+  function loadSample(key) {
+    const s = SAMPLES[key];
+    if (!s) return;
+    sampleKey = key;
+    setUidFloor(s.maxId());
+    symbol = s.make();
+    selKind = "stroke";
+    selStrokeId = symbol.strokes[0].id;
+    selIdx = 0;
+    pause();
+    anim = false;
   }
 
   function selectStroke(id) {
@@ -354,6 +381,7 @@
         if (p.delay === undefined) p.delay = 0;
         if (p.pctrl === undefined) p.pctrl = null;
         delete p.pressureEase;
+        delete p.timeEase;
         if (p.ctrl !== undefined) continue;
         p.ctrl = (p.h1 && p.h2)
           ? { x: (p.h1.x + p.h2.x) / 2, y: (p.h1.y + p.h2.y) / 2 }
@@ -363,53 +391,70 @@
     }
   }
 
+  // snapshot all editable state into a plain serializable object.
+  function serializeState() {
+    return {
+      symbol,
+      params: { baseRadius, sampleDensity, showHandles, showGrid },
+      connect: { enabled: connect.enabled, thread: connect.thread },
+      timing: { speed: timing.speed },
+      view: { zoom: view.zoom, panX: view.panX, panY: view.panY },
+      selection: { selKind, selStrokeId, selIdx },
+    };
+  }
+
+  // restore state from a snapshot object (from scratch autosave or a slot).
+  function applyState(data) {
+    if (!data) return;
+    if (data.symbol && Array.isArray(data.symbol.strokes)) {
+      // bump uid past highest stored id
+      let maxId = 0;
+      for (const s of data.symbol.strokes) {
+        if (s.id > maxId) maxId = s.id;
+        for (const p of s.points || []) if (p.id > maxId) maxId = p.id;
+      }
+      setUidFloor(maxId);
+      migrateSymbol(data.symbol);
+      symbol = data.symbol;
+    }
+    if (data.params) {
+      const p = data.params;
+      if (typeof p.baseRadius    === "number") baseRadius    = p.baseRadius;
+      if (typeof p.sampleDensity === "number") sampleDensity = p.sampleDensity;
+      if (typeof p.showHandles   === "boolean") showHandles  = p.showHandles;
+      if (typeof p.showGrid      === "boolean") showGrid     = p.showGrid;
+    }
+    if (data.connect) {
+      const c = data.connect;
+      if (typeof c.enabled === "boolean") connect.enabled = c.enabled;
+      if (typeof c.thread  === "number") connect.thread  = c.thread;
+    }
+    if (data.timing && typeof data.timing.speed === "number") {
+      timing.speed = data.timing.speed;
+    }
+    if (data.view && typeof data.view.zoom === "number") {
+      view.zoom = data.view.zoom;
+      view.panX = data.view.panX || 0;
+      view.panY = data.view.panY || 0;
+    }
+    if (data.selection) {
+      const sel = data.selection;
+      const stroke = symbol.strokes.find(s => s.id === sel.selStrokeId);
+      if (stroke) {
+        selStrokeId = sel.selStrokeId;
+        selKind = sel.selKind || "stroke";
+        selIdx = Math.min(Math.max(0, sel.selIdx | 0),
+          Math.max(0, (selKind === "path" ? stroke.paths.length : stroke.points.length) - 1));
+      }
+    }
+  }
+
   function loadState() {
     if (typeof localStorage === "undefined") return;
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw);
-      if (data.symbol && Array.isArray(data.symbol.strokes)) {
-        // bump uid past highest stored id
-        let maxId = 0;
-        for (const s of data.symbol.strokes) {
-          if (s.id > maxId) maxId = s.id;
-          for (const p of s.points || []) if (p.id > maxId) maxId = p.id;
-        }
-        setUidFloor(maxId);
-        migrateSymbol(data.symbol);
-        symbol = data.symbol;
-      }
-      if (data.params) {
-        const p = data.params;
-        if (typeof p.baseRadius    === "number") baseRadius    = p.baseRadius;
-        if (typeof p.sampleDensity === "number") sampleDensity = p.sampleDensity;
-        if (typeof p.showHandles   === "boolean") showHandles  = p.showHandles;
-        if (typeof p.showGrid      === "boolean") showGrid     = p.showGrid;
-      }
-      if (data.connect) {
-        const c = data.connect;
-        if (typeof c.enabled === "boolean") connect.enabled = c.enabled;
-        if (typeof c.thread  === "number") connect.thread  = c.thread;
-      }
-      if (data.timing && typeof data.timing.speed === "number") {
-        timing.speed = data.timing.speed;
-      }
-      if (data.view && typeof data.view.zoom === "number") {
-        view.zoom = data.view.zoom;
-        view.panX = data.view.panX || 0;
-        view.panY = data.view.panY || 0;
-      }
-      if (data.selection) {
-        const sel = data.selection;
-        const stroke = symbol.strokes.find(s => s.id === sel.selStrokeId);
-        if (stroke) {
-          selStrokeId = sel.selStrokeId;
-          selKind = sel.selKind || "stroke";
-          selIdx = Math.min(Math.max(0, sel.selIdx | 0),
-            Math.max(0, (selKind === "path" ? stroke.paths.length : stroke.points.length) - 1));
-        }
-      }
+      applyState(JSON.parse(raw));
     } catch (e) {
       console.warn("brush: failed to load saved state", e);
     }
@@ -418,18 +463,71 @@
   function saveState() {
     if (typeof localStorage === "undefined") return;
     try {
-      localStorage.setItem(LS_KEY, JSON.stringify({
-        symbol,
-        params: { baseRadius, sampleDensity, showHandles, showGrid },
-        connect: { enabled: connect.enabled, thread: connect.thread },
-        timing: { speed: timing.speed },
-        view: { zoom: view.zoom, panX: view.panX, panY: view.panY },
-        selection: { selKind, selStrokeId, selIdx },
-      }));
+      localStorage.setItem(LS_KEY, JSON.stringify(serializeState()));
     } catch (e) { /* quota/private mode */ }
   }
 
-  onMount(() => { loadState(); render(); });
+  // --- named save slots -------------------------------------------------------
+  // scratch autosave (LS_KEY) is the live working copy; slots are explicit,
+  // user-named snapshots persisted under LS_SLOTS_KEY as [{ id, name, data }].
+  function loadSlots() {
+    if (typeof localStorage === "undefined") return;
+    try {
+      const raw = localStorage.getItem(LS_SLOTS_KEY);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) slots = arr;
+    } catch (e) { /* ignore corrupt slot store */ }
+  }
+  function persistSlots() {
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.setItem(LS_SLOTS_KEY, JSON.stringify(slots));
+    } catch (e) { /* quota/private mode */ }
+  }
+  function newSlot() {
+    const name = (typeof prompt === "function"
+      ? prompt("Save slot name", `slot ${slots.length + 1}`)
+      : `slot ${slots.length + 1}`);
+    if (name == null) return; // cancelled
+    const slot = { id: uid(), name: name.trim() || `slot ${slots.length + 1}`,
+                   data: JSON.parse(JSON.stringify(serializeState())) };
+    slots.push(slot);
+    activeSlotId = slot.id;
+    persistSlots();
+  }
+  function saveToSlot(id) {
+    const slot = slots.find(s => s.id === id);
+    if (!slot) return;
+    slot.data = JSON.parse(JSON.stringify(serializeState()));
+    activeSlotId = id;
+    persistSlots();
+  }
+  function loadSlot(id) {
+    const slot = slots.find(s => s.id === id);
+    if (!slot) return;
+    applyState(JSON.parse(JSON.stringify(slot.data)));
+    activeSlotId = id;
+    pause();
+    anim = false;
+  }
+  function renameSlot(id) {
+    const slot = slots.find(s => s.id === id);
+    if (!slot || typeof prompt !== "function") return;
+    const name = prompt("Rename slot", slot.name);
+    if (name == null) return;
+    slot.name = name.trim() || slot.name;
+    persistSlots();
+  }
+  function deleteSlot(id) {
+    const i = slots.findIndex(s => s.id === id);
+    if (i < 0) return;
+    slots.splice(i, 1);
+    if (activeSlotId === id) activeSlotId = null;
+    persistSlots();
+  }
+
+  onMount(() => { loadState(); loadSlots(); render(); });
 
   // persist on every change (after mount/load done)
   let _saveReady = false;
@@ -571,6 +669,15 @@
   <div class="controls">
     <fieldset>
       <legend>symbol</legend>
+      <label>
+        <span>sample</span>
+        <select value={sampleKey}
+                onchange={(e) => loadSample(e.target.value)}>
+          {#each Object.entries(SAMPLES) as [key, s]}
+            <option value={key}>{s.label}</option>
+          {/each}
+        </select>
+      </label>
       <div class="buttons">
         <button type="button" onclick={spawnPoint}
                 disabled={!showHandles}>+ point</button>
@@ -580,6 +687,35 @@
                 disabled={!showHandles || !canSplit}
                 title="cut this stroke at the selected point; the gap auto-connects with a silk thread">split</button>
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>save slots</legend>
+      <div class="buttons">
+        <button type="button" onclick={newSlot}>+ new slot</button>
+      </div>
+      {#if slots.length === 0}
+        <p class="hint">no slots yet - "+ new slot" snapshots current work.</p>
+      {:else}
+        <ol class="slot-list">
+          {#each slots as slot (slot.id)}
+            <li class:sel={activeSlotId === slot.id}>
+              <button type="button" class="slot-pick" title="load this slot"
+                      onclick={() => loadSlot(slot.id)}>
+                <span class="name">{slot.name}</span>
+              </button>
+              <span class="slot-actions">
+                <button type="button" title="overwrite with current work"
+                        onclick={() => saveToSlot(slot.id)}>save</button>
+                <button type="button" title="rename"
+                        onclick={() => renameSlot(slot.id)}>✎</button>
+                <button type="button" title="delete"
+                        onclick={() => deleteSlot(slot.id)}>✕</button>
+              </span>
+            </li>
+          {/each}
+        </ol>
+      {/if}
     </fieldset>
 
     <fieldset>
@@ -694,7 +830,7 @@
                   disabled={!selPath.pctrl}>reset pressure</button>
         </div>
         <p class="hint">
-          drag the blue square to bend the segment — it also sets where the
+          drag the blue square to bend the segment - it also sets where the
           belly sits. belly thin sets how thin the stroke gets there.
         </p>
       </fieldset>
@@ -864,6 +1000,45 @@
     font-weight: 600;
   }
   .stroke-pick .meta { opacity: 0.6; }
+  .slot-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.25rem;
+    max-height: 12rem;
+    overflow-y: auto;
+  }
+  .slot-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid rgba(128,128,128,0.25);
+    border-radius: 0.3rem;
+    padding: 0.1rem 0.3rem 0.1rem 0;
+  }
+  .slot-list li.sel {
+    border-color: rgba(40,80,220,0.8);
+    background: rgba(40,80,220,0.08);
+  }
+  .slot-pick {
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .slot-actions { display: inline-flex; gap: 0.15rem; }
+  .slot-actions button {
+    height: 1.6rem;
+    padding: 0 0.4rem;
+    line-height: 1;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
   .reorder { display: inline-flex; gap: 0.15rem; }
   .reorder button {
     width: 1.6rem;

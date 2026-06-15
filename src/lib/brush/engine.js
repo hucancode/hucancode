@@ -3,13 +3,13 @@
 //   Symbol = { strokes: Stroke[] }
 //   Stroke = { id, points: Point[], paths: Path[] }   (paths.length === points.length - 1)
 //   Point  = { id, x, y, pressure }                   (pressure 0..1)
-//   Path   = { timeEase, duration, ctrl, pctrl }
+//   Path   = { duration, ctrl, pctrl }
 //             ctrl  = third point {x,y} steering the segment, or null = auto.
 //                     A straight segment has ctrl at the chord midpoint.
 //             pctrl = pressure curve control {k}, or null = linear.
 //                     The pressure of a path is a quadratic bezier value curve
 //                     with endpoints (0,A) and (1,B); pctrl bends it so the
-//                     curve passes through value k at the belly — the arc
+//                     curve passes through value k at the belly - the arc
 //                     position of the geometry control point ctrl.
 //
 // Sampling:
@@ -19,17 +19,14 @@
 //   arc fraction s in [0..1]:
 //     - position p(s) on the curve
 //     - pressure = pressureAt(pctrl, A, B, s)             (pressure curve)
-//     - localTime = timeEase(s) * duration                (time curve; s -> t)
+//     - localTime = s * duration                          (linear; s -> t)
 //   Width comes from pressure alone; the renderer stamps solid circles.
-
-import { applyEasing } from "./easing";
 
 let _id = 0;
 export const uid = () => ++_id;
 export const setUidFloor = (n) => { if (n > _id) _id = n; };
 
 export const DEFAULT_PATH = () => ({
-  timeEase: "linear",
   delay: 0.0,    // dead time (s) before this path starts drawing
   duration: 1.0,
   ctrl: null,    // third point {x,y}, or null = auto from neighbours
@@ -151,14 +148,13 @@ function samplePath(stroke, segIdx, sampleDensity) {
     const localT = b > a ? (targetArc - a) / (b - a) : 0;
     const tCurve = (j + localT) / dense;
     const pos = cubic(p1, c, c, p2, tCurve);
-    const te = applyEasing(path.timeEase, s);
     samples[k] = {
       x: pos.x,
       y: pos.y,
       s,
       arc: targetArc,
       pressure: pressureAt(path.pctrl, p1.pressure, p2.pressure, s, bellyX),
-      time: te * path.duration,
+      time: s * path.duration,
       duration: path.duration,
     };
   }
@@ -180,7 +176,7 @@ function clampN(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 //   - accelerate further on thin line (low pressure → faster, drier stroke)
 // timing = { speed }   (the only user knob)
 //   speed = base brush velocity (world units / sec) on a straight, full ink run.
-// Cornering brake and thin-line boost are fixed internal constants — timing is
+// Cornering brake and thin-line boost are fixed internal constants - timing is
 // always auto-computed; only the base speed is configurable.
 export const DEFAULT_TIMING = () => ({ speed: 1.0 });
 
@@ -225,7 +221,7 @@ function pointSpeed(stroke, i, timing) {
 }
 
 // Time to travel arc a (0..L) when speed varies linearly sa→sb along the arc.
-// ∫ ds / (sa + (sb-sa)·s/L) — closed form; reduces to a/sa when speed constant.
+// ∫ ds / (sa + (sb-sa)·s/L) - closed form; reduces to a/sa when speed constant.
 function travelTime(L, sa, sb, a) {
   if (L <= 0) return 0;
   const d = sb - sa;
@@ -269,7 +265,7 @@ export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
 // never stored on the symbol, never editable, regenerated each frame.
 //
 // connect = { enabled, thread }
-//   thread = max belly thickness — the thin waist. Ends match the stroke's own
+//   thread = max belly thickness - the thin waist. Ends match the stroke's own
 //            end pressure; the belly is capped here and never exceeds an end.
 // Connector timing is auto-computed like any stroke (driven by base speed).
 export const DEFAULT_CONNECT = () => ({ enabled: false, thread: 0.18 });
@@ -300,7 +296,7 @@ function tangentIn(stroke) {
 }
 
 // Control point of the connector: the point on A's exit tangent that (for a
-// true intersection) also lies on B's entry tangent — so the thread leaves A
+// true intersection) also lies on B's entry tangent - so the thread leaves A
 // and arrives B tangentially. Clamped to the gap; degenerate -> midpoint bow.
 function connectorControl(A, u, B, v, g) {
   const wx = B.x - A.x, wy = B.y - A.y;
@@ -339,7 +335,7 @@ export function connectorStroke(a, b, connect) {
       { id: -1, x: A.x, y: A.y, pressure: pA },
       { id: -2, x: B.x, y: B.y, pressure: pB },
     ],
-    paths: [{ timeEase: "linear", delay: 0, duration, ctrl, pctrl: { k } }],
+    paths: [{ delay: 0, duration, ctrl, pctrl: { k } }],
   };
 }
 

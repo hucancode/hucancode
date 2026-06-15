@@ -313,7 +313,7 @@ export function setWidthRange(v)  { if (bodyStroke) bodyStroke.uniforms.uWidthRa
 
 export function setControlPoints(points) {
   if (!bodyStroke) return;
-  // One quad per body segment — trust the verlet chain as the render polyline,
+  // One quad per body segment - trust the verlet chain as the render polyline,
   // miter joints in the ribbon keep it visually continuous.
   updatePolylineStroke(bodyStroke, points);
 }
@@ -395,7 +395,7 @@ export function worldToScreen(p, w, h) {
 }
 
 // ============================================================================
-// Chain physics — body + two verlet whiskers. State lives here; the svelte
+// Chain physics - body + two verlet whiskers. State lives here; the svelte
 // component reads parameters in and reads back overlay snapshots out.
 // ============================================================================
 

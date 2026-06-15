@@ -122,7 +122,7 @@ void main() {
     // (overflow = 0) it collapses to abs(perpOff) - halfW.
     float d = sqrt(overflow * overflow + perpOff * perpOff) - halfW;
 
-    // bristle tip jitter — carves bristle ends near relArc = 0
+    // bristle tip jitter - carves bristle ends near relArc = 0
     float strandsHead = max(uStrands, 0.05) * 0.15;
     float baseFreq = 25.0 * strandsHead;
     float j1 = noise01(vec2(perpInPoly * baseFreq,       0.0));

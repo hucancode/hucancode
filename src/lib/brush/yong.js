@@ -1,4 +1,4 @@
-// "永" (yong) — classic Chinese calligraphy practice character, cursive (草書)
+// "永" (yong) - classic Chinese calligraphy practice character, cursive (草書)
 const YONG = {
   symbol: {
     strokes: [
@@ -10,9 +10,9 @@ const YONG = {
           { id: 98, x: -0.0739195016742183,   y:  0.4455069959122395, pressure: 0.08 },
         ],
         paths: [
-          { timeEase: "linear", duration: 0.21, delay: 0,
+          { duration: 0.21, delay: 0,
             ctrl: { x: -0.0024532771357208827, y: 0.5204142485612898 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: { k: 0.07 } },
+          { duration: 1, delay: 0, ctrl: null, pctrl: { k: 0.07 } },
         ],
       },
       {
@@ -28,17 +28,17 @@ const YONG = {
           { id: 97, x: -0.1262035270919118,  y: -0.35493833598856095, pressure: 0.15 },
         ],
         paths: [
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: -0.2877809866141016, y: 0.23174053861003696 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: -0.13926058594827936, y: 0.3344944572784214 }, pctrl: { k: 0.29 } },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: 0.05522677048488851, y: 0.3875823389965692 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: { k: 0.42 } },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0, ctrl: null, pctrl: null },
+          { duration: 1, delay: 0, ctrl: null, pctrl: { k: 0.42 } },
+          { duration: 1, delay: 0,
             ctrl: { x: 0.022870719905820416, y: -0.37304508728603386 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: null },
+          { duration: 1, delay: 0, ctrl: null, pctrl: null },
         ],
       },
       {
@@ -52,14 +52,14 @@ const YONG = {
           { id: 93, x: -0.4571266046788528,  y: -0.3596069481407696, pressure: 0.06 },
         ],
         paths: [
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: -0.39809560589335485, y: -0.005230202021029959 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: -0.17914208274288757, y: 0.08195761951001765 }, pctrl: { k: 0 } },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0, ctrl: null, pctrl: null },
+          { duration: 1, delay: 0,
             ctrl: { x: -0.16360822011475412, y: -0.16552597442190536 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: -0.5140482808185615, y: -0.4519017080375299 }, pctrl: null },
         ],
       },
@@ -75,14 +75,14 @@ const YONG = {
           { id: 91, x:  0.7026845396276269,  y: -0.4779024556594953, pressure: 0.06 },
         ],
         paths: [
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: 0.4095984184834357, y: 0.35969442086176007 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0,
             ctrl: { x: 0.3132518870535793, y: 0.2041760738758867 }, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: null },
-          { timeEase: "linear", duration: 1, delay: 0, ctrl: null, pctrl: { k: 0.75 } },
-          { timeEase: "linear", duration: 1, delay: 0,
+          { duration: 1, delay: 0, ctrl: null, pctrl: null },
+          { duration: 1, delay: 0, ctrl: null, pctrl: null },
+          { duration: 1, delay: 0, ctrl: null, pctrl: { k: 0.75 } },
+          { duration: 1, delay: 0,
             ctrl: { x: 0.4539964023402222, y: -0.34070795512521107 }, pctrl: { k: 0.5 } },
         ],
       },

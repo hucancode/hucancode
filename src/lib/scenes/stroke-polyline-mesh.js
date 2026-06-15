@@ -16,7 +16,7 @@ const MITER_LIMIT     = 4.0;
 const PERP_CLEARANCE  = 0.35;  // fraction of mesh perp_t reserved per side
 const ARC_CLEARANCE   = 0.15;  // fraction of mesh arc_t reserved per end
 // Two extra ribbon points (one before tail, one after tip) carry the arc
-// clearance — keep this in mind when sizing buffers.
+// clearance - keep this in mind when sizing buffers.
 const ARC_EXTRA_POINTS = 2;
 
 export function makePolylineStroke({

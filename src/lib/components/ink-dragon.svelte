@@ -78,7 +78,7 @@
   let overlayView = $state({ body: [], whiskerL: [], whiskerR: [] });
   let pathView = $state({ samples: [], ctrls: [], cursor: null });
 
-  // auto-fly — uniform cubic B-spline, C2 across all junctions
+  // auto-fly - uniform cubic B-spline, C2 across all junctions
   let autoFly = $state(false);
   let autoSpeed = $state(0.6);
   let autoCtrl = null;   // rolling array of control points
@@ -135,7 +135,7 @@
     };
   }
 
-  // dP/du — needed for arc-speed parameterization.
+  // dP/du - needed for arc-speed parameterization.
   function bsplineVel(p0, p1, p2, p3, u) {
     const u2 = u * u;
     const d0 = (-3*u2 + 6*u - 3) / 6;

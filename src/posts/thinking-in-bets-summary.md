@@ -76,7 +76,7 @@ still be losing over 40% of his games.
 **The quality of our lives = the sum of decision quality (bets) + luck**
 
 In the long run, the cumulative effect of being a little better at decision-making
-like compounding interest — can have huge effects on everything that we do.
+like compounding interest - can have huge effects on everything that we do.
 In the long run, the more objective person will win against the more biased person.
 
 ### Redefining confidence
