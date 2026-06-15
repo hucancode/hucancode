@@ -8,6 +8,7 @@
   } from "$lib/brush/engine";
   import { yongSymbol, yongMaxId } from "$lib/brush/yong";
   import { longSymbol, longMaxId } from "$lib/brush/long";
+  import { bakeGLSL } from "$lib/brush/bake";
   import {
     drawSymbol, worldToScreen, screenToWorld,
   } from "$lib/brush/render2d";
@@ -46,6 +47,27 @@
   let view = $state({ zoom: 1, panX: 0, panY: 0 });
   const color = "#111111";
 
+  // frame mode: edit the whole glyph at once (translate + uniform scale)
+  // instead of individual points.
+  let frameMode = $state(false);
+
+  // show-code panel: dump the live symbol.strokes array as JSON.
+  let showCode = $state(false);
+  const codeText = $derived(JSON.stringify(symbol.strokes, null, 2));
+
+  // bake panel: emit the shadertoy GLSL Seg[] table for the live symbol.
+  let bakeText = $state("");
+  let bakeInfo = $state("");
+  function bake() {
+    const r = bakeGLSL(symbol, {
+      connect: { enabled: connect.enabled, thread: connect.thread },
+      timing: { speed: timing.speed },
+      glyph: SAMPLES[sampleKey]?.label ?? "?",
+    });
+    bakeText = r.glsl;
+    bakeInfo = `${r.segCount} segs / ${r.strokeCount} strokes / ${r.total.toFixed(3)}s`;
+  }
+
   // auto connectors: derive a thin silk thread between every consecutive
   // stroke pair. Pure derived geometry - not stored on the symbol.
   let connect = $state(DEFAULT_CONNECT());
@@ -68,6 +90,7 @@
   let dragStrokeId = null;
   let dragIdx = null;
   let dragLastWorld = null;
+  let frameAnchor = null; // pivot (world) for frame-scale drag
 
   function randPressure() { return 0.25 + Math.random() * 0.7; }
 
@@ -254,6 +277,55 @@
     view.panY += before.y - after.y;
   }
   function resetView() { view.zoom = 1; view.panX = 0; view.panY = 0; }
+
+  // --- frame mode: transform whole glyph --------------------------------------
+  // world-space bounding box over every point of every stroke.
+  function glyphBBox() {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const s of symbol.strokes) {
+      for (const p of s.points) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+    }
+    if (!isFinite(minX)) return null;
+    return { minX, minY, maxX, maxY };
+  }
+  // shift every point + explicit control point by (dx,dy).
+  function translateGlyph(dx, dy) {
+    for (const s of symbol.strokes) {
+      for (const p of s.points) { p.x += dx; p.y += dy; }
+      for (const pa of s.paths) if (pa.ctrl) { pa.ctrl.x += dx; pa.ctrl.y += dy; }
+    }
+  }
+  // uniform scale by f about pivot (ox,oy) in world space.
+  function scaleGlyph(f, ox, oy) {
+    if (!isFinite(f) || f <= 0) return;
+    for (const s of symbol.strokes) {
+      for (const p of s.points) {
+        p.x = ox + (p.x - ox) * f;
+        p.y = oy + (p.y - oy) * f;
+      }
+      for (const pa of s.paths) if (pa.ctrl) {
+        pa.ctrl.x = ox + (pa.ctrl.x - ox) * f;
+        pa.ctrl.y = oy + (pa.ctrl.y - oy) * f;
+      }
+    }
+  }
+  function onPointerDownFrameMove(e) {
+    e.preventDefault(); e.stopPropagation();
+    dragMode = "frame-move";
+    dragLastWorld = pointerWorld(e);
+  }
+  // anchor = opposite corner (world); scaling pins it in place.
+  function onPointerDownFrameScale(e, ax, ay) {
+    e.preventDefault(); e.stopPropagation();
+    dragMode = "frame-scale";
+    frameAnchor = { x: ax, y: ay };
+    dragLastWorld = pointerWorld(e);
+  }
   function onPointerDownPoint(e, strokeId, i) {
     e.preventDefault(); e.stopPropagation();
     dragMode = "point"; dragStrokeId = strokeId; dragIdx = i;
@@ -288,6 +360,21 @@
       view.panY += (dy / stageH) * 2 / view.zoom;
       return;
     }
+    if (dragMode === "frame-move") {
+      const w = pointerWorld(e);
+      translateGlyph(w.x - dragLastWorld.x, w.y - dragLastWorld.y);
+      dragLastWorld = w;
+      return;
+    }
+    if (dragMode === "frame-scale") {
+      const w = pointerWorld(e);
+      const a = frameAnchor;
+      const dPrev = Math.hypot(dragLastWorld.x - a.x, dragLastWorld.y - a.y);
+      const dNow = Math.hypot(w.x - a.x, w.y - a.y);
+      if (dPrev > 1e-4) scaleGlyph(dNow / dPrev, a.x, a.y);
+      dragLastWorld = w;
+      return;
+    }
     const w = pointerWorld(e);
     const s = findStroke(dragStrokeId);
     if (!s) return;
@@ -313,6 +400,7 @@
     const wasClick = wasPan && !dragMoved;
     dragMode = null; dragStrokeId = null; dragIdx = null;
     dragLastWorld = null; dragLastScreen = null; dragDownScreen = null;
+    frameAnchor = null;
     dragMoved = false;
     if (wasClick) deselectAll();
   }
@@ -532,6 +620,8 @@
   const selPath = $derived(
     selKind === "path" && selStroke ? selStroke.paths[selIdx] : null
   );
+  // recomputed live during frame drags, so the frame tracks the glyph.
+  const frameWorld = $derived(frameMode ? (void JSON.stringify(symbol), glyphBBox()) : null);
 </script>
 
 <svelte:window onpointermove={onPointerMove} onpointerup={endDrag} />
@@ -569,6 +659,18 @@
           <line x1="13" y1="6" x2="18" y2="11" />
         </svg>
       </button>
+      <button type="button" class="vp-btn"
+              class:active={frameMode && !anim}
+              title={frameMode ? "exit frame mode" : "frame mode (scale/move whole glyph)"}
+              onpointerdown={(e) => e.stopPropagation()}
+              onclick={() => { if (anim) exitAnim(); frameMode = !frameMode; }}
+              aria-label="toggle frame mode">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5" />
+          <rect x="8" y="8" width="8" height="8" rx="1" opacity="0.55" />
+        </svg>
+      </button>
     </div>
     <div class="viewport-zoom" onpointerdown={(e) => e.stopPropagation()}>
       <span class="zoom-pct">{Math.round(view.zoom * 100)}%</span>
@@ -581,7 +683,37 @@
         </svg>
       </button>
     </div>
-    {#if showHandles && !anim && stageW > 0}
+    {#if frameMode && !anim && stageW > 0 && frameWorld}
+      {@const fw = frameWorld}
+      {@const cA = ws({ x: fw.minX, y: fw.minY })}
+      {@const cB = ws({ x: fw.maxX, y: fw.minY })}
+      {@const cC = ws({ x: fw.maxX, y: fw.maxY })}
+      {@const cD = ws({ x: fw.minX, y: fw.maxY })}
+      {@const left = Math.min(cA.x, cB.x, cC.x, cD.x)}
+      {@const right = Math.max(cA.x, cB.x, cC.x, cD.x)}
+      {@const top = Math.min(cA.y, cB.y, cC.y, cD.y)}
+      {@const bot = Math.max(cA.y, cB.y, cC.y, cD.y)}
+      <svg class="overlay" width={stageW} height={stageH}>
+        <rect x={left} y={top} width={right - left} height={bot - top}
+              fill="rgba(40,140,220,0.06)" stroke="rgba(40,140,220,0.85)"
+              stroke-width="1.5" stroke-dasharray="6 4"
+              style="cursor:move; pointer-events:all;"
+              onpointerdown={onPointerDownFrameMove} />
+        <!-- corner handles: each scales uniformly about the opposite corner -->
+        {#each [
+          { p: cA, ax: fw.maxX, ay: fw.maxY },
+          { p: cB, ax: fw.minX, ay: fw.maxY },
+          { p: cC, ax: fw.minX, ay: fw.minY },
+          { p: cD, ax: fw.maxX, ay: fw.minY },
+        ] as h}
+          <rect x={h.p.x - 6} y={h.p.y - 6} width="12" height="12"
+                fill="rgba(40,140,220,0.95)" stroke="white" stroke-width="2"
+                style="cursor:nwse-resize; pointer-events:all;"
+                onpointerdown={(e) => onPointerDownFrameScale(e, h.ax, h.ay)} />
+        {/each}
+      </svg>
+    {/if}
+    {#if showHandles && !anim && !frameMode && stageW > 0}
       <svg class="overlay" width={stageW} height={stageH}>
         <!-- pass 1: edges (preview + hit area) for every segment of every stroke -->
         {#each symbol.strokes as stroke (stroke.id)}
@@ -669,6 +801,32 @@
                 disabled={!showHandles || !canSplit}
                 title="cut this stroke at the selected point; the gap auto-connects with a silk thread">split</button>
       </div>
+      <div class="buttons">
+        <button type="button" onclick={() => (showCode = !showCode)}>
+          {showCode ? "hide code" : "show code"}
+        </button>
+        {#if showCode}
+          <button type="button" title="copy to clipboard"
+                  onclick={() => navigator.clipboard?.writeText(codeText)}>copy</button>
+        {/if}
+        <button type="button" onclick={bake}
+                title="generate the shadertoy GLSL Seg[] table for this glyph">bake glsl</button>
+        {#if bakeText}
+          <button type="button" title="copy to clipboard"
+                  onclick={() => navigator.clipboard?.writeText(bakeText)}>copy</button>
+          <button type="button" title="clear baked output"
+                  onclick={() => { bakeText = ""; bakeInfo = ""; }}>clear</button>
+        {/if}
+      </div>
+      {#if showCode}
+        <textarea class="code-dump" readonly rows="12"
+                  onpointerdown={(e) => e.stopPropagation()}>{codeText}</textarea>
+      {/if}
+      {#if bakeText}
+        <p class="hint">baked: {bakeInfo}</p>
+        <textarea class="code-dump" readonly rows="14"
+                  onpointerdown={(e) => e.stopPropagation()}>{bakeText}</textarea>
+      {/if}
     </fieldset>
 
     <fieldset>
@@ -906,6 +1064,21 @@
     background: rgba(40,80,220,0.92);
     color: white;
     border-color: rgba(40,80,220,1);
+  }
+  .code-dump {
+    width: 100%;
+    margin-top: 0.35rem;
+    box-sizing: border-box;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem;
+    line-height: 1.35;
+    resize: vertical;
+    white-space: pre;
+    overflow: auto;
+    border: 1px solid rgba(0,0,0,0.18);
+    border-radius: 6px;
+    background: #fbfbf5;
+    color: #222;
   }
   .overlay circle {
     pointer-events: all;
