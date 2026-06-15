@@ -10,9 +10,22 @@
   import { longSymbol, longMaxId } from "$lib/brush/long";
   import { fuSymbol, fuMaxId } from "$lib/brush/fu";
   import { bakeGLSL } from "$lib/brush/bake";
-  import {
-    drawSymbol, worldToScreen, screenToWorld,
-  } from "$lib/brush/render2d";
+  import { makeGLRenderer } from "$lib/brush/render-gl";
+
+  // World coords: x in [-aspect,+aspect], y in [-1,+1], origin centred.
+  // view: { zoom, panX, panY } applied as pScreen = view((p - pan) * zoom).
+  function worldToScreen(p, w, h, view) {
+    const aspect = w / h;
+    const vx = (p.x - view.panX) * view.zoom;
+    const vy = (p.y - view.panY) * view.zoom;
+    return { x: ((vx / aspect + 1) / 2) * w, y: (1 - (vy + 1) / 2) * h };
+  }
+  function screenToWorld(x, y, w, h, view) {
+    const aspect = w / h;
+    const vx = (x / w * 2 - 1) * aspect;
+    const vy = (1 - y / h) * 2 - 1;
+    return { x: vx / view.zoom + view.panX, y: vy / view.zoom + view.panY };
+  }
 
   const LS_KEY = "brush:state:v1";
   const LS_SLOTS_KEY = "brush:slots:v1";
@@ -30,6 +43,7 @@
   let sampleKey = $state("yong");
 
   let canvasEl;
+  let glRenderer = null;
   let stageW = $state(600), stageH = $state(600);
 
   // initial: load yong as seed; uid floor bumped past stored ids.
@@ -443,10 +457,9 @@
   function render() {
     if (!canvasEl || stageW <= 0 || stageH <= 0) return;
     syncCanvasSize();
-    const ctx = canvasEl.getContext("2d");
-    drawSymbol(ctx, stageW, stageH, symbol, {
-      baseRadius, sampleDensity, color,
-      view, showGrid, bg: "#fffce0", connect, timing,
+    if (!glRenderer) glRenderer = makeGLRenderer(canvasEl);
+    glRenderer.render(symbol, {
+      baseRadius, view, showGrid, gridSize: 1.6, connect, timing,
       playhead: anim ? pb.t : undefined,
     });
   }
@@ -599,7 +612,10 @@
     persistSlots();
   }
 
-  onMount(() => { loadState(); loadSlots(); render(); });
+  onMount(() => {
+    loadState(); loadSlots(); render();
+    return () => { glRenderer?.dispose(); glRenderer = null; };
+  });
 
   // persist on every change (after mount/load done)
   let _saveReady = false;
@@ -926,11 +942,6 @@
         <span>base radius</span>
         <input type="range" min="0.005" max="0.2" step="0.001" bind:value={baseRadius} />
         <output>{baseRadius.toFixed(3)}</output>
-      </label>
-      <label>
-        <span>samples</span>
-        <input type="range" min="10" max="400" step="1" bind:value={sampleDensity} />
-        <output>{sampleDensity}</output>
       </label>
     </fieldset>
 

@@ -173,12 +173,13 @@ function expandStrokes(symbol, connect) {
   return out;
 }
 
-// ---- bake -----------------------------------------------------------------
-// Returns { glsl, segCount, strokeCount, total }.
-export function bakeGLSL(symbol, opts = {}) {
+// ---- seg table (shared by bakeGLSL text emit + live GL renderer) ----------
+// Walk the symbol once, deriving auto connectors, control points, pressure
+// belly and auto timing into a flat array of self-contained Segs.
+// Returns { segs, strokeCount, total }.
+export function bakeSegs(symbol, opts = {}) {
   const connect = opts.connect || { enabled: true, thread: 0.18 };
   const speed = opts.timing ? opts.timing.speed : 1.0;
-  const glyph = opts.glyph || "?";
 
   const expanded = expandStrokes(symbol, connect);
   const segs = [];
@@ -203,7 +204,14 @@ export function bakeGLSL(symbol, opts = {}) {
       cursor += dur;
     }
   }
-  const total = cursor;
+  return { segs, strokeCount: expanded.length, total: cursor };
+}
+
+// ---- bake -----------------------------------------------------------------
+// Returns { glsl, segCount, strokeCount, total }.
+export function bakeGLSL(symbol, opts = {}) {
+  const glyph = opts.glyph || "?";
+  const { segs, strokeCount: expandedCount, total } = bakeSegs(symbol, opts);
 
   // ---- emit GLSL ----------------------------------------------------------
   const f = n => {
@@ -214,7 +222,7 @@ export function bakeGLSL(symbol, opts = {}) {
   const N = segs.length;
   let out = "";
   out += `// ===== BAKED by src/lib/brush/bake.js - DO NOT HAND-EDIT =====\n`;
-  out += `// ${glyph}, ${expanded.length} strokes expanded with auto connectors (牽絲), auto timing.\n`;
+  out += `// ${glyph}, ${expandedCount} strokes expanded with auto connectors (牽絲), auto timing.\n`;
   out += `// Each Seg is self-contained: endpoints, control, pressures, belly, timeline.\n`;
   out += `//   p1,p2   segment endpoints (world)\n`;
   out += `//   ctrl    resolved bezier control (auto Catmull-rom already applied)\n`;
@@ -237,5 +245,5 @@ export function bakeGLSL(symbol, opts = {}) {
   ).join(",\n");
   out += `\n);\n`;
 
-  return { glsl: out, segCount: N, strokeCount: expanded.length, total };
+  return { glsl: out, segCount: N, strokeCount: expandedCount, total };
 }
