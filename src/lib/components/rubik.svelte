@@ -8,7 +8,9 @@
     update,
     enter,
     leave,
-    setCubeSize
+    setCubeSize,
+    setConfig,
+    step,
   } from "$lib/scenes/rubik";
   import {
     PerspectiveCamera,
@@ -64,6 +66,14 @@
       }
     }
   });
+
+  // Playground API
+  export function apply(patch) {
+    setConfig(patch);
+  }
+  export function stepOnce() {
+    step();
+  }
 </script>
 
 <Canvas3D {ready} id={CANVAS_ID} {render} />

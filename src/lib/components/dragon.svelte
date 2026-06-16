@@ -10,6 +10,8 @@
     getCurrentDragonCount,
     clearDragon,
     makeDragon,
+    regenerate,
+    setConfig,
   } from "$lib/scenes/dragon";
 
   let ready = $state(false);
@@ -25,13 +27,38 @@
     }
   });
 
-  const MAX_DRAGON = 5;
+  const MAX_DRAGON = 8;
 
   export function performMagic() {
     if (getCurrentDragonCount() > MAX_DRAGON) {
       clearDragon();
     }
     makeDragon();
+  }
+
+  // Playground API ---------------------------------------------------------
+  // change a knob that only affects the live render (speed, lights)
+  export function apply(patch) {
+    setConfig(patch);
+  }
+  // change a knob that reshapes the curve -> rebuild onto a new path
+  export function reshape(patch) {
+    setConfig(patch);
+    regenerate();
+  }
+  export function newPath() {
+    regenerate();
+  }
+  export function addDragon() {
+    if (getCurrentDragonCount() >= MAX_DRAGON) return;
+    makeDragon();
+  }
+  export function reset() {
+    clearDragon();
+    makeDragon();
+  }
+  export function count() {
+    return getCurrentDragonCount();
   }
 </script>
 

@@ -161,14 +161,16 @@ function connectorStroke(a, b, connect) {
     paths: [{ delay: 0, duration: Math.max(0.05, g), ctrl, pctrl: { k } }],
   };
 }
+// Expand to {stroke, si, connector}: original strokes keep their source index
+// `si`; auto-connectors carry the index of the stroke they follow (connector:true).
 function expandStrokes(symbol, connect) {
   const strokes = symbol.strokes;
-  if (!connect || !connect.enabled) return strokes;
   const out = [];
   for (let i = 0; i < strokes.length; i++) {
-    out.push(strokes[i]);
+    out.push({ stroke: strokes[i], si: i, connector: false });
+    if (!connect || !connect.enabled) continue;
     const b = strokes[i + 1];
-    if (b) { const c = connectorStroke(strokes[i], b, connect); if (c) out.push(c); }
+    if (b) { const c = connectorStroke(strokes[i], b, connect); if (c) out.push({ stroke: c, si: i, connector: true }); }
   }
   return out;
 }
@@ -184,7 +186,8 @@ export function bakeSegs(symbol, opts = {}) {
   const expanded = expandStrokes(symbol, connect);
   const segs = [];
   let cursor = 0;
-  for (const stroke of expanded) {
+  for (const e of expanded) {
+    const stroke = e.stroke;
     for (let i = 0; i < stroke.paths.length; i++) {
       const path = stroke.paths[i];
       cursor += path.delay || 0;
@@ -199,7 +202,7 @@ export function bakeSegs(symbol, opts = {}) {
       segs.push({
         p1: { x: p1.x, y: p1.y }, p2: { x: p2.x, y: p2.y }, ctrl: c,
         pr1: p1.pressure, pr2: p2.pressure, k, hasBelly, belly,
-        t0: cursor, dur, v0, v1, connector: stroke._connector ? 1 : 0,
+        t0: cursor, dur, v0, v1, connector: e.connector ? 1 : 0, stroke: e.si,
       });
       cursor += dur;
     }

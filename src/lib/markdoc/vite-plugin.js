@@ -47,10 +47,7 @@ function extractFrontmatter(content) {
 function transformMarkdocToJS(content, frontmatter, filename) {
   // Process math expressions
   content = transformMathExpressions(content);
-  
-  // Process mermaid blocks to preserve content
-  content = transformMermaidBlocks(content);
-  
+
   // Parse and transform Markdoc
   const ast = Markdoc.parse(content);
   const renderable = Markdoc.transform(ast, config);
@@ -80,17 +77,6 @@ function transformMathExpressions(content) {
   // Be careful not to match escaped dollars or double dollars
   content = content.replace(/(?<!\\)\$(?!\$)(.*?)(?<!\\)\$(?!\$)/g, (match, math) => {
     return `{% math type="inline" %}${math.trim()}{% /math %}`;
-  });
-  
-  return content;
-}
-
-function transformMermaidBlocks(content) {
-  // Transform mermaid blocks to preserve their content with proper escaping
-  content = content.replace(/{% mermaid(.*?)%}([\s\S]*?){% \/mermaid %}/g, (match, attrs, mermaidContent) => {
-    // Escape the content to preserve it through Markdoc parsing
-    const encodedContent = Buffer.from(mermaidContent.trim()).toString('base64');
-    return `{% mermaid${attrs} encodedContent="${encodedContent}" /%}`;
   });
   
   return content;
