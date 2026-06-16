@@ -209,7 +209,7 @@ export function makeWebGLRenderer(canvas) {
     U.dragon3d = uniforms(gl, progs.dragon3d, [
       "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime",
     ]);
-    U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uZ", "uStep", "uOpacity", "uReveal"]);
+    U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uZ", "uStep", "uMinorDiv", "uOpacity", "uReveal", "uRevealMinor"]);
     U.blit = uniforms(gl, progs.blit, ["uTex"]);
     U.line = uniforms(gl, progs.line, ["uVP", "uAspect", "u3D", "uColor"]);
 
@@ -411,8 +411,10 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.grid.uExt, g.ext);
     gl.uniform1f(U.grid.uZ, g.z);
     gl.uniform1f(U.grid.uStep, g.step);
+    gl.uniform1f(U.grid.uMinorDiv, g.minorDiv);
     gl.uniform1f(U.grid.uOpacity, g.opacity);
     gl.uniform1f(U.grid.uReveal, g.reveal);
+    gl.uniform1f(U.grid.uRevealMinor, g.revealMinor);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 

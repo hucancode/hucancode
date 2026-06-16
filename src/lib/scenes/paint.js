@@ -93,6 +93,8 @@ const CAM_PITCH_ANGLE = -Math.PI / 4; // straight-down (0) -> 45deg elevation ti
 // Ground grid reveals AFTER the 2D dragon is fully gone, wiping in radially.
 const GRID_REVEAL_DUR = 2.5;
 const GRID_MAX_OPACITY = 0.22;
+const GRID_MINOR_DIV = 5; // minor cells per major cell (minor step = GRID.step/this)
+const GRID_MINOR_LAG = 0.8; // minor grid wipe-in trails the major reveal by this many seconds
 
 // after the 2D->3D branch, leave room to watch the 3D dragon loop on alone.
 export const TIMELINE_END = T_BRANCH + 12.0;
@@ -694,6 +696,7 @@ const blkGrid = {
   after: { block: "inkDragon", branch: "gone" },
   update(ctx, local) {
     ctx.gridReveal = clamp(local / GRID_REVEAL_DUR, 0, 1);
+    ctx.gridRevealMinor = clamp((local - GRID_MINOR_LAG) / GRID_REVEAL_DUR, 0, 1);
     ctx.gridStrength = ctx.gridReveal > 0 ? GRID_MAX_OPACITY : 0;
   },
 };
@@ -709,7 +712,7 @@ export function buildState(t, aspect, showDebug = false, orbit = null, debugBuff
     t,
     playhead: glyphTotal,      // glyph held fully drawn unless the glyph block traces
     inkAlpha: 0, d3Alpha: 0,
-    gridStrength: 0, gridReveal: 0,
+    gridStrength: 0, gridReveal: 0, gridRevealMinor: 0,
     camPitch: 0,               // top-down until the camera block tilts
     inkWidthScale: 1, headSize: HEAD_SIZE,
   };
@@ -722,7 +725,7 @@ export function buildState(t, aspect, showDebug = false, orbit = null, debugBuff
   return {
     aspect,
     opacity: { glyph: 1.0, inkDragon: ctx.inkAlpha, dragon3d: ctx.d3Alpha },
-    grid: { opacity: ctx.gridStrength, reveal: ctx.gridReveal, viewProj, ext: GRID.ext, z: GRID.z, step: GRID.step },
+    grid: { opacity: ctx.gridStrength, reveal: ctx.gridReveal, revealMinor: ctx.gridRevealMinor, viewProj, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
     glyph: { segs: glyphSegs, playhead: ctx.playhead, baseRadius: GLYPH_RADIUS },
     inkDragon: {
       body,
