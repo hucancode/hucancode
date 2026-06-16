@@ -1,8 +1,6 @@
 <script>
-  // Thin, lowkey scene-progress bar. A gradient fill grows with `progress`
-  // (0..1) behind a hand-drawn (roughjs) baseline. Click / drag to seek -> the
-  // parent gets the new progress and decides what to do (pause + map onto t).
   import { onMount, onDestroy } from "svelte";
+  import rough from "roughjs";
 
   let { progress = 0, onseek = null } = $props();
 
@@ -23,7 +21,7 @@
     ctx.clearRect(0, 0, w, h);
     const y = h / 2;
     // a single rough baseline spanning the bar, lowkey
-    rc.line(2, y, w - 2, y, { stroke: "#6b6450", strokeWidth: 1, roughness: 1.8, bowing: 2 });
+    rc.line(2, y, w - 2, y, { stroke: "#6b6450", strokeWidth: 1, roughness: 1.0, bowing: 0 });
   }
 
   function seekAt(clientX) {
@@ -35,8 +33,7 @@
   function onMove(e) { if (dragging) seekAt(e.clientX); }
   function onUp() { dragging = false; }
 
-  onMount(async () => {
-    const rough = (await import("roughjs")).default;
+  onMount(() => {
     rc = rough.canvas(canvasEl);
     draw();
     ro = new ResizeObserver(() => draw());

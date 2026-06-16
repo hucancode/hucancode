@@ -1,12 +1,14 @@
 <script>
   import { browser } from "$app/environment";
   import Scene from "$lib/components/paint.svelte";
-  import RoughTimeline from "$lib/components/rough-timeline.svelte";
+  import Timeline from "$lib/components/timeline.svelte";
   import { TIMELINE_END } from "$lib/scenes/paint.js";
-
-  const Github = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>`;
-  const Download = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M4 22v-2h16v2zm8-4L5 9h4V2h6v7h4z"/></svg>`;
-  const Book = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M2 21V3l1.675 1.675L5.325 3L7 4.675L8.675 3l1.65 1.675L12 3l1.675 1.675L15.325 3L17 4.675L18.675 3l1.65 1.675L22 3v18zm2-2h7v-6H4zm9 0h7v-2h-7zm0-4h7v-2h-7zm-9-4h16V8H4z"/></svg>`;
+  import Github from "$icons/simple-icons/github.svg?raw";
+  import Download from "$icons/google-material/download.svg?raw";
+  import Book from "$icons/google-material/book.svg?raw";
+  import Play from "$icons/google-material/play-arrow.svg?raw";
+  import Pause from "$icons/google-material/pause.svg?raw";
+  import ChevronDown from "$icons/google-material/chevron-down.svg?raw";
 
   // scroll length (px) mapped onto the whole timeline. The stage is sticky and
   // fills the viewport; this tall track gives the page something to scroll.
@@ -123,6 +125,19 @@
       <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub">{@html Github}</a>
       <a href="/resume.pdf" download aria-label="Resume" title="Resume">{@html Download}</a>
       <a href="/cp" aria-label="Notes" title="Notes">{@html Book}</a>
+      <div class="controls" bind:this={controlsEl}>
+        <button class="play" onclick={togglePlay} aria-label={playing ? "pause" : "play"}>
+          {@html playing ? Pause : Play}
+        </button>
+        <Timeline {progress} onseek={seek} />
+        {#if showDebug}
+          <div class="debug">
+            <input type="range" min="0" max={TIMELINE_END} step="0.01" value={t} oninput={(e) => seek(+e.target.value / TIMELINE_END)} />
+            <span>{t.toFixed(2)}s</span>
+            <label><input type="checkbox" bind:checked={debug} /> path</label>
+          </div>
+        {/if}
+      </div>
     </nav>
 
     <!-- empty-state coach marks: one fixed-size popover per icon (top layer),
@@ -150,19 +165,7 @@
       </svg>
     </div>
 
-    <div class="controls" bind:this={controlsEl}>
-      <button class="play" onclick={togglePlay} aria-label={playing ? "pause" : "play"}>
-        {playing ? "⏸" : "▶"}
-      </button>
-      <RoughTimeline {progress} onseek={seek} />
-      {#if showDebug}
-        <div class="debug">
-          <input type="range" min="0" max={TIMELINE_END} step="0.01" value={t} oninput={(e) => seek(+e.target.value / TIMELINE_END)} />
-          <span>{t.toFixed(2)}s</span>
-          <label><input type="checkbox" bind:checked={debug} /> path</label>
-        </div>
-      {/if}
-    </div>
+
   </div>
 </header>
 
@@ -173,7 +176,7 @@
 </div>
 
 <button class="scroll-hint" class:show={progress < 0.02} onclick={() => (playing = true)} aria-label="play">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m6 9l6 6l6-6"/></svg>
+  {@html ChevronDown}
 </button>
 
 <footer class="footer" class:show={progress >= 1}>
@@ -270,16 +273,22 @@
   }
   .play {
     flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 2rem;
     height: 2rem;
     border: none;
     background: none;
     cursor: pointer;
-    font-size: 1rem;
     color: #3a3320;
     opacity: 0.7;
   }
   .play:hover { opacity: 1; }
+  .play :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
   .debug {
     display: flex;
     align-items: center;
