@@ -652,7 +652,11 @@ const blkInk = {
   name: "inkDragon",
   after: { block: "glyph", branch: "end" },
   duration: D3_END - T.dragonStart,
-  branches: { handoff: T_BRANCH - T.dragonStart, gone: D3_END - T.dragonStart },
+  branches: {
+    traced: T_GLYPH_END - T.dragonStart, // dragon finished tracing the glyph stroke
+    handoff: T_BRANCH - T.dragonStart,
+    gone: D3_END - T.dragonStart,
+  },
   // entering, or seeking in/within: refit the body on-path (no physics history,
   // no straight teleport) so a scrub lands on a valid on-curve pose.
   setup(ctx) { reseedBody(ctx.t, BODY_LEN * inkLenFrac(ctx.t)); },
@@ -693,7 +697,7 @@ const blkDragon3d = {
 
 const blkGrid = {
   name: "grid",
-  after: { block: "inkDragon", branch: "gone" },
+  after: { block: "inkDragon", branch: "traced" }, // reveal right after the stroke is traced
   update(ctx, local) {
     ctx.gridReveal = clamp(local / GRID_REVEAL_DUR, 0, 1);
     ctx.gridRevealMinor = clamp((local - GRID_MINOR_LAG) / GRID_REVEAL_DUR, 0, 1);

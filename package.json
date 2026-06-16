@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "npm run build:resume && vite build",
-    "build:resume": "for f in src/resume/resume*.typ; do typst c --font-path fonts \"$f\" \"static/$(basename \"${f%.typ}.pdf\")\"; done",
+    "build:resume": "for f in src/resume/resume*.typ; do typst c --font-path src/resume/fonts \"$f\" \"static/$(basename \"${f%.typ}.pdf\")\"; done",
     "preview": "vite preview",
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. ."
   },

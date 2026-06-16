@@ -1,6 +1,4 @@
-<script>
-  import { _ } from "$lib/i18n";
-  import Scene from "$lib/components/ink.svelte";
+<script>  import Scene from "$lib/components/ink.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
 </script>
 
@@ -15,7 +13,7 @@
   <div role="group" class="square">
     <a role="button" href="/">
       {@html Return}
-      {$_("home.showcase.goback")}
+      Go back
     </a>
   </div>
 </section>
@@ -24,9 +22,5 @@
   section {
     flex-grow: 1;
     justify-content: space-around;
-  }
-  figure .stage {
-    width: 100%;
-    max-width: 720px;
   }
 </style>

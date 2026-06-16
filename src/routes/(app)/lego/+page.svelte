@@ -1,6 +1,4 @@
-<script>
-  import { _ } from "$lib/i18n";
-  import Scene from "$lib/components/lego.svelte";
+<script>  import Scene from "$lib/components/lego.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
 </script>
 
@@ -15,7 +13,7 @@
   <div role="group" class="square">
     <a role="button" href="/">
       {@html Return}
-      {$_("home.showcase.goback")}
+      Go back
     </a>
   </div>
 </section>

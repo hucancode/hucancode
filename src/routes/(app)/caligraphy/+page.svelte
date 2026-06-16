@@ -1,6 +1,4 @@
-<script>
-  import { _ } from "$lib/i18n";
-  import Playground from "$lib/components/caligraphy.svelte";
+<script>  import Playground from "$lib/components/caligraphy.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
 </script>
 
@@ -15,7 +13,7 @@
   <div role="group" class="square">
     <a role="button" href="/">
       {@html Return}
-      {$_("home.showcase.goback")}
+      Go back
     </a>
   </div>
 </section>

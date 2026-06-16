@@ -2,7 +2,13 @@
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import { createRenderer } from "$lib/scenes/render/index.js";
-  import { initScene, buildState, TIMELINE_END } from "$lib/scenes/paint.js";
+  import { initScene, buildState } from "$lib/scenes/paint.js";
+
+  // Controlled canvas. The parent owns the timeline:
+  //   t        scene time, bindable (parent maps scroll / autoplay onto it)
+  //   playing  when true the component auto-advances t each frame
+  //   fill     stretch to the parent's height instead of a 16/9 box
+  let { t = $bindable(0), playing = $bindable(false), debug = $bindable(false), fill = false } = $props();
 
   let canvasEl;
   let renderer = null;
@@ -11,13 +17,6 @@
   let ro;
   let lastTs = null;
   let aspect = 1;
-
-  let t = $state(0);
-  let playing = $state(true);
-  let debug = $state(false);
-  // debug: inspect a single offscreen buffer fullscreen
-  const BUFFERS = ["none", "dragon", "trail", "glow", "glyph", "ink"];
-  let debugBuffer = $state("none");
 
   // orbit camera: YAW only. Pitch (elevation) is fully scripted by the scene
   // (top-down 90deg during the glyph trace -> 45deg as the 3D dragon appears).
@@ -33,7 +32,6 @@
     if (!dragging) return;
     orbitYaw = orbitYaw + (e.clientX - lastX) * 0.01;
     lastX = e.clientX;
-    if (!playing) renderPaused();
   }
   function onPointerUp() { dragging = false; }
 
@@ -50,14 +48,16 @@
     aspect = h > 0 ? w / h : 1;
   }
 
+  // Render every frame while visible (the 3D dragon loops on forever). t only
+  // advances while playing; the parent moves it otherwise (scroll scrubbing).
   function tick(ts) {
     frameID = requestAnimationFrame(tick);
     if (lastTs == null) lastTs = ts;
     const dt = Math.min(0.05, (ts - lastTs) / 1000);
     lastTs = ts;
-    if (playing) t += dt;
+    if (playing) t += dt; // unbounded: persistent blocks keep the dragon looping
     if (!renderer) return;
-    renderer.frame(buildState(t, aspect, debug, orbit(), debugBuffer));
+    renderer.frame(buildState(t, aspect, debug, orbit()));
   }
 
   function start() {
@@ -70,35 +70,19 @@
     frameID = 0;
   }
 
-  // Render a single paused frame. The body is fitted to the path at t (seeks
-  // never teleport through a straight reseed), so no warm-up loop is needed.
-  function renderPaused() {
-    if (!renderer) return;
-    renderer.frame(buildState(t, aspect, debug, orbit(), debugBuffer));
-  }
-  function onScrub() {
-    if (!playing) renderPaused();
-  }
-
   onMount(async () => {
     if (!browser) return;
     // debug: ?t=<seconds> renders a single paused frame at that scene time
     const qs = new URLSearchParams(location.search);
     const qt = qs.get("t");
-    if (qt != null && !Number.isNaN(parseFloat(qt))) {
-      t = parseFloat(qt);
-      playing = false;
-    }
-    // ?play=1 keeps the clock running (lets the head-trail accumulate for tests)
+    if (qt != null && !Number.isNaN(parseFloat(qt))) { t = parseFloat(qt); playing = false; }
     if (qs.get("play") === "1") playing = true;
     if (qs.get("debug") === "1") debug = true;
-    if (qs.get("buffer") && BUFFERS.includes(qs.get("buffer"))) debugBuffer = qs.get("buffer");
     if (qs.get("yaw")) orbitYaw = parseFloat(qs.get("yaw")) || 0;
     initScene();
     sizeCanvas();
     renderer = await createRenderer(canvasEl, { prefer: "webgl" });
     sizeCanvas();
-    if (!playing) renderPaused();
 
     ro = new ResizeObserver(() => sizeCanvas());
     ro.observe(canvasEl);
@@ -119,81 +103,28 @@
   });
 </script>
 
-<div class="paint">
-  <canvas
-    bind:this={canvasEl}
-    onpointerdown={onPointerDown}
-    onpointermove={onPointerMove}
-    onpointerup={onPointerUp}
-    onpointerleave={onPointerUp}
-  ></canvas>
-  <div class="timeline">
-    <button onclick={() => (playing = !playing)} aria-label="play/pause">
-      {playing ? "⏸" : "▶"}
-    </button>
-    <input
-      type="range"
-      min="0"
-      max={TIMELINE_END}
-      step="0.01"
-      bind:value={t}
-      oninput={onScrub}
-    />
-    <span class="t">{t.toFixed(2)}s</span>
-    <label class="dbg">
-      <input type="checkbox" bind:checked={debug} onchange={onScrub} /> path
-    </label>
-    <label class="dbg">
-      buffer
-      <select bind:value={debugBuffer} onchange={onScrub}>
-        {#each BUFFERS as b}
-          <option value={b}>{b}</option>
-        {/each}
-      </select>
-    </label>
-  </div>
-</div>
+<canvas
+  class:fill
+  bind:this={canvasEl}
+  onpointerdown={onPointerDown}
+  onpointermove={onPointerMove}
+  onpointerup={onPointerUp}
+  onpointerleave={onPointerUp}
+></canvas>
 
 <style>
-  .paint {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
   canvas {
     width: 100%;
     aspect-ratio: 16 / 9;
     display: block;
-    border-radius: 0.5rem;
     touch-action: none;
     cursor: grab;
   }
+  canvas.fill {
+    height: 100%;
+    aspect-ratio: auto;
+  }
   canvas:active {
     cursor: grabbing;
-  }
-  .timeline {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    opacity: 0.6;
-  }
-  .timeline input[type="range"] {
-    flex: 1;
-  }
-  .timeline button {
-    width: 2rem;
-    cursor: pointer;
-  }
-  .t {
-    min-width: 3.5rem;
-    text-align: right;
-  }
-  .dbg {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    white-space: nowrap;
   }
 </style>

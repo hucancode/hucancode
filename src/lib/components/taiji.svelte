@@ -7,7 +7,10 @@
     destroy,
     update,
     enter,
-    leave
+    leave,
+    setConfig,
+    rebuildPath,
+    setColors,
   } from "$lib/scenes/taiji";
   import {
     AmbientLight,
@@ -68,6 +71,21 @@
       }
     }
   });
+
+  // Playground API
+  export function apply(patch) {
+    setConfig(patch);
+  }
+  export function reshape(patch) {
+    setConfig(patch);
+    rebuildPath();
+  }
+  export function newPath() {
+    rebuildPath();
+  }
+  export function colors(c1, c2) {
+    setColors(c1, c2);
+  }
 </script>
 
 <Canvas3D {ready} id={CANVAS_ID} {render} />

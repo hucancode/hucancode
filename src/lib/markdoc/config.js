@@ -186,51 +186,6 @@ export const config = {
       },
       selfClosing: true
     },
-    dragon: {
-      render: 'Dragon',
-      attributes: {
-        style: {
-          type: String,
-          default: 'animated'
-        },
-        speed: {
-          type: Number,
-          default: 1
-        },
-        color: {
-          type: String,
-          default: '#ffffff'
-        }
-      },
-      selfClosing: true
-    },
-    rubik: {
-      render: 'Rubik',
-      attributes: {
-        size: {
-          type: String,
-          default: 'medium',
-          matches: ['small', 'medium', 'large']
-        },
-        cubes: {
-          type: Number,
-          default: 5
-        },
-        rotating: {
-          type: Boolean,
-          default: false
-        },
-        showControls: {
-          type: Boolean,
-          default: true
-        },
-        canvasId: {
-          type: String,
-          required: true
-        }
-      },
-      selfClosing: true
-    },
     taiji: {
       render: 'Taiji',
       attributes: {

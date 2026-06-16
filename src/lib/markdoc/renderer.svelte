@@ -2,8 +2,6 @@
   import Renderer from './renderer.svelte';
   import MermaidRenderer from './renderers/MermaidRenderer.svelte';
   import ComponentRenderer from './renderers/ComponentRenderer.svelte';
-  import DragonRenderer from './renderers/DragonRenderer.svelte';
-  import RubikRenderer from './renderers/RubikRenderer.svelte';
   import TaijiRenderer from './renderers/TaijiRenderer.svelte';
   import LegoRenderer from './renderers/LegoRenderer.svelte';
   import CalloutRenderer from './renderers/CalloutRenderer.svelte';
@@ -18,8 +16,6 @@
   const components = {
     Mermaid: MermaidRenderer,
     Component: ComponentRenderer,
-    Dragon: DragonRenderer,
-    Rubik: RubikRenderer,
     Taiji: TaijiRenderer,
     Lego: LegoRenderer,
     Callout: CalloutRenderer,
