@@ -209,7 +209,7 @@ export function makeWebGLRenderer(canvas) {
     U.dragon3d = uniforms(gl, progs.dragon3d, [
       "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime",
     ]);
-    U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uY", "uStep", "uOpacity"]);
+    U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uZ", "uStep", "uOpacity", "uReveal"]);
     U.blit = uniforms(gl, progs.blit, ["uTex"]);
     U.line = uniforms(gl, progs.line, ["uVP", "uAspect", "u3D", "uColor"]);
 
@@ -402,15 +402,17 @@ export function makeWebGLRenderer(canvas) {
     gl.drawArrays(gl.LINE_STRIP, 0, dataF32.length / 3);
   }
 
-  // ground grid: procedural quad through the orbit camera (black lines + fog + falloff)
+  // ground grid: procedural quad on the x/y ground plane, through the orbit camera
+  // (black lines + fog + falloff), wiped in radially from the origin (uReveal).
   function drawGrid(g) {
     gl.useProgram(progs.grid);
     gl.bindVertexArray(emptyVao);
     gl.uniformMatrix4fv(U.grid.uViewProj, false, g.viewProj);
     gl.uniform1f(U.grid.uExt, g.ext);
-    gl.uniform1f(U.grid.uY, g.y);
+    gl.uniform1f(U.grid.uZ, g.z);
     gl.uniform1f(U.grid.uStep, g.step);
     gl.uniform1f(U.grid.uOpacity, g.opacity);
+    gl.uniform1f(U.grid.uReveal, g.reveal);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -480,8 +482,8 @@ export function makeWebGLRenderer(canvas) {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // premultiplied composite
     const vp = state.dragon3d.viewProj;
 
-    // ground grid (behind the ink layers, over the paper)
-    if (state.grid && state.grid.opacity > 0) drawGrid(state.grid);
+    // ground grid (behind the ink layers, over the paper); radial wipe-in
+    if (state.grid && state.grid.reveal > 0) drawGrid(state.grid);
 
     compositeQuad(fbo.glyph.tex, state.opacity.glyph, -0.002, vp, aspect);
     compositeQuad(fbo.ink.tex, state.opacity.inkDragon, 0.0, vp, aspect);

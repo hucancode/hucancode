@@ -5,15 +5,21 @@
 // FrameState (see render/renderer.js) each frame; performs zero GPU calls so
 // any backend can render it.
 //
+// Everything lives on ONE ground plane (the internal x/y plane). The camera looks
+// straight DOWN at it (top-down) during the glyph trace, then tilts to a 45deg
+// elevation as the 2D dragon hands off to the 3D dragon; the ground grid wipes in
+// radially after the 2D dragon is gone. Out-of-plane internal z is world height.
+//
 // Timeline (scene clock t, seconds):
-//   glyph reveal      0 - 2s     playhead 0 -> glyph duration, then hold
-//   2D dragon fly     1 - 16s    tip walks circle x2 -> small-8 x2 -> big-8 x2
-//   glyph fade        6 - 8s     alpha 1 -> 0.2, then hold
-//   3D + 2D crossfade 14.5 - 16s 3D alpha 0->1 as 2D alpha 1->0 (same big-8)
-//   3D dragon fly     16s -> oo  flies the big-8 alone, loops forever
+//   glyph reveal   0  - 2s    playhead 0 -> glyph duration, then HOLD (no fade)
+//   2D dragon      2s - ~10s  enters at the glyph end, traces it, peels onto a loop
+//   cam tilt + xfade          camera 90deg->45deg, 2D fades out / 3D fades in
+//   grid reveal               radial wipe-in once the 2D dragon is fully gone
+//   3D dragon fly             flies its loop alone, forever
 
 import { longSymbol } from "$lib/brush/long.js";
 import { bakeSegs } from "$lib/brush/bake.js";
+import { makeTimeline } from "./timeline.js";
 
 // ---- small math ------------------------------------------------------------
 const TAU = Math.PI * 2;
@@ -30,27 +36,26 @@ const smooth = (x) => x * x * (3 - 2 * x);
 // ---- timeline knobs --------------------------------------------------------
 const T = {
   glyphRevealEnd: 2.0,
-  dragonStart: 1.0,
-  glyphFadeStart: 6.0,
-  glyphFadeEnd: 8.0,
-  glyphFadeTo: 0.2,
-  // 2D->3D crossfade + grid reveal are timed off the branch (D3_START/END,
-  // defined with the flight-path constants below). gridStagger offsets the grid.
-  gridStagger: 0.0,
+  dragonStart: 2.0, // dragon enters at the END of the glyph reveal and traces it
+  // camera tilt + 2D->3D crossfade + grid reveal are timed off the branch
+  // (D3_START/END, CAM_*, GRID_* defined with the flight-path constants below).
 };
 
 // ============================================================================
 // Flight path - random smooth loops, generated fresh each load.
 //   glyph trace  -> 2D random loop (pivots inside a bounding circle, G1) -> after
 //   LOOP2_DUR, branch to a 3D random loop (G1) that the 3D dragon flies on.
-// Both loops are closed Catmull-Rom splines, so tangent continuity is automatic
-// (including the wrap seam). Handoffs (glyph->2D, 2D->3D) are aligned by phase +
-// a decaying position offset / shared branch pivot. See buildSpline / initScene.
+// Both loops are closed Catmull-Rom splines. Each is a PURE random loop with a
+// single anchor pivot at its handoff point and NO copy of the previous path
+// grafted in, so neither dragon ever flies back over a transition segment:
+//   - loop2 is anchored at the glyph split point (head leaves the glyph there).
+//   - loop3 is anchored at the 2D branch point bp; the fading 2D dragon switches
+//     ONTO loop3 at the branch so the two overlap during the crossfade.
+// See buildSpline / initScene.
 // ============================================================================
 // Entry: the head first traces glyph strokes #6 then #7 (0-based source stroke
-// index, near the glyph's end). loop2 is grafted to start with a copy of the
-// glyph-trace tail, so the head leaves the glyph tangent-continuously (G1) and
-// the body stays on the glyph path through the handoff. See initScene.
+// index, near the glyph's end), then leaves the glyph end onto loop2 (anchored
+// at that split point, leaving along the glyph heading within a turn cap).
 const ENTRY_STROKE_FIRST = 7; // first traced glyph stroke (0-based source index)
 const ENTRY_STROKE_LAST = 7;  // last traced glyph stroke; split at its end
 const GLYPH_DUR = 0.8;        // seconds to trace the glyph entry before splitting
@@ -71,13 +76,26 @@ const SP3 = 1.5;            // 3D head speed (path units / sec)
 const LOOP2_DUR = 6.0;       // seconds flying the 2D loop before branching to 3D
 const CROSSFADE = 1.0;       // 2D->3D crossfade duration
 const MAX_EXIT_TURN = Math.PI / 4; // cap on the peel-off turn when the head leaves the glyph onto loop2
-const MAX_TURN = Math.PI / 2;      // cap on the turn angle at any path pivot (loop2 + loop3)
-const RELAX_ITERS = 24;            // relaxation passes to smooth sharp pivots
+const MIN_TURN = Math.PI / 9;      // floor on the turn angle at a pivot (keeps loops from going too straight)
+const MAX_TURN = Math.PI / 2;      // angle above which a pivot counts as a "sharp" turn
+const MAX_SHARP_RUN = 2;           // a sharp turn is fine, but not N in a row -> relax the Nth
+const RELAX_ITERS = 24;            // relaxation passes
 
 const T_GLYPH_END = T.dragonStart + GLYPH_DUR; // glyph entry -> 2D loop
 const T_BRANCH = T_GLYPH_END + LOOP2_DUR;      // 2D loop -> 3D loop (+ crossfade)
 const D3_START = T_BRANCH;                     // 3D dragon fades in
 const D3_END = T_BRANCH + CROSSFADE;           // ...as the 2D ink fades out
+
+// Camera: looks straight down (top-down, pitch 0) through the glyph trace; tilts
+// to a 45deg elevation as the 2D dragon fades to the 3D dragon. Yaw stays
+// user-controllable (component), pitch is fully scripted here.
+const CAM_PITCH_ANGLE = -Math.PI / 4; // straight-down (0) -> 45deg elevation tilt (sign = tilt dir)
+// Ground grid reveals AFTER the 2D dragon is fully gone, wiping in radially.
+const GRID_REVEAL_DUR = 2.5;
+const GRID_MAX_OPACITY = 0.22;
+
+// after the 2D->3D branch, leave room to watch the 3D dragon loop on alone.
+export const TIMELINE_END = T_BRANCH + 12.0;
 
 // Glyph pen query: where the brush tip is at playhead `ph` (0..glyphTotal),
 // plus its heading. Segments are quadratic beziers with a [t0, t0+dur] window in
@@ -188,11 +206,9 @@ let loop3Phase = 0;        // 3D head arc at T_BRANCH (aligns the branch handoff
 //   entryReady   - false if the glyph lacks the requested strokes
 //   entryStartPh - playhead where following begins (start of the first stroke)
 //   entryEndPh   - playhead where following ends (end of the last stroke)
-//   entryStartS  - loop2 arc at the split point (where the head leaves the glyph)
 let entryReady = false;
 let entryStartPh = 0;
 let entryEndPh = 0;
-let entryStartS = 0;
 
 function resolveEntry() {
   // map source stroke indices -> playhead window (segs are in pen order; a stroke
@@ -207,25 +223,6 @@ function resolveEntry() {
   entryReady = true;
   entryStartPh = startPh;
   entryEndPh = endPh;
-}
-
-// Pivots copying the glyph-trace tail behind the split point, covering `arcLen`
-// of body, ordered oldest -> split point (z=0). loop2 is grafted to start with
-// these so the 2D dragon's body stays on the glyph path through the handoff,
-// then the head peels off into the random loop (G1, like the 2D->3D branch).
-function glyphTailPivots(arcLen) {
-  const split = glyphStrokeAt(entryEndPh);
-  const out = [{ x: split.x, y: split.y, z: 0 }];
-  let prev = split, ph = entryEndPh, acc = 0, sinceLast = 0, guard = 0;
-  while (acc < arcLen && guard++ < 8000) {
-    ph -= 0.02;
-    const p = glyphStrokeAt(ph);
-    const d = Math.hypot(p.x - prev.x, p.y - prev.y);
-    acc += d; sinceLast += d; prev = p;
-    if (sinceLast >= 0.12) { out.push({ x: p.x, y: p.y, z: 0 }); sinceLast = 0; }
-  }
-  out.reverse();
-  return out;
 }
 
 // Rotate the first random pivot about the split point so the head's peel-off
@@ -243,31 +240,52 @@ function clampExitPivot(pivots, split, maxTurn) {
   pivots[0] = { x: split.x + r * Math.cos(nb), y: split.y + r * Math.sin(nb), z: p.z };
 }
 
-// Relax a closed pivot ring so no vertex turns sharper than `maxTurn`. Each pass,
-// any movable pivot whose incoming/outgoing legs bend past the cap is pulled
-// toward the midpoint of its neighbours (curvature-reducing). `movable(i)` keeps
-// grafted/shared pivots pinned so the glyph + crossfade handoffs stay continuous.
-function relaxTurns(P, maxTurn, movable, iters) {
+// Turn angle at pivot i on a closed ring (angle between the incoming/outgoing legs).
+function turnAngle(P, i) {
+  const K = P.length;
+  const a = P[(i - 1 + K) % K], b = P[i], c = P[(i + 1) % K];
+  const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z;
+  const vx = c.x - b.x, vy = c.y - b.y, vz = c.z - b.z;
+  const ul = Math.hypot(ux, uy, uz) || 1e-6;
+  const vl = Math.hypot(vx, vy, vz) || 1e-6;
+  return Math.acos(clamp((ux * vx + uy * vy + uz * vz) / (ul * vl), -1, 1));
+}
+
+// Shape a closed pivot ring's turn angles. Each pass, for a movable pivot:
+//   - too straight (< minTurn)       -> push AWAY from neighbours' midpoint (more bend);
+//   - sharp (> maxTurn) AND the Nth   -> pull TOWARD the midpoint (break the run).
+//     consecutive sharp turn
+// A lone sharp turn is allowed; only the Nth sharp-in-a-row (maxRun) gets relaxed,
+// so loops keep some sharp corners without long jagged stretches. In-band pivots
+// and isolated sharp turns are left alone. `movable(i)` pins the anchor pivots so
+// the glyph + branch handoffs stay continuous. Converges (pushing/relaxing both
+// stop once the pivot re-enters its allowed state).
+function relaxTurns(P, minTurn, maxTurn, maxRun, movable, iters) {
   const K = P.length;
   for (let it = 0; it < iters; it++) {
+    let sharpRun = 0; // consecutive sharp turns walking the ring
     for (let i = 0; i < K; i++) {
+      const ang = turnAngle(P, i);
+      const sharp = ang > maxTurn;
+      sharpRun = sharp ? sharpRun + 1 : 0;
       if (!movable(i)) continue;
+      let w = 0;
+      if (sharp) {
+        if (sharpRun < maxRun) continue;        // lone / sub-run sharp turn is fine
+        w = 0.5; sharpRun = 0;                   // Nth in a row -> smooth, break the run
+      } else if (ang < minTurn) {
+        w = -clamp((minTurn - ang) * 0.6, 0, 0.3); // too straight -> add bend
+      } else continue;
       const a = P[(i - 1 + K) % K], b = P[i], c = P[(i + 1) % K];
-      const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z;
-      const vx = c.x - b.x, vy = c.y - b.y, vz = c.z - b.z;
-      const ul = Math.hypot(ux, uy, uz) || 1e-6;
-      const vl = Math.hypot(vx, vy, vz) || 1e-6;
-      const cosA = (ux * vx + uy * vy + uz * vz) / (ul * vl);
-      if (Math.acos(clamp(cosA, -1, 1)) <= maxTurn) continue;
       const mx = (a.x + c.x) * 0.5, my = (a.y + c.y) * 0.5, mz = (a.z + c.z) * 0.5;
-      P[i] = { x: lerp(b.x, mx, 0.5), y: lerp(b.y, my, 0.5), z: lerp(b.z, mz, 0.5) };
+      P[i] = { x: lerp(b.x, mx, w), y: lerp(b.y, my, w), z: lerp(b.z, mz, w) };
     }
   }
 }
 
 // Drives the 2D ink-dragon head: glyph trace, then the 2D random loop (arc s).
-// loop2 is grafted to start with a copy of the glyph-trace tail, so the head
-// leaves the glyph at entryStartS exactly tangent-continuous -> no offset needed.
+// loop2 is anchored at the glyph split point (arc 0), so the head leaves the
+// glyph end with no position jump; after the branch the head rides loop3.
 function pathAt(t) {
   // glyph-follow entry: head rides the glyph pen across strokes #6 and #7,
   // then splits onto the 2D loop at the last stroke's end point.
@@ -276,10 +294,17 @@ function pathAt(t) {
     const ph = lerp(entryStartPh, entryEndPh, prog);
     return { fn: (a) => { const p = glyphStrokeAt(a); return { x: p.x, y: p.y }; }, a: ph };
   }
-  // 2D random loop (also while the ink dragon fades out post-branch)
-  const t0 = entryReady ? T_GLYPH_END : T.dragonStart;
-  const s = (entryReady ? entryStartS : 0) + Math.max(0, t - t0) * SP2;
-  return { fn: (a) => { const p = loop2.pos(a); return { x: p.x, y: p.y }; }, a: s };
+  // 2D random loop (loop2) until the branch
+  if (t < T_BRANCH) {
+    const t0 = entryReady ? T_GLYPH_END : T.dragonStart;
+    const s = Math.max(0, t - t0) * SP2; // enters at arc 0 (the split point)
+    return { fn: (a) => { const p = loop2.pos(a); return { x: p.x, y: p.y }; }, a: s };
+  }
+  // after the branch the fading 2D dragon rides loop3 (== the 3D dragon's path,
+  // SP2==SP3), so they overlap exactly through the crossfade and the 2D never
+  // returns to the loop2 entry/transition path.
+  const s = (t - T_BRANCH) * SP2;
+  return { fn: (a) => { const p = loop3.pos(a); return { x: p.x, y: p.y }; }, a: s };
 }
 function tipAt(t) {
   const { fn, a } = pathAt(t);
@@ -310,7 +335,6 @@ const MAX_BEND = (30 * Math.PI) / 180;
 const HEAD_SIZE = 0.12;
 
 let body = [];
-let lastT = null;
 
 // Fit the body ALONG the current path: head at the path point for t, the rest
 // trailing back by arc length on the same curve. Used when seeking (no straight
@@ -479,9 +503,9 @@ function rotX(a) {
   const c = Math.cos(a), s = Math.sin(a);
   return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]);
 }
-function rotY(a) {
+function rotZ(a) {
   const c = Math.cos(a), s = Math.sin(a);
-  return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]);
+  return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 }
 function translate(x, y, z) {
   return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]);
@@ -501,7 +525,9 @@ function sceneViewProj(aspect, orbit) {
   const yaw = (orbit && orbit.yaw) || 0;
   const pitch = (orbit && orbit.pitch) || 0;
   const proj = perspective(CAM.fov, aspect, 0.1, 60);
-  let m = rotY(yaw);
+  // ground is the x/y plane, so +z is up. Yaw spins about z (the ground normal);
+  // pitch then tilts elevation. rotZ first so yaw stays a true heading once tilted.
+  let m = rotZ(yaw);
   m = mat4mul(rotX(pitch), m);
   m = mat4mul(translate(0, 0, -CAM.dist), m); // pull camera back along +z
   return mat4mul(proj, m);
@@ -517,12 +543,13 @@ function samplePath3d(stride = 4) {
 }
 
 // ============================================================================
-// Ground grid - a horizontal plane (y = GRID.y) drawn procedurally by the grid
-// shader (glow + fog + camera-distance falloff). Edge-on at the front view;
-// revealed as the camera pitches up to look from above. We only hand the
-// renderer the plane params + opacity; the geometry is a quad in the shader.
+// Ground grid - the floor the whole scene sits on. It is COPLANAR with the glyph
+// / ink layers (the internal x/y plane, at internal z = GRID.z just behind them),
+// so the glyph reads as painted ON it. Hidden at the start; once the 2D dragon is
+// gone it wipes in RADIALLY from the origin (grid shader uReveal), not as a flat
+// quad-opacity fade. We hand the renderer the plane params + opacity + reveal.
 // ============================================================================
-const GRID = { y: -1.0, ext: 12.0, step: 0.6 };
+const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
 
 // ============================================================================
 // public API
@@ -546,71 +573,39 @@ export function initScene() {
   rng = mulberry32((Math.random() * 4294967296) >>> 0);
   resolveEntry(); // glyph stroke window for the entry trace
 
-  // loop2 branches FROM the glyph trace: graft a copy of the glyph-trace tail
-  // (z=0, body length behind the split) onto the front, then random pivots that
-  // peel away and close the loop. The head leaves the glyph at the split point.
+  // loop2 leaves the glyph trace at the split point: it is a pure random closed
+  // loop ANCHORED at the split (so the head leaves the glyph end with no position
+  // jump) and leaving along the glyph heading (clampExitPivot). No glyph-tail copy
+  // is grafted in -> the head never flies back over the entry/transition path.
   if (entryReady) {
-    const tail = glyphTailPivots(BODY_LEN);
     const split = glyphStrokeAt(entryEndPh);
     const loopPivots = randomLoopPivots(rng, LOOP2_PIVOTS, R2D, 0);
-    clampExitPivot(loopPivots, split, MAX_EXIT_TURN); // limit the peel-off turn angle
-    const ring2 = [...tail, ...loopPivots];
-    // smooth sharp turns; pin the glyph tail + the clamped peel-off pivot (idx tail.length)
-    relaxTurns(ring2, MAX_TURN, (i) => i > tail.length, RELAX_ITERS);
+    clampExitPivot(loopPivots, split, MAX_EXIT_TURN); // leave the glyph within the turn cap
+    const ring2 = [{ x: split.x, y: split.y, z: 0 }, ...loopPivots];
+    relaxTurns(ring2, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, (i) => i >= 1, RELAX_ITERS); // pin the split anchor
     loop2 = buildSpline(ring2);
-    const M = 1024;
-    let best = Infinity;
-    for (let i = 0; i < M; i++) {
-      const s = (i / M) * loop2.total;
-      const q = loop2.pos(s);
-      const d = (q.x - split.x) ** 2 + (q.y - split.y) ** 2;
-      if (d < best) { best = d; entryStartS = s; }
-    }
   } else {
     loop2 = buildSpline(randomLoopPivots(rng, LOOP2_PIVOTS, R2D, 0));
-    entryStartS = 0;
   }
 
-  // where the 2D head is when it branches to 3D
-  const branchS = entryStartS + Math.max(0, T_BRANCH - T_GLYPH_END) * SP2;
+  // 2D head arc on loop2 when it branches to 3D (mirrors pathAt's loop2 phase)
+  const loop2T0 = entryReady ? T_GLYPH_END : T.dragonStart;
+  const branchS = (T_BRANCH - loop2T0) * SP2;
   const bp = loop2.pos(branchS);
-  // The 3D dragon must OVERLAP the 2D path during the crossfade. So loop3 begins
-  // with a faithful (z=0) copy of loop2 covering the arc the 3D head+body occupy
-  // over the crossfade window, then bridges into random 3D pivots and closes.
-  // SP3==SP2 and both heads start at branchS -> they stay locked until the head
-  // leaves the shared copy (~end of crossfade), then the 3D dragon diverges.
-  const bodyLen3 = BODY_LEN * D3.bodyFactor;
-  const transArc = CROSSFADE * SP3;
-  const sharedStart = branchS - bodyLen3 - 0.1; // body trails behind the head
-  const sharedEnd = branchS + transArc + 0.1;    // head advances ahead
-  const span = sharedEnd - sharedStart;
-  const nShare = Math.max(8, Math.round(span / 0.1));
-  const sharePivots = [];
-  for (let i = 0; i <= nShare; i++) {
-    const q = loop2.pos(sharedStart + (i / nShare) * span);
-    sharePivots.push({ x: q.x, y: q.y, z: 0 });
-  }
-  // random 3D pivots bridge sharedEnd back around to sharedStart (closed loop)
+  const tb = loop2.tan(branchS); // 2D heading at the branch point
+  // loop3 is a pure random closed loop ANCHORED at the branch point bp, leaving it
+  // along the 2D heading. The 2D dragon switches onto loop3 AT the branch (see
+  // pathAt) so the two overlap during the crossfade without copying loop2 into
+  // loop3. loop3 holds no transition copy -> the 3D dragon never returns to it.
   const rest = randomLoopPivots(rng, LOOP3_PIVOTS, R3D, Z3D);
-  const ring3 = [...sharePivots, ...rest];
-  // smooth sharp turns; pin the shared crossfade copy so the 2D->3D handoff stays put
-  relaxTurns(ring3, MAX_TURN, (i) => i >= sharePivots.length, RELAX_ITERS);
+  clampExitPivot(rest, { x: bp.x, y: bp.y, dir: { x: tb.x, y: tb.y } }, MAX_EXIT_TURN);
+  const ring3 = [{ x: bp.x, y: bp.y, z: 0 }, ...rest];
+  relaxTurns(ring3, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, (i) => i >= 1, RELAX_ITERS); // pin the branch anchor
   loop3 = buildSpline(ring3);
-  // arc on loop3 nearest the branch point -> the 3D head starts there at T_BRANCH
-  loop3Phase = 0;
-  {
-    const M = 1024;
-    let best = Infinity;
-    for (let i = 0; i < M; i++) {
-      const s = (i / M) * loop3.total;
-      const q = loop3.pos(s);
-      const d = (q.x - bp.x) ** 2 + (q.y - bp.y) ** 2 + q.z ** 2;
-      if (d < best) { best = d; loop3Phase = s; }
-    }
-  }
+  loop3Phase = 0; // 3D head starts at bp (loop3 arc 0) at T_BRANCH
 
   buildDragon3dFrames();
-  lastT = null;
+  timeline.reset(); // fresh scene: re-run block setup on the next frame
   // seed body fitted to the path at the dragon's start (short)
   reseedBody(T.dragonStart, BODY_LEN * ENTRY_GROW_MIN);
 }
@@ -619,52 +614,120 @@ export function initScene() {
 // -> a stroke width close to the ink dragon's body width.
 const D3_GIRTH = 0.006;
 
-// Build the FrameState for scene time t. showDebug adds path polylines;
-// orbit = { yaw, pitch, zoom } rotates the 3D dragon's camera.
+// 2D-dragon grow ramp: small + short while tracing the glyph, growing up after it
+// peels onto the loop. Shared by body length + head/stroke size.
+function inkGrow(t) {
+  return entryReady
+    ? smooth(clamp((t - T_GLYPH_END) / GROW_DUR, 0, 1))
+    : Math.max(0, ramp(t, T.dragonStart, T.dragonStart + 0.4, 0, 1));
+}
+const inkLenFrac = (t) => lerp(ENTRY_GROW_MIN, 1.0, inkGrow(t));
+const inkSizeFrac = (t) => lerp(ENTRY_SIZE_MIN, 1.0, inkGrow(t));
+
+// ============================================================================
+// Scene timeline - overlapping blocks (see timeline.js). Each block writes its
+// slice into the shared ctx; buildState seeds ctx defaults, runs the timeline,
+// then assembles the FrameState. Blocks attach to each other's branch points so
+// they retime together and can be developed independently.
+//   glyph     [0 .. reveal]       traces the glyph, then holds it on the ground
+//   inkDragon (after glyph.end)   enters at the glyph end, traces it, peels onto a
+//                                 loop, then fades. branches: `handoff`, `gone`
+//   camera    (after ink.handoff) tilts top-down -> 45deg over the crossfade
+//   dragon3d  (after ink.handoff) fades in and flies its loop forever
+//   grid      (after ink.gone)    radial wipe-in of the ground grid
+// ============================================================================
+const blkGlyph = {
+  name: "glyph",
+  at: 0,
+  duration: T.glyphRevealEnd,
+  branches: { end: T.glyphRevealEnd },
+  update(ctx) {
+    ctx.playhead = ramp(ctx.t, 0, T.glyphRevealEnd, 0, glyphTotal);
+  },
+};
+
+const blkInk = {
+  name: "inkDragon",
+  after: { block: "glyph", branch: "end" },
+  duration: D3_END - T.dragonStart,
+  branches: { handoff: T_BRANCH - T.dragonStart, gone: D3_END - T.dragonStart },
+  // entering, or seeking in/within: refit the body on-path (no physics history,
+  // no straight teleport) so a scrub lands on a valid on-curve pose.
+  setup(ctx) { reseedBody(ctx.t, BODY_LEN * inkLenFrac(ctx.t)); },
+  seek(ctx) { reseedBody(ctx.t, BODY_LEN * inkLenFrac(ctx.t)); },
+  update(ctx) {
+    const t = ctx.t;
+    const inkReveal = ramp(t, T.dragonStart, T.dragonStart + 0.4, 0, 1);
+    const inkFade = ramp(t, D3_START, D3_END, 1, 0); // fades as the 3D dragon appears
+    ctx.inkAlpha = Math.min(inkReveal, inkFade);
+    const sizeFrac = inkSizeFrac(t);
+    ctx.inkWidthScale = sizeFrac;
+    ctx.headSize = HEAD_SIZE * sizeFrac;
+    const growLen = BODY_LEN * inkLenFrac(t);
+    // continuous step; seeks are resynced by setup/seek above
+    if (body.length < 2) reseedBody(t, growLen);
+    else stepBody(tipAt(t), growLen);
+  },
+};
+
+// camera/dragon3d/grid are PERSISTENT (no duration): once started they keep
+// updating forever, holding their end state (full tilt / dragon looping / grid
+// revealed) instead of tearing down and snapping back to defaults.
+const blkCamera = {
+  name: "camera",
+  after: { block: "inkDragon", branch: "handoff" },
+  update(ctx, local) {
+    ctx.camPitch = smooth(clamp(local / CROSSFADE, 0, 1)) * CAM_PITCH_ANGLE;
+  },
+};
+
+const blkDragon3d = {
+  name: "dragon3d",
+  after: { block: "inkDragon", branch: "handoff" },
+  update(ctx) {
+    ctx.d3Alpha = ramp(ctx.t, D3_START, D3_END, 0, 1); // flies its loop forever (headArc3 advances with t)
+  },
+};
+
+const blkGrid = {
+  name: "grid",
+  after: { block: "inkDragon", branch: "gone" },
+  update(ctx, local) {
+    ctx.gridReveal = clamp(local / GRID_REVEAL_DUR, 0, 1);
+    ctx.gridStrength = ctx.gridReveal > 0 ? GRID_MAX_OPACITY : 0;
+  },
+};
+
+const timeline = makeTimeline([blkGlyph, blkInk, blkCamera, blkDragon3d, blkGrid]);
+
+// Build the FrameState for scene time t. showDebug adds path polylines; orbit =
+// { yaw } (pitch is scripted by the camera block). Seeds ctx defaults (= nothing
+// happening, so inactive blocks need no teardown to clear), runs the overlapping
+// timeline blocks, then assembles the FrameState from ctx.
 export function buildState(t, aspect, showDebug = false, orbit = null, debugBuffer = "none") {
-  // ---- opacities ----
-  // glyph dims to 0.2 mid-flight, then finishes fading to 0 as the 3D dragon reveals
-  const glyphAlpha = Math.min(
-    ramp(t, T.glyphFadeStart, T.glyphFadeEnd, 1.0, T.glyphFadeTo),
-    ramp(t, D3_START, D3_END, 1.0, 0.0)
-  );
-  const inkReveal = ramp(t, T.dragonStart, T.dragonStart + 0.4, 0, 1);
-  const inkFade = ramp(t, D3_START, D3_END, 1, 0); // 2D fades as the 3D dragon appears
-  const inkAlpha = Math.min(inkReveal, inkFade);
-  const d3Alpha = ramp(t, D3_START, D3_END, 0, 1);
-  const gridAlpha = ramp(t, D3_START + T.gridStagger, D3_END + T.gridStagger, 0, 0.2);
+  const ctx = {
+    t,
+    playhead: glyphTotal,      // glyph held fully drawn unless the glyph block traces
+    inkAlpha: 0, d3Alpha: 0,
+    gridStrength: 0, gridReveal: 0,
+    camPitch: 0,               // top-down until the camera block tilts
+    inkWidthScale: 1, headSize: HEAD_SIZE,
+  };
+  timeline.frame(ctx, t);
 
-  // ---- glyph reveal playhead ----
-  const playhead = ramp(t, 0, T.glyphRevealEnd, 0, glyphTotal);
-
-  // ---- 2D dragon ----
-  // shared frame dt for stateful physics; reseed on jumps / reverse scrub
-  const dt = lastT == null ? 0 : t - lastT;
-  lastT = t;
-  const reseed = dt <= 0 || dt > 0.1 || inkAlpha <= 0;
-
-  // small + short while tracing the glyph; AFTER it exits (splits to the circle)
-  // it grows up: body lengthens, girth/head enlarge.
-  const g = entryReady ? smooth(clamp((t - T_GLYPH_END) / GROW_DUR, 0, 1)) : Math.max(0, inkReveal);
-  const lenFrac = lerp(ENTRY_GROW_MIN, 1.0, g);
-  const sizeFrac = lerp(ENTRY_SIZE_MIN, 1.0, g);
-  const growLen = BODY_LEN * lenFrac;
-
-  if (reseed || body.length < 2) reseedBody(t, growLen);
-  else stepBody(tipAt(t), growLen);
   const frame = headFrame(body);
-
-  const viewProj = sceneViewProj(aspect, orbit);
+  const userYaw = (orbit && orbit.yaw) || 0;
+  const viewProj = sceneViewProj(aspect, { yaw: userYaw, pitch: ctx.camPitch });
 
   return {
     aspect,
-    opacity: { glyph: glyphAlpha, inkDragon: inkAlpha, dragon3d: d3Alpha },
-    grid: { opacity: gridAlpha, viewProj, ext: GRID.ext, y: GRID.y, step: GRID.step },
-    glyph: { segs: glyphSegs, playhead, baseRadius: GLYPH_RADIUS },
+    opacity: { glyph: 1.0, inkDragon: ctx.inkAlpha, dragon3d: ctx.d3Alpha },
+    grid: { opacity: ctx.gridStrength, reveal: ctx.gridReveal, viewProj, ext: GRID.ext, z: GRID.z, step: GRID.step },
+    glyph: { segs: glyphSegs, playhead: ctx.playhead, baseRadius: GLYPH_RADIUS },
     inkDragon: {
       body,
-      head: { pos: frame.pos, dir: frame.dir, size: HEAD_SIZE * sizeFrac },
-      widthScale: sizeFrac,        // body stroke width grows with size
+      head: { pos: frame.pos, dir: frame.dir, size: ctx.headSize },
+      widthScale: ctx.inkWidthScale, // body stroke width grows with size
     },
     dragon3d: {
       frames: dragon3dFrames,
@@ -683,6 +746,3 @@ export function buildState(t, aspect, showDebug = false, orbit = null, debugBuff
       : { show: false, buffer: debugBuffer },
   };
 }
-
-// after the 2D->3D branch, leave room to watch the 3D dragon loop on alone.
-export const TIMELINE_END = T_BRANCH + 12.0;

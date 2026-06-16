@@ -19,23 +19,20 @@
   const BUFFERS = ["none", "dragon", "trail", "glow", "glyph", "ink"];
   let debugBuffer = $state("none");
 
-  // orbit camera (3D dragon) - limited yaw/pitch around the front view
-  const PITCH_MIN = 0;             // front view
-  const PITCH_MAX = Math.PI / 6;   // +30deg, look from above only
-  const clampR = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  let orbitYaw = 0, orbitPitch = 0;
-  let dragging = false, lastX = 0, lastY = 0;
-  const orbit = () => ({ yaw: orbitYaw, pitch: orbitPitch, zoom: 1 });
+  // orbit camera: YAW only. Pitch (elevation) is fully scripted by the scene
+  // (top-down 90deg during the glyph trace -> 45deg as the 3D dragon appears).
+  let orbitYaw = 0;
+  let dragging = false, lastX = 0;
+  const orbit = () => ({ yaw: orbitYaw });
 
   function onPointerDown(e) {
-    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    dragging = true; lastX = e.clientX;
     canvasEl.setPointerCapture?.(e.pointerId);
   }
   function onPointerMove(e) {
     if (!dragging) return;
     orbitYaw = orbitYaw + (e.clientX - lastX) * 0.01;
-    orbitPitch = clampR(orbitPitch + (e.clientY - lastY) * 0.01, PITCH_MIN, PITCH_MAX);
-    lastX = e.clientX; lastY = e.clientY;
+    lastX = e.clientX;
     if (!playing) renderPaused();
   }
   function onPointerUp() { dragging = false; }
@@ -97,7 +94,6 @@
     if (qs.get("debug") === "1") debug = true;
     if (qs.get("buffer") && BUFFERS.includes(qs.get("buffer"))) debugBuffer = qs.get("buffer");
     if (qs.get("yaw")) orbitYaw = parseFloat(qs.get("yaw")) || 0;
-    if (qs.get("pitch")) orbitPitch = clampR(parseFloat(qs.get("pitch")) || 0, PITCH_MIN, PITCH_MAX);
     initScene();
     sizeCanvas();
     renderer = await createRenderer(canvasEl, { prefer: "webgl" });
