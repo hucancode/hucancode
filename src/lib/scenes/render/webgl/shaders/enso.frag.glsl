@@ -18,20 +18,20 @@ uniform float uLineWidth;  // brush thickness (polar line width)
 uniform float uClock;      // scene time -> slow bristle drift
 
 const float PI2 = 6.28318531;
-// The scene sweeps the head over decreasing angle (ensoPos: ensoA0 - frac*TAU),
-// which is INCREASING atan2(x,y); false makes the stroke grow that same way so
-// the head stays exactly at the stroke front (it LEADS the brush).
-const bool  CLOCKWISE = false;
+// The scene sweeps the head counter-clockwise (ensoPos: ensoA0 + frac*TAU),
+// which is INCREASING standard atan2(y,x) = DECREASING atan2(x,y).
+// CLOCKWISE=true flips `a` so phase grows with decreasing atan2(x,y),
+// keeping the head exactly at the stroke front.
+const bool  CLOCKWISE = true;
 const vec3  INK = vec3(0.05, 0.05, 0.07);
 
-// brush look (was mouse-driven in the reference; fixed here for a bold enso)
-const float uWobble      = 0.5;
-const float uStrands     = 1.6;
-const float uWidthEnd    = 0.12; // tapers to a thin tail at the sweep end
+const float uWobble      = 1.0;
+const float uStrands     = 5.0;
+const float uWidthEnd    = 0.0; // tapers to a thin tail at the sweep end
 const float uWidthOffset = 0.92;
 const float uWidthRange  = 1.4;
-const float uWidthAnchor = 1.0;
-const float uInkFlow     = 1.1;
+const float uWidthAnchor = 0.5;
+const float uInkFlow     = 1.5;
 const float uWaterFlow   = 0.7;
 
 vec2 hash(vec2 p) {
@@ -109,7 +109,8 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float sweepAmt, float lin
 
     float tAlong = clamp(along / max(strokeLen, 1e-6), 0.0, 1.0);
     float halfRange = max(uWidthRange, 1e-3) * 0.5;
-    float widthCurve = smoothstep(uWidthOffset - halfRange, uWidthOffset + halfRange, tAlong);
+    // Upper edge pinned to 1.0 so taper always completes at the stroke end.
+    float widthCurve = smoothstep(uWidthOffset - halfRange, 1.0, tAlong);
     float lineWidth1 = lineWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
 
     vec3 hu = deformLine(uvLine, lineLength);
@@ -122,10 +123,25 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float sweepAmt, float lin
     float d_body = abs(perp - bodyCenter) - bodyHalfW;
 
     float base = strokeAlpha(huUV, paperUV, vec2(lineWidth1, max(strokeLen, 1e-6)), d_body);
-    // smooth taper at both ends — no hard SDF clips, so no square cuts
-    float fadeLen = lineWidth * 3.0;
-    float startFade = smoothstep(0.0, fadeLen, along);
-    float endFade   = smoothstep(strokeLen, max(strokeLen - fadeLen, 0.0), along);
+    // Cap fadeLen so start/end fade zones never overlap (prevents crushing at small sweep).
+    float fadeLen = min(lineWidth * 5.0, strokeLen * 0.45);
+    // Per-group bristle taper: lower frequency -> bigger clumps of strands that
+    // taper together, smoother and bolder. Head (start) uses coarser noise so
+    // bristles are visibly large rather than fine fringe.
+    float bristleT = perp / max(uLineWidth, 1e-4);
+    float tn1 = noise01(vec2(bristleT * 5.5, 1.71));
+    float tn2 = noise01(vec2(bristleT * 13.0, 5.19));
+    float tailVar = tn1 * 0.65 + tn2 * 0.35;
+    // min ratio 0.40 (was 0.15) -> each bristle has ample fade room, no fine clipping
+    float tailLen = max(fadeLen * mix(0.40, 1.0, tailVar), 1e-5);
+    // Clamp to [0, lineLength] so bristles never extend outside polar phase range.
+    float alongClamped = clamp(along, 0.0, lineLength);
+    float startFade = smoothstep(0.0, tailLen, alongClamped);
+    float hn1 = noise01(vec2(bristleT * 11.0, 8.33));
+    float hn2 = noise01(vec2(bristleT * 27.3, 13.7));
+    float headVar = hn1 * 0.65 + hn2 * 0.35;
+    float headLen = fadeLen * mix(0.15, 1.0, headVar);
+    float endFade  = smoothstep(strokeLen, max(strokeLen - headLen, 0.0), alongClamped);
     return base * startFade * endFade;
 }
 

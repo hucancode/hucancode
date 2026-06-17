@@ -1,10 +1,10 @@
 <script>
+  import { onMount } from "svelte";
+  import rough from "roughjs";
   import Dragon from "$icons/game-icons/dragon.svg?raw";
   import Cube from "$icons/mdi/cube.svg?raw";
   import Planet from "$icons/ph/planet.svg?raw";
 
-  // thumb: path to a preview image (added later). Until then the icon shows
-  // centered on a placeholder tile.
   const playgrounds = [
     { href: "/dragon", name: "Dragon", icon: Dragon, thumb: null },
     { href: "/rubik", name: "Rubik", icon: Cube, thumb: null },
@@ -13,6 +13,41 @@
     { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: null },
     { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: null },
   ];
+
+  let cardEls = $state([]);
+  let svgEls = $state([]);
+
+  function drawCard(svgEl, w, h, seed) {
+    while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
+    svgEl.setAttribute("width", w);
+    svgEl.setAttribute("height", h);
+    svgEl.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    const rc = rough.svg(svgEl);
+    const pad = 3;
+    const g = rc.rectangle(pad, pad, w - pad * 2, h - pad * 2, {
+      roughness: 1.6,
+      stroke: "#3a3320",
+      strokeWidth: 1.5,
+      fill: "none",
+      seed,
+    });
+    svgEl.appendChild(g);
+  }
+
+  function redrawAll() {
+    svgEls.forEach((svgEl, i) => {
+      if (!svgEl || !cardEls[i]) return;
+      const r = cardEls[i].getBoundingClientRect();
+      drawCard(svgEl, r.width, r.height, i + 1);
+    });
+  }
+
+  onMount(() => {
+    redrawAll();
+    const ro = new ResizeObserver(redrawAll);
+    cardEls.forEach(el => el && ro.observe(el));
+    return () => ro.disconnect();
+  });
 </script>
 
 <svelte:head>
@@ -22,9 +57,10 @@
 <main class="playgrounds">
   <h1>Playgrounds</h1>
   <ul>
-    {#each playgrounds as p}
+    {#each playgrounds as p, i}
       <li>
-        <a href={p.href}>
+        <a href={p.href} bind:this={cardEls[i]} class="card">
+          <svg class="card-border" bind:this={svgEls[i]} aria-hidden="true"></svg>
           <div class="thumb">
             {#if p.thumb}
               <img src={p.thumb} alt={p.name} loading="lazy" />
@@ -41,12 +77,24 @@
 </main>
 
 <style>
+  @font-face {
+    font-family: "Virgil";
+    src: url("/fonts/Virgil.woff2") format("woff2");
+    font-display: swap;
+  }
+  :global(body) {
+    background: rgb(255, 252, 224);
+  }
   .playgrounds {
+    width: 100%;
     max-width: 1100px;
     margin: 0 auto;
     padding: 4rem 1.5rem;
   }
   h1 {
+    font-family: "Virgil", "Comic Sans MS", cursive;
+    font-size: 2.2rem;
+    color: #3a3320;
     margin-bottom: 2rem;
   }
   ul {
@@ -55,30 +103,41 @@
     margin: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
-  li a {
+  li {
+    display: flex;
+  }
+  .card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     text-decoration: none;
     color: inherit;
+    padding: 0.75rem;
+    border-radius: 2px;
+    background: rgba(255, 253, 240, 0.7);
+    transition: transform 0.15s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px) rotate(-0.4deg);
+  }
+  .card-border {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
   }
   .thumb {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
+    width: 320px;
+    height: 180px;
     display: grid;
     place-items: center;
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 0.6rem;
-    background: linear-gradient(135deg, #f4f1ea, #e7e2d6);
-    transition: transform 0.15s ease, border-color 0.15s ease;
-  }
-  li a:hover .thumb {
-    transform: translateY(-3px);
-    border-color: #6b4e71;
+    background: linear-gradient(135deg, #f0ece0, #e4dece);
   }
   .thumb img {
     width: 100%;
@@ -88,17 +147,19 @@
   .icon :global(svg) {
     width: 3rem;
     height: 3rem;
-    fill: currentColor;
-    opacity: 0.55;
+    fill: #3a3320;
+    opacity: 0.45;
   }
   .name {
-    font-size: 1rem;
-    font-weight: 500;
-    padding-left: 0.15rem;
+    font-family: "Virgil", "Comic Sans MS", cursive;
+    font-size: 1.05rem;
+    color: #3a3320;
+    padding-left: 0.1rem;
   }
   .back {
     display: inline-block;
     margin-top: 2.5rem;
+    font-family: "Virgil", "Comic Sans MS", cursive;
     color: #6b4e71;
     text-decoration: none;
   }

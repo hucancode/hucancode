@@ -50,37 +50,37 @@ const T = {
 //                   of this phase (it is hidden through the lead-in + first half).
 //   2. enso       - head sweeps one clockwise circle; the enso shader stroke
 //                   reveals up to the head (head leads the brush). Held after.
-//   3. curve roam - head flies a chain of random C / S / figure-8 curves.
+//   3. circle roam - head flies a chain of tangent circles (0.5–1.5 rounds each).
 //   4. 3D handoff - after the roam, branch onto a 3D random loop (anchored at the
 //                   branch point); the 2D ink + enso fade as the 3D dragon enters.
 // See buildSpline / buildOpenSpline / generateCurvePath / initScene.
 // ============================================================================
-const LEADIN_DUR = 1.2;       // straight glide from the top onto the glyph start
+const LEADIN_DUR = 0.5;       // straight glide from the top onto the glyph start
 const LEADIN_START = { x: 0, y: 0.78 }; // top-middle, far from the glyph entry
-const GLYPH_TRACE_DUR = 2.5;  // head traces the whole glyph, leading the reveal
+const GLYPH_TRACE_DUR = 0.5;  // 1.5 = head traces the whole glyph, leading the reveal
 const ENSO_LEADIN_DUR = 0.6;  // branch off the glyph end onto the enso (no snap)
-const ENSO_DUR = 4.0;         // head sweeps one full enso circle
 const ENSO_R = 0.4;           // enso radius (world units; <1 keeps it on-screen)
 const ENSO_WIDTH = 0.05;      // enso brush thickness (polar line width in the shader)
 const GROW_DUR = 2.5;         // body grows up after the glyph trace (over the enso)
-const ENTRY_GROW_MIN = 0.3;   // body length fraction while tracing the glyph
-const ENTRY_SIZE_MIN = 0.6;   // body width / head size fraction while tracing
+const ENTRY_GROW_MIN = 0.2;   // body length fraction while tracing the glyph
+const ENTRY_SIZE_MIN = 0.4;   // body width / head size fraction while tracing
 
-// Random C / S / figure-8 curve roam (replaces the old single closed loop2). The
-// head flies a chain of curves: C 50%, S 30%, figure-8 20% (see generateCurvePath).
-const CURVE_COUNT = 12;       // curves generated for the roam chain
-const CURVE_BOUND = 0.72;     // hard radius cap on the roam (1.8x ENSO_R, keeps paths on-screen)
-const CURVE_SIZE_MIN = 0.32;  // min curve size (0.8x of previous)
-const CURVE_SIZE_MAX = 0.52;  // max curve size (0.8x of previous)
-const CURVE_DUR = 6.0;        // seconds roaming the curves before branching to 3D
+// 2D roam: dragon flies a chain of tangent circles (0.5–1.5 rounds each), then
+// transitions to the next via an internally or externally tangent circle.
+const CURVE_BOUND = 1.00;      // bounding radius (keeps all circles on-screen)
+const CIRCLE_R_MIN = 0.3;     // min individual circle radius
+const CIRCLE_R_MAX = 0.8;     // max individual circle radius
+const CIRCLE_CHAIN_LEN = 9;    // number of circles in the chain
+const CIRCLE_SAMPLES = 10;    // dense samples per full (2π) revolution
 
 // 3D loop (unchanged): a random closed loop the 3D dragon flies, anchored at the
 // branch point so the fading 2D dragon overlaps it through the crossfade.
 const R3D = 0.72;            // 3D loop bounding radius (x/y)
 const Z3D = 0.6;             // 3D loop out-of-plane amplitude
 const LOOP3_PIVOTS = 8;      // random pivots for the 3D loop
-const SP2 = 1.5;             // 2D head speed (path units / sec)
-const SP3 = 1.5;             // 3D head speed (path units / sec)
+const SP2 = 2.5;             // 2D & 3D head speed (world units / sec)
+const SP3 = SP2;             // 3D dragon speed matches 2D
+const ENSO_DUR = (2 * Math.PI * ENSO_R) / SP2; // enso circumference / speed
 const CROSSFADE = 1.0;       // 2D->3D crossfade duration
 const CAM_PITCH_DUR = CROSSFADE * 4; // camera pitch tilt duration (slower than the fade)
 const MAX_EXIT_TURN = Math.PI / 4; // cap on the peel-off turn at the branch onto loop3
@@ -93,9 +93,10 @@ const T_GLYPH_START = T.dragonStart + LEADIN_DUR;    // lead-in -> glyph trace
 const T_GLYPH_END = T_GLYPH_START + GLYPH_TRACE_DUR; // glyph trace -> enso branch
 const T_ENSO_START = T_GLYPH_END + ENSO_LEADIN_DUR;  // enso branch -> enso sweep
 const T_ENSO_END = T_ENSO_START + ENSO_DUR;          // enso -> curve roam
-const T_BRANCH = T_ENSO_END + CURVE_DUR;             // curve roam -> 3D loop
-const D3_START = T_BRANCH;                           // 3D dragon fades in
-const D3_END = T_BRANCH + CROSSFADE;                 // ...as the 2D ink fades out
+// T_BRANCH/D3_START/D3_END recomputed in initScene once curvePath.total is known
+let T_BRANCH = T_ENSO_END + 6.0;  // placeholder until initScene runs
+let D3_START = T_BRANCH;
+let D3_END = T_BRANCH + CROSSFADE;
 
 // Camera: looks straight down (top-down, pitch 0) through the glyph trace; tilts
 // to a 45deg elevation as the 2D dragon fades to the 3D dragon. Yaw stays
@@ -110,7 +111,7 @@ const GRID_MINOR_DIV = 5; // minor cells per major cell (minor step = GRID.step/
 const GRID_MINOR_LAG = 0.8; // minor grid wipe-in trails the major reveal by this many seconds
 
 // after the 2D->3D branch, leave room to watch the 3D dragon loop on alone.
-export const TIMELINE_END = T_BRANCH + 11.0;
+export let TIMELINE_END = T_BRANCH + 11.0;
 
 // Glyph pen query: where the brush tip is at playhead `ph` (0..glyphTotal),
 // plus its heading. Segments are quadratic beziers with a [t0, t0+dur] window in
@@ -262,19 +263,20 @@ function randomLoopPivots(rng, count, radius, zAmp) {
 
 let rng = null;            // session PRNG (seeded in initScene)
 let ensoLeadIn = null;     // short branch from the glyph end onto the enso circle
-let curvePath = null;      // 2D random C/S/8 curve chain the ink dragon roams
+let curvePath = null;      // 2D roam spline the ink dragon follows
+let curvePool = [];        // pool of {x,y,z} waypoints used to build curvePath (debug)
 let loop3 = null;          // 3D random loop the 3D dragon flies
 let loop3Phase = 0;        // 3D head arc at T_BRANCH (aligns the branch handoff)
 let glyphEntry = { x: 0, y: 0 };  // glyph pen position at playhead 0 (lead-in target)
-let ensoA0 = Math.PI / 2;  // enso start angle (set so the circle begins near the glyph exit)
+let ensoA0 = Math.PI / 2;  // enso start angle: top of circle (fixed); head sweeps counter-clockwise
 
 // ---- enso circle ----------------------------------------------------------
-// The head sweeps ONE clockwise circle of radius ENSO_R about the origin; `frac`
-// (0..1) is the head's fraction around the circle, which also drives the enso
-// shader's sweep so the brush stroke trails the head. Defined for any frac so the
-// body can trail behind the head (frac<0) at the start of the sweep.
+// The head sweeps ONE counter-clockwise circle of radius ENSO_R starting at the
+// top (0, ENSO_R); `frac` (0..1) drives the enso shader's sweep so the brush
+// stroke trails the head. Defined for any frac so the body can trail before the
+// start (frac<0).
 function ensoPos(frac) {
-  const a = ensoA0 - frac * TAU; // clockwise (decreasing angle)
+  const a = ensoA0 + frac * TAU; // counter-clockwise (increasing angle)
   return { x: ENSO_R * Math.cos(a), y: ENSO_R * Math.sin(a) };
 }
 
@@ -284,76 +286,150 @@ function leadInPos(p) {
   return { x: lerp(LEADIN_START.x, glyphEntry.x, k), y: lerp(LEADIN_START.y, glyphEntry.y, k) };
 }
 
-// ---- random C / S / figure-8 curve chain -----------------------------------
-// Each "step" appends one curve to a turtle walking from the previous exit, then
-// the whole point list is smoothed by an open Catmull-Rom spline. Curve TYPE is
-// random (C 50%, S 30%, figure-8 20%); curve SIZE is random in [min,max] (never
-// too small). Points are authored in a local frame (entry at origin, heading +x)
-// then rotated/translated onto the turtle pose:
-//   C  (3 pts): entry, belly, exit                 - a broad arc
-//   S  (5 pts): entry, belly1, transition, belly2, exit
-//   8  (9 pts): entry, belly1, transition, belly2, tip, belly3, transition,
-//               belly4, exit(=entry)               - a figure-8 crossing at `transition`
-// The entry point is shared with the previous exit, so each generator returns the
-// points AFTER the entry.
-function curveLocal(type, R, s) {
-  if (type === "C") {
-    return [{ x: R, y: s * R }, { x: 0, y: 2 * s * R }];
-  }
-  if (type === "S") {
-    return [{ x: R, y: s * R }, { x: 2 * R, y: 0 }, { x: 3 * R, y: -s * R }, { x: 4 * R, y: 0 }];
-  }
-  // figure-8: crossing at transition (2R,0); right lobe out to the tip (4R,0),
-  // left lobe back to the entry (0,0). exit == entry.
-  return [
-    { x: R, y: s * R }, { x: 2 * R, y: 0 }, { x: 3 * R, y: s * R }, { x: 4 * R, y: 0 },
-    { x: 3 * R, y: -s * R }, { x: 2 * R, y: 0 }, { x: R, y: -s * R }, { x: 0, y: 0 },
+// 2D roam: dragon flies a chain of tangent circles. Each circle covers 0.5–1.5
+// rounds; the exit angle and next circle are chosen by scoring 12 candidate exit
+// angles × 3 radii for clearance from previous circles + boundary margin.
+// External tangency (next center beyond touch point, rotation flips, 90% weight)
+// is preferred; internal (same side, same rotation, 10% weight) is a fallback.
+// Trying many exit angles ensures external is always feasible somewhere — avoiding
+// the consecutive-internal-tangent bug caused by a single exit point near the edge.
+function generateCirclePath(rng, entry, heading) {
+  curvePool = [];
+
+  const hdx = Math.cos(heading);
+  const hdy = Math.sin(heading);
+
+  let dir = rng() > 0.5 ? 1 : -1;
+  let r = CIRCLE_R_MIN + rng() * (CIRCLE_R_MAX - CIRCLE_R_MIN);
+  let cx = entry.x + (dir > 0 ? -hdy : hdy) * r;
+  let cy = entry.y + (dir > 0 ? hdx : -hdx) * r;
+  const dc0 = Math.hypot(cx, cy);
+  const maxDc0 = Math.max(0, CURVE_BOUND - r);
+  if (dc0 > maxDc0 && dc0 > 1e-6) { cx *= maxDc0 / dc0; cy *= maxDc0 / dc0; }
+
+  let px = entry.x, py = entry.y;
+  const allPts = [
+    { x: px - hdx * BODY_LEN * 2, y: py - hdy * BODY_LEN * 2, z: 0 },
+    { x: px - hdx * BODY_LEN,     y: py - hdy * BODY_LEN,     z: 0 },
+    { x: px,                       y: py,                       z: 0 },
   ];
-}
-function pickCurveType(rng) {
-  const r = rng();
-  return r < 0.5 ? "C" : r < 0.8 ? "S" : "8";
-}
-// Build the open curve chain. A short straight LEAD-IN is prepended behind the
-// entry so the body has path to trail on when the head starts (headStart = arc at
-// the real entry). Curves steer back toward the origin past CURVE_BOUND so the
-// roam stays on-screen. Returns the open spline + headStart arc.
-function generateCurvePath(rng, entry, heading) {
-  let px = entry.x, py = entry.y, th = heading;
-  const dx = Math.cos(th), dy = Math.sin(th);
-  // lead-in: two colinear points behind the entry (straight -> body trails cleanly)
-  const pts = [
-    { x: px - dx * BODY_LEN * 2, y: py - dy * BODY_LEN * 2, z: 0 },
-    { x: px - dx * BODY_LEN, y: py - dy * BODY_LEN, z: 0 },
-    { x: px, y: py, z: 0 },
-  ];
-  const headStartU = 2; // pivot index of the real entry (lead-in is straight)
-  for (let n = 0; n < CURVE_COUNT; n++) {
-    const type = pickCurveType(rng);
-    const R = lerp(CURVE_SIZE_MIN, CURVE_SIZE_MAX, rng());
-    const s = rng() < 0.5 ? 1 : -1;
-    const ct = Math.cos(th), st = Math.sin(th);
-    for (const p of curveLocal(type, R, s)) {
-      let wx = px + (ct * p.x - st * p.y), wy = py + (st * p.x + ct * p.y);
-      // hard cap: every point stays within CURVE_BOUND of the origin (on-screen)
-      const rr = Math.hypot(wx, wy);
-      if (rr > CURVE_BOUND) { const k = CURVE_BOUND / rr; wx *= k; wy *= k; }
-      pts.push({ x: wx, y: wy, z: 0 });
+  const headEntryIdx = 2;
+  const history = []; // all placed circles for empty-area scoring
+
+  const EXIT_CANDS = 12; // candidate exit angles to evaluate
+  const R_TRIES = 3;     // radii to try per exit angle
+
+  for (let chain = 0; chain < CIRCLE_CHAIN_LEN; chain++) {
+    history.push({ cx, cy, r });
+    const startAngle = Math.atan2(py - cy, px - cx);
+
+    // Score candidates: sample EXIT_CANDS exit angles in [0.5, 1.5] revolutions,
+    // try R_TRIES radii each (90% ext / 10% int per attempt).
+    let bestScore = -Infinity;
+    let best = null;
+
+    for (let k = 0; k < EXIT_CANDS; k++) {
+      // Jittered uniform coverage of the valid arc range
+      const t = (k + 0.1 + rng() * 0.8) / EXIT_CANDS;
+      const delta = lerp(0.5 * TAU, 1.5 * TAU, t); // angular sweep on current circle
+      const exitAngle = startAngle + delta * dir;
+      const ex = cx + r * Math.cos(exitAngle);
+      const ey = cy + r * Math.sin(exitAngle);
+      const nx = (ex - cx) / r; // outward normal at exit
+      const ny = (ey - cy) / r;
+
+      for (let ri = 0; ri < R_TRIES; ri++) {
+        const nextR = CIRCLE_R_MIN + rng() * (CIRCLE_R_MAX - CIRCLE_R_MIN);
+        // External: center beyond touch point (outward), rotation flips (+0.5 score bonus).
+        // Internal: center same side as current center, same rotation.
+        const ext = rng() < 0.7;
+        const sign = ext ? 1 : -1;
+        const nextCx = ex + sign * nx * nextR;
+        const nextCy = ey + sign * ny * nextR;
+        const nextDir = ext ? -dir : dir;
+
+        const outerDist = Math.hypot(nextCx, nextCy) + nextR;
+        if (outerDist > CURVE_BOUND * 0.96) continue; // out of bounds, skip
+
+        // Score: min clearance from all previous circles (skip current = last in history)
+        // + boundary margin bonus + external bonus.
+        let minClearance = Infinity;
+        for (let hi = 0; hi < history.length - 1; hi++) {
+          const h = history[hi];
+          const c = Math.hypot(nextCx - h.cx, nextCy - h.cy) - h.r - nextR;
+          if (c < minClearance) minClearance = c;
+        }
+        if (!isFinite(minClearance)) minClearance = 0;
+        const boundMargin = CURVE_BOUND - outerDist;
+        const score = minClearance + boundMargin * 0.4 + (ext ? 0.5 : 0);
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = { delta, ex, ey, nextCx, nextCy, nextR, nextDir };
+        }
+      }
     }
-    // new pose from the last two appended points
-    const b = pts[pts.length - 1], a = pts[pts.length - 2];
-    px = b.x; py = b.y; th = Math.atan2(b.y - a.y, b.x - a.x);
-    // steer back toward the origin as we approach the bound (keeps the roam centred)
-    if (Math.hypot(px, py) > CURVE_BOUND * 0.8) {
-      const toHome = Math.atan2(-py, -px);
-      let diff = toHome - th;
-      while (diff > Math.PI) diff -= TAU;
-      while (diff < -Math.PI) diff += TAU;
-      th += diff * 0.5;
+
+    // Fallback: external tangency at a random in-range exit, clamped to bound.
+    if (!best) {
+      const delta = lerp(0.5 * TAU, 1.5 * TAU, rng());
+      const exitAngle = startAngle + delta * dir;
+      const ex = cx + r * Math.cos(exitAngle);
+      const ey = cy + r * Math.sin(exitAngle);
+      const nx = (ex - cx) / r, ny = (ey - cy) / r;
+      const nextR = CIRCLE_R_MIN;
+      let nextCx = ex + nx * nextR, nextCy = ey + ny * nextR;
+      const dc2 = Math.hypot(nextCx, nextCy);
+      const maxDc2 = Math.max(0, CURVE_BOUND - nextR);
+      if (dc2 > maxDc2 && dc2 > 1e-6) { nextCx *= maxDc2 / dc2; nextCy *= maxDc2 / dc2; }
+      best = { delta, ex, ey, nextCx, nextCy, nextR, nextDir: -dir };
     }
+
+    // Sample the chosen arc.
+    const nSamples = Math.max(32, Math.round(CIRCLE_SAMPLES * best.delta / TAU));
+    for (let i = 1; i <= nSamples; i++) {
+      const a = startAngle + (i / nSamples) * best.delta * dir;
+      allPts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), z: 0 });
+    }
+
+    if (chain === CIRCLE_CHAIN_LEN - 1) break;
+
+    px = best.ex; py = best.ey;
+    cx = best.nextCx; cy = best.nextCy; r = best.nextR; dir = best.nextDir;
   }
-  const spline = buildOpenSpline(pts);
-  return { ...spline, headStart: spline.arcAtU(headStartU) };
+
+  // Arc-length parameterization directly from dense circle samples.
+  const N = allPts.length;
+  const cum = new Float64Array(N);
+  for (let i = 1; i < N; i++) {
+    const a = allPts[i - 1], b = allPts[i];
+    cum[i] = cum[i - 1] + Math.hypot(b.x - a.x, b.y - a.y);
+  }
+  const total = cum[N - 1] || 1;
+  const headStart = cum[headEntryIdx];
+
+  function pos(s) {
+    const d = clamp(s, 0, total);
+    let lo = 0, hi = N - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid] < d) lo = mid + 1; else hi = mid; }
+    const i = Math.max(1, lo);
+    const seg = cum[i] - cum[i - 1] || 1e-6;
+    const k = (d - cum[i - 1]) / seg;
+    return { x: lerp(allPts[i - 1].x, allPts[i].x, k), y: lerp(allPts[i - 1].y, allPts[i].y, k), z: 0 };
+  }
+
+  function tan(s) {
+    const e = total * 1e-3;
+    const a = pos(clamp(s, 0, total - e));
+    const b = pos(clamp(s + e, 0, total));
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const m = Math.hypot(dx, dy) || 1;
+    return { x: dx / m, y: dy / m, z: 0 };
+  }
+
+  const arcAtU = (u) => cum[clamp(Math.round(u), 0, N - 1)];
+
+  return { pos, tan, total, headStart, arcAtU };
 }
 
 // Branch off the glyph end onto the enso circle with a C curve (entry, belly,
@@ -370,7 +446,7 @@ function buildEnsoLeadIn(entry, entryHeading, exit, exitHeading) {
   const chord = Math.hypot(cx, cy) || 1e-6;
   let px = -cy / chord, py = cx / chord;           // chord normal
   if (px * (entry.x + exit.x) + py * (entry.y + exit.y) < 0) { px = -px; py = -py; } // bow outward
-  const off = Math.max(0.35 * chord, CURVE_SIZE_MIN);
+  const off = Math.max(0.35 * chord, 0.25);
   const belly = { x: (entry.x + exit.x) * 0.5 + px * off, y: (entry.y + exit.y) * 0.5 + py * off, z: 0 };
   const tan = 0.2 * chord; // tangent-guide control offset
   const pivots = [
@@ -511,8 +587,8 @@ function samplePath2d(t, n = 256) {
 // 2D ink dragon - kinematic body
 // ============================================================================
 const BODY_N = 20;
-const BODY_LEN = 1.116;
-const PROP_SPEED = 0.5; // chain relaxation per step (verlet lag)
+const BODY_LEN = 0.8;
+const PROP_SPEED = 0.6; // chain relaxation per step (verlet lag)
 const MAX_BEND = (30 * Math.PI) / 180;
 const HEAD_SIZE = 0.12;
 
@@ -742,7 +818,7 @@ const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
 // ============================================================================
 const SPLASH_SPREAD = 0.8;        // max blob radius (world units)
 const SPLASH_AMOUNT = 0.45;        // 0..1 amount of ink blobs (higher = denser)
-const SPLASH_GROW_DUR = T_BRANCH;  // ink keeps spreading across the 2D phase, then holds
+let SPLASH_GROW_DUR = T_BRANCH;  // ink keeps spreading across the 2D phase, then holds
 const SPLASH_FADE_IN = 1.0;        // seconds for the wash to fade in at the start
 
 // ============================================================================
@@ -766,12 +842,12 @@ export function initScene() {
   // fresh random paths each load (seeded once -> stable within the session)
   rng = mulberry32((Math.random() * 4294967296) >>> 0);
 
-  // lead-in target = glyph pen at playhead 0; enso start angle aimed at the glyph
-  // exit so the branch onto the circle is short.
+  // lead-in target = glyph pen at playhead 0
   const g0 = glyphStrokeAt(0);
   glyphEntry = { x: g0.x, y: g0.y };
   const gEnd = glyphStrokeAt(glyphTotal);
-  ensoA0 = Math.atan2(gEnd.y, gEnd.x);
+  // enso always starts at the top (fixed), counter-clockwise
+  ensoA0 = Math.PI / 2;
 
   // branch off the glyph end onto the enso circle with a C curve (tangent-matched
   // to the glyph heading in and the circle tangent out) -> smooth, no snap.
@@ -784,14 +860,26 @@ export function initScene() {
   );
 
   // curve roam: the head leaves the enso at its exit (== enso start point, frac=1)
-  // along the enso tangent, then flies the random C/S/8 chain (generateCurvePath).
+  // along the enso tangent, then flies the circle-chain path.
   const ensoExit = ensoPos(1);
   const ensoNext = ensoPos(1 + 1e-3);
   const ensoHeading = Math.atan2(ensoNext.y - ensoExit.y, ensoNext.x - ensoExit.x);
-  curvePath = generateCurvePath(rng, ensoExit, ensoHeading);
+  curvePath = generateCirclePath(rng, ensoExit, ensoHeading);
 
-  // 2D head arc on the curve roam when it branches to 3D (mirrors pathAt)
-  const branchS = curvePath.headStart + (T_BRANCH - T_ENSO_END) * SP2;
+  // Recompute timeline from actual path length so roam speed == SP2 exactly
+  const curveDur = (curvePath.total - curvePath.headStart) / SP2;
+  T_BRANCH = T_ENSO_END + curveDur;
+  D3_START = T_BRANCH;
+  D3_END = T_BRANCH + CROSSFADE;
+  TIMELINE_END = T_BRANCH + 11.0;
+  SPLASH_GROW_DUR = T_BRANCH;
+  // update block objects that captured the placeholder values at module init
+  blkInk.duration = D3_END;
+  blkInk.branches.handoff = T_BRANCH;
+  blkInk.branches.gone = D3_END;
+
+  // 2D head arc on the curve roam when it branches to 3D: end of the path
+  const branchS = curvePath.total;
   const bp = curvePath.pos(branchS);
   const tb = curvePath.tan(branchS); // 2D heading at the branch point
   // loop3 is a pure random closed loop ANCHORED at the branch point bp, leaving it
@@ -999,9 +1087,22 @@ export function buildState(t, aspect, debug = {}, orbit = null, debugBuffer = "n
       time: t,
     },
     debug: (debug.path2d || debug.path3d)
-      ? { show: true, buffer: debugBuffer,
-          path2d: debug.path2d ? samplePath2d(t) : [],
-          path3d: debug.path3d ? samplePath3d() : [] }
+      ? (() => {
+          const tip = tipAt(t);
+          const hx = tip.dir.x, hy = tip.dir.y;
+          const poolLeft = [], poolRight = [];
+          for (const p of curvePool) {
+            const cross = hx * (p.y - tip.y) - hy * (p.x - tip.x);
+            (cross > 0.01 ? poolLeft : poolRight).push(p.x, p.y, 0);
+          }
+          return {
+            show: true, buffer: debugBuffer,
+            path2d: debug.path2d ? samplePath2d(t) : [],
+            path3d: debug.path3d ? samplePath3d() : [],
+            poolLeft: new Float32Array(poolLeft),
+            poolRight: new Float32Array(poolRight),
+          };
+        })()
       : { show: false, buffer: debugBuffer },
   };
 }

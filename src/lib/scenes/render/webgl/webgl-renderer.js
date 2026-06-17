@@ -63,7 +63,7 @@ in vec2 vUV;
 out vec4 fragColor;
 void main() { fragColor = texture(uTex, vUV); }`;
 
-// debug path lines: 2D (x/aspect,y) or 3D (uVP * pos)
+// debug path lines and points: 2D (x/aspect,y) or 3D (uVP * pos)
 const LINE_VERT = `#version 300 es
 precision highp float;
 in vec3 aPos;
@@ -71,6 +71,7 @@ uniform mat4 uVP;
 uniform float uAspect;
 uniform int u3D;
 void main() {
+  gl_PointSize = 10.0;
   if (u3D == 1) gl_Position = uVP * vec4(aPos, 1.0);
   else gl_Position = vec4(aPos.x / uAspect, aPos.y, 0.0, 1.0);
 }`;
@@ -400,7 +401,7 @@ export function makeWebGLRenderer(canvas) {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  function drawLine(dataF32, use3D, vp, aspect, color) {
+  function bindLineData(dataF32, use3D, vp, aspect, color) {
     gl.bindVertexArray(lineVao);
     gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
     gl.bufferData(gl.ARRAY_BUFFER, dataF32, gl.STREAM_DRAW);
@@ -409,7 +410,14 @@ export function makeWebGLRenderer(canvas) {
     if (vp) gl.uniformMatrix4fv(U.line.uVP, false, vp);
     gl.uniform1f(U.line.uAspect, aspect);
     gl.uniform4fv(U.line.uColor, color);
+  }
+  function drawLine(dataF32, use3D, vp, aspect, color) {
+    bindLineData(dataF32, use3D, vp, aspect, color);
     gl.drawArrays(gl.LINE_STRIP, 0, dataF32.length / 3);
+  }
+  function drawPoints(dataF32, use3D, vp, aspect, color) {
+    bindLineData(dataF32, use3D, vp, aspect, color);
+    gl.drawArrays(gl.POINTS, 0, dataF32.length / 3);
   }
 
   // ground grid: procedural quad on the x/y ground plane, through the orbit camera
@@ -590,6 +598,7 @@ export function makeWebGLRenderer(canvas) {
     if (state.debug && state.debug.show) {
       gl.disable(gl.DEPTH_TEST);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      const vp = state.dragon3d.viewProj;
       const p2 = state.debug.path2d;
       if (p2 && p2.length) {
         if (lineScratch.length < p2.length * 3) lineScratch = new Float32Array(p2.length * 3);
@@ -597,11 +606,17 @@ export function makeWebGLRenderer(canvas) {
           lineScratch[i * 3] = p2[i].x; lineScratch[i * 3 + 1] = p2[i].y; lineScratch[i * 3 + 2] = 0;
         }
         // the 2D path lies on z=0 in world space -> draw through the scene camera
-        // so it tilts/orbits with the dragon (not a flat screen overlay)
-        drawLine(lineScratch.subarray(0, p2.length * 3), true, state.dragon3d.viewProj, aspect, [0.9, 0.1, 0.6, 0.9]);
+        drawLine(lineScratch.subarray(0, p2.length * 3), true, vp, aspect, [0.9, 0.1, 0.6, 0.9]);
       }
       if (state.debug.path3d && state.debug.path3d.length) {
-        drawLine(state.debug.path3d, true, state.dragon3d.viewProj, aspect, [0.0, 0.7, 1.0, 0.9]);
+        drawLine(state.debug.path3d, true, vp, aspect, [0.0, 0.7, 1.0, 0.9]);
+      }
+      // pool waypoints: left-side candidates = blue, right-side = orange
+      if (state.debug.poolLeft?.length) {
+        drawPoints(state.debug.poolLeft, true, vp, aspect, [0.2, 0.5, 1.0, 1.0]);
+      }
+      if (state.debug.poolRight?.length) {
+        drawPoints(state.debug.poolRight, true, vp, aspect, [1.0, 0.45, 0.1, 1.0]);
       }
     }
 
