@@ -49,7 +49,9 @@ jobs:
           target: wasm32-unknown-unknown
           toolchain: stable
       - name: Install wasm-bindgen
-        run: cargo install wasm-bindgen-cli
+        run: |
+          VERSION=$(grep -A1 'name = "wasm-bindgen"$' flying-dragon/Cargo.lock | grep version | sed 's/.*"\(.*\)".*/\1/')
+          cargo install wasm-bindgen-cli --version "$VERSION"
       - name: Build Flying Dragon WASM
         run: RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo build --release --target wasm32-unknown-unknown
         working-directory: ${{ env.BUILD_PATH }}/flying-dragon
