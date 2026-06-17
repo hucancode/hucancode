@@ -70,8 +70,17 @@ export function makeTimeline(blocks) {
   }
 
   // Reset on (re)load: drop active state + seek history so the next frame
-  // re-runs setup for whatever is active at that time.
-  function reset() { active.clear(); lastFrameT = null; }
+  // re-runs setup for whatever is active at that time. ALSO rebuild the start
+  // cache: block start times are derived from parent branch points, and those
+  // branches are finalised AFTER construction (initScene computes the real
+  // handoff time from the generated path, replacing the module-load placeholder).
+  // Without recomputing here, dependent blocks (camera, dragon3d) would keep
+  // firing at the stale placeholder time -> the 3D dragon pops in mid-loop3.
+  function reset() {
+    active.clear(); lastFrameT = null;
+    startCache.clear();
+    for (const b of blocks) startOf(b);
+  }
 
   const startTimeOf = (name) => startCache.get(name);
   const branchAbs = (name, branch) => startCache.get(name) + byName.get(name).branches[branch];

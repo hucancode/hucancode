@@ -58,6 +58,7 @@
 </svelte:head>
 
 <main>
+  <a class="back" href="/">{@html Return} Home</a>
   <h1>Playgrounds</h1>
   <ul>
     {#each playgrounds as p, i}
@@ -81,7 +82,6 @@
       </li>
     {/each}
   </ul>
-  <a class="back" href="/">{@html Return} Home</a>
 </main>
 
 <style>
@@ -94,6 +94,7 @@
     background: var(--paper);
   }
   main {
+    position: relative;
     flex-direction: column;
     max-width: 1100px;
     margin: 0 auto;
@@ -164,11 +165,13 @@
     padding-left: 0.1rem;
   }
   a.back {
-    position: static;
+    position: absolute;
+    top: 1rem;
+    left: 1.5rem;
+    z-index: 10;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    margin-top: 2.5rem;
     padding: 0;
     background: none;
     border: none;

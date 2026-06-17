@@ -76,7 +76,7 @@
     const qt = qs.get("t");
     if (qt != null && !Number.isNaN(parseFloat(qt))) { t = parseFloat(qt); playing = false; }
     if (qs.get("play") === "1") playing = true;
-    if (qs.get("debug") === "1") debug = true;
+    if (qs.get("debug") === "1") debug = { path2d: true, path3d: true };
     if (qs.get("yaw")) orbitYaw = parseFloat(qs.get("yaw")) || 0;
     initScene();
     sizeCanvas();
