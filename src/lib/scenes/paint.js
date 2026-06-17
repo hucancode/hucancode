@@ -481,53 +481,45 @@ function relaxTurns(P, minTurn, maxTurn, maxRun, movable, iters) {
   }
 }
 
-// Which path phase scene-time t is in (lead-in / glyph / enso / curve / loop3).
-// Used to refit the body when a phase boundary is crossed (the phases don't share
-// a continuous arc parameter, so the body is reseeded onto the new curve).
+// The 2D ink-dragon head LEADS through a sequence of PHASES (it is the leading
+// edge of the ink / reveal). Each phase is self-contained:
+//   end        absolute scene time the phase ends (its pivot; phaseOf/the timeline
+//              key off these boundaries). Infinity = runs out.
+//   continuous entering this phase from the previous one is positionally smooth,
+//              so the verlet body chain keeps running (no reseed). false phases
+//              don't share an arc parameter with the previous, so the body is
+//              refit onto the new curve on entry.
+//   path(t)    head sampler { fn, a }: fn(a) is the head point, a the arc/frac
+//              parameter (tipAt/reseedBody sample fn around a).
+// Built in initScene once the paths + branch time are final (closures read the
+// live curves/constants). After the branch the head holds at the curve end, where
+// the inkDragon block has already faded out.
+let PHASES = [];
+const curveHead = (a) => { const p = curvePath.pos(a); return { x: p.x, y: p.y }; };
+function makePhases() {
+  return [
+    { name: "leadin", end: T_GLYPH_START, continuous: false,
+      path: (t) => ({ fn: leadInPos, a: clamp((t - T.dragonStart) / LEADIN_DUR, 0, 1) }) },
+    { name: "glyph", end: T_GLYPH_END, continuous: false,
+      path: (t) => ({ fn: (a) => { const p = glyphStrokeAt(a); return { x: p.x, y: p.y }; },
+        a: clamp((t - T_GLYPH_START) / GLYPH_TRACE_DUR, 0, 1) * glyphExitPh }) },
+    { name: "ensoBranch", end: T_ENSO_START, continuous: false,
+      path: (t) => ({ fn: (a) => { const p = ensoLeadIn.pos(a); return { x: p.x, y: p.y }; },
+        a: lerp(ensoLeadIn.headStart, ensoLeadIn.endArc, clamp((t - T_GLYPH_END) / ENSO_LEADIN_DUR, 0, 1)) }) },
+    { name: "enso", end: T_ENSO_END, continuous: false,
+      path: (t) => ({ fn: ensoPos, a: clamp((t - T_ENSO_START) / ENSO_DUR, 0, 1) }) },
+    { name: "roam", end: T_BRANCH, continuous: true,
+      path: (t) => ({ fn: curveHead, a: curvePath.headStart + Math.max(0, t - T_ENSO_END) * SP2 }) },
+    { name: "loop3", end: Infinity, continuous: true,
+      path: () => ({ fn: curveHead, a: curvePath.total }) },
+  ];
+}
+// Index of the phase scene-time t is in (refit the body when a boundary is crossed).
 function phaseOf(t) {
-  if (t < T_GLYPH_START) return 0; // lead-in
-  if (t < T_GLYPH_END) return 1;   // glyph trace
-  if (t < T_ENSO_START) return 2;  // enso branch (connector)
-  if (t < T_ENSO_END) return 3;    // enso sweep
-  if (t < T_BRANCH) return 4;      // curve roam
-  return 5;                        // loop3 (3D handoff)
+  for (let i = 0; i < PHASES.length; i++) if (t < PHASES[i].end) return i;
+  return PHASES.length - 1;
 }
-
-// Drives the 2D ink-dragon head through the phases. The head LEADS each phase
-// (it is the leading edge of the ink / reveal). After the branch it rides loop3
-// (== the 3D dragon's path) so the two overlap through the crossfade.
-function pathAt(t) {
-  // lead-in: a straight glide from the top onto the glyph entry
-  if (t < T_GLYPH_START) {
-    const prog = clamp((t - T.dragonStart) / LEADIN_DUR, 0, 1);
-    return { fn: (a) => leadInPos(a), a: prog };
-  }
-  // glyph trace: head rides the glyph pen across the whole symbol
-  if (t < T_GLYPH_END) {
-    const prog = clamp((t - T_GLYPH_START) / GLYPH_TRACE_DUR, 0, 1);
-    const ph = prog * glyphExitPh;
-    return { fn: (a) => { const p = glyphStrokeAt(a); return { x: p.x, y: p.y }; }, a: ph };
-  }
-  // enso branch: C curve off the glyph end onto the circle (no snap)
-  if (t < T_ENSO_START) {
-    const prog = clamp((t - T_GLYPH_END) / ENSO_LEADIN_DUR, 0, 1);
-    const s = lerp(ensoLeadIn.headStart, ensoLeadIn.endArc, prog);
-    return { fn: (a) => { const p = ensoLeadIn.pos(a); return { x: p.x, y: p.y }; }, a: s };
-  }
-  // enso: head sweeps one clockwise circle (frac 0..1)
-  if (t < T_ENSO_END) {
-    const frac = clamp((t - T_ENSO_START) / ENSO_DUR, 0, 1);
-    return { fn: (a) => ensoPos(a), a: frac };
-  }
-  // curve roam: head flies the random C/S/8 chain (arc s, from the lead-in offset)
-  if (t < T_BRANCH) {
-    const s = curvePath.headStart + Math.max(0, t - T_ENSO_END) * SP2;
-    return { fn: (a) => { const p = curvePath.pos(a); return { x: p.x, y: p.y }; }, a: s };
-  }
-  // t >= T_BRANCH: inkDragon block already ended (D3_END = T_BRANCH) so 2D is
-  // invisible here; hold at curvePath end as a safe fallback for seeking.
-  return { fn: (a) => { const p = curvePath.pos(a); return { x: p.x, y: p.y }; }, a: curvePath.total };
-}
+const pathAt = (t) => PHASES[phaseOf(t)].path(t);
 function tipAt(t) {
   const { fn, a } = pathAt(t);
   const p = fn(a), p2 = fn(a + 1e-3);
@@ -873,6 +865,7 @@ export function initScene() {
   loop3 = buildSpline(ring3); // 3D head starts at bp (loop3 arc 0) at T_BRANCH
 
   buildDragon3dFrames();
+  PHASES = makePhases(); // paths + T_BRANCH are final; phaseOf/pathAt key off this
   timeline.reset(); // fresh scene: re-run block setup on the next frame
   lastInkPhase = -1; // force a body refit on the first frame
   // seed body fitted to the path at the dragon's start (short, on the lead-in)
@@ -944,14 +937,11 @@ const blkInk = {
     ctx.inkWidthScale = sizeFrac;
     ctx.headSize = HEAD_SIZE * sizeFrac;
     const growLen = BODY_LEN * inkLenFrac(t);
-    // refit when a phase boundary is crossed (phases don't share an arc param);
-    // otherwise step the verlet chain. seeks are resynced by setup/seek above.
+    // Refit when crossing into a non-continuous phase (those don't share an arc
+    // param, so stepping would snap the body straight); otherwise step the verlet
+    // chain. Seeks are resynced by setup/seek above.
     const ph = phaseOf(t);
-    // Enso→curve and curve→loop3 are positionally continuous: head doesn't snap,
-    // so let the verlet chain keep running instead of reseeding (which would put
-    // the body in a straight line and cause a visible snap).
-    const smoothCross = (lastInkPhase === 3 && ph === 4) || (lastInkPhase === 4 && ph === 5);
-    if (body.length < 2 || (ph !== lastInkPhase && !smoothCross)) reseedBody(t, growLen);
+    if (body.length < 2 || (ph !== lastInkPhase && !PHASES[ph].continuous)) reseedBody(t, growLen);
     else stepBody(tipAt(t), growLen);
     lastInkPhase = ph;
   },

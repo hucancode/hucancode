@@ -325,6 +325,9 @@
   footer.show {
     opacity: 1;
   }
+  footer.show a {
+    pointer-events: auto; /* re-enable clicks once the footer is visible */
+  }
   footer a {
     font-family: 'Virgil';
     text-decoration: underline wavy;
