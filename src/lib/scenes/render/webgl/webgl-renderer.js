@@ -8,6 +8,7 @@
 //         dragon directly with depth testing on top.
 
 import GLYPH_FRAG from "./shaders/glyph.frag.glsl?raw";
+import SPLASH_FRAG from "./shaders/splash.frag.glsl?raw";
 import STROKE_FRAG from "./shaders/stroke.frag.glsl?raw";
 import HEAD_FRAG from "./shaders/head.frag.glsl?raw";
 import DRAGON3D_VERT from "./shaders/dragon3d.vert.glsl?raw";
@@ -137,7 +138,7 @@ export function makeWebGLRenderer(canvas) {
   let U = {};
   let emptyVao;
   // { fb, tex, rb, w, h }
-  let fbo = { glyph: null, ink: null, dragon: null };
+  let fbo = { glyph: null, splash: null, ink: null, dragon: null };
   let segTex, segBuf = new Float32Array(0), segRows = 0;
   // dynamic stroke buffers
   let strokeVao, posBuf, uvBuf, idxBuf;
@@ -190,6 +191,7 @@ export function makeWebGLRenderer(canvas) {
     }
 
     progs.glyph = link(gl, FS_TRI_VERT, GLYPH_FRAG);
+    progs.splash = link(gl, FS_TRI_VERT, SPLASH_FRAG);
     progs.composite = link(gl, COMPOSITE_VERT, COMPOSITE_FRAG);
     progs.stroke = link(gl, STROKE_VERT, STROKE_FRAG);
     progs.head = link(gl, HEAD_VERT, HEAD_FRAG);
@@ -199,6 +201,7 @@ export function makeWebGLRenderer(canvas) {
     progs.line = link(gl, LINE_VERT, LINE_FRAG);
 
     U.glyph = uniforms(gl, progs.glyph, ["uResolution", "uBaseRadius", "uTime", "uNSeg", "uSegTex"]);
+    U.splash = uniforms(gl, progs.splash, ["uResolution", "uGrow", "uSpread", "uAmount", "uClock"]);
     U.composite = uniforms(gl, progs.composite, ["uTex", "uOpacity", "uAspect", "uZ", "uViewProj"]);
     U.stroke = uniforms(gl, progs.stroke, [
       "uAspect", "uInkFlow", "uStrands", "uWaterFlow", "uWobble", "uOpacity",
@@ -297,9 +300,11 @@ export function makeWebGLRenderer(canvas) {
     w = Math.max(1, nw | 0);
     h = Math.max(1, nh | 0);
     freeTarget(fbo.glyph);
+    freeTarget(fbo.splash);
     freeTarget(fbo.ink);
     freeTarget(fbo.dragon);
     fbo.glyph = makeTarget();
+    fbo.splash = makeTarget();
     fbo.ink = makeTarget();
     fbo.dragon = makeTarget(true); // needs depth for self-occlusion
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -433,6 +438,7 @@ export function makeWebGLRenderer(canvas) {
 
   function frame(state) {
     const aspect = state.aspect;
+    const nSeg = uploadSegs(state.glyph.segs); // shared by the glyph + splash passes
 
     // ---------- Pass A: glyph ink -> FBO_glyph ----------
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.glyph.fb);
@@ -442,20 +448,34 @@ export function makeWebGLRenderer(canvas) {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    {
-      const n = uploadSegs(state.glyph.segs);
-      if (n > 0) {
-        gl.useProgram(progs.glyph);
-        gl.bindVertexArray(emptyVao);
-        gl.uniform2f(U.glyph.uResolution, w, h);
-        gl.uniform1f(U.glyph.uBaseRadius, state.glyph.baseRadius);
-        gl.uniform1f(U.glyph.uTime, state.glyph.playhead);
-        gl.uniform1i(U.glyph.uNSeg, n);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, segTex);
-        gl.uniform1i(U.glyph.uSegTex, 0);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-      }
+    if (nSeg > 0) {
+      gl.useProgram(progs.glyph);
+      gl.bindVertexArray(emptyVao);
+      gl.uniform2f(U.glyph.uResolution, w, h);
+      gl.uniform1f(U.glyph.uBaseRadius, state.glyph.baseRadius);
+      gl.uniform1f(U.glyph.uTime, state.glyph.playhead);
+      gl.uniform1i(U.glyph.uNSeg, nSeg);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, segTex);
+      gl.uniform1i(U.glyph.uSegTex, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    // ---------- Pass A: ink splash -> FBO_splash ----------
+    // procedural noise blob centred at the origin, grows + splatters over time
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.splash.fb);
+    gl.viewport(0, 0, w, h);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    if (state.splash && state.splash.alpha > 0) {
+      gl.useProgram(progs.splash);
+      gl.bindVertexArray(emptyVao);
+      gl.uniform2f(U.splash.uResolution, w, h);
+      gl.uniform1f(U.splash.uGrow, state.splash.grow);
+      gl.uniform1f(U.splash.uSpread, state.splash.spread);
+      gl.uniform1f(U.splash.uAmount, state.splash.amount);
+      gl.uniform1f(U.splash.uClock, state.splash.time);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 
     // ---------- Pass A: ink dragon -> FBO_ink ----------
@@ -487,6 +507,9 @@ export function makeWebGLRenderer(canvas) {
     // ground grid (behind the ink layers, over the paper); radial wipe-in
     if (state.grid && state.grid.reveal > 0) drawGrid(state.grid);
 
+    // ink splash wash sits between the grid and the glyph, bleeding under it
+    if (state.splash && state.splash.alpha > 0)
+      compositeQuad(fbo.splash.tex, state.splash.alpha, -0.006, vp, aspect);
     compositeQuad(fbo.glyph.tex, state.opacity.glyph, -0.002, vp, aspect);
     compositeQuad(fbo.ink.tex, state.opacity.inkDragon, 0.0, vp, aspect);
 
@@ -558,7 +581,7 @@ export function makeWebGLRenderer(canvas) {
 
     // ---------- debug: inspect a single offscreen buffer fullscreen ----------
     if (state.debug && state.debug.buffer && state.debug.buffer !== "none") {
-      const map = { dragon: fbo.dragon, glyph: fbo.glyph, ink: fbo.ink };
+      const map = { dragon: fbo.dragon, glyph: fbo.glyph, splash: fbo.splash, ink: fbo.ink };
       const tgt = map[state.debug.buffer];
       if (tgt) {
         gl.disable(gl.BLEND);
@@ -578,7 +601,7 @@ export function makeWebGLRenderer(canvas) {
   function destroy() {
     if (!gl) return;
     for (const k in progs) gl.deleteProgram(progs[k]);
-    freeTarget(fbo.glyph); freeTarget(fbo.ink); freeTarget(fbo.dragon);
+    freeTarget(fbo.glyph); freeTarget(fbo.splash); freeTarget(fbo.ink); freeTarget(fbo.dragon);
     gl.deleteTexture(segTex);
     gl.deleteTexture(d3FramesTex);
     gl.deleteBuffer(posBuf); gl.deleteBuffer(uvBuf); gl.deleteBuffer(idxBuf);

@@ -75,6 +75,7 @@ const SP2 = 1.5;             // 2D head speed (path units / sec)
 const SP3 = 1.5;            // 3D head speed (path units / sec)
 const LOOP2_DUR = 6.0;       // seconds flying the 2D loop before branching to 3D
 const CROSSFADE = 1.0;       // 2D->3D crossfade duration
+const CAM_PITCH_DUR = CROSSFADE * 4; // camera pitch tilt duration (slower than the fade)
 const MAX_EXIT_TURN = Math.PI / 4; // cap on the peel-off turn when the head leaves the glyph onto loop2
 const MIN_TURN = Math.PI / 9;      // floor on the turn angle at a pivot (keeps loops from going too straight)
 const MAX_TURN = Math.PI / 2;      // angle above which a pivot counts as a "sharp" turn
@@ -89,7 +90,8 @@ const D3_END = T_BRANCH + CROSSFADE;           // ...as the 2D ink fades out
 // Camera: looks straight down (top-down, pitch 0) through the glyph trace; tilts
 // to a 45deg elevation as the 2D dragon fades to the 3D dragon. Yaw stays
 // user-controllable (component), pitch is fully scripted here.
-const CAM_PITCH_ANGLE = -Math.PI / 4; // straight-down (0) -> 45deg elevation tilt (sign = tilt dir)
+const CAM_PITCH_ANGLE = -Math.PI * 0.3; // straight-down (0) -> 45deg elevation tilt (sign = tilt dir)
+const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as the 3D dragon takes over
 // Ground grid reveals AFTER the 2D dragon is fully gone, wiping in radially.
 const GRID_REVEAL_DUR = 2.5;
 const GRID_MAX_OPACITY = 0.22;
@@ -554,6 +556,17 @@ function samplePath3d(stride = 4) {
 const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
 
 // ============================================================================
+// Ink splash - a procedural-noise blob centred at the origin (behind the glyph)
+// that GROWS over the scene, splattering randomly around a circle with a sharp
+// fbm edge and ~3 posterised ink tones (see splash.frag.glsl). spread = max blob
+// radius (world units); grow ramps 0->1 over the 2D phase, then holds.
+// ============================================================================
+const SPLASH_SPREAD = 0.8;        // max blob radius (world units)
+const SPLASH_AMOUNT = 0.45;        // 0..1 amount of ink blobs (higher = denser)
+const SPLASH_GROW_DUR = T_BRANCH;  // ink keeps spreading across the 2D phase, then holds
+const SPLASH_FADE_IN = 1.0;        // seconds for the wash to fade in at the start
+
+// ============================================================================
 // public API
 // ============================================================================
 const GLYPH_SCALE = 0.5;
@@ -683,7 +696,7 @@ const blkCamera = {
   name: "camera",
   after: { block: "inkDragon", branch: "handoff" },
   update(ctx, local) {
-    ctx.camPitch = smooth(clamp(local / CROSSFADE, 0, 1)) * CAM_PITCH_ANGLE;
+    ctx.camPitch = smooth(clamp(local / CAM_PITCH_DUR, 0, 1)) * CAM_PITCH_ANGLE;
   },
 };
 
@@ -692,6 +705,19 @@ const blkDragon3d = {
   after: { block: "inkDragon", branch: "handoff" },
   update(ctx) {
     ctx.d3Alpha = ramp(ctx.t, D3_START, D3_END, 0, 1); // flies its loop forever (headArc3 advances with t)
+    ctx.glyphAlpha = ramp(ctx.t, D3_START, D3_END, 1, GLYPH_FADE_TARGET); // glyph eases back during the 3D transition
+  },
+};
+
+// Ink splash bleeds in at the start and keeps spreading across the 2D phase,
+// following the glyph trace (reveal-aware in the shader). Persistent: once the
+// spread reaches full it holds, so the wash stays under the 3D dragon.
+const blkSplash = {
+  name: "splash",
+  at: 0,
+  update(ctx) {
+    ctx.splashAlpha = smooth(clamp(ctx.t / SPLASH_FADE_IN, 0, 1));
+    ctx.splashGrow = smooth(clamp(ctx.t / SPLASH_GROW_DUR, 0, 1));
   },
 };
 
@@ -705,7 +731,7 @@ const blkGrid = {
   },
 };
 
-const timeline = makeTimeline([blkGlyph, blkInk, blkCamera, blkDragon3d, blkGrid]);
+const timeline = makeTimeline([blkSplash, blkGlyph, blkInk, blkCamera, blkDragon3d, blkGrid]);
 
 // Build the FrameState for scene time t. showDebug adds path polylines; orbit =
 // { yaw } (pitch is scripted by the camera block). Seeds ctx defaults (= nothing
@@ -716,6 +742,8 @@ export function buildState(t, aspect, showDebug = false, orbit = null, debugBuff
     t,
     playhead: glyphTotal,      // glyph held fully drawn unless the glyph block traces
     inkAlpha: 0, d3Alpha: 0,
+    glyphAlpha: 1.0,           // full until the 3D transition eases it back
+    splashAlpha: 0, splashGrow: 0,
     gridStrength: 0, gridReveal: 0, gridRevealMinor: 0,
     camPitch: 0,               // top-down until the camera block tilts
     inkWidthScale: 1, headSize: HEAD_SIZE,
@@ -723,14 +751,17 @@ export function buildState(t, aspect, showDebug = false, orbit = null, debugBuff
   timeline.frame(ctx, t);
 
   const frame = headFrame(body);
-  const userYaw = (orbit && orbit.yaw) || 0;
+  // user yaw is locked during the glyph trace + 2D dragon phase; unlocks at the 3D branch
+  const userYaw = t >= T_BRANCH ? (orbit && orbit.yaw) || 0 : 0;
   const viewProj = sceneViewProj(aspect, { yaw: userYaw, pitch: ctx.camPitch });
 
   return {
     aspect,
-    opacity: { glyph: 1.0, inkDragon: ctx.inkAlpha, dragon3d: ctx.d3Alpha },
+    opacity: { glyph: ctx.glyphAlpha, inkDragon: ctx.inkAlpha, dragon3d: ctx.d3Alpha },
     grid: { opacity: ctx.gridStrength, reveal: ctx.gridReveal, revealMinor: ctx.gridRevealMinor, viewProj, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
     glyph: { segs: glyphSegs, playhead: ctx.playhead, baseRadius: GLYPH_RADIUS },
+    // procedural ink-splash blob (origin-centred, grows + splatters over time)
+    splash: { alpha: ctx.splashAlpha, grow: ctx.splashGrow, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: t },
     inkDragon: {
       body,
       head: { pos: frame.pos, dir: frame.dir, size: ctx.headSize },
