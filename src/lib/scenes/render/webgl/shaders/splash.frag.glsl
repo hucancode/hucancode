@@ -16,8 +16,8 @@ uniform float uSpread;   // max blob radius (world units)
 uniform float uAmount;   // 0..1 amount of ink blobs (more patches as it rises)
 uniform float uClock;    // absolute scene time -> slow noise drift
 
-const vec3 INK_DARK = vec3(0.06, 0.06, 0.07);
-const vec3 INK_LIGHT = vec3(0.32, 0.31, 0.30);
+uniform vec3 uInkDark;
+uniform vec3 uInkLight;
 
 // ---- simplex noise + fbm (from the sumi-e reference shader) -----------------
 vec2 hash(vec2 p) {
@@ -98,6 +98,6 @@ void main() {
 
     ink = clamp(ink, 0.0, 1.0);
 
-    vec3 col = mix(INK_LIGHT, INK_DARK, ink);
+    vec3 col = mix(uInkLight, uInkDark, ink);
     fragColor = vec4(col, ink);
 }

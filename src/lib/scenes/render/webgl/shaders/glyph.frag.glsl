@@ -17,7 +17,7 @@ uniform sampler2D uSegTex; // RGBA32F, 4 texels per seg, height = NSEG
 #define SAMPLES   10
 #define MIN_PRESS 0.0
 
-const vec3 INK_COLOR = vec3(0.067, 0.067, 0.067);
+uniform vec3 uInkColor;
 
 struct Seg {
     vec2 p1; vec2 p2; vec2 ctrl;
@@ -121,5 +121,5 @@ void main() {
     }
 
     float ink = smoothstep(aa, -aa, dmin);
-    fragColor = vec4(INK_COLOR, ink);
+    fragColor = vec4(uInkColor, ink);
 }

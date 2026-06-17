@@ -23,7 +23,7 @@ const float PI2 = 6.28318531;
 // CLOCKWISE=true flips `a` so phase grows with decreasing atan2(x,y),
 // keeping the head exactly at the stroke front.
 const bool  CLOCKWISE = true;
-const vec3  INK = vec3(0.05, 0.05, 0.07);
+uniform vec3 uInkColor;
 
 const float uWobble      = 1.0;
 const float uStrands     = 5.0;
@@ -156,5 +156,5 @@ void main() {
     vec2 suv = vec2(phase * r, r - uRadius);
 
     float alpha = drawStroke(suv, uv, uRadius, uSweep, uLineWidth);
-    fragColor = vec4(INK, alpha);
+    fragColor = vec4(uInkColor, alpha);
 }

@@ -19,9 +19,32 @@ import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./stroke-gl.js";
 import { loadDragonMesh } from "./dragon3d-gl.js";
 
-const PAPER = [1.0, 0.988, 0.878, 1.0];
-const INK_COLOR = [0.05, 0.05, 0.05, 0.95];
+// Kanagawa: lotusWhite3 / lotusInk2 for light; dragonBlack3 / dragonWhite for dark
+const PAPER_LIGHT      = [0.949, 0.925, 0.737, 1.0];
+const INK_LIGHT        = [0.086, 0.086, 0.114, 0.95]; // sumiInk0 #16161D
+const PAPER_DARK       = [0.094, 0.086, 0.086, 1.0];
+const INK_DARK         = [0.773, 0.788, 0.773, 0.95];
+// splash uses a tonal range: mix(INK_xLOW, INK_xHIGH, coverage)
+const SPLASH_LOW_LIGHT = [0.32, 0.31, 0.30];  // low-coverage areas, light mode
+const SPLASH_HIGH_LIGHT= [0.06, 0.06, 0.07];  // high-coverage areas, light mode
+const SPLASH_LOW_DARK  = [0.45, 0.47, 0.45];  // low-coverage areas, dark mode
+const SPLASH_HIGH_DARK = [0.773, 0.788, 0.773]; // high-coverage areas, dark mode
+const _darkMQ = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+function isDark()         { return !!_darkMQ?.matches; }
+function getPaper()       { return isDark() ? PAPER_DARK  : PAPER_LIGHT; }
+function getInk()         { return isDark() ? INK_DARK    : INK_LIGHT; }       // 4-elem, for uniform4fv
+function getInkRGB()      { const c = getInk(); return [c[0], c[1], c[2]]; }  // 3-elem, for uniform3fv
+function getSplashLow()   { return isDark() ? SPLASH_LOW_DARK  : SPLASH_LOW_LIGHT; }
+function getSplashHigh()  { return isDark() ? SPLASH_HIGH_DARK : SPLASH_HIGH_LIGHT; }
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
+
+// head quad corners [localX, localY, u, v] (HW=2.4*0.5, HH=1.6*0.5); constant
+const HEAD_CORNERS = [
+  [-1.2, -0.8, 0, 0],
+  [1.2, -0.8, 1, 0],
+  [-1.2, 0.8, 0, 1],
+  [1.2, 0.8, 1, 1],
+];
 
 // ---- inline vertex shaders -------------------------------------------------
 const FS_TRI_VERT = `#version 300 es
@@ -145,8 +168,10 @@ export function makeWebGLRenderer(canvas) {
   let segTex, segBuf = new Float32Array(0), segRows = 0, segRef = null;
   // dynamic stroke buffers
   let strokeVao, posBuf, uvBuf, idxBuf;
+  let strokeIdxCount = -1; // ribbon topology is fixed -> indices uploaded once
   // head buffers
   let headVao, headBuf;
+  const headData = new Float32Array(16); // reused head-quad scratch (no per-frame alloc)
   // dragon3d
   let d3Vao, d3PosBuf, d3NormBuf, d3FramesTex, d3VertexCount = 0, d3FramesRef = null;
   // debug lines
@@ -210,9 +235,9 @@ export function makeWebGLRenderer(canvas) {
     progs.blit = link(gl, FS_TRI_VERT, BLIT_FRAG);
     progs.line = link(gl, LINE_VERT, LINE_FRAG);
 
-    U.glyph = uniforms(gl, progs.glyph, ["uResolution", "uBaseRadius", "uTime", "uNSeg", "uSegTex"]);
-    U.splash = uniforms(gl, progs.splash, ["uResolution", "uGrow", "uSpread", "uAmount", "uClock"]);
-    U.enso = uniforms(gl, progs.enso, ["uResolution", "uRadius", "uSweep", "uAngleStart", "uLineWidth", "uClock"]);
+    U.glyph = uniforms(gl, progs.glyph, ["uResolution", "uBaseRadius", "uTime", "uNSeg", "uSegTex", "uInkColor"]);
+    U.splash = uniforms(gl, progs.splash, ["uResolution", "uGrow", "uSpread", "uAmount", "uClock", "uInkDark", "uInkLight"]);
+    U.enso = uniforms(gl, progs.enso, ["uResolution", "uRadius", "uSweep", "uAngleStart", "uLineWidth", "uClock", "uInkColor"]);
     U.composite = uniforms(gl, progs.composite, ["uTex", "uOpacity", "uAspect", "uZ", "uViewProj"]);
     U.stroke = uniforms(gl, progs.stroke, [
       "uAspect", "uInkFlow", "uStrands", "uWaterFlow", "uWobble", "uOpacity",
@@ -221,9 +246,9 @@ export function makeWebGLRenderer(canvas) {
     ]);
     U.head = uniforms(gl, progs.head, ["uAspect", "uBrushColor", "uOpacity"]);
     U.dragon3d = uniforms(gl, progs.dragon3d, [
-      "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime",
+      "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime", "uLightBoost",
     ]);
-    U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uZ", "uStep", "uMinorDiv", "uOpacity", "uReveal", "uRevealMinor"]);
+    U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uZ", "uStep", "uMinorDiv", "uOpacity", "uReveal", "uRevealMinor", "uInkColor"]);
     U.blit = uniforms(gl, progs.blit, ["uTex"]);
     U.line = uniforms(gl, progs.line, ["uVP", "uAspect", "u3D", "uColor"]);
 
@@ -369,7 +394,11 @@ export function makeWebGLRenderer(canvas) {
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuf);
     gl.bufferData(gl.ARRAY_BUFFER, r.uvs, gl.STREAM_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuf);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, r.indices, gl.STREAM_DRAW);
+    if (strokeIdxCount !== r.indexCount) {
+      // topology constant for a fixed body length -> upload indices once
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, r.indices, gl.STATIC_DRAW);
+      strokeIdxCount = r.indexCount;
+    }
 
     gl.uniform1f(U.stroke.uAspect, aspect);
     gl.uniform1f(U.stroke.uInkFlow, params.inkFlow);
@@ -383,7 +412,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.stroke.uWidthAnchor, params.widthAnchor ?? 0.5);
     gl.uniform1f(U.stroke.uPerpClearance, PERP_CLEARANCE);
     gl.uniform1f(U.stroke.uArcClearance, ARC_CLEARANCE);
-    gl.uniform4fv(U.stroke.uBrushColor, INK_COLOR);
+    gl.uniform4fv(U.stroke.uBrushColor, getInk());
     gl.uniform1i(U.stroke.uSimple, simple ? 1 : 0);
     gl.drawElements(gl.TRIANGLES, r.indexCount, gl.UNSIGNED_SHORT, 0);
   }
@@ -396,20 +425,14 @@ export function makeWebGLRenderer(canvas) {
     const theta = Math.atan2(head.dir.y, head.dir.x);
     const ct = Math.cos(theta), st = Math.sin(theta);
     const s = head.size;
-    const HW = 2.4 * 0.5, HH = 1.6 * 0.5;
-    const corners = [
-      [-HW, -HH, 0, 0],
-      [HW, -HH, 1, 0],
-      [-HW, HH, 0, 1],
-      [HW, HH, 1, 1],
-    ];
-    const data = new Float32Array(4 * 4);
+    const data = headData;
     for (let i = 0; i < 4; i++) {
-      const lx = corners[i][0] * s, ly = corners[i][1] * s;
+      const c = HEAD_CORNERS[i];
+      const lx = c[0] * s, ly = c[1] * s;
       const wx = head.pos.x + (ct * lx - st * ly);
       const wy = head.pos.y + (st * lx + ct * ly);
       data[i * 4 + 0] = wx; data[i * 4 + 1] = wy;
-      data[i * 4 + 2] = corners[i][2]; data[i * 4 + 3] = corners[i][3];
+      data[i * 4 + 2] = c[2]; data[i * 4 + 3] = c[3];
     }
     gl.bindVertexArray(headVao);
     gl.bindBuffer(gl.ARRAY_BUFFER, headBuf);
@@ -417,7 +440,7 @@ export function makeWebGLRenderer(canvas) {
     gl.useProgram(progs.head);
     gl.uniform1f(U.head.uAspect, aspect);
     gl.uniform1f(U.head.uOpacity, opacity);
-    gl.uniform4fv(U.head.uBrushColor, INK_COLOR);
+    gl.uniform4fv(U.head.uBrushColor, getInk());
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -453,6 +476,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.grid.uOpacity, g.opacity);
     gl.uniform1f(U.grid.uReveal, g.reveal);
     gl.uniform1f(U.grid.uRevealMinor, g.revealMinor);
+    gl.uniform3fv(U.grid.uInkColor, getInkRGB());
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -491,6 +515,7 @@ export function makeWebGLRenderer(canvas) {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, segTex);
     gl.uniform1i(U.glyph.uSegTex, 0);
+    gl.uniform3fv(U.glyph.uInkColor, getInkRGB());
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -512,6 +537,8 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.splash.uSpread, state.splash.spread);
     gl.uniform1f(U.splash.uAmount, state.splash.amount);
     gl.uniform1f(U.splash.uClock, state.splash.time);
+    gl.uniform3fv(U.splash.uInkLight, getSplashLow());
+    gl.uniform3fv(U.splash.uInkDark, getSplashHigh());
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -534,6 +561,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.enso.uAngleStart, state.enso.angleStart);
     gl.uniform1f(U.enso.uLineWidth, state.enso.lineWidth);
     gl.uniform1f(U.enso.uClock, state.enso.time);
+    gl.uniform3fv(U.enso.uInkColor, getInkRGB());
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -559,7 +587,8 @@ export function makeWebGLRenderer(canvas) {
     gl.viewport(0, 0, w, h);
     gl.disable(gl.DEPTH_TEST);
     gl.depthMask(false);
-    gl.clearColor(PAPER[0], PAPER[1], PAPER[2], 1.0);
+    const paper = getPaper();
+    gl.clearColor(paper[0], paper[1], paper[2], 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // premultiplied composite
@@ -611,6 +640,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.dragon3d.uHeadOffset, d3.headOffset);
     gl.uniform1f(U.dragon3d.uGirth, d3.girth);
     gl.uniform1f(U.dragon3d.uOpacity, state.opacity.dragon3d);
+    gl.uniform1f(U.dragon3d.uLightBoost, isDark() ? 2.0 : 1.0);
     gl.uniform1f(U.dragon3d.uTime, d3.time);
     gl.uniformMatrix4fv(U.dragon3d.uViewProj, false, d3.viewProj);
     gl.drawArrays(gl.TRIANGLES, 0, d3VertexCount);

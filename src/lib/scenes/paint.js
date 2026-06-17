@@ -556,18 +556,9 @@ function tipAt(t) {
 //   - Once the tail has fully left the circles (elapsed >= transArc) -> switch to
 //     the PURE loop3 ring, which wraps cleanly forever.  The switch is C0/C1
 //     continuous: at elapsed=transArc the head is at loop3 arc bodyArc in both.
-function dragon3dDraw(t) {
-  const bodyArc  = BODY_LEN * D3.bodyFactor;
-  const transArc = d3TransArc; // bodyArc + CROSSFADE*SP3
-  const elapsed  = Math.max(0, t - D3_START) * SP3;
-  if (!dragon3dFramesLoop || elapsed < transArc) {
-    // transition: head buffer-arc = bodyArc + elapsed -> headOffset = elapsed
-    return { frames: dragon3dFrames, pathLen: dragon3dPathLen, headOffset: elapsed };
-  }
-  // pure loop3 ring: continue head arc from bodyArc, let shader mod-N wrap it
-  const loopArc = bodyArc + (elapsed - transArc);
-  return { frames: dragon3dFramesLoop, pathLen: dragon3dLoopLen, headOffset: loopArc - bodyArc };
-}
+// (3D dragon draw params are written directly into _frame.dragon3d by
+// buildDragon3dState -> no per-frame object is allocated.)
+
 // debug: sample the 2D curve roam as a polyline
 function samplePath2d(t, n = 256) {
   const out = [];
@@ -586,6 +577,7 @@ const MAX_BEND = (30 * Math.PI) / 180;
 const HEAD_SIZE = 0.12;
 
 let body = [];
+let _next = null; // persistent scratch chain swapped with body in stepBody (no per-frame alloc)
 let lastInkPhase = -1; // path phase the body was last fitted in (refit on change)
 
 // Fit the body ALONG the current path: head at the path point for t, the rest
@@ -618,20 +610,27 @@ function reseedBody(t, len = BODY_LEN) {
 
 // Verlet chain trailing the tip target (mirrors ink-dragon.js stepBody):
 // distance constraint back from the tip, max-bend clamp, forward re-constraint.
+function ensureNext(n) {
+  if (_next && _next.length === n) return;
+  _next = new Array(n);
+  for (let i = 0; i < n; i++) _next[i] = { x: 0, y: 0 };
+}
 function stepBody(tip, len = BODY_LEN) {
   const N = body.length;
   if (N < 2) return;
   const linkLen = len / (N - 1);
   const speed = PROP_SPEED;
-  const next = body.map((p) => ({ x: p.x, y: p.y }));
-  next[N - 1] = { x: tip.x, y: tip.y };
+  ensureNext(N);
+  const next = _next;
+  for (let i = 0; i < N; i++) { next[i].x = body[i].x; next[i].y = body[i].y; }
+  next[N - 1].x = tip.x; next[N - 1].y = tip.y;
 
   for (let i = N - 2; i >= 0; i--) {
     const dx = next[i + 1].x - next[i].x, dy = next[i + 1].y - next[i].y;
     const d = Math.hypot(dx, dy);
     if (d > linkLen && d > 1e-6) {
       const inv = ((d - linkLen) * speed) / d;
-      next[i] = { x: next[i].x + dx * inv, y: next[i].y + dy * inv };
+      next[i].x += dx * inv; next[i].y += dy * inv;
     }
   }
 
@@ -651,7 +650,8 @@ function stepBody(tip, len = BODY_LEN) {
         const targetAng = (Math.PI - MAX_BEND) * sgn;
         const newAng = curAng + (targetAng - curAng) * speed;
         const c = Math.cos(newAng), s = Math.sin(newAng);
-        next[i - 1] = { x: mid.x + (adx * c - ady * s) * bLen, y: mid.y + (adx * s + ady * c) * bLen };
+        next[i - 1].x = mid.x + (adx * c - ady * s) * bLen;
+        next[i - 1].y = mid.y + (adx * s + ady * c) * bLen;
       }
     }
     for (let i = N - 2; i >= 0; i--) {
@@ -659,25 +659,28 @@ function stepBody(tip, len = BODY_LEN) {
       const d = Math.hypot(dx, dy);
       if (d > linkLen && d > 1e-6) {
         const inv = ((d - linkLen) * speed) / d;
-        next[i] = { x: next[i].x + dx * inv, y: next[i].y + dy * inv };
+        next[i].x += dx * inv; next[i].y += dy * inv;
       }
     }
   }
+  // swap: result becomes body, old body becomes the reusable scratch (no alloc)
+  _next = body;
   body = next;
 }
 
-function headFrame(body) {
+// Write the head pose (neck-offset position + heading) into `head` in place.
+// perp is unused by the renderer, so it is not emitted.
+function writeHeadFrame(body, head) {
   const n = body.length;
   const tip = body[n - 1], prev = body[n - 2];
   let dx = tip.x - prev.x, dy = tip.y - prev.y;
   const m = Math.hypot(dx, dy) || 1;
   dx /= m; dy /= m;
   const neck = 0.05;
-  return {
-    pos: { x: tip.x + dx * neck, y: tip.y + dy * neck },
-    dir: { x: dx, y: dy },
-    perp: { x: -dy, y: dx },
-  };
+  head.pos.x = tip.x + dx * neck;
+  head.pos.y = tip.y + dy * neck;
+  head.dir.x = dx;
+  head.dir.y = dy;
 }
 
 // ============================================================================
@@ -769,9 +772,7 @@ const _vpProj = mat4.create();
 const _vpRot = mat4.create();
 const _vpTmp = mat4.create();
 const _vpResult = mat4.create();
-function sceneViewProj(aspect, orbit) {
-  const yaw = (orbit && orbit.yaw) || 0;
-  const pitch = (orbit && orbit.pitch) || 0;
+function sceneViewProj(aspect, yaw, pitch) {
   mat4.perspective(_vpProj, CAM.fov, aspect, 0.1, 60);
   // ground is the x/y plane, so +z is up. Yaw spins about z (the ground normal);
   // pitch then tilts elevation. rotZ first so yaw stays a true heading once tilted.
@@ -1000,7 +1001,7 @@ const blkDragon3d = {
   name: "dragon3d",
   after: { block: "inkDragon", branch: "handoff" },
   update(ctx) {
-    ctx.d3Alpha = ramp(ctx.t, D3_START, D3_END, 0, 1); // flies its loop forever (dragon3dDraw advances with t)
+    ctx.d3Alpha = ramp(ctx.t, D3_START, D3_END, 0, 1); // flies its loop forever (buildDragon3dState advances with t)
     ctx.glyphAlpha = ramp(ctx.t, D3_START, D3_END, 1, GLYPH_FADE_TARGET); // glyph eases back during the 3D transition
   },
 };
@@ -1029,71 +1030,124 @@ const blkGrid = {
 
 const timeline = makeTimeline([blkSplash, blkGlyph, blkInk, blkEnso, blkCamera, blkDragon3d, blkGrid]);
 
-// Build the FrameState for scene time t. showDebug adds path polylines; orbit =
-// { yaw } (pitch is scripted by the camera block). Seeds ctx defaults (= nothing
-// happening, so inactive blocks need no teardown to clear), runs the overlapping
-// timeline blocks, then assembles the FrameState from ctx.
-export function buildState(t, aspect, debug = {}, orbit = null, debugBuffer = "none") {
-  const ctx = {
-    t,
-    playhead: glyphTotal,      // glyph held fully drawn unless the glyph block traces
-    inkAlpha: 0, d3Alpha: 0,
-    glyphAlpha: 1.0,           // full until the 3D transition eases it back
-    ensoAlpha: 0, ensoSweep: 0, // enso circle (drawn during/after the enso phase)
-    headAlpha: 1,              // ink-dragon head opacity (hidden early in the trace)
-    splashAlpha: 0, splashGrow: 0,
-    gridStrength: 0, gridReveal: 0, gridRevealMinor: 0,
-    camPitch: 0,               // top-down until the camera block tilts
-    inkWidthScale: 1, headSize: HEAD_SIZE,
-  };
-  timeline.frame(ctx, t);
+// ---- reused frame-state scratch (zero per-frame allocation) ----------------
+// buildState mutates these in place and returns _frame; the renderer consumes it
+// synchronously (no retained reference), so a single instance is safe and avoids
+// minting ~15 short-lived objects every frame -> no GC hitch on the infinite 3D
+// loop. Constant fields (spread, radii, grid params) are set once in the literal.
+const EMPTY_F32 = new Float32Array(0);
+const _ctx = {
+  t: 0, playhead: 1, inkAlpha: 0, d3Alpha: 0, glyphAlpha: 1.0,
+  ensoAlpha: 0, ensoSweep: 0, headAlpha: 1, splashAlpha: 0, splashGrow: 0,
+  gridStrength: 0, gridReveal: 0, gridRevealMinor: 0, camPitch: 0,
+  inkWidthScale: 1, headSize: HEAD_SIZE,
+};
+// Reset ctx to "nothing happening" each frame, so inactive timeline blocks need
+// no teardown to clear (matches the old fresh-literal semantics).
+function resetCtx(t) {
+  _ctx.t = t;
+  _ctx.playhead = glyphTotal; // glyph held fully drawn unless the glyph block traces
+  _ctx.inkAlpha = 0; _ctx.d3Alpha = 0;
+  _ctx.glyphAlpha = 1.0;
+  _ctx.ensoAlpha = 0; _ctx.ensoSweep = 0;
+  _ctx.headAlpha = 1;
+  _ctx.splashAlpha = 0; _ctx.splashGrow = 0;
+  _ctx.gridStrength = 0; _ctx.gridReveal = 0; _ctx.gridRevealMinor = 0;
+  _ctx.camPitch = 0;
+  _ctx.inkWidthScale = 1; _ctx.headSize = HEAD_SIZE;
+}
+const _frame = {
+  aspect: 1,
+  opacity: { glyph: 1, inkDragon: 0, dragon3d: 0 },
+  grid: { opacity: 0, reveal: 0, revealMinor: 0, viewProj: null, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
+  glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS },
+  splash: { alpha: 0, grow: 0, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: 0 },
+  enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0 },
+  inkDragon: {
+    body: null,
+    head: { pos: { x: 0, y: 0 }, dir: { x: 0, y: 1 }, size: HEAD_SIZE, alpha: 1 },
+    widthScale: 1, // body stroke width grows with size
+  },
+  dragon3d: { frames: null, frameCount: D3.N, pathLen: 1, bodyLen: BODY_LEN * D3.bodyFactor, headOffset: 0, girth: D3_GIRTH, viewProj: null, time: 0 },
+  debug: { show: false, buffer: "none", path2d: EMPTY_F32, path3d: EMPTY_F32, poolLeft: EMPTY_F32, poolRight: EMPTY_F32 },
+};
 
-  const frame = headFrame(body);
+// Build the FrameState for scene time t. debug adds path polylines; yaw is the
+// user orbit heading (pitch is scripted by the camera block). Resets ctx defaults,
+// runs the overlapping timeline blocks, then assembles _frame in place.
+export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none") {
+  resetCtx(t);
+  timeline.frame(_ctx, t);
+
+  writeHeadFrame(body, _frame.inkDragon.head);
   // user yaw locked to 0 during 2D phase; lerps in over the crossfade (no snap)
-  const rawYaw = (orbit && orbit.yaw) || 0;
+  const rawYaw = yaw || 0;
   const userYaw = t < T_BRANCH ? 0 : ramp(t, D3_START, D3_END, 0, rawYaw);
-  const viewProj = sceneViewProj(aspect, { yaw: userYaw, pitch: ctx.camPitch });
+  const viewProj = sceneViewProj(aspect, userYaw, _ctx.camPitch);
 
-  return {
-    aspect,
-    opacity: { glyph: ctx.glyphAlpha, inkDragon: ctx.inkAlpha, dragon3d: ctx.d3Alpha },
-    grid: { opacity: ctx.gridStrength, reveal: ctx.gridReveal, revealMinor: ctx.gridRevealMinor, viewProj, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
-    glyph: { segs: glyphSegs, playhead: ctx.playhead, baseRadius: GLYPH_RADIUS },
-    // procedural ink-splash blob (origin-centred, grows + splatters over time)
-    splash: { alpha: ctx.splashAlpha, grow: ctx.splashGrow, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: t },
-    // enso circle (origin-centred); sweep = head fraction around it -> shader stroke
-    enso: { alpha: ctx.ensoAlpha, sweep: ctx.ensoSweep, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: Math.PI / 2 - ensoA0, time: t },
-    inkDragon: {
-      body,
-      head: { pos: frame.pos, dir: frame.dir, size: ctx.headSize, alpha: ctx.headAlpha },
-      widthScale: ctx.inkWidthScale, // body stroke width grows with size
-    },
-    dragon3d: buildDragon3dState(t, viewProj),
-    debug: buildDebugState(t, debug, debugBuffer),
-  };
+  _frame.aspect = aspect;
+  _frame.opacity.glyph = _ctx.glyphAlpha;
+  _frame.opacity.inkDragon = _ctx.inkAlpha;
+  _frame.opacity.dragon3d = _ctx.d3Alpha;
+
+  const g = _frame.grid;
+  g.opacity = _ctx.gridStrength; g.reveal = _ctx.gridReveal; g.revealMinor = _ctx.gridRevealMinor;
+  g.viewProj = viewProj;
+
+  _frame.glyph.segs = glyphSegs;
+  _frame.glyph.playhead = _ctx.playhead;
+
+  const sp = _frame.splash;
+  sp.alpha = _ctx.splashAlpha; sp.grow = _ctx.splashGrow; sp.time = t;
+
+  const en = _frame.enso;
+  en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = Math.PI / 2 - ensoA0; en.time = t;
+
+  const ink = _frame.inkDragon;
+  ink.body = body;
+  ink.head.size = _ctx.headSize;
+  ink.head.alpha = _ctx.headAlpha;
+  ink.widthScale = _ctx.inkWidthScale;
+
+  buildDragon3dState(t, viewProj); // writes _frame.dragon3d
+  buildDebugState(t, debug, debugBuffer); // writes _frame.debug
+  return _frame;
 }
 
-// 3D dragon render params for time t: pick the buffer (transition vs pure loop3
-// ring) + head offset, plus the static mesh/draw params.
+// Write the 3D dragon's per-frame draw params into _frame.dragon3d (no alloc).
+// Picks the buffer (transition vs pure loop3 ring) + head offset; the shader
+// wraps mod-N over the whole buffer. See the buffer-switch note in buildDragon3dFrames.
+//   - transition buffer while the body still trails off the flat circles
+//     (head buffer-arc = bodyArc + elapsed -> headOffset = elapsed);
+//   - pure loop3 ring once the tail has left the circles (wraps cleanly forever).
 function buildDragon3dState(t, viewProj) {
-  const d3 = dragon3dDraw(t);
-  return {
-    frames: d3.frames,
-    frameCount: D3.N,
-    pathLen: d3.pathLen,
-    bodyLen: BODY_LEN * D3.bodyFactor,
-    // mesh head is at x=1 (leads by bodyLen); headOffset already accounts for it.
-    headOffset: d3.headOffset,
-    girth: D3_GIRTH,
-    viewProj,
-    time: t,
-  };
+  const d = _frame.dragon3d;
+  const bodyArc = BODY_LEN * D3.bodyFactor;
+  const transArc = d3TransArc; // bodyArc + CROSSFADE*SP3
+  const elapsed = Math.max(0, t - D3_START) * SP3;
+  if (!dragon3dFramesLoop || elapsed < transArc) {
+    d.frames = dragon3dFrames; d.pathLen = dragon3dPathLen; d.headOffset = elapsed;
+  } else {
+    const loopArc = bodyArc + (elapsed - transArc);
+    d.frames = dragon3dFramesLoop; d.pathLen = dragon3dLoopLen; d.headOffset = loopArc - bodyArc;
+  }
+  d.frameCount = D3.N;
+  d.bodyLen = bodyArc; // mesh head is at x=1 (leads by bodyLen); headOffset accounts for it
+  d.viewProj = viewProj;
+  d.time = t;
 }
 
 // Debug overlay state: sampled 2D/3D path polylines + curve-pool waypoints split
-// left/right of the head heading. Empty unless a debug path flag is set.
+// left/right of the head heading. Written into _frame.debug; the debug-only path
+// arrays still allocate (off in production).
 function buildDebugState(t, debug, debugBuffer) {
-  if (!debug.path2d && !debug.path3d) return { show: false, buffer: debugBuffer };
+  const d = _frame.debug;
+  d.buffer = debugBuffer;
+  if (!debug.path2d && !debug.path3d) {
+    d.show = false;
+    d.path2d = EMPTY_F32; d.path3d = EMPTY_F32; d.poolLeft = EMPTY_F32; d.poolRight = EMPTY_F32;
+    return;
+  }
   const tip = tipAt(t);
   const hx = tip.dir.x, hy = tip.dir.y;
   const poolLeft = [], poolRight = [];
@@ -1101,11 +1155,9 @@ function buildDebugState(t, debug, debugBuffer) {
     const cross = hx * (p.y - tip.y) - hy * (p.x - tip.x);
     (cross > 0.01 ? poolLeft : poolRight).push(p.x, p.y, 0);
   }
-  return {
-    show: true, buffer: debugBuffer,
-    path2d: debug.path2d ? samplePath2d(t) : [],
-    path3d: debug.path3d ? samplePath3d() : [],
-    poolLeft: new Float32Array(poolLeft),
-    poolRight: new Float32Array(poolRight),
-  };
+  d.show = true;
+  d.path2d = debug.path2d ? samplePath2d(t) : EMPTY_F32;
+  d.path3d = debug.path3d ? samplePath3d() : EMPTY_F32;
+  d.poolLeft = new Float32Array(poolLeft);
+  d.poolRight = new Float32Array(poolRight);
 }

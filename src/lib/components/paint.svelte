@@ -22,7 +22,6 @@
   // (top-down 90deg during the glyph trace -> 45deg as the 3D dragon appears).
   let orbitYaw = 0;
   let dragging = false, lastX = 0;
-  const orbit = () => ({ yaw: orbitYaw });
 
   function onPointerDown(e) {
     dragging = true; lastX = e.clientX;
@@ -57,7 +56,7 @@
     lastTs = ts;
     if (playing) t += dt; // unbounded: persistent blocks keep the dragon looping
     if (!renderer) return;
-    renderer.frame(buildState(t, aspect, debug, orbit()));
+    renderer.frame(buildState(t, aspect, debug, orbitYaw));
   }
 
   function start() {

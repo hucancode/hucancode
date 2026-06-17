@@ -25,6 +25,7 @@ uniform float uExt;
 uniform float uOpacity;
 uniform float uReveal;      // major wipe: 0 = hidden, 1 = fully in
 uniform float uRevealMinor; // minor wipe (lags behind uReveal)
+uniform vec3 uInkColor;
 
 out vec4 fragColor;
 
@@ -65,6 +66,6 @@ void main() {
 
   float a = lines * fog * camFade * uOpacity;
 
-  vec3 col = vec3(0.0); // plain black lines, no glow
+  vec3 col = uInkColor;
   fragColor = vec4(col * a, a); // premultiplied
 }

@@ -257,13 +257,25 @@
 </footer>
 
 <style>
+  :root {
+    --paper: #f2ecbc;
+    --ink: #16161D;
+    --link: #624c83;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #181616;
+      --ink: #c5c9c5;
+      --link: #8ba4b0;
+    }
+  }
   @font-face {
     font-family: "Virgil";
     src: url("/fonts/Virgil.woff2") format("woff2");
     font-display: swap;
   }
   :global(body:has(.stage)) {
-    background: rgb(255, 252, 224);
+    background: var(--paper);
   }
   .topbar {
     position: fixed;
@@ -272,7 +284,7 @@
     right: 0;
     z-index: 10;
     padding: 0.4rem 0.9rem;
-    background: linear-gradient(180deg, rgba(255, 252, 224, 0.92), rgba(255, 252, 224, 0));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--paper) 92%, transparent), transparent);
     backdrop-filter: blur(2px);
   }
   .bar {
@@ -291,7 +303,7 @@
     inset: auto; /* reset UA popover centering; JS sets left/top/width */
     position: fixed;
     overflow: visible; /* let rotated labels spill past the row width */
-    color: #3a3320;
+    color: var(--ink);
     pointer-events: none; /* never block icon clicks / canvas drags */
     opacity: 0;
     transition:
@@ -330,7 +342,7 @@
     justify-content: center;
     width: 2.2rem;
     height: 2.2rem;
-    color: #3a3320;
+    color: var(--ink);
   }
   .controls {
     flex: 1 1 auto; /* fill all space left of the icons -> long seek bar */
@@ -354,7 +366,7 @@
     border: none;
     background: none;
     cursor: pointer;
-    color: #3a3320;
+    color: var(--ink);
     opacity: 0.7;
   }
   .play:hover { opacity: 1; }
@@ -388,7 +400,7 @@
     text-align: center;
     padding: 1.5rem;
     pointer-events: none; /* let drags reach the canvas; re-enable on the link */
-    background: linear-gradient(0deg, rgba(255, 252, 224, 0.85), rgba(255, 252, 224, 0));
+    background: linear-gradient(0deg, color-mix(in srgb, var(--paper) 85%, transparent), transparent);
     opacity: 0; /* only visible once scrolled to the bottom */
     transition: opacity 0.4s ease;
   }
@@ -417,7 +429,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-    color: #3a3320;
+    color: var(--ink);
     border: none;
     background: none;
     padding: 0.5rem;
@@ -446,7 +458,7 @@
     .scroll-hint.show { animation: none; }
   }
   footer a {
-    color: #6b4e71;
+    color: var(--link);
     text-decoration: none;
     font-size: 1.1rem;
   }

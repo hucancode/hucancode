@@ -14,11 +14,30 @@ function totalArcOf(points, n) {
   return acc;
 }
 
+// Persistent scratch reused across frames. The body length is constant, so these
+// are allocated once and reused -> no per-frame typed-array / object churn. The
+// returned arrays are consumed (uploaded) synchronously by the caller before the
+// next buildRibbon, so sharing them is safe.
+const _ext0 = { x: 0, y: 0 };
+const _extN = { x: 0, y: 0 };
+let _ribbon = null;
+let _positions = null, _uvs = null, _indices = null, _arcs = null;
+function ensureScratch(nRibbon) {
+  if (_ribbon && _ribbon.length === nRibbon) return;
+  _ribbon = new Array(nRibbon);
+  _positions = new Float32Array(nRibbon * 4);
+  _uvs = new Float32Array(nRibbon * 4);
+  _arcs = new Float32Array(nRibbon);
+  _indices = new Uint16Array((nRibbon - 1) * 6);
+}
+
 // Returns { positions: Float32Array(2*V), uvs: Float32Array(2*V),
 //           indices: Uint16Array, indexCount } or null if < 2 points.
 export function buildRibbon(points, lineWidth) {
   const nPoly = points.length;
   if (nPoly < 2) return null;
+  const nRibbon = nPoly + 2;
+  ensureScratch(nRibbon);
 
   const totalPolyArc = totalArcOf(points, nPoly);
   const extLen = (ARC_CLEARANCE > 0 && ARC_CLEARANCE < 0.5)
@@ -30,22 +49,26 @@ export function buildRibbon(points, lineWidth) {
   const tNx = points[nPoly - 1].x - points[nPoly - 2].x, tNy = points[nPoly - 1].y - points[nPoly - 2].y;
   const tNL = Math.hypot(tNx, tNy) || 1;
 
-  const ribbon = new Array(nPoly + 2);
-  ribbon[0] = { x: points[0].x - (t0x / t0L) * extLen, y: points[0].y - (t0y / t0L) * extLen };
+  const ribbon = _ribbon;
+  _ext0.x = points[0].x - (t0x / t0L) * extLen;
+  _ext0.y = points[0].y - (t0y / t0L) * extLen;
+  ribbon[0] = _ext0;
   for (let i = 0; i < nPoly; i++) ribbon[i + 1] = points[i];
-  ribbon[nPoly + 1] = { x: points[nPoly - 1].x + (tNx / tNL) * extLen, y: points[nPoly - 1].y + (tNy / tNL) * extLen };
-  const nRibbon = ribbon.length;
+  _extN.x = points[nPoly - 1].x + (tNx / tNL) * extLen;
+  _extN.y = points[nPoly - 1].y + (tNy / tNL) * extLen;
+  ribbon[nPoly + 1] = _extN;
 
   const halfStrokeW = (lineWidth || 0) * 0.5;
   const halfMeshW = (PERP_CLEARANCE > 0 && PERP_CLEARANCE < 0.5)
     ? halfStrokeW / (1 - 2 * PERP_CLEARANCE)
     : halfStrokeW;
 
-  const positions = new Float32Array(nRibbon * 2 * 2);
-  const uvs = new Float32Array(nRibbon * 2 * 2);
-  const indices = new Uint16Array((nRibbon - 1) * 6);
+  const positions = _positions;
+  const uvs = _uvs;
+  const indices = _indices;
 
-  const arcs = new Float32Array(nRibbon);
+  const arcs = _arcs;
+  arcs[0] = 0;
   for (let i = 1; i < nRibbon; i++) {
     arcs[i] = arcs[i - 1] + Math.hypot(ribbon[i].x - ribbon[i - 1].x, ribbon[i].y - ribbon[i - 1].y);
   }
