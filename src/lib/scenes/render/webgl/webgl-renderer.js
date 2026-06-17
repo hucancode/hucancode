@@ -147,7 +147,7 @@ export function makeWebGLRenderer(canvas) {
   // head buffers
   let headVao, headBuf;
   // dragon3d
-  let d3Vao, d3PosBuf, d3NormBuf, d3FramesTex, d3VertexCount = 0, d3FramesUploaded = false;
+  let d3Vao, d3PosBuf, d3NormBuf, d3FramesTex, d3VertexCount = 0, d3FramesRef = null;
   // debug lines
   let lineVao, lineBuf, lineScratch = new Float32Array(0);
   let w = 1, h = 1;
@@ -550,10 +550,12 @@ export function makeWebGLRenderer(canvas) {
     // ---------- 3D dragon -> its own target, then composite to screen ----------
     if (state.opacity.dragon3d > 0 && d3VertexCount > 0) {
       const d3 = state.dragon3d;
-      if (!d3FramesUploaded) {
+      // re-upload whenever the frame buffer changes (scene swaps the transition
+      // buffer for the pure-loop3 ring once the body leaves the circles).
+      if (d3.frames && d3.frames !== d3FramesRef) {
         gl.bindTexture(gl.TEXTURE_2D, d3FramesTex);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, 4, d3.frameCount, 0, gl.RGBA, gl.FLOAT, d3.frames, 0);
-        d3FramesUploaded = true;
+        d3FramesRef = d3.frames;
       }
       // draw the dragon into its offscreen target (transparent, own depth)
       gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.dragon.fb);

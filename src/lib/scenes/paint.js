@@ -57,7 +57,7 @@ const T = {
 // ============================================================================
 const LEADIN_DUR = 0.5;       // straight glide from the top onto the glyph start
 const LEADIN_START = { x: 0, y: 0.78 }; // top-middle, far from the glyph entry
-const GLYPH_TRACE_DUR = 0.5;  // 1.5 = head traces the whole glyph, leading the reveal
+const GLYPH_TRACE_DUR = 3.5;  // 1.5 = head traces the whole glyph, leading the reveal
 const ENSO_LEADIN_DUR = 0.6;  // branch off the glyph end onto the enso (no snap)
 const ENSO_R = 0.4;           // enso radius (world units; <1 keeps it on-screen)
 const ENSO_WIDTH = 0.05;      // enso brush thickness (polar line width in the shader)
@@ -299,13 +299,32 @@ function generateCirclePath(rng, entry, heading) {
   const hdx = Math.cos(heading);
   const hdy = Math.sin(heading);
 
+  // First circle: centre along the perpendicular to the heading at `entry`.
+  // At the enso exit the heading IS the enso tangent, so this perpendicular is
+  // the enso radial -> the first circle is tangent to the enso (shared tangent +
+  // collinear centres).  Pick dir/r so the whole circle fits CURVE_BOUND; do NOT
+  // scale the centre (that would break tangency and pull the circle off `entry`).
   let dir = rng() > 0.5 ? 1 : -1;
   let r = CIRCLE_R_MIN + rng() * (CIRCLE_R_MAX - CIRCLE_R_MIN);
-  let cx = entry.x + (dir > 0 ? -hdy : hdy) * r;
-  let cy = entry.y + (dir > 0 ? hdx : -hdx) * r;
-  const dc0 = Math.hypot(cx, cy);
-  const maxDc0 = Math.max(0, CURVE_BOUND - r);
-  if (dc0 > maxDc0 && dc0 > 1e-6) { cx *= maxDc0 / dc0; cy *= maxDc0 / dc0; }
+  let cx, cy;
+  let placed = false;
+  for (let tryi = 0; tryi < 12; tryi++) {
+    const d = tryi === 0 ? dir : (rng() > 0.5 ? 1 : -1);
+    const rr = tryi === 0 ? r : CIRCLE_R_MIN + rng() * (CIRCLE_R_MAX - CIRCLE_R_MIN);
+    const ccx = entry.x + (d > 0 ? -hdy : hdy) * rr;
+    const ccy = entry.y + (d > 0 ? hdx : -hdx) * rr;
+    if (Math.hypot(ccx, ccy) + rr <= CURVE_BOUND) {
+      dir = d; r = rr; cx = ccx; cy = ccy; placed = true; break;
+    }
+  }
+  if (!placed) {
+    // No radius/side fit (entry near the bound): take the inward side at min radius.
+    r = CIRCLE_R_MIN;
+    const inwardSign = (entry.x * -hdy + entry.y * hdx) < 0 ? 1 : -1; // perp pointing toward origin
+    dir = inwardSign;
+    cx = entry.x + (dir > 0 ? -hdy : hdy) * r;
+    cy = entry.y + (dir > 0 ? hdx : -hdx) * r;
+  }
 
   let px = entry.x, py = entry.y;
   const allPts = [
@@ -561,8 +580,9 @@ function pathAt(t) {
     const s = curvePath.headStart + Math.max(0, t - T_ENSO_END) * SP2;
     return { fn: (a) => { const p = curvePath.pos(a); return { x: p.x, y: p.y }; }, a: s };
   }
-  const s = (t - T_BRANCH) * SP2;
-  return { fn: (a) => { const p = loop3.pos(a); return { x: p.x, y: p.y }; }, a: s };
+  // t >= T_BRANCH: inkDragon block already ended (D3_END = T_BRANCH) so 2D is
+  // invisible here; hold at curvePath end as a safe fallback for seeking.
+  return { fn: (a) => { const p = curvePath.pos(a); return { x: p.x, y: p.y }; }, a: curvePath.total };
 }
 function tipAt(t) {
   const { fn, a } = pathAt(t);
@@ -571,9 +591,25 @@ function tipAt(t) {
   const m = Math.hypot(dx, dy) || 1;
   return { x: p.x, y: p.y, dir: { x: dx / m, y: dy / m } };
 }
-// 3D head arc position at time t (advances along loop3 from the branch phase)
-function headArc3(t) {
-  return loop3Phase + Math.max(0, t - T_BRANCH) * SP3;
+// 3D dragon render params for time t: which frame buffer, its arc length, and the
+// head offset.  The shader wraps mod-N over the WHOLE buffer (a closed ring), so:
+//   - While the body is still trailing off the flat circles -> use the TRANSITION
+//     buffer (curvePath tail + loop3).  head buffer-arc = bodyArc + elapsed; the
+//     body never crosses the buffer seam, so no wrap artifact.
+//   - Once the tail has fully left the circles (elapsed >= transArc) -> switch to
+//     the PURE loop3 ring, which wraps cleanly forever.  The switch is C0/C1
+//     continuous: at elapsed=transArc the head is at loop3 arc bodyArc in both.
+function dragon3dDraw(t) {
+  const bodyArc  = BODY_LEN * D3.bodyFactor;
+  const transArc = d3TransArc; // bodyArc + CROSSFADE*SP3
+  const elapsed  = Math.max(0, t - D3_START) * SP3;
+  if (!dragon3dFramesLoop || elapsed < transArc) {
+    // transition: head buffer-arc = bodyArc + elapsed -> headOffset = elapsed
+    return { frames: dragon3dFrames, pathLen: dragon3dPathLen, headOffset: elapsed };
+  }
+  // pure loop3 ring: continue head arc from bodyArc, let shader mod-N wrap it
+  const loopArc = bodyArc + (elapsed - transArc);
+  return { frames: dragon3dFramesLoop, pathLen: dragon3dLoopLen, headOffset: loopArc - bodyArc };
 }
 // debug: sample the 2D curve roam as a polyline
 function samplePath2d(t, n = 256) {
@@ -704,47 +740,68 @@ const D3 = {
   bodyFactor: 1.2,
   depth: 10, // ortho z range (for the mesh's out-of-plane extent)
 };
-let dragon3dFrames = null; // Float32Array N*16, column-major
+let dragon3dFrames = null;     // transition buffer (curvePath tail + loop3), N*16
 let dragon3dPathLen = 1;
+let dragon3dFramesLoop = null; // pure loop3 ring (wraps cleanly forever), N*16
+let dragon3dLoopLen = 1;
+let d3TransArc = 0;            // curvePath tail length baked into the transition buffer
 
-// Build the 3D dragon's frames by sampling loop3 at EQUAL ARC LENGTH. The shader
-// maps mesh.x linearly to frame index, so arc-uniform frames keep the dragon a
-// constant length per mesh unit. Each frame is a 3D orthonormal basis built from
-// the path tangent + world-up (no precomputed twist; loop3's gentle z keeps the
-// tangent away from vertical, so the up-vector method is stable).
-function buildDragon3dFrames() {
-  if (!loop3) return;
-  const N = D3.N;
-  const total = loop3.total;
-  const frames = new Float32Array(N * 16);
+// Fill an N*16 column-major frame buffer by sampling `sample(arc)->{p,tg}` at N
+// equal-arc-length steps over [0, total). Each frame is a 3D orthonormal basis
+// from the tangent + world-up (cross(up,T) gives the stable in-plane width normal;
+// fall back to +y only if the tangent runs near-vertical).
+function fillFrames(frames, N, total, sample) {
   for (let i = 0; i < N; i++) {
-    const s = (i / N) * total;
-    const p = loop3.pos(s);
-    const tg = loop3.tan(s);
-    // reference up = +z (out-of-plane); the loop is mostly in x/y with gentle z,
-    // so cross(up,T) is the stable in-plane "width" normal. Fall back to +y only
-    // if the tangent runs near-parallel to z.
+    const { p, tg } = sample((i / N) * total);
     let ux = 0, uy = 0, uz = 1;
     if (Math.abs(tg.z) > 0.95) { ux = 0; uy = 1; uz = 0; }
-    // N = normalize(cross(up, T))
     let nx = uy * tg.z - uz * tg.y;
     let ny = uz * tg.x - ux * tg.z;
     let nz = ux * tg.y - uy * tg.x;
     const nl = Math.hypot(nx, ny, nz) || 1;
     nx /= nl; ny /= nl; nz /= nl;
-    // B = cross(T, N)
     const bx = tg.y * nz - tg.z * ny;
     const by = tg.z * nx - tg.x * nz;
     const bz = tg.x * ny - tg.y * nx;
-    // column-major: col0=tangent(x), col1=normal(y=width), col2=binormal(z=depth), col3=pos
     const o = i * 16;
     frames[o + 0] = tg.x; frames[o + 1] = tg.y; frames[o + 2] = tg.z; frames[o + 3] = 0;
     frames[o + 4] = nx;   frames[o + 5] = ny;   frames[o + 6] = nz;   frames[o + 7] = 0;
     frames[o + 8] = bx;   frames[o + 9] = by;   frames[o + 10] = bz;  frames[o + 11] = 0;
     frames[o + 12] = p.x; frames[o + 13] = p.y; frames[o + 14] = p.z; frames[o + 15] = 1;
   }
-  dragon3dFrames = frames;
+}
+
+// Build BOTH 3D frame buffers (arc-uniform; the shader maps mesh.x linearly to
+// frame index, so equal-arc frames keep the dragon a constant length):
+//   - transition buffer: [0, transArc) = curvePath tail ending at bp (flat circles
+//     for the crossfade), [transArc, ..) = loop3 from bp. Used only while the body
+//     still trails off the circles.
+//   - loop buffer: pure loop3 closed ring; wraps mod-N cleanly forever afterward.
+// The join at bp is tangent-continuous (loop3 leaves bp along the curvePath exit
+// heading via clampExitPivot).
+function buildDragon3dFrames() {
+  if (!loop3 || !curvePath) return;
+  const N = D3.N;
+  const bodyArc  = BODY_LEN * D3.bodyFactor;
+  const transArc = bodyArc + CROSSFADE * SP3; // curvePath tail length in the trans buffer
+  d3TransArc = transArc;
+
+  const total = transArc + loop3.total;
+  const trans = new Float32Array(N * 16);
+  fillFrames(trans, N, total, (arc) => {
+    if (arc < transArc) {
+      const cpArc = curvePath.total - transArc + arc;
+      return { p: curvePath.pos(cpArc), tg: curvePath.tan(cpArc) };
+    }
+    return { p: loop3.pos(arc - transArc), tg: loop3.tan(arc - transArc) };
+  });
+  dragon3dFrames = trans;
   dragon3dPathLen = total;
+
+  const loop = new Float32Array(N * 16);
+  fillFrames(loop, N, loop3.total, (arc) => ({ p: loop3.pos(arc), tg: loop3.tan(arc) }));
+  dragon3dFramesLoop = loop;
+  dragon3dLoopLen = loop3.total;
 }
 
 // ---- orbit camera (orthographic; column-major mat4) ------------------------
@@ -869,23 +926,26 @@ export function initScene() {
   // Recompute timeline from actual path length so roam speed == SP2 exactly
   const curveDur = (curvePath.total - curvePath.headStart) / SP2;
   T_BRANCH = T_ENSO_END + curveDur;
-  D3_START = T_BRANCH;
-  D3_END = T_BRANCH + CROSSFADE;
+  // Crossfade COMPLETES at T_BRANCH (when circles end).  Both 2D and 3D advance
+  // on the same curvePath arc during [D3_START, T_BRANCH]; at T_BRANCH both heads
+  // are at bp, 2D fades out, 3D exits into loop3.
+  D3_START = T_BRANCH - CROSSFADE;
+  D3_END = T_BRANCH;
   TIMELINE_END = T_BRANCH + 11.0;
   SPLASH_GROW_DUR = T_BRANCH;
   // update block objects that captured the placeholder values at module init
   blkInk.duration = D3_END;
-  blkInk.branches.handoff = T_BRANCH;
+  blkInk.branches.handoff = D3_START; // camera tilt + 3D fade begin one crossfade before T_BRANCH
   blkInk.branches.gone = D3_END;
 
   // 2D head arc on the curve roam when it branches to 3D: end of the path
   const branchS = curvePath.total;
   const bp = curvePath.pos(branchS);
   const tb = curvePath.tan(branchS); // 2D heading at the branch point
-  // loop3 is a pure random closed loop ANCHORED at the branch point bp, leaving it
-  // along the 2D heading. The 2D dragon switches onto loop3 AT the branch (see
-  // pathAt) so the two overlap during the crossfade without copying loop2 into
-  // loop3. loop3 holds no transition copy -> the 3D dragon never returns to it.
+  // loop3: closed random 3D loop starting at bp.  The 3D dragon's frame array
+  // contains a curvePath tail (flat circles) followed by loop3; during the crossfade
+  // the 3D head traces the flat circles alongside the fading 2D dragon, then the
+  // head exits into loop3 and loops there forever.
   const rest = randomLoopPivots(rng, LOOP3_PIVOTS, R3D, Z3D);
   clampExitPivot(rest, { x: bp.x, y: bp.y, dir: { x: tb.x, y: tb.y } }, MAX_EXIT_TURN);
   const ring3 = [{ x: bp.x, y: bp.y, z: 0 }, ...rest];
@@ -1006,7 +1066,7 @@ const blkDragon3d = {
   name: "dragon3d",
   after: { block: "inkDragon", branch: "handoff" },
   update(ctx) {
-    ctx.d3Alpha = ramp(ctx.t, D3_START, D3_END, 0, 1); // flies its loop forever (headArc3 advances with t)
+    ctx.d3Alpha = ramp(ctx.t, D3_START, D3_END, 0, 1); // flies its loop forever (dragon3dDraw advances with t)
     ctx.glyphAlpha = ramp(ctx.t, D3_START, D3_END, 1, GLYPH_FADE_TARGET); // glyph eases back during the 3D transition
   },
 };
@@ -1074,18 +1134,21 @@ export function buildState(t, aspect, debug = {}, orbit = null, debugBuffer = "n
       head: { pos: frame.pos, dir: frame.dir, size: ctx.headSize, alpha: ctx.headAlpha },
       widthScale: ctx.inkWidthScale, // body stroke width grows with size
     },
-    dragon3d: {
-      frames: dragon3dFrames,
-      frameCount: D3.N,
-      pathLen: dragon3dPathLen,
-      bodyLen: BODY_LEN * D3.bodyFactor,
-      // head end of the mesh is at x=1, so it leads by bodyLen in the shader;
-      // subtract it so the mesh head lands on headArc3 (the loop3 head position).
-      headOffset: headArc3(t) - BODY_LEN * D3.bodyFactor,
-      girth: D3_GIRTH,
-      viewProj,
-      time: t,
-    },
+    dragon3d: (() => {
+      // pick the buffer (transition vs pure loop3 ring) + head offset for time t
+      const d3 = dragon3dDraw(t);
+      return {
+        frames: d3.frames,
+        frameCount: D3.N,
+        pathLen: d3.pathLen,
+        bodyLen: BODY_LEN * D3.bodyFactor,
+        // mesh head is at x=1 (leads by bodyLen); headOffset already accounts for it.
+        headOffset: d3.headOffset,
+        girth: D3_GIRTH,
+        viewProj,
+        time: t,
+      };
+    })(),
     debug: (debug.path2d || debug.path3d)
       ? (() => {
           const tip = tipAt(t);
