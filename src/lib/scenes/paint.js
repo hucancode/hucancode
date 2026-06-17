@@ -19,19 +19,9 @@
 
 import { longSymbol } from "$lib/brush/long.js";
 import { bakeSegs } from "$lib/brush/bake.js";
+import { TAU, clamp, lerp, smooth, ramp } from "$lib/math/scalar.js";
+import * as mat4 from "$lib/math/mat4.js";
 import { makeTimeline } from "./timeline.js";
-
-// ---- small math ------------------------------------------------------------
-const TAU = Math.PI * 2;
-const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
-// ramp t across [t0,t1] to [a,b], clamped/held outside
-function ramp(t, t0, t1, a, b) {
-  if (t <= t0) return a;
-  if (t >= t1) return b;
-  return a + (b - a) * ((t - t0) / (t1 - t0));
-}
-const lerp = (a, b, k) => a + (b - a) * k;
-const smooth = (x) => x * x * (3 - 2 * x);
 
 // ---- timeline knobs --------------------------------------------------------
 const T = {
@@ -168,37 +158,51 @@ function catmullClosed(P, u) {
   };
 }
 
-// Build an arc-length-parameterised closed spline: pos(s)/tan(s) wrap on s, total
-// is the loop arc length. Mirrors the dense/cum/posAtArc pattern in buildDragon3dFrames.
+// Arc-length parameterise a polyline of dense {x,y,z} samples. Returns pos(s) /
+// tan(s) keyed on arc length s, the loop `total`, and arcAt(i) = arc length at
+// dense index i. `closed` wraps s on total (looping path); otherwise s clamps to
+// the ends. The single source of truth for every spline/curve sampler below.
+function arcLengthCurve(dense, closed) {
+  const N = dense.length;
+  const last = N - 1;
+  const cum = new Float64Array(N);
+  for (let i = 1; i < N; i++) {
+    const a = dense[i - 1], b = dense[i];
+    cum[i] = cum[i - 1] + Math.hypot(b.x - a.x, b.y - a.y, (b.z || 0) - (a.z || 0));
+  }
+  const total = cum[last] || 1;
+  function locate(d) {
+    let lo = 0, hi = last;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid] < d) lo = mid + 1; else hi = mid; }
+    return Math.max(1, lo);
+  }
+  function pos(s) {
+    const d = closed ? ((s % total) + total) % total : clamp(s, 0, total);
+    const i = locate(d);
+    const seg = cum[i] - cum[i - 1] || 1e-6;
+    const k = (d - cum[i - 1]) / seg;
+    const a = dense[i - 1], b = dense[i];
+    return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), z: lerp(a.z || 0, b.z || 0, k) };
+  }
+  function tan(s) {
+    const e = total * 1e-3;
+    const base = closed ? s : clamp(s, 0, total - e);
+    const a = pos(base), b = pos(base + e);
+    const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+    const m = Math.hypot(dx, dy, dz) || 1;
+    return { x: dx / m, y: dy / m, z: dz / m };
+  }
+  const arcAt = (i) => cum[clamp(Math.round(i), 0, last)];
+  return { pos, tan, total, arcAt };
+}
+
+// Closed Catmull-Rom spline (pos/tan wrap on s), arc-length parameterised.
 function buildSpline(pivots) {
   const K = pivots.length;
   const M = 2048;
   const dense = new Array(M + 1);
-  const cum = new Float64Array(M + 1);
   for (let i = 0; i <= M; i++) dense[i] = catmullClosed(pivots, (i / M) * K);
-  for (let i = 1; i <= M; i++) {
-    const a = dense[i], b = dense[i - 1];
-    cum[i] = cum[i - 1] + Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-  }
-  const total = cum[M] || 1;
-  function pos(s) {
-    let d = ((s % total) + total) % total;
-    let lo = 0, hi = M;
-    while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid] < d) lo = mid + 1; else hi = mid; }
-    const i = Math.max(1, lo);
-    const seg = cum[i] - cum[i - 1] || 1e-6;
-    const k = (d - cum[i - 1]) / seg;
-    const a = dense[i - 1], b = dense[i];
-    return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), z: lerp(a.z, b.z, k) };
-  }
-  function tan(s) {
-    const e = total * 1e-3;
-    const a = pos(s), b = pos(s + e);
-    let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
-    const m = Math.hypot(dx, dy, dz) || 1;
-    return { x: dx / m, y: dy / m, z: dz / m };
-  }
-  return { pos, tan, total };
+  return arcLengthCurve(dense, true);
 }
 
 // Catmull-Rom through pivots P (OPEN; endpoints clamped). u in [0, K-1].
@@ -214,39 +218,17 @@ function catmullOpen(P, u) {
   };
 }
 
-// Arc-length-parameterised OPEN spline through pivots: pos(s)/tan(s) CLAMP at the
-// ends (s held in [0,total]); arcAtU(u) gives the arc length at pivot-index u.
+// OPEN Catmull-Rom spline through pivots (pos/tan clamp at the ends), arc-length
+// parameterised. arcAtU(u) gives the arc length at pivot-index u (u in [0, K-1]).
 function buildOpenSpline(pivots) {
   const K = pivots.length;
   const M = 2048;
   const span = K - 1;
   const dense = new Array(M + 1);
-  const cum = new Float64Array(M + 1);
   for (let i = 0; i <= M; i++) dense[i] = catmullOpen(pivots, (i / M) * span);
-  for (let i = 1; i <= M; i++) {
-    const a = dense[i], b = dense[i - 1];
-    cum[i] = cum[i - 1] + Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-  }
-  const total = cum[M] || 1;
-  function pos(s) {
-    const d = clamp(s, 0, total);
-    let lo = 0, hi = M;
-    while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid] < d) lo = mid + 1; else hi = mid; }
-    const i = Math.max(1, lo);
-    const seg = cum[i] - cum[i - 1] || 1e-6;
-    const k = (d - cum[i - 1]) / seg;
-    const a = dense[i - 1], b = dense[i];
-    return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), z: lerp(a.z, b.z, k) };
-  }
-  function tan(s) {
-    const e = total * 1e-3;
-    const a = pos(clamp(s, 0, total - e)), b = pos(clamp(s, 0, total - e) + e);
-    let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
-    const m = Math.hypot(dx, dy, dz) || 1;
-    return { x: dx / m, y: dy / m, z: dz / m };
-  }
-  const arcAtU = (u) => cum[Math.round(clamp(u / span, 0, 1) * M)];
-  return { pos, tan, total, arcAtU };
+  const curve = arcLengthCurve(dense, false);
+  const arcAtU = (u) => curve.arcAt(clamp(u / span, 0, 1) * M);
+  return { ...curve, arcAtU };
 }
 
 // Random pivots on jittered sorted angles, radius kept INSIDE `radius` (so the
@@ -417,38 +399,13 @@ function generateCirclePath(rng, entry, heading) {
     cx = best.nextCx; cy = best.nextCy; r = best.nextR; dir = best.nextDir;
   }
 
-  // Arc-length parameterization directly from dense circle samples.
-  const N = allPts.length;
-  const cum = new Float64Array(N);
-  for (let i = 1; i < N; i++) {
-    const a = allPts[i - 1], b = allPts[i];
-    cum[i] = cum[i - 1] + Math.hypot(b.x - a.x, b.y - a.y);
-  }
-  const total = cum[N - 1] || 1;
-  const headStart = cum[headEntryIdx];
-
-  function pos(s) {
-    const d = clamp(s, 0, total);
-    let lo = 0, hi = N - 1;
-    while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid] < d) lo = mid + 1; else hi = mid; }
-    const i = Math.max(1, lo);
-    const seg = cum[i] - cum[i - 1] || 1e-6;
-    const k = (d - cum[i - 1]) / seg;
-    return { x: lerp(allPts[i - 1].x, allPts[i].x, k), y: lerp(allPts[i - 1].y, allPts[i].y, k), z: 0 };
-  }
-
-  function tan(s) {
-    const e = total * 1e-3;
-    const a = pos(clamp(s, 0, total - e));
-    const b = pos(clamp(s + e, 0, total));
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const m = Math.hypot(dx, dy) || 1;
-    return { x: dx / m, y: dy / m, z: 0 };
-  }
-
-  const arcAtU = (u) => cum[clamp(Math.round(u), 0, N - 1)];
-
-  return { pos, tan, total, headStart, arcAtU };
+  // Arc-length parameterise directly from the dense circle samples (open path).
+  const curve = arcLengthCurve(allPts, false);
+  return {
+    ...curve,
+    headStart: curve.arcAt(headEntryIdx), // arc length where the head enters
+    arcAtU: (u) => curve.arcAt(u),         // u is a direct index into allPts
+  };
 }
 
 // Branch off the glyph end onto the enso circle with a C curve (entry, belly,
@@ -804,49 +761,26 @@ function buildDragon3dFrames() {
   dragon3dLoopLen = loop3.total;
 }
 
-// ---- orbit camera (orthographic; column-major mat4) ------------------------
-function mat4mul(a, b) {
-  const o = new Float32Array(16);
-  for (let c = 0; c < 4; c++)
-    for (let r = 0; r < 4; r++) {
-      let s = 0;
-      for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
-      o[c * 4 + r] = s;
-    }
-  return o;
-}
-function rotX(a) {
-  const c = Math.cos(a), s = Math.sin(a);
-  return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]);
-}
-function rotZ(a) {
-  const c = Math.cos(a), s = Math.sin(a);
-  return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-}
-function translate(x, y, z) {
-  return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]);
-}
-function perspective(fovy, aspect, near, far) {
-  const f = 1 / Math.tan(fovy / 2);
-  const nf = 1 / (near - far);
-  const o = new Float32Array(16);
-  o[0] = f / aspect; o[5] = f;
-  o[10] = (far + near) * nf; o[11] = -1;
-  o[14] = 2 * far * near * nf;
-  return o;
-}
-
+// ---- orbit camera (perspective; column-major mat4) -------------------------
 const CAM = { fov: (45 * Math.PI) / 180, dist: 2.6 };
+// reused scratch so building the view-proj allocates nothing per frame; the
+// returned `_vpResult` is fully consumed (uploaded) by the renderer each frame.
+const _vpProj = mat4.create();
+const _vpRot = mat4.create();
+const _vpTmp = mat4.create();
+const _vpResult = mat4.create();
 function sceneViewProj(aspect, orbit) {
   const yaw = (orbit && orbit.yaw) || 0;
   const pitch = (orbit && orbit.pitch) || 0;
-  const proj = perspective(CAM.fov, aspect, 0.1, 60);
+  mat4.perspective(_vpProj, CAM.fov, aspect, 0.1, 60);
   // ground is the x/y plane, so +z is up. Yaw spins about z (the ground normal);
   // pitch then tilts elevation. rotZ first so yaw stays a true heading once tilted.
-  let m = rotZ(yaw);
-  m = mat4mul(rotX(pitch), m);
-  m = mat4mul(translate(0, 0, -CAM.dist), m); // pull camera back along +z
-  return mat4mul(proj, m);
+  mat4.rotationZ(_vpRot, yaw);
+  mat4.rotationX(_vpTmp, pitch);
+  mat4.multiply(_vpRot, _vpTmp, _vpRot);          // rotX(pitch) * rotZ(yaw)
+  mat4.translation(_vpTmp, 0, 0, -CAM.dist);
+  mat4.multiply(_vpRot, _vpTmp, _vpRot);          // pull camera back along +z
+  return mat4.multiply(_vpResult, _vpProj, _vpRot);
 }
 // debug: 3D path centreline (frame translations) as xyz triples
 function samplePath3d(stride = 4) {
@@ -1134,38 +1068,44 @@ export function buildState(t, aspect, debug = {}, orbit = null, debugBuffer = "n
       head: { pos: frame.pos, dir: frame.dir, size: ctx.headSize, alpha: ctx.headAlpha },
       widthScale: ctx.inkWidthScale, // body stroke width grows with size
     },
-    dragon3d: (() => {
-      // pick the buffer (transition vs pure loop3 ring) + head offset for time t
-      const d3 = dragon3dDraw(t);
-      return {
-        frames: d3.frames,
-        frameCount: D3.N,
-        pathLen: d3.pathLen,
-        bodyLen: BODY_LEN * D3.bodyFactor,
-        // mesh head is at x=1 (leads by bodyLen); headOffset already accounts for it.
-        headOffset: d3.headOffset,
-        girth: D3_GIRTH,
-        viewProj,
-        time: t,
-      };
-    })(),
-    debug: (debug.path2d || debug.path3d)
-      ? (() => {
-          const tip = tipAt(t);
-          const hx = tip.dir.x, hy = tip.dir.y;
-          const poolLeft = [], poolRight = [];
-          for (const p of curvePool) {
-            const cross = hx * (p.y - tip.y) - hy * (p.x - tip.x);
-            (cross > 0.01 ? poolLeft : poolRight).push(p.x, p.y, 0);
-          }
-          return {
-            show: true, buffer: debugBuffer,
-            path2d: debug.path2d ? samplePath2d(t) : [],
-            path3d: debug.path3d ? samplePath3d() : [],
-            poolLeft: new Float32Array(poolLeft),
-            poolRight: new Float32Array(poolRight),
-          };
-        })()
-      : { show: false, buffer: debugBuffer },
+    dragon3d: buildDragon3dState(t, viewProj),
+    debug: buildDebugState(t, debug, debugBuffer),
+  };
+}
+
+// 3D dragon render params for time t: pick the buffer (transition vs pure loop3
+// ring) + head offset, plus the static mesh/draw params.
+function buildDragon3dState(t, viewProj) {
+  const d3 = dragon3dDraw(t);
+  return {
+    frames: d3.frames,
+    frameCount: D3.N,
+    pathLen: d3.pathLen,
+    bodyLen: BODY_LEN * D3.bodyFactor,
+    // mesh head is at x=1 (leads by bodyLen); headOffset already accounts for it.
+    headOffset: d3.headOffset,
+    girth: D3_GIRTH,
+    viewProj,
+    time: t,
+  };
+}
+
+// Debug overlay state: sampled 2D/3D path polylines + curve-pool waypoints split
+// left/right of the head heading. Empty unless a debug path flag is set.
+function buildDebugState(t, debug, debugBuffer) {
+  if (!debug.path2d && !debug.path3d) return { show: false, buffer: debugBuffer };
+  const tip = tipAt(t);
+  const hx = tip.dir.x, hy = tip.dir.y;
+  const poolLeft = [], poolRight = [];
+  for (const p of curvePool) {
+    const cross = hx * (p.y - tip.y) - hy * (p.x - tip.x);
+    (cross > 0.01 ? poolLeft : poolRight).push(p.x, p.y, 0);
+  }
+  return {
+    show: true, buffer: debugBuffer,
+    path2d: debug.path2d ? samplePath2d(t) : [],
+    path3d: debug.path3d ? samplePath3d() : [],
+    poolLeft: new Float32Array(poolLeft),
+    poolRight: new Float32Array(poolRight),
   };
 }

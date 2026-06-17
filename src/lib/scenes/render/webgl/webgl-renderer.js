@@ -140,8 +140,9 @@ export function makeWebGLRenderer(canvas) {
   let U = {};
   let emptyVao;
   // { fb, tex, rb, w, h }
-  let fbo = { glyph: null, splash: null, enso: null, ink: null, dragon: null };
-  let segTex, segBuf = new Float32Array(0), segRows = 0;
+  // dragon draws straight to the screen, so it needs no offscreen target
+  let fbo = { glyph: null, splash: null, enso: null, ink: null };
+  let segTex, segBuf = new Float32Array(0), segRows = 0, segRef = null;
   // dynamic stroke buffers
   let strokeVao, posBuf, uvBuf, idxBuf;
   // head buffers
@@ -151,6 +152,12 @@ export function makeWebGLRenderer(canvas) {
   // debug lines
   let lineVao, lineBuf, lineScratch = new Float32Array(0);
   let w = 1, h = 1;
+  // steady-state caching: the glyph FBO is static once the trace ends (its shader
+  // has no clock), so re-render only when the playhead changes. splash + enso only
+  // drift slowly on uClock once saturated -> re-render every STATIC_THROTTLE frames.
+  let frameCount = 0;
+  let glyphCacheKey = NaN; // last rendered playhead (NaN forces a render)
+  const STATIC_THROTTLE = 8;
 
   function makeTarget(withDepth, div) {
     const tw = Math.max(1, Math.ceil(w / (div || 1)));
@@ -278,11 +285,20 @@ export function makeWebGLRenderer(canvas) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    // load dragon mesh (x normalised to [0,1]; uBodyLen scales it at draw time)
+    // load dragon mesh asynchronously -- don't block first paint. The 2D glyph
+    // trace renders immediately; the 3D dragon appears once the mesh arrives
+    // (its draw is gated on d3VertexCount > 0). Asset is preloaded in <head>,
+    // so the fetch usually hits cache.
+    loadMesh().catch((e) => console.warn("[paint] dragon mesh load failed", e));
+
+    resize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+  }
+
+  // x normalised to [0,1]; uBodyLen scales it at draw time
+  async function loadMesh() {
     const mesh = await loadDragonMesh(DRAGON_OBJ, 1.0);
-    d3VertexCount = mesh.vertexCount;
-    d3Vao = gl.createVertexArray();
-    gl.bindVertexArray(d3Vao);
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
     d3PosBuf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, d3PosBuf);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.positions, gl.STATIC_DRAW);
@@ -296,8 +312,9 @@ export function makeWebGLRenderer(canvas) {
     gl.enableVertexAttribArray(dNorm);
     gl.vertexAttribPointer(dNorm, 3, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
-
-    resize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+    // publish last: gates the draw, so VAO/buffers are fully ready first
+    d3Vao = vao;
+    d3VertexCount = mesh.vertexCount;
   }
 
   function resize(nw, nh) {
@@ -307,18 +324,21 @@ export function makeWebGLRenderer(canvas) {
     freeTarget(fbo.splash);
     freeTarget(fbo.enso);
     freeTarget(fbo.ink);
-    freeTarget(fbo.dragon);
-    fbo.glyph = makeTarget();
-    fbo.splash = makeTarget();
-    fbo.enso = makeTarget();
-    fbo.ink = makeTarget();
-    fbo.dragon = makeTarget(true); // needs depth for self-occlusion
+    fbo.glyph = makeTarget();      // full-res: crisp calligraphy SDF
+    fbo.splash = makeTarget(false, 2); // soft fbm wash -> half-res is invisible
+    fbo.enso = makeTarget(false);   // soft brush noise
+    fbo.ink = makeTarget();        // full-res: crisp dragon ribbon
+    glyphCacheKey = NaN;           // targets recreated -> force a glyph re-render
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
   function uploadSegs(segs) {
     const n = segs.length;
     if (n === 0) return 0;
+    // glyph segs are baked once in initScene and never mutate -> upload only when
+    // the array identity changes (scene reload), not every frame.
+    if (segs === segRef && n === segRows) return n;
+    segRef = segs;
     const need = n * 16;
     if (segBuf.length < need) segBuf = new Float32Array(need);
     for (let i = 0; i < n; i++) {
@@ -449,82 +469,92 @@ export function makeWebGLRenderer(canvas) {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  function frame(state) {
-    const aspect = state.aspect;
-    const nSeg = uploadSegs(state.glyph.segs); // shared by the glyph + splash passes
+  // ---------- Pass A: offscreen ink layers ----------
+  // Each renders into its own RGBA target. The premultiplied accumulation blend
+  // (set once in frame()) is shared across all four, so they must run together.
 
-    // ---------- Pass A: glyph ink -> FBO_glyph ----------
+  // glyph ink SDF -> fbo.glyph. Static once the trace ends (shader has no clock),
+  // so skip the redraw while the playhead is unchanged; the FBO keeps its content.
+  function glyphPass(state, nSeg) {
+    if (nSeg <= 0 || state.glyph.playhead === glyphCacheKey) return; // empty or cached
+    glyphCacheKey = state.glyph.playhead;
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.glyph.fb);
     gl.viewport(0, 0, w, h);
-    gl.disable(gl.DEPTH_TEST);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.enable(gl.BLEND);
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    if (nSeg > 0) {
-      gl.useProgram(progs.glyph);
-      gl.bindVertexArray(emptyVao);
-      gl.uniform2f(U.glyph.uResolution, w, h);
-      gl.uniform1f(U.glyph.uBaseRadius, state.glyph.baseRadius);
-      gl.uniform1f(U.glyph.uTime, state.glyph.playhead);
-      gl.uniform1i(U.glyph.uNSeg, nSeg);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, segTex);
-      gl.uniform1i(U.glyph.uSegTex, 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
+    gl.useProgram(progs.glyph);
+    gl.bindVertexArray(emptyVao);
+    gl.uniform2f(U.glyph.uResolution, w, h);
+    gl.uniform1f(U.glyph.uBaseRadius, state.glyph.baseRadius);
+    gl.uniform1f(U.glyph.uTime, state.glyph.playhead);
+    gl.uniform1i(U.glyph.uNSeg, nSeg);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, segTex);
+    gl.uniform1i(U.glyph.uSegTex, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
 
-    // ---------- Pass A: ink splash -> FBO_splash ----------
-    // procedural noise blob centred at the origin, grows + splatters over time
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.splash.fb);
-    gl.viewport(0, 0, w, h);
+  // procedural noise blob centred at the origin, grows + splatters over time.
+  // Half-res target; once grown it only drifts on uClock -> throttle the redraw.
+  function splashPass(state) {
+    const animating = !state.splash || state.splash.alpha <= 0 || state.splash.grow < 1;
+    if (!animating && frameCount % STATIC_THROTTLE !== 0) return; // keep cached drift
+    const t = fbo.splash;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb);
+    gl.viewport(0, 0, t.w, t.h);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    if (state.splash && state.splash.alpha > 0) {
-      gl.useProgram(progs.splash);
-      gl.bindVertexArray(emptyVao);
-      gl.uniform2f(U.splash.uResolution, w, h);
-      gl.uniform1f(U.splash.uGrow, state.splash.grow);
-      gl.uniform1f(U.splash.uSpread, state.splash.spread);
-      gl.uniform1f(U.splash.uAmount, state.splash.amount);
-      gl.uniform1f(U.splash.uClock, state.splash.time);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
+    if (!state.splash || state.splash.alpha <= 0) return;
+    gl.useProgram(progs.splash);
+    gl.bindVertexArray(emptyVao);
+    gl.uniform2f(U.splash.uResolution, t.w, t.h);
+    gl.uniform1f(U.splash.uGrow, state.splash.grow);
+    gl.uniform1f(U.splash.uSpread, state.splash.spread);
+    gl.uniform1f(U.splash.uAmount, state.splash.amount);
+    gl.uniform1f(U.splash.uClock, state.splash.time);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
 
-    // ---------- Pass A: enso circle -> FBO_enso ----------
-    // polar brush stroke swept by the dragon head (uSweep); straight-alpha output
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.enso.fb);
-    gl.viewport(0, 0, w, h);
+  // polar brush stroke swept by the dragon head (uSweep); straight-alpha output.
+  // Half-res target; once swept it only drifts on uClock -> throttle the redraw.
+  function ensoPass(state) {
+    const animating = !state.enso || state.enso.alpha <= 0 || state.enso.sweep < 1;
+    if (!animating && frameCount % STATIC_THROTTLE !== 0) return; // keep cached drift
+    const t = fbo.enso;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb);
+    gl.viewport(0, 0, t.w, t.h);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    if (state.enso && state.enso.alpha > 0 && state.enso.sweep > 0) {
-      gl.useProgram(progs.enso);
-      gl.bindVertexArray(emptyVao);
-      gl.uniform2f(U.enso.uResolution, w, h);
-      gl.uniform1f(U.enso.uRadius, state.enso.radius);
-      gl.uniform1f(U.enso.uSweep, state.enso.sweep);
-      gl.uniform1f(U.enso.uAngleStart, state.enso.angleStart);
-      gl.uniform1f(U.enso.uLineWidth, state.enso.lineWidth);
-      gl.uniform1f(U.enso.uClock, state.enso.time);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
+    if (!state.enso || state.enso.alpha <= 0 || state.enso.sweep <= 0) return;
+    gl.useProgram(progs.enso);
+    gl.bindVertexArray(emptyVao);
+    gl.uniform2f(U.enso.uResolution, t.w, t.h);
+    gl.uniform1f(U.enso.uRadius, state.enso.radius);
+    gl.uniform1f(U.enso.uSweep, state.enso.sweep);
+    gl.uniform1f(U.enso.uAngleStart, state.enso.angleStart);
+    gl.uniform1f(U.enso.uLineWidth, state.enso.lineWidth);
+    gl.uniform1f(U.enso.uClock, state.enso.time);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
 
-    // ---------- Pass A: ink dragon -> FBO_ink ----------
+  // ink-dragon body ribbon + head quad -> fbo.ink
+  function inkPass(state, aspect) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.ink.fb);
     gl.viewport(0, 0, w, h);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    if (state.opacity.inkDragon > 0) {
-      const d = state.inkDragon;
-      const ws = d.widthScale ?? 1; // body stroke width grows with the dragon
-      gl.useProgram(progs.stroke);
-      drawStroke(d.body, 0.03 * ws, aspect, 1.0, BODY_PARAMS, false);
-      if ((d.head.alpha ?? 1) > 0) drawHead(d.head, aspect, d.head.alpha ?? 1); // head hidden early in the trace
-    }
+    if (state.opacity.inkDragon <= 0) return;
+    const d = state.inkDragon;
+    const ws = d.widthScale ?? 1; // body stroke width grows with the dragon
+    gl.useProgram(progs.stroke);
+    drawStroke(d.body, 0.03 * ws, aspect, 1.0, BODY_PARAMS, false);
+    if ((d.head.alpha ?? 1) > 0) drawHead(d.head, aspect, d.head.alpha ?? 1); // head hidden early in the trace
+  }
 
-    // ---------- Pass B: composite to screen ----------
-    // glyph + ink-dragon are textured quads on the z=0 plane, drawn through the
-    // SAME orbit camera as the 3D dragon, so they tilt with it (no billboard).
+  // ---------- Pass B: composite the ink layers to screen ----------
+  // glyph + ink-dragon are textured quads on the z=0 plane, drawn through the
+  // SAME orbit camera as the 3D dragon, so they tilt with it (no billboard).
+  function compositePass(state, aspect) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, w, h);
     gl.disable(gl.DEPTH_TEST);
@@ -537,7 +567,6 @@ export function makeWebGLRenderer(canvas) {
 
     // ground grid (behind the ink layers, over the paper); radial wipe-in
     if (state.grid && state.grid.reveal > 0) drawGrid(state.grid);
-
     // ink splash wash sits between the grid and the glyph, bleeding under it
     if (state.splash && state.splash.alpha > 0)
       compositeQuad(fbo.splash.tex, state.splash.alpha, -0.006, vp, aspect);
@@ -546,58 +575,53 @@ export function makeWebGLRenderer(canvas) {
       compositeQuad(fbo.enso.tex, state.enso.alpha, -0.004, vp, aspect);
     compositeQuad(fbo.glyph.tex, state.opacity.glyph, -0.002, vp, aspect);
     compositeQuad(fbo.ink.tex, state.opacity.inkDragon, 0.0, vp, aspect);
+  }
 
-    // ---------- 3D dragon -> its own target, then composite to screen ----------
-    if (state.opacity.dragon3d > 0 && d3VertexCount > 0) {
-      const d3 = state.dragon3d;
-      // re-upload whenever the frame buffer changes (scene swaps the transition
-      // buffer for the pure-loop3 ring once the body leaves the circles).
-      if (d3.frames && d3.frames !== d3FramesRef) {
-        gl.bindTexture(gl.TEXTURE_2D, d3FramesTex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, 4, d3.frameCount, 0, gl.RGBA, gl.FLOAT, d3.frames, 0);
-        d3FramesRef = d3.frames;
-      }
-      // draw the dragon into its offscreen target (transparent, own depth)
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.dragon.fb);
-      gl.viewport(0, 0, w, h);
-      gl.clearColor(0, 0, 0, 0);
-      gl.depthMask(true);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      gl.enable(gl.DEPTH_TEST);
-      gl.depthFunc(gl.LEQUAL);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      gl.useProgram(progs.dragon3d);
-      gl.bindVertexArray(d3Vao);
-      gl.activeTexture(gl.TEXTURE0);
+  // ---------- 3D dragon, drawn straight onto the screen ----------
+  // The screen already holds opaque paper + ink (compositePass), and its depth
+  // buffer was cleared there, so we depth-test the dragon for self-occlusion and
+  // alpha-blend it over. Straight SRC_ALPHA over an opaque background gives the
+  // exact pixels the old transparent-target + premultiplied blit did, and the
+  // default framebuffer's MSAA antialiases the dragon edges for free.
+  function dragonPass(state) {
+    if (state.opacity.dragon3d <= 0 || d3VertexCount <= 0) return;
+    const d3 = state.dragon3d;
+    // re-upload whenever the frame buffer changes (scene swaps the transition
+    // buffer for the pure-loop3 ring once the body leaves the circles).
+    if (d3.frames && d3.frames !== d3FramesRef) {
       gl.bindTexture(gl.TEXTURE_2D, d3FramesTex);
-      gl.uniform1i(U.dragon3d.uFrames, 0);
-      gl.uniform1f(U.dragon3d.uN, d3.frameCount);
-      gl.uniform1f(U.dragon3d.uPathLen, d3.pathLen);
-      gl.uniform1f(U.dragon3d.uBodyLen, d3.bodyLen);
-      gl.uniform1f(U.dragon3d.uHeadOffset, d3.headOffset);
-      gl.uniform1f(U.dragon3d.uGirth, d3.girth);
-      gl.uniform1f(U.dragon3d.uOpacity, state.opacity.dragon3d);
-      gl.uniform1f(U.dragon3d.uTime, d3.time);
-      gl.uniformMatrix4fv(U.dragon3d.uViewProj, false, d3.viewProj);
-      gl.drawArrays(gl.TRIANGLES, 0, d3VertexCount);
-      gl.disable(gl.DEPTH_TEST);
-
-      // composite the dragon target to screen (premultiplied)
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(0, 0, w, h);
-      gl.depthMask(false);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // premultiplied dragon over
-      gl.bindVertexArray(emptyVao);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, fbo.dragon.tex);
-      gl.useProgram(progs.blit);
-      gl.uniform1i(U.blit.uTex, 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, 4, d3.frameCount, 0, gl.RGBA, gl.FLOAT, d3.frames, 0);
+      d3FramesRef = d3.frames;
     }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, w, h);
+    gl.depthMask(true);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.useProgram(progs.dragon3d);
+    gl.bindVertexArray(d3Vao);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, d3FramesTex);
+    gl.uniform1i(U.dragon3d.uFrames, 0);
+    gl.uniform1f(U.dragon3d.uN, d3.frameCount);
+    gl.uniform1f(U.dragon3d.uPathLen, d3.pathLen);
+    gl.uniform1f(U.dragon3d.uBodyLen, d3.bodyLen);
+    gl.uniform1f(U.dragon3d.uHeadOffset, d3.headOffset);
+    gl.uniform1f(U.dragon3d.uGirth, d3.girth);
+    gl.uniform1f(U.dragon3d.uOpacity, state.opacity.dragon3d);
+    gl.uniform1f(U.dragon3d.uTime, d3.time);
+    gl.uniformMatrix4fv(U.dragon3d.uViewProj, false, d3.viewProj);
+    gl.drawArrays(gl.TRIANGLES, 0, d3VertexCount);
+    gl.disable(gl.DEPTH_TEST);
+    gl.depthMask(false);
+  }
 
-    // ---------- debug path overlay ----------
-    if (state.debug && state.debug.show) {
+  // ---------- debug overlays (path polylines + single-buffer inspect) ----------
+  function debugPass(state, aspect) {
+    if (!state.debug) return;
+    if (state.debug.show) {
       gl.disable(gl.DEPTH_TEST);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       const vp = state.dragon3d.viewProj;
@@ -621,10 +645,9 @@ export function makeWebGLRenderer(canvas) {
         drawPoints(state.debug.poolRight, true, vp, aspect, [1.0, 0.45, 0.1, 1.0]);
       }
     }
-
-    // ---------- debug: inspect a single offscreen buffer fullscreen ----------
-    if (state.debug && state.debug.buffer && state.debug.buffer !== "none") {
-      const map = { dragon: fbo.dragon, glyph: fbo.glyph, splash: fbo.splash, enso: fbo.enso, ink: fbo.ink };
+    // inspect a single offscreen buffer fullscreen
+    if (state.debug.buffer && state.debug.buffer !== "none") {
+      const map = { glyph: fbo.glyph, splash: fbo.splash, enso: fbo.enso, ink: fbo.ink };
       const tgt = map[state.debug.buffer];
       if (tgt) {
         gl.disable(gl.BLEND);
@@ -637,6 +660,26 @@ export function makeWebGLRenderer(canvas) {
         gl.enable(gl.BLEND);
       }
     }
+  }
+
+  function frame(state) {
+    frameCount++;
+    const aspect = state.aspect;
+    const nSeg = uploadSegs(state.glyph.segs); // shared by the glyph pass
+
+    // Pass A: offscreen ink layers, premultiplied accumulation blend (shared)
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    glyphPass(state, nSeg);
+    splashPass(state);
+    ensoPass(state);
+    inkPass(state, aspect);
+
+    // Pass B: composite ink layers, then the 3D dragon, then debug overlays
+    compositePass(state, aspect);
+    dragonPass(state);
+    debugPass(state, aspect);
 
     gl.bindVertexArray(null);
   }
@@ -644,7 +687,7 @@ export function makeWebGLRenderer(canvas) {
   function destroy() {
     if (!gl) return;
     for (const k in progs) gl.deleteProgram(progs[k]);
-    freeTarget(fbo.glyph); freeTarget(fbo.splash); freeTarget(fbo.enso); freeTarget(fbo.ink); freeTarget(fbo.dragon);
+    freeTarget(fbo.glyph); freeTarget(fbo.splash); freeTarget(fbo.enso); freeTarget(fbo.ink);
     gl.deleteTexture(segTex);
     gl.deleteTexture(d3FramesTex);
     gl.deleteBuffer(posBuf); gl.deleteBuffer(uvBuf); gl.deleteBuffer(idxBuf);

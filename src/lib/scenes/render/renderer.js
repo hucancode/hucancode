@@ -17,29 +17,42 @@
 //   destroy(): void               release GPU resources
 // }
 //
-// FrameState shape (all plain data, no GPU handles):
+// FrameState shape (all plain data, no GPU handles). Source of truth is
+// scenes/paint.js buildState(); keep this in sync with it.
 //
 // {
 //   aspect: number,                       // canvas width / height
-//   opacity: { glyph, inkDragon, dragon3d },
+//   opacity: { glyph, inkDragon, dragon3d }, // per-layer composite opacity
+//   grid: {                               // ground grid (radial wipe-in)
+//     opacity, reveal, revealMinor,       // strength + major/minor reveal 0..1
+//     viewProj: Float32Array,             // 16, column-major (shared orbit cam)
+//     ext, z, step, minorDiv,             // plane extent / height / cell sizes
+//   },
 //   glyph: {
 //     segs: Seg[],                        // from brush/bake.js bakeSegs()
 //     playhead: number,                   // reveal time in seconds
 //     baseRadius: number,
 //   },
+//   splash: { alpha, grow, spread, amount, time }, // procedural ink-wash blob
+//   enso: { alpha, sweep, radius, lineWidth, angleStart, time }, // swept ring
 //   inkDragon: {
 //     body: {x,y}[],                      // verlet chain, tail -> tip
-//     whiskerL: {x,y}[],                  // anchor -> free tip
-//     whiskerR: {x,y}[],
-//     head: { pos:{x,y}, dir:{x,y}, size }, // head quad frame
+//     head: { pos:{x,y}, dir:{x,y}, size, alpha }, // head quad frame
+//     widthScale: number,                 // body stroke width multiplier
 //   },
 //   dragon3d: {
 //     frames: Float32Array,               // N * 16, column-major mat4 path frames
 //     frameCount: number,                 // N
 //     pathLen: number,                    // total arc length of the path
 //     bodyLen: number,                    // mesh length in path units
+//     headOffset: number,                 // head arc offset into the frame buffer
+//     girth: number,                      // cross-section scale
 //     time: number,                       // animation clock (flies forever)
 //     viewProj: Float32Array,             // 16, column-major
+//   },
+//   debug: {                              // only populated when debug flags set
+//     show: boolean, buffer: string,      // overlay on / which FBO to inspect
+//     path2d, path3d, poolLeft, poolRight, // sampled polylines + waypoints
 //   },
 // }
 
