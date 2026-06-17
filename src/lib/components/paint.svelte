@@ -24,11 +24,12 @@
   let dragging = false, lastX = 0;
 
   function onPointerDown(e) {
+    if (e.pointerType !== "mouse") return; // touch -> let the page scroll/scrub
     dragging = true; lastX = e.clientX;
     canvasEl.setPointerCapture?.(e.pointerId);
   }
   function onPointerMove(e) {
-    if (!dragging) return;
+    if (!dragging || e.pointerType !== "mouse") return;
     orbitYaw = orbitYaw + (e.clientX - lastX) * 0.01;
     lastX = e.clientX;
   }
@@ -116,7 +117,7 @@
     width: 100%;
     aspect-ratio: 16 / 9;
     display: block;
-    touch-action: none;
+    touch-action: pan-y;
     cursor: grab;
   }
   canvas.fill {
