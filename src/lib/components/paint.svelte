@@ -8,7 +8,7 @@
   //   t        scene time, bindable (parent maps scroll / autoplay onto it)
   //   playing  when true the component auto-advances t each frame
   //   fill     stretch to the parent's height instead of a 16/9 box
-  let { t = $bindable(0), playing = $bindable(false), debug = $bindable(false), fill = false } = $props();
+  let { t = $bindable(0), playing = $bindable(false), debug = {}, fill = false } = $props();
 
   let canvasEl;
   let renderer = null;

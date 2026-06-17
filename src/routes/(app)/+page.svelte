@@ -18,7 +18,9 @@
   let playing = $state(false);
   let userPaused = $state(false); // explicit pause -> don't auto-resume at the footer
   let showDebug = $state(false); // ?debug=true -> reveal debug widgets
-  let debug = $state(false); // scene path overlay toggle
+  let debugPath2d = $state(false);
+  let debugPath3d = $state(false);
+  const debug = $derived({ path2d: debugPath2d, path3d: debugPath3d });
   let lastSyncY = -1; // last scroll position WE set; onScroll ignores a match
   const SYNC_TOL = 3; // px slack (browser rounds/clamps scrollTo)
   // one fixed-size coach mark per icon -> never scales with the row width
@@ -132,9 +134,8 @@
         <Timeline {progress} onseek={seek} />
         {#if showDebug}
           <div class="debug">
-            <input type="range" min="0" max={TIMELINE_END} step="0.01" value={t} oninput={(e) => seek(+e.target.value / TIMELINE_END)} />
-            <span>{t.toFixed(2)}s</span>
-            <label><input type="checkbox" bind:checked={debug} /> path</label>
+            <label><input type="checkbox" bind:checked={debugPath2d} /> path 2d</label>
+            <label><input type="checkbox" bind:checked={debugPath3d} /> path 3d</label>
           </div>
         {/if}
       </div>
