@@ -1,5 +1,8 @@
 :root,
 :host {
+  --paper: #f2ecbc;
+  --ink: #16161D;
+  --link: #624c83;
   --color-neutral-50: rgb(236, 254, 252);
   --color-neutral-100: rgb(240, 243, 254);
   --color-neutral-200: rgb(214, 220, 245);
@@ -27,7 +30,9 @@
 @media (prefers-color-scheme: dark) {
   :root,
   :host {
-    --color-neutral-950: rgb(215, 224, 254);
+    --paper: #181616;
+    --ink: #c5c9c5;
+    --link: #8ba4b0;
     --color-neutral-950: rgb(215, 224, 254);
     --color-neutral-900: rgb(166, 173, 200);
     --color-neutral-800: rgb(147, 153, 178);
@@ -72,8 +77,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  background: var(--color-neutral-50);
-  color: var(--color-neutral-950);
+  background: var(--paper);
+  color: var(--ink);
   padding-top: 1rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -109,10 +114,6 @@ nav:has(> :only-child) {
 
 video {
   max-width: 100%;
-}
-
-.relative {
-  position: relative;
 }
 
 .container {
@@ -157,11 +158,12 @@ hr {
 
 a {
   text-decoration: none;
-  color: var(--color-primary-700);
+  color: var(--link);
 }
 
 a:hover {
-  color: var(--color-primary-800);
+  color: var(--link);
+  opacity: 0.8;
 }
 
 h1 {
@@ -187,7 +189,7 @@ h2 {
 
 h3 {
   font-size: medium;
-  font-weight: var(--sl-font-weight-semibold);
+  font-weight: 600;
   line-height: 1.5;
   min-height: 1.5em;
 }
@@ -288,8 +290,8 @@ small {
 }
 :is(button, a[role="button"])[disabled="true"] {
   pointer-events: none;
-  color: var(--color-neutral-800);
-  background-color: var(--color-primary-50);
+  color: color-mix(in srgb, var(--ink) 50%, transparent);
+  background-color: color-mix(in srgb, var(--ink) 8%, var(--paper));
 }
 input[type="radio"] {
   display: none;
@@ -303,7 +305,7 @@ div[role="group"].square {
     font-size: medium;
     border-style: solid;
     border-width: 0.075em;
-    border-color: var(--color-neutral-200);
+    border-color: color-mix(in srgb, var(--ink) 20%, transparent);
     display: flex;
     gap: 0.5em;
     align-items: center;
@@ -317,33 +319,116 @@ div[role="group"].square {
   }
   & label:active:has(input[type="radio"]),
   & :is(button, a[role="button"]):active {
-    color: var(--color-primary-900);
+    color: var(--link);
   }
   & :is(button, a[role="button"]) svg {
     font-size: larger;
   }
   & label:has(input[type="radio"]:checked) {
-    background-color: var(--color-primary-50);
+    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
   }
   & label:hover:has(input[type="radio"]),
   & :is(button, a[role="button"]):hover {
-    background-color: var(--color-primary-50);
-    border-color: var(--color-primary-200);
-    color: var(--color-primary-700);
+    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
+    border-color: color-mix(in srgb, var(--link) 40%, transparent);
+    color: var(--link);
+    opacity: 1;
   }
   & :is(button, a[role="button"]) {
-    color: var(--color-primary-700);
-    background-color: var(--color-neutral-50);
+    color: var(--link);
+    background-color: var(--paper);
   }
   & :is(button, a[role="button"])[disabled="true"] {
     pointer-events: none;
-    color: var(--color-neutral-800);
-    background-color: var(--color-primary-50);
+    color: color-mix(in srgb, var(--ink) 50%, transparent);
+    background-color: color-mix(in srgb, var(--ink) 8%, var(--paper));
   }
 }
 :is(h1, h2, h3, p, a, small, label, button) svg {
   height: 1.5em;
 }
+
+fieldset {
+  border: 1px solid rgba(128,128,128,0.3);
+  border-radius: 0.35rem;
+  padding: 0.5rem 0.75rem 0.6rem;
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+legend {
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+/* fixed back button on individual canvas pages */
+a.back {
+  position: fixed;
+  top: 1rem;
+  /* hug main's left edge (max-width 1024, centered), clamp to 1rem when narrow */
+  left: calc(max(0px, (100vw - 1024px) / 2) + 1rem);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  color: var(--link);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--paper) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  padding: 0.25rem;
+}
+a.back:hover { opacity: 0.7; }
+a.back svg { width: 1.5rem; height: 1.5rem; }
+
+/* canvas/scene page layout */
+main {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1024px;
+  margin-inline: auto;
+  padding: 1rem;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  main:has(> aside) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  main:has(> aside) > figure {
+    flex: 3 1 0;   /* canvas : controls width ratio = 3 : 1 */
+    width: auto;
+  }
+  main:has(> aside) > aside { flex: 1 1 0; min-width: 16rem; }
+}
+main > figure {
+  margin: 0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;   /* canvas keeps shape, never stretches to controls */
+  overflow: hidden;
+}
+main > aside {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* control widgets inside fieldsets */
+fieldset label {
+  display: grid;
+  grid-template-columns: 6rem 1fr 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+fieldset label:has(input[type="checkbox"]) {
+  grid-template-columns: auto 1fr;
+}
+input[type="range"] { width: 100%; }
+.buttons { display: flex; gap: 0.5rem; }
 
 .container,
 .container-sm,

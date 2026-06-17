@@ -27,21 +27,31 @@ let previousAutoRotation = false;
 let isWaitingForResource = false;
 let waitingScene = null;
 
-const DRAGON_RANDOM_PATH = false;
-const DRAGON_SPEED_PERCENT_PER_FRAME = 0.03;
-async function makeDragon() {
-  let model = await loadModelStatic("dragon-low.glb");
-  dragon = new Flow(model);
+// Tunable, educational parameters driven by the playground page.
+const config = {
+  randomPath: false, // scatter points vs a tidy orbit
+  radius: 34, // orbit radius
+  elevation: 8, // how far the orbit rises/dips
+  movingCycle: 5, // loops around the disc per lap
+  elevationCycle: 11, // up/down oscillations per lap
+  dragonSpeed: 0.0003, // fraction of curve per frame
+  taijiSpin: 0.01, // disc radians per frame
+  cloudSpeed: 4, // background animation rate
+};
+
+function setConfig(patch) {
+  Object.assign(config, patch);
+}
+
+// build the control points for the dragon's flight path from `config`
+function buildDragonPoints() {
   const points = [];
-  if (DRAGON_RANDOM_PATH) {
-    const MIN_X = -40;
-    const VAR_X = 80;
-    const MIN_Y = -5;
-    const VAR_Y = 10;
-    const MIN_Z = -40;
-    const VAR_Z = 80;
+  if (config.randomPath) {
+    const MIN_X = -40, VAR_X = 80;
+    const MIN_Y = -5, VAR_Y = 10;
+    const MIN_Z = -40, VAR_Z = 80;
     const SAMPLE_COUNT = 20;
-    for (var i = 0; i < SAMPLE_COUNT; i++) {
+    for (let i = 0; i < SAMPLE_COUNT; i++) {
       points.push(
         new Vector3(
           Math.random() * VAR_X + MIN_X,
@@ -51,21 +61,31 @@ async function makeDragon() {
       );
     }
   } else {
-    const RADIUS = 34;
     const SAMPLE_COUNT = 60;
-    const ELEVATION = 8;
-    const ELEVATION_CYCLE = 11;
-    const MOVING_CYCLE = 5;
-    for (var i = 0; i < SAMPLE_COUNT; i++) {
-      const theta = (i * Math.PI * 2 * MOVING_CYCLE) / SAMPLE_COUNT;
-      const alpha = (i * Math.PI * 2 * ELEVATION_CYCLE) / SAMPLE_COUNT;
-      const x = RADIUS * Math.cos(theta);
-      const z = RADIUS * Math.sin(theta);
-      const y = Math.sin(alpha) * ELEVATION;
+    for (let i = 0; i < SAMPLE_COUNT; i++) {
+      const theta = (i * Math.PI * 2 * config.movingCycle) / SAMPLE_COUNT;
+      const alpha = (i * Math.PI * 2 * config.elevationCycle) / SAMPLE_COUNT;
+      const x = config.radius * Math.cos(theta);
+      const z = config.radius * Math.sin(theta);
+      const y = Math.sin(alpha) * config.elevation;
       points.push(new Vector3(x, y, z));
     }
   }
-  curve = new CatmullRomCurve3(points);
+  return points;
+}
+
+// re-route the existing dragon onto a freshly built path (live, no reload)
+function rebuildPath() {
+  if (!dragon) return;
+  curve = new CatmullRomCurve3(buildDragonPoints());
+  curve.curveType = "centripetal";
+  curve.closed = true;
+  dragon.updateCurve(0, curve);
+}
+
+async function makeDragon() {
+  let model = await loadModelStatic("dragon-low.glb");
+  curve = new CatmullRomCurve3(buildDragonPoints());
   curve.curveType = "centripetal";
   curve.closed = true;
   dragon = new Flow(model);
@@ -192,12 +212,7 @@ function animateDragon(scene) {
     ease: eases.outExpo,
     duration: 500,
   });
-  utils.remove(dragon);
-  animate(dragon, {
-    speed: DRAGON_SPEED_PERCENT_PER_FRAME * 0.01,
-    ease: eases.linear(),
-    duration: 1000,
-  });
+  // dragon flight speed is driven live from config in update()
 }
 function enter(scene, _camera, controls) {
   if (controls) {
@@ -211,11 +226,22 @@ function enter(scene, _camera, controls) {
 function update() {
   time += clock.getDelta();
   if (background) {
-    background.material.uniforms.time.value = time * 4;
+    background.material.uniforms.time.value = time * config.cloudSpeed;
+  }
+  if (taiji) {
+    taiji.rotation.z += config.taijiSpin;
   }
   if (dragon) {
+    dragon.speed = config.dragonSpeed;
     dragon.moveAlongCurve(dragon.speed);
   }
+}
+
+// live-set the yin/yang colors of the taiji disc
+function setColors(c1, c2) {
+  if (!taiji) return;
+  taiji.material.uniforms.color1.value.set(c1);
+  taiji.material.uniforms.color2.value.set(c2);
 }
 
 function leave(scene, _camera, controls) {
@@ -323,4 +349,14 @@ function destroy() {
   }
 }
 
-export { init, enter, leave, update, destroy };
+export {
+  init,
+  enter,
+  leave,
+  update,
+  destroy,
+  setConfig,
+  rebuildPath,
+  setColors,
+  config,
+};

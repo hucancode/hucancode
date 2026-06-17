@@ -23,8 +23,65 @@ let dynamicLight, ambientLight;
 const CANVAS_ID = "dragon";
 const ASPECT_RATIO = 0.75;
 
+// Tunable, educational parameters. The playground page drives these.
+const config = {
+  preset: "random", // random | circle | figure8 | helix | wave
+  points: 20, // control points sampled into the Catmull-Rom curve
+  spread: 1, // overall scale of the path
+  speed: 0.0008, // fraction of the curve advanced per frame
+  showLights: true, // animated colored lights
+};
+
+function setConfig(patch) {
+  Object.assign(config, patch);
+}
+
 function getCurrentDragonCount() {
   return dragons.length;
+}
+
+// Path presets: each returns an array of {x,y,z} control points. Random
+// scatters points in a box (a different flight every time); the others trace
+// recognisable analytic curves so the effect of the maths is visible.
+function buildPath(preset, n, s) {
+  const pts = [];
+  if (preset === "circle") {
+    const R = 70 * s;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      pts.push({ x: Math.cos(a) * R, y: Math.sin(a * 2) * 12 * s, z: Math.sin(a) * R });
+    }
+  } else if (preset === "figure8") {
+    const R = 70 * s;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      pts.push({ x: Math.sin(a) * R, y: Math.sin(a * 3) * 16 * s, z: Math.sin(a * 2) * R * 0.5 });
+    }
+  } else if (preset === "helix") {
+    const R = 55 * s;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 * 3;
+      pts.push({ x: Math.cos(a) * R, y: (i / n - 0.5) * 120 * s, z: Math.sin(a) * R });
+    }
+  } else if (preset === "wave") {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      pts.push({ x: (i / n - 0.5) * 160 * s, y: Math.sin(a * 3) * 30 * s, z: Math.cos(a * 2) * 40 * s });
+    }
+  } else {
+    // random
+    const MIN_X = -40 * s, VAR_X = 80 * s;
+    const MIN_Y = -40 * s, VAR_Y = 80 * s;
+    const MIN_Z = -80 * s, VAR_Z = 160 * s;
+    for (let i = 0; i < n; i++) {
+      pts.push({
+        x: Math.random() * VAR_X + MIN_X,
+        y: Math.random() * VAR_Y + MIN_Y,
+        z: Math.random() * VAR_Z + MIN_Z,
+      });
+    }
+  }
+  return pts;
 }
 
 async function buildScene() {
@@ -75,19 +132,7 @@ function makeDragon() {
   if (!model) {
     return;
   }
-  const MIN_X = -40;
-  const VAR_X = 80;
-  const MIN_Y = -40;
-  const VAR_Y = 80;
-  const MIN_Z = -80;
-  const VAR_Z = 160;
-  const points = Array.from({ length: 20 }, (_) => {
-    return {
-      x: Math.random() * VAR_X + MIN_X,
-      y: Math.random() * VAR_Y + MIN_Y,
-      z: Math.random() * VAR_Z + MIN_Z,
-    };
-  });
+  const points = buildPath(config.preset, config.points, config.spread);
   let curve = new CatmullRomCurve3(
     points.map((e) => new Vector3(e.x, e.y, e.z)),
   );
@@ -98,6 +143,14 @@ function makeDragon() {
   scene.add(dragon.object3D);
   dragons.push(dragon);
   curves.push(curve);
+}
+
+// Rebuild every dragon onto a freshly generated path (used when a knob that
+// changes the curve shape moves, or the user hits "New path").
+function regenerate() {
+  const count = Math.max(1, dragons.length);
+  clearDragon();
+  for (let i = 0; i < count; i++) makeDragon();
 }
 
 async function init() {
@@ -148,9 +201,9 @@ function render() {
   time += clock.getDelta();
   for (let i = 0; i < dragons.length; i++) {
     // Remove redundant updateCurve call - curve doesn't change
-    dragons[i].moveAlongCurve(0.0008);
+    dragons[i].moveAlongCurve(config.speed);
   }
-  if (dynamicLight) {
+  if (dynamicLight && config.showLights) {
     // Cache trig calculations
     const t07 = time * 0.7;
     const t05 = time * 0.5;
@@ -186,4 +239,7 @@ export {
   getCurrentDragonCount,
   clearDragon,
   makeDragon,
+  regenerate,
+  setConfig,
+  config,
 };

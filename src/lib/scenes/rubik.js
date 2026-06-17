@@ -69,6 +69,27 @@ const EASING_FUNCTIONS = [
 ];
 let cubeNum = CUBE_NUM_DEFAULT;
 
+// Tunable, educational parameters driven by the playground page.
+const config = {
+  speed: 1, // multiplies how fast each face turns
+  autoplay: true, // keep making random moves on its own
+  randomEase: true, // random easing per move (vs a plain ease)
+};
+let busy = false; // a face is currently turning
+
+function setConfig(patch) {
+  Object.assign(config, patch);
+  if (config.autoplay) resume();
+}
+// resume the endless shuffle if it idled while paused
+function resume() {
+  if (!busy && config.autoplay) startMoveRandom();
+}
+// perform exactly one random move (useful while paused)
+function step() {
+  if (!busy) startMoveRandom();
+}
+
 function setCubeSize(size) {
   cubeNum = size;
 }
@@ -226,6 +247,7 @@ function leave(scene) {
 }
 
 function startMoveRandom() {
+  if (busy) return;
   const face = Math.floor(Math.random() * 5);
   const depth = Math.floor(Math.random() * (cubeNum - 1)) + 1;
   const magnitude =
@@ -256,25 +278,30 @@ function startMove(face, depth, magnitude) {
   } else if (face == FACE_FRONT || face == FACE_BACK) {
     targetZ += (Math.PI / 2) * magnitude;
   }
-  const easing =
-    EASING_FUNCTIONS[Math.floor(Math.random() * EASING_FUNCTIONS.length)];
+  const easing = config.randomEase
+    ? EASING_FUNCTIONS[Math.floor(Math.random() * EASING_FUNCTIONS.length)]
+    : eases.inOutCubic;
+  const spd = config.speed || 1;
+  busy = true;
   animate(pivot.rotation, {
     x: targetX,
     y: targetY,
     z: targetZ,
-    duration: 600 * Math.abs(magnitude),
+    duration: (600 * Math.abs(magnitude)) / spd,
     round: 100,
-    delay: 200,
+    delay: 200 / spd,
     ease: easing,
     onComplete: () => {
       transferCubes();
-      startMoveRandom();
+      busy = false;
+      if (config.autoplay) startMoveRandom();
     },
   });
 }
 
 function destroy() {
   // Clean up all animations
+  busy = false;
   utils.remove(pivot.rotation);
   const targets = cubes.map((e) => e.position);
   utils.remove(targets);
@@ -288,4 +315,16 @@ function destroy() {
   pivot.removeFromParent();
 }
 
-export { init, scroll, enter, leave, update, destroy, setCubeSize };
+export {
+  init,
+  scroll,
+  enter,
+  leave,
+  update,
+  destroy,
+  setCubeSize,
+  setConfig,
+  resume,
+  step,
+  config,
+};
