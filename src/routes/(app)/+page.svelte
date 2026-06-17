@@ -1,7 +1,5 @@
 <script>
   import { browser } from "$app/environment";
-  import { onMount } from "svelte";
-  import rough from "roughjs";
   import Scene from "$lib/components/paint.svelte";
   import Timeline from "$lib/components/timeline.svelte";
   import { TIMELINE_END } from "$lib/scenes/paint.js";
@@ -38,70 +36,6 @@
   let controlsEl = $state(null); // play + seek bar it points at
 
   const progress = $derived(Math.min(1, t / TIMELINE_END));
-
-  // rough SVG underline for the footer link
-  let footerLinkEl = $state(null);
-  let roughSvgEl = $state(null);
-  let _roughPaths = [];
-  let _underlineShown = false;
-
-  function drawRoughUnderline(seed) {
-    if (!roughSvgEl || !footerLinkEl) return [];
-    while (roughSvgEl.firstChild) roughSvgEl.removeChild(roughSvgEl.firstChild);
-    const w = footerLinkEl.offsetWidth;
-    if (!w) return [];
-    roughSvgEl.setAttribute("width", w);
-    const rc = rough.svg(roughSvgEl);
-    const g = rc.line(1, 3, w - 1, 3, {
-      roughness: 1.8,
-      stroke: "currentColor",
-      strokeWidth: 1.8,
-      disableMultiStroke: false,
-      seed: seed ?? 42,
-    });
-    roughSvgEl.appendChild(g);
-    const paths = [...roughSvgEl.querySelectorAll("path")];
-    paths.forEach(p => {
-      const len = p.getTotalLength();
-      p.setAttribute("stroke-dasharray", len);
-      p.setAttribute("stroke-dashoffset", len);
-    });
-    return paths;
-  }
-
-  function animateUnderlineIn(paths, delay = 0) {
-    paths.forEach((p, i) => {
-      p.style.transition = `stroke-dashoffset 0.55s ease ${delay + i * 70}ms`;
-      p.style.strokeDashoffset = "0";
-    });
-  }
-
-  function animateUnderlineOut(paths) {
-    paths.forEach(p => {
-      const len = p.getTotalLength();
-      p.style.transition = "stroke-dashoffset 0.35s ease";
-      p.style.strokeDashoffset = String(len);
-    });
-  }
-
-  $effect(() => {
-    if (!browser || _underlineShown || progress < 1) return;
-    _underlineShown = true;
-    _roughPaths = drawRoughUnderline(42);
-    animateUnderlineIn(_roughPaths, 200);
-  });
-
-  function onFooterHover() {
-    _roughPaths = drawRoughUnderline(Math.random() * 9999 | 0);
-    animateUnderlineIn(_roughPaths);
-  }
-  function onFooterLeave() {
-    animateUnderlineOut(_roughPaths);
-  }
-
-  onMount(() => {
-    _roughPaths = drawRoughUnderline(42);
-  });
 
   function scrollTo(px) {
     lastSyncY = Math.round(px);
@@ -249,11 +183,7 @@
 </button>
 
 <footer class:show={progress >= 1}>
-  <span class="rough-link" bind:this={footerLinkEl}
-        onmouseenter={onFooterHover} onmouseleave={onFooterLeave}>
-    <a href="/playgrounds">More like this...</a>
-    <svg class="rough-under" bind:this={roughSvgEl} height="8" aria-hidden="true"></svg>
-  </span>
+  <a href="/playgrounds">More like this...</a>
 </footer>
 
 <style>
@@ -395,21 +325,12 @@
   footer.show {
     opacity: 1;
   }
-  .rough-link {
-    pointer-events: auto;
-    position: relative;
-    display: inline-block;
-  }
   footer a {
     font-family: 'Virgil';
-    text-decoration: none;
-  }
-  .rough-under {
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    pointer-events: none;
-    overflow: visible;
+    text-decoration: underline wavy;
+    text-underline-offset: 4px;
+    color: var(--link);
+    font-size: 1.5rem;
   }
   .scroll-hint {
     position: fixed;
@@ -444,10 +365,5 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .scroll-hint.show { animation: none; }
-  }
-  footer a {
-    color: var(--link);
-    text-decoration: none;
-    font-size: 1.1rem;
   }
 </style>

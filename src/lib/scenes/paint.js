@@ -51,9 +51,8 @@ const GLYPH_TRACE_DUR = 3.5;  // 1.5 = head traces the whole glyph, leading the 
 // 2D dragon glyph-trace exit: it peels off the glyph onto the enso at the END of
 // this baked-segment index (0-based into glyphSegs). null / out-of-range -> the
 // final segment (trace the whole symbol; the original behaviour). Earlier indices
-// exit sooner and hold the glyph reveal partially drawn at that point. Overridable
-// per-load via initScene({ exitSeg }).
-const GLYPH_EXIT_SEG = null;
+// exit sooner and hold the glyph reveal partially drawn at that point.
+const GLYPH_EXIT_SEG = 45;
 const ENSO_LEADIN_DUR = 0.6;  // branch off the glyph end onto the enso (no snap)
 const ENSO_R = 0.4;           // enso radius (world units; <1 keeps it on-screen)
 const ENSO_WIDTH = 0.05;      // enso brush thickness (polar line width in the shader)
@@ -826,7 +825,7 @@ const SPLASH_FADE_IN = 1.0;        // seconds for the wash to fade in at the sta
 const GLYPH_SCALE = 0.36;
 const GLYPH_RADIUS = 0.06 * GLYPH_SCALE;
 
-export function initScene(opts = {}) {
+export function initScene() {
   const sym = longSymbol();
   const baked = bakeSegs(sym, { connect: { enabled: true, thread: 0.18 }, timing: { speed: 1.0 } });
   // scale glyph geometry about origin (timing/pressure fields unchanged)
@@ -841,8 +840,7 @@ export function initScene(opts = {}) {
   // resolve the glyph-trace exit playhead from the configured segment index:
   // the head peels onto the enso at the END of that baked segment.
   const lastSeg = glyphSegs.length - 1;
-  const cfgExit = opts.exitSeg ?? GLYPH_EXIT_SEG;
-  const exitSeg = cfgExit == null ? lastSeg : clamp(Math.round(cfgExit), 0, lastSeg);
+  const exitSeg = GLYPH_EXIT_SEG == null ? lastSeg : clamp(Math.round(GLYPH_EXIT_SEG), 0, lastSeg);
   const es = glyphSegs[exitSeg];
   glyphExitPh = es ? Math.min(es.t0 + es.dur, glyphTotal) : glyphTotal;
 
@@ -946,7 +944,11 @@ const blkGlyph = {
   at: 0, // persistent: 0 through the lead-in, traces, then holds the symbol
   branches: { end: T_GLYPH_END },
   update(ctx) {
-    ctx.playhead = ctx.t < T_GLYPH_START ? 0 : ramp(ctx.t, T_GLYPH_START, T_GLYPH_END, 0, glyphExitPh);
+    // Reveal advances at the head's pace (glyphExitPh per GLYPH_TRACE_DUR). The
+    // head peels off onto the enso at the exit (T_GLYPH_END), but the reveal keeps
+    // drawing the rest of the symbol to the end at the same speed after it leaves.
+    const speed = glyphExitPh / GLYPH_TRACE_DUR; // playhead units / sec
+    ctx.playhead = ctx.t < T_GLYPH_START ? 0 : clamp((ctx.t - T_GLYPH_START) * speed, 0, glyphTotal);
   },
 };
 
@@ -1061,7 +1063,7 @@ const _ctx = {
 // no teardown to clear (matches the old fresh-literal semantics).
 function resetCtx(t) {
   _ctx.t = t;
-  _ctx.playhead = glyphExitPh; // glyph held drawn up to the exit unless the glyph block traces
+  _ctx.playhead = glyphTotal; // glyph held fully drawn unless the glyph block traces
   _ctx.inkAlpha = 0; _ctx.d3Alpha = 0;
   _ctx.glyphAlpha = 1.0;
   _ctx.ensoAlpha = 0; _ctx.ensoSweep = 0;
