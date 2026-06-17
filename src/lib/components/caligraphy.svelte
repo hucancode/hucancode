@@ -1105,32 +1105,6 @@
     padding: 0.5rem 0;
     min-width: 280px;
   }
-  label {
-    display: grid;
-    grid-template-columns: 6rem 1fr 3rem;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-  }
-  label.check { grid-template-columns: auto 1fr; }
-  input[type="range"] { width: 100%; }
-  fieldset {
-    border: 1px solid rgba(128,128,128,0.3);
-    border-radius: 0.35rem;
-    padding: 0.5rem 0.75rem 0.6rem;
-    margin: 0;
-    display: grid;
-    gap: 0.4rem;
-  }
-  legend {
-    padding: 0 0.4rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.7;
-  }
-  .buttons { display: flex; gap: 0.5rem; }
   .stroke-list {
     list-style: none;
     margin: 0;

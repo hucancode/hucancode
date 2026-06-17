@@ -33,7 +33,7 @@
   });
 </script>
 
-<div class="container">
+<div class="canvas-wrap">
   <div class="backdrop"></div>
   {#if !ready}
     <span class="spinner" transition:fade={{ duration: 300 }}></span>
@@ -58,13 +58,13 @@
       transparent
     );
   }
-  .container {
+  .canvas-wrap {
     position: relative;
     width: 100%;
     height: 100%;
     min-height: 400px;
   }
-  .container .spinner {
+  .canvas-wrap .spinner {
     position: absolute;
     top: 50%;
     left: 50%;

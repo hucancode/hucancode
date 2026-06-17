@@ -12,7 +12,7 @@
 </script>
 
 {#if categories.length > 0}
-  <section class="tags-section">
+  <section>
     <h2>Popular Topics</h2>
     <div class="tags-wrapper">
       <div class="tags-container">
@@ -50,16 +50,15 @@
 {/if}
 
 <style>
-  .tags-section {
+  section {
     padding: 2rem;
     margin-bottom: 3rem;
     background: color-mix(in srgb, var(--ink) 5%, var(--paper));
   }
 
-  .tags-section h2 {
+  h2 {
     margin: 0 0 1.5rem 0;
     font-size: 1.25rem;
-    color: var(--ink);
   }
 
   .tags-wrapper {
@@ -122,8 +121,7 @@
     color: var(--link);
   }
 
-  .expand-button,
-  .collapse-button {
+  button {
     padding: 0.5rem 1rem;
     background: transparent;
     border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
@@ -135,24 +133,18 @@
     transition: all 0.2s ease;
   }
 
-  .expand-button {
-    min-width: 3rem;
-  }
-
-  .expand-button:hover,
-  .collapse-button:hover {
+  button:hover {
     background: color-mix(in srgb, var(--ink) 8%, transparent);
     border-color: color-mix(in srgb, var(--ink) 35%, transparent);
     color: var(--ink);
   }
 
-  .collapse-button {
-    align-self: flex-start;
-  }
+  .expand-button { min-width: 3rem; }
+  .collapse-button { align-self: flex-start; }
 
   /* Responsive */
   @media (max-width: 640px) {
-    .tags-section {
+    section {
       padding: 1.5rem;
       margin-bottom: 2rem;
     }

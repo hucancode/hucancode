@@ -34,7 +34,6 @@
     --ink: #c5c9c5;
     --link: #8ba4b0;
     --color-neutral-950: rgb(215, 224, 254);
-    --color-neutral-950: rgb(215, 224, 254);
     --color-neutral-900: rgb(166, 173, 200);
     --color-neutral-800: rgb(147, 153, 178);
     --color-neutral-700: rgb(127, 132, 156);
@@ -117,10 +116,6 @@ video {
   max-width: 100%;
 }
 
-.relative {
-  position: relative;
-}
-
 .container {
   width: 100%;
 }
@@ -194,7 +189,7 @@ h2 {
 
 h3 {
   font-size: medium;
-  font-weight: var(--sl-font-weight-semibold);
+  font-weight: 600;
   line-height: 1.5;
   min-height: 1.5em;
 }

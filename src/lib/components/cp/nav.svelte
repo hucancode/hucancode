@@ -17,7 +17,4 @@
     display: flex;
     gap: 1rem;
   }
-  h2 {
-    font-weight: bold;
-  }
 </style>

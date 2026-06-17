@@ -9,13 +9,7 @@
 // straight DOWN at it (top-down) during the glyph trace, then tilts to a 45deg
 // elevation as the 2D dragon hands off to the 3D dragon; the ground grid wipes in
 // radially after the 2D dragon is gone. Out-of-plane internal z is world height.
-//
-// Timeline (scene clock t, seconds):
-//   glyph reveal   0  - 2s    playhead 0 -> glyph duration, then HOLD (no fade)
-//   2D dragon      2s - ~10s  enters at the glyph end, traces it, peels onto a loop
-//   cam tilt + xfade          camera 90deg->45deg, 2D fades out / 3D fades in
-//   grid reveal               radial wipe-in once the 2D dragon is fully gone
-//   3D dragon fly             flies its loop alone, forever
+// The timeline is defined as overlapping blocks below (see the block section).
 
 import { longSymbol } from "$lib/brush/long.js";
 import { bakeSegs } from "$lib/brush/bake.js";
@@ -32,18 +26,8 @@ const T = {
 
 // ============================================================================
 // Flight path - the 2D ink dragon LEADS every phase (head at the front, ink
-// filling in behind it), then hands off to a 3D loop:
-//   0. lead-in    - the dragon is the FIRST thing on screen: a simple straight
-//                   stroke at top-middle, head hidden, gliding toward the glyph.
-//   1. glyph trace- head rides the glyph pen across the WHOLE symbol; the glyph
-//                   reveal follows the head. The head fades in over the back half
-//                   of this phase (it is hidden through the lead-in + first half).
-//   2. enso       - head sweeps one clockwise circle; the enso shader stroke
-//                   reveals up to the head (head leads the brush). Held after.
-//   3. circle roam - head flies a chain of tangent circles (0.5–1.5 rounds each).
-//   4. 3D handoff - after the roam, branch onto a 3D random loop (anchored at the
-//                   branch point); the 2D ink + enso fade as the 3D dragon enters.
-// See buildSpline / buildOpenSpline / generateCurvePath / initScene.
+// filling in behind), then hands off to a 3D loop. Phases: lead-in -> glyph
+// trace -> enso -> circle roam -> 3D handoff (see phaseOf / pathAt below).
 // ============================================================================
 const LEADIN_DUR = 0.5;       // straight glide from the top onto the glyph start
 const LEADIN_START = { x: 0, y: 0.78 }; // top-middle, far from the glyph entry
@@ -253,7 +237,6 @@ let ensoLeadIn = null;     // short branch from the glyph end onto the enso circ
 let curvePath = null;      // 2D roam spline the ink dragon follows
 let curvePool = [];        // pool of {x,y,z} waypoints used to build curvePath (debug)
 let loop3 = null;          // 3D random loop the 3D dragon flies
-let loop3Phase = 0;        // 3D head arc at T_BRANCH (aligns the branch handoff)
 let glyphEntry = { x: 0, y: 0 };  // glyph pen position at playhead 0 (lead-in target)
 let ensoA0 = Math.PI / 2;  // enso start angle: top of circle (fixed); head sweeps counter-clockwise
 
@@ -409,7 +392,6 @@ function generateCirclePath(rng, entry, heading) {
   return {
     ...curve,
     headStart: curve.arcAt(headEntryIdx), // arc length where the head enters
-    arcAtU: (u) => curve.arcAt(u),         // u is a direct index into allPts
   };
 }
 
@@ -553,16 +535,6 @@ function tipAt(t) {
   const m = Math.hypot(dx, dy) || 1;
   return { x: p.x, y: p.y, dir: { x: dx / m, y: dy / m } };
 }
-// 3D dragon render params for time t: which frame buffer, its arc length, and the
-// head offset.  The shader wraps mod-N over the WHOLE buffer (a closed ring), so:
-//   - While the body is still trailing off the flat circles -> use the TRANSITION
-//     buffer (curvePath tail + loop3).  head buffer-arc = bodyArc + elapsed; the
-//     body never crosses the buffer seam, so no wrap artifact.
-//   - Once the tail has fully left the circles (elapsed >= transArc) -> switch to
-//     the PURE loop3 ring, which wraps cleanly forever.  The switch is C0/C1
-//     continuous: at elapsed=transArc the head is at loop3 arc bodyArc in both.
-// (3D dragon draw params are written directly into _frame.dragon3d by
-// buildDragon3dState -> no per-frame object is allocated.)
 
 // debug: sample the 2D curve roam as a polyline
 function samplePath2d(t, n = 256) {
@@ -898,8 +870,7 @@ export function initScene() {
   clampExitPivot(rest, { x: bp.x, y: bp.y, dir: { x: tb.x, y: tb.y } }, MAX_EXIT_TURN);
   const ring3 = [{ x: bp.x, y: bp.y, z: 0 }, ...rest];
   relaxTurns(ring3, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, (i) => i >= 1, RELAX_ITERS); // pin the branch anchor
-  loop3 = buildSpline(ring3);
-  loop3Phase = 0; // 3D head starts at bp (loop3 arc 0) at T_BRANCH
+  loop3 = buildSpline(ring3); // 3D head starts at bp (loop3 arc 0) at T_BRANCH
 
   buildDragon3dFrames();
   timeline.reset(); // fresh scene: re-run block setup on the next frame
@@ -922,18 +893,14 @@ const inkLenFrac  = (t) => lerp(ENTRY_GROW_MIN, t >= T_GLYPH_END ? 0.8 : 1.0, in
 const inkSizeFrac = (t) => lerp(ENTRY_SIZE_MIN, t >= T_GLYPH_END ? 0.8 : 1.0, inkGrow(t));
 
 // ============================================================================
-// Scene timeline - overlapping blocks (see timeline.js). Each block writes its
-// slice into the shared ctx; buildState seeds ctx defaults, runs the timeline,
-// then assembles the FrameState. Blocks attach to each other's branch points so
-// they retime together and can be developed independently.
-//   glyph     [0 ..]            holds undrawn through the lead-in, traces while the
-//                               head rides it, then holds the symbol on the ground
-//   inkDragon [0 .. gone]       leads every phase (lead-in straight stroke, glyph
-//                               trace, enso, curve roam), then fades. The head is
-//                               hidden until the back half of the glyph trace.
-//                               branches: `traced`, `handoff`, `gone`
-//   enso      (after glyph.end) sweeps the enso circle behind the head, then fades
-//                               to ENSO_FADE_TARGET at the 3D handoff
+// Scene timeline - overlapping blocks (see timeline.js). Each block owns a slice
+// of ctx: defaults() restores its resting values every frame, update() writes
+// them while active. buildState runs the timeline then assembles the FrameState.
+// Blocks attach to each other's branch points so they retime together.
+//   glyph     [0 ..]              undrawn -> traces while the head rides it -> held
+//   inkDragon [0 .. gone]         leads every phase, then fades; branches:
+//                                 `traced`, `handoff`, `gone`
+//   enso      (after glyph.end)   sweeps behind the head, fades at the 3D handoff
 //   camera    (after ink.handoff) tilts top-down -> 45deg over the crossfade
 //   dragon3d  (after ink.handoff) fades in and flies its loop forever
 //   grid      (after ink.traced)  radial wipe-in of the ground grid
@@ -943,10 +910,10 @@ const blkGlyph = {
   name: "glyph",
   at: 0, // persistent: 0 through the lead-in, traces, then holds the symbol
   branches: { end: T_GLYPH_END },
+  defaults(ctx) { ctx.playhead = glyphTotal; ctx.glyphAlpha = 1.0; }, // glyphAlpha eased by dragon3d
   update(ctx) {
-    // Reveal advances at the head's pace (glyphExitPh per GLYPH_TRACE_DUR). The
-    // head peels off onto the enso at the exit (T_GLYPH_END), but the reveal keeps
-    // drawing the rest of the symbol to the end at the same speed after it leaves.
+    // Reveal advances at the head's pace; after the head peels onto the enso at
+    // the exit it keeps drawing the rest of the symbol at the same speed.
     const speed = glyphExitPh / GLYPH_TRACE_DUR; // playhead units / sec
     ctx.playhead = ctx.t < T_GLYPH_START ? 0 : clamp((ctx.t - T_GLYPH_START) * speed, 0, glyphTotal);
   },
@@ -961,6 +928,7 @@ const blkInk = {
     handoff: T_BRANCH,    // branch onto loop3 (3D handoff)
     gone: D3_END,         // 2D ink fully faded
   },
+  defaults(ctx) { ctx.inkAlpha = 0; ctx.headAlpha = 1; ctx.inkWidthScale = 1; ctx.headSize = HEAD_SIZE; },
   // entering, or seeking in/within: refit the body on-path (no physics history,
   // no straight teleport) so a scrub lands on a valid on-curve pose.
   setup(ctx) { reseedBody(ctx.t, BODY_LEN * inkLenFrac(ctx.t)); lastInkPhase = phaseOf(ctx.t); },
@@ -994,6 +962,7 @@ const blkInk = {
 const blkEnso = {
   name: "enso",
   after: { block: "glyph", branch: "end" },
+  defaults(ctx) { ctx.ensoAlpha = 0; ctx.ensoSweep = 0; },
   update(ctx) {
     const t = ctx.t;
     ctx.ensoSweep = clamp((t - T_ENSO_START) / ENSO_DUR, 0, 1); // 0 through the branch
@@ -1009,6 +978,7 @@ const blkEnso = {
 const blkCamera = {
   name: "camera",
   after: { block: "inkDragon", branch: "handoff" },
+  defaults(ctx) { ctx.camPitch = 0; },
   update(ctx, local) {
     ctx.camPitch = smooth(clamp(local / CAM_PITCH_DUR, 0, 1)) * CAM_PITCH_ANGLE;
   },
@@ -1017,6 +987,7 @@ const blkCamera = {
 const blkDragon3d = {
   name: "dragon3d",
   after: { block: "inkDragon", branch: "handoff" },
+  defaults(ctx) { ctx.d3Alpha = 0; },
   update(ctx) {
     ctx.d3Alpha = ramp(ctx.t, D3_START, D3_END, 0, 1); // flies its loop forever (buildDragon3dState advances with t)
     ctx.glyphAlpha = ramp(ctx.t, D3_START, D3_END, 1, GLYPH_FADE_TARGET); // glyph eases back during the 3D transition
@@ -1029,6 +1000,7 @@ const blkDragon3d = {
 const blkSplash = {
   name: "splash",
   at: 0,
+  defaults(ctx) { ctx.splashAlpha = 0; ctx.splashGrow = 0; },
   update(ctx) {
     ctx.splashAlpha = smooth(clamp(ctx.t / SPLASH_FADE_IN, 0, 1));
     ctx.splashGrow = smooth(clamp(ctx.t / SPLASH_GROW_DUR, 0, 1));
@@ -1038,6 +1010,7 @@ const blkSplash = {
 const blkGrid = {
   name: "grid",
   after: { block: "inkDragon", branch: "traced" }, // reveal right after the stroke is traced
+  defaults(ctx) { ctx.gridStrength = 0; ctx.gridReveal = 0; ctx.gridRevealMinor = 0; },
   update(ctx, local) {
     ctx.gridReveal = clamp(local / GRID_REVEAL_DUR, 0, 1);
     ctx.gridRevealMinor = clamp((local - GRID_MINOR_LAG) / GRID_REVEAL_DUR, 0, 1);
@@ -1053,26 +1026,16 @@ const timeline = makeTimeline([blkSplash, blkGlyph, blkInk, blkEnso, blkCamera, 
 // minting ~15 short-lived objects every frame -> no GC hitch on the infinite 3D
 // loop. Constant fields (spread, radii, grid params) are set once in the literal.
 const EMPTY_F32 = new Float32Array(0);
+// Shared frame-state ctx. Each timeline block restores the fields it owns via its
+// defaults(ctx) hook (run for every block before any update), so inactive blocks
+// need no teardown to clear. Initialised with every key so the object keeps one
+// hidden class. Values here are placeholders; defaults() sets the real resting set.
 const _ctx = {
   t: 0, playhead: 1, inkAlpha: 0, d3Alpha: 0, glyphAlpha: 1.0,
   ensoAlpha: 0, ensoSweep: 0, headAlpha: 1, splashAlpha: 0, splashGrow: 0,
   gridStrength: 0, gridReveal: 0, gridRevealMinor: 0, camPitch: 0,
   inkWidthScale: 1, headSize: HEAD_SIZE,
 };
-// Reset ctx to "nothing happening" each frame, so inactive timeline blocks need
-// no teardown to clear (matches the old fresh-literal semantics).
-function resetCtx(t) {
-  _ctx.t = t;
-  _ctx.playhead = glyphTotal; // glyph held fully drawn unless the glyph block traces
-  _ctx.inkAlpha = 0; _ctx.d3Alpha = 0;
-  _ctx.glyphAlpha = 1.0;
-  _ctx.ensoAlpha = 0; _ctx.ensoSweep = 0;
-  _ctx.headAlpha = 1;
-  _ctx.splashAlpha = 0; _ctx.splashGrow = 0;
-  _ctx.gridStrength = 0; _ctx.gridReveal = 0; _ctx.gridRevealMinor = 0;
-  _ctx.camPitch = 0;
-  _ctx.inkWidthScale = 1; _ctx.headSize = HEAD_SIZE;
-}
 const _frame = {
   aspect: 1,
   opacity: { glyph: 1, inkDragon: 0, dragon3d: 0 },
@@ -1090,10 +1053,10 @@ const _frame = {
 };
 
 // Build the FrameState for scene time t. debug adds path polylines; yaw is the
-// user orbit heading (pitch is scripted by the camera block). Resets ctx defaults,
-// runs the overlapping timeline blocks, then assembles _frame in place.
+// user orbit heading (pitch is scripted by the camera block). Runs the timeline
+// (each block restores its defaults then updates), then assembles _frame in place.
 export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none") {
-  resetCtx(t);
+  _ctx.t = t;
   timeline.frame(_ctx, t);
 
   writeHeadFrame(body, _frame.inkDragon.head);

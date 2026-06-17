@@ -65,7 +65,7 @@
     <div role="group" class="square">
       {#each pages as p}
         {#if p === '...'}
-          <span class="ellipsis">...</span>
+          <span>...</span>
         {:else}
           <a
             role="button"
@@ -93,7 +93,6 @@
   }
   
   a[role="button"] {
-    text-decoration: none;
     transition: all 0.2s ease;
   }
   
@@ -109,7 +108,7 @@
     pointer-events: none;
   }
 
-  .ellipsis {
+  span {
     padding: 0.5rem 0.75rem;
     color: color-mix(in srgb, var(--ink) 45%, transparent);
     user-select: none;
@@ -126,7 +125,7 @@
       font-size: 0.875rem;
     }
     
-    .ellipsis {
+    span {
       padding: 0.375rem 0.5rem;
     }
   }

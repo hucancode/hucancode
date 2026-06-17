@@ -90,8 +90,6 @@
     width: 1.3em;
   }
   h3 {
-    margin: 0;
     font-size: 1.05rem;
-    font-weight: 600;
   }
 </style>

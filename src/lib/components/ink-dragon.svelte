@@ -639,21 +639,6 @@
     gap: 0.5rem;
     padding: 0.5rem 0;
   }
-  label {
-    display: grid;
-    grid-template-columns: 6rem 1fr 3rem;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-  }
-  label.check {
-    grid-template-columns: auto 1fr;
-  }
-  input[type="range"] { width: 100%; }
-  .buttons {
-    display: flex;
-    gap: 0.5rem;
-  }
   button {
     padding: 0.3rem 0.8rem;
     font-size: 0.9rem;

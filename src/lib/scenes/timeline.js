@@ -1,36 +1,27 @@
 // Overlapping timeline blocks with a dependency graph.
 //
 // A scene is a set of BLOCKS. Each block owns a slice of scene time
-// [start, start + duration] and can overlap freely with the others. A block is
-// authored independently: it only declares WHEN it starts and exposes named
-// BRANCH POINTS (local times) that other blocks can hang off of.
+// [start, start + duration], overlaps freely, and is authored independently: it
+// declares WHEN it starts and exposes named BRANCH POINTS (local times) others
+// hang off of. Start resolves one of two ways:
+//   { at: <seconds> }                      fixed absolute start
+//   { after: { block, branch, offset? } }  startOf(block) + branches[branch] + offset
 //
-// Start of a block is resolved one of two ways:
-//   { at: <seconds> }                              fixed absolute start
-//   { after: { block, branch, offset? } }          start = startOf(block)
-//                                                          + block.branches[branch]
-//                                                          + (offset || 0)
-// so you can say "begin 0.5s after the glyph block's `end` branch" without
-// either block knowing the other's absolute schedule.
-//
-// `duration` bounds the block; OMIT it (or Infinity) for a PERSISTENT block that
-// stays active and keeps updating forever once started (e.g. a dragon that loops
-// on indefinitely). Persistent blocks are ignored by endTime().
+// OMIT `duration` (or Infinity) for a PERSISTENT block that keeps updating once
+// started; persistent blocks are ignored by endTime().
 //
 // Lifecycle per block, driven by the scene clock t (scrubbing both ways is OK):
+//   defaults(ctx)       every frame for EVERY block, before any update: restore
+//                       the ctx fields this block owns to their resting values.
+//                       Replaces a central reset so each block owns its own slice.
 //   setup(ctx)          once, the frame the block becomes active (incl. seek-in)
-//   seek(ctx, local)    when t arrives DISCONTINUOUSLY inside an already-active
-//                       block (a scrub jump / reverse); resync derived state here
+//   seek(ctx, local)    when t lands DISCONTINUOUSLY inside an active block
+//                       (scrub / reverse); resync derived state here
 //   update(ctx, local)  every frame while active; local = t - start in [0, dur]
 //   teardown(ctx)       once, the frame the block goes inactive (incl. seek-out)
 // ctx is the shared frame-state object every block reads from / writes into.
 //
-// Seeking OUT of a block (a jump to before its start, or past a finite end) fires
-// teardown; seeking INTO a block fires setup (if it was inactive) or seek (if it
-// was already active), so a block always gets a chance to resync on a scrub.
-//
-// Blocks are evaluated in array order each frame, so author them in dependency
-// order (a producer before its consumers).
+// Blocks are evaluated in array order; author producers before consumers.
 
 export function makeTimeline(blocks) {
   const byName = new Map(blocks.map((b) => [b.name, b]));
@@ -63,6 +54,7 @@ export function makeTimeline(blocks) {
 
   // Advance every block to scene time t, firing setup/seek/update/teardown.
   function frame(ctx, t) {
+    for (const b of blocks) b.defaults && b.defaults(ctx); // restore resting state first
     const seeked = lastFrameT == null || t < lastFrameT || t - lastFrameT > SEEK_GAP;
     for (const b of blocks) {
       const s = startCache.get(b.name);
