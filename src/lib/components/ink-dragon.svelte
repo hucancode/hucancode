@@ -562,12 +562,13 @@
   @media(min-width: 768px) {
     .brush-demo {
       flex-direction: row;
+      align-items: flex-start;
     }
   }
   .stage {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 1 / 1;
   }
   @media(min-width: 768px) {
     .brush-demo .stage { flex: 1 1 auto; }

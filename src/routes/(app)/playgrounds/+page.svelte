@@ -4,14 +4,16 @@
   import Dragon from "$icons/game-icons/dragon.svg?raw";
   import Cube from "$icons/mdi/cube.svg?raw";
   import Planet from "$icons/ph/planet.svg?raw";
+  import Return from "$icons/line-md/chevron-left.svg?raw";
 
   const playgrounds = [
-    { href: "/dragon", name: "Dragon", icon: Dragon, thumb: null },
-    { href: "/rubik", name: "Rubik", icon: Cube, thumb: null },
-    { href: "/taiji", name: "Taiji", icon: Planet, thumb: null },
-    { href: "/ink", name: "Ink", icon: Planet, thumb: null },
-    { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: null },
-    { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: null },
+    { href: "/dragon", name: "Dragon", icon: Dragon, thumb: "/assets/thumb/dragon.png" },
+    { href: "/rubik", name: "Rubik", icon: Cube, thumb: "/assets/thumb/rubik.png" },
+    { href: "/taiji", name: "Taiji", icon: Planet, thumb: "/assets/thumb/taiji.png" },
+    { href: "/ink", name: "Ink", icon: Planet, thumb: "/assets/thumb/ink.png" },
+    { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: "/assets/thumb/ink-dragon.png" },
+    { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: "/assets/thumb/caligraphy.png" },
+    { href: "/lego", name: "Lego", icon: Cube, thumb: "/assets/thumb/lego.png" },
   ];
 
   let cardEls = $state([]);
@@ -54,7 +56,7 @@
   <title>Playgrounds</title>
 </svelte:head>
 
-<main class="playgrounds">
+<main>
   <h1>Playgrounds</h1>
   <ul>
     {#each playgrounds as p, i}
@@ -62,18 +64,23 @@
         <a href={p.href} bind:this={cardEls[i]} class="card">
           <svg class="card-border" bind:this={svgEls[i]} aria-hidden="true"></svg>
           <div class="thumb">
-            {#if p.thumb}
-              <img src={p.thumb} alt={p.name} loading="lazy" />
-            {:else}
-              <span class="icon">{@html p.icon}</span>
-            {/if}
+            <img
+              src={p.thumb}
+              alt={p.name}
+              loading="lazy"
+              onerror={(e) => {
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextElementSibling.style.display = "grid";
+              }}
+            />
+            <span class="icon" style="display:none">{@html p.icon}</span>
           </div>
           <span class="name">{p.name}</span>
         </a>
       </li>
     {/each}
   </ul>
-  <a class="back" href="/">← back</a>
+  <a class="back" href="/">{@html Return} Home</a>
 </main>
 
 <style>
@@ -85,8 +92,8 @@
   :global(body) {
     background: rgb(255, 252, 224);
   }
-  .playgrounds {
-    width: 100%;
+  main {
+    flex-direction: column;
     max-width: 1100px;
     margin: 0 auto;
     padding: 4rem 1.5rem;
@@ -102,7 +109,7 @@
     padding: 0;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
     gap: 1.5rem;
   }
   li {
@@ -116,7 +123,6 @@
     text-decoration: none;
     color: inherit;
     padding: 0.75rem;
-    border-radius: 2px;
     background: rgba(255, 253, 240, 0.7);
     transition: transform 0.15s ease;
   }
@@ -132,8 +138,8 @@
     overflow: visible;
   }
   .thumb {
-    width: 320px;
-    height: 180px;
+    width: 18rem;
+    aspect-ratio: 16/9;
     display: grid;
     place-items: center;
     overflow: hidden;
@@ -156,14 +162,19 @@
     color: #3a3320;
     padding-left: 0.1rem;
   }
-  .back {
-    display: inline-block;
+  a.back {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     margin-top: 2.5rem;
+    padding: 0;
+    background: none;
+    border: none;
     font-family: "Virgil", "Comic Sans MS", cursive;
     color: #6b4e71;
     text-decoration: none;
   }
-  .back:hover {
-    text-decoration: underline;
-  }
+  a.back:hover { opacity: 0.7; }
+  a.back :global(svg) { width: 1.2rem; height: 1.2rem; }
 </style>

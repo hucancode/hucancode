@@ -78,9 +78,8 @@
   }
   .spinner {
     aspect-ratio: 1;
-    border: 0.8rem solid var(--color-primary-500);
-    border-bottom-color: transparent;
-    border-radius: 50%;
+    border: 0.3rem solid rgba(107, 78, 113, 0.2);
+    border-top-color: #6b4e71;
     animation: rotation 1s linear infinite;
   }
 

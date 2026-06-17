@@ -999,7 +999,7 @@
     gap: 0.5rem;
   }
   @media (min-width: 768px) {
-    .brush-demo { flex-direction: row; }
+    .brush-demo { flex-direction: row; align-items: flex-start; }
   }
   .stage {
     position: relative;

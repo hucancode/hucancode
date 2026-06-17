@@ -1,11 +1,10 @@
 <script>
-  import Panel from "$lib/components/playground/panel.svelte";
   import Scene from "$lib/components/taiji.svelte";
+  import Return from "$icons/line-md/chevron-left.svg?raw";
 
   let scene = $state(null);
-
-  let dragonSpeed = $state(0.3); // shown ×1000 of curve fraction/frame
-  let taijiSpin = $state(1); // shown ×100 radians/frame
+  let dragonSpeed = $state(0.3);
+  let taijiSpin = $state(1);
   let cloudSpeed = $state(4);
   let randomPath = $state(false);
   let radius = $state(34);
@@ -13,7 +12,6 @@
   let color1 = $state("#ffffff");
   let color2 = $state("#000000");
 
-  // live knobs (no curve change)
   $effect(() => {
     scene?.apply({
       dragonSpeed: dragonSpeed / 1000,
@@ -30,86 +28,73 @@
   <title>Taiji</title>
 </svelte:head>
 
-<Panel title="Taiji">
-  {#snippet stage()}
+<a class="back" href="/playgrounds">{@html Return}</a>
+
+<main>
+  <figure>
     <Scene bind:this={scene} />
-  {/snippet}
+  </figure>
 
-  {#snippet controls()}
-    <label class="row">
-      <span>Dragon speed <span class="val">{dragonSpeed.toFixed(2)}</span></span>
-      <input type="range" min="0" max="2" step="0.05" bind:value={dragonSpeed} />
-    </label>
-
-    <label class="row">
-      <span>Disc spin <span class="val">{taijiSpin.toFixed(1)}</span></span>
-      <input type="range" min="-4" max="4" step="0.1" bind:value={taijiSpin} />
-    </label>
-
-    <label class="row">
-      <span>Cloud drift <span class="val">{cloudSpeed.toFixed(1)}</span></span>
-      <input type="range" min="0" max="12" step="0.5" bind:value={cloudSpeed} />
-    </label>
-
-    <label class="row toggle-row">
-      <span>Random flight path</span>
-      <input
-        type="checkbox"
-        bind:checked={randomPath}
-        onchange={() => scene?.reshape({ randomPath })}
-      />
-    </label>
-
-    {#if !randomPath}
-      <label class="row">
-        <span>Orbit radius <span class="val">{radius}</span></span>
-        <input
-          type="range"
-          min="12"
-          max="44"
-          step="1"
-          bind:value={radius}
-          onchange={() => scene?.reshape({ radius })}
-        />
+  <aside>
+    <fieldset>
+      <legend>motion</legend>
+      <label>
+        <span>Dragon</span>
+        <input type="range" min="0" max="2" step="0.05" bind:value={dragonSpeed} />
+        <output>{dragonSpeed.toFixed(2)}</output>
       </label>
-
-      <label class="row">
-        <span>Orbit rise <span class="val">{elevation}</span></span>
-        <input
-          type="range"
-          min="0"
-          max="24"
-          step="1"
-          bind:value={elevation}
-          onchange={() => scene?.reshape({ elevation })}
-        />
+      <label>
+        <span>Disc spin</span>
+        <input type="range" min="-4" max="4" step="0.1" bind:value={taijiSpin} />
+        <output>{taijiSpin.toFixed(1)}</output>
       </label>
-    {/if}
+      <label>
+        <span>Cloud drift</span>
+        <input type="range" min="0" max="12" step="0.5" bind:value={cloudSpeed} />
+        <output>{cloudSpeed.toFixed(1)}</output>
+      </label>
+    </fieldset>
 
-    <label class="row toggle-row">
-      <span>Yang color</span>
-      <input type="color" bind:value={color1} />
-    </label>
-    <label class="row toggle-row">
-      <span>Yin color</span>
-      <input type="color" bind:value={color2} />
-    </label>
+    <fieldset>
+      <legend>orbit</legend>
+      <label>
+        <input type="checkbox" bind:checked={randomPath}
+          onchange={() => scene?.reshape({ randomPath })} />
+        <span>Random path</span>
+      </label>
+      {#if !randomPath}
+        <label>
+          <span>Radius</span>
+          <input type="range" min="12" max="44" step="1" bind:value={radius}
+            onchange={() => scene?.reshape({ radius })} />
+          <output>{radius}</output>
+        </label>
+        <label>
+          <span>Rise</span>
+          <input type="range" min="0" max="24" step="1" bind:value={elevation}
+            onchange={() => scene?.reshape({ elevation })} />
+          <output>{elevation}</output>
+        </label>
+      {/if}
+      {#if randomPath}
+        <div class="buttons">
+          <button onclick={() => scene?.newPath()}>↻ New path</button>
+        </div>
+      {/if}
+    </fieldset>
 
-    {#if randomPath}
-      <button class="action" onclick={() => scene?.newPath()}>↻ New path</button>
-    {/if}
-  {/snippet}
-
-  {#snippet notes()}
-    <p>
-      A dragon flies a closed <strong>Catmull-Rom</strong> loop above a spinning
-      taiji disc, over an animated cloud shader. The default flight is an
-      <em>orbit</em> — a circle (radius) modulated by a sine rise (rise), so it
-      weaves up and down as it circles.
-    </p>
-    <p>
-      <em>Disc spin</em> turns the yin/yang continuously (negative reverses).
-      Switch to a <em>random</em> path for a fresh scattered route each time.
-    </p>
-  {/snippet}
-</Panel>
+    <fieldset>
+      <legend>colors</legend>
+      <label>
+        <span>Yang</span>
+        <input type="color" bind:value={color1} />
+        <output></output>
+      </label>
+      <label>
+        <span>Yin</span>
+        <input type="color" bind:value={color2} />
+        <output></output>
+      </label>
+    </fieldset>
+  </aside>
+</main>

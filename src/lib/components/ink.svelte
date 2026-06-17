@@ -294,13 +294,15 @@
   @media(min-width: 768px) {
     .ink-demo {
       flex-direction: row;
+      align-items: flex-start;
     }
+    .stage { flex: 1 1 auto; min-width: 0; }
+    .controls { flex: 0 0 18rem; }
   }
   .stage {
     position: relative;
     width: 100%;
-    min-width: 50vw;
-    max-width: 1280px;
+    max-width: 640px;
     aspect-ratio: 1 / 1;
   }
   canvas {
