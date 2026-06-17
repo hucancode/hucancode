@@ -66,7 +66,7 @@
     margin: 0 auto;
   }
   li {
-    border-bottom: 1px solid var(--color-neutral-200, rgba(0, 0, 0, 0.1));
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
   }
   li a {
     display: flex;
@@ -77,7 +77,7 @@
     color: inherit;
   }
   li a:hover h3 {
-    color: var(--color-primary-600, #6b4e71);
+    color: var(--link);
   }
   .icons {
     display: inline-flex;

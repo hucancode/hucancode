@@ -103,21 +103,16 @@
   }
   
   a[role="button"][disabled] {
-    background-color: var(--color-primary-500);
-    color: white;
+    background-color: var(--link);
+    color: var(--paper);
     cursor: default;
     pointer-events: none;
   }
-  
+
   .ellipsis {
     padding: 0.5rem 0.75rem;
-    color: var(--color-neutral-400);
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
     user-select: none;
-  }
-  
-  /* Dark mode support */
-  :global(.dark) a[role="button"][disabled] {
-    background-color: var(--color-primary-600);
   }
   
   /* Mobile adjustments */

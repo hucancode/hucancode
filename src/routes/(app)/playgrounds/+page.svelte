@@ -26,9 +26,10 @@
     svgEl.setAttribute("viewBox", `0 0 ${w} ${h}`);
     const rc = rough.svg(svgEl);
     const pad = 3;
+    const ink = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
     const g = rc.rectangle(pad, pad, w - pad * 2, h - pad * 2, {
       roughness: 1.6,
-      stroke: "#3a3320",
+      stroke: ink || "#16161D",
       strokeWidth: 1.5,
       fill: "none",
       seed,
@@ -90,7 +91,7 @@
     font-display: swap;
   }
   :global(body) {
-    background: rgb(255, 252, 224);
+    background: var(--paper);
   }
   main {
     flex-direction: column;
@@ -101,7 +102,7 @@
   h1 {
     font-family: "Virgil", "Comic Sans MS", cursive;
     font-size: 2.2rem;
-    color: #3a3320;
+    color: var(--ink);
     margin-bottom: 2rem;
   }
   ul {
@@ -123,7 +124,7 @@
     text-decoration: none;
     color: inherit;
     padding: 0.75rem;
-    background: rgba(255, 253, 240, 0.7);
+    background: color-mix(in srgb, var(--paper) 70%, transparent);
     transition: transform 0.15s ease;
   }
   .card:hover {
@@ -143,7 +144,7 @@
     display: grid;
     place-items: center;
     overflow: hidden;
-    background: linear-gradient(135deg, #f0ece0, #e4dece);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--paper) 90%, var(--ink)), color-mix(in srgb, var(--paper) 80%, var(--ink)));
   }
   .thumb img {
     width: 100%;
@@ -153,13 +154,13 @@
   .icon :global(svg) {
     width: 3rem;
     height: 3rem;
-    fill: #3a3320;
+    fill: var(--ink);
     opacity: 0.45;
   }
   .name {
     font-family: "Virgil", "Comic Sans MS", cursive;
     font-size: 1.05rem;
-    color: #3a3320;
+    color: var(--ink);
     padding-left: 0.1rem;
   }
   a.back {
@@ -172,7 +173,7 @@
     background: none;
     border: none;
     font-family: "Virgil", "Comic Sans MS", cursive;
-    color: #6b4e71;
+    color: var(--link);
     text-decoration: none;
   }
   a.back:hover { opacity: 0.7; }

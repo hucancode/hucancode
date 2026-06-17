@@ -78,7 +78,10 @@
     if (qs.get("play") === "1") playing = true;
     if (qs.get("debug") === "1") debug = true;
     if (qs.get("yaw")) orbitYaw = parseFloat(qs.get("yaw")) || 0;
-    initScene();
+    // ?exitSeg=<index> peels the 2D dragon off the glyph at that baked-segment index
+    const qExit = qs.get("exitSeg");
+    const exitSeg = qExit != null && qExit !== "" && !Number.isNaN(parseInt(qExit, 10)) ? parseInt(qExit, 10) : undefined;
+    initScene({ exitSeg });
     sizeCanvas();
     renderer = await createRenderer(canvasEl, { prefer: "webgl" });
     sizeCanvas();

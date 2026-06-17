@@ -1,5 +1,8 @@
 :root,
 :host {
+  --paper: #f2ecbc;
+  --ink: #16161D;
+  --link: #624c83;
   --color-neutral-50: rgb(236, 254, 252);
   --color-neutral-100: rgb(240, 243, 254);
   --color-neutral-200: rgb(214, 220, 245);
@@ -27,6 +30,9 @@
 @media (prefers-color-scheme: dark) {
   :root,
   :host {
+    --paper: #181616;
+    --ink: #c5c9c5;
+    --link: #8ba4b0;
     --color-neutral-950: rgb(215, 224, 254);
     --color-neutral-950: rgb(215, 224, 254);
     --color-neutral-900: rgb(166, 173, 200);
@@ -72,8 +78,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  background: var(--color-neutral-50);
-  color: var(--color-neutral-950);
+  background: var(--paper);
+  color: var(--ink);
   padding-top: 1rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -157,11 +163,12 @@ hr {
 
 a {
   text-decoration: none;
-  color: var(--color-primary-700);
+  color: var(--link);
 }
 
 a:hover {
-  color: var(--color-primary-800);
+  color: var(--link);
+  opacity: 0.8;
 }
 
 h1 {
@@ -288,8 +295,8 @@ small {
 }
 :is(button, a[role="button"])[disabled="true"] {
   pointer-events: none;
-  color: var(--color-neutral-800);
-  background-color: var(--color-primary-50);
+  color: color-mix(in srgb, var(--ink) 50%, transparent);
+  background-color: color-mix(in srgb, var(--ink) 8%, var(--paper));
 }
 input[type="radio"] {
   display: none;
@@ -303,7 +310,7 @@ div[role="group"].square {
     font-size: medium;
     border-style: solid;
     border-width: 0.075em;
-    border-color: var(--color-neutral-200);
+    border-color: color-mix(in srgb, var(--ink) 20%, transparent);
     display: flex;
     gap: 0.5em;
     align-items: center;
@@ -317,28 +324,29 @@ div[role="group"].square {
   }
   & label:active:has(input[type="radio"]),
   & :is(button, a[role="button"]):active {
-    color: var(--color-primary-900);
+    color: var(--link);
   }
   & :is(button, a[role="button"]) svg {
     font-size: larger;
   }
   & label:has(input[type="radio"]:checked) {
-    background-color: var(--color-primary-50);
+    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
   }
   & label:hover:has(input[type="radio"]),
   & :is(button, a[role="button"]):hover {
-    background-color: var(--color-primary-50);
-    border-color: var(--color-primary-200);
-    color: var(--color-primary-700);
+    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
+    border-color: color-mix(in srgb, var(--link) 40%, transparent);
+    color: var(--link);
+    opacity: 1;
   }
   & :is(button, a[role="button"]) {
-    color: var(--color-primary-700);
-    background-color: var(--color-neutral-50);
+    color: var(--link);
+    background-color: var(--paper);
   }
   & :is(button, a[role="button"])[disabled="true"] {
     pointer-events: none;
-    color: var(--color-neutral-800);
-    background-color: var(--color-primary-50);
+    color: color-mix(in srgb, var(--ink) 50%, transparent);
+    background-color: color-mix(in srgb, var(--ink) 8%, var(--paper));
   }
 }
 :is(h1, h2, h3, p, a, small, label, button) svg {
@@ -370,10 +378,10 @@ a.back {
   z-index: 10;
   display: inline-flex;
   align-items: center;
-  color: #6b4e71;
+  color: var(--link);
   text-decoration: none;
-  background: rgba(255, 253, 240, 0.85);
-  border: 1px solid rgba(58, 51, 32, 0.18);
+  background: color-mix(in srgb, var(--paper) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
   padding: 0.25rem;
 }
 a.back:hover { opacity: 0.7; }

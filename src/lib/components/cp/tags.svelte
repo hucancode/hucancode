@@ -53,13 +53,13 @@
   .tags-section {
     padding: 2rem;
     margin-bottom: 3rem;
-    background: var(--color-neutral-100);
+    background: color-mix(in srgb, var(--ink) 5%, var(--paper));
   }
 
   .tags-section h2 {
     margin: 0 0 1.5rem 0;
     font-size: 1.25rem;
-    color: var(--color-neutral-900);
+    color: var(--ink);
   }
 
   .tags-wrapper {
@@ -80,8 +80,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: var(--color-neutral-50);
-    border: 1px solid var(--color-neutral-200);
+    background: var(--paper);
+    border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
     border-radius: 0;
     text-decoration: none;
     font-size: 0.875rem;
@@ -89,12 +89,13 @@
   }
 
   .tag:hover {
-    background: var(--color-primary-100);
-    border-color: var(--color-primary-300);
+    background: color-mix(in srgb, var(--link) 10%, var(--paper));
+    border-color: color-mix(in srgb, var(--link) 40%, transparent);
+    opacity: 1;
   }
 
   .tag-name {
-    color: var(--color-neutral-700);
+    color: var(--ink);
     font-weight: 500;
   }
 
@@ -105,31 +106,31 @@
     min-width: 1.5rem;
     height: 1.5rem;
     padding: 0 0.375rem;
-    background: var(--color-neutral-200);
-    color: var(--color-neutral-600);
+    background: color-mix(in srgb, var(--ink) 12%, transparent);
+    color: color-mix(in srgb, var(--ink) 70%, transparent);
     border-radius: 0;
     font-size: 0.75rem;
     font-weight: 600;
   }
 
   .tag:hover .tag-name {
-    color: var(--color-primary-700);
+    color: var(--link);
   }
 
   .tag:hover .tag-count {
-    background: var(--color-primary-200);
-    color: var(--color-primary-700);
+    background: color-mix(in srgb, var(--link) 20%, transparent);
+    color: var(--link);
   }
 
   .expand-button,
   .collapse-button {
     padding: 0.5rem 1rem;
     background: transparent;
-    border: 1px solid var(--color-neutral-300);
+    border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
     border-radius: 0;
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-neutral-600);
+    color: color-mix(in srgb, var(--ink) 60%, transparent);
     cursor: pointer;
     transition: all 0.2s ease;
   }
@@ -140,63 +141,13 @@
 
   .expand-button:hover,
   .collapse-button:hover {
-    background: var(--color-neutral-200);
-    border-color: var(--color-neutral-400);
-    color: var(--color-neutral-700);
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+    border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+    color: var(--ink);
   }
 
   .collapse-button {
     align-self: flex-start;
-  }
-
-  /* Dark mode */
-  :global(.dark) .tags-section {
-    background: var(--color-neutral-800);
-  }
-
-  :global(.dark) .tags-section h2 {
-    color: var(--color-neutral-100);
-  }
-
-  :global(.dark) .tag {
-    background: var(--color-neutral-900);
-    border-color: var(--color-neutral-700);
-  }
-
-  :global(.dark) .tag:hover {
-    background: var(--color-primary-900);
-    border-color: var(--color-primary-700);
-  }
-
-  :global(.dark) .tag-name {
-    color: var(--color-neutral-300);
-  }
-
-  :global(.dark) .tag-count {
-    background: var(--color-neutral-700);
-    color: var(--color-neutral-300);
-  }
-
-  :global(.dark) .tag:hover .tag-name {
-    color: var(--color-primary-300);
-  }
-
-  :global(.dark) .tag:hover .tag-count {
-    background: var(--color-primary-800);
-    color: var(--color-primary-300);
-  }
-
-  :global(.dark) .expand-button,
-  :global(.dark) .collapse-button {
-    border-color: var(--color-neutral-600);
-    color: var(--color-neutral-400);
-  }
-
-  :global(.dark) .expand-button:hover,
-  :global(.dark) .collapse-button:hover {
-    background: var(--color-neutral-700);
-    border-color: var(--color-neutral-500);
-    color: var(--color-neutral-300);
   }
 
   /* Responsive */

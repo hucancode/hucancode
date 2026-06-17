@@ -192,9 +192,9 @@
 <header class="topbar">
   <div class="bar">
     <nav class="links" bind:this={linksEl}>
-      <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub">{@html Github}</a>
-      <a href="/resume.pdf" download aria-label="Resume" title="Resume">{@html Download}</a>
-      <a href="/cp" aria-label="Notes" title="Notes">{@html Book}</a>
+      <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub">{@html Github}</a>
+      <a href="/resume.pdf" download aria-label="Resume">{@html Download}</a>
+      <a href="/cp" aria-label="Notes">{@html Book}</a>
       <div class="controls" bind:this={controlsEl}>
         <button class="play" onclick={togglePlay} aria-label={playing ? "pause" : "play"}>
           {@html playing ? Pause : Play}
@@ -257,18 +257,6 @@
 </footer>
 
 <style>
-  :root {
-    --paper: #f2ecbc;
-    --ink: #16161D;
-    --link: #624c83;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --paper: #181616;
-      --ink: #c5c9c5;
-      --link: #8ba4b0;
-    }
-  }
   @font-face {
     font-family: "Virgil";
     src: url("/fonts/Virgil.woff2") format("woff2");

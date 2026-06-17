@@ -137,8 +137,8 @@
     position: absolute;
     width: 4rem;
     aspect-ratio: 1;
-    border: 0.3rem solid rgba(107, 78, 113, 0.2);
-    border-top-color: #6b4e71;
+    border: 0.3rem solid color-mix(in srgb, var(--link) 20%, transparent);
+    border-top-color: var(--link);
     animation: rotation 1s linear infinite;
   }
   @keyframes rotation {
