@@ -1,16 +1,20 @@
-// Renderer backend contract for the /paint scene.
+// FrameState contract for the /main (paint) scene's render backends.
 //
-// The scene (scenes/paint.js) is backend-agnostic: every frame it produces a
-// plain-data FrameState describing what each layer looks like at scene time t.
-// A backend turns that description into pixels. Today there is a WebGL2
-// backend (render/webgl); a WebGPU backend can be added later (render/webgpu)
-// without touching the scene, because both implement this same interface.
+// The generic backend seam (the Renderer interface below + backend selection)
+// lives in the engine: engine/backend.js. This file pins down THIS scene's
+// data contract — the FrameState shape its backends consume.
+//
+// The scene (main.js) is backend-agnostic: every frame it produces a plain-data
+// FrameState describing what each layer looks like at scene time t. A backend
+// turns that description into pixels. Today there is a WebGL2 backend
+// (render/webgl); a WebGPU backend can be added later (render/webgpu) without
+// touching the scene, because both implement this same interface.
 //
 // The interface is intentionally *layer-oriented* (glyph quad, ink-dragon
 // quad, 3D dragon) rather than a generic GPU API - that keeps both backends
 // small and the seam obvious.
 //
-// Renderer = {
+// Renderer = {                       // contract owner: engine/backend.js
 //   init(canvas): Promise<void>   create context, offscreen targets, programs
 //   resize(w, h): void            resize swapchain + offscreen targets
 //   frame(state: FrameState): void upload per-frame data + draw all passes
@@ -18,7 +22,7 @@
 // }
 //
 // FrameState shape (all plain data, no GPU handles). Source of truth is
-// scenes/paint.js buildState(); keep this in sync with it.
+// main.js buildState(); keep this in sync with it.
 //
 // {
 //   aspect: number,                       // canvas width / height

@@ -3,7 +3,7 @@
   import Scene from "$lib/components/paint.svelte";
   import Timeline from "$lib/components/timeline.svelte";
   import RoughIcon from "$lib/components/rough-icon.svelte";
-  import { TIMELINE_END } from "$lib/playgrounds/main.js";
+  import { TIMELINE_END } from "$lib/playgrounds/main";
   import Github from "$icons/simple-icons/github.svg?raw";
   import Profile from "$icons/google-material/profile.svg?raw";
   import PersonRaiseHand from "$icons/google-material/person-raise-hand.svg?raw";
@@ -141,7 +141,7 @@
     <nav class="links" bind:this={linksEl}>
       <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub"><RoughIcon svg={Github} /></a>
       <a href="/resume.pdf" download aria-label="Resume"><RoughIcon svg={Profile} /></a>
-      <a href="/cp" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
+      <a href="/notes" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
       <div class="controls" bind:this={controlsEl}>
         <button class="play" onclick={togglePlay} aria-label={atEnd ? "restart" : playing ? "pause" : "play"}>
           <RoughIcon svg={atEnd ? Restart : playing ? Pause : Play} />

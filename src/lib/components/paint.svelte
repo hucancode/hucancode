@@ -2,7 +2,7 @@
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import { createRenderer } from "$lib/playgrounds/main/render/index.js";
-  import { initScene, buildState } from "$lib/playgrounds/main.js";
+  import { initScene, buildState } from "$lib/playgrounds/main";
 
   // Controlled canvas. The parent owns the timeline:
   //   t        scene time, bindable (parent maps scroll / autoplay onto it)

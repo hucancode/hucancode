@@ -9,7 +9,11 @@ import { GLYPH_FADE_TARGET } from "../config.js";
 export function createDragon3dBlock({ timing }) {
   return {
     name: "dragon3d",
-    after: { block: "inkDragon", branch: "handoff" },
+    // Active from the START of the crossfade (d3Start), not the handoff point at
+    // its END (timing.branch): the fade-in window [d3Start, d3Mid] and the glyph
+    // ease-back [d3Start, d3End] both lie BEFORE the branch, so a block that only
+    // woke at the branch never ran them — d3Alpha snapped 0 -> 1 instead of fading.
+    at: timing.d3Start,
     outputs: ["d3Alpha"],
     defaults(ctx) { ctx.d3Alpha = 0; },
     update(ctx) {
