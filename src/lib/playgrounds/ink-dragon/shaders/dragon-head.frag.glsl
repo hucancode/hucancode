@@ -1,10 +1,13 @@
+#version 300 es
 precision highp float;
 
 uniform vec4 uBrushColor;
 
-varying vec2 vUV;
+in vec2 vUV;
 
-// Plane geometry size - keep in sync with HEAD_PLANE_W/H in ink-dragon.js
+out vec4 fragColor;
+
+// Plane geometry size - keep in sync with HEAD_PLANE_W/H in index.js
 const float HEAD_W = 2.4;
 const float HEAD_H = 1.6;
 // SDF x of plane center (snout sits at sdf x = -0.55 → at vUV.x = 0.5)
@@ -60,5 +63,5 @@ void main() {
     float aa = fwidth(d);
     float alpha = (1.0 - smoothstep(-aa, aa, d)) * uBrushColor.a;
     if (alpha <= 0.0) discard;
-    gl_FragColor = vec4(uBrushColor.rgb, alpha);
+    fragColor = vec4(uBrushColor.rgb, alpha);
 }

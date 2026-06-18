@@ -88,13 +88,13 @@ void main() {
     // uAmount lowers the threshold -> more of the fbm field passes -> more blobs.
     float thr = mix(0.82, 0.12, clamp(uAmount, 0.0, 1.0));
     float patches = smoothstep(thr, thr + 0.36, fbm(w * 2.3 + vec2(11.0, 7.0)));
-    float ink = shape * grain * patches * 1.7;
+    float ink = shape * grain * patches * 1.0;
 
     // splatter speckles flung just past the current ink front
     float reach = uSpread * uGrow;
     float speck = pow(smoothstep(22.0, 40.0, magicBox((w + 9.0) * 3.0)), 2.0);
     speck *= smoothstep(reach * 1.7, reach * 0.85, r); // only near/just outside the front
-    ink = max(ink, speck * 0.8);
+    ink = max(ink, speck * clamp(uAmount, 0.0, 1.0) * 4.5);
 
     ink = clamp(ink, 0.0, 1.0);
 

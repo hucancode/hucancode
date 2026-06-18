@@ -52,8 +52,8 @@ export const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg el
 export const CAM = { fov: (45 * Math.PI) / 180, dist: 2.6 };
 
 // ---- fades / grid ----------------------------------------------------------
-export const GLYPH_FADE_TARGET = 0.25; // glyph ink eases to this opacity as the 3D dragon takes over
-export const ENSO_FADE_TARGET = 0.25;  // enso circle eases to this opacity as the 3D dragon takes over
+export const GLYPH_FADE_TARGET = 0.45; // glyph ink eases to this opacity as the 3D dragon takes over
+export const ENSO_FADE_TARGET = 0.35;  // enso circle eases to this opacity as the 3D dragon takes over
 export const GRID_REVEAL_DUR = 5.5;
 export const GRID_MAX_OPACITY = 0.75;
 export const GRID_MINOR_DIV = 5;  // minor cells per major cell
@@ -74,7 +74,7 @@ export const D3_GIRTH = 0.006; // cross-section scale for the 3D mesh
 
 // ---- ink splash ------------------------------------------------------------
 export const SPLASH_SPREAD = 1.2; // max blob radius (world units)
-export const SPLASH_AMOUNT = 0.1; // 0..1 amount of ink blobs
+export const SPLASH_AMOUNT = 0.05; // 0..1 amount of ink blobs
 export const SPLASH_FADE_IN = 5.0; // seconds for the wash to fade in at the start
 
 // ---- glyph -----------------------------------------------------------------

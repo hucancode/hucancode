@@ -19,7 +19,7 @@ export function createInkBlock({ timing, bodyCtrl, headPath, grow }) {
     branches: {
       traced: timing.glyphEnd, // head finished tracing the glyph
       handoff: timing.branch,  // branch onto loop3 (3D handoff)
-      gone: timing.d3End,      // 2D ink fully faded
+      gone: timing.inkGone,    // 2D ink fully faded
     },
     outputs: ["inkAlpha", "headAlpha", "inkWidthScale", "headSize"],
     defaults(ctx) { ctx.inkAlpha = 0; ctx.headAlpha = 1; ctx.inkWidthScale = 1; ctx.headSize = HEAD_SIZE; },
@@ -30,7 +30,7 @@ export function createInkBlock({ timing, bodyCtrl, headPath, grow }) {
     update(ctx) {
       const t = ctx.t;
       const inkReveal = ramp(t, timing.dragonStart, timing.dragonStart + 0.4, 0, 1);
-      const inkFade = ramp(t, timing.d3Mid, timing.d3End, 1, 0); // holds full until the 3D dragon is in
+      const inkFade = ramp(t, timing.d3Mid, timing.inkGone, 1, 0); // holds full until the 3D dragon is in, then fades quickly by the handoff
       ctx.inkAlpha = Math.min(inkReveal, inkFade);
       // head hidden through the lead-in + first half of the glyph trace, then fades in
       ctx.headAlpha = ramp(t, timing.headRevealT0, timing.glyphEnd, 0, 1);

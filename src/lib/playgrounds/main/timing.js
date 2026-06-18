@@ -21,16 +21,19 @@ export function computeTiming(curveDur) {
   const headRevealT0 = glyphStart + GLYPH_TRACE_DUR * 0.5; // head fades in here
 
   const branch = ensoEnd + curveDur;   // 2D head reaches the branch point
-  // Crossfade COMPLETES at branch (when the circles end). The 3D dragon fades in
-  // over [d3Start, d3Mid] while the 2D ink is still solid; the 2D ink then fades
-  // out under it over [d3Mid, d3End].
+  // Crossfade-IN completes at branch (when the circles end). The 3D dragon fades
+  // in over [d3Start, d3Mid] while the 2D ink is still solid. The fade-OUT tail
+  // (glyph + enso + 2D ink easing back) runs PAST branch until the camera pitch
+  // has settled (branch + CAM_PITCH_DUR), so the 2D layers don't vanish before
+  // the tilt finishes.
   const d3Start = branch - CROSSFADE;
-  const d3End = branch;
   const d3Mid = d3Start + CROSSFADE * D3_FADEIN_FRAC;
+  const d3End = branch + CAM_PITCH_DUR; // pitch settles here -> glyph/enso fades complete
+  const inkGone = branch;               // 2D ink itself fades out quickly, by the handoff
 
   return {
     dragonStart, glyphStart, glyphEnd, ensoStart, ensoEnd, headRevealT0,
-    branch, d3Start, d3Mid, d3End,
+    branch, d3Start, d3Mid, d3End, inkGone,
     camPitchDur: CAM_PITCH_DUR,
     splashGrowDur: branch,      // ink keeps spreading across the 2D phase, then holds
     timelineEnd: branch + 11.0, // leave room to watch the 3D dragon loop on alone

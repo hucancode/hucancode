@@ -1,27 +1,22 @@
-// Procedural ribbon mesh for ink strokes.
-// Two vertices per ribbon-point, offset by ± miter normal × half the mesh
-// band width. The mesh band is wider than the actual stroke by a clearance
-// margin (perp + arc) so the fragment shader can render ink bleed past the
-// nominal stroke edge. aLineUV carries (perp_t, arc_t) in 0..1.
-import {
-  BufferAttribute,
-  BufferGeometry,
-  Mesh,
-  ShaderMaterial,
-} from "three";
-import POLYLINE_VERT from "./shaders/stroke-polyline.vert.glsl?raw";
-import STROKE_FRAG  from "./shaders/stroke.frag.glsl?raw";
+// Procedural ribbon mesh for the dragon body stroke (engine geometry, no three).
+// Two vertices per ribbon-point, offset by ± miter normal × half the mesh band
+// width. The mesh band is wider than the actual stroke by a clearance margin
+// (perp + arc) so the fragment shader can render ink bleed past the nominal
+// stroke edge. aLineUV carries (perp_t, arc_t) in 0..1.
+//
+// The geometry is indexed + dynamic: positions/aLineUV are rewritten every time
+// the polyline changes and re-uploaded by the engine on the next draw. The scene
+// owns the program and feeds `params`/`brushColor` to the stroke shader.
+import { Geometry } from "$lib/engine/index.js";
 
 const MITER_LIMIT     = 4.0;
-const PERP_CLEARANCE  = 0.35;  // fraction of mesh perp_t reserved per side
-const ARC_CLEARANCE   = 0.15;  // fraction of mesh arc_t reserved per end
+export const PERP_CLEARANCE = 0.35;  // fraction of mesh perp_t reserved per side
+export const ARC_CLEARANCE  = 0.15;  // fraction of mesh arc_t reserved per end
 // Two extra ribbon points (one before tail, one after tip) carry the arc
 // clearance - keep this in mind when sizing buffers.
 const ARC_EXTRA_POINTS = 2;
 
-export function makePolylineStroke({
-  maxPoints, params, brushColor, aspectUniform,
-}) {
+export function makePolylineStroke({ maxPoints, params, brushColor }) {
   const ribbonCap = maxPoints + ARC_EXTRA_POINTS;
   const maxVerts  = ribbonCap * 2;
   const positions = new Float32Array(maxVerts * 3);
@@ -39,56 +34,39 @@ export function makePolylineStroke({
     indices[o + 5] = v + 3;
   }
 
-  const geom = new BufferGeometry();
-  geom.setAttribute("position", new BufferAttribute(positions, 3));
-  geom.setAttribute("aLineUV",  new BufferAttribute(lineUVs, 2));
-  geom.setIndex(new BufferAttribute(indices, 1));
+  const geom = new Geometry();
+  geom.dynamic = true;
+  geom.setAttribute("position", positions, 3);
+  geom.setAttribute("aLineUV", lineUVs, 2);
+  geom.setIndex(indices);
   geom.setDrawRange(0, 0);
 
-  const uniforms = {
-    uAspect:        aspectUniform,
-    uInkFlow:       { value: params.inkFlow },
-    uStrands:       { value: params.strands },
-    uWaterFlow:     { value: params.waterFlow },
-    uOpacity:       { value: params.opacity },
-    uWobble:        { value: params.wobble },
-    uWidthEnd:      { value: params.widthEnd },
-    uWidthOffset:   { value: params.widthOffset },
-    uWidthRange:    { value: params.widthRange },
-    uWidthAnchor:   { value: params.widthAnchor ?? 0.5 },
-    uPerpClearance: { value: PERP_CLEARANCE },
-    uArcClearance:  { value: ARC_CLEARANCE },
-    uBrushColor:    { value: brushColor },
-  };
-
-  const material = new ShaderMaterial({
-    uniforms,
-    vertexShader:   POLYLINE_VERT,
-    fragmentShader: STROKE_FRAG,
-    transparent: true,
-    depthWrite: false,
-    extensions: { derivatives: true },
-  });
-
-  const mesh = new Mesh(geom, material);
-  mesh.frustumCulled = false;
-
   return {
-    mesh, material, uniforms,
     geom, positions, lineUVs,
     maxPoints, ribbonCap, n: 0,
     lineWidth: params.lineWidth,
     lastPts: null,
+    brushColor,
+    // plain-value uniforms consumed by the scene's draw call
+    params: {
+      uInkFlow:       params.inkFlow,
+      uStrands:       params.strands,
+      uWaterFlow:     params.waterFlow,
+      uOpacity:       params.opacity,
+      uWobble:        params.wobble,
+      uWidthEnd:      params.widthEnd,
+      uWidthOffset:   params.widthOffset,
+      uWidthRange:    params.widthRange,
+      uWidthAnchor:   params.widthAnchor ?? 0.5,
+      uPerpClearance: PERP_CLEARANCE,
+      uArcClearance:  ARC_CLEARANCE,
+    },
   };
 }
 
 export function setStrokeLineWidth(stroke, w) {
   stroke.lineWidth = w;
   if (stroke.lastPts) updatePolylineStroke(stroke, stroke.lastPts);
-}
-
-export function setStrokeWireframe(stroke, on) {
-  if (stroke && stroke.material) stroke.material.wireframe = !!on;
 }
 
 export function updatePolylineStroke(stroke, points) {
@@ -218,10 +196,4 @@ function computeTotalArc(points, n) {
     acc += Math.hypot(dx, dy);
   }
   return acc;
-}
-
-export function disposePolylineStroke(stroke) {
-  if (!stroke) return;
-  if (stroke.material) stroke.material.dispose();
-  if (stroke.geom) stroke.geom.dispose();
 }

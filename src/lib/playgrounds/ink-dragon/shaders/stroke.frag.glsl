@@ -1,3 +1,4 @@
+#version 300 es
 precision highp float;
 
 uniform float uInkFlow;
@@ -13,8 +14,10 @@ uniform float uPerpClearance;  // 0..<0.5: fraction of mesh perp_t reserved per 
 uniform float uArcClearance;   // 0..<0.5: same, at tip and tail ends
 uniform vec4  uBrushColor;
 
-varying vec2 vUV01;   // (perp_t, arc_t), both in 0..1; stroke band sits in the central
-varying vec2 vWorld;  // sub-rectangle [c, 1-c] × [c, 1-c] (per-axis clearances differ)
+in vec2 vUV01;   // (perp_t, arc_t), both in 0..1; stroke band sits in the central
+in vec2 vWorld;  // sub-rectangle [c, 1-c] × [c, 1-c] (per-axis clearances differ)
+
+out vec4 fragColor;
 
 // ---------- noise / util ----------
 vec2 hash(vec2 p) {
@@ -136,5 +139,5 @@ void main() {
     float inkA = brushStrokeAlpha(uvLine, vWorld, d, uBrushColor.a);
     inkA = clamp(inkA * uOpacity, 0.0, 1.0);
 
-    gl_FragColor = vec4(uBrushColor.rgb, inkA);
+    fragColor = vec4(uBrushColor.rgb, inkA);
 }

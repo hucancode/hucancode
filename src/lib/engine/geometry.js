@@ -5,14 +5,28 @@
 
 export class Geometry {
   constructor() {
-    this.attributes = {}; // name -> { array, itemSize, count }
+    this.attributes = {}; // name -> { array, itemSize, count, needsUpdate }
+    this.index = null;    // { array, needsUpdate } when indexed (drawElements)
+    this.drawRange = null; // { start, count } to draw a sub-range; null = all
+    this.dynamic = false; // hint: per-frame attribute/index re-uploads expected
   }
   setAttribute(name, array, itemSize) {
-    this.attributes[name] = { array, itemSize, count: array.length / itemSize };
+    this.attributes[name] = { array, itemSize, count: array.length / itemSize, needsUpdate: false };
     return this;
   }
   getAttribute(name) {
     return this.attributes[name];
+  }
+  // Uint16Array of vertex indices -> draw with drawElements.
+  setIndex(array) {
+    this.index = { array, needsUpdate: false };
+    return this;
+  }
+  // Restrict the draw to [start, start+count). For indexed geometry these are
+  // index-buffer offsets/counts; otherwise vertex offsets/counts.
+  setDrawRange(start, count) {
+    this.drawRange = { start, count };
+    return this;
   }
   get vertexCount() {
     return this.attributes.position.count;

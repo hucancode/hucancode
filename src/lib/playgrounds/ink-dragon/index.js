@@ -1,35 +1,24 @@
-import {
-  DataTexture,
-  FloatType,
-  Matrix4,
-  Mesh,
-  NearestFilter,
-  NormalBlending,
-  OrthographicCamera,
-  PlaneGeometry,
-  RGBAFormat,
-  Scene,
-  ShaderMaterial,
-  Vector2,
-  Vector3,
-  WebGLRenderer,
-  ClampToEdgeWrapping,
-} from "three";
-const aspectUniform = { value: 1 };
-import VERTEX_SHADER from "$lib/playgrounds/shared/shaders/basic.vert.glsl?raw";
+// Ink dragon — standalone WebGL2 (no three.js). A 2D sumi-e dragon: a paper
+// background, a procedural ribbon body stroke, two verlet whiskers sampled from
+// a curve texture, and an SDF head plane. The engine only transports data and
+// draws; all curve/physics/transform logic lives here in the scene.
+//
+// Layering (back to front): paper (opaque) → body → whiskers → head, all alpha
+// blended over the paper in framebuffer space. The orthographic camera is
+// identity, so world coords map straight to clip (x divided by aspect).
+
+import { makeContext, Geometry, DataTexture, mat4, planeGeometry } from "$lib/engine/index.js";
+import BASIC_VERT from "./shaders/basic.vert.glsl?raw";
+import POLYLINE_VERT from "./shaders/stroke-polyline.vert.glsl?raw";
+import STROKE_FRAG from "./shaders/stroke.frag.glsl?raw";
+import PAPER_FRAG from "./shaders/paper-background.frag.glsl?raw";
 import WATERDROP_FRAGMENT_SHADER from "./shaders/waterdrop.frag.glsl?raw";
 import DRAGON_HEAD_FRAGMENT_SHADER from "./shaders/dragon-head.frag.glsl?raw";
 import {
   makePolylineStroke,
   updatePolylineStroke,
   setStrokeLineWidth,
-  setStrokeWireframe,
-  disposePolylineStroke,
-} from "$lib/playgrounds/shared/stroke-polyline-mesh";
-import {
-  makePaperBackground,
-  disposePaperBackground,
-} from "$lib/playgrounds/shared/paper-background";
+} from "./stroke-mesh.js";
 
 const PAPER_COLOR = [1.0, 1.0, 0.875, 1.0];
 
@@ -37,83 +26,58 @@ const BODY_MAX_POINTS = 64;
 const WHISKER_MAX_POINTS = 80;
 const WHISKER_SAMPLES_PER_SEGMENT = 4;
 
-let scene, camera, renderer, headMesh;
-let bodyStroke = null;
-let whiskerStrokes = [null, null];
-let background = null;
+const HEAD_PLANE_W = 2.4;
+const HEAD_PLANE_H = 1.6;
 
 const brushColor = [0.05, 0.05, 0.05, 0.95];
 
-const headUniforms = {
-  uBrushColor: { value: brushColor },
-};
+let canvas, gl, ctx;
+let pPaper, pBody, pWhisker, pHead;
+let paperQuad, whiskerQuad, headQuad;
+let bodyStroke = null;
+let whiskerStrokes = [null, null];
+let aspect = 1;
+let bodyWireframe = false;
 
-const HEAD_PLANE_W = 2.4;
-const HEAD_PLANE_H = 1.6;
+// head transform (world-space TRS, aspect-corrected to clip)
+const IDENTITY = mat4.identity(mat4.create());
+const headMatrix = mat4.identity(mat4.create());
+const headTRS = mat4.create();
+const headAspectInv = mat4.create();
+const headPos = { x: 0, y: 0, z: 0 };
+const headEuler = { x: 0, y: 0, z: 0 };
+const headScale = { x: 1, y: 1, z: 1 };
 const headState = {
-  pos: new Vector2(0, 0),
-  dir: new Vector2(1, 0),
+  pos: { x: 0, y: 0 },
+  dir: { x: 1, y: 0 },
   size: 0.25,
 };
-const headMatrixTmp = new Matrix4();
-const headAspectInv = new Matrix4();
-const headScaleVec = new Vector3();
+let headVisible = true;
+
+// ---------------- whisker stroke (curve-texture sampled SDF) ----------------
 
 function makeWhiskerStroke({ maxPoints, params }) {
   const data = new Float32Array(maxPoints * 4);
-  const tex = new DataTexture(data, maxPoints, 1, RGBAFormat, FloatType);
-  tex.minFilter = NearestFilter;
-  tex.magFilter = NearestFilter;
-  tex.wrapS = ClampToEdgeWrapping;
-  tex.wrapT = ClampToEdgeWrapping;
-  tex.needsUpdate = true;
-
-  const uniforms = {
-    uAspect: aspectUniform,
-    curveTex: { value: tex },
-    curveLen: { value: 0 },
-    curveTexWidth: { value: maxPoints },
-    curveTotalLen: { value: 1 },
-    uOffset:      { value: 0.0 },
-    uArcLength:   { value: 1.0 },
-    uLineWidth:   { value: params.width },
-    uInkFlow:     { value: params.inkFlow },
-    uOpacity:     { value: params.opacity },
-    uWidthEnd:    { value: params.widthEnd },
-    uWidthOffset: { value: params.widthOffset },
-    uWidthRange:  { value: params.widthRange },
-    uBrushColor:  { value: brushColor },
-    uBgColor:     { value: params.bgColor },
-  };
-
-  const material = new ShaderMaterial({
-    uniforms,
-    vertexShader: VERTEX_SHADER,
-    fragmentShader: WATERDROP_FRAGMENT_SHADER,
-    transparent: true,
-    depthWrite: false,
-    blending: NormalBlending,
-    extensions: { derivatives: true },
-  });
-  const mesh = new Mesh(sharedGeometry, material);
-  mesh.frustumCulled = false;
-
+  const tex = new DataTexture(data, maxPoints, 1); // RGBA32F / NEAREST defaults
   return {
-    mesh, material, uniforms,
-    tex, data,
-    maxPoints,
+    tex, data, maxPoints,
     lastPts: null,
+    bgColor: params.bgColor,
+    params: {
+      curveLen: 0,
+      curveTotalLen: 1,
+      curveTexWidth: maxPoints,
+      uOffset: 0.0,
+      uArcLength: 1.0,
+      uLineWidth: params.width,
+      uInkFlow: params.inkFlow,
+      uOpacity: params.opacity,
+      uWidthEnd: params.widthEnd,
+      uWidthOffset: params.widthOffset,
+      uWidthRange: params.widthRange,
+    },
   };
 }
-
-function disposeWhiskerStroke(s) {
-  if (!s) return;
-  if (s.mesh && scene) scene.remove(s.mesh);
-  s.material.dispose();
-  s.tex.dispose();
-}
-
-let sharedGeometry;
 
 // Cubic-bezier control points per segment using neighbor tangents.
 function buildBezierSegments(pts) {
@@ -176,11 +140,11 @@ function smoothChain(controlPoints, perSegment, maxPoints) {
 
 // Push a (possibly smoothed) chain into a whisker stroke's curve texture.
 function writeWhisker(stroke, controlPoints, perSegment) {
-  const { data, tex, uniforms, maxPoints } = stroke;
+  const { data, tex, params, maxPoints } = stroke;
   const pts = smoothChain(controlPoints, perSegment, maxPoints);
   if (pts.length < 2) {
-    uniforms.curveLen.value = 0;
-    uniforms.curveTotalLen.value = 1;
+    params.curveLen = 0;
+    params.curveTotalLen = 1;
     stroke.lastPts = null;
     return;
   }
@@ -202,53 +166,38 @@ function writeWhisker(stroke, controlPoints, perSegment) {
     data[o + 0] = data[o + 1] = data[o + 2] = data[o + 3] = 0;
   }
   tex.needsUpdate = true;
-  uniforms.curveLen.value = pts.length;
-  uniforms.curveTotalLen.value = Math.max(acc, 1e-6);
+  params.curveLen = pts.length;
+  params.curveTotalLen = Math.max(acc, 1e-6);
   stroke.lastPts = pts;
 }
 
-let headGeometry = null;
-
-function makeHeadMesh() {
-  const material = new ShaderMaterial({
-    uniforms: headUniforms,
-    vertexShader: VERTEX_SHADER,
-    fragmentShader: DRAGON_HEAD_FRAGMENT_SHADER,
-    transparent: true,
-    depthWrite: false,
-    blending: NormalBlending,
-    extensions: { derivatives: true },
-  });
-  headGeometry = new PlaneGeometry(HEAD_PLANE_W, HEAD_PLANE_H);
-  const m = new Mesh(headGeometry, material);
-  m.matrixAutoUpdate = false;
-  m.renderOrder = 3;
-  return m;
-}
-
 function updateHeadTransform() {
-  if (!headMesh) return;
-  const aspect = aspectUniform.value;
   const theta = Math.atan2(headState.dir.y, headState.dir.x);
-  const s = headState.size;
-  headMatrixTmp.makeRotationZ(theta);
-  headMatrixTmp.setPosition(headState.pos.x, headState.pos.y, 0);
-  headScaleVec.set(s, s, 1);
-  headMatrixTmp.scale(headScaleVec);
-  headAspectInv.makeScale(1 / aspect, 1, 1);
-  headMesh.matrix.multiplyMatrices(headAspectInv, headMatrixTmp);
+  headPos.x = headState.pos.x;
+  headPos.y = headState.pos.y;
+  headEuler.z = theta;
+  headScale.x = headState.size;
+  headScale.y = headState.size;
+  mat4.compose(headTRS, headPos, headEuler, headScale);
+  mat4.identity(headAspectInv);
+  headAspectInv[0] = 1 / aspect;
+  mat4.multiply(headMatrix, headAspectInv, headTRS);
 }
 
-export function init(canvas) {
-  scene = new Scene();
-  camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  renderer = new WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(window.devicePixelRatio);
+export function init(canvasEl) {
+  canvas = canvasEl;
+  ctx = makeContext(canvas, { alpha: false });
+  gl = ctx.gl;
   resize(canvas.clientWidth, canvas.clientHeight);
-  sharedGeometry = new PlaneGeometry(2, 2);
 
-  background = makePaperBackground({ bgColor: PAPER_COLOR, aspectUniform });
-  scene.add(background.mesh);
+  pPaper = ctx.program(BASIC_VERT, PAPER_FRAG);
+  pBody = ctx.program(POLYLINE_VERT, STROKE_FRAG);
+  pWhisker = ctx.program(BASIC_VERT, WATERDROP_FRAGMENT_SHADER);
+  pHead = ctx.program(BASIC_VERT, DRAGON_HEAD_FRAGMENT_SHADER);
+
+  paperQuad = planeGeometry(2, 2);
+  whiskerQuad = planeGeometry(2, 2);
+  headQuad = planeGeometry(HEAD_PLANE_W, HEAD_PLANE_H);
 
   bodyStroke = makePolylineStroke({
     maxPoints: BODY_MAX_POINTS,
@@ -260,10 +209,7 @@ export function init(canvas) {
       widthAnchor: 0.5,
     },
     brushColor,
-    aspectUniform,
   });
-  bodyStroke.mesh.renderOrder = 1;
-  scene.add(bodyStroke.mesh);
 
   for (let i = 0; i < 2; i++) {
     whiskerStrokes[i] = makeWhiskerStroke({
@@ -276,40 +222,99 @@ export function init(canvas) {
         bgColor: [0, 0, 0, 0],
       },
     });
-    whiskerStrokes[i].mesh.renderOrder = 2;
-    scene.add(whiskerStrokes[i].mesh);
   }
 
-  headMesh = makeHeadMesh();
-  scene.add(headMesh);
   updateHeadTransform();
 }
 
 export function resize(w, h) {
-  if (!renderer) return;
-  renderer.setSize(w, h, false);
-  aspectUniform.value = h > 0 ? w / h : 1;
+  if (!ctx) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  ctx.resize(w, h, dpr);
+  aspect = h > 0 ? w / h : 1;
   updateHeadTransform();
 }
 
 export function render() {
-  if (!renderer || !scene || !camera) return;
-  renderer.render(scene, camera);
+  if (!gl) return;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.disable(gl.DEPTH_TEST);
+  gl.clearColor(PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // paper background — opaque fill
+  gl.disable(gl.BLEND);
+  pPaper.use().set("uModel", IDENTITY).set("uAspect", aspect).set("uBgColor", PAPER_COLOR);
+  pPaper.draw(paperQuad);
+
+  // strokes + head — straight-alpha over the paper
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  // body ribbon
+  if (bodyStroke && bodyStroke.n >= 2) {
+    const bp = bodyStroke.params;
+    pBody.use()
+      .set("uAspect", aspect)
+      .set("uInkFlow", bp.uInkFlow)
+      .set("uStrands", bp.uStrands)
+      .set("uWaterFlow", bp.uWaterFlow)
+      .set("uOpacity", bp.uOpacity)
+      .set("uWobble", bp.uWobble)
+      .set("uWidthEnd", bp.uWidthEnd)
+      .set("uWidthOffset", bp.uWidthOffset)
+      .set("uWidthRange", bp.uWidthRange)
+      .set("uWidthAnchor", bp.uWidthAnchor)
+      .set("uPerpClearance", bp.uPerpClearance)
+      .set("uArcClearance", bp.uArcClearance)
+      .set("uBrushColor", bodyStroke.brushColor);
+    pBody.draw(bodyStroke.geom, bodyWireframe ? gl.LINE_STRIP : gl.TRIANGLES);
+  }
+
+  // whiskers
+  for (const s of whiskerStrokes) {
+    if (!s || s.params.curveLen < 2) continue;
+    const wp = s.params;
+    pWhisker.use()
+      .set("uModel", IDENTITY)
+      .set("uAspect", aspect)
+      .set("curveTex", s.tex)
+      .set("curveLen", wp.curveLen)
+      .set("curveTotalLen", wp.curveTotalLen)
+      .set("curveTexWidth", wp.curveTexWidth)
+      .set("uOffset", wp.uOffset)
+      .set("uArcLength", wp.uArcLength)
+      .set("uLineWidth", wp.uLineWidth)
+      .set("uInkFlow", wp.uInkFlow)
+      .set("uOpacity", wp.uOpacity)
+      .set("uWidthEnd", wp.uWidthEnd)
+      .set("uWidthOffset", wp.uWidthOffset)
+      .set("uWidthRange", wp.uWidthRange)
+      .set("uBrushColor", brushColor)
+      .set("uBgColor", s.bgColor);
+    pWhisker.draw(whiskerQuad);
+  }
+
+  // head plane
+  if (headVisible) {
+    pHead.use().set("uModel", headMatrix).set("uBrushColor", brushColor);
+    pHead.draw(headQuad);
+  }
 }
 
 export function setWidth(v) {
   if (bodyStroke) setStrokeLineWidth(bodyStroke, v);
 }
 export function setWireframe(on) {
-  setStrokeWireframe(bodyStroke, on);
+  bodyWireframe = !!on;
 }
-export function setInkFlow(v)   { if (bodyStroke) bodyStroke.uniforms.uInkFlow.value = v; }
-export function setStrands(v)   { if (bodyStroke) bodyStroke.uniforms.uStrands.value = v; }
-export function setWaterFlow(v) { if (bodyStroke) bodyStroke.uniforms.uWaterFlow.value = v; }
-export function setWobble(v)    { if (bodyStroke) bodyStroke.uniforms.uWobble.value = v; }
-export function setWidthEnd(v)    { if (bodyStroke) bodyStroke.uniforms.uWidthEnd.value = v; }
-export function setWidthOffset(v) { if (bodyStroke) bodyStroke.uniforms.uWidthOffset.value = v; }
-export function setWidthRange(v)  { if (bodyStroke) bodyStroke.uniforms.uWidthRange.value = v; }
+export function setInkFlow(v)   { if (bodyStroke) bodyStroke.params.uInkFlow = v; }
+export function setStrands(v)   { if (bodyStroke) bodyStroke.params.uStrands = v; }
+export function setWaterFlow(v) { if (bodyStroke) bodyStroke.params.uWaterFlow = v; }
+export function setWobble(v)    { if (bodyStroke) bodyStroke.params.uWobble = v; }
+export function setWidthEnd(v)    { if (bodyStroke) bodyStroke.params.uWidthEnd = v; }
+export function setWidthOffset(v) { if (bodyStroke) bodyStroke.params.uWidthOffset = v; }
+export function setWidthRange(v)  { if (bodyStroke) bodyStroke.params.uWidthRange = v; }
 
 export function setControlPoints(points) {
   if (!bodyStroke) return;
@@ -329,53 +334,35 @@ export function setWhisker(slot, points) {
 export function setWhiskerWidth(v) {
   for (const s of whiskerStrokes) {
     if (!s) continue;
-    s.uniforms.uLineWidth.value = v;
+    s.params.uLineWidth = v;
   }
 }
 
 export function setHead(pos, dir, size, show) {
-  if (pos) headState.pos.set(pos.x, pos.y);
-  if (dir) headState.dir.set(dir.x, dir.y);
+  if (pos) { headState.pos.x = pos.x; headState.pos.y = pos.y; }
+  if (dir) { headState.dir.x = dir.x; headState.dir.y = dir.y; }
   if (typeof size === "number") headState.size = size;
-  if (typeof show === "boolean" && headMesh) headMesh.visible = show;
+  if (typeof show === "boolean") headVisible = show;
   updateHeadTransform();
 }
 
 export function destroy() {
-  if (headMesh) {
-    headMesh.material.dispose();
-    if (scene) scene.remove(headMesh);
-    headMesh = null;
-  }
-  if (bodyStroke) {
-    if (scene) scene.remove(bodyStroke.mesh);
-    disposePolylineStroke(bodyStroke);
-    bodyStroke = null;
-  }
-  if (background) {
-    if (scene) scene.remove(background.mesh);
-    disposePaperBackground(background);
-    background = null;
-  }
-  for (let i = 0; i < whiskerStrokes.length; i++) {
-    disposeWhiskerStroke(whiskerStrokes[i]);
-    whiskerStrokes[i] = null;
-  }
-  if (sharedGeometry) { sharedGeometry.dispose(); sharedGeometry = null; }
-  if (headGeometry) { headGeometry.dispose(); headGeometry = null; }
-  if (renderer) {
-    renderer.dispose();
-    renderer = null;
-  }
-  scene = null;
-  camera = null;
+  if (pPaper) pPaper.dispose();
+  if (pBody) pBody.dispose();
+  if (pWhisker) pWhisker.dispose();
+  if (pHead) pHead.dispose();
+  pPaper = pBody = pWhisker = pHead = null;
+  bodyStroke = null;
+  whiskerStrokes = [null, null];
+  gl = null;
+  ctx = null;
 }
 
 export function screenToWorld(x, y, w, h) {
-  const aspect = w / h;
+  const a = w / h;
   const u = x / w;
   const v = 1.0 - y / h;
-  return { x: (u * 2 - 1) * aspect, y: v * 2 - 1 };
+  return { x: (u * 2 - 1) * a, y: v * 2 - 1 };
 }
 
 export function eventToWorld(canvasEl, e) {
@@ -388,8 +375,8 @@ export function eventToWorld(canvasEl, e) {
 }
 
 export function worldToScreen(p, w, h) {
-  const aspect = w / h;
-  const u = (p.x / aspect + 1) * 0.5;
+  const a = w / h;
+  const u = (p.x / a + 1) * 0.5;
   const v = (p.y + 1) * 0.5;
   return { x: u * w, y: (1 - v) * h };
 }

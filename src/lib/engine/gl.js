@@ -127,13 +127,24 @@ export function makeContext(canvas, opts = {}) {
       },
       // ensure geometry GPU buffers exist; bind a VAO specific to this program
       draw(geometry, mode = gl.TRIANGLES) {
+        const usage = geometry.dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW;
         if (!geometry._vbos) {
+          gl.bindVertexArray(null); // don't mutate a foreign VAO's element binding
           geometry._vbos = {};
           for (const name in geometry.attributes) {
+            const a = geometry.attributes[name];
             const b = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, b);
-            gl.bufferData(gl.ARRAY_BUFFER, geometry.attributes[name].array, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, a.array, usage);
+            a.needsUpdate = false;
             geometry._vbos[name] = b;
+          }
+          if (geometry.index) {
+            const ib = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geometry.index.array, usage);
+            geometry.index.needsUpdate = false;
+            geometry._ibo = ib;
           }
           geometry._vaos = new Map();
         }
@@ -149,10 +160,37 @@ export function makeContext(canvas, opts = {}) {
             gl.enableVertexAttribArray(l);
             gl.vertexAttribPointer(l, a.itemSize, gl.FLOAT, false, 0, 0);
           }
+          if (geometry._ibo) gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry._ibo);
           geometry._vaos.set(prog, vao);
         }
         gl.bindVertexArray(vao);
-        gl.drawArrays(mode, 0, geometry.attributes.position.count);
+
+        // re-upload any dirty buffers (dynamic geometry). ARRAY_BUFFER binding is
+        // not VAO state; the element buffer is, but it's already this VAO's.
+        for (const name in geometry.attributes) {
+          const a = geometry.attributes[name];
+          if (a.needsUpdate) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, geometry._vbos[name]);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, a.array);
+            a.needsUpdate = false;
+          }
+        }
+        if (geometry.index && geometry.index.needsUpdate) {
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geometry._ibo);
+          gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, geometry.index.array);
+          geometry.index.needsUpdate = false;
+        }
+
+        const r = geometry.drawRange;
+        if (geometry.index) {
+          const count = r ? r.count : geometry.index.array.length;
+          const start = r ? r.start : 0;
+          if (count > 0) gl.drawElements(mode, count, gl.UNSIGNED_SHORT, start * 2);
+        } else {
+          const count = r ? r.count : geometry.attributes.position.count;
+          const start = r ? r.start : 0;
+          if (count > 0) gl.drawArrays(mode, start, count);
+        }
         return api;
       },
       dispose() {

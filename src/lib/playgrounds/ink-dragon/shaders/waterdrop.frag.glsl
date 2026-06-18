@@ -1,8 +1,9 @@
+#version 300 es
 precision highp float;
 
 uniform float uAspect;
 uniform sampler2D curveTex;
-uniform int   curveLen;
+uniform float curveLen;       // point count packed into curveTex (cast to int below)
 uniform float curveTotalLen;
 uniform float curveTexWidth;
 uniform float uOffset;
@@ -16,11 +17,13 @@ uniform float uWidthRange;    // width step transition width (small = hard step,
 uniform vec4  uBrushColor;
 uniform vec4  uBgColor;
 
-varying vec2 vUV;
+in vec2 vUV;
+
+out vec4 fragColor;
 
 vec3 sampleCurve(int i) {
     float u = (float(i) + 0.5) / curveTexWidth;
-    return texture2D(curveTex, vec2(u, 0.5)).xyz;
+    return texture(curveTex, vec2(u, 0.5)).xyz;
 }
 
 // project p onto segment ab; returns (unsignedDist, t in [0,1], segLen)
@@ -33,14 +36,14 @@ vec3 segProject(vec2 p, vec2 a, vec2 b) {
     return vec3(length(p - q), t / L, L);
 }
 
-vec3 sdPolyline(vec2 p) {
+vec3 sdPolyline(vec2 p, int n) {
     // Coarse: sample every STRIDE-th point to find nearest region
     const int STRIDE = 8;
     float coarseBest = 1e9;
     int coarseI = 0;
     for (int i = 0; i < 32; i++) {
         int idx = i * STRIDE;
-        if (idx >= curveLen) break;
+        if (idx >= n) break;
         float d = length(p - sampleCurve(idx).xy);
         if (d < coarseBest) { coarseBest = d; coarseI = idx; }
     }
@@ -48,7 +51,7 @@ vec3 sdPolyline(vec2 p) {
     float bestAbs = 1e9;
     float bestArc = 0.0;
     int flo = max(0, coarseI - STRIDE);
-    int fhi = min(curveLen - 1, coarseI + STRIDE);
+    int fhi = min(n - 1, coarseI + STRIDE);
     for (int i = 0; i < 16; i++) {
         int idx = flo + i;
         if (idx >= fhi) break;
@@ -63,10 +66,10 @@ vec3 sdPolyline(vec2 p) {
     return vec3(bestAbs, bestArc, 0.0);
 }
 
-vec2 curvePointAtArc(float s) {
+vec2 curvePointAtArc(float s, int n) {
     // Binary search - arc lengths are monotonically increasing
     int lo = 0;
-    int hi = curveLen - 2;
+    int hi = n - 2;
     for (int i = 0; i < 9; i++) {
         if (lo >= hi) break;
         int mid = (lo + hi) / 2;
@@ -81,12 +84,13 @@ vec2 curvePointAtArc(float s) {
 void main() {
     vec2 p = vec2((vUV.x * 2.0 - 1.0) * uAspect, vUV.y * 2.0 - 1.0);
 
-    if (curveLen < 2) {
-        gl_FragColor = uBgColor;
+    int n = int(curveLen + 0.5);
+    if (n < 2) {
+        fragColor = uBgColor;
         return;
     }
 
-    vec3 pr = sdPolyline(p);
+    vec3 pr = sdPolyline(p, n);
     float sd = pr.x;
     float arc = pr.y;
 
@@ -96,7 +100,7 @@ void main() {
 
     // round cap at tip (head end)
     if (arc > endArc) {
-        vec2 ep = curvePointAtArc(endArc);
+        vec2 ep = curvePointAtArc(endArc, n);
         sd = distance(p, ep);
         arc = endArc;
     }
@@ -127,5 +131,5 @@ void main() {
     // 'over' composite with background
     float outA = strokeA + uBgColor.a * (1.0 - strokeA);
     vec3 outRGB = (strokeA * uBrushColor.rgb + uBgColor.rgb * uBgColor.a * (1.0 - strokeA)) / max(outA, 1e-6);
-    gl_FragColor = vec4(outRGB, outA);
+    fragColor = vec4(outRGB, outA);
 }
