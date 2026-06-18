@@ -2,10 +2,11 @@
   import { browser } from "$app/environment";
   import Scene from "$lib/components/paint.svelte";
   import Timeline from "$lib/components/timeline.svelte";
+  import RoughIcon from "$lib/components/rough-icon.svelte";
   import { TIMELINE_END } from "$lib/scenes/paint.js";
   import Github from "$icons/simple-icons/github.svg?raw";
-  import Download from "$icons/google-material/download.svg?raw";
-  import Book from "$icons/google-material/book.svg?raw";
+  import Profile from "$icons/google-material/profile.svg?raw";
+  import PersonRaiseHand from "$icons/google-material/person-raise-hand.svg?raw";
   import Play from "$icons/google-material/play-arrow.svg?raw";
   import Pause from "$icons/google-material/pause.svg?raw";
   import ChevronDown from "$icons/google-material/chevron-down.svg?raw";
@@ -26,9 +27,9 @@
   // one fixed-size coach mark per icon -> never scales with the row width
   // lx/ly stagger each label off the row; arrow tip stays at the icon (42,6)
   const ICON_HINTS = [
-    { label: "Code", rot: -6, bend: -6, lx: 38, ly: 30 },
-    { label: "Resume", rot: 5, bend: 8, lx: 47, ly: 52 },
-    { label: "Notes", rot: -8, bend: -3, lx: 45, ly: 38 },
+    { label: "Code", rot: 6, bend: -6, lx: 38, ly: 40 },
+    { label: "Resume", rot: 0, bend: 2, lx: 47, ly: 52 },
+    { label: "Notes", rot: -8, bend: -3, lx: 55, ly: 44 },
   ];
   let linksEl = $state(null); // icon row; we measure each child <a>
   let iconHintEls = $state([]); // one popover per icon
@@ -129,12 +130,12 @@
 <header class="topbar">
   <div class="bar">
     <nav class="links" bind:this={linksEl}>
-      <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub">{@html Github}</a>
-      <a href="/resume.pdf" download aria-label="Resume">{@html Download}</a>
-      <a href="/cp" aria-label="Notes">{@html Book}</a>
+      <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub"><RoughIcon svg={Github} /></a>
+      <a href="/resume.pdf" download aria-label="Resume"><RoughIcon svg={Profile} /></a>
+      <a href="/cp" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
       <div class="controls" bind:this={controlsEl}>
         <button class="play" onclick={togglePlay} aria-label={playing ? "pause" : "play"}>
-          {@html playing ? Pause : Play}
+          <RoughIcon svg={playing ? Pause : Play} />
         </button>
         <Timeline {progress} onseek={seek} />
         {#if showDebug}
@@ -150,9 +151,9 @@
          each centered under its own icon so it never drifts or scales. -->
     {#each ICON_HINTS as h, i}
       <div class="hints" popover="manual" bind:this={iconHintEls[i]} aria-hidden="true">
-        <svg viewBox="0 0 84 60">
+        <svg viewBox="0 0 90 60">
           <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d={`M${h.lx} ${h.ly - 11} C ${h.lx + h.bend} ${h.ly - 20} ${42 - h.bend} 14 42 6`} />
+            <path d={`M${h.lx} ${h.ly - 11} C ${h.lx + h.bend} ${h.ly - 20} ${36 - h.bend} 14 42 6`} />
             <path d="M42 6 l -4 4 M42 6 l 4 4.5" />
           </g>
           <text class="ink" x={h.lx} y={h.ly} text-anchor="middle" transform={`rotate(${h.rot} ${h.lx} ${h.ly})`}>{h.label}</text>
@@ -167,7 +168,7 @@
           <path d="M58 40 C 54 26, 66 16, 60 7.5" />
           <path d="M60 7.5 l -6 5 M60 7.5 l 5 6.5" />
         </g>
-        <text class="ink" x="60" y="44" text-anchor="middle" transform="rotate(-4 60 44)">Animation!</text>
+        <text class="ink" x="60" y="54" text-anchor="middle" transform="rotate(-4 60 44)">Animation!</text>
       </svg>
     </div>
 
@@ -182,7 +183,7 @@
 </div>
 
 <button class="scroll-hint" class:show={progress < 0.02} onclick={() => (playing = true)} aria-label="play">
-  {@html ChevronDown}
+  <RoughIcon svg={ChevronDown} />
 </button>
 
 <footer class:show={progress >= 1}>
@@ -282,8 +283,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 3rem;
+    height: 3rem;
     border: none;
     background: none;
     cursor: pointer;
@@ -292,8 +293,8 @@
   }
   .play:hover { opacity: 1; }
   .play :global(svg) {
-    width: 1.4rem;
-    height: 1.4rem;
+    width: 2.2rem;
+    height: 2.2rem;
   }
   .debug {
     display: flex;
@@ -362,7 +363,7 @@
   .scroll-hint.show:hover {
     opacity: 1;
   }
-  .scroll-hint svg {
+  .scroll-hint :global(svg) {
     width: 2.5rem;
     height: 2.5rem;
   }
