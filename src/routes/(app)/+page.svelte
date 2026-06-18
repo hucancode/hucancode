@@ -342,7 +342,8 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    scale: 2;
+    translate: -50% -50%;
     z-index: 10;
     color: var(--ink);
     border: none;
@@ -366,8 +367,8 @@
     height: 2.5rem;
   }
   @keyframes hint-bounce {
-    0%, 100% { transform: translate(-50%, -50%); }
-    50% { transform: translate(-50%, calc(-50% + 10px)); }
+    0%, 100% { translate: -50% -50%; }
+    50% { translate: -50% calc(-50% + 10px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .scroll-hint.show { animation: none; }

@@ -640,7 +640,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.dragon3d.uHeadOffset, d3.headOffset);
     gl.uniform1f(U.dragon3d.uGirth, d3.girth);
     gl.uniform1f(U.dragon3d.uOpacity, state.opacity.dragon3d);
-    gl.uniform1f(U.dragon3d.uLightBoost, isDark() ? 2.0 : 1.0);
+    gl.uniform1f(U.dragon3d.uLightBoost, isDark() ? 4.0 : 1.0);
     gl.uniform1f(U.dragon3d.uTime, d3.time);
     gl.uniformMatrix4fv(U.dragon3d.uViewProj, false, d3.viewProj);
     gl.drawArrays(gl.TRIANGLES, 0, d3VertexCount);

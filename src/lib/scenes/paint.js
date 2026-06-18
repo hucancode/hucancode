@@ -61,8 +61,8 @@ const FRAME_MEDIUM_N = 8;           // medium circles externally tangent to the 
 const FRAME_MEDIUM_R = 0.7;         // medium radius as a fraction of ENSO_R (clamped, see below)
 const FRAME_INNER_AXIS = Math.PI / 8; // vesica-pair axis (offset off the medium spokes)
 const FRAME_BRANCH_P = 0.5;         // chance to switch circles at a touching point
-const FRAME_MIN_LEN = 9.0;          // keep walking until the path is at least this long
-const FRAME_MAX_STEPS = 80;         // hard cap on arcs walked (safety)
+const FRAME_MIN_LEN = 18.0;         // keep walking until the path is at least this long (longer = longer 2D fly)
+const FRAME_MAX_STEPS = 160;        // hard cap on arcs walked (safety; raised to reach the longer min length)
 const FRAME_SAMPLES = 96;           // dense samples per full (2π) revolution
 const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolerance
 
@@ -72,10 +72,12 @@ const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolerance
 // 3D dragon flies this orbit forever (see orbitPivots / buildDragon3dFrames).
 const R3D = 0.95;            // 3D orbit radius (x/y) — rings the rosette (frame reaches ~0.9)
 const Z3D = 0.45;            // 3D orbit out-of-plane amplitude (height once the camera tilts)
-const LOOP3_PIVOTS = 12;     // pivots around the orbit
+const LOOP3_PIVOTS = 24;     // pivots around the orbit (more -> crisper petals)
 const LOOP3_WAVES = 3;       // z undulations per orbit (full periods, so z closes smoothly)
-const SP2 = 2.5;             // 2D & 3D head speed (world units / sec)
-const SP3 = SP2;             // 3D dragon speed matches 2D
+const LOOP3_LOBES = 3;       // radial petals: the orbit winds IN/OUT this many times -> a longer path (longer loop period) within the SAME outer radius
+const LOOP3_LOBE_DEPTH = 0.45; // how far each petal dips inward, as a fraction of R3D (0 = plain circle)
+const SP2 = 2.0;             // 2D dragon speed (world units / sec)
+const SP3 = 1.5;             // 3D dragon speed
 const ENSO_DUR = (2 * Math.PI * ENSO_R) / SP2; // enso circumference / speed
 const CROSSFADE = 1.0;       // 2D->3D crossfade duration
 const CAM_PITCH_DUR = CROSSFADE * 4; // camera pitch tilt duration (slower than the fade)
@@ -83,7 +85,7 @@ const MAX_EXIT_TURN = Math.PI / 4; // cap on the peel-off turn at the branch ont
 const MIN_TURN = Math.PI / 9;      // floor on the turn angle at a pivot (keeps loops from going too straight)
 const MAX_TURN = Math.PI / 2;      // angle above which a pivot counts as a "sharp" turn
 const MAX_SHARP_RUN = 2;           // a sharp turn is fine, but not N in a row -> relax the Nth
-const RELAX_ITERS = 24;            // relaxation passes
+const RELAX_ITERS = 5;            // relaxation passes
 
 const T_GLYPH_START = T.dragonStart + LEADIN_DUR;    // lead-in -> glyph trace
 const T_GLYPH_END = T_GLYPH_START + GLYPH_TRACE_DUR; // glyph trace -> enso branch
@@ -104,14 +106,14 @@ let D3_MID = D3_START;
 // Camera: looks straight down (top-down, pitch 0) through the glyph trace; tilts
 // to a 45deg elevation as the 2D dragon fades to the 3D dragon. Yaw stays
 // user-controllable (component), pitch is fully scripted here.
-const CAM_PITCH_ANGLE = -Math.PI * 0.3; // straight-down (0) -> 45deg elevation tilt (sign = tilt dir)
-const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as the 3D dragon takes over
-const ENSO_FADE_TARGET = 0.5;   // enso circle eases to this opacity as the 3D dragon takes over
+const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg elevation tilt (sign = tilt dir)
+const GLYPH_FADE_TARGET = 0.25; // glyph ink eases to this opacity as the 3D dragon takes over
+const ENSO_FADE_TARGET = 0.25;   // enso circle eases to this opacity as the 3D dragon takes over
 // Ground grid reveals AFTER the 2D dragon is fully gone, wiping in radially.
-const GRID_REVEAL_DUR = 2.5;
-const GRID_MAX_OPACITY = 0.22;
+const GRID_REVEAL_DUR = 5.5;
+const GRID_MAX_OPACITY = 0.75;
 const GRID_MINOR_DIV = 5; // minor cells per major cell (minor step = GRID.step/this)
-const GRID_MINOR_LAG = 0.8; // minor grid wipe-in trails the major reveal by this many seconds
+const GRID_MINOR_LAG = 1.5; // minor grid wipe-in trails the major reveal by this many seconds
 
 // after the 2D->3D branch, leave room to watch the 3D dragon loop on alone.
 export let TIMELINE_END = T_BRANCH + 11.0;
@@ -244,15 +246,20 @@ function buildOpenSpline(pivots) {
   return { ...curve, arcAtU };
 }
 
-// Even pivots on a circle of `radius`, z undulating `waves` full periods per turn
-// (so z returns to 0 at the seam -> a clean closed loop). `phase` sets the start
-// angle. Deterministic — the dragon's 3D orbit is a definite path, not random.
-function orbitPivots(count, radius, zAmp, waves, phase) {
+// Even pivots around a ring, z undulating `waves` full periods per turn (so z
+// returns to 0 at the seam -> a clean closed loop). `phase` sets the start angle.
+// `lobes` adds radial petals: the ring dips inward up to `lobeDepth`·radius,
+// `lobes` times per revolution, so the path winds in/out (a LONGER loop) while
+// its outer bound stays `radius`. lobes integer -> the radius closes at the seam.
+// Deterministic — the dragon's 3D orbit is a definite path, not random.
+function orbitPivots(count, radius, zAmp, waves, phase, lobes = 0, lobeDepth = 0) {
   const pts = new Array(count);
   for (let k = 0; k < count; k++) {
     const f = k / count;
     const a = phase + f * TAU;
-    pts[k] = { x: radius * Math.cos(a), y: radius * Math.sin(a), z: zAmp * Math.sin(waves * f * TAU) };
+    const g = lobes > 0 ? 0.5 + 0.5 * Math.cos(lobes * f * TAU) : 0; // 0 at petal tip, 1 at the inward dip
+    const r = radius * (1 - lobeDepth * g);
+    pts[k] = { x: r * Math.cos(a), y: r * Math.sin(a), z: zAmp * Math.sin(waves * f * TAU) };
   }
   return pts;
 }
@@ -538,6 +545,14 @@ function phaseOf(t) {
   return PHASES.length - 1;
 }
 const pathAt = (t) => PHASES[phaseOf(t)].path(t);
+// Head position at scene time t (global sampler -> crosses phase seams). Every
+// phase is positionally continuous with the previous (leadIn end == glyph start,
+// glyph exit == ensoBranch entry, ensoBranch exit == ensoPos(0), ...), so walking
+// this over t gives ONE continuous motion line through every transition.
+function posAt(t) {
+  const { fn, a } = pathAt(t);
+  return fn(a);
+}
 function tipAt(t) {
   const { fn, a } = pathAt(t);
   const p = fn(a), p2 = fn(a + 1e-3);
@@ -546,11 +561,17 @@ function tipAt(t) {
   return { x: p.x, y: p.y, dir: { x: dx / m, y: dy / m } };
 }
 
-// debug: sample the 2D curve roam as a polyline
-function samplePath2d(t, n = 256) {
+// debug: the FULL 2D head motion line across every phase (lead-in -> glyph ->
+// enso branch -> enso -> roam), sampled in scene-time so the phase TRANSITIONS
+// (glyph exit, enso entry) show up and their smoothness can be eyeballed.
+function samplePath2d(_t, n = 600) {
   const out = [];
-  if (!curvePath) return out;
-  for (let i = 0; i <= n; i++) out.push(curvePath.pos((i / n) * curvePath.total));
+  if (!PHASES.length || !curvePath) return out;
+  for (let i = 0; i <= n; i++) {
+    const tt = lerp(T.dragonStart, T_BRANCH, i / n);
+    const p = posAt(tt);
+    out.push({ x: p.x, y: p.y, z: 0 });
+  }
   return out;
 }
 
@@ -560,7 +581,7 @@ function samplePath2d(t, n = 256) {
 const BODY_N = 20;
 const BODY_LEN = 0.8;
 const PROP_SPEED = 0.2; // chain relaxation per step (verlet lag)
-const ENABLE_PHYSICS = true; // false -> body rigidly matches the line of motion (refit on-path each frame, no verlet trail)
+const ENABLE_PHYSICS = false; // false -> body rigidly matches the line of motion (refit on-path each frame, no verlet trail)
 const MAX_BEND = (60 * Math.PI) / 180;
 const HEAD_SIZE = 0.1;
 
@@ -568,28 +589,39 @@ let body = [];
 let _next = null; // persistent scratch chain swapped with body in stepBody (no per-frame alloc)
 let lastInkPhase = -1; // path phase the body was last fitted in (refit on change)
 
-// Fit the body ALONG the current path: head at the path point for t, the rest
-// trailing back by arc length on the same curve. Used when seeking (no straight
-// teleport) - physics then takes over from this on-path pose during playback.
+// Fit the body ALONG the motion line: head at the path point for t, the rest
+// trailing back by arc length. We walk backward IN SCENE-TIME through the global
+// sampler (posAt), NOT in the current phase's own parameter — so the trail flows
+// across phase seams (glyph exit -> enso entry, etc.). Walking the per-phase
+// parameter instead clamped at a phase's param start and laid the tail down as a
+// straight stub (the horizontal line seen at the glyph->enso handoff with physics
+// off). Used on seek (no teleport) and every frame when physics is disabled.
 function reseedBody(t, len = BODY_LEN) {
-  const { fn, a: headA } = pathAt(t);
-  // dense samples walking backward from the head, accumulating arc length
-  const step = 0.02;
-  const pts = [fn(headA)];
+  const dt = 0.004;            // scene-time step walking backward from the head
+  const t0 = T.dragonStart;    // the dragon does not exist before this -> floor
+  const tHead = Math.min(Math.max(t, t0), T_BRANCH); // head holds at the branch in loop3
+  const head = posAt(tHead);
+  const pts = [{ x: head.x, y: head.y }];
   const arcs = [0];
-  let prev = pts[0], acc = 0, a = headA, guard = 0;
-  while (acc < len && guard++ < 5000) {
-    a -= step;
-    const p = fn(a);
-    acc += Math.hypot(p.x - prev.x, p.y - prev.y);
-    pts.push(p); arcs.push(acc); prev = p;
+  let prev = pts[0], acc = 0, tt = tHead;
+  while (acc < len && tt > t0) {
+    tt = Math.max(t0, tt - dt);
+    const q = posAt(tt);
+    acc += Math.hypot(q.x - prev.x, q.y - prev.y);
+    pts.push({ x: q.x, y: q.y }); arcs.push(acc); prev = pts[pts.length - 1];
   }
   body = new Array(BODY_N);
+  // degenerate: head sits at the timeline start (no trail yet) -> collapse the
+  // whole body onto the head point (avoids indexing the empty pts[1]).
+  if (pts.length < 2) {
+    for (let i = 0; i < BODY_N; i++) body[i] = { x: pts[0].x, y: pts[0].y };
+    return;
+  }
   for (let i = 0; i < BODY_N; i++) {
     const back = (1 - i / (BODY_N - 1)) * len; // i=N-1 head .. i=0 tail
     let lo = 0, hi = arcs.length - 1;
     while (lo < hi) { const mid = (lo + hi) >> 1; if (arcs[mid] < back) lo = mid + 1; else hi = mid; }
-    const j = Math.max(1, lo);
+    const j = Math.min(Math.max(1, lo), pts.length - 1);
     const seg = arcs[j] - arcs[j - 1] || 1e-6;
     const k = (back - arcs[j - 1]) / seg;
     body[i] = { x: lerp(pts[j - 1].x, pts[j].x, k), y: lerp(pts[j - 1].y, pts[j].y, k) };
@@ -803,10 +835,10 @@ const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
 // fbm edge and ~3 posterised ink tones (see splash.frag.glsl). spread = max blob
 // radius (world units); grow ramps 0->1 over the 2D phase, then holds.
 // ============================================================================
-const SPLASH_SPREAD = 0.8;        // max blob radius (world units)
-const SPLASH_AMOUNT = 0.45;        // 0..1 amount of ink blobs (higher = denser)
+const SPLASH_SPREAD = 1.2;        // max blob radius (world units)
+const SPLASH_AMOUNT = 0.1;        // 0..1 amount of ink blobs (higher = denser)
 let SPLASH_GROW_DUR = T_BRANCH;  // ink keeps spreading across the 2D phase, then holds
-const SPLASH_FADE_IN = 1.0;        // seconds for the wash to fade in at the start
+const SPLASH_FADE_IN = 5.0;        // seconds for the wash to fade in at the start
 
 // ============================================================================
 // public API
@@ -887,7 +919,7 @@ export function initScene() {
   // at bp's angle so its first pivot sits roughly along the exit -> a short swoop
   // from bp onto the ring; clampExitPivot then pins the peel-off tangent to tb.
   const bpA = Math.atan2(bp.y, bp.x);
-  const rest = orbitPivots(LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, bpA);
+  const rest = orbitPivots(LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, bpA, LOOP3_LOBES, LOOP3_LOBE_DEPTH);
   clampExitPivot(rest, { x: bp.x, y: bp.y, dir: { x: tb.x, y: tb.y } }, MAX_EXIT_TURN);
   const ring3 = [{ x: bp.x, y: bp.y, z: 0 }, ...rest];
   relaxTurns(ring3, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, (i) => i >= 1, RELAX_ITERS); // pin the branch anchor
