@@ -9,6 +9,7 @@
   import PersonRaiseHand from "$icons/google-material/person-raise-hand.svg?raw";
   import Play from "$icons/google-material/play-arrow.svg?raw";
   import Pause from "$icons/google-material/pause.svg?raw";
+  import Restart from "$icons/google-material/restart.svg?raw";
   import ChevronDown from "$icons/google-material/chevron-down.svg?raw";
 
   // scroll length (px) mapped onto the whole timeline. The stage is sticky and
@@ -37,6 +38,7 @@
   let controlsEl = $state(null); // play + seek bar it points at
 
   const progress = $derived(Math.min(1, t / TIMELINE_END));
+  const atEnd = $derived(t >= TIMELINE_END);
 
   function scrollTo(px) {
     const y = Math.round(px);
@@ -109,7 +111,14 @@
     if (browser) scrollTo(p * SCROLL_LEN);
   }
   function togglePlay() {
-    if (t >= TIMELINE_END) t = 0; // replay from the top
+    if (atEnd) {
+      // restart: jump to the top and replay
+      t = 0;
+      if (browser) scrollTo(0);
+      playing = true;
+      userPaused = false;
+      return;
+    }
     playing = !playing;
     userPaused = !playing;
   }
@@ -134,8 +143,8 @@
       <a href="/resume.pdf" download aria-label="Resume"><RoughIcon svg={Profile} /></a>
       <a href="/cp" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
       <div class="controls" bind:this={controlsEl}>
-        <button class="play" onclick={togglePlay} aria-label={playing ? "pause" : "play"}>
-          <RoughIcon svg={playing ? Pause : Play} />
+        <button class="play" onclick={togglePlay} aria-label={atEnd ? "restart" : playing ? "pause" : "play"}>
+          <RoughIcon svg={atEnd ? Restart : playing ? Pause : Play} />
         </button>
         <Timeline {progress} onseek={seek} />
         {#if showDebug}
