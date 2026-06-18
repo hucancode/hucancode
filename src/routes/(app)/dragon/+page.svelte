@@ -56,7 +56,7 @@
   <title>Dragon</title>
 </svelte:head>
 
-<a class="back" href="/playgrounds">{@html Return}</a>
+<a class="back" href="/playgrounds">{@html Return} Playgrounds</a>
 
 <main>
   <figure>

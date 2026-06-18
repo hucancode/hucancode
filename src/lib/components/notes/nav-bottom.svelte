@@ -21,6 +21,9 @@
 <style>
   nav {
     margin-bottom: 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   h2 {
     display: flex;
