@@ -20,8 +20,17 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     const y = h / 2;
-    // a single rough baseline spanning the bar, lowkey
-    rc.line(2, y, w - 2, y, { stroke: "#6b6450", strokeWidth: 1, roughness: 1.0, bowing: 0 });
+    const x0 = 2, x1 = w - 2;
+    const p = Math.min(1, Math.max(0, progress));
+    const px = x0 + (x1 - x0) * p;
+    // unplayed baseline, lowkey
+    rc.line(px, y, x1, y, { stroke: "#6b6450", strokeWidth: 2, roughness: 1.0, bowing: 0, seed: 7 });
+    // played portion, sketchy + bolder
+    if (px > x0) {
+      rc.line(x0, y, px, y, { stroke: "#c1666b", strokeWidth: 4.5, roughness: 1.4, bowing: 1, seed: 13 });
+    }
+    // hand-drawn handle circle at playhead
+    rc.circle(px, y, 14, { stroke: "#d4b483", strokeWidth: 2, fill: "#c1666b", fillStyle: "solid", roughness: 1.2, seed: 21 });
   }
 
   function seekAt(clientX) {
@@ -40,6 +49,12 @@
     ro.observe(host);
   });
   onDestroy(() => ro && ro.disconnect());
+
+  // redraw when progress changes
+  $effect(() => {
+    progress;
+    draw();
+  });
 </script>
 
 <div
@@ -56,7 +71,6 @@
   onpointerup={onUp}
   onpointerleave={onUp}
 >
-  <div class="fill" style:width={`${Math.min(1, Math.max(0, progress)) * 100}%`}></div>
   <canvas bind:this={canvasEl} aria-hidden="true"></canvas>
 </div>
 
@@ -64,20 +78,10 @@
   .rt {
     position: relative;
     flex: 1;
-    height: 12px;
+    height: 20px;
     min-width: 80px;
     cursor: pointer;
     touch-action: none;
-  }
-  .rt .fill {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    height: 4px;
-    transform: translateY(-50%);
-    border-radius: 2px;
-    background: linear-gradient(90deg, #d4b483, #c1666b, #6b4e71);
-    opacity: 0.8;
   }
   .rt canvas {
     position: absolute;
