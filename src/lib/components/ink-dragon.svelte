@@ -25,7 +25,7 @@
     getOverlay,
     eventToWorld,
     worldToScreen,
-  } from "$lib/scenes/ink-dragon";
+  } from "$lib/playgrounds/ink-dragon";
 
   let canvasEl;
   let ready = $state(false);

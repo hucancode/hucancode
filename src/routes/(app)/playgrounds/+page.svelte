@@ -10,7 +10,7 @@
     { href: "/dragon", name: "Dragon", icon: Dragon, thumb: "/assets/thumb/dragon.png" },
     { href: "/rubik", name: "Rubik", icon: Cube, thumb: "/assets/thumb/rubik.png" },
     { href: "/taiji", name: "Taiji", icon: Planet, thumb: "/assets/thumb/taiji.png" },
-    { href: "/ink", name: "Ink", icon: Planet, thumb: "/assets/thumb/ink.png" },
+    { href: "/enso", name: "Ensō", icon: Planet, thumb: "/assets/thumb/enso.png" },
     { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: "/assets/thumb/ink-dragon.png" },
     { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: "/assets/thumb/caligraphy.png" },
     { href: "/lego", name: "Lego", icon: Cube, thumb: "/assets/thumb/lego.png" },
@@ -59,7 +59,6 @@
 
 <main>
   <a class="back" href="/">{@html Return} Home</a>
-  <h1>Playgrounds</h1>
   <ul>
     {#each playgrounds as p, i}
       <li>
@@ -138,6 +137,7 @@
     height: 100%;
     pointer-events: none;
     overflow: visible;
+    opacity: 0.15;
   }
   .thumb {
     width: 18rem;
@@ -164,21 +164,4 @@
     color: var(--ink);
     padding-left: 0.1rem;
   }
-  a.back {
-    position: absolute;
-    top: 1rem;
-    left: 1.5rem;
-    z-index: 10;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0;
-    background: none;
-    border: none;
-    font-family: "Virgil", "Comic Sans MS", cursive;
-    color: var(--link);
-    text-decoration: none;
-  }
-  a.back:hover { opacity: 0.7; }
-  a.back :global(svg) { width: 1.2rem; height: 1.2rem; }
 </style>

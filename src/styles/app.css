@@ -30,9 +30,9 @@
 @media (prefers-color-scheme: dark) {
   :root,
   :host {
-    --paper: #181616;
-    --ink: #c5c9c5;
-    --link: #8ba4b0;
+    --paper: #16161d;
+    --ink: #dcd7ba;
+    --link: #7e9cd8;
     --color-neutral-950: rgb(215, 224, 254);
     --color-neutral-900: rgb(166, 173, 200);
     --color-neutral-800: rgb(147, 153, 178);
@@ -373,14 +373,15 @@ a.back {
   z-index: 10;
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
   color: var(--link);
   text-decoration: none;
-  background: color-mix(in srgb, var(--paper) 85%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-  padding: 0.25rem;
+  padding: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
 }
 a.back:hover { opacity: 0.7; }
-a.back svg { width: 1.5rem; height: 1.5rem; }
+a.back svg { width: 1.6rem; height: 1.6rem; }
 
 /* canvas/scene page layout */
 main {
@@ -390,6 +391,7 @@ main {
   max-width: 1024px;
   margin-inline: auto;
   padding: 1rem;
+  padding-top: 3.5rem;   /* clear the fixed back button */
   gap: 1rem;
 }
 @media (min-width: 768px) {
@@ -452,4 +454,12 @@ input[type="range"] { width: 100%; }
 }
 .container-xxl {
   max-width: 1536px;
+}
+
+/* 3D canvas scenes */
+.scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
 }

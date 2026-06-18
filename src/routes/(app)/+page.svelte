@@ -3,7 +3,7 @@
   import Scene from "$lib/components/paint.svelte";
   import Timeline from "$lib/components/timeline.svelte";
   import RoughIcon from "$lib/components/rough-icon.svelte";
-  import { TIMELINE_END } from "$lib/scenes/paint.js";
+  import { TIMELINE_END } from "$lib/playgrounds/main";
   import Github from "$icons/simple-icons/github.svg?raw";
   import Profile from "$icons/google-material/profile.svg?raw";
   import PersonRaiseHand from "$icons/google-material/person-raise-hand.svg?raw";
@@ -141,7 +141,7 @@
     <nav class="links" bind:this={linksEl}>
       <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub"><RoughIcon svg={Github} /></a>
       <a href="/resume.pdf" download aria-label="Resume"><RoughIcon svg={Profile} /></a>
-      <a href="/cp" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
+      <a href="/notes" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
       <div class="controls" bind:this={controlsEl}>
         <button class="play" onclick={togglePlay} aria-label={atEnd ? "restart" : playing ? "pause" : "play"}>
           <RoughIcon svg={atEnd ? Restart : playing ? Pause : Play} />
@@ -243,7 +243,7 @@
       display 0.4s allow-discrete;
   }
   .hints:popover-open {
-    opacity: 0.75;
+    opacity: 0.95;
   }
   @starting-style {
     .hints:popover-open {
@@ -298,7 +298,7 @@
     background: none;
     cursor: pointer;
     color: var(--ink);
-    opacity: 0.7;
+    opacity: 0.9;
   }
   .play:hover { opacity: 1; }
   .play :global(svg) {
@@ -311,7 +311,7 @@
     gap: 0.5rem;
     font-variant-numeric: tabular-nums;
     font-size: 0.8rem;
-    opacity: 0.7;
+    opacity: 0.85;
   }
   .track {
     position: relative;
@@ -365,7 +365,7 @@
     transition: opacity 0.4s ease;
   }
   .scroll-hint.show {
-    opacity: 0.6;
+    opacity: 0.85;
     pointer-events: auto;
     animation: hint-bounce 1.4s ease-in-out infinite;
   }
