@@ -19,19 +19,19 @@ import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./stroke-gl.js";
 import { makeContext, loadDragonMesh } from "$lib/engine/index.js";
 
-// Kanagawa: lotusWhite3 / lotusInk2 for light; dragonBlack3 / dragonWhite for dark
+// Kanagawa wave: lotusWhite3 / sumiInk0 for light; sumiInk0 / fujiWhite for dark
 const PAPER_LIGHT      = [0.949, 0.925, 0.737, 1.0];
 const INK_LIGHT        = [0.086, 0.086, 0.114, 0.95]; // sumiInk0 #16161D
-const PAPER_DARK       = [0.094, 0.086, 0.086, 1.0];
-const INK_DARK         = [0.773, 0.788, 0.773, 0.95];
+const PAPER_DARK       = [0.086, 0.086, 0.114, 1.0]; // sumiInk0 #16161D
+const INK_DARK         = [0.863, 0.843, 0.729, 0.95]; // fujiWhite #DCD7BA
 // splash uses a tonal range: mix(INK_xLOW, INK_xHIGH, coverage)
 const SPLASH_LOW_LIGHT = [0.32, 0.31, 0.30];  // low-coverage areas, light mode
 const SPLASH_HIGH_LIGHT= [0.06, 0.06, 0.07];  // high-coverage areas, light mode
-const SPLASH_LOW_DARK  = [0.45, 0.47, 0.45];  // low-coverage areas, dark mode
-const SPLASH_HIGH_DARK = [0.773, 0.788, 0.773]; // high-coverage areas, dark mode
+const SPLASH_LOW_DARK  = [0.47, 0.46, 0.40];  // low-coverage areas, dark mode (warm grey)
+const SPLASH_HIGH_DARK = [0.863, 0.843, 0.729]; // high-coverage areas, dark mode (fujiWhite)
 // 3d dragon albedo: dark ink on light paper / light ink on dark paper
 const DRAGON3D_LIGHT   = [0.06, 0.07, 0.10];  // near-black, light mode
-const DRAGON3D_DARK    = [0.62, 0.66, 0.70];  // light grey, dark mode
+const DRAGON3D_DARK    = [0.70, 0.68, 0.59];  // fujiWhite, dimmed for shading
 const _darkMQ = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 function isDark()         { return !!_darkMQ?.matches; }
 function getPaper()       { return isDark() ? PAPER_DARK  : PAPER_LIGHT; }

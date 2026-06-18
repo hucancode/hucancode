@@ -30,9 +30,9 @@
 @media (prefers-color-scheme: dark) {
   :root,
   :host {
-    --paper: #181616;
-    --ink: #c5c9c5;
-    --link: #8ba4b0;
+    --paper: #16161d;
+    --ink: #dcd7ba;
+    --link: #7e9cd8;
     --color-neutral-950: rgb(215, 224, 254);
     --color-neutral-900: rgb(166, 173, 200);
     --color-neutral-800: rgb(147, 153, 178);
@@ -391,6 +391,7 @@ main {
   max-width: 1024px;
   margin-inline: auto;
   padding: 1rem;
+  padding-top: 3.5rem;   /* clear the fixed back button */
   gap: 1rem;
 }
 @media (min-width: 768px) {
