@@ -32,6 +32,7 @@ const T = {
 const LEADIN_DUR = 0.5;       // straight glide from the top onto the glyph start
 const LEADIN_START = { x: 0, y: 0.78 }; // top-middle, far from the glyph entry
 const GLYPH_TRACE_DUR = 3.5;  // 1.5 = head traces the whole glyph, leading the reveal
+const LEAD_OFFSET = 0.5;      // 2D dragon head leads the ink reveal (glyph + enso) by this many seconds
 // 2D dragon glyph-trace exit: it peels off the glyph onto the enso at the END of
 // this baked-segment index (0-based into glyphSegs). null / out-of-range -> the
 // final segment (trace the whole symbol; the original behaviour). Earlier indices
@@ -260,6 +261,7 @@ let rng = null;            // session PRNG (seeded in initScene)
 let ensoLeadIn = null;     // short branch from the glyph end onto the enso circle
 let curvePath = null;      // 2D roam spline the ink dragon follows
 let curvePool = [];        // pool of {x,y,z} waypoints used to build curvePath (debug)
+let _poolF32 = null;       // cached Float32Array of curvePool centres (debug points)
 let loop3 = null;          // 3D random loop the 3D dragon flies
 let glyphEntry = { x: 0, y: 0 };  // glyph pen position at playhead 0 (lead-in target)
 let ensoA0 = Math.PI / 2;  // enso start angle: top of circle (fixed); head sweeps counter-clockwise
@@ -396,6 +398,7 @@ function walkFrame(rng, circles, entry, heading) {
 function generateFramePath(rng, entry, heading) {
   const circles = buildFrame();
   curvePool = circles.map((c) => ({ x: c.cx, y: c.cy, z: 0 })); // debug: circle centres
+  _poolF32 = null; // invalidate cached debug-point buffer
   const hdx = Math.cos(heading), hdy = Math.sin(heading);
   const walk = walkFrame(rng, circles, entry, heading); // walk[0] === entry
   const allPts = [
@@ -519,7 +522,9 @@ function makePhases() {
     { name: "ensoBranch", end: T_ENSO_START, continuous: false,
       path: (t) => ({ fn: (a) => { const p = ensoLeadIn.pos(a); return { x: p.x, y: p.y }; },
         a: lerp(ensoLeadIn.headStart, ensoLeadIn.endArc, clamp((t - T_GLYPH_END) / ENSO_LEADIN_DUR, 0, 1)) }) },
-    { name: "enso", end: T_ENSO_END, continuous: false,
+    // continuous: the ensoBranch exit == ensoPos(0) with matched tangent, so the
+    // verlet body keeps trailing onto the circle (no reseed = no body snap/jump).
+    { name: "enso", end: T_ENSO_END, continuous: true,
       path: (t) => ({ fn: ensoPos, a: clamp((t - T_ENSO_START) / ENSO_DUR, 0, 1) }) },
     { name: "roam", end: T_BRANCH, continuous: true,
       path: (t) => ({ fn: curveHead, a: curvePath.headStart + Math.max(0, t - T_ENSO_END) * SP2 }) },
@@ -555,6 +560,7 @@ function samplePath2d(t, n = 256) {
 const BODY_N = 20;
 const BODY_LEN = 0.8;
 const PROP_SPEED = 0.2; // chain relaxation per step (verlet lag)
+const ENABLE_PHYSICS = true; // false -> body rigidly matches the line of motion (refit on-path each frame, no verlet trail)
 const MAX_BEND = (60 * Math.PI) / 180;
 const HEAD_SIZE = 0.1;
 
@@ -928,10 +934,10 @@ const blkGlyph = {
   branches: { end: T_GLYPH_END },
   defaults(ctx) { ctx.playhead = glyphTotal; ctx.glyphAlpha = 1.0; }, // glyphAlpha eased by dragon3d
   update(ctx) {
-    // Reveal advances at the head's pace; after the head peels onto the enso at
-    // the exit it keeps drawing the rest of the symbol at the same speed.
+    // Reveal trails the head by LEAD_OFFSET so the dragon LEADS the glyph fill;
+    // after the head peels onto the enso it keeps drawing the rest at the same speed.
     const speed = glyphExitPh / GLYPH_TRACE_DUR; // playhead units / sec
-    ctx.playhead = ctx.t < T_GLYPH_START ? 0 : clamp((ctx.t - T_GLYPH_START) * speed, 0, glyphTotal);
+    ctx.playhead = clamp((ctx.t - T_GLYPH_START - LEAD_OFFSET) * speed, 0, glyphTotal);
   },
 };
 
@@ -964,7 +970,8 @@ const blkInk = {
     // param, so stepping would snap the body straight); otherwise step the verlet
     // chain. Seeks are resynced by setup/seek above.
     const ph = phaseOf(t);
-    if (body.length < 2 || (ph !== lastInkPhase && !PHASES[ph].continuous)) reseedBody(t, growLen);
+    // physics off -> body rigidly matches the line of motion (refit on-path each frame).
+    if (!ENABLE_PHYSICS || body.length < 2 || (ph !== lastInkPhase && !PHASES[ph].continuous)) reseedBody(t, growLen);
     else stepBody(tipAt(t), growLen);
     lastInkPhase = ph;
   },
@@ -978,7 +985,7 @@ const blkEnso = {
   defaults(ctx) { ctx.ensoAlpha = 0; ctx.ensoSweep = 0; },
   update(ctx) {
     const t = ctx.t;
-    ctx.ensoSweep = clamp((t - T_ENSO_START) / ENSO_DUR, 0, 1); // 0 through the branch
+    ctx.ensoSweep = clamp((t - T_ENSO_START - LEAD_OFFSET) / ENSO_DUR, 0, 1); // trails head by LEAD_OFFSET; 0 through the branch
     const ensoIn = ramp(t, T_ENSO_START, T_ENSO_START + 0.3, 0, 1);
     const ensoFade = ramp(t, D3_START, D3_END, 1, ENSO_FADE_TARGET);
     ctx.ensoAlpha = Math.min(ensoIn, ensoFade);
@@ -1062,7 +1069,7 @@ const _frame = {
     widthScale: 1, // body stroke width grows with size
   },
   dragon3d: { frames: null, frameCount: D3.N, pathLen: 1, bodyLen: BODY_LEN * D3.bodyFactor, headOffset: 0, girth: D3_GIRTH, viewProj: null, time: 0 },
-  debug: { show: false, buffer: "none", path2d: EMPTY_F32, path3d: EMPTY_F32, poolLeft: EMPTY_F32, poolRight: EMPTY_F32 },
+  debug: { show: false, buffer: "none", path2d: EMPTY_F32, path3d: EMPTY_F32, pool: EMPTY_F32 },
 };
 
 // Build the FrameState for scene time t. debug adds path polylines; yaw is the
@@ -1138,19 +1145,23 @@ function buildDebugState(t, debug, debugBuffer) {
   d.buffer = debugBuffer;
   if (!debug.path2d && !debug.path3d) {
     d.show = false;
-    d.path2d = EMPTY_F32; d.path3d = EMPTY_F32; d.poolLeft = EMPTY_F32; d.poolRight = EMPTY_F32;
+    d.path2d = EMPTY_F32; d.path3d = EMPTY_F32; d.pool = EMPTY_F32;
     return;
-  }
-  const tip = tipAt(t);
-  const hx = tip.dir.x, hy = tip.dir.y;
-  const poolLeft = [], poolRight = [];
-  for (const p of curvePool) {
-    const cross = hx * (p.y - tip.y) - hy * (p.x - tip.x);
-    (cross > 0.01 ? poolLeft : poolRight).push(p.x, p.y, 0);
   }
   d.show = true;
   d.path2d = debug.path2d ? samplePath2d(t) : EMPTY_F32;
   d.path3d = debug.path3d ? samplePath3d() : EMPTY_F32;
-  d.poolLeft = new Float32Array(poolLeft);
-  d.poolRight = new Float32Array(poolRight);
+  d.pool = poolPoints();
+}
+
+// Circle centres as xyz triples (static; built once from curvePool).
+function poolPoints() {
+  if (_poolF32 && _poolF32.length === curvePool.length * 3) return _poolF32;
+  _poolF32 = new Float32Array(curvePool.length * 3);
+  for (let i = 0; i < curvePool.length; i++) {
+    _poolF32[i * 3] = curvePool[i].x;
+    _poolF32[i * 3 + 1] = curvePool[i].y;
+    _poolF32[i * 3 + 2] = 0;
+  }
+  return _poolF32;
 }
