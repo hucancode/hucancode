@@ -243,7 +243,7 @@
       display 0.4s allow-discrete;
   }
   .hints:popover-open {
-    opacity: 0.75;
+    opacity: 0.95;
   }
   @starting-style {
     .hints:popover-open {
@@ -298,7 +298,7 @@
     background: none;
     cursor: pointer;
     color: var(--ink);
-    opacity: 0.7;
+    opacity: 0.9;
   }
   .play:hover { opacity: 1; }
   .play :global(svg) {
@@ -311,7 +311,7 @@
     gap: 0.5rem;
     font-variant-numeric: tabular-nums;
     font-size: 0.8rem;
-    opacity: 0.7;
+    opacity: 0.85;
   }
   .track {
     position: relative;
@@ -365,7 +365,7 @@
     transition: opacity 0.4s ease;
   }
   .scroll-hint.show {
-    opacity: 0.6;
+    opacity: 0.85;
     pointer-events: auto;
     animation: hint-bounce 1.4s ease-in-out infinite;
   }

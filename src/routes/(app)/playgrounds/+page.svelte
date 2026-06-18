@@ -137,6 +137,7 @@
     height: 100%;
     pointer-events: none;
     overflow: visible;
+    opacity: 0.15;
   }
   .thumb {
     width: 18rem;
