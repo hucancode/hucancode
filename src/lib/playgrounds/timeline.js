@@ -7,8 +7,21 @@
 //   { at: <seconds> }                      fixed absolute start
 //   { after: { block, branch, offset? } }  startOf(block) + branches[branch] + offset
 //
-// OMIT `duration` (or Infinity) for a PERSISTENT block that keeps updating once
-// started; persistent blocks are ignored by endTime().
+// A BLOCK is meant to be developed in isolation and wired up by the scene. It
+// is a plain descriptor (usually returned by a `create(deps)` factory so its
+// dependencies are explicit, never reached out of module scope):
+//   name        unique id
+//   at|after    start (see above)
+//   duration?   omit / Infinity -> PERSISTENT (keeps updating, ignored by endTime)
+//   branches?   { name: localTime }, localTime = number OR () => number. A
+//               function branch is resolved at reset() time, so a block can hang
+//               off a point that is only known after the scene is built (e.g. a
+//               handoff time derived from a generated path length) WITHOUT the
+//               parent having to be patched after construction.
+//   outputs?    [ctx field names this block writes]. createCtx() unions these so
+//               the shared ctx is assembled FROM the blocks — adding a block needs
+//               no central edit. defaults(ctx) still sets the resting VALUES.
+//   defaults/setup/seek/update/teardown   lifecycle (below)
 //
 // Lifecycle per block, driven by the scene clock t (scrubbing both ways is OK):
 //   defaults(ctx)       every frame for EVERY block, before any update: restore
@@ -28,6 +41,13 @@ export function makeTimeline(blocks) {
   const startCache = new Map();
   const resolving = new Set();
 
+  // localTime of a branch may be a constant or a thunk (resolved here so blocks
+  // can hang off runtime-derived points without the parent being patched).
+  function branchLocal(parent, branch) {
+    const bp = parent.branches && parent.branches[branch];
+    return typeof bp === "function" ? bp() : bp;
+  }
+
   function startOf(b) {
     if (startCache.has(b.name)) return startCache.get(b.name);
     if (resolving.has(b.name)) throw new Error(`timeline: cycle through ${b.name}`);
@@ -36,7 +56,7 @@ export function makeTimeline(blocks) {
     if (b.after) {
       const parent = byName.get(b.after.block);
       if (!parent) throw new Error(`block ${b.name}: unknown parent ${b.after.block}`);
-      const bp = parent.branches && parent.branches[b.after.branch];
+      const bp = branchLocal(parent, b.after.branch);
       if (bp == null) throw new Error(`block ${b.name}: parent ${parent.name} has no branch ${b.after.branch}`);
       s = startOf(parent) + bp + (b.after.offset || 0);
     } else {
@@ -47,6 +67,16 @@ export function makeTimeline(blocks) {
     return s;
   }
   for (const b of blocks) startOf(b);
+
+  // Assemble the shared ctx FROM the blocks' declared outputs (one hidden class,
+  // every key present). Resting VALUES are set by each block's defaults() every
+  // frame, so the initial 0 here only fixes the shape.
+  function createCtx(extra) {
+    const ctx = {};
+    for (const b of blocks) for (const k of b.outputs || []) ctx[k] = 0;
+    if (extra) Object.assign(ctx, extra);
+    return ctx;
+  }
 
   const active = new Set();
   let lastFrameT = null;
@@ -71,11 +101,9 @@ export function makeTimeline(blocks) {
 
   // Reset on (re)load: drop active state + seek history so the next frame
   // re-runs setup for whatever is active at that time. ALSO rebuild the start
-  // cache: block start times are derived from parent branch points, and those
-  // branches are finalised AFTER construction (initScene computes the real
-  // handoff time from the generated path, replacing the module-load placeholder).
-  // Without recomputing here, dependent blocks (camera, dragon3d) would keep
-  // firing at the stale placeholder time -> the 3D dragon pops in mid-loop3.
+  // cache, re-resolving function branches: when a timeline is reused across a
+  // re-init whose derived branch points changed, dependent blocks (camera,
+  // dragon3d) would otherwise keep firing at the stale resolved time.
   function reset() {
     active.clear(); lastFrameT = null;
     startCache.clear();
@@ -83,7 +111,7 @@ export function makeTimeline(blocks) {
   }
 
   const startTimeOf = (name) => startCache.get(name);
-  const branchAbs = (name, branch) => startCache.get(name) + byName.get(name).branches[branch];
+  const branchAbs = (name, branch) => startCache.get(name) + branchLocal(byName.get(name), branch);
   function endTime() {
     let max = 0;
     for (const b of blocks) {
@@ -93,5 +121,5 @@ export function makeTimeline(blocks) {
     return max;
   }
 
-  return { frame, reset, startTimeOf, branchAbs, endTime };
+  return { frame, createCtx, reset, startTimeOf, branchAbs, endTime };
 }

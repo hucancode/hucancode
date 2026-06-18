@@ -1,5 +1,4 @@
 <script>
-  import { fade } from "svelte/transition";
   import Scene from "$lib/components/dragon.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
 
@@ -17,13 +16,15 @@
   let spread = $state(1);
   let speed = $state(0.8);
   let showLights = $state(true);
+  let showPath = $state(false);
+  let bodyFraction = $state(0.25);
+  let girthFactor = $state(0.0012);
 
   $effect(() => {
-    scene?.apply({ speed: speed / 1000, showLights });
+    scene?.apply({ speed: speed / 1000, showLights, showPath });
   });
 
   const whiteList = ["This isn't actually an error!"];
-  let loading = $state(true);
   let error = $state(false);
   let rustCanvas = $state();
   let rustStarted = false;
@@ -31,7 +32,6 @@
   async function startRust() {
     if (rustStarted) return;
     rustStarted = true;
-    loading = true;
     error = false;
     try {
       const { default: init } = await import("$lib/wasm/dragon/flying-dragon.js");
@@ -43,7 +43,6 @@
         throw e;
       }
     } finally {
-      loading = false;
       if (rustCanvas) rustCanvas.style = undefined;
     }
   }
@@ -65,9 +64,6 @@
       <Scene bind:this={scene} />
     {:else}
       <div class="rust">
-        {#if loading}
-          <span class="spinner" transition:fade={{ duration: 300 }}></span>
-        {/if}
         {#if error}
           <p class="fallback">Live render failed — here is a recording instead.</p>
           <video autoplay loop muted playsinline>
@@ -85,7 +81,7 @@
       <label>
         <span>Version</span>
         <select bind:value={version}>
-          <option value="webgl">WebGL · Three.js</option>
+          <option value="webgl">WebGL</option>
           <option value="rust">WebGPU · Rust/WASM</option>
         </select>
         <output></output>
@@ -126,8 +122,24 @@
           <output>{spread.toFixed(2)}</output>
         </label>
         <label>
+          <span>Body length</span>
+          <input type="range" min="0.05" max="0.6" step="0.01" bind:value={bodyFraction}
+            onchange={() => scene?.reshape({ bodyFraction })} />
+          <output>{bodyFraction.toFixed(2)}</output>
+        </label>
+        <label>
+          <span>Girth</span>
+          <input type="range" min="0.0004" max="0.004" step="0.0002" bind:value={girthFactor}
+            onchange={() => scene?.reshape({ girthFactor })} />
+          <output>{girthFactor.toFixed(4)}</output>
+        </label>
+        <label>
           <input type="checkbox" bind:checked={showLights} />
           <span>Animated lights</span>
+        </label>
+        <label>
+          <input type="checkbox" bind:checked={showPath} />
+          <span>Show flight path</span>
         </label>
       </fieldset>
 
@@ -155,15 +167,4 @@
   .rust canvas { outline: none; width: 100%; height: 100%; }
   .fallback { text-align: center; font-style: italic; }
   video { width: 100%; height: auto; }
-  .spinner {
-    position: absolute;
-    width: 4rem;
-    aspect-ratio: 1;
-    border: 0.3rem solid color-mix(in srgb, var(--link) 20%, transparent);
-    border-top-color: var(--link);
-    animation: rotation 1s linear infinite;
-  }
-  @keyframes rotation {
-    to { transform: rotate(360deg); }
-  }
 </style>

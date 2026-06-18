@@ -16,20 +16,20 @@ import {
   ClampToEdgeWrapping,
 } from "three";
 const aspectUniform = { value: 1 };
-import VERTEX_SHADER from "$lib/scenes/shaders/basic.vert.glsl?raw";
-import WATERDROP_FRAGMENT_SHADER from "$lib/scenes/shaders/waterdrop.frag.glsl?raw";
-import DRAGON_HEAD_FRAGMENT_SHADER from "$lib/scenes/shaders/dragon-head.frag.glsl?raw";
+import VERTEX_SHADER from "$lib/playgrounds/shaders/basic.vert.glsl?raw";
+import WATERDROP_FRAGMENT_SHADER from "$lib/playgrounds/shaders/waterdrop.frag.glsl?raw";
+import DRAGON_HEAD_FRAGMENT_SHADER from "$lib/playgrounds/shaders/dragon-head.frag.glsl?raw";
 import {
   makePolylineStroke,
   updatePolylineStroke,
   setStrokeLineWidth,
   setStrokeWireframe,
   disposePolylineStroke,
-} from "$lib/scenes/stroke-polyline-mesh";
+} from "$lib/playgrounds/stroke-polyline-mesh";
 import {
   makePaperBackground,
   disposePaperBackground,
-} from "$lib/scenes/paper-background";
+} from "$lib/playgrounds/paper-background";
 
 const PAPER_COLOR = [1.0, 1.0, 0.875, 1.0];
 

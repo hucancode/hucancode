@@ -1,7 +1,6 @@
 <script>
   import { browser } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
-  import Canvas3D from "./canvas3d.svelte";
   import {
     CANVAS_ID,
     init,
@@ -12,17 +11,24 @@
     makeDragon,
     regenerate,
     setConfig,
-  } from "$lib/scenes/dragon";
+  } from "$lib/playgrounds/dragon";
 
-  let ready = $state(false);
+  let canvas = $state();
+  let frameID = 0;
+
+  function loop() {
+    frameID = requestAnimationFrame(loop);
+    render();
+  }
 
   onMount(async () => {
     await init();
-    ready = true;
+    loop();
   });
 
   onDestroy(() => {
     if (browser) {
+      cancelAnimationFrame(frameID);
       destroy();
     }
   });
@@ -62,4 +68,4 @@
   }
 </script>
 
-<Canvas3D {ready} id={CANVAS_ID} {render} />
+<canvas class="scene-canvas" id={CANVAS_ID} bind:this={canvas}></canvas>

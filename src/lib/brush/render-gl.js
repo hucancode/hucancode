@@ -5,7 +5,7 @@
 // is streamed to the GPU as an RGBA32F texture every render (bake.bakeSegs),
 // so an edited glyph re-renders live - no shader recompile, no const arrays.
 
-import FRAG from "$lib/scenes/shaders/st/caligraphy-playground.frag.glsl?raw";
+import FRAG from "$lib/playgrounds/shaders/st/caligraphy-playground.frag.glsl?raw";
 import { bakeSegs } from "./bake";
 
 const VERT = `#version 300 es

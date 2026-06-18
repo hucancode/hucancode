@@ -1,5 +1,4 @@
 <script>
-  import { fade } from "svelte/transition";
   import Scene from "$lib/components/rubik.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
 
@@ -15,7 +14,6 @@
   });
 
   const whiteList = ["This isn't actually an error!"];
-  let loading = $state(true);
   let error = $state(false);
   let rustCanvas = $state();
   let rustStarted = false;
@@ -23,7 +21,6 @@
   async function startRust() {
     if (rustStarted) return;
     rustStarted = true;
-    loading = true;
     error = false;
     try {
       const { default: init } = await import("$lib/wasm/rubik/rubik.js");
@@ -35,7 +32,6 @@
         throw e;
       }
     } finally {
-      loading = false;
       if (rustCanvas) rustCanvas.style = undefined;
     }
   }
@@ -59,9 +55,6 @@
       {/key}
     {:else}
       <div class="rust">
-        {#if loading}
-          <span class="spinner" transition:fade={{ duration: 300 }}></span>
-        {/if}
         {#if error}
           <p class="fallback">Live render failed — here is a recording instead.</p>
           <video autoplay loop muted playsinline>
@@ -79,7 +72,7 @@
       <label>
         <span>Version</span>
         <select bind:value={version}>
-          <option value="webgl">WebGL · Three.js</option>
+          <option value="webgl">WebGL</option>
           <option value="rust">WebGPU · Rust/WASM</option>
         </select>
         <output></output>
@@ -133,15 +126,4 @@
   .rust canvas { outline: none; width: 100%; height: 100%; }
   .fallback { text-align: center; font-style: italic; }
   video { width: 100%; height: auto; }
-  .spinner {
-    position: absolute;
-    width: 4rem;
-    aspect-ratio: 1;
-    border: 0.3rem solid color-mix(in srgb, var(--link) 20%, transparent);
-    border-top-color: var(--link);
-    animation: rotation 1s linear infinite;
-  }
-  @keyframes rotation {
-    to { transform: rotate(360deg); }
-  }
 </style>

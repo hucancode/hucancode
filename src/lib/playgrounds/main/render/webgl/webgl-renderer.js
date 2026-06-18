@@ -17,7 +17,7 @@ import DRAGON3D_FRAG from "./shaders/dragon3d.frag.glsl?raw";
 import GRID_VERT from "./shaders/grid.vert.glsl?raw";
 import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./stroke-gl.js";
-import { loadDragonMesh } from "./dragon3d-gl.js";
+import { makeContext, loadDragonMesh } from "$lib/engine/index.js";
 
 // Kanagawa: lotusWhite3 / lotusInk2 for light; dragonBlack3 / dragonWhite for dark
 const PAPER_LIGHT      = [0.949, 0.925, 0.737, 1.0];
@@ -126,31 +126,10 @@ out vec2 vUV;
 void main() { vUV = aUV; gl_Position = vec4(aPos.x / uAspect, aPos.y, 0.0, 1.0); }`;
 
 // ---- gl helpers ------------------------------------------------------------
-function compile(gl, type, src) {
-  const sh = gl.createShader(type);
-  gl.shaderSource(sh, src);
-  gl.compileShader(sh);
-  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-    const log = gl.getShaderInfoLog(sh);
-    gl.deleteShader(sh);
-    throw new Error("shader compile failed:\n" + log + "\n--- src ---\n" + src);
-  }
-  return sh;
-}
-function link(gl, vsSrc, fsSrc) {
-  const vs = compile(gl, gl.VERTEX_SHADER, vsSrc);
-  const fs = compile(gl, gl.FRAGMENT_SHADER, fsSrc);
-  const p = gl.createProgram();
-  gl.attachShader(p, vs);
-  gl.attachShader(p, fs);
-  gl.linkProgram(p);
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-    throw new Error("program link failed:\n" + gl.getProgramInfoLog(p));
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
-  return p;
-}
+// shader compile + program link come from the engine GL toolkit (makeContext).
+// link() returns the raw WebGLProgram; uniform locations are still cached and
+// driven raw here because the layers use int + raw-texture uniforms the engine
+// program.set() abstraction does not cover.
 function uniforms(gl, prog, names) {
   const U = {};
   for (const n of names) U[n] = gl.getUniformLocation(prog, n);
@@ -215,25 +194,25 @@ export function makeWebGLRenderer(canvas) {
   }
 
   async function init() {
-    gl = canvas.getContext("webgl2", {
-      alpha: false, antialias: true, depth: true, premultipliedAlpha: false,
-    });
-    if (!gl) throw new Error("WebGL2 not available");
-    if (!gl.getExtension("EXT_color_buffer_float")) {
-      // RGBA32F seg texture only needs sampling (core), not render - this is fine
-      // even without the extension; texImage2D RGBA32F + texelFetch is core WebGL2.
-    }
+    // engine GL toolkit: WebGL2 context (opaque, MSAA) + shader compile/link.
+    // .program() returns a wrapper; we keep its raw .prog and drive uniforms by
+    // hand (int + raw-texture uniforms the wrapper's set() does not handle).
+    // RGBA32F seg/frames textures are sampled-only (texelFetch), core WebGL2 —
+    // EXT_color_buffer_float is not required.
+    const ctx = makeContext(canvas, { alpha: false, antialias: true });
+    gl = ctx.gl;
+    const link = (vs, fs) => ctx.program(vs, fs).prog;
 
-    progs.glyph = link(gl, FS_TRI_VERT, GLYPH_FRAG);
-    progs.splash = link(gl, FS_TRI_VERT, SPLASH_FRAG);
-    progs.enso = link(gl, FS_TRI_VERT, ENSO_FRAG);
-    progs.composite = link(gl, COMPOSITE_VERT, COMPOSITE_FRAG);
-    progs.stroke = link(gl, STROKE_VERT, STROKE_FRAG);
-    progs.head = link(gl, HEAD_VERT, HEAD_FRAG);
-    progs.dragon3d = link(gl, DRAGON3D_VERT, DRAGON3D_FRAG);
-    progs.grid = link(gl, GRID_VERT, GRID_FRAG);
-    progs.blit = link(gl, FS_TRI_VERT, BLIT_FRAG);
-    progs.line = link(gl, LINE_VERT, LINE_FRAG);
+    progs.glyph = link(FS_TRI_VERT, GLYPH_FRAG);
+    progs.splash = link(FS_TRI_VERT, SPLASH_FRAG);
+    progs.enso = link(FS_TRI_VERT, ENSO_FRAG);
+    progs.composite = link(COMPOSITE_VERT, COMPOSITE_FRAG);
+    progs.stroke = link(STROKE_VERT, STROKE_FRAG);
+    progs.head = link(HEAD_VERT, HEAD_FRAG);
+    progs.dragon3d = link(DRAGON3D_VERT, DRAGON3D_FRAG);
+    progs.grid = link(GRID_VERT, GRID_FRAG);
+    progs.blit = link(FS_TRI_VERT, BLIT_FRAG);
+    progs.line = link(LINE_VERT, LINE_FRAG);
 
     U.glyph = uniforms(gl, progs.glyph, ["uResolution", "uBaseRadius", "uTime", "uNSeg", "uSegTex", "uInkColor"]);
     U.splash = uniforms(gl, progs.splash, ["uResolution", "uGrow", "uSpread", "uAmount", "uClock", "uInkDark", "uInkLight"]);

@@ -8,11 +8,11 @@ import {
   updatePolylineStroke,
   setStrokeLineWidth,
   disposePolylineStroke,
-} from "$lib/scenes/stroke-polyline-mesh";
+} from "$lib/playgrounds/stroke-polyline-mesh";
 import {
   makePaperBackground,
   disposePaperBackground,
-} from "$lib/scenes/paper-background";
+} from "$lib/playgrounds/paper-background";
 
 const MAX_POINTS = 256;
 

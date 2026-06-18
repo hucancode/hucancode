@@ -9,8 +9,8 @@ import {
   Mesh,
   ShaderMaterial,
 } from "three";
-import POLYLINE_VERT from "$lib/scenes/shaders/stroke-polyline.vert.glsl?raw";
-import STROKE_FRAG  from "$lib/scenes/shaders/stroke.frag.glsl?raw";
+import POLYLINE_VERT from "$lib/playgrounds/shaders/stroke-polyline.vert.glsl?raw";
+import STROKE_FRAG  from "$lib/playgrounds/shaders/stroke.frag.glsl?raw";
 
 const MITER_LIMIT     = 4.0;
 const PERP_CLEARANCE  = 0.35;  // fraction of mesh perp_t reserved per side

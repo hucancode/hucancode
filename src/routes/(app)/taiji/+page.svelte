@@ -3,20 +3,21 @@
   import Return from "$icons/line-md/chevron-left.svg?raw";
 
   let scene = $state(null);
-  let dragonSpeed = $state(0.3);
   let taijiSpin = $state(1);
   let cloudSpeed = $state(4);
-  let randomPath = $state(false);
-  let radius = $state(34);
-  let elevation = $state(8);
+  let bitCount = $state(3);
+  let stroke = $state(0.04);
+  let dot = $state(0.12);
   let color1 = $state("#ffffff");
   let color2 = $state("#000000");
 
   $effect(() => {
     scene?.apply({
-      dragonSpeed: dragonSpeed / 1000,
       taijiSpin: taijiSpin / 100,
       cloudSpeed,
+      bitCount,
+      stroke,
+      dot,
     });
   });
   $effect(() => {
@@ -39,11 +40,6 @@
     <fieldset>
       <legend>motion</legend>
       <label>
-        <span>Dragon</span>
-        <input type="range" min="0" max="2" step="0.05" bind:value={dragonSpeed} />
-        <output>{dragonSpeed.toFixed(2)}</output>
-      </label>
-      <label>
         <span>Disc spin</span>
         <input type="range" min="-4" max="4" step="0.1" bind:value={taijiSpin} />
         <output>{taijiSpin.toFixed(1)}</output>
@@ -56,31 +52,22 @@
     </fieldset>
 
     <fieldset>
-      <legend>orbit</legend>
+      <legend>symbol</legend>
       <label>
-        <input type="checkbox" bind:checked={randomPath}
-          onchange={() => scene?.reshape({ randomPath })} />
-        <span>Random path</span>
+        <span>Bagua bars</span>
+        <input type="range" min="1" max="5" step="1" bind:value={bitCount} />
+        <output>{bitCount}</output>
       </label>
-      {#if !randomPath}
-        <label>
-          <span>Radius</span>
-          <input type="range" min="12" max="44" step="1" bind:value={radius}
-            onchange={() => scene?.reshape({ radius })} />
-          <output>{radius}</output>
-        </label>
-        <label>
-          <span>Rise</span>
-          <input type="range" min="0" max="24" step="1" bind:value={elevation}
-            onchange={() => scene?.reshape({ elevation })} />
-          <output>{elevation}</output>
-        </label>
-      {/if}
-      {#if randomPath}
-        <div class="buttons">
-          <button onclick={() => scene?.newPath()}>↻ New path</button>
-        </div>
-      {/if}
+      <label>
+        <span>Border size</span>
+        <input type="range" min="0" max="0.15" step="0.005" bind:value={stroke} />
+        <output>{stroke.toFixed(3)}</output>
+      </label>
+      <label>
+        <span>Dot size</span>
+        <input type="range" min="0.04" max="0.2" step="0.005" bind:value={dot} />
+        <output>{dot.toFixed(3)}</output>
+      </label>
     </fieldset>
 
     <fieldset>

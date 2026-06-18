@@ -1,8 +1,8 @@
 // Fullscreen background billboard. Renders the paper colour + grain so the
 // stroke shader can stay alpha-only (no internal bg composite).
 import { Mesh, PlaneGeometry, ShaderMaterial } from "three";
-import BASIC_VERT from "$lib/scenes/shaders/basic.vert.glsl?raw";
-import PAPER_FRAG from "$lib/scenes/shaders/paper-background.frag.glsl?raw";
+import BASIC_VERT from "$lib/playgrounds/shaders/basic.vert.glsl?raw";
+import PAPER_FRAG from "$lib/playgrounds/shaders/paper-background.frag.glsl?raw";
 
 export function makePaperBackground({ bgColor, aspectUniform }) {
   const material = new ShaderMaterial({

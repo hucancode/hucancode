@@ -3,7 +3,7 @@
   import Scene from "$lib/components/paint.svelte";
   import Timeline from "$lib/components/timeline.svelte";
   import RoughIcon from "$lib/components/rough-icon.svelte";
-  import { TIMELINE_END } from "$lib/scenes/paint.js";
+  import { TIMELINE_END } from "$lib/playgrounds/main.js";
   import Github from "$icons/simple-icons/github.svg?raw";
   import Profile from "$icons/google-material/profile.svg?raw";
   import PersonRaiseHand from "$icons/google-material/person-raise-hand.svg?raw";

@@ -26,7 +26,7 @@
     makeCirclePolyline,
     appendPolylinePoint,
     dropPolylinePoint,
-  } from "$lib/scenes/ink";
+  } from "$lib/playgrounds/ink";
 
   let canvasEl;
   let ready = $state(false);
