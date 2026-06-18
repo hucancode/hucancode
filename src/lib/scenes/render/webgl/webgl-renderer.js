@@ -640,7 +640,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.dragon3d.uHeadOffset, d3.headOffset);
     gl.uniform1f(U.dragon3d.uGirth, d3.girth);
     gl.uniform1f(U.dragon3d.uOpacity, state.opacity.dragon3d);
-    gl.uniform1f(U.dragon3d.uLightBoost, isDark() ? 2.0 : 1.0);
+    gl.uniform1f(U.dragon3d.uLightBoost, isDark() ? 4.0 : 1.0);
     gl.uniform1f(U.dragon3d.uTime, d3.time);
     gl.uniformMatrix4fv(U.dragon3d.uViewProj, false, d3.viewProj);
     gl.drawArrays(gl.TRIANGLES, 0, d3VertexCount);
@@ -667,12 +667,9 @@ export function makeWebGLRenderer(canvas) {
       if (state.debug.path3d && state.debug.path3d.length) {
         drawLine(state.debug.path3d, true, vp, aspect, [0.0, 0.7, 1.0, 0.9]);
       }
-      // pool waypoints: left-side candidates = blue, right-side = orange
-      if (state.debug.poolLeft?.length) {
-        drawPoints(state.debug.poolLeft, true, vp, aspect, [0.2, 0.5, 1.0, 1.0]);
-      }
-      if (state.debug.poolRight?.length) {
-        drawPoints(state.debug.poolRight, true, vp, aspect, [1.0, 0.45, 0.1, 1.0]);
+      // pool waypoints: circle centres (single colour)
+      if (state.debug.pool?.length) {
+        drawPoints(state.debug.pool, true, vp, aspect, [0.2, 0.5, 1.0, 1.0]);
       }
     }
     // inspect a single offscreen buffer fullscreen

@@ -21,8 +21,8 @@
   let debugPath2d = $state(false);
   let debugPath3d = $state(false);
   const debug = $derived({ path2d: debugPath2d, path3d: debugPath3d });
-  let lastSyncY = -1; // last scroll position WE set; onScroll ignores a match
-  const SYNC_TOL = 3; // px slack (browser rounds/clamps scrollTo)
+  let selfScroll = false; // true while our programmatic scroll's event is pending
+  const SYNC_TOL = 3; // px slack: skip scrollTo if already within this of target
   // one fixed-size coach mark per icon -> never scales with the row width
   // lx/ly stagger each label off the row; arrow tip stays at the icon (42,6)
   const ICON_HINTS = [
@@ -38,17 +38,20 @@
   const progress = $derived(Math.min(1, t / TIMELINE_END));
 
   function scrollTo(px) {
-    lastSyncY = Math.round(px);
-    window.scrollTo(0, lastSyncY);
+    const y = Math.round(px);
+    if (Math.abs(window.scrollY - y) <= SYNC_TOL) return; // already there, no event
+    selfScroll = true; // swallow the one scroll event this triggers
+    window.scrollTo(0, y);
   }
 
-  // User scroll. OUR own programmatic scroll (matches lastSyncY) is ignored --
-  // a position match is robust against the scroll event firing a frame late.
+  // User scroll. OUR own programmatic scroll sets selfScroll, so the resulting
+  // event is swallowed -- robust against mobile URL-bar clamp moving scrollY off
+  // the requested px (a position match would misfire and pause playback).
   // Grabbing the scrollbar mid-track stops autoplay and scrubs; scrolling all
   // the way to the footer resumes playback (unless the user explicitly paused).
   function onScroll() {
     if (!browser) return;
-    if (Math.abs(window.scrollY - lastSyncY) <= SYNC_TOL) return; // our own move
+    if (selfScroll) { selfScroll = false; return; } // our own move
     const raw = window.scrollY / SCROLL_LEN;
     if (raw >= 1) {
       if (!userPaused) playing = true; // reached the footer -> keep flying
@@ -325,6 +328,9 @@
   footer.show {
     opacity: 1;
   }
+  footer.show a {
+    pointer-events: auto; /* re-enable clicks once the footer is visible */
+  }
   footer a {
     font-family: 'Virgil';
     text-decoration: underline wavy;
@@ -336,7 +342,8 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    scale: 2;
+    translate: -50% -50%;
     z-index: 10;
     color: var(--ink);
     border: none;
@@ -360,8 +367,8 @@
     height: 2.5rem;
   }
   @keyframes hint-bounce {
-    0%, 100% { transform: translate(-50%, -50%); }
-    50% { transform: translate(-50%, calc(-50% + 10px)); }
+    0%, 100% { translate: -50% -50%; }
+    50% { translate: -50% calc(-50% + 10px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .scroll-hint.show { animation: none; }

@@ -52,7 +52,7 @@
 //   },
 //   debug: {                              // only populated when debug flags set
 //     show: boolean, buffer: string,      // overlay on / which FBO to inspect
-//     path2d, path3d, poolLeft, poolRight, // sampled polylines + waypoints
+//     path2d, path3d, pool,               // sampled polylines + waypoints
 //   },
 // }
 
