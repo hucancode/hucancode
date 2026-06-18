@@ -29,6 +29,9 @@ const SPLASH_LOW_LIGHT = [0.32, 0.31, 0.30];  // low-coverage areas, light mode
 const SPLASH_HIGH_LIGHT= [0.06, 0.06, 0.07];  // high-coverage areas, light mode
 const SPLASH_LOW_DARK  = [0.45, 0.47, 0.45];  // low-coverage areas, dark mode
 const SPLASH_HIGH_DARK = [0.773, 0.788, 0.773]; // high-coverage areas, dark mode
+// 3d dragon albedo: dark ink on light paper / light ink on dark paper
+const DRAGON3D_LIGHT   = [0.06, 0.07, 0.10];  // near-black, light mode
+const DRAGON3D_DARK    = [0.62, 0.66, 0.70];  // light grey, dark mode
 const _darkMQ = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 function isDark()         { return !!_darkMQ?.matches; }
 function getPaper()       { return isDark() ? PAPER_DARK  : PAPER_LIGHT; }
@@ -36,6 +39,7 @@ function getInk()         { return isDark() ? INK_DARK    : INK_LIGHT; }       /
 function getInkRGB()      { const c = getInk(); return [c[0], c[1], c[2]]; }  // 3-elem, for uniform3fv
 function getSplashLow()   { return isDark() ? SPLASH_LOW_DARK  : SPLASH_LOW_LIGHT; }
 function getSplashHigh()  { return isDark() ? SPLASH_HIGH_DARK : SPLASH_HIGH_LIGHT; }
+function getDragon3d()    { return isDark() ? DRAGON3D_DARK    : DRAGON3D_LIGHT; }
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 
 // head quad corners [localX, localY, u, v] (HW=2.4*0.5, HH=1.6*0.5); constant
@@ -225,7 +229,7 @@ export function makeWebGLRenderer(canvas) {
     ]);
     U.head = uniforms(gl, progs.head, ["uAspect", "uBrushColor", "uOpacity"]);
     U.dragon3d = uniforms(gl, progs.dragon3d, [
-      "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime", "uLightBoost",
+      "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime", "uLightBoost", "uAlbedo",
     ]);
     U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uZ", "uStep", "uMinorDiv", "uOpacity", "uReveal", "uRevealMinor", "uInkColor"]);
     U.blit = uniforms(gl, progs.blit, ["uTex"]);
@@ -619,7 +623,8 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.dragon3d.uHeadOffset, d3.headOffset);
     gl.uniform1f(U.dragon3d.uGirth, d3.girth);
     gl.uniform1f(U.dragon3d.uOpacity, state.opacity.dragon3d);
-    gl.uniform1f(U.dragon3d.uLightBoost, isDark() ? 4.0 : 1.0);
+    gl.uniform1f(U.dragon3d.uLightBoost, 1.0);
+    gl.uniform3fv(U.dragon3d.uAlbedo, getDragon3d());
     gl.uniform1f(U.dragon3d.uTime, d3.time);
     gl.uniformMatrix4fv(U.dragon3d.uViewProj, false, d3.viewProj);
     gl.drawArrays(gl.TRIANGLES, 0, d3VertexCount);

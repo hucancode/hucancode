@@ -7,9 +7,9 @@ precision highp float;
 in vec3 vNormal;
 uniform float uOpacity;
 uniform float uLightBoost;
+uniform vec3 uAlbedo;
 out vec4 fragColor;
 
-const vec3 uAlbedo = vec3(0.06, 0.07, 0.10);
 const vec3 LIGHT_DIR = vec3(0.40, 0.70, 0.58);
 const vec3 LIGHT_COL = vec3(1.0, 0.97, 0.90);
 const float AMBIENT  = 0.14;
