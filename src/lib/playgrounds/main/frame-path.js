@@ -69,7 +69,7 @@ export function generateCircleChain(rng, entry, heading, dropTarget, lenTarget =
   const nx = -Math.sin(heading), ny = Math.cos(heading); // normal to heading
   const side = rng() < 0.5 ? 1 : -1;
   let cx = entry.x + side * r * nx, cy = entry.y + side * r * ny; // c0 (entry on its rim)
-  pool.push({ x: cx, y: cy, z: 0 });
+  pool.push({ x: cx, y: cy, z: 0, r });
   let aIn = Math.atan2(entry.y - cy, entry.x - cx);
   // entry winding: the first circle's start tangent must agree with `heading` so the
   // join from the fly-in has no cusp; subsequent circles alternate.
@@ -117,7 +117,7 @@ export function generateCircleChain(rng, entry, heading, dropTarget, lenTarget =
     const ncx = cx + (r + rn) * ux, ncy = cy + (r + rn) * uy;
     aIn = Math.atan2(cy - ncy, cx - ncx); // faces back at the shared point
     cx = ncx; cy = ncy; r = rn; dir = -dir; // alternate winding -> C1 S-weave
-    pool.push({ x: cx, y: cy, z: 0 });
+    pool.push({ x: cx, y: cy, z: 0, r });
     // stop once it has sunk far enough OR walked the length target — whichever first
     // (the gentle descent keeps these close; the connector absorbs any small gap to
     // the enso top, so the chain never plunges below it).
@@ -287,7 +287,7 @@ function walkFrame(rng, circles, entry, heading) {
 // (with headStart) plus the circle centres as a debug `pool`.
 export function generateFramePath(rng, entry, heading, center) {
   const circles = buildFrame(center);
-  const pool = circles.map((c) => ({ x: c.cx, y: c.cy, z: 0 })); // debug: circle centres
+  const pool = circles.map((c) => ({ x: c.cx, y: c.cy, z: 0, r: c.r })); // debug: circle centres
   const hdx = Math.cos(heading), hdy = Math.sin(heading);
   const walk = walkFrame(rng, circles, entry, heading); // walk[0] === entry
   const allPts = [

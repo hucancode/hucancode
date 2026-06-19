@@ -16,8 +16,12 @@ import DRAGON3D_VERT from "./shaders/dragon3d.vert.glsl?raw";
 import DRAGON3D_FRAG from "./shaders/dragon3d.frag.glsl?raw";
 import GRID_VERT from "./shaders/grid.vert.glsl?raw";
 import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
+import FLOWER_FRAG from "./shaders/flower.frag.glsl?raw";
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./stroke-gl.js";
 import { makeContext, loadDragonMesh } from "$lib/engine/index.js";
+import { FLOWER_PETALS, FLOWER_LAYERS } from "../../config.js";
+
+const FLOWER_Z = -0.005; // flowers sit just above the grid, under the dragon/glyph
 
 // Kanagawa wave: lotusWhite3 / sumiInk0 for light; sumiInk0 / fujiWhite for dark
 const PAPER_LIGHT      = [0.949, 0.925, 0.737, 1.0];
@@ -90,6 +94,24 @@ uniform sampler2D uTex;
 in vec2 vUV;
 out vec4 fragColor;
 void main() { fragColor = texture(uTex, vUV); }`;
+
+// A single bloom flower: a quad of half-size uScale centred at world uCenter on the
+// z=uZ ground plane, through the orbit camera (so flowers tilt with the scene). One
+// draw per flower; vLocal (-1..1) is the flower's polar field in the fragment shader.
+const FLOWER_VERT = `#version 300 es
+precision highp float;
+uniform vec2 uCenter;
+uniform float uScale;
+uniform float uZ;
+uniform mat4 uViewProj;
+out vec2 vLocal;
+const vec2 C[4] = vec2[4](vec2(-1.0,-1.0), vec2(1.0,-1.0), vec2(-1.0,1.0), vec2(1.0,1.0));
+void main() {
+  vec2 c = C[gl_VertexID];
+  vLocal = c;
+  vec3 world = vec3(uCenter + c * uScale, uZ);
+  gl_Position = uViewProj * vec4(world, 1.0);
+}`;
 
 // debug path lines and points: 2D (x/aspect,y) or 3D (uVP * pos)
 const LINE_VERT = `#version 300 es
@@ -222,6 +244,7 @@ export function makeWebGLRenderer(canvas) {
     progs.head = link(HEAD_VERT, HEAD_FRAG);
     progs.dragon3d = link(DRAGON3D_VERT, DRAGON3D_FRAG);
     progs.grid = link(GRID_VERT, GRID_FRAG);
+    progs.flower = link(FLOWER_VERT, FLOWER_FRAG);
     progs.blit = link(FS_TRI_VERT, BLIT_FRAG);
     progs.line = link(LINE_VERT, LINE_FRAG);
 
@@ -239,6 +262,9 @@ export function makeWebGLRenderer(canvas) {
       "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime", "uLightBoost", "uAlbedo",
     ]);
     U.grid = uniforms(gl, progs.grid, ["uViewProj", "uExt", "uZ", "uStep", "uMinorDiv", "uOpacity", "uReveal", "uRevealMinor", "uInkColor"]);
+    U.flower = uniforms(gl, progs.flower, [
+      "uCenter", "uScale", "uZ", "uViewProj", "uBloom", "uSeed", "uAlpha", "uPetals", "uLayers", "uInkColor",
+    ]);
     U.blit = uniforms(gl, progs.blit, ["uTex"]);
     U.line = uniforms(gl, progs.line, ["uVP", "uAspect", "u3D", "uColor"]);
 
@@ -472,6 +498,33 @@ export function makeWebGLRenderer(canvas) {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
+  // bloom flowers: one premultiplied quad per visible flower, on the ground plane
+  // through the orbit camera. The premultiplied composite blend is already set by
+  // compositePass; buds (bloom ~0) are skipped. Shared knobs are set once, per-flower
+  // placement + bloom + seed set in the loop.
+  function drawFlowers(state, vp) {
+    const f = state.flowers;
+    if (!f || !f.items || f.count <= 0 || f.alpha <= 0) return;
+    gl.useProgram(progs.flower);
+    gl.bindVertexArray(emptyVao);
+    gl.uniformMatrix4fv(U.flower.uViewProj, false, vp);
+    gl.uniform1f(U.flower.uZ, FLOWER_Z);
+    gl.uniform1f(U.flower.uPetals, FLOWER_PETALS);
+    gl.uniform1f(U.flower.uLayers, FLOWER_LAYERS);
+    gl.uniform3fv(U.flower.uInkColor, getInkRGB());
+    const items = f.items;
+    for (let i = 0; i < f.count; i++) {
+      const fl = items[i];
+      if (fl.bloom <= 0.001) continue; // still a closed bud -> nothing to draw
+      gl.uniform2f(U.flower.uCenter, fl.x, fl.y);
+      gl.uniform1f(U.flower.uScale, fl.r);
+      gl.uniform1f(U.flower.uBloom, fl.bloom);
+      gl.uniform1f(U.flower.uSeed, fl.seed);
+      gl.uniform1f(U.flower.uAlpha, f.alpha * (fl.opacity ?? 1)); // per-flower ink opacity
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+  }
+
   function compositeQuad(tex, opacity, z, viewProj, aspect, stationY = 0) {
     gl.useProgram(progs.composite);
     gl.activeTexture(gl.TEXTURE0);
@@ -594,6 +647,8 @@ export function makeWebGLRenderer(canvas) {
     const camY = state.camY || 0;
     // ground grid (behind the ink layers, over the paper); radial wipe-in
     if (state.grid && state.grid.reveal > 0) drawGrid(state.grid);
+    // bloom flowers on the ground (above the grid, under the splash/glyph/dragon)
+    drawFlowers(state, vp);
     // ink splash wash sits between the grid and the glyph, bleeding under it
     if (state.splash && state.splash.alpha > 0)
       compositeQuad(fbo.splash.tex, state.splash.alpha, -0.006, vp, aspect, state.splash.stationY || 0);

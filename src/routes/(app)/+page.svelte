@@ -256,7 +256,7 @@
     height: auto;
   }
   .hints text {
-    font-family: "Virgil", "Comic Sans MS", cursive;
+    font-family: "Virgil", cursive;
     font-size: 17px;
     fill: currentColor;
   }

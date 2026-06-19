@@ -11,6 +11,7 @@
     { href: "/rubik", name: "Rubik", icon: Cube, thumb: "/assets/thumb/rubik.png" },
     { href: "/taiji", name: "Taiji", icon: Planet, thumb: "/assets/thumb/taiji.png" },
     { href: "/enso", name: "Ensō", icon: Planet, thumb: "/assets/thumb/enso.png" },
+    { href: "/flower", name: "Ink Flower", icon: Planet, thumb: "/assets/thumb/flower.png" },
     { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: "/assets/thumb/ink-dragon.png" },
     { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: "/assets/thumb/caligraphy.png" },
     { href: "/lego", name: "Lego", icon: Cube, thumb: "/assets/thumb/lego.png" },
@@ -99,12 +100,6 @@
     margin: 0 auto;
     padding: 4rem 1.5rem;
   }
-  h1 {
-    font-family: "Virgil", "Comic Sans MS", cursive;
-    font-size: 2.2rem;
-    color: var(--ink);
-    margin-bottom: 2rem;
-  }
   ul {
     list-style: none;
     padding: 0;
@@ -159,7 +154,7 @@
     opacity: 0.45;
   }
   .name {
-    font-family: "Virgil", "Comic Sans MS", cursive;
+    font-family: "Virgil", cursive;
     font-size: 1.05rem;
     color: var(--ink);
     padding-left: 0.1rem;
