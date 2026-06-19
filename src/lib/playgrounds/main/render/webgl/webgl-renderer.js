@@ -19,6 +19,7 @@ import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
 import FLOWER_FRAG from "./shaders/flower.frag.glsl?raw";
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./stroke-gl.js";
 import { makeContext, loadDragonMesh } from "$lib/engine/index.js";
+import { mark } from "$lib/engine/profile.js";
 import { FLOWER_PETALS, FLOWER_LAYERS } from "../../config.js";
 
 const FLOWER_Z = -0.005; // flowers sit just above the grid, under the dragon/glyph
@@ -227,6 +228,7 @@ export function makeWebGLRenderer(canvas) {
   }
 
   async function init() {
+    const endInit = mark("webgl init total");
     // engine GL toolkit: WebGL2 context (opaque, MSAA) + shader compile/link.
     // .program() returns a wrapper; we keep its raw .prog and drive uniforms by
     // hand (int + raw-texture uniforms the wrapper's set() does not handle).
@@ -236,6 +238,7 @@ export function makeWebGLRenderer(canvas) {
     gl = ctx.gl;
     const link = (vs, fs) => ctx.program(vs, fs).prog;
 
+    const endShaders = mark("webgl shader compile+link");
     progs.glyph = link(FS_TRI_VERT, GLYPH_FRAG);
     progs.splash = link(FS_TRI_VERT, SPLASH_FRAG);
     progs.enso = link(FS_TRI_VERT, ENSO_FRAG);
@@ -247,6 +250,7 @@ export function makeWebGLRenderer(canvas) {
     progs.flower = link(FLOWER_VERT, FLOWER_FRAG);
     progs.blit = link(FS_TRI_VERT, BLIT_FRAG);
     progs.line = link(LINE_VERT, LINE_FRAG);
+    endShaders();
 
     U.glyph = uniforms(gl, progs.glyph, ["uResolution", "uBaseRadius", "uTime", "uNSeg", "uSegTex", "uInkColor"]);
     U.splash = uniforms(gl, progs.splash, ["uResolution", "uGrow", "uSpread", "uAmount", "uClock", "uInkDark", "uInkLight"]);
@@ -333,11 +337,15 @@ export function makeWebGLRenderer(canvas) {
     loadMesh().catch((e) => console.warn("[paint] dragon mesh load failed", e));
 
     resize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+    endInit();
   }
 
   // x normalised to [0,1]; uBodyLen scales it at draw time
   async function loadMesh() {
+    const endMesh = mark("dragon mesh load+upload");
+    const endFetch = mark("loadDragonMesh (fetch+parse)");
     const mesh = await loadDragonMesh(DRAGON_OBJ, 1.0);
+    endFetch();
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
     d3PosBuf = gl.createBuffer();
@@ -356,6 +364,7 @@ export function makeWebGLRenderer(canvas) {
     // publish last: gates the draw, so VAO/buffers are fully ready first
     d3Vao = vao;
     d3VertexCount = mesh.vertexCount;
+    endMesh();
   }
 
   function resize(nw, nh) {

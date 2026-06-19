@@ -11,6 +11,11 @@
   import Pause from "$icons/google-material/pause.svg?raw";
   import Restart from "$icons/google-material/restart.svg?raw";
   import ChevronDown from "$icons/google-material/chevron-down.svg?raw";
+  import { onMount } from "svelte";
+  import { stamp } from "$lib/engine/profile.js";
+
+  stamp("+page.svelte script init (hydration)");
+  onMount(() => stamp("+page.svelte onMount (DOM ready)"));
 
   // scroll length (px) mapped onto the whole timeline. The stage is sticky and
   // fills the viewport; this tall track gives the page something to scroll.
