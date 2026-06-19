@@ -24,20 +24,22 @@
 // initScene builds the paths + schedule, then constructs the blocks (so their
 // branch points are real numbers, not placeholders) and wires the timeline.
 
-import { clamp, lerp, smooth, ramp } from "$lib/math/scalar.js";
+import { clamp, lerp, smooth } from "$lib/math/scalar.js";
 import { mulberry32 } from "$lib/math/random.js";
-import { orbitPivots, clampExitPivot, relaxTurns, buildSpline } from "$lib/math/curve.js";
-import { makeTimeline } from "./timeline.js";
+import { orbitPivots, clampExitPivot, relaxTurns, buildSpline, buildOpenSpline } from "$lib/math/curve.js";
+import { makeTimeline, createCameraTrack } from "./stage/index.js";
 import {
   GLYPH_RADIUS, GRID, GRID_MINOR_DIV, SPLASH_SPREAD, SPLASH_AMOUNT,
-  ENSO_R, ENSO_WIDTH, BODY_LEN, HEAD_SIZE, D3, D3_GIRTH, SP2,
+  ENSO_R, ENSO_WIDTH, BODY_LEN, HEAD_SIZE, D3, D3_GIRTH, SP3,
   GROW_DUR, ENTRY_GROW_MIN, ENTRY_SIZE_MIN,
   LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, LOOP3_LOBES, LOOP3_LOBE_DEPTH,
   MAX_EXIT_TURN, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, RELAX_ITERS,
+  CORRIDOR_DROP, FLYIN_TOP_Y, FLYIN_BOW, ENSO_REVS,
+  CRUISE_SP, CHAIN_LEN_FRAC,
 } from "./config.js";
 import { computeTiming } from "./timing.js";
 import { buildGlyph } from "./glyph.js";
-import { ensoPos, ensoA0, generateFramePath, buildEnsoLeadIn } from "./frame-path.js";
+import { ensoPos, generateFramePath, buildDescent } from "./frame-path.js";
 import { createHeadPath } from "./head-path.js";
 import { createBodyController } from "./body.js";
 import { createDragon3d } from "./dragon3d.js";
@@ -46,37 +48,46 @@ import { createSplashBlock } from "./blocks/splash.js";
 import { createGlyphBlock } from "./blocks/glyph.js";
 import { createInkBlock } from "./blocks/ink.js";
 import { createEnsoBlock } from "./blocks/enso.js";
-import { createCameraBlock } from "./blocks/camera.js";
 import { createDragon3dBlock } from "./blocks/dragon3d.js";
 import { createGridBlock } from "./blocks/grid.js";
 
-// Placeholder until initScene runs with the real roam-path length. +page.svelte
-// imports this (live binding -> the reassign in initScene is observed).
-export let TIMELINE_END = computeTiming(6.0).timelineEnd;
+// Placeholder until initScene runs. +page.svelte imports this (live binding ->
+// the reassign in initScene is observed).
+export let TIMELINE_END = computeTiming().timelineEnd;
 
 // ---- scene model (built in initScene) --------------------------------------
 let timing = null;
 let glyph = null;
-let curvePath = null;   // 2D roam spline the ink dragon follows
-let ensoLeadIn = null;  // short branch from the glyph end onto the enso circle
+let curvePath = null;   // 2D roam2 path the 3D dragon transitions off of
 let loop3 = null;       // 3D orbit the 3D dragon flies
 let headPath = null;    // head phase sequence + samplers
 let bodyCtrl = null;    // 2D dragon body controller
 let dragon3d = null;    // 3D dragon frame buffers
 let timeline = null;
+let cameraTrack = null; // corridor descent + pitch + yaw gate
+let ensoCenter = { x: 0, y: 0 }; // world station of the glyph + enso
 let _ctx = null;
-let pool = [];          // debug: rosette circle centres
+let pool = [];          // debug: circle centres (both roams)
 let _poolF32 = null;    // cached debug-point buffer
 
-// 2D-dragon grow ramp: small + short while tracing the glyph, growing up after it
-// leaves the glyph onto the enso. Shared by body length + head/stroke size.
+// 2D-dragon grow ramp: small while the dragon reveals + first roam, growing to
+// full by the enso. Shared by body length + head/stroke size.
 function makeGrow(timing) {
-  const g = (t) => smooth(clamp((t - timing.glyphEnd) / GROW_DUR, 0, 1));
-  // caps at 0.8 after the glyph trace (0.8x full size in the enso + 2D fly phases).
+  const g = (t) => smooth(clamp((t - timing.roam1Start) / GROW_DUR, 0, 1));
   return {
-    len: (t) => lerp(ENTRY_GROW_MIN, t >= timing.glyphEnd ? 0.8 : 1.0, g(t)),
-    size: (t) => lerp(ENTRY_SIZE_MIN, t >= timing.glyphEnd ? 0.8 : 1.0, g(t)),
+    len: (t) => lerp(ENTRY_GROW_MIN, 1.0, g(t)),
+    size: (t) => lerp(ENTRY_SIZE_MIN, 1.0, g(t)),
   };
+}
+
+// slightly-curved fly-in from the top-middle down onto the corridor middle.
+function buildFlyin(topY, endY) {
+  return buildOpenSpline([
+    { x: 0, y: topY, z: 0 },
+    { x: FLYIN_BOW, y: lerp(topY, endY, 0.35), z: 0 },
+    { x: -FLYIN_BOW * 0.6, y: lerp(topY, endY, 0.7), z: 0 },
+    { x: 0, y: endY, z: 0 },
+  ]);
 }
 
 export function initScene() {
@@ -86,68 +97,105 @@ export function initScene() {
   // timeline scrubbing replays the same generated path).
   const rng = mulberry32((Math.random() * 4294967296) >>> 0);
 
-  // branch off the glyph end onto the enso circle with a C curve (tangent-matched
-  // to the glyph heading in and the circle tangent out) -> smooth, no snap.
-  const ensoStart = ensoPos(0);
-  const ensoStartNext = ensoPos(1e-3);
-  const ensoStartHeading = Math.atan2(ensoStartNext.y - ensoStart.y, ensoStartNext.x - ensoStart.x);
-  ensoLeadIn = buildEnsoLeadIn(
-    { x: glyph.end.x, y: glyph.end.y }, Math.atan2(glyph.end.dir.y, glyph.end.dir.x),
-    ensoStart, ensoStartHeading,
-  );
-
-  // curve roam: the head leaves the enso at its exit (== enso start point, frac=1)
-  // along the enso tangent, then flies the circle-chain path.
-  const ensoExit = ensoPos(1);
-  const ensoNext = ensoPos(1 + 1e-3);
-  const ensoHeading = Math.atan2(ensoNext.y - ensoExit.y, ensoNext.x - ensoExit.x);
-  const framePath = generateFramePath(rng, ensoExit, ensoHeading);
-  curvePath = framePath.curve;
-  pool = framePath.pool;
-  _poolF32 = null;
-
-  // the schedule depends on the actual roam length, so roam speed == SP2 exactly
-  const curveDur = (curvePath.total - curvePath.headStart) / SP2;
-  timing = computeTiming(curveDur);
+  timing = computeTiming();
   TIMELINE_END = timing.timelineEnd;
 
-  // loop3: a clean 3D orbit ringing the rosette, starting at the branch point bp.
-  // Seeded at bp's angle so its first pivot sits roughly along the exit; clampExit
-  // pins the peel-off tangent to the 2D heading; relaxTurns shapes the ring.
-  const branchS = curvePath.total;
-  const bp = curvePath.pos(branchS);
-  const tb = curvePath.tan(branchS); // 2D heading at the branch point
-  const bpA = Math.atan2(bp.y, bp.x);
-  const rest = orbitPivots(LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, bpA, LOOP3_LOBES, LOOP3_LOBE_DEPTH);
-  clampExitPivot(rest, { x: bp.x, y: bp.y, dir: { x: tb.x, y: tb.y } }, MAX_EXIT_TURN);
-  const ring3 = [{ x: bp.x, y: bp.y, z: 0 }, ...rest];
-  relaxTurns(ring3, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, (i) => i >= 1, RELAX_ITERS); // pin the branch anchor
-  loop3 = buildSpline(ring3);
+  // corridor camera: descends through B1-B3, holds during B4, tilts from B5.
+  cameraTrack = createCameraTrack({
+    descent: { enabled: true, yTop: 0, yBottom: -CORRIDOR_DROP, startT: timing.flyinStart, endT: timing.descentEnd },
+    pitch: { anchorT: timing.pitchAnchor, dur: timing.camPitchDur },
+    yaw: { gateStart: timing.d3Start, gateEnd: timing.d3End },
+  });
+  const camY = cameraTrack.camY;
+
+  // stations (world-Y where each object sits centred when the camera looks at it)
+  const topY = camY(timing.flyinStart) + FLYIN_TOP_Y;      // dragon spawn (top-middle)
+  const flyinEndY = camY(timing.roam1Start);               // mid-screen at t=roam1Start
+  const roam1EndY = camY(timing.approachStart);            // mid-screen at t=approachStart
+  ensoCenter = { x: 0, y: camY(timing.ensoStart) };        // glyph + enso station
+
+  // enso entry (top) + exit (bottom after 1.5 revs), with circle tangents.
+  const ensoTop = ensoPos(0, ensoCenter);
+  const ensoTopNext = ensoPos(1e-3, ensoCenter);
+  const ensoTopHeading = Math.atan2(ensoTopNext.y - ensoTop.y, ensoTopNext.x - ensoTop.x);
+  const ensoBottom = ensoPos(ENSO_REVS, ensoCenter);
+  const ensoBottomNext = ensoPos(ENSO_REVS + 1e-3, ensoCenter);
+  const ensoBottomHeading = Math.atan2(ensoBottomNext.y - ensoBottom.y, ensoBottomNext.x - ensoBottom.x);
+
+  // B1 fly-in: top-middle -> mid-screen (slightly bowed line).
+  const flyin = buildFlyin(topY, flyinEndY);
+  // enter the descent along the fly-in's ACTUAL end tangent (the circle-chain entry
+  // tangent equals its heading exactly) -> C1 join.
+  const flyinEndTan = flyin.tan(flyin.total);
+  const flyinEndHeading = Math.atan2(flyinEndTan.y, flyinEndTan.x);
+
+  // B2+B3 descent: ONE path = a descending circle-chain (fuller, lateral traces)
+  // then a C1 connector onto the enso TOP. Traversed at one continuous (cubic-eased)
+  // speed in head-path -> no crawl, no kink, and no speed bump leaving the fly-in,
+  // between circles, or entering the enso. The dragon stays near mid-screen the whole
+  // descent (the camera tracks it). The glyph reveals independently underneath — the
+  // dragon does NOT trace it.
+  void roam1EndY;
+  // length target: make the weave long enough that descentAvg (= len/descentDur)
+  // approaches CRUISE_SP, so the head enters the descent at a healthy speed (no
+  // start crawl) instead of being forced to crawl up from near-zero.
+  const descentDur = timing.ensoStart - timing.roam1Start;
+  const descentLenTarget = CRUISE_SP * descentDur * CHAIN_LEN_FRAC;
+  const descent = buildDescent(
+    rng, { x: 0, y: flyinEndY }, flyinEndHeading, ensoTop, ensoTopHeading,
+    flyinEndY - (ensoCenter.y + ENSO_R), descentLenTarget,
+  );
+
+  // B5 roam2: a flower of tangent circles centred on the enso station; the camera
+  // is held here so the dragon roams near mid-screen as it hands off to 3D. The
+  // head traverses only the first SP3*roamDur arc of the flower at constant SP3 so
+  // it (a) matches the 3D loop speed -> no jump at the handoff and (b) shares the
+  // exact curve position with the 3D dragon through the crossfade.
+  const roam2 = generateFramePath(rng, ensoBottom, ensoBottomHeading, ensoCenter);
+  const roamDur = timing.loop3Start - timing.ensoExit;
+  const branchArc = (roam2.curve.headStart || 0) + SP3 * roamDur;
+  roam2.curve.headEnd = branchArc; // head ends here at loop3Start (the 3D loop start)
+  curvePath = roam2.curve;
+  pool = [...descent.pool, ...roam2.pool];
+  _poolF32 = null;
 
   // scene model (closes over the now-final paths + schedule)
-  headPath = createHeadPath({ timing, glyph, ensoLeadIn, curvePath });
+  const paths = { flyin, descent, roam2, ensoCenter };
+  headPath = createHeadPath({ timing, paths });
   bodyCtrl = createBodyController({ headPath, timing });
+
+  // loop3: a clean 3D orbit ringing the roam2 flower, centred on the enso station,
+  // starting at the roam2 branch point (where the 2D head ends == 3D loop begins).
+  const bp = curvePath.pos(branchArc);
+  const tb = curvePath.tan(branchArc);
+  const bpA = Math.atan2(bp.y - ensoCenter.y, bp.x - ensoCenter.x);
+  const rest = orbitPivots(LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, bpA, LOOP3_LOBES, LOOP3_LOBE_DEPTH)
+    .map((p) => ({ x: p.x + ensoCenter.x, y: p.y + ensoCenter.y, z: p.z })); // recentre on the station
+  clampExitPivot(rest, { x: bp.x, y: bp.y, dir: { x: tb.x, y: tb.y } }, MAX_EXIT_TURN);
+  const ring3 = [{ x: bp.x, y: bp.y, z: 0 }, ...rest];
+  relaxTurns(ring3, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, (i) => i >= 1, RELAX_ITERS);
+  loop3 = buildSpline(ring3);
+
   dragon3d = createDragon3d({ timing });
   dragon3d.build(loop3, curvePath);
 
-  // blocks + timeline, built AFTER timing so branch points are real numbers (no
-  // placeholders, no post-construction patching). Each block is an independent
-  // unit; deps are passed explicitly.
+  // blocks + timeline, built AFTER timing so branch points are real numbers. Each
+  // block is an independent unit; deps are passed explicitly. The camera is a
+  // first-class track (cameraTrack), not a block.
   const deps = { timing, glyph, bodyCtrl, headPath, grow: makeGrow(timing) };
   const blocks = [
     createSplashBlock(deps),
-    createGlyphBlock(deps),
-    createInkBlock(deps),
-    createEnsoBlock(deps),
-    createCameraBlock(deps),
-    createDragon3dBlock(deps),
     createGridBlock(deps),
+    createInkBlock(deps),
+    createGlyphBlock(deps),
+    createEnsoBlock(deps),
+    createDragon3dBlock(deps),
   ];
   timeline = makeTimeline(blocks);
   _ctx = timeline.createCtx({ t: 0 });
 
-  // seed body fitted to the path at the dragon's start (short, on the lead-in)
-  bodyCtrl.reseed(timing.dragonStart, BODY_LEN * ENTRY_GROW_MIN);
+  // seed body fitted to the path at the dragon's start (short, on the fly-in)
+  bodyCtrl.reseed(timing.flyinStart, BODY_LEN * ENTRY_GROW_MIN);
 }
 
 // ---- reused frame-state scratch (zero per-frame allocation) ----------------
@@ -157,11 +205,12 @@ export function initScene() {
 const EMPTY_F32 = new Float32Array(0);
 const _frame = {
   aspect: 1,
+  camY: 0,  // corridor look-at world-Y (0 = stationary)
   opacity: { glyph: 1, inkDragon: 0, dragon3d: 0 },
   grid: { opacity: 0, reveal: 0, revealMinor: 0, viewProj: null, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
-  glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS },
-  splash: { alpha: 0, grow: 0, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: 0 },
-  enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0 },
+  glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS, stationY: 0 },
+  splash: { alpha: 0, grow: 0, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: 0, stationY: 0 },
+  enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0, laps: 1, stationY: 0 },
   inkDragon: {
     body: null,
     head: { pos: { x: 0, y: 0 }, dir: { x: 0, y: 1 }, size: HEAD_SIZE, alpha: 1 },
@@ -179,12 +228,14 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
   timeline.frame(_ctx, t);
 
   bodyCtrl.writeHead(_frame.inkDragon.head, headPath.tipAt(t).dir); // align head to the path tangent
-  // user yaw locked to 0 during the 2D phase; lerps in over the crossfade (no snap)
-  const rawYaw = yaw || 0;
-  const userYaw = t < timing.branch ? 0 : ramp(t, timing.d3Start, timing.d3End, 0, rawYaw);
-  const viewProj = sceneViewProj(aspect, userYaw, _ctx.camPitch);
+  // corridor camera: descend (camY), tilt (pitch), and gate user yaw in — all from
+  // the camera track so the descend->pitch handoff stays in sync.
+  const userYaw = cameraTrack.yawGate(t, yaw || 0);
+  const camY = cameraTrack.camY(t);
+  const viewProj = sceneViewProj(aspect, userYaw, cameraTrack.camPitch(t), camY);
 
   _frame.aspect = aspect;
+  _frame.camY = camY;
   _frame.opacity.glyph = _ctx.glyphAlpha;
   _frame.opacity.inkDragon = _ctx.inkAlpha;
   _frame.opacity.dragon3d = _ctx.d3Alpha;
@@ -195,12 +246,15 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
 
   _frame.glyph.segs = glyph.segs;
   _frame.glyph.playhead = _ctx.playhead;
+  _frame.glyph.stationY = ensoCenter.y; // glyph parked at the enso station
 
   const sp = _frame.splash;
   sp.alpha = _ctx.splashAlpha; sp.grow = _ctx.splashGrow; sp.time = t;
+  sp.stationY = ensoCenter.y; // ink wash parked at the glyph/enso station (bottom of the corridor)
 
   const en = _frame.enso;
-  en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = Math.PI / 2 - ensoA0; en.time = t;
+  en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = 0; en.time = t;
+  en.laps = ENSO_REVS; en.stationY = ensoCenter.y;
 
   const ink = _frame.inkDragon;
   ink.body = bodyCtrl.body;

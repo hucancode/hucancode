@@ -3,29 +3,175 @@
 // end onto the enso. All pure builders — fed the entry/heading and the session
 // PRNG, they return paths the head-path module samples.
 
-import { TAU, clamp, lerp, smooth } from "$lib/math/scalar.js";
-import { arcLengthCurve, buildOpenSpline } from "$lib/math/curve.js";
+import { TAU, clamp } from "$lib/math/scalar.js";
+import { arcLengthCurve } from "$lib/math/curve.js";
 import {
-  ENSO_R, BODY_LEN,
+  ENSO_R, BODY_LEN, SP3, ENSO_DUR, ENSO_REVS,
   FRAME_SMALL_R, FRAME_MEDIUM_N, FRAME_MEDIUM_R, FRAME_INNER_AXIS,
   FRAME_BRANCH_P, FRAME_MIN_LEN, FRAME_MAX_STEPS, FRAME_SAMPLES, FRAME_TAN_EPS,
+  CHAIN_R, CHAIN_TURN, CHAIN_DOWN_BIAS, CHAIN_LATERAL, CHAIN_DESCEND,
+  CHAIN_CENTER_R, CHAIN_MIN_SWEEP, CHAIN_MAX,
 } from "./config.js";
+
+const DOWN_ANG = -Math.PI / 2; // straight-down heading
+// shortest signed angle from `cur` to `target` (in -π..π)
+const angDiff = (target, cur) => Math.atan2(Math.sin(target - cur), Math.cos(target - cur));
+
+// Eased enso head progress (0..1 over the trace). It DECELERATES so the head speed
+// at the end equals the 3D loop speed SP3 — so when the dragon exits the enso into
+// the second roam and hands off to the 3D dragon, the speed is deterministic (no
+// jump). Quadratic g with g(0)=0, g(1)=1, g'(1)=k where k is the end-slope that
+// makes d(arc)/dt == SP3 at the exit.
+const ENSO_CIRC = TAU * ENSO_R;
+const ENSO_END_K = clamp((SP3 * ENSO_DUR) / (ENSO_REVS * ENSO_CIRC), 0.15, 1.85);
+export function ensoHeadProgress(tau) {
+  tau = clamp(tau, 0, 1);
+  const a = ENSO_END_K - 1, b = 2 - ENSO_END_K; // a+b=1, 2a+b=k
+  return clamp(a * tau * tau + b * tau, 0, 1);
+}
 
 // enso start angle: top of circle (fixed); head sweeps counter-clockwise.
 export const ensoA0 = Math.PI / 2;
 
-// The head sweeps ONE counter-clockwise circle of radius ENSO_R starting at the
-// top; `frac` (0..1) drives the sweep. Defined for any frac (frac<0 trails before
-// the start) so the body can lead in.
-export function ensoPos(frac) {
+// The head sweeps a counter-clockwise circle of radius ENSO_R about `center`
+// (default origin), starting at the top; `frac` is in revolutions (0..1.5 traces
+// 1.5 laps). Defined for any frac (frac<0 trails before the start) so the body can
+// lead in.
+export function ensoPos(frac, center) {
+  const cx = center ? center.x : 0, cy = center ? center.y : 0;
   const a = ensoA0 + frac * TAU; // counter-clockwise (increasing angle)
-  return { x: ENSO_R * Math.cos(a), y: ENSO_R * Math.sin(a) };
+  return { x: cx + ENSO_R * Math.cos(a), y: cy + ENSO_R * Math.sin(a) };
 }
 
-// straight glide from LEADIN_START onto the glyph entry (eased); p in 0..1
-export function leadInPos(p, start, entry) {
-  const k = smooth(clamp(p, 0, 1));
-  return { x: lerp(start.x, entry.x, k), y: lerp(start.y, entry.y, k) };
+// Corridor roam: a STRING of externally-tangent circles whose CENTRES stay near
+// the centre line (x->0). The march heading (the direction to the next circle's
+// centre) aims MOSTLY LATERAL with a gentle downward drift PLUS a pull back toward
+// centre, so each new centre is generated near the camera centre — the dragon
+// weaves side-to-side around centre while slowly sinking, never drifting off
+// screen. The winding ALTERNATES each circle (required for a C1 join at external
+// tangency — an S-weave), so the per-circle sweep is fixed by the march geometry; a
+// short hop gets a whole extra lap so traces stay fuller. Because the march weaves
+// laterally, the sweep angles naturally spread across ~1/2 .. full turns (the soft
+// "half / three-quarter / full" mix). The downward drift is GENTLE and uniform, so
+// the dragon sinks at a steady rate with arc length — matching the camera's linear
+// descent so it stays vertically centred (no sinking off the bottom). Walks until it
+// has either descended `dropTarget` or walked `lenTarget` of arc (the mostly-lateral
+// weave makes the path long, so the head cruises it at a healthy near-constant speed
+// — no start crawl). Returns { curve (with headStart), pool, points, end }.
+export function generateCircleChain(rng, entry, heading, dropTarget, lenTarget = 0) {
+  const [rMin, rMax] = CHAIN_R;
+  const rand = (a, b) => a + (b - a) * rng();
+  const pts = [{ x: entry.x, y: entry.y, z: 0 }];
+  const pool = [];
+
+  let r = rand(rMin, rMax);
+  const nx = -Math.sin(heading), ny = Math.cos(heading); // normal to heading
+  const side = rng() < 0.5 ? 1 : -1;
+  let cx = entry.x + side * r * nx, cy = entry.y + side * r * ny; // c0 (entry on its rim)
+  pool.push({ x: cx, y: cy, z: 0 });
+  let aIn = Math.atan2(entry.y - cy, entry.x - cx);
+  // entry winding: the first circle's start tangent must agree with `heading` so the
+  // join from the fly-in has no cusp; subsequent circles alternate.
+  let dir = Math.sin(heading - aIn) >= 0 ? 1 : -1;
+  let march = heading;       // running march heading (direction to the next centre)
+  const startY = entry.y;
+  let len = 0;
+
+  for (let i = 0; i < CHAIN_MAX; i++) {
+    // march TARGET: a vector that is mostly lateral (steered toward centre, x->0)
+    // with a gentle, uniform downward drift — so the chain weaves side-to-side about
+    // centre while sinking steadily with arc length (tracks the linear camera).
+    const dropFrac = clamp((startY - cy) / dropTarget, 0, 1); // how far we have sunk
+    const hx = clamp(-cx / CHAIN_CENTER_R, -1, 1) * CHAIN_LATERAL; // toward centre
+    const target = (hx === 0) ? DOWN_ANG : Math.atan2(-CHAIN_DESCEND, hx);
+    march += (rng() * 2 - 1) * CHAIN_TURN;          // random wander
+    march += angDiff(target, march) * CHAIN_DOWN_BIAS; // ease toward the target heading
+
+    const rn = rand(rMin, rMax);
+    // sweep to exit with the tangent-point aimed along `march` for the (alternating)
+    // winding; a short hop gets a whole extra lap (exit direction unchanged mod 2π,
+    // so the next circle still lies along march) -> fuller traces.
+    let sweep = ((dir * (march - aIn)) % TAU + TAU) % TAU;
+    if (sweep < FRAME_TAN_EPS) sweep += TAU;
+    if (sweep < CHAIN_MIN_SWEEP * TAU) sweep += TAU;
+    if (i === 0 && sweep < 0.85 * TAU) sweep += TAU; // first loop returns near centre
+    // PAD with extra full laps so the cumulative length tracks lenTarget*dropFrac:
+    // a lap returns to the same exit point/direction, so it adds length + a fuller
+    // trace WITHOUT any net drop or drift. Distributed by descent progress, this
+    // makes the path reach lenTarget exactly as it reaches dropTarget (uniform speed
+    // + a half/full trace mix) — and long enough that the head never crawls.
+    const lapArc = r * TAU;
+    let laps = Math.round((lenTarget * dropFrac - len - r * sweep) / lapArc);
+    sweep += clamp(laps, 0, 2) * TAU;
+
+    const aOut = aIn + dir * sweep;
+    const n = Math.max(2, Math.round(FRAME_SAMPLES * sweep / TAU));
+    for (let k = 1; k <= n; k++) {
+      const a = aIn + dir * sweep * (k / n);
+      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), z: 0 });
+    }
+    len += r * sweep;
+    // next circle: externally tangent along the exit direction (== march mod 2π)
+    const ux = Math.cos(aOut), uy = Math.sin(aOut);
+    const ncx = cx + (r + rn) * ux, ncy = cy + (r + rn) * uy;
+    aIn = Math.atan2(cy - ncy, cx - ncx); // faces back at the shared point
+    cx = ncx; cy = ncy; r = rn; dir = -dir; // alternate winding -> C1 S-weave
+    pool.push({ x: cx, y: cy, z: 0 });
+    // stop once it has sunk far enough OR walked the length target — whichever first
+    // (the gentle descent keeps these close; the connector absorbs any small gap to
+    // the enso top, so the chain never plunges below it).
+    if ((startY - cy >= dropTarget) || len >= lenTarget) break;
+  }
+
+  // prepend two body lead-in points behind the entry (so the chain has something
+  // to trail) and arc-length-parameterise.
+  const hdx = Math.cos(heading), hdy = Math.sin(heading);
+  const all = [
+    { x: entry.x - hdx * BODY_LEN * 2, y: entry.y - hdy * BODY_LEN * 2, z: 0 },
+    { x: entry.x - hdx * BODY_LEN, y: entry.y - hdy * BODY_LEN, z: 0 },
+    ...pts,
+  ];
+  const curve = arcLengthCurve(all, false);
+  const e = curve.pos(curve.total), et = curve.tan(curve.total);
+  return {
+    curve: { ...curve, headStart: curve.arcAt(2) },
+    pool,
+    points: all, // raw polyline (entry at index 2) for concatenating a connector
+    end: { x: e.x, y: e.y, dir: { x: et.x, y: et.y } },
+  };
+}
+
+// Sample a C1 cubic Bezier (controls along the end headings) into a point array.
+function c1ArcPoints(p0, h0, p1, h1, tension = 0.4) {
+  const chord = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1e-6;
+  const d = tension * chord;
+  const c1 = { x: p0.x + Math.cos(h0) * d, y: p0.y + Math.sin(h0) * d };
+  const c2 = { x: p1.x - Math.cos(h1) * d, y: p1.y - Math.sin(h1) * d };
+  const N = 40, out = [];
+  for (let i = 0; i <= N; i++) {
+    const u = i / N, v = 1 - u;
+    const b0 = v * v * v, b1 = 3 * v * v * u, b2 = 3 * v * u * u, b3 = u * u * u;
+    out.push({
+      x: b0 * p0.x + b1 * c1.x + b2 * c2.x + b3 * p1.x,
+      y: b0 * p0.y + b1 * c1.y + b2 * c2.y + b3 * p1.y,
+      z: 0,
+    });
+  }
+  return out;
+}
+
+// The full B2+B3 DESCENT path as ONE curve: a circle-chain weaving down from the
+// fly-in end, then a C1 connector onto the enso top. Built as a single arc-length
+// curve so the dragon crosses it at one continuous (cubic-eased) speed — no crawl,
+// no kink — and arrives tangent to the enso. `lenTarget` makes the chain long
+// enough that the head's cruise speed never crawls. headStart skips the body lead-in.
+export function buildDescent(rng, entry, heading, ensoTop, ensoTopHeading, drop, lenTarget = 0) {
+  const chain = generateCircleChain(rng, entry, heading, drop, lenTarget);
+  const ce = chain.end;
+  const conn = c1ArcPoints(ce, Math.atan2(ce.dir.y, ce.dir.x), ensoTop, ensoTopHeading);
+  const pts = [...chain.points, ...conn.slice(1)]; // entry stays at index 2
+  const curve = arcLengthCurve(pts, false);
+  return { curve: { ...curve, headStart: curve.arcAt(2) }, pool: chain.pool };
 }
 
 // Build the rosette frame as a list of {cx, cy, r} circles, then wire up every
@@ -33,15 +179,16 @@ export function leadInPos(p, start, entry) {
 // the angle on this circle, the partner index, and the angle on the partner at
 // the shared point. Tangencies are detected numerically — external when the
 // centre distance equals ri+rj, internal when it equals |ri-rj|.
-function buildFrame() {
+function buildFrame(center) {
+  const ox = center ? center.x : 0, oy = center ? center.y : 0;
   const R = ENSO_R;
-  const circles = [{ cx: 0, cy: 0, r: R }]; // 0: the enso (grand circle)
+  const circles = [{ cx: ox, cy: oy, r: R }]; // 0: the enso (grand circle)
 
-  // vesica pair: two equal circles tangent at the origin, each internally tangent
+  // vesica pair: two equal circles tangent at the centre, each internally tangent
   // to the enso at the ends of the FRAME_INNER_AXIS diameter.
   const ir = FRAME_SMALL_R * R;
   for (const s of [1, -1]) {
-    circles.push({ cx: s * ir * Math.cos(FRAME_INNER_AXIS), cy: s * ir * Math.sin(FRAME_INNER_AXIS), r: ir });
+    circles.push({ cx: ox + s * ir * Math.cos(FRAME_INNER_AXIS), cy: oy + s * ir * Math.sin(FRAME_INNER_AXIS), r: ir });
   }
 
   // medium ring: FRAME_MEDIUM_N equal circles externally tangent to the enso,
@@ -52,7 +199,7 @@ function buildFrame() {
   const MD = R + rmed; // centre distance for external tangency to the enso
   for (let k = 0; k < FRAME_MEDIUM_N; k++) {
     const a = k * (TAU / FRAME_MEDIUM_N);
-    circles.push({ cx: MD * Math.cos(a), cy: MD * Math.sin(a), r: rmed });
+    circles.push({ cx: ox + MD * Math.cos(a), cy: oy + MD * Math.sin(a), r: rmed });
   }
 
   // wire tangencies (numeric: handles internal, external and coincident points)
@@ -135,8 +282,8 @@ function walkFrame(rng, circles, entry, heading) {
 // lead-in points behind the entry (so the verlet chain has something to trail),
 // and arc-length parameterise the dense polyline (open path). Returns the curve
 // (with headStart) plus the circle centres as a debug `pool`.
-export function generateFramePath(rng, entry, heading) {
-  const circles = buildFrame();
+export function generateFramePath(rng, entry, heading, center) {
+  const circles = buildFrame(center);
   const pool = circles.map((c) => ({ x: c.cx, y: c.cy, z: 0 })); // debug: circle centres
   const hdx = Math.cos(heading), hdy = Math.sin(heading);
   const walk = walkFrame(rng, circles, entry, heading); // walk[0] === entry
@@ -150,28 +297,3 @@ export function generateFramePath(rng, entry, heading) {
   return { curve: { ...curve, headStart: curve.arcAt(headEntryIdx) }, pool };
 }
 
-// Branch off the glyph end onto the enso circle with a C curve (entry, belly,
-// exit) — same generation rule as the roam, so the join is smooth. Entry/exit
-// tangents are pinned to the glyph exit heading and the circle tangent (no kink,
-// no snap). Returns the open spline + the arc range the head travels.
-export function buildEnsoLeadIn(entry, entryHeading, exit, exitHeading) {
-  const edx = Math.cos(entryHeading), edy = Math.sin(entryHeading);
-  const xdx = Math.cos(exitHeading), xdy = Math.sin(exitHeading);
-  // belly: bowed off the entry->exit chord (outward), sized so it is never tiny
-  const cx = exit.x - entry.x, cy = exit.y - entry.y;
-  const chord = Math.hypot(cx, cy) || 1e-6;
-  let px = -cy / chord, py = cx / chord;           // chord normal
-  if (px * (entry.x + exit.x) + py * (entry.y + exit.y) < 0) { px = -px; py = -py; } // bow outward
-  const off = Math.max(0.35 * chord, 0.25);
-  const belly = { x: (entry.x + exit.x) * 0.5 + px * off, y: (entry.y + exit.y) * 0.5 + py * off, z: 0 };
-  const tan = 0.2 * chord; // tangent-guide control offset
-  const pivots = [
-    { x: entry.x - edx * tan, y: entry.y - edy * tan, z: 0 },
-    { x: entry.x, y: entry.y, z: 0 },
-    belly,
-    { x: exit.x, y: exit.y, z: 0 },
-    { x: exit.x + xdx * tan, y: exit.y + xdy * tan, z: 0 },
-  ];
-  const spline = buildOpenSpline(pivots);
-  return { ...spline, headStart: spline.arcAtU(1), endArc: spline.arcAtU(3) };
-}
