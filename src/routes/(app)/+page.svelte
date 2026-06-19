@@ -140,7 +140,7 @@
 <svelte:head>
   <title>hucancode</title>
   <!-- start the dragon mesh download during HTML parse; renderer fetch hits cache -->
-  <link rel="preload" href="/assets/obj/dragon-low.obj" as="fetch" />
+  <link rel="preload" href="/assets/obj/dragon-low.obj" as="fetch" crossorigin />
 </svelte:head>
 <svelte:window onscroll={onScroll} onresize={placeHints} />
 
