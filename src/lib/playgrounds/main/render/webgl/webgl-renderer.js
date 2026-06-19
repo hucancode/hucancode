@@ -64,13 +64,14 @@ const COMPOSITE_VERT = `#version 300 es
 precision highp float;
 uniform float uAspect;
 uniform float uZ;
+uniform float uStationY; // world-Y the layer is parked at (corridor station)
 uniform mat4 uViewProj;
 out vec2 vUV;
 const vec2 C[4] = vec2[4](vec2(0.0,0.0), vec2(1.0,0.0), vec2(0.0,1.0), vec2(1.0,1.0));
 void main() {
   vec2 c = C[gl_VertexID];
   vUV = c;
-  vec3 world = vec3((c.x * 2.0 - 1.0) * uAspect, c.y * 2.0 - 1.0, uZ);
+  vec3 world = vec3((c.x * 2.0 - 1.0) * uAspect, c.y * 2.0 - 1.0 + uStationY, uZ);
   gl_Position = uViewProj * vec4(world, 1.0);
 }`;
 
@@ -108,17 +109,22 @@ uniform vec4 uColor;
 out vec4 fragColor;
 void main() { fragColor = uColor; }`;
 
+// The ink dragon travels the whole corridor, so its body/head are drawn
+// CAMERA-RELATIVE: subtract uCamY so a body parked at world-Y == camY lands at the
+// FBO centre (and stays inside the [-1,1] FBO bounds). The ink composite quad is
+// parked at stationY == camY to cancel the view-proj corridor pan.
 const STROKE_VERT = `#version 300 es
 precision highp float;
 in vec2 aPos;
 in vec2 aLineUV;
 uniform float uAspect;
+uniform float uCamY;
 out vec2 vUV01;
 out vec2 vWorld;
 void main() {
   vUV01 = aLineUV;
   vWorld = aPos;
-  gl_Position = vec4(aPos.x / uAspect, aPos.y, 0.0, 1.0);
+  gl_Position = vec4(aPos.x / uAspect, aPos.y - uCamY, 0.0, 1.0);
 }`;
 
 const HEAD_VERT = `#version 300 es
@@ -126,8 +132,9 @@ precision highp float;
 in vec2 aPos;
 in vec2 aUV;
 uniform float uAspect;
+uniform float uCamY;
 out vec2 vUV;
-void main() { vUV = aUV; gl_Position = vec4(aPos.x / uAspect, aPos.y, 0.0, 1.0); }`;
+void main() { vUV = aUV; gl_Position = vec4(aPos.x / uAspect, aPos.y - uCamY, 0.0, 1.0); }`;
 
 // ---- gl helpers ------------------------------------------------------------
 // shader compile + program link come from the engine GL toolkit (makeContext).
@@ -220,14 +227,14 @@ export function makeWebGLRenderer(canvas) {
 
     U.glyph = uniforms(gl, progs.glyph, ["uResolution", "uBaseRadius", "uTime", "uNSeg", "uSegTex", "uInkColor"]);
     U.splash = uniforms(gl, progs.splash, ["uResolution", "uGrow", "uSpread", "uAmount", "uClock", "uInkDark", "uInkLight"]);
-    U.enso = uniforms(gl, progs.enso, ["uResolution", "uRadius", "uSweep", "uAngleStart", "uLineWidth", "uClock", "uInkColor"]);
-    U.composite = uniforms(gl, progs.composite, ["uTex", "uOpacity", "uAspect", "uZ", "uViewProj"]);
+    U.enso = uniforms(gl, progs.enso, ["uResolution", "uRadius", "uSweep", "uLaps", "uAngleStart", "uLineWidth", "uClock", "uInkColor"]);
+    U.composite = uniforms(gl, progs.composite, ["uTex", "uOpacity", "uAspect", "uZ", "uStationY", "uViewProj"]);
     U.stroke = uniforms(gl, progs.stroke, [
-      "uAspect", "uInkFlow", "uStrands", "uWaterFlow", "uWobble", "uOpacity",
+      "uAspect", "uCamY", "uInkFlow", "uStrands", "uWaterFlow", "uWobble", "uOpacity",
       "uWidthEnd", "uWidthOffset", "uWidthRange", "uWidthAnchor",
       "uPerpClearance", "uArcClearance", "uBrushColor", "uSimple",
     ]);
-    U.head = uniforms(gl, progs.head, ["uAspect", "uBrushColor", "uOpacity"]);
+    U.head = uniforms(gl, progs.head, ["uAspect", "uCamY", "uBrushColor", "uOpacity"]);
     U.dragon3d = uniforms(gl, progs.dragon3d, [
       "uFrames", "uN", "uPathLen", "uBodyLen", "uHeadOffset", "uGirth", "uViewProj", "uOpacity", "uTime", "uLightBoost", "uAlbedo",
     ]);
@@ -368,7 +375,7 @@ export function makeWebGLRenderer(canvas) {
   }
 
   // draw one ribbon stroke into the currently-bound FBO
-  function drawStroke(points, lineWidth, aspect, opacity, params, simple) {
+  function drawStroke(points, lineWidth, aspect, opacity, params, simple, camY = 0) {
     const r = buildRibbon(points, lineWidth);
     if (!r) return;
     gl.bindVertexArray(strokeVao);
@@ -384,6 +391,7 @@ export function makeWebGLRenderer(canvas) {
     }
 
     gl.uniform1f(U.stroke.uAspect, aspect);
+    gl.uniform1f(U.stroke.uCamY, camY);
     gl.uniform1f(U.stroke.uInkFlow, params.inkFlow);
     gl.uniform1f(U.stroke.uStrands, params.strands);
     gl.uniform1f(U.stroke.uWaterFlow, params.waterFlow);
@@ -404,7 +412,7 @@ export function makeWebGLRenderer(canvas) {
     inkFlow: 1.0, strands: 3.0, waterFlow: 0.8, wobble: 0.3,
     widthEnd: 0.2, widthOffset: 0.5, widthRange: 1.0, widthAnchor: 0.5,
   };
-  function drawHead(head, aspect, opacity) {
+  function drawHead(head, aspect, opacity, camY = 0) {
     const theta = Math.atan2(head.dir.y, head.dir.x);
     const ct = Math.cos(theta), st = Math.sin(theta);
     const s = head.size;
@@ -422,6 +430,7 @@ export function makeWebGLRenderer(canvas) {
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
     gl.useProgram(progs.head);
     gl.uniform1f(U.head.uAspect, aspect);
+    gl.uniform1f(U.head.uCamY, camY);
     gl.uniform1f(U.head.uOpacity, opacity);
     gl.uniform4fv(U.head.uBrushColor, getInk());
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -463,7 +472,7 @@ export function makeWebGLRenderer(canvas) {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  function compositeQuad(tex, opacity, z, viewProj, aspect) {
+  function compositeQuad(tex, opacity, z, viewProj, aspect, stationY = 0) {
     gl.useProgram(progs.composite);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -471,6 +480,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform1f(U.composite.uOpacity, opacity);
     gl.uniform1f(U.composite.uAspect, aspect);
     gl.uniform1f(U.composite.uZ, z);
+    gl.uniform1f(U.composite.uStationY, stationY);
     gl.uniformMatrix4fv(U.composite.uViewProj, false, viewProj);
     gl.bindVertexArray(emptyVao);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -541,6 +551,7 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform2f(U.enso.uResolution, t.w, t.h);
     gl.uniform1f(U.enso.uRadius, state.enso.radius);
     gl.uniform1f(U.enso.uSweep, state.enso.sweep);
+    gl.uniform1f(U.enso.uLaps, state.enso.laps || 1);
     gl.uniform1f(U.enso.uAngleStart, state.enso.angleStart);
     gl.uniform1f(U.enso.uLineWidth, state.enso.lineWidth);
     gl.uniform1f(U.enso.uClock, state.enso.time);
@@ -557,9 +568,10 @@ export function makeWebGLRenderer(canvas) {
     if (state.opacity.inkDragon <= 0) return;
     const d = state.inkDragon;
     const ws = d.widthScale ?? 1; // body stroke width grows with the dragon
+    const camY = state.camY || 0;  // body drawn camera-relative (corridor)
     gl.useProgram(progs.stroke);
-    drawStroke(d.body, 0.03 * ws, aspect, 1.0, BODY_PARAMS, false);
-    if ((d.head.alpha ?? 1) > 0) drawHead(d.head, aspect, d.head.alpha ?? 1); // head hidden early in the trace
+    drawStroke(d.body, 0.03 * ws, aspect, 1.0, BODY_PARAMS, false, camY);
+    if ((d.head.alpha ?? 1) > 0) drawHead(d.head, aspect, d.head.alpha ?? 1, camY); // head hidden early in the trace
   }
 
   // ---------- Pass B: composite the ink layers to screen ----------
@@ -577,16 +589,20 @@ export function makeWebGLRenderer(canvas) {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // premultiplied composite
     const vp = state.dragon3d.viewProj;
 
+    // Each 2D layer is parked at its corridor station world-Y; the camera pan
+    // (baked into vp) slides it through frame. The traveling ink dragon is drawn
+    // camera-relative (see index.js) so its quad stays camera-locked at camY.
+    const camY = state.camY || 0;
     // ground grid (behind the ink layers, over the paper); radial wipe-in
     if (state.grid && state.grid.reveal > 0) drawGrid(state.grid);
     // ink splash wash sits between the grid and the glyph, bleeding under it
     if (state.splash && state.splash.alpha > 0)
-      compositeQuad(fbo.splash.tex, state.splash.alpha, -0.006, vp, aspect);
+      compositeQuad(fbo.splash.tex, state.splash.alpha, -0.006, vp, aspect, state.splash.stationY || 0);
     // enso circle sits between the splash and the glyph (encircles the symbol)
     if (state.enso && state.enso.alpha > 0)
-      compositeQuad(fbo.enso.tex, state.enso.alpha, -0.004, vp, aspect);
-    compositeQuad(fbo.glyph.tex, state.opacity.glyph, -0.002, vp, aspect);
-    compositeQuad(fbo.ink.tex, state.opacity.inkDragon, 0.0, vp, aspect);
+      compositeQuad(fbo.enso.tex, state.enso.alpha, -0.004, vp, aspect, state.enso.stationY || 0);
+    compositeQuad(fbo.glyph.tex, state.opacity.glyph, -0.002, vp, aspect, state.glyph.stationY || 0);
+    compositeQuad(fbo.ink.tex, state.opacity.inkDragon, 0.0, vp, aspect, camY);
   }
 
   // ---------- 3D dragon, drawn straight onto the screen ----------

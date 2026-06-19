@@ -1,77 +1,112 @@
-// The 2D ink-dragon head LEADS through a sequence of PHASES (it is the leading
-// edge of the ink / reveal). Each phase is self-contained:
+// The 2D ink-dragon head LEADS through the corridor PHASES, sampling pre-built
+// WORLD-space curves (built in index.js with the corridor stations).
+//
+//   flyin -> descent (circle-chain + enso connector) -> enso -> roam2 -> loop3
+//
+// SPEED is continuous across every seam. Each phase is traversed by a CUBIC eased
+// progress with PRESCRIBED endpoint speeds (world units/sec), so neighbouring
+// phases meet at the same speed — no crawl, no snap:
+//   flyin   : 0          -> descentStart   (accelerate from rest as it catches the camera)
+//   descent : descentStart -> CRUISE_SP    (cubic; descentStart chosen so the curve length fits)
+//   enso    : CRUISE_SP   -> SP3           (decelerates; ensoHeadProgress)
+//   roam2   : SP3 (constant; == 3D loop speed) -> deterministic handoff
+//
+// The head does NOT trace the glyph; the glyph reveals on its own (glyph block).
+//
 //   end        absolute scene time the phase ends. Infinity = runs out.
 //   continuous entering from the previous phase is positionally smooth, so the
-//              verlet body chain keeps running (no reseed). false phases don't
-//              share an arc parameter, so the body is refit on entry.
-//   path(t)    head sampler { fn, a }: fn(a) is the head point, a the arc/frac
-//              parameter (tipAt/reseedBody sample fn around a).
-//
-// createHeadPath wires the phases to the (already built) glyph / paths / schedule
-// and returns the global samplers (posAt/tipAt/phaseOf) that cross phase seams.
+//              rigid body keeps trailing (no reseed). false -> body is refit.
+//   path(t)    head sampler { fn, a }: fn(a) is the head point, a the arc param.
 
 import { clamp, lerp } from "$lib/math/scalar.js";
-import { LEADIN_DUR, GLYPH_TRACE_DUR, ENSO_LEADIN_DUR, ENSO_DUR, SP2, LEADIN_START } from "./config.js";
-import { ensoPos, leadInPos } from "./frame-path.js";
+import { BLOCK_DUR, ENSO_REVS, CRUISE_SP, SP3 } from "./config.js";
+import { ensoPos, ensoHeadProgress } from "./frame-path.js";
 
-export function createHeadPath({ timing, glyph, ensoLeadIn, curvePath }) {
-  const { dragonStart, glyphStart, glyphEnd, ensoStart, ensoEnd, branch } = timing;
+// cubic Hermite progress g(0)=0, g(1)=1 with endpoint slopes m0, m1.
+function cubicG(x, m0, m1) {
+  const t2 = x * x, t3 = t2 * x;
+  return (t3 - 2 * t2 + x) * m0 + (3 * t2 - 2 * t3) + (t3 - t2) * m1;
+}
 
-  const curveHead = (a) => { const p = curvePath.pos(a); return { x: p.x, y: p.y }; };
-  const leadInHead = (a) => leadInPos(a, LEADIN_START, glyph.entry);
-  const glyphHead = (a) => { const p = glyph.at(a); return { x: p.x, y: p.y }; };
-  const ensoBranchHead = (a) => { const p = ensoLeadIn.pos(a); return { x: p.x, y: p.y }; };
+export function createHeadPath({ timing, paths }) {
+  const { flyinStart, roam1Start, approachStart, ensoStart, ensoExit, loop3Start } = timing;
+  const { flyin, descent, roam2, ensoCenter } = paths;
+  const descentCurve = descent.curve;
+
+  // arc length the head actually rides on each curve (skip the body lead-in /
+  // tangent-guide tails via headStart/headEnd).
+  const arcOf = (c) => (c.headEnd ?? c.total) - (c.headStart || 0);
+
+  // descent: choose the START speed so the cubic (start -> CRUISE_SP) covers the
+  // whole curve length over its duration. avg = L/dur; start = 2*avg - end keeps the
+  // integral exact for a cubic whose endpoint slopes average to 1.
+  const descentDur = ensoStart - roam1Start;
+  const descentAvg = arcOf(descentCurve) / descentDur;
+  const descentStart = Math.max(0, 2 * descentAvg - CRUISE_SP);
+
+  // sample a curve by a cubic-eased progress with prescribed endpoint SPEEDS.
+  const cruise = (curve, t, t0, dur, s0, s1) => {
+    const hs = curve.headStart || 0, he = curve.headEnd ?? curve.total, L = (he - hs) || 1e-6;
+    const x = clamp((t - t0) / dur, 0, 1);
+    const g = clamp(cubicG(x, (s0 * dur) / L, (s1 * dur) / L), 0, 1);
+    return curve.pos(hs + g * L);
+  };
+  const frac = (t, t0, dur) => clamp((t - t0) / dur, 0, 1);
+
+  const flyinHead = (t) => cruise(flyin, t, flyinStart, BLOCK_DUR.flyin, 0, descentStart);
+  const descentHead = (t) => cruise(descentCurve, t, roam1Start, descentDur, descentStart, CRUISE_SP);
+  const ensoHead = (a) => ensoPos(ENSO_REVS * a, ensoCenter);
+  const roam2Head = (a) => {
+    const hs = roam2.curve.headStart || 0, he = roam2.curve.headEnd ?? roam2.curve.total;
+    return roam2.curve.pos(hs + a * (he - hs));
+  };
+  const roam2Dur = loop3Start - ensoExit; // SP3 by construction (headEnd = hs + SP3*roam2Dur)
 
   const PHASES = [
-    { name: "leadin", end: glyphStart, continuous: false,
-      path: (t) => ({ fn: leadInHead, a: clamp((t - dragonStart) / LEADIN_DUR, 0, 1) }) },
-    { name: "glyph", end: glyphEnd, continuous: false,
-      path: (t) => ({ fn: glyphHead, a: clamp((t - glyphStart) / GLYPH_TRACE_DUR, 0, 1) * glyph.exitPh }) },
-    { name: "ensoBranch", end: ensoStart, continuous: false,
-      path: (t) => ({ fn: ensoBranchHead, a: lerp(ensoLeadIn.headStart, ensoLeadIn.endArc, clamp((t - glyphEnd) / ENSO_LEADIN_DUR, 0, 1)) }) },
-    // continuous: the ensoBranch exit == ensoPos(0) with matched tangent, so the
-    // verlet body keeps trailing onto the circle (no reseed = no body snap/jump).
-    { name: "enso", end: ensoEnd, continuous: true,
-      path: (t) => ({ fn: ensoPos, a: clamp((t - ensoStart) / ENSO_DUR, 0, 1) }) },
-    { name: "roam", end: branch, continuous: true,
-      path: (t) => ({ fn: curveHead, a: curvePath.headStart + Math.max(0, t - ensoEnd) * SP2 }) },
+    { name: "flyin", end: roam1Start, continuous: false,
+      path: (t) => ({ fn: () => flyinHead(t), a: 0 }) },
+    { name: "descent", end: ensoStart, continuous: false,
+      path: (t) => ({ fn: () => descentHead(t), a: 0 }) },
+    // continuous: the descent ends at the enso top with the circle tangent + speed
+    // CRUISE_SP, so the body keeps trailing onto the enso (which decelerates to SP3).
+    { name: "enso", end: ensoExit, continuous: true,
+      path: (t) => ({ fn: ensoHead, a: ensoHeadProgress(frac(t, ensoStart, BLOCK_DUR.enso)) }) },
+    { name: "roam2", end: loop3Start, continuous: true,
+      path: (t) => ({ fn: roam2Head, a: frac(t, ensoExit, roam2Dur) }) },
     { name: "loop3", end: Infinity, continuous: true,
-      path: () => ({ fn: curveHead, a: curvePath.total }) },
+      path: () => ({ fn: roam2Head, a: 1 }) },
   ];
 
-  // Index of the phase scene-time t is in (refit the body when a boundary is crossed).
   function phaseOf(t) {
     for (let i = 0; i < PHASES.length; i++) if (t < PHASES[i].end) return i;
     return PHASES.length - 1;
   }
+  // sample a phase at its OWN time t (flyin/descent samplers ignore `a` and read t
+  // directly via the cubic speed law; the others use the arc/frac `a`).
   const pathAt = (t) => PHASES[phaseOf(t)].path(t);
 
-  // Head position at scene time t (global sampler -> crosses phase seams). Every
-  // phase is positionally continuous with the previous, so walking this over t
-  // gives ONE continuous motion line through every transition.
   function posAt(t) {
     const { fn, a } = pathAt(t);
     return fn(a);
   }
   function tipAt(t) {
-    const { fn, a } = pathAt(t);
-    const p = fn(a), p2 = fn(a + 1e-3);
+    const p = posAt(t), p2 = posAt(t + 1e-3);
     let dx = p2.x - p.x, dy = p2.y - p.y;
     const m = Math.hypot(dx, dy) || 1;
     return { x: p.x, y: p.y, dir: { x: dx / m, y: dy / m } };
   }
 
-  // debug: the FULL 2D head motion line across every phase, sampled in scene-time
-  // so the phase TRANSITIONS show up and their smoothness can be eyeballed.
+  // debug: the FULL 2D head motion line across every phase, in world coords.
   function samplePath2d(n = 600) {
     const out = [];
     for (let i = 0; i <= n; i++) {
-      const tt = lerp(dragonStart, branch, i / n);
+      const tt = lerp(flyinStart, loop3Start, i / n);
       const p = posAt(tt);
       out.push({ x: p.x, y: p.y, z: 0 });
     }
     return out;
   }
 
+  void approachStart; void SP3;
   return { PHASES, phaseOf, posAt, tipAt, samplePath2d };
 }

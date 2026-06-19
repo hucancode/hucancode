@@ -1,7 +1,7 @@
-// Ink-dragon block: the 2D dragon LEADS every phase, then fades under the 3D
-// dragon. Owns its alpha / head fade / size ramp and drives the body controller
-// (refit on a non-continuous phase boundary or when physics is off; otherwise
-// step the verlet chain). Branches: traced / handoff / gone.
+// Ink-dragon block: the 2D dragon reveals (B1), leads through the corridor, then
+// fades under the 3D dragon (B6). Owns its alpha / head fade / size ramp and drives
+// the body controller (refit on a non-continuous phase boundary or when physics is
+// off; otherwise step the verlet chain). Body has history, so this stays imperative.
 
 import { ramp } from "$lib/math/scalar.js";
 import { BODY_LEN, HEAD_SIZE, ENABLE_PHYSICS } from "../config.js";
@@ -14,26 +14,21 @@ export function createInkBlock({ timing, bodyCtrl, headPath, grow }) {
   };
   return {
     name: "inkDragon",
-    at: 0, // the 2D dragon is the first thing on screen (lead-in straight stroke)
-    duration: timing.d3End,
-    branches: {
-      traced: timing.glyphEnd, // head finished tracing the glyph
-      handoff: timing.branch,  // branch onto loop3 (3D handoff)
-      gone: timing.inkGone,    // 2D ink fully faded
-    },
+    at: 0,                          // the 2D dragon reveals first (top-middle)
+    duration: timing.loop3Start,    // persists through the crossfade, gone by loop3
     outputs: ["inkAlpha", "headAlpha", "inkWidthScale", "headSize"],
     defaults(ctx) { ctx.inkAlpha = 0; ctx.headAlpha = 1; ctx.inkWidthScale = 1; ctx.headSize = HEAD_SIZE; },
-    // entering, or seeking in/within: refit the body on-path (no physics history,
-    // no straight teleport) so a scrub lands on a valid on-curve pose.
+    // entering, or seeking in/within: refit the body on-path so a scrub lands on a
+    // valid on-curve pose (no physics history, no straight teleport).
     setup: refit,
     seek: refit,
     update(ctx) {
       const t = ctx.t;
-      const inkReveal = ramp(t, timing.dragonStart, timing.dragonStart + 0.4, 0, 1);
-      const inkFade = ramp(t, timing.d3Mid, timing.inkGone, 1, 0); // holds full until the 3D dragon is in, then fades quickly by the handoff
+      // reveal from opacity 0 over B1; fade out over the crossfade (B6).
+      const inkReveal = ramp(t, timing.flyinStart, timing.flyinStart + 0.4, 0, 1);
+      const inkFade = ramp(t, timing.crossfadeStart, timing.loop3Start, 1, 0);
       ctx.inkAlpha = Math.min(inkReveal, inkFade);
-      // head hidden through the lead-in + first half of the glyph trace, then fades in
-      ctx.headAlpha = ramp(t, timing.headRevealT0, timing.glyphEnd, 0, 1);
+      ctx.headAlpha = ramp(t, timing.flyinStart, timing.flyinStart + 0.5, 0, 1);
       const sizeFrac = grow.size(t);
       ctx.inkWidthScale = sizeFrac;
       ctx.headSize = HEAD_SIZE * sizeFrac;

@@ -12,7 +12,8 @@ out vec4 fragColor;
 
 uniform vec2  uResolution;
 uniform float uRadius;     // ring radius (world units; world quad spans y[-1,1])
-uniform float uSweep;      // 0..1 fraction of the ring drawn (head leads this)
+uniform float uSweep;      // 0..1 fraction of the (uLaps-long) stroke drawn (head leads this)
+uniform float uLaps;       // number of revolutions traced (e.g. 1.5 -> exit at the bottom)
 uniform float uAngleStart; // ring start angle (polar atan2(x,y) convention)
 uniform float uLineWidth;  // brush thickness (polar line width)
 uniform float uClock;      // scene time -> slow bristle drift
@@ -98,14 +99,10 @@ vec3 deformLine(vec2 uvLine, float lineLength) {
     return vec3(h, centerOff);
 }
 
-float drawStroke(vec2 uv, vec2 paperUV, float radius_, float sweepAmt, float lineWidth) {
-    float lineLength = radius_ * PI2;
+float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float strokeLen, float lineWidth) {
     float along = uv.x;
     float perp  = uv.y;
     vec2 uvLine = vec2(perp, along);
-
-    float sweep = clamp(sweepAmt, 0.0, 1.0);
-    float strokeLen = lineLength * sweep;
 
     float tAlong = clamp(along / max(strokeLen, 1e-6), 0.0, 1.0);
     float halfRange = max(uWidthRange, 1e-3) * 0.5;
@@ -153,8 +150,20 @@ void main() {
     float a = atan(uv.x, uv.y) - uAngleStart;
     if (CLOCKWISE) a = -a;
     float phase = mod(a, PI2);
-    vec2 suv = vec2(phase * r, r - uRadius);
 
-    float alpha = drawStroke(suv, uv, uRadius, uSweep, uLineWidth);
+    // multi-lap enso: the stroke is uLaps revolutions long; each fragment at polar
+    // angle `phase` may be covered on lap 0, 1, ... — take the most-covered.
+    float laps = max(uLaps, 1.0);
+    float lineLength = uRadius * PI2 * laps;
+    float strokeLen = lineLength * clamp(uSweep, 0.0, 1.0);
+    int nLaps = int(ceil(laps - 1e-4));
+    float alpha = 0.0;
+    for (int k = 0; k < 3; k++) {
+        if (k >= nLaps) break;
+        float along = (phase + float(k) * PI2) * uRadius;
+        if (along > lineLength) continue;
+        vec2 suv = vec2(along, r - uRadius);
+        alpha = max(alpha, drawStroke(suv, uv, uRadius, lineLength, strokeLen, uLineWidth));
+    }
     fragColor = vec4(uInkColor, alpha);
 }

@@ -3,7 +3,8 @@
 // forever. createDragon3d owns the two frame buffers and writes the per-frame draw
 // params (which buffer + head offset) into _frame.dragon3d.
 
-import { D3, BODY_LEN, CROSSFADE, SP3 } from "./config.js";
+import { clamp } from "$lib/math/scalar.js";
+import { D3, BODY_LEN, SP3 } from "./config.js";
 
 // Fill an N*16 column-major frame buffer by sampling `sample(arc)->{p,tg}` at N
 // equal-arc-length steps over [0, total). Each frame is a 3D orthonormal basis
@@ -31,28 +32,34 @@ function fillFrames(frames, N, total, sample) {
 }
 
 export function createDragon3d({ timing }) {
-  let frames = null;     // transition buffer (curvePath tail + loop3), N*16
+  let frames = null;     // transition buffer (curvePath roam2 window + loop3), N*16
   let pathLen = 1;
   let framesLoop = null; // pure loop3 ring (wraps cleanly forever), N*16
   let loopLen = 1;
-  let transArc = 0;      // curvePath tail length baked into the transition buffer
+  let transArc = 0;      // curvePath window length baked into the transition buffer
+  let _hs = 0, _branchArc = 0, _transStart = 0, _bodyArc = 0;
 
   // Build BOTH 3D frame buffers (arc-uniform; the shader maps mesh.x linearly to
   // frame index, so equal-arc frames keep the dragon a constant length):
-  //   - transition buffer: [0, transArc) = curvePath tail ending at bp, then loop3.
+  //   - transition buffer: the roam2 window [transStart, branchArc) of curvePath
+  //     (the exact arc the 2D dragon rides during the crossfade) then loop3.
   //   - loop buffer: pure loop3 closed ring; wraps mod-N cleanly forever after.
-  // The join at bp is tangent-continuous (loop3 leaves bp along the curvePath exit).
+  // The join at the branch point is tangent-continuous (loop3 leaves it along the
+  // curvePath exit). curvePath.headStart / headEnd mark the roam2 head's arc range.
   function build(loop3, curvePath) {
     if (!loop3 || !curvePath) return;
     const N = D3.N;
-    const bodyArc = BODY_LEN * D3.bodyFactor;
-    transArc = bodyArc + CROSSFADE * SP3; // curvePath tail length in the trans buffer
+    _bodyArc = BODY_LEN * D3.bodyFactor;
+    _hs = curvePath.headStart || 0;
+    _branchArc = curvePath.headEnd ?? curvePath.total; // 2D roam2 end == 3D loop start
+    _transStart = Math.max(0, _hs);                    // cover the whole ridden window
+    transArc = _branchArc - _transStart;
 
     const total = transArc + loop3.total;
     const trans = new Float32Array(N * 16);
     fillFrames(trans, N, total, (arc) => {
       if (arc < transArc) {
-        const cpArc = curvePath.total - transArc + arc;
+        const cpArc = _transStart + arc;
         return { p: curvePath.pos(cpArc), tg: curvePath.tan(cpArc) };
       }
       return { p: loop3.pos(arc - transArc), tg: loop3.tan(arc - transArc) };
@@ -66,19 +73,33 @@ export function createDragon3d({ timing }) {
     loopLen = loop3.total;
   }
 
+  // The 3D head's curvePath arc as a function of t. Through the crossfade it follows
+  // the EXACT same arc-vs-time law as the 2D roam2 head (constant SP3 from _hs at
+  // ensoExit to _branchArc at loop3Start), so the two dragons share position. After
+  // loop3Start it continues into loop3 at SP3 with no speed jump (same SP3).
+  function headArcAt(t) {
+    const roamDur = timing.loop3Start - timing.ensoExit;
+    if (t <= timing.loop3Start) {
+      const frac = clamp((t - timing.ensoExit) / roamDur, 0, 1);
+      return _hs + frac * (_branchArc - _hs);
+    }
+    return _branchArc + (t - timing.loop3Start) * SP3;
+  }
+
   // Write the per-frame draw params into `d` (= _frame.dragon3d; no alloc). Picks
-  // the buffer (transition vs pure loop3 ring) + head offset; the shader wraps
-  // mod-N over the whole buffer.
-  //   - transition buffer while the body still trails off the flat circles;
-  //   - pure loop3 ring once the tail has left the circles (wraps forever).
+  // the buffer (transition window vs pure loop3 ring) + head offset; the shader
+  // wraps mod-N over the whole buffer.
   function writeState(d, t, viewProj) {
-    const bodyArc = BODY_LEN * D3.bodyFactor;
-    const elapsed = Math.max(0, t - timing.d3Start) * SP3;
-    if (!framesLoop || elapsed < transArc) {
-      d.frames = frames; d.pathLen = pathLen; d.headOffset = elapsed;
+    const bodyArc = _bodyArc;
+    const headArc = headArcAt(t);
+    const tailInWindow = headArc - bodyArc < _branchArc; // body still on curvePath
+    if (!framesLoop || tailInWindow) {
+      d.frames = frames; d.pathLen = pathLen;
+      d.headOffset = headArc - _transStart - bodyArc;
     } else {
-      const loopArc = bodyArc + (elapsed - transArc);
-      d.frames = framesLoop; d.pathLen = loopLen; d.headOffset = loopArc - bodyArc;
+      const loopHead = headArc - _branchArc; // arc into loop3
+      d.frames = framesLoop; d.pathLen = loopLen;
+      d.headOffset = loopHead - bodyArc;
     }
     d.frameCount = D3.N;
     d.bodyLen = bodyArc; // mesh head is at x=1 (leads by bodyLen); headOffset accounts for it

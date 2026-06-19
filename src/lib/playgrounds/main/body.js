@@ -19,7 +19,7 @@ export function createBodyController({ headPath, timing }) {
   // is disabled.
   function reseed(t, len = BODY_LEN) {
     const dt = 0.004;             // scene-time step walking backward from the head
-    const t0 = timing.dragonStart; // the dragon does not exist before this -> floor
+    const t0 = timing.flyinStart; // the dragon does not exist before this -> floor
     const tHead = Math.min(Math.max(t, t0), timing.branch); // head holds at the branch in loop3
     const head = posAt(tHead);
     const pts = [{ x: head.x, y: head.y }];

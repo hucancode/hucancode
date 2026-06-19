@@ -1,41 +1,46 @@
 // The scene schedule: every absolute boundary time, in one object, computed once.
 //
-// The static boundaries (lead-in -> glyph -> enso) are fixed by config durations.
-// The branch (2D->3D handoff) and everything after it depend on the GENERATED
-// roam path length, so they are only known after the path is built — which is
-// exactly why blocks must be wired AFTER this runs (no placeholder/patch dance).
+// The corridor scene is BLOCK-DRIVEN: durations are fixed by config (BLOCK_DUR),
+// so the whole schedule is known up front (no dependence on a generated path
+// length). Blocks are still wired AFTER this so their branch points are real
+// numbers.
 //
-// `curveDur` = roam duration = (curvePath.total - headStart) / SP2.
+//   B1 flyin -> B2 roam1 -> B3 approach(glyph) -> B4 enso -> B5 roam2
+//   -> B6 crossfade -> B7 loop3 (persistent)
+//
+// The camera descends through B1-B3 (look-at glides down CORRIDOR_DROP), HOLDS
+// during B4 so the enso stays centred while it is traced, then from B5 it stops
+// descending and the pitch tilts in.
 
-import {
-  LEADIN_DUR, GLYPH_TRACE_DUR, ENSO_LEADIN_DUR, ENSO_DUR,
-  CROSSFADE, CAM_PITCH_DUR, D3_FADEIN_FRAC,
-} from "./config.js";
+import { BLOCK_DUR, CROSSFADE, CAM_PITCH_DUR, D3_FADEIN_FRAC, CORRIDOR_TAIL } from "./config.js";
 
-export function computeTiming(curveDur) {
-  const dragonStart = 0; // the 2D dragon is the first thing on screen
-  const glyphStart = dragonStart + LEADIN_DUR;     // lead-in -> glyph trace
-  const glyphEnd = glyphStart + GLYPH_TRACE_DUR;   // glyph trace -> enso branch
-  const ensoStart = glyphEnd + ENSO_LEADIN_DUR;    // enso branch -> enso sweep
-  const ensoEnd = ensoStart + ENSO_DUR;            // enso -> curve roam
-  const headRevealT0 = glyphStart + GLYPH_TRACE_DUR * 0.5; // head fades in here
+export function computeTiming() {
+  const flyinStart = 0;
+  const roam1Start = flyinStart + BLOCK_DUR.flyin;        // 2
+  const approachStart = roam1Start + BLOCK_DUR.roam1;     // 7  (glyph starts)
+  const ensoStart = approachStart + BLOCK_DUR.approach;   // 12
+  const ensoExit = ensoStart + BLOCK_DUR.enso;            // 14 (== roam2 start)
+  const roam2Start = ensoExit;
+  const crossfadeStart = roam2Start + BLOCK_DUR.roam2;    // 16
+  const loop3Start = crossfadeStart + BLOCK_DUR.crossfade; // 18
 
-  const branch = ensoEnd + curveDur;   // 2D head reaches the branch point
-  // Crossfade-IN completes at branch (when the circles end). The 3D dragon fades
-  // in over [d3Start, d3Mid] while the 2D ink is still solid. The fade-OUT tail
-  // (glyph + enso + 2D ink easing back) runs PAST branch until the camera pitch
-  // has settled (branch + CAM_PITCH_DUR), so the 2D layers don't vanish before
-  // the tilt finishes.
-  const d3Start = branch - CROSSFADE;
-  const d3Mid = d3Start + CROSSFADE * D3_FADEIN_FRAC;
-  const d3End = branch + CAM_PITCH_DUR; // pitch settles here -> glyph/enso fades complete
-  const inkGone = branch;               // 2D ink itself fades out quickly, by the handoff
+  // camera: descend through B1-B3, hold during B4, pitch from B5 (ensoExit).
+  const descentEnd = ensoStart;     // 12 — look-at reaches the enso station, then holds
+  const pitchAnchor = ensoExit;     // 14 — descent stopped; tilt begins
+
+  // 2D -> 3D crossfade spans B6 [crossfadeStart, loop3Start].
+  const d3Start = crossfadeStart;                          // 16
+  const d3Mid = d3Start + CROSSFADE * D3_FADEIN_FRAC;      // 3D faded in
+  const d3End = loop3Start;                                // 18 — glyph/enso fades settle
+  const branch = loop3Start;        // handoff complete: 2D gone, 3D solo
+  const inkGone = loop3Start;
 
   return {
-    dragonStart, glyphStart, glyphEnd, ensoStart, ensoEnd, headRevealT0,
-    branch, d3Start, d3Mid, d3End, inkGone,
+    flyinStart, roam1Start, approachStart, ensoStart, ensoExit, roam2Start,
+    crossfadeStart, loop3Start, descentEnd, pitchAnchor,
+    d3Start, d3Mid, d3End, branch, inkGone,
     camPitchDur: CAM_PITCH_DUR,
-    splashGrowDur: branch,      // ink keeps spreading across the 2D phase, then holds
-    timelineEnd: branch + 11.0, // leave room to watch the 3D dragon loop on alone
+    splashGrowDur: ensoStart,      // ink wash keeps spreading across the descent, then holds
+    timelineEnd: loop3Start + CORRIDOR_TAIL,
   };
 }
