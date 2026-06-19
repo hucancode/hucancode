@@ -27,8 +27,7 @@ const config = {
   widthRange: 1.5,
   widthAnchor: 1.0,
   clockwise: true,
-  sweep: 1.0,        // used when autoSweep is off
-  autoSweep: true,   // breathe the sweep with time (the Shadertoy default)
+  sweep: 1.0,
 };
 let brushColor = [0.05, 0.05, 0.07, 1.0];
 let bgColor = [0.96, 0.93, 0.86, 1.0];
@@ -78,8 +77,6 @@ function render() {
   gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  const sweep = config.autoSweep ? 0.65 + 0.35 * Math.sin(time * 0.6) : config.sweep;
-
   prog.use()
     .set("uResolution", [canvas.width, canvas.height])
     .set("uClockwise", config.clockwise ? 1 : 0)
@@ -94,7 +91,7 @@ function render() {
     .set("uWidthOffset", config.widthOffset)
     .set("uWidthRange", config.widthRange)
     .set("uWidthAnchor", config.widthAnchor)
-    .set("uSweepAmt", sweep)
+    .set("uSweepAmt", config.sweep)
     .set("uBrushColor", brushColor)
     .set("uBgColor", bgColor);
   prog.draw(quad);

@@ -19,7 +19,6 @@
   let angleStart = $state(0.0);
   let lineWidth = $state(0.28);
   let clockwise = $state(true);
-  let autoSweep = $state(true);
   let sweep = $state(1.0);
   let inkFlow = $state(1.0);
   let waterFlow = $state(0.7);
@@ -45,7 +44,7 @@
   $effect(() => {
     if (!ready) return;
     setConfig({
-      radius, angleStart, lineWidth, clockwise, autoSweep, sweep,
+      radius, angleStart, lineWidth, clockwise, sweep,
       inkFlow, waterFlow, strands, wobble,
       widthEnd, widthOffset, widthRange, widthAnchor,
     });
@@ -100,13 +99,9 @@
         <input type="checkbox" bind:checked={clockwise} />
         <span>clockwise</span>
       </label>
-      <label class="check">
-        <input type="checkbox" bind:checked={autoSweep} />
-        <span>auto sweep</span>
-      </label>
       <label>
         <span>Sweep</span>
-        <input type="range" min="0" max="1" step="0.001" bind:value={sweep} disabled={autoSweep} />
+        <input type="range" min="0" max="1" step="0.001" bind:value={sweep} />
         <output>{sweep.toFixed(2)}</output>
       </label>
     </fieldset>
