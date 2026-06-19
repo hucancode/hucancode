@@ -63,6 +63,21 @@ export const FRAME_MAX_STEPS = 160;        // hard cap on arcs walked (safety)
 export const FRAME_SAMPLES = 96;           // dense samples per full (2π) revolution
 export const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolerance
 
+// ---- bloom flowers (seated in the path circles) ----------------------------
+// One sumi-e flower sits at the CENTRE of every circle the 2D dragon's path is
+// built from (descent chain + roam2 rosette). A flower stays a tight bud until the
+// dragon's head reaches its circle's rim (the head rides the arcs), then opens over
+// FLOWER_BLOOM_DUR. Bloom is a pure function of scene time (per-flower enter time is
+// precomputed once) so timeline scrubbing replays it exactly.
+export const FLOWER_ENTER_BAND = 0.14;   // head within r*(1+band) of a centre = "on/inside" that circle
+export const FLOWER_BLOOM_DUR = 2.2;     // seconds a flower takes to open from bud to full
+export const FLOWER_SAMPLE_DT = 1 / 120; // enter-time precompute sampling step (s)
+export const FLOWER_PETALS = 6;          // base petals per ring (varied ±1 per flower)
+export const FLOWER_LAYERS = 3;          // concentric petal rings at full bloom
+export const FLOWER_FILL = 0.13;         // flower radius as a fraction of its circle radius
+export const FLOWER_SIZE_JITTER = [0.45, 1.7]; // per-flower [min,max] size multiplier (seed-driven)
+export const FLOWER_OPACITY_JITTER = [0.35, 1.0]; // per-flower [min,max] ink opacity (seed-driven)
+
 // ---- 3D loop ---------------------------------------------------------------
 export const R3D = 0.95;            // 3D orbit radius (x/y) — rings the rosette
 export const Z3D = 0.45;            // 3D orbit out-of-plane amplitude
@@ -91,8 +106,8 @@ export const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg el
 export const CAM = { fov: (45 * Math.PI) / 180, dist: 2.6 };
 
 // ---- fades / grid ----------------------------------------------------------
-export const GLYPH_FADE_TARGET = 0.45; // glyph ink eases to this opacity as the 3D dragon takes over
-export const ENSO_FADE_TARGET = 0.35;  // enso circle eases to this opacity as the 3D dragon takes over
+export const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as the 3D dragon takes over
+export const ENSO_FADE_TARGET = 0.55;  // enso circle eases to this opacity as the 3D dragon takes over
 export const GRID_REVEAL_DUR = 8.0;  // grid wipes in slowly (spans past the fly-in, into the roam)
 export const GRID_MAX_OPACITY = 0.75;
 export const GRID_MINOR_DIV = 5;  // minor cells per major cell

@@ -11,6 +11,7 @@
     { href: "/rubik", name: "Rubik", icon: Cube, thumb: "/assets/thumb/rubik.png" },
     { href: "/taiji", name: "Taiji", icon: Planet, thumb: "/assets/thumb/taiji.png" },
     { href: "/enso", name: "Ensō", icon: Planet, thumb: "/assets/thumb/enso.png" },
+    { href: "/flower", name: "Ink Flower", icon: Planet, thumb: "/assets/thumb/flower.png" },
     { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: "/assets/thumb/ink-dragon.png" },
     { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: "/assets/thumb/caligraphy.png" },
     { href: "/lego", name: "Lego", icon: Cube, thumb: "/assets/thumb/lego.png" },
