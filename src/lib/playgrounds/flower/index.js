@@ -15,23 +15,20 @@ void main() {
 }`;
 
 const config = {
-  petals: 6,
-  layers: 2,
-  length: 0.85,
-  width: 0.32,
-  tipSharp: 1.1,
-  baseBias: 0.7,
-  layerScale: 0.72,
-  layerTwist: 0.3,
+  petals: 8,
+  layers: 1,
+  length: 1.0,
+  width: 0.2,
+  tipSharp: 1.5,
+  tipNotch: 0.1,
+  baseBias: 1.4,
+  layerScale: 0.66,
+  layerTwist: 0.4,
   swirl: 0.0,
-  wobble: 0.6,
-  core: 0.12,
-  inkFlow: 1.1,
-  waterFlow: 0.4,
-  strands: 0.6,   // dry-brush / flying-white amount
+  inkFlow: 1.0,
+  waterFlow: 0.6,
 };
 let inkColor = [0.07, 0.06, 0.09, 1.0];
-let coreColor = [0.05, 0.05, 0.07, 1.0];
 let bgColor = [0.96, 0.93, 0.86, 1.0];
 
 let canvas, gl, ctx, quad, prog;
@@ -40,7 +37,6 @@ function setConfig(patch) {
   Object.assign(config, patch);
 }
 function setInkColor(rgba)  { inkColor = rgba.slice(0, 4); }
-function setCoreColor(rgba) { coreColor = rgba.slice(0, 4); }
 function setBgColor(rgba)   { bgColor = rgba.slice(0, 4); }
 
 function init(canvasEl) {
@@ -80,17 +76,14 @@ function render() {
     .set("uLength", config.length)
     .set("uWidth", config.width)
     .set("uTipSharp", config.tipSharp)
+    .set("uTipNotch", config.tipNotch)
     .set("uBaseBias", config.baseBias)
     .set("uLayerScale", config.layerScale)
     .set("uLayerTwist", config.layerTwist)
     .set("uSwirl", config.swirl)
-    .set("uWobble", config.wobble)
-    .set("uCore", config.core)
     .set("uInkFlow", config.inkFlow)
     .set("uWaterFlow", config.waterFlow)
-    .set("uStrands", config.strands)
     .set("uInkColor", inkColor)
-    .set("uCoreColor", coreColor)
     .set("uBgColor", bgColor);
   prog.draw(quad);
 }
@@ -100,4 +93,4 @@ function destroy() {
   gl = null;
 }
 
-export { init, render, destroy, setConfig, setInkColor, setCoreColor, setBgColor, config };
+export { init, render, destroy, setConfig, setInkColor, setBgColor, config };

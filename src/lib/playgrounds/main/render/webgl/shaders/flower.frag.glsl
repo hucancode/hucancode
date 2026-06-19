@@ -45,26 +45,29 @@ float noise01(vec2 p) { return clamp((noise(p) + 0.5) * 0.5, 0.0, 1.0); }
 
 // petal knobs, resolved from bloom — recomputed once per fragment (cheap)
 struct Knobs {
-    float petals, layers, len, wid, tipSharp, baseBias, layerScale, layerTwist,
-          swirl, wobble, inkFlow, waterFlow, strands;
+    float petals, layers, len, wid, tipSharp, tipNotch, baseBias, layerScale,
+          layerTwist, swirl, wobble, inkFlow, waterFlow;
 };
 Knobs bloomKnobs() {
     float b = clamp(uBloom, 0.0, 1.0);
     float open = smoothstep(0.0, 1.0, b);
     Knobs k;
     k.petals     = floor(uPetals + (uSeed > 0.66 ? 1.0 : (uSeed < 0.33 ? -1.0 : 0.0)) + 0.5);
-    k.layers     = uLayers;
-    k.len        = mix(0.16, 0.92, open);
-    k.wid        = mix(0.05, 0.34, open);
-    k.tipSharp   = mix(2.4, 1.1, open);   // bud has a sharp closed tip; opens to a leaf
-    k.baseBias   = mix(1.5, 0.7, open);   // belly slides from near-tip (closed) to mid
-    k.layerScale = 0.72;
+    // layers per flower: 50% 1, 30% 2, 20% 3 — decorrelated hash so it's
+    // independent of petal count / twist (which also read uSeed)
+    float lr     = fract(uSeed * 91.7 + 0.137);
+    k.layers     = lr < 0.5 ? 1.0 : (lr < 0.8 ? 2.0 : 3.0);
+    k.len        = mix(0.16, 0.95, open);
+    k.wid        = mix(0.05, 0.42, open);
+    k.tipSharp   = mix(2.4, 0.6, open);   // bud has a sharp closed tip; opens to a plump lotus petal
+    k.baseBias   = mix(1.5, 0.95, open);  // belly slides from near-tip (closed) to mid-upper
+    k.tipNotch   = mix(0.0, 0.12, open);  // apex cleft opens up with the bloom
+    k.layerScale = 0.66;
     k.layerTwist = 0.3 + 0.45 * uSeed;
     k.swirl      = mix(1.5, 0.0, open) * (0.6 + 0.8 * uSeed); // un-curl as it opens
-    k.wobble     = 0.6;
-    k.inkFlow    = 1.1;
-    k.waterFlow  = 0.4;
-    k.strands    = 0.6;
+    k.wobble     = 0.35;
+    k.inkFlow    = 1.0;
+    k.waterFlow  = 0.6;
     return k;
 }
 
@@ -72,24 +75,35 @@ Knobs bloomKnobs() {
 // posterized dry-brush "flying white" as the standalone, alpha = coverage*tone.
 vec4 inkStroke(vec2 uvLine, float tAlong, float sd, vec3 brushRGB, Knobs k) {
     float water = clamp(k.waterFlow, 0.0, 1.0);
-    float bleed = mix(0.004, 0.016, water);
-    float fill = 1.0 - smoothstep(-bleed, bleed, sd);
+
+    // JAGGED bleeding contour (滲み) — anisotropic noise tears the boundary into a
+    // coherent sawtooth along the rim; AA band stays crisp, decoupled from amp.
+    float bloomN = noise01(uvLine * 3.0);
+    float jag    = noise(vec2(uvLine.y * 6.0,  uvLine.x * 2.5)) * 0.6
+                 + noise(vec2(uvLine.y * 15.0, uvLine.x * 2.5)) * 0.4;
+    float amp    = mix(0.012, 0.05, water) * mix(0.6, 1.8, bloomN);
+    float sdb    = sd + jag * amp;
+    float edgeAA = mix(0.004, 0.012, water);
+    float fill = 1.0 - smoothstep(-edgeAA, edgeAA, sdb);
     if (fill <= 0.0) return vec4(0.0);
 
-    float depth = clamp(-sd / 0.12, 0.0, 1.0);
-    float dry   = pow(clamp(tAlong, 0.0, 1.0), 1.3);
-    float dens  = (1.0 - 0.85 * dry) * mix(0.5, 1.0, depth);
+    // pale translucent body, ink gathers dark toward the tip and pools at the rim
+    float depth    = clamp(-sd / 0.12, 0.0, 1.0);
+    float edgePool = pow(1.0 - depth, 1.4);
+    float tipDark  = smoothstep(0.2, 1.0, clamp(tAlong, 0.0, 1.0));
+    float dens     = 0.24 + 0.42 * tipDark;
+    dens = max(dens, edgePool * 0.8);
     dens = pow(clamp(dens, 0.0, 1.0), 1.0 / max(k.inkFlow, 0.1));
 
-    float fibers = noise01(vec2(uvLine.x * 140.0, uvLine.y * 6.0)) * 0.6
-                 + noise01(vec2(uvLine.x * 55.0,  uvLine.y * 3.0)) * 0.4;
-    float dryBrush = clamp(k.strands, 0.0, 1.0) * (1.0 - water * 0.6);
-    float carve = smoothstep(dens - 0.07, dens + 0.07, fibers);
-    float val = dens * (1.0 - carve * dryBrush);
+    // low-freq granulation blotches across the wash (no fine grain)
+    float gran = noise01(uvLine * 2.0) * 0.65 + noise01(uvLine * 4.5) * 0.35;
+    dens *= mix(1.0 - 0.3 * water, 1.0 + 0.22 * water, gran);
 
-    const float BANDS = 3.0;
-    float vb = clamp(val, 0.0, 1.0) * BANDS;
-    float tone = (floor(vb) + smoothstep(0.4, 0.6, fract(vb))) / BANDS;
+    // smooth continuous wash, soft tonal quantize only
+    float val = clamp(dens, 0.0, 1.0);
+    float val5 = val * 5.0;
+    float tone = (floor(val5) + smoothstep(0.25, 0.75, fract(val5))) / 5.0;
+    tone = mix(val, tone, 0.35);
 
     float a = clamp(fill * tone, 0.0, 1.0);
     return vec4(brushRGB, a);
@@ -120,10 +134,17 @@ float petalRing(vec2 uv, float petals, float len, float wid, float twist,
     float tp = aexp / (aexp + bexp);
     float peak = pow(tp, aexp) * pow(1.0 - tp, bexp);
     float prof = pow(t, aexp) * pow(1.0 - t, bexp) / max(peak, 1e-4);
+    // round the attachment so the base is a soft cup, not a needle
+    prof = max(prof, smoothstep(0.0, 0.18, t) * (1.0 - smoothstep(0.7, 1.0, t)) * 0.35);
     float halfW = max(wid * prof, 1e-4);
 
+    // notched tip: gaussian dip in x shortens the centerline -> soft apex cleft
+    float notchW = wid * 0.45 + 1e-4;
+    float dip    = max(k.tipNotch, 0.0) * len * exp(-(x * x) / (notchW * notchW));
+    float tipLen = len - dip;
+
     float sd = abs(x) - halfW;
-    sd = max(sd, y - len);
+    sd = max(sd, y - tipLen);
     sd = max(sd, -y);
 
     uvLine = vec2(x, y);

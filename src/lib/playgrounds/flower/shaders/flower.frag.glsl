@@ -19,14 +19,13 @@ uniform float uLayers;        // concentric petal rings
 uniform float uLength;        // petal length (radius reach)
 uniform float uWidth;         // petal fatness
 uniform float uTipSharp;      // tip taper exponent
+uniform float uTipNotch;      // central cleft depth at the apex
 uniform float uBaseBias;      // where the petal belly sits (base..tip)
 uniform float uLayerScale;    // how much each inner ring shrinks
 uniform float uLayerTwist;    // angular offset between rings
 uniform float uSwirl;         // global rotation / petal curl
-uniform float uWobble;        // organic edge noise
 uniform float uInkFlow;
 uniform float uWaterFlow;
-uniform float uStrands;
 uniform vec4  uInkColor;
 uniform vec4  uBgColor;
 
@@ -63,31 +62,42 @@ float smoothf(float x) { return x*x*x*(x*(x*6.0 - 15.0) + 10.0); }
 // let the paper show through near the dry tip and the stroke edges.
 vec3 inkStroke(vec2 uvLine, vec2 paperUV, float tAlong, float sd, vec3 inpColor, vec4 brushColor) {
     float water = clamp(uWaterFlow, 0.0, 1.0);
-    // soft anti-aliased coverage edge; wetter ink bleeds a touch wider
-    float bleed = mix(0.004, 0.016, water);
-    float fill = 1.0 - smoothstep(-bleed, bleed, sd);
+
+    // BLEEDING EDGE (滲み) — a JAGGED CONTOUR, not a fuzzy texture. The noise is
+    // anisotropic: it varies fast ALONG the rim (uvLine.y, the petal length) but
+    // slowly ACROSS it, so the boundary tears into a coherent sawtooth instead of
+    // speckle. Displacement amplitude and edge crispness are decoupled — the AA
+    // band stays tight so the displaced contour reads as a sharp torn edge.
+    float bloom = noise01(uvLine * 3.0);                   // where ink floods out (low freq)
+    float jag   = noise(vec2(uvLine.y * 6.0,  uvLine.x * 2.5)) * 0.6
+                + noise(vec2(uvLine.y * 15.0, uvLine.x * 2.5)) * 0.4;
+    float amp   = mix(0.012, 0.05, water) * mix(0.6, 1.8, bloom);
+    float sdb   = sd + jag * amp;                          // jagged contour displacement
+    float edgeAA = mix(0.004, 0.012, water);               // crisp edge, independent of amp
+    float fill = 1.0 - smoothstep(-edgeAA, edgeAA, sdb);
     if (fill <= 0.0) return inpColor;
 
-    // WETNESS MAP — how much ink the brush deposits here: full at the base &
-    // core, drying out toward the tip, thinning near the stroke edges.
-    float depth = clamp(-sd / 0.12, 0.0, 1.0);
-    float dry   = pow(clamp(tAlong, 0.0, 1.0), 1.3);
-    float dens  = (1.0 - 0.85 * dry) * mix(0.5, 1.0, depth);
+    // WETNESS MAP — lotus watercolor: a PALE translucent wash fills the petal
+    // body, ink gathers DARK toward the soft tip and POOLS along the rim
+    // (wet-edge), exactly as a loaded brush dries pulling pigment to the margins.
+    float depth    = clamp(-sd / 0.12, 0.0, 1.0);          // 1 deep inside, 0 at rim
+    float edgePool = pow(1.0 - depth, 1.4);                // ink banks up at the edge
+    float tipDark  = smoothstep(0.2, 1.0, clamp(tAlong, 0.0, 1.0));
+    float dens     = 0.24 + 0.42 * tipDark;                // pale body, darker tip
+    dens = max(dens, edgePool * 0.8);                      // dark rim rings the petal
     dens = pow(clamp(dens, 0.0, 1.0), 1.0 / max(uInkFlow, 0.1));
 
-    // DRY-BRUSH FIBERS — noise stretched ALONG the stroke (high freq across,
-    // low along) = long thin bristle streaks. Thresholded against the wetness
-    // map, they carve paper-white combs that grow toward the dry tip & edges.
-    float fibers = noise01(vec2(uvLine.x * 140.0, uvLine.y * 6.0)) * 0.6
-                 + noise01(vec2(uvLine.x * 55.0,  uvLine.y * 3.0)) * 0.4;
-    float dryBrush = clamp(uStrands, 0.0, 1.0) * (1.0 - water * 0.6);
-    float carve = smoothstep(dens - 0.07, dens + 0.07, fibers);  // 1 = paper shows
-    float val = dens * (1.0 - carve * dryBrush);
+    // GRANULATION — the FILL is low frequency: large soft pigment blotches drift
+    // across the wash (the watercolour "blooms"), no fine grain in the body.
+    float gran = noise01(uvLine * 2.0) * 0.65 + noise01(uvLine * 4.5) * 0.35;
+    dens *= mix(1.0 - 0.3 * water, 1.0 + 0.22 * water, gran);
 
-    // posterize the remaining ink into 3 sumi tones, soft band transitions
-    const float BANDS = 3.0;
-    float vb = clamp(val, 0.0, 1.0) * BANDS;
-    float tone = (floor(vb) + smoothstep(0.4, 0.6, fract(vb))) / BANDS;
+    // smooth continuous wash (no dry-brush, no hard sumi posterization) — soft
+    // tonal quantize only to suggest layered brush passes
+    float val = clamp(dens, 0.0, 1.0);
+    float val5 = val * 5.0;
+    float tone = (floor(val5) + smoothstep(0.25, 0.75, fract(val5))) / 5.0;
+    tone = mix(val, tone, 0.35);
 
     float alpha = clamp(fill * tone * brushColor.a, 0.0, 1.0);
     return mix(inpColor, brushColor.rgb, alpha);
@@ -116,21 +126,27 @@ float petalRing(vec2 uv, float petals, float len, float wid, float twist,
 
     float t = clamp(y / max(len2, 1e-4), 0.0, 1.0);
 
-    // straight centerline, only a faint organic wobble
-    float w = max(uWobble, 0.0);
-    x += (noise01(vec2(y * 5.0, idx * 11.0)) - 0.5) * 0.05 * w;
-    x += sin(y * 16.0 + idx) * 0.01 * w;
-
-    // pointed leaf profile: pow(t,base) * pow(1-t,tip), normalized to peak 1
+    // lotus petal profile: plump rounded body swelling past the middle, drawn to
+    // a SOFT point. pow(t,base)*pow(1-t,tip) with both exponents < 1 bulges the
+    // base and tip rounded; peak sits where base/(base+tip) lands.
     float aexp = max(uBaseBias, 0.1);
     float bexp = max(uTipSharp, 0.1);
     float tp = aexp / (aexp + bexp);
     float peak = pow(tp, aexp) * pow(1.0 - tp, bexp);
     float prof = pow(t, aexp) * pow(1.0 - t, bexp) / max(peak, 1e-4);
+    // round the attachment so the petal base is a soft cup, not a needle
+    prof = max(prof, smoothstep(0.0, 0.18, t) * (1.0 - smoothstep(0.7, 1.0, t)) * 0.35);
     float halfW = max(wid2 * prof, 1e-4);
 
+    // NOTCHED TIP — carve a central cleft at the apex: shorten the petal length
+    // near the centerline (gaussian dip in x) so the tip folds into a soft V,
+    // like a real lotus petal edge. uTipNotch controls cleft depth.
+    float notchW = wid2 * 0.45 + 1e-4;
+    float dip    = max(uTipNotch, 0.0) * len2 * exp(-(x * x) / (notchW * notchW));
+    float tipLen = len2 - dip;
+
     float sd = abs(x) - halfW;       // lateral body
-    sd = max(sd, y - len2);          // clip at tip
+    sd = max(sd, y - tipLen);        // clip at notched tip
     sd = max(sd, -y);                // clip at base
 
     uvLine = vec2(x, y);

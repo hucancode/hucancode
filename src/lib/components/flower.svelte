@@ -7,7 +7,6 @@
     render,
     setConfig,
     setInkColor,
-    setCoreColor,
     setBgColor,
   } from "$lib/playgrounds/flower";
 
@@ -16,22 +15,19 @@
   let frameID = 0;
   let observer;
 
-  let petals = $state(6);
-  let layers = $state(2);
-  let length = $state(0.85);
-  let width = $state(0.32);
-  let tipSharp = $state(1.1);
-  let baseBias = $state(0.7);
-  let layerScale = $state(0.72);
-  let layerTwist = $state(0.3);
+  let petals = $state(8);
+  let layers = $state(1);
+  let length = $state(1.0);
+  let width = $state(0.2);
+  let tipSharp = $state(1.5);
+  let tipNotch = $state(0.1);
+  let baseBias = $state(1.4);
+  let layerScale = $state(0.66);
+  let layerTwist = $state(0.4);
   let swirl = $state(0.0);
-  let wobble = $state(0.6);
-  let core = $state(0.12);
-  let inkFlow = $state(1.1);
-  let waterFlow = $state(0.4);
-  let strands = $state(0.6);
+  let inkFlow = $state(1.0);
+  let waterFlow = $state(0.6);
   let inkHex = $state("#120f17");
-  let coreHex = $state("#0d0d12");
   let bgHex = $state("#f5eddc");
 
   function hexToRgba(hex) {
@@ -47,13 +43,12 @@
   $effect(() => {
     if (!ready) return;
     setConfig({
-      petals, layers, length, width, tipSharp, baseBias,
-      layerScale, layerTwist, swirl, wobble, core,
-      inkFlow, waterFlow, strands,
+      petals, layers, length, width, tipSharp, tipNotch, baseBias,
+      layerScale, layerTwist, swirl,
+      inkFlow, waterFlow,
     });
   });
   $effect(() => { if (ready) setInkColor(hexToRgba(inkHex)); });
-  $effect(() => { if (ready) setCoreColor(hexToRgba(coreHex)); });
   $effect(() => { if (ready) setBgColor(hexToRgba(bgHex)); });
 
   function loop() {
@@ -109,11 +104,6 @@
         <input type="range" min="0.05" max="0.7" step="0.001" bind:value={width} />
         <output>{width.toFixed(3)}</output>
       </label>
-      <label>
-        <span>Core</span>
-        <input type="range" min="0" max="0.4" step="0.001" bind:value={core} />
-        <output>{core.toFixed(3)}</output>
-      </label>
     </fieldset>
 
     <fieldset>
@@ -124,14 +114,14 @@
         <output>{tipSharp.toFixed(2)}</output>
       </label>
       <label>
+        <span>Tip notch</span>
+        <input type="range" min="0" max="0.5" step="0.01" bind:value={tipNotch} />
+        <output>{tipNotch.toFixed(2)}</output>
+      </label>
+      <label>
         <span>Belly bias</span>
         <input type="range" min="0.2" max="2" step="0.01" bind:value={baseBias} />
         <output>{baseBias.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Wobble</span>
-        <input type="range" min="0" max="1.5" step="0.01" bind:value={wobble} />
-        <output>{wobble.toFixed(2)}</output>
       </label>
     </fieldset>
 
@@ -166,11 +156,6 @@
         <input type="range" min="0" max="1" step="0.01" bind:value={waterFlow} />
         <output>{waterFlow.toFixed(2)}</output>
       </label>
-      <label>
-        <span>Dry brush</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={strands} />
-        <output>{strands.toFixed(2)}</output>
-      </label>
     </fieldset>
 
     <fieldset>
@@ -178,10 +163,6 @@
       <label class="color">
         <span>Petal</span>
         <input type="color" bind:value={inkHex} />
-      </label>
-      <label class="color">
-        <span>Core</span>
-        <input type="color" bind:value={coreHex} />
       </label>
       <label class="color">
         <span>Paper</span>

@@ -49,19 +49,28 @@ export function createFlowers({ headPath, timing, circles }) {
         const seed = hashSeed(c.i);
         // independent hash for size so size jitter isn't correlated with petals/twist
         const sizeRand = hashSeed(c.i * 7 + 13);
-        const opaRand = hashSeed(c.i * 31 + 5);
         const jitter = SIZE_MIN + (SIZE_MAX - SIZE_MIN) * sizeRand;
         items.push({
           x: c.x, y: c.y,
           r: c.r * FLOWER_FILL * jitter,
           tEnter: t,
           seed,
-          opacity: OPA_MIN + (OPA_MAX - OPA_MIN) * opaRand,
+          opacity: 1, // set below from absolute size (small opaque, big translucent)
           bloom: 0,
         });
       }
     }
   }
+  // opacity by ABSOLUTE size — small flowers read solid, big ones translucent.
+  // normalize r across all flowers, then map [smallest..biggest] -> [OPA_MAX..OPA_MIN].
+  let rMin = Infinity, rMax = -Infinity;
+  for (const f of items) { if (f.r < rMin) rMin = f.r; if (f.r > rMax) rMax = f.r; }
+  const rSpan = Math.max(rMax - rMin, 1e-6);
+  for (const f of items) {
+    const sizeT = (f.r - rMin) / rSpan;        // 0 small .. 1 big
+    f.opacity = OPA_MAX + (OPA_MIN - OPA_MAX) * sizeT;
+  }
+
   // bloom in path order (outer descent flowers first) so the renderer's draw order
   // reads naturally; items already pushed in first-hit (== time) order.
 

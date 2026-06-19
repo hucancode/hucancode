@@ -75,8 +75,8 @@ export const FLOWER_SAMPLE_DT = 1 / 120; // enter-time precompute sampling step 
 export const FLOWER_PETALS = 6;          // base petals per ring (varied ±1 per flower)
 export const FLOWER_LAYERS = 3;          // concentric petal rings at full bloom
 export const FLOWER_FILL = 0.13;         // flower radius as a fraction of its circle radius
-export const FLOWER_SIZE_JITTER = [0.45, 1.7]; // per-flower [min,max] size multiplier (seed-driven)
-export const FLOWER_OPACITY_JITTER = [0.35, 1.0]; // per-flower [min,max] ink opacity (seed-driven)
+export const FLOWER_SIZE_JITTER = [0.45, 2.8]; // per-flower [min,max] size multiplier (seed-driven)
+export const FLOWER_OPACITY_JITTER = [0.35, 1.0]; // ink opacity [biggest,smallest] — small opaque, big translucent
 
 // ---- 3D loop ---------------------------------------------------------------
 export const R3D = 0.95;            // 3D orbit radius (x/y) — rings the rosette
@@ -107,9 +107,9 @@ export const CAM = { fov: (45 * Math.PI) / 180, dist: 2.6 };
 
 // ---- fades / grid ----------------------------------------------------------
 export const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as the 3D dragon takes over
-export const ENSO_FADE_TARGET = 0.55;  // enso circle eases to this opacity as the 3D dragon takes over
+export const ENSO_FADE_TARGET = 0.85;  // enso circle eases to this opacity as the 3D dragon takes over
 export const GRID_REVEAL_DUR = 8.0;  // grid wipes in slowly (spans past the fly-in, into the roam)
-export const GRID_MAX_OPACITY = 0.75;
+export const GRID_MAX_OPACITY = 0.85;
 export const GRID_MINOR_DIV = 5;  // minor cells per major cell
 export const GRID_MINOR_LAG = 1.5; // seconds the minor grid wipe-in trails the major reveal
 export const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
