@@ -19,11 +19,13 @@
   let angleStart = $state(0.0);
   let lineWidth = $state(0.28);
   let clockwise = $state(true);
-  let autoSweep = $state(true);
   let sweep = $state(1.0);
-  let inkFlow = $state(1.0);
-  let waterFlow = $state(0.7);
-  let strands = $state(1.5);
+  let opacityBleed = $state(1.0);
+  let opacityWet = $state(1.0);
+  let opacityDry = $state(1.0);
+  let inkFlow = $state(2.0);
+  let waterFlow = $state(0.5);
+  let strands = $state(2.5);
   let wobble = $state(0.5);
   let widthEnd = $state(0.15);
   let widthOffset = $state(0.55);
@@ -45,7 +47,8 @@
   $effect(() => {
     if (!ready) return;
     setConfig({
-      radius, angleStart, lineWidth, clockwise, autoSweep, sweep,
+      radius, angleStart, lineWidth, clockwise, sweep,
+      opacityBleed, opacityWet, opacityDry,
       inkFlow, waterFlow, strands, wobble,
       widthEnd, widthOffset, widthRange, widthAnchor,
     });
@@ -100,14 +103,29 @@
         <input type="checkbox" bind:checked={clockwise} />
         <span>clockwise</span>
       </label>
-      <label class="check">
-        <input type="checkbox" bind:checked={autoSweep} />
-        <span>auto sweep</span>
-      </label>
       <label>
         <span>Sweep</span>
-        <input type="range" min="0" max="1" step="0.001" bind:value={sweep} disabled={autoSweep} />
+        <input type="range" min="0" max="1" step="0.001" bind:value={sweep} />
         <output>{sweep.toFixed(2)}</output>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>layers</legend>
+      <label>
+        <span>Bleed</span>
+        <input type="range" min="0" max="1" step="0.01" bind:value={opacityBleed} />
+        <output>{opacityBleed.toFixed(2)}</output>
+      </label>
+      <label>
+        <span>Wet</span>
+        <input type="range" min="0" max="1" step="0.01" bind:value={opacityWet} />
+        <output>{opacityWet.toFixed(2)}</output>
+      </label>
+      <label>
+        <span>Dry</span>
+        <input type="range" min="0" max="1" step="0.01" bind:value={opacityDry} />
+        <output>{opacityDry.toFixed(2)}</output>
       </label>
     </fieldset>
 
@@ -115,7 +133,7 @@
       <legend>brush</legend>
       <label>
         <span>Line Width</span>
-        <input type="range" min="0.01" max="0.6" step="0.001" bind:value={lineWidth} />
+        <input type="range" min="0.01" max="1.0" step="0.001" bind:value={lineWidth} />
         <output>{lineWidth.toFixed(3)}</output>
       </label>
       <label>

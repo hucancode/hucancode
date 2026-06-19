@@ -43,14 +43,14 @@ export const CHAIN_LEN_FRAC = 0.85;      // descent length target as a fraction 
 export const CHAIN_MAX = 60;             // hard cap on circles per roam (safety)
 
 // ---- flight path -----------------------------------------------------------
-// 2D dragon glyph-trace exit: peels off the glyph onto the enso at the END of
-// this baked-segment index (0-based). null / out-of-range -> the final segment.
-export const GLYPH_EXIT_SEG = 45;
 export const ENSO_R = 0.4;           // enso radius (world units; <1 keeps it on-screen)
-export const ENSO_WIDTH = 0.05;      // enso brush thickness (polar line width in the shader)
-export const GROW_DUR = 2.5;         // body grows up after the glyph trace (over the enso)
-export const ENTRY_GROW_MIN = 0.2;   // body length fraction while tracing the glyph
-export const ENTRY_SIZE_MIN = 0.4;   // body width / head size fraction while tracing
+export const ENSO_WIDTH = 0.15;       // enso brush thickness (polar line width in the shader)
+export const ENSO_CLEARANCE = 0.06;  // gap between the brush OUTER edge and the dragon head path
+// dragon traces just outside the brush so the contour clears the painted stroke
+export const ENSO_HEAD_R = ENSO_R + ENSO_WIDTH * 0.5 + ENSO_CLEARANCE;
+export const GROW_DUR = 2.5;         // body eases to full size over this span from roam1Start
+export const ENTRY_GROW_MIN = 0.2;   // body length fraction at entry (fly-in), grows to 1 by the enso
+export const ENTRY_SIZE_MIN = 0.4;   // body width / head size fraction at entry, grows to 1
 
 // ---- 2D roam frame (rosette of tangent circles) ----------------------------
 export const FRAME_SMALL_R = 0.5;          // vesica-lobe radius as a fraction of ENSO_R
