@@ -5,18 +5,17 @@
   let version = $state("webgl");
   let scene = $state(null);
   const PRESETS = [
-    { id: "random", label: "Random" },
     { id: "circle", label: "Circle" },
-    { id: "figure8", label: "Figure-8" },
+    { id: "figure8", label: "Fig8" },
     { id: "helix", label: "Helix" },
-    { id: "wave", label: "Wave" },
+    { id: "random", label: "Random" },
   ];
-  let preset = $state("random");
+  let preset = $state("circle");
   let points = $state(20);
   let spread = $state(1);
   let speed = $state(0.8);
-  let showLights = $state(true);
-  let showPath = $state(false);
+  let showLights = $state(false);
+  let showPath = $state(true);
   let bodyFraction = $state(0.25);
   let girthFactor = $state(0.0012);
 
@@ -56,16 +55,16 @@
   <title>Dragon</title>
 </svelte:head>
 
-<a class="back" href="/playgrounds">{@html Return} Playgrounds</a>
+<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
 
 <main>
-  <figure>
+  <section>
     {#if version === "webgl"}
       <Scene bind:this={scene} />
     {:else}
       <div class="rust">
         {#if error}
-          <p class="fallback">Live render failed — here is a recording instead.</p>
+          <p>Live render failed — here is a recording instead.</p>
           <video autoplay loop muted playsinline>
             <source src="/assets/video/dragon-rust.webm" type="video/webm" />
           </video>
@@ -73,7 +72,7 @@
         <canvas bind:this={rustCanvas}></canvas>
       </div>
     {/if}
-  </figure>
+  </section>
 
   <aside>
     <fieldset>
@@ -151,20 +150,3 @@
     {/if}
   </aside>
 </main>
-
-<style>
-  .rust {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    gap: 1rem;
-    overflow: hidden;
-  }
-  .rust canvas { outline: none; width: 100%; height: 100%; }
-  .fallback { text-align: center; font-style: italic; }
-  video { width: 100%; height: auto; }
-</style>

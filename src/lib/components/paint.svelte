@@ -3,6 +3,7 @@
   import { onMount, onDestroy } from "svelte";
   import { createRenderer } from "$lib/playgrounds/main/render/index.js";
   import { initScene, buildState } from "$lib/playgrounds/main";
+  import { profile, mark, stamp } from "$lib/engine/profile.js";
 
   // Controlled canvas. The parent owns the timeline:
   //   t        scene time, bindable (parent maps scroll / autoplay onto it)
@@ -17,6 +18,7 @@
   let ro;
   let lastTs = null;
   let aspect = 1;
+  let firstFrame = true;
 
   // orbit camera: YAW only. Pitch (elevation) is fully scripted by the scene
   // (top-down 90deg during the glyph trace -> 45deg as the 3D dragon appears).
@@ -57,6 +59,17 @@
     lastTs = ts;
     if (playing) t += dt; // unbounded: persistent blocks keep the dragon looping
     if (!renderer) return;
+    if (firstFrame) {
+      const endBuild = mark("buildState (first)");
+      const st = buildState(t, aspect, debug, orbitYaw);
+      endBuild();
+      const endFrame = mark("renderer.frame (first)");
+      renderer.frame(st);
+      endFrame();
+      stamp("first frame painted");
+      firstFrame = false;
+      return;
+    }
     renderer.frame(buildState(t, aspect, debug, orbitYaw));
   }
 
@@ -72,6 +85,7 @@
 
   onMount(async () => {
     if (!browser) return;
+    stamp("paint.svelte onMount start");
     // debug: ?t=<seconds> renders a single paused frame at that scene time
     const qs = new URLSearchParams(location.search);
     const qt = qs.get("t");
@@ -79,10 +93,12 @@
     if (qs.get("play") === "1") playing = true;
     if (qs.get("debug") === "1") debug = { path2d: true, path3d: true };
     if (qs.get("yaw")) orbitYaw = parseFloat(qs.get("yaw")) || 0;
-    initScene();
+    const endMount = mark("onMount total");
+    profile("initScene", () => initScene());
     sizeCanvas();
-    renderer = await createRenderer(canvasEl, { prefer: "webgl" });
+    renderer = await profile("createRenderer", () => createRenderer(canvasEl, { prefer: "webgl" }));
     sizeCanvas();
+    endMount();
 
     ro = new ResizeObserver(() => sizeCanvas());
     ro.observe(canvasEl);

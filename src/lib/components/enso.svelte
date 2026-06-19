@@ -47,14 +47,30 @@
   $effect(() => {
     if (!ready) return;
     setConfig({
-      radius, angleStart, lineWidth, clockwise, sweep,
-      opacityBleed, opacityWet, opacityDry,
-      inkFlow, waterFlow, strands, wobble,
-      widthEnd, widthOffset, widthRange, widthAnchor,
+      radius,
+      angleStart,
+      lineWidth,
+      clockwise,
+      sweep,
+      opacityBleed,
+      opacityWet,
+      opacityDry,
+      inkFlow,
+      waterFlow,
+      strands,
+      wobble,
+      widthEnd,
+      widthOffset,
+      widthRange,
+      widthAnchor,
     });
   });
-  $effect(() => { if (ready) setBrushColor(hexToRgba(brushHex)); });
-  $effect(() => { if (ready) setBgColor(hexToRgba(bgHex)); });
+  $effect(() => {
+    if (ready) setBrushColor(hexToRgba(brushHex));
+  });
+  $effect(() => {
+    if (ready) setBgColor(hexToRgba(bgHex));
+  });
 
   function loop() {
     frameID = requestAnimationFrame(loop);
@@ -82,138 +98,163 @@
   });
 </script>
 
-<div class="enso-demo">
-  <div class="stage">
-    <canvas bind:this={canvasEl}></canvas>
-  </div>
-  <div class="controls">
-    <fieldset>
-      <legend>circle</legend>
-      <label>
-        <span>Radius</span>
-        <input type="range" min="0.1" max="0.95" step="0.001" bind:value={radius} />
-        <output>{radius.toFixed(3)}</output>
-      </label>
-      <label>
-        <span>Start angle</span>
-        <input type="range" min="-3.14159" max="3.14159" step="0.001" bind:value={angleStart} />
-        <output>{angleStart.toFixed(2)}</output>
-      </label>
-      <label class="check">
-        <input type="checkbox" bind:checked={clockwise} />
-        <span>clockwise</span>
-      </label>
-      <label>
-        <span>Sweep</span>
-        <input type="range" min="0" max="1" step="0.001" bind:value={sweep} />
-        <output>{sweep.toFixed(2)}</output>
-      </label>
-    </fieldset>
+<section>
+  <canvas bind:this={canvasEl}></canvas>
+</section>
+<aside>
+  <fieldset>
+    <legend>circle</legend>
+    <label>
+      <span>Radius</span>
+      <input
+        type="range"
+        min="0.1"
+        max="0.95"
+        step="0.001"
+        bind:value={radius}
+      />
+      <output>{radius.toFixed(3)}</output>
+    </label>
+    <label>
+      <span>Start angle</span>
+      <input
+        type="range"
+        min="-3.14159"
+        max="3.14159"
+        step="0.001"
+        bind:value={angleStart}
+      />
+      <output>{angleStart.toFixed(2)}</output>
+    </label>
+    <label>
+      <input type="checkbox" bind:checked={clockwise} />
+      <span>clockwise</span>
+    </label>
+    <label>
+      <span>Sweep</span>
+      <input type="range" min="0" max="1" step="0.001" bind:value={sweep} />
+      <output>{sweep.toFixed(2)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>layers</legend>
-      <label>
-        <span>Bleed</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={opacityBleed} />
-        <output>{opacityBleed.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Wet</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={opacityWet} />
-        <output>{opacityWet.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Dry</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={opacityDry} />
-        <output>{opacityDry.toFixed(2)}</output>
-      </label>
-    </fieldset>
+  <fieldset>
+    <legend>layers</legend>
+    <label>
+      <span>Bleed</span>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={opacityBleed}
+      />
+      <output>{opacityBleed.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Wet</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={opacityWet} />
+      <output>{opacityWet.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Dry</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={opacityDry} />
+      <output>{opacityDry.toFixed(2)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>brush</legend>
-      <label>
-        <span>Line Width</span>
-        <input type="range" min="0.01" max="1.0" step="0.001" bind:value={lineWidth} />
-        <output>{lineWidth.toFixed(3)}</output>
-      </label>
-      <label>
-        <span>Ink Flow</span>
-        <input type="range" min="0.2" max="3" step="0.01" bind:value={inkFlow} />
-        <output>{inkFlow.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Water Flow</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={waterFlow} />
-        <output>{waterFlow.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Strands</span>
-        <input type="range" min="0.1" max="4" step="0.01" bind:value={strands} />
-        <output>{strands.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Wobble</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={wobble} />
-        <output>{wobble.toFixed(2)}</output>
-      </label>
-    </fieldset>
+  <fieldset>
+    <legend>brush</legend>
+    <label>
+      <span>Line Width</span>
+      <input
+        type="range"
+        min="0.01"
+        max="1.0"
+        step="0.001"
+        bind:value={lineWidth}
+      />
+      <output>{lineWidth.toFixed(3)}</output>
+    </label>
+    <label>
+      <span>Ink Flow</span>
+      <input type="range" min="0.2" max="3" step="0.01" bind:value={inkFlow} />
+      <output>{inkFlow.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Water Flow</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={waterFlow} />
+      <output>{waterFlow.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Strands</span>
+      <input type="range" min="0.1" max="4" step="0.01" bind:value={strands} />
+      <output>{strands.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Wobble</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={wobble} />
+      <output>{wobble.toFixed(2)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>stroke shape</legend>
-      <label>
-        <span>Tail width</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={widthEnd} />
-        <output>{widthEnd.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Step offset</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={widthOffset} />
-        <output>{widthOffset.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Step range</span>
-        <input type="range" min="0" max="1.5" step="0.01" bind:value={widthRange} />
-        <output>{widthRange.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Anchor</span>
-        <input type="range" min="0" max="1" step="0.001" bind:value={widthAnchor} />
-        <output>{widthAnchor.toFixed(2)}</output>
-      </label>
-    </fieldset>
+  <fieldset>
+    <legend>stroke shape</legend>
+    <label>
+      <span>Tail width</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={widthEnd} />
+      <output>{widthEnd.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Step offset</span>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={widthOffset}
+      />
+      <output>{widthOffset.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Step range</span>
+      <input
+        type="range"
+        min="0"
+        max="1.5"
+        step="0.01"
+        bind:value={widthRange}
+      />
+      <output>{widthRange.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Anchor</span>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.001"
+        bind:value={widthAnchor}
+      />
+      <output>{widthAnchor.toFixed(2)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>color</legend>
-      <label class="color">
-        <span>Ink</span>
-        <input type="color" bind:value={brushHex} />
-      </label>
-      <label class="color">
-        <span>Paper</span>
-        <input type="color" bind:value={bgHex} />
-      </label>
-    </fieldset>
-  </div>
-</div>
+  <fieldset>
+    <legend>color</legend>
+    <label class="color">
+      <span>Ink</span>
+      <input type="color" bind:value={brushHex} />
+    </label>
+    <label class="color">
+      <span>Paper</span>
+      <input type="color" bind:value={bgHex} />
+    </label>
+  </fieldset>
+</aside>
 
 <style>
-  .enso-demo {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  @media(min-width: 768px) {
-    .enso-demo {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-    .stage { flex: 1 1 auto; min-width: 0; }
-    .controls { flex: 0 0 18rem; }
-  }
-  .stage {
-    position: relative;
-    width: 100%;
+  /* layout (main > section / aside) + fieldset/label styling come from global app.css */
+  section {
     max-width: 640px;
     aspect-ratio: 1 / 1;
   }
@@ -225,37 +266,7 @@
     touch-action: none;
     display: block;
   }
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-  }
-  label {
-    display: grid;
-    grid-template-columns: 6rem 1fr 3rem;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-  }
-  label.check { grid-template-columns: auto 1fr; }
-  label.color { grid-template-columns: 6rem 1fr; }
-  input[type="range"] { width: 100%; }
-  input[type="range"]:disabled { opacity: 0.4; }
-  fieldset {
-    border: 1px solid rgba(128,128,128,0.3);
-    border-radius: 0.35rem;
-    padding: 0.5rem 0.75rem 0.6rem;
-    margin: 0;
-    display: grid;
-    gap: 0.4rem;
-  }
-  legend {
-    padding: 0 0.4rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.7;
+  label.color {
+    grid-template-columns: 6rem 1fr;
   }
 </style>

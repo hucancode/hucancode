@@ -4,33 +4,44 @@
 
   let { progress = 0, onseek = null } = $props();
 
-  let host, canvasEl, ro, rc;
+  let host, svgEl, ro, rs;
+  let playedEl, handleEl;
+  let geom = { x0: 2, x1: 0, w: 0 };
   let dragging = false;
 
-  function draw() {
-    if (!rc || !host || !canvasEl) return;
+  // build rough geometry ONCE (per size). Expensive part — never per frame.
+  function build() {
+    if (!host || !svgEl) return;
     const w = host.clientWidth, h = host.clientHeight;
     if (w === 0 || h === 0) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvasEl.width = Math.round(w * dpr);
-    canvasEl.height = Math.round(h * dpr);
-    canvasEl.style.width = w + "px";
-    canvasEl.style.height = h + "px";
-    const ctx = canvasEl.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    const y = h / 2;
-    const x0 = 2, x1 = w - 2;
+    const y = h / 2, x0 = 2, x1 = w - 2;
+    geom = { x0, x1, w };
+    svgEl.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    svgEl.setAttribute("width", w);
+    svgEl.setAttribute("height", h);
+    svgEl.replaceChildren();
+    rs = rough.svg(svgEl);
+    // unplayed baseline, full width, lowkey
+    svgEl.appendChild(
+      rs.line(x0, y, x1, y, { stroke: "#6b6450", strokeWidth: 2, roughness: 1.0, bowing: 0, seed: 7 })
+    );
+    // played portion, full width — revealed by clip-path
+    playedEl = rs.line(x0, y, x1, y, { stroke: "#c1666b", strokeWidth: 4.5, roughness: 1.4, bowing: 1, seed: 13 });
+    svgEl.appendChild(playedEl);
+    // hand-drawn handle, drawn at origin, moved by transform
+    handleEl = rs.circle(0, y, 14, { stroke: "#d4b483", strokeWidth: 2, fill: "#c1666b", fillStyle: "solid", roughness: 1.2, seed: 21 });
+    svgEl.appendChild(handleEl);
+    place();
+  }
+
+  // cheap per-frame update: move handle + clip played. No rough regen.
+  function place() {
+    if (!playedEl || !handleEl) return;
+    const { x0, x1 } = geom;
     const p = Math.min(1, Math.max(0, progress));
     const px = x0 + (x1 - x0) * p;
-    // unplayed baseline, lowkey
-    rc.line(px, y, x1, y, { stroke: "#6b6450", strokeWidth: 2, roughness: 1.0, bowing: 0, seed: 7 });
-    // played portion, sketchy + bolder
-    if (px > x0) {
-      rc.line(x0, y, px, y, { stroke: "#c1666b", strokeWidth: 4.5, roughness: 1.4, bowing: 1, seed: 13 });
-    }
-    // hand-drawn handle circle at playhead
-    rc.circle(px, y, 14, { stroke: "#d4b483", strokeWidth: 2, fill: "#c1666b", fillStyle: "solid", roughness: 1.2, seed: 21 });
+    handleEl.setAttribute("transform", `translate(${px},0)`);
+    playedEl.style.clipPath = `inset(0 ${Math.max(0, x1 - px)}px 0 0)`;
   }
 
   function seekAt(clientX) {
@@ -43,22 +54,20 @@
   function onUp() { dragging = false; }
 
   onMount(() => {
-    rc = rough.canvas(canvasEl);
-    draw();
-    ro = new ResizeObserver(() => draw());
+    build();
+    ro = new ResizeObserver(() => build());
     ro.observe(host);
   });
   onDestroy(() => ro && ro.disconnect());
 
-  // redraw when progress changes
+  // progress change → cheap reposition only
   $effect(() => {
     progress;
-    draw();
+    place();
   });
 </script>
 
 <div
-  class="rt"
   bind:this={host}
   role="slider"
   aria-label="scene timeline"
@@ -71,11 +80,11 @@
   onpointerup={onUp}
   onpointerleave={onUp}
 >
-  <canvas bind:this={canvasEl} aria-hidden="true"></canvas>
+  <svg bind:this={svgEl} aria-hidden="true"></svg>
 </div>
 
 <style>
-  .rt {
+  div {
     position: relative;
     flex: 1;
     height: 20px;
@@ -83,9 +92,10 @@
     cursor: pointer;
     touch-action: none;
   }
-  .rt canvas {
+  svg {
     position: absolute;
     inset: 0;
     pointer-events: none;
+    overflow: visible;
   }
 </style>

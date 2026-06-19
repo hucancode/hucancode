@@ -17,41 +17,6 @@
     { href: "/lego", name: "Lego", icon: Cube, thumb: "/assets/thumb/lego.png" },
   ];
 
-  let cardEls = $state([]);
-  let svgEls = $state([]);
-
-  function drawCard(svgEl, w, h, seed) {
-    while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
-    svgEl.setAttribute("width", w);
-    svgEl.setAttribute("height", h);
-    svgEl.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    const rc = rough.svg(svgEl);
-    const pad = 3;
-    const ink = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
-    const g = rc.rectangle(pad, pad, w - pad * 2, h - pad * 2, {
-      roughness: 1.6,
-      stroke: ink || "#16161D",
-      strokeWidth: 1.5,
-      fill: "none",
-      seed,
-    });
-    svgEl.appendChild(g);
-  }
-
-  function redrawAll() {
-    svgEls.forEach((svgEl, i) => {
-      if (!svgEl || !cardEls[i]) return;
-      const r = cardEls[i].getBoundingClientRect();
-      drawCard(svgEl, r.width, r.height, i + 1);
-    });
-  }
-
-  onMount(() => {
-    redrawAll();
-    const ro = new ResizeObserver(redrawAll);
-    cardEls.forEach(el => el && ro.observe(el));
-    return () => ro.disconnect();
-  });
 </script>
 
 <svelte:head>
@@ -59,13 +24,12 @@
 </svelte:head>
 
 <main>
-  <a class="back" href="/">{@html Return} Home</a>
+  <nav><a class="back" href="/">{@html Return} Home</a></nav>
   <ul>
     {#each playgrounds as p, i}
       <li>
-        <a href={p.href} bind:this={cardEls[i]} class="card">
-          <svg class="card-border" bind:this={svgEls[i]} aria-hidden="true"></svg>
-          <div class="thumb">
+        <a href={p.href}>
+          <figure>
             <img
               src={p.thumb}
               alt={p.name}
@@ -75,9 +39,9 @@
                 e.currentTarget.nextElementSibling.style.display = "grid";
               }}
             />
-            <span class="icon" style="display:none">{@html p.icon}</span>
-          </div>
-          <span class="name">{p.name}</span>
+            <span style="display:none">{@html p.icon}</span>
+          </figure>
+          <span>{p.name}</span>
         </a>
       </li>
     {/each}
@@ -85,14 +49,6 @@
 </main>
 
 <style>
-  @font-face {
-    font-family: "Virgil";
-    src: url("/fonts/Virgil.woff2") format("woff2");
-    font-display: swap;
-  }
-  :global(body) {
-    background: var(--paper);
-  }
   main {
     position: relative;
     flex-direction: column;
@@ -109,23 +65,19 @@
     gap: 1.5rem;
   }
   li {
-    display: flex;
+    border: 1px dashed var(--color-neutral-500);
   }
-  .card {
+  li > a {
     position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    text-decoration: none;
-    color: inherit;
     padding: 0.75rem;
+    color: var(--ink);
     background: color-mix(in srgb, var(--paper) 70%, transparent);
     transition: transform 0.15s ease;
   }
-  .card:hover {
-    transform: translateY(-4px) rotate(-0.4deg);
-  }
-  .card-border {
+  li > a > svg {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -134,29 +86,23 @@
     overflow: visible;
     opacity: 0.15;
   }
-  .thumb {
-    width: 18rem;
+  figure {
+    margin: 0;
     aspect-ratio: 16/9;
     display: grid;
     place-items: center;
     overflow: hidden;
     background: linear-gradient(135deg, color-mix(in srgb, var(--paper) 90%, var(--ink)), color-mix(in srgb, var(--paper) 80%, var(--ink)));
   }
-  .thumb img {
+  figure img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
-  .icon :global(svg) {
+  figure span :global(svg) {
     width: 3rem;
     height: 3rem;
     fill: var(--ink);
     opacity: 0.45;
-  }
-  .name {
-    font-family: "Virgil", cursive;
-    font-size: 1.05rem;
-    color: var(--ink);
-    padding-left: 0.1rem;
   }
 </style>

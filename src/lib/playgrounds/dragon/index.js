@@ -75,7 +75,7 @@ out vec4 fragColor;
 void main() { fragColor = vec4(uColor, 0.5); }`;
 
 const config = {
-  preset: "random", points: 20, spread: 1, speed: 0.0008, showLights: true, showPath: false,
+  preset: "circle", points: 10, spread: 1, speed: 0.0008, showLights: false, showPath: true,
   bodyFraction: 0.25,   // dragon body length as a fraction of the loop
   girthFactor: 0.0012,  // cross-section scale relative to path length
 };
@@ -103,8 +103,6 @@ function buildPath(preset, n, s) {
   } else if (preset === "helix") {
     const R = 55 * s;
     for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 * 3; pts.push({ x: Math.cos(a) * R, y: (i / n - 0.5) * 120 * s, z: Math.sin(a) * R }); }
-  } else if (preset === "wave") {
-    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; pts.push({ x: (i / n - 0.5) * 160 * s, y: Math.sin(a * 3) * 30 * s, z: Math.cos(a * 2) * 40 * s }); }
   } else {
     const MIN_X = -40 * s, VAR_X = 80 * s, MIN_Y = -40 * s, VAR_Y = 80 * s, MIN_Z = -80 * s, VAR_Z = 160 * s;
     for (let i = 0; i < n; i++) pts.push({ x: Math.random() * VAR_X + MIN_X, y: Math.random() * VAR_Y + MIN_Y, z: Math.random() * VAR_Z + MIN_Z });

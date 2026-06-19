@@ -11,6 +11,11 @@
   import Pause from "$icons/google-material/pause.svg?raw";
   import Restart from "$icons/google-material/restart.svg?raw";
   import ChevronDown from "$icons/google-material/chevron-down.svg?raw";
+  import { onMount } from "svelte";
+  import { stamp } from "$lib/engine/profile.js";
+
+  stamp("+page.svelte script init (hydration)");
+  onMount(() => stamp("+page.svelte onMount (DOM ready)"));
 
   // scroll length (px) mapped onto the whole timeline. The stage is sticky and
   // fills the viewport; this tall track gives the page something to scroll.
@@ -54,7 +59,10 @@
   // the way to the footer resumes playback (unless the user explicitly paused).
   function onScroll() {
     if (!browser) return;
-    if (selfScroll) { selfScroll = false; return; } // our own move
+    if (selfScroll) {
+      selfScroll = false;
+      return;
+    } // our own move
     const raw = window.scrollY / SCROLL_LEN;
     if (raw >= 1) {
       if (!userPaused) playing = true; // reached the footer -> keep flying
@@ -132,58 +140,98 @@
 <svelte:head>
   <title>hucancode</title>
   <!-- start the dragon mesh download during HTML parse; renderer fetch hits cache -->
-  <link rel="preload" href="/assets/obj/dragon-low.obj" as="fetch" />
+  <link rel="preload" href="/assets/obj/dragon-low.obj" as="fetch" crossorigin />
 </svelte:head>
 <svelte:window onscroll={onScroll} onresize={placeHints} />
 
-<header class="topbar">
-  <div class="bar">
-    <nav class="links" bind:this={linksEl}>
-      <a href="https://github.com/hucancode" target="_blank" rel="noreferrer" aria-label="GitHub"><RoughIcon svg={Github} /></a>
-      <a href="/resume.pdf" download aria-label="Resume"><RoughIcon svg={Profile} /></a>
-      <a href="/notes" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
-      <div class="controls" bind:this={controlsEl}>
-        <button class="play" onclick={togglePlay} aria-label={atEnd ? "restart" : playing ? "pause" : "play"}>
-          <RoughIcon svg={atEnd ? Restart : playing ? Pause : Play} />
-        </button>
-        <Timeline {progress} onseek={seek} />
-        {#if showDebug}
-          <div class="debug">
-            <label><input type="checkbox" bind:checked={debugPath2d} /> path 2d</label>
-            <label><input type="checkbox" bind:checked={debugPath3d} /> path 3d</label>
-          </div>
-        {/if}
+<nav class="topbar" bind:this={linksEl}>
+  <a
+    href="https://github.com/hucancode"
+    target="_blank"
+    rel="noreferrer"
+    aria-label="GitHub"><RoughIcon svg={Github} /></a
+  >
+  <a href="/resume.pdf" download aria-label="Resume"
+    ><RoughIcon svg={Profile} /></a
+  >
+  <a href="/notes" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
+  <div class="controls" bind:this={controlsEl}>
+    <button
+      class="play"
+      onclick={togglePlay}
+      aria-label={atEnd ? "restart" : playing ? "pause" : "play"}
+    >
+      <RoughIcon svg={atEnd ? Restart : playing ? Pause : Play} />
+    </button>
+    <Timeline {progress} onseek={seek} />
+    {#if showDebug}
+      <div class="debug">
+        <label
+          ><input type="checkbox" bind:checked={debugPath2d} /> path 2d</label
+        >
+        <label
+          ><input type="checkbox" bind:checked={debugPath3d} /> path 3d</label
+        >
       </div>
-    </nav>
+    {/if}
+  </div>
 
-    <!-- empty-state coach marks: one fixed-size popover per icon (top layer),
-         each centered under its own icon so it never drifts or scales. -->
-    {#each ICON_HINTS as h, i}
-      <div class="hints" popover="manual" bind:this={iconHintEls[i]} aria-hidden="true">
-        <svg viewBox="0 0 90 60">
-          <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d={`M${h.lx} ${h.ly - 11} C ${h.lx + h.bend} ${h.ly - 20} ${36 - h.bend} 14 42 6`} />
-            <path d="M42 6 l -4 4 M42 6 l 4 4.5" />
-          </g>
-          <text class="ink" x={h.lx} y={h.ly} text-anchor="middle" transform={`rotate(${h.rot} ${h.lx} ${h.ly})`}>{h.label}</text>
-        </svg>
-      </div>
-    {/each}
-
-    <!-- coach mark for the seek bar -->
-    <div class="hints" popover="manual" bind:this={hints2El} aria-hidden="true">
-      <svg viewBox="0 0 120 60">
-        <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M58 40 C 54 26, 66 16, 60 7.5" />
-          <path d="M60 7.5 l -6 5 M60 7.5 l 5 6.5" />
+  <!-- empty-state coach marks: one fixed-size popover per icon (top layer),
+       each centered under its own icon so it never drifts or scales. -->
+  {#each ICON_HINTS as h, i}
+    <div
+      class="hints"
+      popover="manual"
+      bind:this={iconHintEls[i]}
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 90 60">
+        <g
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d={`M${h.lx} ${h.ly - 11} C ${h.lx + h.bend} ${h.ly - 20} ${36 - h.bend} 14 42 6`}
+          />
+          <path d="M42 6 l -4 4 M42 6 l 4 4.5" />
         </g>
-        <text class="ink" x="60" y="54" text-anchor="middle" transform="rotate(-4 60 44)">Animation!</text>
+        <text
+          class="ink"
+          x={h.lx}
+          y={h.ly}
+          text-anchor="middle"
+          transform={`rotate(${h.rot} ${h.lx} ${h.ly})`}>{h.label}</text
+        >
       </svg>
     </div>
+  {/each}
 
-
+  <!-- coach mark for the seek bar -->
+  <div class="hints" popover="manual" bind:this={hints2El} aria-hidden="true">
+    <svg viewBox="0 0 120 60">
+      <g
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M58 40 C 54 26, 66 16, 60 7.5" />
+        <path d="M60 7.5 l -6 5 M60 7.5 l 5 6.5" />
+      </g>
+      <text
+        class="ink"
+        x="60"
+        y="54"
+        text-anchor="middle"
+        transform="rotate(-4 60 44)">Animation!</text
+      >
+    </svg>
   </div>
-</header>
+</nav>
 
 <div class="track" style:height={`calc(100vh + ${SCROLL_LEN}px)`}>
   <div class="stage">
@@ -191,7 +239,12 @@
   </div>
 </div>
 
-<button class="scroll-hint" class:show={progress < 0.02} onclick={() => (playing = true)} aria-label="play">
+<button
+  class="scroll-hint"
+  class:show={progress < 0.02}
+  onclick={() => (playing = true)}
+  aria-label="play"
+>
   <RoughIcon svg={ChevronDown} />
 </button>
 
@@ -200,31 +253,26 @@
 </footer>
 
 <style>
-  @font-face {
-    font-family: "Virgil";
-    src: url("/fonts/Virgil.woff2") format("woff2");
-    font-display: swap;
-  }
-  :global(body:has(.stage)) {
-    background: var(--paper);
-  }
+  /* single <nav> top bar: full-width fixed, content clamped to 1100px and
+     centered via side padding (overrides the global <nav> max-width/justify). */
   .topbar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 10;
-    padding: 0.4rem 0.9rem;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--paper) 92%, transparent), transparent);
-    backdrop-filter: blur(2px);
-  }
-  .bar {
-    position: relative;
-    max-width: 1100px;
-    margin: 0 auto;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: flex-start;
+    gap: 1.6rem; /* room for the coach-mark labels under each icon */
+    max-width: none;
+    padding: 0.4rem max(0.9rem, calc((100vw - 1100px) / 2));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--paper) 92%, transparent),
+      transparent
+    );
+    backdrop-filter: blur(2px);
   }
   .hints {
     margin: 0;
@@ -260,14 +308,7 @@
     font-size: 17px;
     fill: currentColor;
   }
-  .links {
-    flex: none; /* cluster tight on the left, don't stretch */
-    display: flex;
-    align-items: center;
-    justify-content: start;
-    gap: 1.6rem; /* room for the coach-mark labels under each icon */
-  }
-  .links a {
+  .topbar > a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -282,7 +323,7 @@
     align-items: center;
     gap: 0.5rem;
   }
-  .links :global(svg) {
+  .topbar > a :global(svg) {
     width: 100%;
     height: 100%;
     fill: currentColor;
@@ -300,7 +341,9 @@
     color: var(--ink);
     opacity: 0.9;
   }
-  .play:hover { opacity: 1; }
+  .play:hover {
+    opacity: 1;
+  }
   .play :global(svg) {
     width: 2.2rem;
     height: 2.2rem;
@@ -331,7 +374,11 @@
     text-align: center;
     padding: 1.5rem;
     pointer-events: none; /* let drags reach the canvas; re-enable on the link */
-    background: linear-gradient(0deg, color-mix(in srgb, var(--paper) 85%, transparent), transparent);
+    background: linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--paper) 85%, transparent),
+      transparent
+    );
     opacity: 0; /* only visible once scrolled to the bottom */
     transition: opacity 0.4s ease;
   }
@@ -342,7 +389,7 @@
     pointer-events: auto; /* re-enable clicks once the footer is visible */
   }
   footer a {
-    font-family: 'Virgil';
+    font-family: "Virgil";
     text-decoration: underline wavy;
     text-underline-offset: 4px;
     color: var(--link);
@@ -377,10 +424,17 @@
     height: 2.5rem;
   }
   @keyframes hint-bounce {
-    0%, 100% { translate: -50% -50%; }
-    50% { translate: -50% calc(-50% + 10px); }
+    0%,
+    100% {
+      translate: -50% -50%;
+    }
+    50% {
+      translate: -50% calc(-50% + 10px);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    .scroll-hint.show { animation: none; }
+    .scroll-hint.show {
+      animation: none;
+    }
   }
 </style>
