@@ -245,7 +245,7 @@
   onclick={() => (playing = true)}
   aria-label="play"
 >
-  <RoughIcon svg={ChevronDown} />
+  {@html ChevronDown}
 </button>
 
 <footer class:show={progress >= 1}>
@@ -430,6 +430,11 @@
     }
     50% {
       translate: -50% calc(-50% + 10px);
+    }
+  }
+  @media (max-width: 600px) {
+    .topbar {
+      gap: 1rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {
