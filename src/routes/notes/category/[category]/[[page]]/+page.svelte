@@ -16,7 +16,7 @@
 </svelte:head>
 <div>
   <small>Category</small>
-  <h1 rainbow>
+  <h1>
     {data.category}
   </h1>
 </div>

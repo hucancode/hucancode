@@ -3,11 +3,11 @@
 
 <nav>
   <div>
-    <a href="/notes">
-      <h2 rainbow>Notes</h2>
-    </a>
     <a href="/">
-      <h2 rainbow>About</h2>
+      <h2>Home</h2>
+    </a>
+    <a href="/notes">
+      <h2>Notes</h2>
     </a>
   </div>
 </nav>
