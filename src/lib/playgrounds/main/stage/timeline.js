@@ -10,11 +10,11 @@
 // its dependencies are explicit, never reached out of module scope):
 //   name        unique id
 //   at|after    start (see above)
-//   duration?   omit / Infinity -> PERSISTENT (keeps updating, ignored by endTime)
+//   duration?   omit / Infinity -> PERSISTENT (keeps updating)
 //   branches?   { name: localTime }, localTime = number OR () => number. A
-//               function branch is resolved at reset() time, so a block can hang
-//               off a point only known after the scene is built WITHOUT the parent
-//               being patched after construction.
+//               function branch is resolved when the timeline is built, so a block
+//               can hang off a point only known after the scene is assembled
+//               WITHOUT the parent being patched after construction.
 //   outputs?    [ctx field names this block writes]. createCtx() unions these so
 //               the shared ctx is assembled FROM the blocks. defaults(ctx) still
 //               sets the resting VALUES.
@@ -109,34 +109,5 @@ export function makeTimeline(blocks) {
     lastFrameT = t;
   }
 
-  // Reset on (re)load: drop active state + seek history so the next frame
-  // re-runs setup for whatever is active at that time. ALSO rebuild the start
-  // cache, re-resolving function branches: when a timeline is reused across a
-  // re-init whose derived branch points changed, dependent blocks would
-  // otherwise keep firing at the stale resolved time.
-  function reset() {
-    active.clear(); lastFrameT = null;
-    startCache.clear();
-    for (const b of blocks) startOf(b);
-  }
-
-  const startTimeOf = (name) => startCache.get(name);
-  const durationOf = (name) => {
-    const b = byName.get(name);
-    return b ? b.duration : undefined;
-  };
-  const branchAbs = (name, branch) => startCache.get(name) + branchLocal(byName.get(name), branch);
-  function endTime() {
-    let max = 0;
-    for (const b of blocks) {
-      if (b.duration == null || !isFinite(b.duration)) continue; // skip persistent
-      max = Math.max(max, startCache.get(b.name) + b.duration);
-    }
-    return max;
-  }
-
-  return { frame, createCtx, reset, startTimeOf, durationOf, branchAbs, endTime };
+  return { frame, createCtx };
 }
-
-// framework alias: a "stage" is a timeline of blocks.
-export const makeStage = makeTimeline;
