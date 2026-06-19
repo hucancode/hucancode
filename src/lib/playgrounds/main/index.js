@@ -30,7 +30,7 @@ import { orbitPivots, clampExitPivot, relaxTurns, buildSpline, buildOpenSpline }
 import { makeTimeline, createCameraTrack } from "./stage/index.js";
 import {
   GLYPH_RADIUS, GRID, GRID_MINOR_DIV, SPLASH_SPREAD, SPLASH_AMOUNT,
-  ENSO_R, ENSO_WIDTH, BODY_LEN, HEAD_SIZE, D3, D3_GIRTH, SP3,
+  ENSO_R, ENSO_HEAD_R, ENSO_WIDTH, BODY_LEN, HEAD_SIZE, D3, D3_GIRTH, SP3,
   GROW_DUR, ENTRY_GROW_MIN, ENTRY_SIZE_MIN,
   LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, LOOP3_LOBES, LOOP3_LOBE_DEPTH,
   MAX_EXIT_TURN, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, RELAX_ITERS,
@@ -143,7 +143,7 @@ export function initScene() {
   const descentLenTarget = CRUISE_SP * descentDur * CHAIN_LEN_FRAC;
   const descent = buildDescent(
     rng, { x: 0, y: flyinEndY }, flyinEndHeading, ensoTop, ensoTopHeading,
-    flyinEndY - (ensoCenter.y + ENSO_R), descentLenTarget,
+    flyinEndY - (ensoCenter.y + ENSO_HEAD_R), descentLenTarget,
   );
 
   // B5 roam2: a flower of tangent circles centred on the enso station; the camera
@@ -210,7 +210,7 @@ const _frame = {
   grid: { opacity: 0, reveal: 0, revealMinor: 0, viewProj: null, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
   glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS, stationY: 0 },
   splash: { alpha: 0, grow: 0, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: 0, stationY: 0 },
-  enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0, laps: 1, stationY: 0 },
+  enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0, stationY: 0 },
   inkDragon: {
     body: null,
     head: { pos: { x: 0, y: 0 }, dir: { x: 0, y: 1 }, size: HEAD_SIZE, alpha: 1 },
@@ -254,7 +254,7 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
 
   const en = _frame.enso;
   en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = 0; en.time = t;
-  en.laps = ENSO_REVS; en.stationY = ensoCenter.y;
+  en.stationY = ensoCenter.y;
 
   const ink = _frame.inkDragon;
   ink.body = bodyCtrl.body;

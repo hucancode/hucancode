@@ -12,8 +12,7 @@ out vec4 fragColor;
 
 uniform vec2  uResolution;
 uniform float uRadius;     // ring radius (world units; world quad spans y[-1,1])
-uniform float uSweep;      // 0..1 fraction of the (uLaps-long) stroke drawn (head leads this)
-uniform float uLaps;       // number of revolutions traced (e.g. 1.5 -> exit at the bottom)
+uniform float uSweep;      // 0..1 fraction of the stroke drawn (head leads this)
 uniform float uAngleStart; // ring start angle (polar atan2(x,y) convention)
 uniform float uLineWidth;  // brush thickness (polar line width)
 uniform float uClock;      // scene time -> slow bristle drift
@@ -26,14 +25,27 @@ const float PI2 = 6.28318531;
 const bool  CLOCKWISE = true;
 uniform vec3 uInkColor;
 
-const float uWobble      = 1.0;
-const float uStrands     = 5.0;
-const float uWidthEnd    = 0.0; // tapers to a thin tail at the sweep end
-const float uWidthOffset = 0.92;
-const float uWidthRange  = 1.4;
-const float uWidthAnchor = 0.5;
-const float uInkFlow     = 1.5;
-const float uWaterFlow   = 0.7;
+const float uWobble      = 0.5;
+const float uStrands     = 2.5;
+const float uWidthEnd    = 0.15; // tapers to a thin tail at the sweep end
+const float uWidthOffset = 0.55;
+const float uWidthRange  = 1.5;
+const float uWidthAnchor = 1.0;
+const float uInkFlow     = 2.0;
+const float uWaterFlow   = 0.5;
+
+// Per-layer brush settings — base constants get scaled into 3 of these.
+// bleed: watery soft wash, fades at the ends. wet: mid body. dry: rich dark core.
+struct Brush {
+    float inkFlow;
+    float waterFlow;
+    float strands;
+    float lineWidth;
+    float fadeEnds;   // >0.5 = smooth fade to 0 at head & tail (no frayed bristles)
+    float bleed;      // >0.5 = soft paper-bleed edge; else hard edge
+    float taper;      // scales head->tail ink fade (1 = full, lower = more uniform)
+    float stepOffset; // added to uWidthOffset (per-layer width-step shift)
+};
 
 vec2 hash(vec2 p) {
     p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -58,13 +70,13 @@ float smoothf(float x) { return x * x * x * (x * (x * 6.0 - 15.0) + 10.0); }
 
 // Coverage (alpha) of the brush stroke at a point in line-space; mirrors the
 // reference colorBrushStroke but returns alpha instead of compositing onto a bg.
-float strokeAlpha(vec2 uvLine, vec2 paperUV, vec2 lineSize, float sdGeometry) {
-    float posInLineY = uvLine.y / max(lineSize.y, 1e-6);
-    float inkFlow = max(uInkFlow, 0.05);
+float strokeAlpha(vec2 uvLine, vec2 paperUV, vec2 lineSize, float sdGeometry, Brush b) {
+    float posInLineY = (uvLine.y / max(lineSize.y, 1e-6)) * b.taper;
+    float inkFlow = max(b.inkFlow, 0.05);
     float taperEq = mix(1.5, 14.0, smoothstep(0.2, 3.0, inkFlow));
     if (posInLineY > 0.0) posInLineY = pow(posInLineY, taperEq);
 
-    float strandsLocal = max(uStrands, 0.05);
+    float strandsLocal = max(b.strands, 0.05);
     float strokeBoundary = dtoa(sdGeometry, 300.0);
     float tFine   = noise01(uvLine * vec2(min(uResolution.y, uResolution.x) * 0.10 * strandsLocal, 1.0));
     float tMed    = noise01(uvLine * vec2(34.0 * strandsLocal, 1.0));
@@ -72,7 +84,7 @@ float strokeAlpha(vec2 uvLine, vec2 paperUV, vec2 lineSize, float sdGeometry) {
     float bristleField = (tFine * 0.12 + tMed * 0.30 + tCoarse * 0.58) * strokeBoundary;
     bristleField = max(0.008, bristleField);
 
-    float water = clamp(uWaterFlow, 0.0, 1.0);
+    float water = clamp(b.waterFlow, 0.0, 1.0);
     float texClamped = clamp(bristleField, 0.0, 1.0);
     float lo = mix(0.28, 0.02, water);
     float hi = mix(0.78, 0.38, water);
@@ -83,7 +95,8 @@ float strokeAlpha(vec2 uvLine, vec2 paperUV, vec2 lineSize, float sdGeometry) {
     strokeAlpha = smoothf(strokeAlpha);
 
     float paperBleedAmt = 60.0 + (rand(paperUV.yy) * 30.0) + (rand(paperUV.xx) * 30.0);
-    return clamp(strokeAlpha * dtoa(sdGeometry, paperBleedAmt), 0.0, 1.0);
+    float edge = (b.bleed > 0.5) ? dtoa(sdGeometry, paperBleedAmt) : dtoa(sdGeometry, 300.0);
+    return clamp(strokeAlpha * edge, 0.0, 1.0);
 }
 
 vec3 deformLine(vec2 uvLine, float lineLength) {
@@ -99,7 +112,8 @@ vec3 deformLine(vec2 uvLine, float lineLength) {
     return vec3(h, centerOff);
 }
 
-float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float strokeLen, float lineWidth) {
+float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float strokeLen, Brush b) {
+    float lineWidth = b.lineWidth;
     float along = uv.x;
     float perp  = uv.y;
     vec2 uvLine = vec2(perp, along);
@@ -107,7 +121,8 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float s
     float tAlong = clamp(along / max(strokeLen, 1e-6), 0.0, 1.0);
     float halfRange = max(uWidthRange, 1e-3) * 0.5;
     // Upper edge pinned to 1.0 so taper always completes at the stroke end.
-    float widthCurve = smoothstep(uWidthOffset - halfRange, 1.0, tAlong);
+    float wOff = uWidthOffset + b.stepOffset;
+    float widthCurve = smoothstep(wOff - halfRange, wOff + halfRange, tAlong);
     float lineWidth1 = lineWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
 
     vec3 hu = deformLine(uvLine, lineLength);
@@ -119,7 +134,25 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float s
     float bodyCenter = centerOff + anchorS * 0.5 * (lineWidth - lineWidth1);
     float d_body = abs(perp - bodyCenter) - bodyHalfW;
 
-    float base = strokeAlpha(huUV, paperUV, vec2(lineWidth1, max(strokeLen, 1e-6)), d_body);
+    float base = strokeAlpha(huUV, paperUV, vec2(lineWidth1, max(strokeLen, 1e-6)), d_body, b);
+    float alongClamped = clamp(along, 0.0, lineLength);
+
+    if (b.fadeEnds > 0.5) {
+        // cap solid core so the bleed reads as a light wash — halo below the cap
+        // is untouched, only the would-be-black core greys down.
+        base = min(base, 0.45);
+        float t = clamp(alongClamped / max(strokeLen, 1e-6), 0.0, 1.0);
+        // tail: smooth opacity fade
+        base *= (1.0 - smoothstep(0.82, 1.0, t));
+        // head: jagged cut — edge position varies per perp column (1D noise),
+        // torn/ragged boundary instead of a soft fade.
+        float jag = noise01(vec2(huUV.x * 14.0, 0.0)) * 0.7
+                  + noise01(vec2(huUV.x * 34.0, 7.0)) * 0.3;
+        float edgePos = jag * 0.22;
+        base *= smoothstep(edgePos, edgePos + 0.015, t);
+        return base;
+    }
+
     // Cap fadeLen so start/end fade zones never overlap (prevents crushing at small sweep).
     float fadeLen = min(lineWidth * 5.0, strokeLen * 0.45);
     // Per-group bristle taper: lower frequency -> bigger clumps of strands that
@@ -131,8 +164,6 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float s
     float tailVar = tn1 * 0.65 + tn2 * 0.35;
     // min ratio 0.40 (was 0.15) -> each bristle has ample fade room, no fine clipping
     float tailLen = max(fadeLen * mix(0.40, 1.0, tailVar), 1e-5);
-    // Clamp to [0, lineLength] so bristles never extend outside polar phase range.
-    float alongClamped = clamp(along, 0.0, lineLength);
     float startFade = smoothstep(0.0, tailLen, alongClamped);
     float hn1 = noise01(vec2(bristleT * 11.0, 8.33));
     float hn2 = noise01(vec2(bristleT * 27.3, 13.7));
@@ -140,6 +171,14 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float s
     float headLen = fadeLen * mix(0.15, 1.0, headVar);
     float endFade  = smoothstep(strokeLen, max(strokeLen - headLen, 0.0), alongClamped);
     return base * startFade * endFade;
+}
+
+// Coverage of one brush at this fragment (single lap).
+float layerAlpha(vec2 uv, float r, float phase, float lineLength, float strokeLen, Brush b) {
+    float along = phase * uRadius;
+    if (along > lineLength) return 0.0;
+    vec2 suv = vec2(along, r - uRadius);
+    return drawStroke(suv, uv, uRadius, lineLength, strokeLen, b);
 }
 
 void main() {
@@ -151,19 +190,37 @@ void main() {
     if (CLOCKWISE) a = -a;
     float phase = mod(a, PI2);
 
-    // multi-lap enso: the stroke is uLaps revolutions long; each fragment at polar
-    // angle `phase` may be covered on lap 0, 1, ... — take the most-covered.
-    float laps = max(uLaps, 1.0);
-    float lineLength = uRadius * PI2 * laps;
+    // single-lap enso: the stroke spans one revolution; uSweep grows the drawn
+    // fraction (the head leads the front).
+    float lineLength = uRadius * PI2;
     float strokeLen = lineLength * clamp(uSweep, 0.0, 1.0);
-    int nLaps = int(ceil(laps - 1e-4));
-    float alpha = 0.0;
-    for (int k = 0; k < 3; k++) {
-        if (k >= nLaps) break;
-        float along = (phase + float(k) * PI2) * uRadius;
-        if (along > lineLength) continue;
-        vec2 suv = vec2(along, r - uRadius);
-        alpha = max(alpha, drawStroke(suv, uv, uRadius, lineLength, strokeLen, uLineWidth));
-    }
+
+    // 3 stacked passes, wide-light to narrow-dark.
+    Brush bleed = Brush(uInkFlow * 0.4,
+                        clamp(uWaterFlow * 1.3 + 0.2, 0.0, 1.0),
+                        uStrands * 1.6,
+                        uLineWidth * 1.0,
+                        1.0, 1.0, 1.0, 0.35);
+    Brush wet = Brush(uInkFlow * 0.7,
+                      uWaterFlow * 0.7,
+                      uStrands * 0.7,
+                      uLineWidth * 0.8,
+                      0.0, 0.0, 1.0, 0.2);
+    Brush dry = Brush(uInkFlow * 2.8,
+                      uWaterFlow * 0.2,
+                      uStrands * 0.5,
+                      uLineWidth * 0.4,
+                      0.0, 0.0, 1.0, 0.0);
+
+    // bleed wash fades in across the early sweep
+    float aBleed = layerAlpha(uv, r, phase, lineLength, strokeLen, bleed)
+                 * smoothstep(0.1, 0.5, uSweep);
+    float aWet = layerAlpha(uv, r, phase, lineLength, strokeLen, wet);
+    float aDry = layerAlpha(uv, r, phase, lineLength, strokeLen, dry);
+
+    // over-composite (same ink colour): bleed under, wet, dry on top
+    float alpha = aBleed;
+    alpha = alpha + aWet * (1.0 - alpha);
+    alpha = alpha + aDry * (1.0 - alpha);
     fragColor = vec4(uInkColor, alpha);
 }

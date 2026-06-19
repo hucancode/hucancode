@@ -6,7 +6,7 @@
 import { TAU, clamp } from "$lib/math/scalar.js";
 import { arcLengthCurve } from "$lib/math/curve.js";
 import {
-  ENSO_R, BODY_LEN, SP3, ENSO_DUR, ENSO_REVS,
+  ENSO_R, ENSO_HEAD_R, BODY_LEN, SP3, ENSO_DUR, ENSO_REVS,
   FRAME_SMALL_R, FRAME_MEDIUM_N, FRAME_MEDIUM_R, FRAME_INNER_AXIS,
   FRAME_BRANCH_P, FRAME_MIN_LEN, FRAME_MAX_STEPS, FRAME_SAMPLES, FRAME_TAN_EPS,
   CHAIN_R, CHAIN_TURN, CHAIN_DOWN_BIAS, CHAIN_LATERAL, CHAIN_DESCEND,
@@ -40,7 +40,8 @@ export const ensoA0 = Math.PI / 2;
 export function ensoPos(frac, center) {
   const cx = center ? center.x : 0, cy = center ? center.y : 0;
   const a = ensoA0 + frac * TAU; // counter-clockwise (increasing angle)
-  return { x: cx + ENSO_R * Math.cos(a), y: cy + ENSO_R * Math.sin(a) };
+  // head traces ENSO_HEAD_R (just outside the brush) for clearance over the stroke
+  return { x: cx + ENSO_HEAD_R * Math.cos(a), y: cy + ENSO_HEAD_R * Math.sin(a) };
 }
 
 // Corridor roam: a STRING of externally-tangent circles whose CENTRES stay near
@@ -181,7 +182,9 @@ export function buildDescent(rng, entry, heading, ensoTop, ensoTopHeading, drop,
 // centre distance equals ri+rj, internal when it equals |ri-rj|.
 function buildFrame(center) {
   const ox = center ? center.x : 0, oy = center ? center.y : 0;
-  const R = ENSO_R;
+  // grand circle = the head clearance radius (just outside the painted brush), so
+  // every frame circle tangent to it keeps a gap from the actual enso stroke.
+  const R = ENSO_HEAD_R;
   const circles = [{ cx: ox, cy: oy, r: R }]; // 0: the enso (grand circle)
 
   // vesica pair: two equal circles tangent at the centre, each internally tangent

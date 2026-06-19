@@ -227,7 +227,7 @@ export function makeWebGLRenderer(canvas) {
 
     U.glyph = uniforms(gl, progs.glyph, ["uResolution", "uBaseRadius", "uTime", "uNSeg", "uSegTex", "uInkColor"]);
     U.splash = uniforms(gl, progs.splash, ["uResolution", "uGrow", "uSpread", "uAmount", "uClock", "uInkDark", "uInkLight"]);
-    U.enso = uniforms(gl, progs.enso, ["uResolution", "uRadius", "uSweep", "uLaps", "uAngleStart", "uLineWidth", "uClock", "uInkColor"]);
+    U.enso = uniforms(gl, progs.enso, ["uResolution", "uRadius", "uSweep", "uAngleStart", "uLineWidth", "uClock", "uInkColor"]);
     U.composite = uniforms(gl, progs.composite, ["uTex", "uOpacity", "uAspect", "uZ", "uStationY", "uViewProj"]);
     U.stroke = uniforms(gl, progs.stroke, [
       "uAspect", "uCamY", "uInkFlow", "uStrands", "uWaterFlow", "uWobble", "uOpacity",
@@ -551,7 +551,6 @@ export function makeWebGLRenderer(canvas) {
     gl.uniform2f(U.enso.uResolution, t.w, t.h);
     gl.uniform1f(U.enso.uRadius, state.enso.radius);
     gl.uniform1f(U.enso.uSweep, state.enso.sweep);
-    gl.uniform1f(U.enso.uLaps, state.enso.laps || 1);
     gl.uniform1f(U.enso.uAngleStart, state.enso.angleStart);
     gl.uniform1f(U.enso.uLineWidth, state.enso.lineWidth);
     gl.uniform1f(U.enso.uClock, state.enso.time);
