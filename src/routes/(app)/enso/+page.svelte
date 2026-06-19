@@ -7,7 +7,7 @@
   <title>Ensō</title>
 </svelte:head>
 
-<a class="back" href="/playgrounds">{@html Return} Playgrounds</a>
+<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
 <main>
   <Scene />
 </main>

@@ -45,10 +45,10 @@
   <title>Rubik</title>
 </svelte:head>
 
-<a class="back" href="/playgrounds">{@html Return} Playgrounds</a>
+<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
 
 <main>
-  <figure>
+  <section>
     {#if version === "webgl"}
       {#key size}
         <Scene bind:this={scene} {size} />
@@ -56,7 +56,7 @@
     {:else}
       <div class="rust">
         {#if error}
-          <p class="fallback">Live render failed — here is a recording instead.</p>
+          <p>Live render failed — here is a recording instead.</p>
           <video autoplay loop muted playsinline>
             <source src="/assets/video/rubik-rust.webm" type="video/webm" />
           </video>
@@ -64,7 +64,7 @@
         <canvas bind:this={rustCanvas}></canvas>
       </div>
     {/if}
-  </figure>
+  </section>
 
   <aside>
     <fieldset>
@@ -110,20 +110,3 @@
     {/if}
   </aside>
 </main>
-
-<style>
-  .rust {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    gap: 1rem;
-    overflow: hidden;
-  }
-  .rust canvas { outline: none; width: 100%; height: 100%; }
-  .fallback { text-align: center; font-style: italic; }
-  video { width: 100%; height: auto; }
-</style>

@@ -21,12 +21,12 @@
   <title>Lego</title>
 </svelte:head>
 
-<a class="back" href="/playgrounds">{@html Return} Playgrounds</a>
+<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
 
 <main>
-  <figure>
+  <section>
     <Scene bind:this={scene} />
-  </figure>
+  </section>
 
   <aside>
     <fieldset>

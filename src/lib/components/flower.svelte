@@ -43,13 +43,26 @@
   $effect(() => {
     if (!ready) return;
     setConfig({
-      petals, layers, length, width, tipSharp, tipNotch, baseBias,
-      layerScale, layerTwist, swirl,
-      inkFlow, waterFlow,
+      petals,
+      layers,
+      length,
+      width,
+      tipSharp,
+      tipNotch,
+      baseBias,
+      layerScale,
+      layerTwist,
+      swirl,
+      inkFlow,
+      waterFlow,
     });
   });
-  $effect(() => { if (ready) setInkColor(hexToRgba(inkHex)); });
-  $effect(() => { if (ready) setBgColor(hexToRgba(bgHex)); });
+  $effect(() => {
+    if (ready) setInkColor(hexToRgba(inkHex));
+  });
+  $effect(() => {
+    if (ready) setBgColor(hexToRgba(bgHex));
+  });
 
   function loop() {
     frameID = requestAnimationFrame(loop);
@@ -77,119 +90,126 @@
   });
 </script>
 
-<div class="flower-demo">
-  <div class="stage">
-    <canvas bind:this={canvasEl}></canvas>
-  </div>
-  <div class="controls">
-    <fieldset>
-      <legend>bloom</legend>
-      <label>
-        <span>Petals</span>
-        <input type="range" min="3" max="12" step="1" bind:value={petals} />
-        <output>{petals}</output>
-      </label>
-      <label>
-        <span>Layers</span>
-        <input type="range" min="1" max="5" step="1" bind:value={layers} />
-        <output>{layers}</output>
-      </label>
-      <label>
-        <span>Length</span>
-        <input type="range" min="0.3" max="1.1" step="0.001" bind:value={length} />
-        <output>{length.toFixed(3)}</output>
-      </label>
-      <label>
-        <span>Width</span>
-        <input type="range" min="0.05" max="0.7" step="0.001" bind:value={width} />
-        <output>{width.toFixed(3)}</output>
-      </label>
-    </fieldset>
+<section>
+  <canvas bind:this={canvasEl}></canvas>
+</section>
+<aside>
+  <fieldset>
+    <legend>bloom</legend>
+    <label>
+      <span>Petals</span>
+      <input type="range" min="3" max="12" step="1" bind:value={petals} />
+      <output>{petals}</output>
+    </label>
+    <label>
+      <span>Layers</span>
+      <input type="range" min="1" max="5" step="1" bind:value={layers} />
+      <output>{layers}</output>
+    </label>
+    <label>
+      <span>Length</span>
+      <input
+        type="range"
+        min="0.3"
+        max="1.1"
+        step="0.001"
+        bind:value={length}
+      />
+      <output>{length.toFixed(3)}</output>
+    </label>
+    <label>
+      <span>Width</span>
+      <input
+        type="range"
+        min="0.05"
+        max="0.7"
+        step="0.001"
+        bind:value={width}
+      />
+      <output>{width.toFixed(3)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>petal shape</legend>
-      <label>
-        <span>Tip taper</span>
-        <input type="range" min="0.3" max="3" step="0.01" bind:value={tipSharp} />
-        <output>{tipSharp.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Tip notch</span>
-        <input type="range" min="0" max="0.5" step="0.01" bind:value={tipNotch} />
-        <output>{tipNotch.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Belly bias</span>
-        <input type="range" min="0.2" max="2" step="0.01" bind:value={baseBias} />
-        <output>{baseBias.toFixed(2)}</output>
-      </label>
-    </fieldset>
+  <fieldset>
+    <legend>petal shape</legend>
+    <label>
+      <span>Tip taper</span>
+      <input type="range" min="0.3" max="3" step="0.01" bind:value={tipSharp} />
+      <output>{tipSharp.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Tip notch</span>
+      <input type="range" min="0" max="0.5" step="0.01" bind:value={tipNotch} />
+      <output>{tipNotch.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Belly bias</span>
+      <input type="range" min="0.2" max="2" step="0.01" bind:value={baseBias} />
+      <output>{baseBias.toFixed(2)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>arrangement</legend>
-      <label>
-        <span>Layer scale</span>
-        <input type="range" min="0.4" max="1" step="0.01" bind:value={layerScale} />
-        <output>{layerScale.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Layer twist</span>
-        <input type="range" min="-1" max="1" step="0.01" bind:value={layerTwist} />
-        <output>{layerTwist.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Swirl</span>
-        <input type="range" min="-1.5" max="1.5" step="0.01" bind:value={swirl} />
-        <output>{swirl.toFixed(2)}</output>
-      </label>
-    </fieldset>
+  <fieldset>
+    <legend>arrangement</legend>
+    <label>
+      <span>Layer scale</span>
+      <input
+        type="range"
+        min="0.4"
+        max="1"
+        step="0.01"
+        bind:value={layerScale}
+      />
+      <output>{layerScale.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Layer twist</span>
+      <input
+        type="range"
+        min="-1"
+        max="1"
+        step="0.01"
+        bind:value={layerTwist}
+      />
+      <output>{layerTwist.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Swirl</span>
+      <input type="range" min="-1.5" max="1.5" step="0.01" bind:value={swirl} />
+      <output>{swirl.toFixed(2)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>brush</legend>
-      <label>
-        <span>Ink Flow</span>
-        <input type="range" min="0.2" max="3" step="0.01" bind:value={inkFlow} />
-        <output>{inkFlow.toFixed(2)}</output>
-      </label>
-      <label>
-        <span>Water Flow</span>
-        <input type="range" min="0" max="1" step="0.01" bind:value={waterFlow} />
-        <output>{waterFlow.toFixed(2)}</output>
-      </label>
-    </fieldset>
+  <fieldset>
+    <legend>brush</legend>
+    <label>
+      <span>Ink Flow</span>
+      <input type="range" min="0.2" max="3" step="0.01" bind:value={inkFlow} />
+      <output>{inkFlow.toFixed(2)}</output>
+    </label>
+    <label>
+      <span>Water Flow</span>
+      <input type="range" min="0" max="1" step="0.01" bind:value={waterFlow} />
+      <output>{waterFlow.toFixed(2)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>color</legend>
-      <label class="color">
-        <span>Petal</span>
-        <input type="color" bind:value={inkHex} />
-      </label>
-      <label class="color">
-        <span>Paper</span>
-        <input type="color" bind:value={bgHex} />
-      </label>
-    </fieldset>
-  </div>
-</div>
+  <fieldset>
+    <legend>color</legend>
+    <label class="color">
+      <span>Petal</span>
+      <input type="color" bind:value={inkHex} />
+    </label>
+    <label class="color">
+      <span>Paper</span>
+      <input type="color" bind:value={bgHex} />
+    </label>
+  </fieldset>
+</aside>
 
 <style>
-  .flower-demo {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  @media(min-width: 768px) {
-    .flower-demo {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-    .stage { flex: 1 1 auto; min-width: 0; }
-    .controls { flex: 0 0 18rem; }
-  }
-  .stage {
-    position: relative;
-    width: 100%;
+  /* layout (main > section / aside) + fieldset/label styling come from global app.css */
+  section {
     max-width: 640px;
     aspect-ratio: 1 / 1;
   }
@@ -201,35 +221,7 @@
     touch-action: none;
     display: block;
   }
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-  }
-  label {
-    display: grid;
-    grid-template-columns: 6rem 1fr 3rem;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-  }
-  label.color { grid-template-columns: 6rem 1fr; }
-  input[type="range"] { width: 100%; }
-  fieldset {
-    border: 1px solid rgba(128,128,128,0.3);
-    border-radius: 0.35rem;
-    padding: 0.5rem 0.75rem 0.6rem;
-    margin: 0;
-    display: grid;
-    gap: 0.4rem;
-  }
-  legend {
-    padding: 0 0.4rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.7;
+  label.color {
+    grid-template-columns: 6rem 1fr;
   }
 </style>

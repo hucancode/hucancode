@@ -51,6 +51,11 @@
 
 <style>
   section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 1024px;
     padding: 2rem;
     margin-bottom: 3rem;
     background: color-mix(in srgb, var(--ink) 5%, var(--paper));
