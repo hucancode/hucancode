@@ -105,14 +105,9 @@ export const config = {
         // Extract content from children - handle various node types
         let content = '';
         if (node.children && Array.isArray(node.children)) {
-          // For inline math, content is directly in the text node
-          const firstChild = node.children[0];
-          if (firstChild && firstChild.type === 'text' && firstChild.attributes?.content) {
-            content = firstChild.attributes.content;
-          } else {
-            // For block math, need to traverse deeper
-            content = extractTextFromNode(node.children);
-          }
+          // Traverse all children so multi-line blocks (e.g. \begin{aligned})
+          // keep every row, not just the first text node.
+          content = extractTextFromNode(node.children);
         }
         
         function extractTextFromNode(children) {
