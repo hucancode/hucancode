@@ -13,6 +13,7 @@
   import ChevronDown from "$icons/google-material/chevron-down.svg?raw";
   import { onMount } from "svelte";
   import { stamp } from "$lib/engine/profile.js";
+  import { trackMilestone } from "$lib/ga.js";
 
   stamp("+page.svelte script init (hydration)");
   onMount(() => stamp("+page.svelte onMount (DOM ready)"));
@@ -49,6 +50,8 @@
 
   const progress = $derived(Math.min(1, t / TIMELINE_END));
   const atEnd = $derived(t >= TIMELINE_END);
+
+  $effect(() => trackMilestone(progress));
 
   function scrollTo(px) {
     const y = Math.round(px);
