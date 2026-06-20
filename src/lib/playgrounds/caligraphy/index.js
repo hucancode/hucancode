@@ -1,8 +1,8 @@
 import { createDevice } from "$lib/engine/index.js";
-import FRAG from "$lib/brush/shaders/caligraphy-playground.frag.glsl?raw";
-import WGSL from "$lib/brush/shaders/caligraphy-playground.wgsl?raw";
-import VERT from "$lib/brush/shaders/caligraphy-playground.vert.glsl?raw";
-import { bakeSegs } from "./bake";
+import FRAG from "./shaders/caligraphy-playground.frag.glsl?raw";
+import WGSL from "./shaders/caligraphy-playground.wgsl?raw";
+import VERT from "./shaders/caligraphy-playground.vert.glsl?raw";
+import { bakeSegs } from "$lib/brush/bake";
 
 const TEXELS_PER_SEG = 5;
 

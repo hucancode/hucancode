@@ -19,7 +19,7 @@
   import { longSymbol, longMaxId } from "$lib/brush/long";
   import { fuSymbol, fuMaxId } from "$lib/brush/fu";
   import { bakeGLSL } from "$lib/brush/bake";
-  import { makeRenderer } from "$lib/brush/render";
+  import { makeRenderer } from "$lib/playgrounds/caligraphy";
 
   // World coords: x in [-aspect,+aspect], y in [-1,+1], origin centred.
   // view: { zoom, panX, panY } applied as pScreen = view((p - pan) * zoom).
