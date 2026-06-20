@@ -5,13 +5,13 @@
 
 <nav>
   <a href="/notes"
-    ><h2 rainbow>
+    ><h2>
       {@html GoBack}
       Notes
     </h2></a
   >
   <a target="_blank" rel="noreferrer" href="https://buymeacoffee.com/hucancode"
-    ><h2 rainbow="0">
+    ><h2>
       Buy me a coffee
       {@html BuyMeACoffee}
     </h2></a

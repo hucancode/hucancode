@@ -1,7 +1,4 @@
-// Column-major 4x4 matrices, allocation-free: every op writes into a caller-owned
-// `out` Float32Array(16) so hot per-frame code can reuse scratch buffers instead
-// of allocating a matrix per call. `multiply` is safe when out aliases a or b.
-
+// Column-major 4x4 matrices, allocation-free: every op writes caller-owned `out`.
 export const create = () => new Float32Array(16);
 
 export function identity(out) {
@@ -10,8 +7,7 @@ export function identity(out) {
   return out;
 }
 
-// out = a * b (column-major). Caches both a and b into locals first, so out may
-// safely alias a, b, or both.
+// out = a * b (out may alias a, b, or both)
 export function multiply(out, a, b) {
   const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
   const a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
@@ -69,7 +65,7 @@ export function copy(out, a) {
   return out;
 }
 
-// compose T * R(euler XYZ) * S from position / euler / scale objects ({x,y,z})
+// compose T * R(euler XYZ) * S
 export function compose(out, pos, euler, scale) {
   const cx = Math.cos(euler.x), sx = Math.sin(euler.x);
   const cy = Math.cos(euler.y), sy = Math.sin(euler.y);
@@ -84,7 +80,7 @@ export function compose(out, pos, euler, scale) {
   return out;
 }
 
-// decompose a TRS matrix into pos / euler(XYZ) / scale (inverse of compose)
+// decompose TRS matrix into pos / euler(XYZ) / scale. inverse of compose
 export function decompose(m, pos, euler, scale) {
   let sx = Math.hypot(m[0], m[1], m[2]);
   const sy = Math.hypot(m[4], m[5], m[6]);
@@ -143,7 +139,7 @@ export function invert(out, a) {
   return out;
 }
 
-// normal matrix = transpose(inverse(a)), packed into a mat4 (upper-left 3x3 used)
+// normal matrix = transpose(inverse(a)), packed into mat4 (upper-left 3x3 used)
 export function normalFromMat4(out, a) {
   invert(out, a);
   const swap = (i, j) => { const t = out[i]; out[i] = out[j]; out[j] = t; };
@@ -153,7 +149,7 @@ export function normalFromMat4(out, a) {
   return out;
 }
 
-// orientation matrix whose -Z faces from eye toward target (object "look at")
+// orientation matrix whose -Z faces from eye toward target (object look-at)
 export function targetTo(out, eye, target, up) {
   let zx = eye.x - target.x, zy = eye.y - target.y, zz = eye.z - target.z;
   let zl = Math.hypot(zx, zy, zz) || 1;
@@ -169,7 +165,7 @@ export function targetTo(out, eye, target, up) {
   return out;
 }
 
-// view matrix = inverse of the targetTo orientation (transpose R, move eye)
+// view matrix = inverse of targetTo orientation (transpose R, move eye)
 export function lookAt(out, eye, target, up) {
   targetTo(out, eye, target, up);
   const xx = out[0], xy = out[1], xz = out[2];

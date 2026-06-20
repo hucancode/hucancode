@@ -1,16 +1,3 @@
-// Sumi-e ink flowers seated at the CENTRES of the circles the 2D dragon's path is
-// built from (the descent chain + the roam2 rosette). The dragon rides the circle
-// RIMS, so a flower "is entered" the moment the head reaches its circle's arc; from
-// then it opens from a tight bud to a full bloom over FLOWER_BLOOM_DUR.
-//
-// Scrub-safe by construction: the earliest scene time the head reaches each circle
-// (tEnter) is precomputed ONCE by sampling the head path; per-frame bloom is then a
-// pure function of t — smooth((t - tEnter) / dur) — so scrubbing/reversing the
-// timeline replays the blooms exactly with no integration or history.
-//
-// writeState() fills a reused FrameState sub-object (no per-frame allocation): a
-// flat list of { x, y, r, bloom, seed } the renderer draws as world-space quads.
-
 import { clamp, smooth } from "$lib/math/scalar.js";
 import {
   FLOWER_ENTER_BAND, FLOWER_BLOOM_DUR, FLOWER_SAMPLE_DT, FLOWER_FILL,
@@ -28,11 +15,11 @@ const [OPA_MIN, OPA_MAX] = FLOWER_OPACITY_JITTER;
 
 export function createFlowers({ headPath, timing, circles }) {
   const t0 = timing.flyinStart;
-  const t1 = timing.loop3Start; // the 2D head stops advancing at loop3Start (parks at a=1)
+  const t1 = timing.loop3Start; // 2D head stops advancing at loop3Start (parks at a=1)
 
-  // precompute tEnter per circle: earliest sample time the head is within
-  // r*(1+band) of the centre (on or inside the rim). One forward sweep; each circle
-  // records its first hit. Circles the head never reaches are dropped (no flower).
+  // precompute tEnter per circle: earliest sample time head within r*(1+band) of
+  // centre (on or inside rim). one forward sweep; each circle records first hit.
+  // circles head never reaches dropped (no flower).
   const pending = circles
     .map((c, i) => ({ x: c.x, y: c.y, r: c.r || 0, i }))
     .filter((c) => c.r > 0);
@@ -47,7 +34,7 @@ export function createFlowers({ headPath, timing, circles }) {
       if (dx * dx + dy * dy <= trig * trig) {
         found.add(c.i);
         const seed = hashSeed(c.i);
-        // independent hash for size so size jitter isn't correlated with petals/twist
+        // independent hash for size so size jitter not correlated with petals/twist
         const sizeRand = hashSeed(c.i * 7 + 13);
         const jitter = SIZE_MIN + (SIZE_MAX - SIZE_MIN) * sizeRand;
         items.push({
@@ -55,14 +42,14 @@ export function createFlowers({ headPath, timing, circles }) {
           r: c.r * FLOWER_FILL * jitter,
           tEnter: t,
           seed,
-          opacity: 1, // set below from absolute size (small opaque, big translucent)
+          opacity: 1, // set below from absolute size
           bloom: 0,
         });
       }
     }
   }
-  // opacity by ABSOLUTE size — small flowers read solid, big ones translucent.
-  // normalize r across all flowers, then map [smallest..biggest] -> [OPA_MAX..OPA_MIN].
+  // opacity by absolute size: small flowers solid, big translucent. normalize r
+  // across all flowers, then map [smallest..biggest] -> [OPA_MAX..OPA_MIN].
   let rMin = Infinity, rMax = -Infinity;
   for (const f of items) { if (f.r < rMin) rMin = f.r; if (f.r > rMax) rMax = f.r; }
   const rSpan = Math.max(rMax - rMin, 1e-6);
@@ -71,10 +58,6 @@ export function createFlowers({ headPath, timing, circles }) {
     f.opacity = OPA_MAX + (OPA_MIN - OPA_MAX) * sizeT;
   }
 
-  // bloom in path order (outer descent flowers first) so the renderer's draw order
-  // reads naturally; items already pushed in first-hit (== time) order.
-
-  // Reused output: { items, count }. bloom is refreshed in place each frame.
   const out = { items, count: items.length };
 
   function writeState(t) {

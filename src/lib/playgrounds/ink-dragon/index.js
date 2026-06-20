@@ -1,19 +1,14 @@
-// Ink dragon — standalone WebGL2 (no three.js). A 2D sumi-e dragon: a paper
-// background, a procedural ribbon body stroke, two verlet whiskers sampled from
-// a curve texture, and an SDF head plane. The engine only transports data and
-// draws; all curve/physics/transform logic lives here in the scene.
-//
-// Layering (back to front): paper (opaque) → body → whiskers → head, all alpha
-// blended over the paper in framebuffer space. The orthographic camera is
-// identity, so world coords map straight to clip (x divided by aspect).
-
-import { makeContext, Geometry, DataTexture, mat4, planeGeometry } from "$lib/engine/index.js";
+import { createDevice, mat4, planeGeometry } from "$lib/engine/index.js";
 import BASIC_VERT from "./shaders/basic.vert.glsl?raw";
 import POLYLINE_VERT from "./shaders/stroke-polyline.vert.glsl?raw";
 import STROKE_FRAG from "./shaders/stroke.frag.glsl?raw";
 import PAPER_FRAG from "./shaders/paper-background.frag.glsl?raw";
 import WATERDROP_FRAGMENT_SHADER from "./shaders/waterdrop.frag.glsl?raw";
 import DRAGON_HEAD_FRAGMENT_SHADER from "./shaders/dragon-head.frag.glsl?raw";
+import PAPER_WGSL from "./shaders/paper.wgsl?raw";
+import STROKE_WGSL from "./shaders/stroke.wgsl?raw";
+import WATERDROP_WGSL from "./shaders/waterdrop.wgsl?raw";
+import HEAD_WGSL from "./shaders/dragon-head.wgsl?raw";
 import {
   makePolylineStroke,
   updatePolylineStroke,
@@ -31,15 +26,24 @@ const HEAD_PLANE_H = 1.6;
 
 const brushColor = [0.05, 0.05, 0.05, 0.95];
 
-let canvas, gl, ctx;
-let pPaper, pBody, pWhisker, pHead;
-let paperQuad, whiskerQuad, headQuad;
+const F32 = (name) => ({ name, type: "f32" });
+const VEC4 = (name) => ({ name, type: "vec4" });
+const MAT4 = (name) => ({ name, type: "mat4" });
+
+const BUF_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
+const BUF_UV = { stride: 8, step: "vertex", attributes: [{ name: "uv", location: 1, format: "float32x2", offset: 0 }] };
+const BUF_STROKE_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
+const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };
+
+let canvas, device, disposed = false;
+let pPaper, pBody, pBodyWire, pWhisker, pHead;
+let quadPosBuf, quadUVBuf, headPosBuf, headUVBuf;
+let bodyPosBuf, bodyUVBuf, bodyIdxBuf, bodyIdxCount = 0;
 let bodyStroke = null;
 let whiskerStrokes = [null, null];
 let aspect = 1;
 let bodyWireframe = false;
 
-// head transform (world-space TRS, aspect-corrected to clip)
 const IDENTITY = mat4.identity(mat4.create());
 const headMatrix = mat4.identity(mat4.create());
 const headTRS = mat4.create();
@@ -54,11 +58,9 @@ const headState = {
 };
 let headVisible = true;
 
-// ---------------- whisker stroke (curve-texture sampled SDF) ----------------
-
 function makeWhiskerStroke({ maxPoints, params }) {
   const data = new Float32Array(maxPoints * 4);
-  const tex = new DataTexture(data, maxPoints, 1); // RGBA32F / NEAREST defaults
+  const tex = device.texture({ width: maxPoints, height: 1, format: "rgba32f", filter: "nearest", data });
   return {
     tex, data, maxPoints,
     lastPts: null,
@@ -79,7 +81,7 @@ function makeWhiskerStroke({ maxPoints, params }) {
   };
 }
 
-// Cubic-bezier control points per segment using neighbor tangents.
+// cubic-bezier control points per segment from neighbor tangents
 function buildBezierSegments(pts) {
   const n = pts.length;
   const segs = [];
@@ -113,8 +115,6 @@ function sampleBezier(seg, t) {
   };
 }
 
-// Smooth a control polyline into a denser sample array. perSegment > 1
-// bezier-smooths; perSegment <= 1 returns the raw control points.
 function smoothChain(controlPoints, perSegment, maxPoints) {
   if (controlPoints.length < 2) return [];
   if (perSegment <= 1) {
@@ -138,7 +138,6 @@ function smoothChain(controlPoints, perSegment, maxPoints) {
   return pts;
 }
 
-// Push a (possibly smoothed) chain into a whisker stroke's curve texture.
 function writeWhisker(stroke, controlPoints, perSegment) {
   const { data, tex, params, maxPoints } = stroke;
   const pts = smoothChain(controlPoints, perSegment, maxPoints);
@@ -165,7 +164,7 @@ function writeWhisker(stroke, controlPoints, perSegment) {
     const o = i * 4;
     data[o + 0] = data[o + 1] = data[o + 2] = data[o + 3] = 0;
   }
-  tex.needsUpdate = true;
+  tex.write(data, maxPoints, 1);
   params.curveLen = pts.length;
   params.curveTotalLen = Math.max(acc, 1e-6);
   stroke.lastPts = pts;
@@ -184,20 +183,68 @@ function updateHeadTransform() {
   mat4.multiply(headMatrix, headAspectInv, headTRS);
 }
 
-export function init(canvasEl) {
+function quadBuffer(geom, name) {
+  return device.buffer({ kind: "vertex", data: geom.attributes[name].array });
+}
+
+export async function init(canvasEl) {
   canvas = canvasEl;
-  ctx = makeContext(canvas, { alpha: false });
-  gl = ctx.gl;
-  resize(canvas.clientWidth, canvas.clientHeight);
+  disposed = false;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+  canvas.height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+  device = await createDevice(canvas);
+  if (disposed) { device.destroy(); device = null; return; }
+  device.resize(canvas.width, canvas.height);
+  aspect = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
 
-  pPaper = ctx.program(BASIC_VERT, PAPER_FRAG);
-  pBody = ctx.program(POLYLINE_VERT, STROKE_FRAG);
-  pWhisker = ctx.program(BASIC_VERT, WATERDROP_FRAGMENT_SHADER);
-  pHead = ctx.program(BASIC_VERT, DRAGON_HEAD_FRAGMENT_SHADER);
+  pPaper = device.shader({
+    glsl: { vertex: BASIC_VERT, fragment: PAPER_FRAG }, wgsl: PAPER_WGSL,
+    buffers: [BUF_POS, BUF_UV],
+    uniforms: [MAT4("uModel"), F32("uAspect"), VEC4("uBgColor")],
+    blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+  });
+  const strokeUniforms = [
+    F32("uAspect"), F32("uInkFlow"), F32("uStrands"), F32("uWaterFlow"), F32("uOpacity"),
+    F32("uWobble"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"),
+    F32("uPerpClearance"), F32("uArcClearance"), VEC4("uBrushColor"),
+  ];
+  pBody = device.shader({
+    glsl: { vertex: POLYLINE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
+    buffers: [BUF_STROKE_POS, BUF_STROKE_UV],
+    uniforms: strokeUniforms,
+    blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+  });
+  pBodyWire = device.shader({
+    glsl: { vertex: POLYLINE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
+    buffers: [BUF_STROKE_POS, BUF_STROKE_UV],
+    uniforms: strokeUniforms,
+    blend: "straight", topology: "line-strip", target: "screen", sampleCount: 4,
+  });
+  pWhisker = device.shader({
+    glsl: { vertex: BASIC_VERT, fragment: WATERDROP_FRAGMENT_SHADER }, wgsl: WATERDROP_WGSL,
+    buffers: [BUF_POS, BUF_UV],
+    uniforms: [
+      MAT4("uModel"), F32("uAspect"), F32("curveLen"), F32("curveTotalLen"), F32("curveTexWidth"),
+      F32("uOffset"), F32("uArcLength"), F32("uLineWidth"), F32("uInkFlow"), F32("uOpacity"),
+      F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), VEC4("uBrushColor"), VEC4("uBgColor"),
+    ],
+    textures: [{ name: "curveTex", binding: 1 }],
+    blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+  });
+  pHead = device.shader({
+    glsl: { vertex: BASIC_VERT, fragment: DRAGON_HEAD_FRAGMENT_SHADER }, wgsl: HEAD_WGSL,
+    buffers: [BUF_POS, BUF_UV],
+    uniforms: [MAT4("uModel"), VEC4("uBrushColor")],
+    blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+  });
 
-  paperQuad = planeGeometry(2, 2);
-  whiskerQuad = planeGeometry(2, 2);
-  headQuad = planeGeometry(HEAD_PLANE_W, HEAD_PLANE_H);
+  const paperQuad = planeGeometry(2, 2);
+  const headQuad = planeGeometry(HEAD_PLANE_W, HEAD_PLANE_H);
+  quadPosBuf = quadBuffer(paperQuad, "position");
+  quadUVBuf = quadBuffer(paperQuad, "uv");
+  headPosBuf = quadBuffer(headQuad, "position");
+  headUVBuf = quadBuffer(headQuad, "uv");
 
   bodyStroke = makePolylineStroke({
     maxPoints: BODY_MAX_POINTS,
@@ -210,6 +257,10 @@ export function init(canvasEl) {
     },
     brushColor,
   });
+  bodyPosBuf = device.buffer({ kind: "vertex", size: 0, dynamic: true });
+  bodyUVBuf = device.buffer({ kind: "vertex", size: 0, dynamic: true });
+  bodyIdxBuf = device.buffer({ kind: "index", size: 0, dynamic: true });
+  bodyIdxBuf.write(bodyStroke.geom.index.array);
 
   for (let i = 0; i < 2; i++) {
     whiskerStrokes[i] = makeWhiskerStroke({
@@ -228,78 +279,55 @@ export function init(canvasEl) {
 }
 
 export function resize(w, h) {
-  if (!ctx) return;
+  if (!device) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  ctx.resize(w, h, dpr);
+  const cw = Math.max(1, Math.floor(w * dpr)), ch = Math.max(1, Math.floor(h * dpr));
+  canvas.width = cw; canvas.height = ch;
+  device.resize(cw, ch);
   aspect = h > 0 ? w / h : 1;
   updateHeadTransform();
 }
 
 export function render() {
-  if (!gl) return;
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.disable(gl.DEPTH_TEST);
-  gl.clearColor(PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
+  if (!device) return;
 
-  // paper background — opaque fill
-  gl.disable(gl.BLEND);
-  pPaper.use().set("uModel", IDENTITY).set("uAspect", aspect).set("uBgColor", PAPER_COLOR);
-  pPaper.draw(paperQuad);
+  device.beginFrame();
+  device.pass({ target: "screen", clear: [PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0] }, (p) => {
+    p.draw(pPaper, { buffers: [quadPosBuf, quadUVBuf], count: 6, uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR } });
 
-  // strokes + head — straight-alpha over the paper
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    if (bodyStroke && bodyStroke.n >= 2 && bodyIdxCount > 0) {
+      const bp = bodyStroke.params;
+      const prog = bodyWireframe ? pBodyWire : pBody;
+      p.draw(prog, {
+        buffers: [bodyPosBuf, bodyUVBuf], index: bodyIdxBuf, count: bodyIdxCount,
+        uniforms: {
+          uAspect: aspect, uInkFlow: bp.uInkFlow, uStrands: bp.uStrands, uWaterFlow: bp.uWaterFlow,
+          uOpacity: bp.uOpacity, uWobble: bp.uWobble, uWidthEnd: bp.uWidthEnd, uWidthOffset: bp.uWidthOffset,
+          uWidthRange: bp.uWidthRange, uWidthAnchor: bp.uWidthAnchor, uPerpClearance: bp.uPerpClearance,
+          uArcClearance: bp.uArcClearance, uBrushColor: bodyStroke.brushColor,
+        },
+      });
+    }
 
-  // body ribbon
-  if (bodyStroke && bodyStroke.n >= 2) {
-    const bp = bodyStroke.params;
-    pBody.use()
-      .set("uAspect", aspect)
-      .set("uInkFlow", bp.uInkFlow)
-      .set("uStrands", bp.uStrands)
-      .set("uWaterFlow", bp.uWaterFlow)
-      .set("uOpacity", bp.uOpacity)
-      .set("uWobble", bp.uWobble)
-      .set("uWidthEnd", bp.uWidthEnd)
-      .set("uWidthOffset", bp.uWidthOffset)
-      .set("uWidthRange", bp.uWidthRange)
-      .set("uWidthAnchor", bp.uWidthAnchor)
-      .set("uPerpClearance", bp.uPerpClearance)
-      .set("uArcClearance", bp.uArcClearance)
-      .set("uBrushColor", bodyStroke.brushColor);
-    pBody.draw(bodyStroke.geom, bodyWireframe ? gl.LINE_STRIP : gl.TRIANGLES);
-  }
+    for (const s of whiskerStrokes) {
+      if (!s || s.params.curveLen < 2) continue;
+      const wp = s.params;
+      p.draw(pWhisker, {
+        buffers: [quadPosBuf, quadUVBuf], count: 6, textures: { curveTex: s.tex },
+        uniforms: {
+          uModel: IDENTITY, uAspect: aspect, curveLen: wp.curveLen, curveTotalLen: wp.curveTotalLen,
+          curveTexWidth: wp.curveTexWidth, uOffset: wp.uOffset, uArcLength: wp.uArcLength,
+          uLineWidth: wp.uLineWidth, uInkFlow: wp.uInkFlow, uOpacity: wp.uOpacity, uWidthEnd: wp.uWidthEnd,
+          uWidthOffset: wp.uWidthOffset, uWidthRange: wp.uWidthRange, uBrushColor: brushColor, uBgColor: s.bgColor,
+        },
+      });
+    }
 
-  // whiskers
-  for (const s of whiskerStrokes) {
-    if (!s || s.params.curveLen < 2) continue;
-    const wp = s.params;
-    pWhisker.use()
-      .set("uModel", IDENTITY)
-      .set("uAspect", aspect)
-      .set("curveTex", s.tex)
-      .set("curveLen", wp.curveLen)
-      .set("curveTotalLen", wp.curveTotalLen)
-      .set("curveTexWidth", wp.curveTexWidth)
-      .set("uOffset", wp.uOffset)
-      .set("uArcLength", wp.uArcLength)
-      .set("uLineWidth", wp.uLineWidth)
-      .set("uInkFlow", wp.uInkFlow)
-      .set("uOpacity", wp.uOpacity)
-      .set("uWidthEnd", wp.uWidthEnd)
-      .set("uWidthOffset", wp.uWidthOffset)
-      .set("uWidthRange", wp.uWidthRange)
-      .set("uBrushColor", brushColor)
-      .set("uBgColor", s.bgColor);
-    pWhisker.draw(whiskerQuad);
-  }
-
-  // head plane
-  if (headVisible) {
-    pHead.use().set("uModel", headMatrix).set("uBrushColor", brushColor);
-    pHead.draw(headQuad);
-  }
+    if (headVisible) {
+      p.draw(pHead, { buffers: [headPosBuf, headUVBuf], count: 6, uniforms: { uModel: headMatrix, uBrushColor: brushColor } });
+    }
+  });
+  device.endFrame();
 }
 
 export function setWidth(v) {
@@ -318,16 +346,21 @@ export function setWidthRange(v)  { if (bodyStroke) bodyStroke.params.uWidthRang
 
 export function setControlPoints(points) {
   if (!bodyStroke) return;
-  // One quad per body segment - trust the verlet chain as the render polyline,
-  // miter joints in the ribbon keep it visually continuous.
   updatePolylineStroke(bodyStroke, points);
+  if (bodyStroke.n >= 2 && device) {
+    bodyPosBuf.write(bodyStroke.positions);
+    bodyUVBuf.write(bodyStroke.lineUVs);
+    bodyIdxCount = bodyStroke.geom.drawRange ? bodyStroke.geom.drawRange.count : 0;
+  } else {
+    bodyIdxCount = 0;
+  }
 }
 
 export function setWhisker(slot, points) {
   const s = whiskerStrokes[slot];
   if (!s) return;
-  // Caller passes anchor → free-tip. Stroke convention: arc=0 = thick end.
-  // Reverse so anchor (at dragon head) sits at arc=0 → renders thick.
+  // caller passes anchor -> free-tip. stroke convention: arc=0 = thick end.
+  // reverse so anchor (at dragon head) sits at arc=0 -> renders thick
   writeWhisker(s, points.slice().reverse(), WHISKER_SAMPLES_PER_SEGMENT);
 }
 
@@ -347,15 +380,16 @@ export function setHead(pos, dir, size, show) {
 }
 
 export function destroy() {
-  if (pPaper) pPaper.dispose();
-  if (pBody) pBody.dispose();
-  if (pWhisker) pWhisker.dispose();
-  if (pHead) pHead.dispose();
-  pPaper = pBody = pWhisker = pHead = null;
+  disposed = true;
+  quadPosBuf?.destroy(); quadUVBuf?.destroy(); headPosBuf?.destroy(); headUVBuf?.destroy();
+  bodyPosBuf?.destroy(); bodyUVBuf?.destroy(); bodyIdxBuf?.destroy();
+  for (const s of whiskerStrokes) s?.tex?.destroy();
+  quadPosBuf = quadUVBuf = headPosBuf = headUVBuf = null;
+  bodyPosBuf = bodyUVBuf = bodyIdxBuf = null;
+  pPaper = pBody = pBodyWire = pWhisker = pHead = null;
   bodyStroke = null;
   whiskerStrokes = [null, null];
-  gl = null;
-  ctx = null;
+  if (device) { device.destroy(); device = null; }
 }
 
 export function screenToWorld(x, y, w, h) {
@@ -380,11 +414,6 @@ export function worldToScreen(p, w, h) {
   const v = (p.y + 1) * 0.5;
   return { x: u * w, y: (1 - v) * h };
 }
-
-// ============================================================================
-// Chain physics - body + two verlet whiskers. State lives here; the svelte
-// component reads parameters in and reads back overlay snapshots out.
-// ============================================================================
 
 const WHISKER_ANCHOR_X = 0.5;
 const WHISKER_ANCHOR_Y = 0.08;

@@ -1,20 +1,7 @@
 #version 300 es
 precision highp float;
 
-// Procedural black grid with fog, on the x/y ground plane. Premultiplied alpha
-// (blendFunc ONE,1-SRC). Line shape is measured in SCREEN-SPACE pixels (distance
-// to nearest line via fwidth), so:
-//   - core: a crisp black line, constant width at any distance. No glow.
-//   - fade: cells that go sub-pixel-dense with distance thin out + dim.
-//   - fog: planar distance from scene centre.
-//   - camFade: view-space depth -> reacts to the perspective orbit camera.
-//   - reveal: a radial wipe-in from the origin, so the grid grows out as a disc
-//     rather than fading the whole quad uniformly.
-//
-// TWO grids overlaid: MAJOR (spacing uStep, thicker, full strength) and MINOR
-// (spacing uStep/uMinorDiv, thinner, dimmer). Each has its own radial reveal
-// (uReveal for major, uRevealMinor for minor) so the minor grid wipes in LAGGING
-// behind the major one.
+// Line shape is measured in screen-space pixels (distance to nearest line via fwidth); two grids overlaid (major + dimmer minor) with independent radial reveal.
 
 in vec2 vXY;
 in float vDepth;

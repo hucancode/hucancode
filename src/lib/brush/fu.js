@@ -1,4 +1,3 @@
-// "福" (fu) - fortune, cursive (草書)
 const FU = {
   symbol: {
     strokes: [

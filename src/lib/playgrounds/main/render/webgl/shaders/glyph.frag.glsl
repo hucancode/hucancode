@@ -1,11 +1,6 @@
 #version 300 es
 precision highp float;
 
-// Glyph SDF reveal, INK ONLY. Renders into an offscreen target with a
-// transparent background so the composite pass can fade it with one opacity.
-// Same SDF / pressure / reveal math as the calligraphy playground
-// (st/caligraphy-playground.frag.glsl), minus paper, grid, grain, vignette.
-
 out vec4 fragColor;
 
 uniform vec2  uResolution;

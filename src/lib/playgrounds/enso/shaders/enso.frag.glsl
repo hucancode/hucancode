@@ -1,15 +1,11 @@
 #version 300 es
 precision highp float;
 
-// Ensō — a single sumi-e brush circle rendered procedurally in polar space.
-// Ported from the Shadertoy original: the stroke is an SDF in (along, perp)
-// coordinates, with bristle noise, ink-flow taper and paper bleed. POLAR maps
-// the straight-line stroke around a ring; flip it off to debug in cartesian.
-
+// POLAR maps the straight-line stroke around a ring; off = cartesian (debug).
 const float PI2 = 6.28318531;
 const bool  POLAR = true;
 
-in vec2 vUV;            // 0..1 across the canvas
+in vec2 vUV;
 out vec4 fragColor;
 
 uniform vec2  uResolution;
@@ -29,7 +25,7 @@ uniform vec4  uBgColor;
 uniform float uInkFlow;
 uniform float uWaterFlow;
 uniform float uSweepAmt;
-uniform float uOpacityBleed;   // 0..1 per-layer opacity
+uniform float uOpacityBleed;
 uniform float uOpacityWet;
 uniform float uOpacityDry;
 
@@ -105,16 +101,12 @@ vec3 colorBrushStroke(vec2 uvLine, vec2 paperUV, vec2 lineSize,
     float edge = (b.bleed > 0.5) ? dtoa(sdGeometry, paperBleedAmt) : dtoa(sdGeometry, 300.0);
     float alpha = strokeAlpha * brushColor.a * edge;
     if (b.fadeEnds > 0.5) {
-        // cap the solid core so the bleed reads as a light wash — halo (already
-        // below the cap) is untouched, only the would-be-black core greys down.
         alpha = min(alpha, 0.45);
-        // tail: smooth opacity fade
         alpha *= (1.0 - smoothstep(0.82, 1.0, rawPos));
-        // head: jagged cut — edge position varies per perp column (1D noise),
-        // so the head reads as a torn/ragged boundary, not a soft fade.
+        // head: jagged cut, edge position varies per perp column (1D noise)
         float jag = noise01(vec2(uvLine.x * 14.0, 0.0)) * 0.7
                   + noise01(vec2(uvLine.x * 34.0, 7.0)) * 0.3;
-        float edgePos = jag * 0.22;                       // cut wobbles 0..0.22 along
+        float edgePos = jag * 0.22;
         alpha *= smoothstep(edgePos, edgePos + 0.015, rawPos);
     }
     alpha = clamp(alpha, 0.0, 1.0);
@@ -215,7 +207,6 @@ void main() {
                       uLineWidth * 0.4,
                       0.0, 0.0, 1.0, 0.0);
 
-    // bleed layer fades in across the early sweep
     float bleedSweepGate = smoothstep(0.1, 0.5, uSweepAmt);
     vec4 inkBleed = vec4(uBrushColor.rgb, uBrushColor.a * clamp(uOpacityBleed, 0.0, 1.0) * bleedSweepGate);
     vec4 inkWet   = vec4(uBrushColor.rgb, uBrushColor.a * clamp(uOpacityWet, 0.0, 1.0));

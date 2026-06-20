@@ -55,13 +55,11 @@ export async function fetchAllCategories() {
     ),
   );
 
-  // Flatten all categories and count occurrences
   const categoryCount = {};
   posts.flat().forEach((category) => {
     categoryCount[category] = (categoryCount[category] || 0) + 1;
   });
 
-  // Convert to array and sort by count (descending) then name
   return Object.entries(categoryCount)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));

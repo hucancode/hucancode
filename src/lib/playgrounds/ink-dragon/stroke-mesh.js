@@ -1,19 +1,9 @@
-// Procedural ribbon mesh for the dragon body stroke (engine geometry, no three).
-// Two vertices per ribbon-point, offset by ± miter normal × half the mesh band
-// width. The mesh band is wider than the actual stroke by a clearance margin
-// (perp + arc) so the fragment shader can render ink bleed past the nominal
-// stroke edge. aLineUV carries (perp_t, arc_t) in 0..1.
-//
-// The geometry is indexed + dynamic: positions/aLineUV are rewritten every time
-// the polyline changes and re-uploaded by the engine on the next draw. The scene
-// owns the program and feeds `params`/`brushColor` to the stroke shader.
 import { Geometry } from "$lib/engine/index.js";
 
 const MITER_LIMIT     = 4.0;
 export const PERP_CLEARANCE = 0.35;  // fraction of mesh perp_t reserved per side
 export const ARC_CLEARANCE  = 0.15;  // fraction of mesh arc_t reserved per end
-// Two extra ribbon points (one before tail, one after tip) carry the arc
-// clearance - keep this in mind when sizing buffers.
+// two extra ribbon points (one before tail, one after tip) carry arc clearance
 const ARC_EXTRA_POINTS = 2;
 
 export function makePolylineStroke({ maxPoints, params, brushColor }) {
@@ -47,7 +37,6 @@ export function makePolylineStroke({ maxPoints, params, brushColor }) {
     lineWidth: params.lineWidth,
     lastPts: null,
     brushColor,
-    // plain-value uniforms consumed by the scene's draw call
     params: {
       uInkFlow:       params.inkFlow,
       uStrands:       params.strands,
@@ -78,8 +67,8 @@ export function updatePolylineStroke(stroke, points) {
     return;
   }
 
-  // Extend the ribbon past the polyline tail/tip along the end tangents so
-  // the shader's clearance zone has actual geometry to bleed into.
+  // extend ribbon past polyline tail/tip along end tangents so shader's
+  // clearance zone has geometry to bleed into
   const totalPolyArc = computeTotalArc(points, nPoly);
   const extLen = (ARC_CLEARANCE > 0 && ARC_CLEARANCE < 0.5)
     ? totalPolyArc * ARC_CLEARANCE / (1 - 2 * ARC_CLEARANCE)
@@ -107,7 +96,7 @@ export function updatePolylineStroke(stroke, points) {
   ribbon[nPoly + 1] = extEnd;
   const nRibbon = ribbon.length;
 
-  // halfMeshWidth larger than stroke half-width so perp clearance fits.
+  // halfMeshW larger than stroke half-width so perp clearance fits
   const halfStrokeW = (stroke.lineWidth || 0) * 0.5;
   const halfMeshW = (PERP_CLEARANCE > 0 && PERP_CLEARANCE < 0.5)
     ? halfStrokeW / (1 - 2 * PERP_CLEARANCE)

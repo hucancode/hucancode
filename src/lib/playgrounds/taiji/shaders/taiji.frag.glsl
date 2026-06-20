@@ -9,8 +9,8 @@ precision highp float;
 uniform float alpha;
 uniform vec3 color1;
 uniform vec3 color2;
-uniform float uStroke; // outer border width
-uniform float uDot;    // eye-dot radius
+uniform float uStroke;
+uniform float uDot;
 in vec2 vUV;
 out vec4 fragColor;
 

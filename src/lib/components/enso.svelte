@@ -77,17 +77,21 @@
     render();
   }
 
+  let cancelled = false;
   onMount(() => {
-    init(canvasEl);
-    ready = true;
-    observer = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) {
-        frameID = requestAnimationFrame(loop);
-      } else {
-        cancelAnimationFrame(frameID);
-      }
+    init(canvasEl).then(() => {
+      if (cancelled) return;
+      ready = true;
+      observer = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) {
+          frameID = requestAnimationFrame(loop);
+        } else {
+          cancelAnimationFrame(frameID);
+        }
+      });
+      observer.observe(canvasEl);
     });
-    observer.observe(canvasEl);
+    return () => { cancelled = true; };
   });
 
   onDestroy(() => {

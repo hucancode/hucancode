@@ -1,11 +1,6 @@
 #version 300 es
 precision highp float;
 
-// Ground-plane grid quad. A single quad on the internal x/y GROUND plane (the
-// same plane the glyph / ink dragon are painted on) at z = uZ, spanning +-uExt,
-// pushed through the orbit camera (uViewProj). The fragment shader draws the grid
-// lines procedurally with fog + camera-distance falloff + a radial reveal wipe.
-
 uniform mat4 uViewProj;
 uniform float uExt;
 uniform float uZ;

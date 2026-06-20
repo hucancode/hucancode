@@ -1,17 +1,12 @@
-// Generic spline / path math: Catmull-Rom interpolation, arc-length
-// parameterisation, ring/orbit pivot generation, and pivot-ring turn shaping.
-// Pure + scene-agnostic (only depends on scalar helpers) so it is reusable and
-// unit-testable on its own.
-
 import { TAU, clamp, lerp } from "./scalar.js";
 
-// Catmull-Rom basis through control values p0..p3 at fraction f; component-wise.
+// Catmull-Rom basis through control values p0..p3 at fraction f. component-wise
 export function crComp(p0, p1, p2, p3, f) {
   const f2 = f * f, f3 = f2 * f;
   return 0.5 * (2 * p1 + (-p0 + p2) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f2 + (-p0 + 3 * p1 - 3 * p2 + p3) * f3);
 }
 
-// Catmull-Rom through pivots P (CLOSED). u in pivot-index space; component-wise.
+// Catmull-Rom through pivots P (CLOSED). u in pivot-index space. component-wise
 export function catmullClosed(P, u) {
   const K = P.length;
   const i = ((Math.floor(u) % K) + K) % K;
@@ -24,7 +19,7 @@ export function catmullClosed(P, u) {
   };
 }
 
-// Catmull-Rom through pivots P (OPEN; endpoints clamped). u in [0, K-1].
+// Catmull-Rom through pivots P (OPEN; endpoints clamped). u in [0, K-1]
 export function catmullOpen(P, u) {
   const K = P.length;
   const i = Math.min(Math.max(Math.floor(u), 0), K - 2);
@@ -37,10 +32,8 @@ export function catmullOpen(P, u) {
   };
 }
 
-// Arc-length parameterise a polyline of dense {x,y,z} samples. Returns pos(s) /
-// tan(s) keyed on arc length s, the loop `total`, and arcAt(i) = arc length at
-// dense index i. `closed` wraps s on total (looping path); otherwise s clamps to
-// the ends. The single source of truth for every spline/curve sampler below.
+// Arc-length parameterise polyline of dense {x,y,z} samples. pos(s)/tan(s) keyed
+// on arc length s; closed wraps s on total, else clamps to ends.
 export function arcLengthCurve(dense, closed) {
   const N = dense.length;
   const last = N - 1;
@@ -75,7 +68,7 @@ export function arcLengthCurve(dense, closed) {
   return { pos, tan, total, arcAt };
 }
 
-// Closed Catmull-Rom spline (pos/tan wrap on s), arc-length parameterised.
+// Closed Catmull-Rom spline (pos/tan wrap on s), arc-length parameterised
 export function buildSpline(pivots) {
   const K = pivots.length;
   const M = 2048;
@@ -84,8 +77,8 @@ export function buildSpline(pivots) {
   return arcLengthCurve(dense, true);
 }
 
-// OPEN Catmull-Rom spline through pivots (pos/tan clamp at the ends), arc-length
-// parameterised. arcAtU(u) gives the arc length at pivot-index u (u in [0, K-1]).
+// OPEN Catmull-Rom spline through pivots (pos/tan clamp at ends), arc-length
+// parameterised. arcAtU(u) = arc length at pivot-index u (u in [0, K-1])
 export function buildOpenSpline(pivots) {
   const K = pivots.length;
   const M = 2048;
@@ -97,26 +90,22 @@ export function buildOpenSpline(pivots) {
   return { ...curve, arcAtU };
 }
 
-// Even pivots around a ring, z undulating `waves` full periods per turn (so z
-// returns to 0 at the seam -> a clean closed loop). `phase` sets the start angle.
-// `lobes` adds radial petals: the ring dips inward up to `lobeDepth`·radius,
-// `lobes` times per revolution, so the path winds in/out (a LONGER loop) while
-// its outer bound stays `radius`. lobes integer -> the radius closes at the seam.
-// Deterministic — the dragon's 3D orbit is a definite path, not random.
+// Even pivots around ring; z = zAmp*sin(waves*turn) closes at seam, lobes dip
+// radius inward up to lobeDepth*radius, lobes times per revolution.
 export function orbitPivots(count, radius, zAmp, waves, phase, lobes = 0, lobeDepth = 0) {
   const pts = new Array(count);
   for (let k = 0; k < count; k++) {
     const f = k / count;
     const a = phase + f * TAU;
-    const g = lobes > 0 ? 0.5 + 0.5 * Math.cos(lobes * f * TAU) : 0; // 0 at petal tip, 1 at the inward dip
+    const g = lobes > 0 ? 0.5 + 0.5 * Math.cos(lobes * f * TAU) : 0;
     const r = radius * (1 - lobeDepth * g);
     pts[k] = { x: r * Math.cos(a), y: r * Math.sin(a), z: zAmp * Math.sin(waves * f * TAU) };
   }
   return pts;
 }
 
-// Rotate the first random pivot about the split point so the head's peel-off
-// bearing stays within `maxTurn` of the split heading -> no sharp exit turn.
+// Rotate first pivot about split point so head's peel-off bearing stays within
+// maxTurn of split heading -> no sharp exit turn.
 export function clampExitPivot(pivots, split, maxTurn) {
   const p = pivots[0];
   const vx = p.x - split.x, vy = p.y - split.y;
@@ -129,7 +118,7 @@ export function clampExitPivot(pivots, split, maxTurn) {
   pivots[0] = { x: split.x + r * Math.cos(nb), y: split.y + r * Math.sin(nb), z: p.z };
 }
 
-// Turn angle at pivot i on a closed ring (angle between the incoming/outgoing legs).
+// Turn angle at pivot i on closed ring (angle between incoming/outgoing legs)
 export function turnAngle(P, i) {
   const K = P.length;
   const a = P[(i - 1 + K) % K], b = P[i], c = P[(i + 1) % K];
@@ -140,19 +129,12 @@ export function turnAngle(P, i) {
   return Math.acos(clamp((ux * vx + uy * vy + uz * vz) / (ul * vl), -1, 1));
 }
 
-// Shape a closed pivot ring's turn angles. Each pass, for a movable pivot:
-//   - too straight (< minTurn)       -> push AWAY from neighbours' midpoint (more bend);
-//   - sharp (> maxTurn) AND the Nth   -> pull TOWARD the midpoint (break the run).
-//     consecutive sharp turn
-// A lone sharp turn is allowed; only the Nth sharp-in-a-row (maxRun) gets relaxed,
-// so loops keep some sharp corners without long jagged stretches. In-band pivots
-// and isolated sharp turns are left alone. `movable(i)` pins the anchor pivots so
-// the glyph + branch handoffs stay continuous. Converges (pushing/relaxing both
-// stop once the pivot re-enters its allowed state).
+// Shape closed pivot ring's turn angles: push too-straight pivots away from
+// neighbour midpoint (more bend), pull Nth-consecutive sharp pivots toward it.
 export function relaxTurns(P, minTurn, maxTurn, maxRun, movable, iters) {
   const K = P.length;
   for (let it = 0; it < iters; it++) {
-    let sharpRun = 0; // consecutive sharp turns walking the ring
+    let sharpRun = 0;
     for (let i = 0; i < K; i++) {
       const ang = turnAngle(P, i);
       const sharp = ang > maxTurn;
@@ -160,10 +142,10 @@ export function relaxTurns(P, minTurn, maxTurn, maxRun, movable, iters) {
       if (!movable(i)) continue;
       let w = 0;
       if (sharp) {
-        if (sharpRun < maxRun) continue;        // lone / sub-run sharp turn is fine
-        w = 0.5; sharpRun = 0;                   // Nth in a row -> smooth, break the run
+        if (sharpRun < maxRun) continue;
+        w = 0.5; sharpRun = 0;
       } else if (ang < minTurn) {
-        w = -clamp((minTurn - ang) * 0.6, 0, 0.3); // too straight -> add bend
+        w = -clamp((minTurn - ang) * 0.6, 0, 0.3);
       } else continue;
       const a = P[(i - 1 + K) % K], b = P[i], c = P[(i + 1) % K];
       const mx = (a.x + c.x) * 0.5, my = (a.y + c.y) * 0.5, mz = (a.z + c.z) * 0.5;

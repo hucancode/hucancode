@@ -1,8 +1,6 @@
 #version 300 es
 precision highp float;
 
-// Top-down chinese dragon head silhouette. Port of scenes/shaders/dragon-head.frag.glsl.
-
 uniform vec4 uBrushColor;
 uniform float uOpacity;
 

@@ -19,7 +19,7 @@
   import { longSymbol, longMaxId } from "$lib/brush/long";
   import { fuSymbol, fuMaxId } from "$lib/brush/fu";
   import { bakeGLSL } from "$lib/brush/bake";
-  import { makeGLRenderer } from "$lib/brush/render-gl";
+  import { makeRenderer } from "$lib/playgrounds/caligraphy";
 
   // World coords: x in [-aspect,+aspect], y in [-1,+1], origin centred.
   // view: { zoom, panX, panY } applied as pScreen = view((p - pan) * zoom).
@@ -557,7 +557,7 @@
   function render() {
     if (!canvasEl || stageW <= 0 || stageH <= 0) return;
     syncCanvasSize();
-    if (!glRenderer) glRenderer = makeGLRenderer(canvasEl);
+    if (!glRenderer) return; // device renderer is created async in onMount
     glRenderer.render(symbol, {
       baseRadius,
       view,
@@ -741,8 +741,15 @@
   onMount(() => {
     loadState();
     loadSlots();
-    render();
+    let cancelled = false;
+    syncCanvasSize();
+    makeRenderer(canvasEl).then((r) => {
+      if (cancelled) { r.dispose(); return; }
+      glRenderer = r;
+      render();
+    });
     return () => {
+      cancelled = true;
       glRenderer?.dispose();
       glRenderer = null;
     };

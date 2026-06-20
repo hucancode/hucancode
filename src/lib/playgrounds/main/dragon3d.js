@@ -1,15 +1,10 @@
-// The 3D dragon: frame buffers built on the SAME 2D path (z=0 tail) then loop3, so
-// the mesh overlaps the ink dragon through the crossfade, then flies the orbit
-// forever. createDragon3d owns the two frame buffers and writes the per-frame draw
-// params (which buffer + head offset) into _frame.dragon3d.
-
 import { clamp } from "$lib/math/scalar.js";
 import { D3, BODY_LEN, SP3 } from "./config.js";
 
-// Fill an N*16 column-major frame buffer by sampling `sample(arc)->{p,tg}` at N
-// equal-arc-length steps over [0, total). Each frame is a 3D orthonormal basis
-// from the tangent + world-up (cross(up,T) gives the stable in-plane width normal;
-// fall back to +y only if the tangent runs near-vertical).
+// Fill N*16 column-major frame buffer by sampling sample(arc)->{p,tg} at N
+// equal-arc-length steps over [0, total). Each frame = 3D orthonormal basis from
+// tangent + world-up. cross(up,T) gives stable in-plane width normal; tangent
+// near-vertical -> fall back +y.
 function fillFrames(frames, N, total, sample) {
   for (let i = 0; i < N; i++) {
     const { p, tg } = sample((i / N) * total);
@@ -34,25 +29,24 @@ function fillFrames(frames, N, total, sample) {
 export function createDragon3d({ timing }) {
   let frames = null;     // transition buffer (curvePath roam2 window + loop3), N*16
   let pathLen = 1;
-  let framesLoop = null; // pure loop3 ring (wraps cleanly forever), N*16
+  let framesLoop = null; // pure loop3 ring (wraps mod-N forever), N*16
   let loopLen = 1;
-  let transArc = 0;      // curvePath window length baked into the transition buffer
+  let transArc = 0;      // curvePath window length baked into transition buffer
   let _hs = 0, _branchArc = 0, _transStart = 0, _bodyArc = 0;
 
-  // Build BOTH 3D frame buffers (arc-uniform; the shader maps mesh.x linearly to
-  // frame index, so equal-arc frames keep the dragon a constant length):
-  //   - transition buffer: the roam2 window [transStart, branchArc) of curvePath
-  //     (the exact arc the 2D dragon rides during the crossfade) then loop3.
-  //   - loop buffer: pure loop3 closed ring; wraps mod-N cleanly forever after.
-  // The join at the branch point is tangent-continuous (loop3 leaves it along the
-  // curvePath exit). curvePath.headStart / headEnd mark the roam2 head's arc range.
+  // Build BOTH 3D frame buffers (arc-uniform; shader maps mesh.x linearly to
+  // frame index, so equal-arc frames keep dragon constant length):
+  //   - transition buffer: roam2 window [transStart, branchArc) of curvePath
+  //     (exact arc 2D dragon rides during crossfade) then loop3.
+  //   - loop buffer: pure loop3 closed ring; wraps mod-N forever after.
+  // Join at branch point tangent-continuous (loop3 leaves it along curvePath exit).
   function build(loop3, curvePath) {
     if (!loop3 || !curvePath) return;
     const N = D3.N;
     _bodyArc = BODY_LEN * D3.bodyFactor;
     _hs = curvePath.headStart || 0;
     _branchArc = curvePath.headEnd ?? curvePath.total; // 2D roam2 end == 3D loop start
-    _transStart = Math.max(0, _hs);                    // cover the whole ridden window
+    _transStart = Math.max(0, _hs);                    // cover whole ridden window
     transArc = _branchArc - _transStart;
 
     const total = transArc + loop3.total;
@@ -73,10 +67,10 @@ export function createDragon3d({ timing }) {
     loopLen = loop3.total;
   }
 
-  // The 3D head's curvePath arc as a function of t. Through the crossfade it follows
-  // the EXACT same arc-vs-time law as the 2D roam2 head (constant SP3 from _hs at
-  // ensoExit to _branchArc at loop3Start), so the two dragons share position. After
-  // loop3Start it continues into loop3 at SP3 with no speed jump (same SP3).
+  // 3D head's curvePath arc as fn of t. Through crossfade follows EXACT same
+  // arc-vs-time law as 2D roam2 head (constant SP3 from _hs at ensoExit to
+  // _branchArc at loop3Start) -> two dragons share position. After loop3Start
+  // continues into loop3 at SP3, no speed jump (same SP3).
   function headArcAt(t) {
     const roamDur = timing.loop3Start - timing.ensoExit;
     if (t <= timing.loop3Start) {
@@ -86,9 +80,6 @@ export function createDragon3d({ timing }) {
     return _branchArc + (t - timing.loop3Start) * SP3;
   }
 
-  // Write the per-frame draw params into `d` (= _frame.dragon3d; no alloc). Picks
-  // the buffer (transition window vs pure loop3 ring) + head offset; the shader
-  // wraps mod-N over the whole buffer.
   function writeState(d, t, viewProj) {
     const bodyArc = _bodyArc;
     const headArc = headArcAt(t);
@@ -102,7 +93,7 @@ export function createDragon3d({ timing }) {
       d.headOffset = loopHead - bodyArc;
     }
     d.frameCount = D3.N;
-    d.bodyLen = bodyArc; // mesh head is at x=1 (leads by bodyLen); headOffset accounts for it
+    d.bodyLen = bodyArc; // mesh head at x=1 (leads by bodyLen); headOffset accounts for it
     d.viewProj = viewProj;
     d.time = t;
   }

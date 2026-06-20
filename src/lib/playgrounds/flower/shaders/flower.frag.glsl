@@ -1,11 +1,6 @@
 #version 300 es
 precision highp float;
 
-// Sumi-e ink flower — petals are brush strokes radiating from a core, folded
-// around the center in polar space and stacked in concentric layers for a full
-// bloom. Same ink machinery as ensō: simplex bristle noise, dry-tip ink taper
-// and paper bleed give each petal a wet-brush edge. No mesh, just an SDF field.
-
 const float PI  = 3.14159265;
 const float PI2 = 6.28318531;
 
@@ -55,31 +50,20 @@ float h11(float n)    { return fract(sin(n * 127.1) * 43758.5453); }
 float dtoa(float d, float amount) { return clamp(1.0 / (clamp(d, 1.0/amount, 1.0) * amount), 0.0, 1.0); }
 float smoothf(float x) { return x*x*x*(x*(x*6.0 - 15.0) + 10.0); }
 
-// Lay ink over `inpColor` along a stroke. uvLine = (perp, along), tAlong in
-// 0..1 from base to tip; sd is the signed distance to the petal geometry. The
-// petal is a flat ink wash POSTERIZED into 3 sumi-e tones, then carved by
-// "flying white" (飛白) — smooth dry-brush streaks running ALONG the stroke that
-// let the paper show through near the dry tip and the stroke edges.
+// uvLine = (perp, along), tAlong 0..1 base->tip, sd = signed distance to petal.
 vec3 inkStroke(vec2 uvLine, vec2 paperUV, float tAlong, float sd, vec3 inpColor, vec4 brushColor) {
     float water = clamp(uWaterFlow, 0.0, 1.0);
 
-    // BLEEDING EDGE (滲み) — a JAGGED CONTOUR, not a fuzzy texture. The noise is
-    // anisotropic: it varies fast ALONG the rim (uvLine.y, the petal length) but
-    // slowly ACROSS it, so the boundary tears into a coherent sawtooth instead of
-    // speckle. Displacement amplitude and edge crispness are decoupled — the AA
-    // band stays tight so the displaced contour reads as a sharp torn edge.
-    float bloom = noise01(uvLine * 3.0);                   // where ink floods out (low freq)
+    // jagged contour: noise varies fast along the rim, slow across it
+    float bloom = noise01(uvLine * 3.0);
     float jag   = noise(vec2(uvLine.y * 6.0,  uvLine.x * 2.5)) * 0.6
                 + noise(vec2(uvLine.y * 15.0, uvLine.x * 2.5)) * 0.4;
     float amp   = mix(0.012, 0.05, water) * mix(0.6, 1.8, bloom);
-    float sdb   = sd + jag * amp;                          // jagged contour displacement
+    float sdb   = sd + jag * amp;
     float edgeAA = mix(0.004, 0.012, water);               // crisp edge, independent of amp
     float fill = 1.0 - smoothstep(-edgeAA, edgeAA, sdb);
     if (fill <= 0.0) return inpColor;
 
-    // WETNESS MAP — lotus watercolor: a PALE translucent wash fills the petal
-    // body, ink gathers DARK toward the soft tip and POOLS along the rim
-    // (wet-edge), exactly as a loaded brush dries pulling pigment to the margins.
     float depth    = clamp(-sd / 0.12, 0.0, 1.0);          // 1 deep inside, 0 at rim
     float edgePool = pow(1.0 - depth, 1.4);                // ink banks up at the edge
     float tipDark  = smoothstep(0.2, 1.0, clamp(tAlong, 0.0, 1.0));
@@ -87,13 +71,10 @@ vec3 inkStroke(vec2 uvLine, vec2 paperUV, float tAlong, float sd, vec3 inpColor,
     dens = max(dens, edgePool * 0.8);                      // dark rim rings the petal
     dens = pow(clamp(dens, 0.0, 1.0), 1.0 / max(uInkFlow, 0.1));
 
-    // GRANULATION — the FILL is low frequency: large soft pigment blotches drift
-    // across the wash (the watercolour "blooms"), no fine grain in the body.
     float gran = noise01(uvLine * 2.0) * 0.65 + noise01(uvLine * 4.5) * 0.35;
     dens *= mix(1.0 - 0.3 * water, 1.0 + 0.22 * water, gran);
 
-    // smooth continuous wash (no dry-brush, no hard sumi posterization) — soft
-    // tonal quantize only to suggest layered brush passes
+    // tonal quantize to suggest layered brush passes
     float val = clamp(dens, 0.0, 1.0);
     float val5 = val * 5.0;
     float tone = (floor(val5) + smoothstep(0.25, 0.75, fract(val5))) / 5.0;
@@ -103,9 +84,7 @@ vec3 inkStroke(vec2 uvLine, vec2 paperUV, float tAlong, float sd, vec3 inpColor,
     return mix(inpColor, brushColor.rgb, alpha);
 }
 
-// Signed distance to a ring of petals. Each petal is a dry-brush LEAF STROKE:
-// narrow at the base, swelling, then drawn to a sharp tip. Petals are uniform
-// and evenly spaced — the dry-brush fiber texture supplies the variation.
+// Signed distance to a ring of petals.
 float petalRing(vec2 uv, float petals, float len, float wid, float twist,
                 out vec2 uvLine, out float tAlong) {
     float r = length(uv);
@@ -117,7 +96,6 @@ float petalRing(vec2 uv, float petals, float len, float wid, float twist,
     float idx = floor(fa);                        // which petal
     float local = (fract(fa) - 0.5) * cell;       // angle from this petal's axis
 
-    // uniform petals — evenly spaced, straight, identical size
     float len2 = len;
     float wid2 = wid;
 
@@ -138,9 +116,7 @@ float petalRing(vec2 uv, float petals, float len, float wid, float twist,
     prof = max(prof, smoothstep(0.0, 0.18, t) * (1.0 - smoothstep(0.7, 1.0, t)) * 0.35);
     float halfW = max(wid2 * prof, 1e-4);
 
-    // NOTCHED TIP — carve a central cleft at the apex: shorten the petal length
-    // near the centerline (gaussian dip in x) so the tip folds into a soft V,
-    // like a real lotus petal edge. uTipNotch controls cleft depth.
+    // notched tip: gaussian dip in x shortens length near the centerline -> soft V
     float notchW = wid2 * 0.45 + 1e-4;
     float dip    = max(uTipNotch, 0.0) * len2 * exp(-(x * x) / (notchW * notchW));
     float tipLen = len2 - dip;
@@ -175,13 +151,11 @@ void main() {
 
         vec2 uvLine; float tAlong;
         float sd = petalRing(uv, uPetals, len, wid, twist, uvLine, tAlong);
-        // inner rings a touch darker for depth
         vec4 ink = uInkColor;
         ink.rgb *= mix(1.0, 0.82, fi / float(max(layers - 1, 1)));
         col = inkStroke(uvLine, paperUV, tAlong, sd, col, ink);
     }
 
-    // faint paper grain — smooth, low amplitude
     col.rgb += (noise01(uv * 180.0) - 0.5) * 0.02;
     col.rgb = clamp(col.rgb, vec3(0.0), vec3(1.0));
     fragColor = vec4(col, 1.0);

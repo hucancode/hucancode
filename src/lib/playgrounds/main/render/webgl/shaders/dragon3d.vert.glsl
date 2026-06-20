@@ -1,23 +1,19 @@
 #version 300 es
 precision highp float;
 
-// 3D dragon path-deform vertex shader. Raw-WebGL2 port of
-// flying-dragon/src/material/shader_dragon.wgsl (vs_main). The straight mesh is
-// aligned along +X (x normalised to [0, bodyLen] in path units). x picks a
-// position along the path; two adjacent precomputed frame matrices are sampled
-// and interpolated; y,z carry the body cross-section.
+// Straight mesh is aligned along +X; x picks a position along the path, two adjacent frame matrices are sampled and interpolated, y,z carry the cross-section.
 
 in vec3 aPos;
 in vec3 aNormal;
 
-out vec3 vNormal; // world-space normal (for Phong)
+out vec3 vNormal;
 
 uniform sampler2D uFrames; // RGBA32F, width=4 (mat4 columns), height=N
-uniform float uN;          // frame count
-uniform float uPathLen;    // total path arc length (path units)
+uniform float uN;
+uniform float uPathLen;
 uniform float uBodyLen;    // mesh length in path units (x is normalised [0,1])
 uniform float uHeadOffset; // head position along path (path units), animated
-uniform float uGirth;      // cross-section scale
+uniform float uGirth;
 uniform mat4  uViewProj;
 
 mat4 fetchFrame(int i) {

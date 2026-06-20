@@ -1,4 +1,3 @@
-// "龍" (long) - dragon, cursive (草書)
 const LONG = {
   symbol: {
     strokes: [

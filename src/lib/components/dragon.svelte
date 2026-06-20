@@ -15,15 +15,19 @@
 
   let canvas = $state();
   let frameID = 0;
+  let cancelled = false;
 
   function loop() {
     frameID = requestAnimationFrame(loop);
     render();
   }
 
-  onMount(async () => {
-    await init();
-    loop();
+  onMount(() => {
+    init().then(() => {
+      if (cancelled) return;
+      loop();
+    });
+    return () => { cancelled = true; };
   });
 
   onDestroy(() => {

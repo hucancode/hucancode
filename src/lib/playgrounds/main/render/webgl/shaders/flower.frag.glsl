@@ -1,27 +1,20 @@
 #version 300 es
 precision highp float;
 
-// Bloom flower for /paint — a sumi-e ink flower seated at a path-circle centre.
-// Same petal SDF + dry-brush ink machinery as the standalone /flower showcase, but
-// instead of an opaque paper background it outputs PREMULTIPLIED ink coverage so it
-// composites over the live scene. Every petal knob is driven by uBloom (0 = tight
-// bud, 1 = full bloom): rings fade in one by one, petals lengthen + widen, the
-// whole flower un-curls. uSeed gives each flower its own petal count / twist / size.
-
 const float PI  = 3.14159265;
 const float PI2 = 6.28318531;
 
 in vec2 vLocal;            // quad-local, -1..1 (flower fills the unit disc)
 out vec4 fragColor;
 
-uniform float uBloom;      // 0..1 bud -> full bloom
-uniform float uSeed;       // per-flower 0..1 (petal count / twist / size jitter)
-uniform float uAlpha;      // global flower-layer opacity
+in float vBloom;           // 0..1 bud -> full bloom (per-instance)
+in float vSeed;            // per-flower 0..1 (petal count / twist / size jitter)
+in float vAlpha;           // per-flower layer opacity
 uniform float uPetals;     // base petals per ring
 uniform float uLayers;     // max concentric rings at full bloom
 uniform vec3  uInkColor;
 
-// --- ink noise (Dave Hoskins hash + simplex), shared with the standalone -----
+// ink noise (Dave Hoskins hash + simplex)
 vec2 hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
     p3 += dot(p3, p3.yzx + 33.33);
@@ -43,19 +36,18 @@ float noise(in vec2 p) {
 }
 float noise01(vec2 p) { return clamp((noise(p) + 0.5) * 0.5, 0.0, 1.0); }
 
-// petal knobs, resolved from bloom — recomputed once per fragment (cheap)
 struct Knobs {
     float petals, layers, len, wid, tipSharp, tipNotch, baseBias, layerScale,
           layerTwist, swirl, wobble, inkFlow, waterFlow;
 };
 Knobs bloomKnobs() {
-    float b = clamp(uBloom, 0.0, 1.0);
+    float b = clamp(vBloom, 0.0, 1.0);
     float open = smoothstep(0.0, 1.0, b);
     Knobs k;
-    k.petals     = floor(uPetals + (uSeed > 0.66 ? 1.0 : (uSeed < 0.33 ? -1.0 : 0.0)) + 0.5);
+    k.petals     = floor(uPetals + (vSeed > 0.66 ? 1.0 : (vSeed < 0.33 ? -1.0 : 0.0)) + 0.5);
     // layers per flower: 50% 1, 30% 2, 20% 3 — decorrelated hash so it's
-    // independent of petal count / twist (which also read uSeed)
-    float lr     = fract(uSeed * 91.7 + 0.137);
+    // independent of petal count / twist (which also read vSeed)
+    float lr     = fract(vSeed * 91.7 + 0.137);
     k.layers     = lr < 0.5 ? 1.0 : (lr < 0.8 ? 2.0 : 3.0);
     k.len        = mix(0.16, 0.95, open);
     k.wid        = mix(0.05, 0.42, open);
@@ -63,16 +55,15 @@ Knobs bloomKnobs() {
     k.baseBias   = mix(1.5, 0.95, open);  // belly slides from near-tip (closed) to mid-upper
     k.tipNotch   = mix(0.0, 0.12, open);  // apex cleft opens up with the bloom
     k.layerScale = 0.66;
-    k.layerTwist = 0.3 + 0.45 * uSeed;
-    k.swirl      = mix(1.5, 0.0, open) * (0.6 + 0.8 * uSeed); // un-curl as it opens
+    k.layerTwist = 0.3 + 0.45 * vSeed;
+    k.swirl      = mix(1.5, 0.0, open) * (0.6 + 0.8 * vSeed); // un-curl as it opens
     k.wobble     = 0.35;
     k.inkFlow    = 1.0;
     k.waterFlow  = 0.6;
     return k;
 }
 
-// straight-alpha ink wash for one petal ring; returns vec4(rgb, coverage). Same
-// posterized dry-brush "flying white" as the standalone, alpha = coverage*tone.
+// straight-alpha ink wash for one petal ring; returns vec4(rgb, coverage = fill*tone)
 vec4 inkStroke(vec2 uvLine, float tAlong, float sd, vec3 brushRGB, Knobs k) {
     float water = clamp(k.waterFlow, 0.0, 1.0);
 
@@ -154,7 +145,7 @@ float petalRing(vec2 uv, float petals, float len, float wid, float twist,
 
 void main() {
     Knobs k = bloomKnobs();
-    float b = clamp(uBloom, 0.0, 1.0);
+    float b = clamp(vBloom, 0.0, 1.0);
 
     vec3  outRGB = vec3(0.0);
     float outA   = 0.0;
@@ -185,7 +176,7 @@ void main() {
         outA   = s.a + outA * (1.0 - s.a);
     }
 
-    float a = outA * uAlpha;
+    float a = outA * vAlpha;
     if (a <= 0.0) discard;
     fragColor = vec4(outRGB * a, a); // premultiplied
 }

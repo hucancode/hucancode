@@ -83,7 +83,7 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  background: var(--paper);
+  background-color: var(--paper);
   color: var(--ink);
   padding-top: 1rem;
   -webkit-font-smoothing: antialiased;
@@ -138,13 +138,6 @@ h1 {
   line-height: 1.3;
   min-height: 1.3em;
 }
-h1[xl] {
-  font-weight: 800;
-  font-size: xx-large;
-  margin-bottom: 1rem;
-  line-height: 1.3;
-  min-height: 1.3em;
-}
 
 h2 {
   font-size: large;
@@ -160,100 +153,10 @@ h3 {
   min-height: 1.5em;
 }
 
-:is(h1, h2, h3, h4, p, a)[rainbow] {
-  --rainbow: linear-gradient(
-    45deg,
-    var(--color-neutral-200) 0%,
-    var(--color-primary-700) 70%
-  );
-  --rainbow-hover: linear-gradient(
-    45deg,
-    var(--color-primary-700) 0%,
-    var(--color-neutral-200) 70%
-  );
-  white-space: nowrap;
-  background-image: var(--rainbow);
-  color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-  transition-duration: 1000ms;
-  background-size: 200% 100%;
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow]:hover {
-  background-position-x: 100%;
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow] > * {
-  color: var(--color-neutral-950);
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow="0"] {
-  --rainbow: linear-gradient(
-    45deg,
-    var(--color-primary-700) 0%,
-    var(--color-neutral-300) 70%
-  );
-  background-position-x: 100%;
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow="0"]:hover {
-  background-position-x: 0;
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow="1"] {
-  --rainbow: linear-gradient(
-    141.27deg,
-    #ff904e 0%,
-    #ff5982 20%,
-    #ec68f4 40%,
-    #79e2ff 80%
-  );
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow="2"] {
-  --rainbow: linear-gradient(
-    115deg,
-    #4fcf70,
-    #fad648,
-    #a767e5,
-    #12bcfe,
-    #44ce7b
-  );
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow="3"] {
-  --rainbow: linear-gradient(
-    140deg,
-    #d2a8ff 12.09%,
-    #f778ba 42.58%,
-    #ff7b72 84.96%
-  );
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow="4"] {
-  --rainbow: linear-gradient(45deg, rgb(250 222 255) 0%, rgb(219 204 255) 70%);
-}
-
-:is(h1, h2, h3, h4, p, a)[rainbow="5"] {
-  --rainbow: linear-gradient(45deg, rgb(150 130 191) 0%, rgb(32 22 22) 70%);
-}
-
-h1,
-h2,
-h3,
-p {
+h1, h2, h3, p {
   margin: 0;
 }
 
-p {
-  line-height: 1.6;
-}
-
-small {
-  color: var(--color-neutral-500);
-  font-size: small;
-}
 :is(button, a[role="button"])[disabled="true"] {
   pointer-events: none;
   color: color-mix(in srgb, var(--ink) 50%, transparent);
@@ -310,9 +213,6 @@ div[role="group"].square {
     background-color: color-mix(in srgb, var(--ink) 8%, var(--paper));
   }
 }
-:is(h1, h2, h3, p, a, small, label, button) svg {
-  height: 1.5em;
-}
 
 fieldset {
   border: 1px solid rgba(128,128,128,0.3);
@@ -330,7 +230,7 @@ legend {
   letter-spacing: 0.04em;
   opacity: 0.7;
 }
-/* fixed back button on individual canvas pages */
+
 a.back {
   position: fixed;
   top: 1rem;
@@ -349,7 +249,6 @@ a.back {
 a.back:hover { opacity: 0.7; }
 a.back svg { width: 1.6rem; height: 1.6rem; }
 
-/* canvas/scene page layout */
 main {
   display: flex;
   flex-direction: column;
@@ -386,7 +285,6 @@ main > aside {
   gap: 0.5rem;
 }
 
-/* control widgets inside fieldsets */
 fieldset label {
   display: grid;
   grid-template-columns: 6rem 1fr 3rem;
@@ -398,7 +296,10 @@ fieldset label:has(input[type="checkbox"]) {
   grid-template-columns: auto 1fr;
 }
 
-input[type="range"] { width: 100%; }
+input[type="range"] {
+  width: 100%;
+}
+
 .buttons { display: flex; gap: 0.5rem; }
 
 /* 3D canvas scenes */

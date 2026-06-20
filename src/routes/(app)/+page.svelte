@@ -29,7 +29,12 @@
   let debugPath3d = $state(false);
   const debug = $derived({ path2d: debugPath2d, path3d: debugPath3d });
   let selfScroll = false; // true while our programmatic scroll's event is pending
+  let lastTarget = -1; // last y we programmatically scrolled to
   const SYNC_TOL = 3; // px slack: skip scrollTo if already within this of target
+  // px window around the clock's position that still counts as "our own move".
+  // Safari fires stray settle events after the one selfScroll swallows; they
+  // land on lastTarget, so anything still parked there is autoplay, not a grab.
+  const SCRUB_TOL = 80;
   // one fixed-size coach mark per icon -> never scales with the row width
   // lx/ly stagger each label off the row; arrow tip stays at the icon (42,6)
   const ICON_HINTS = [
@@ -47,6 +52,7 @@
 
   function scrollTo(px) {
     const y = Math.round(px);
+    lastTarget = y;
     if (Math.abs(window.scrollY - y) <= SYNC_TOL) return; // already there, no event
     selfScroll = true; // swallow the one scroll event this triggers
     window.scrollTo(0, y);
@@ -63,13 +69,17 @@
       selfScroll = false;
       return;
     } // our own move
-    const raw = window.scrollY / SCROLL_LEN;
+    const y = window.scrollY;
+    const raw = y / SCROLL_LEN;
     if (raw >= 1) {
       if (!userPaused) playing = true; // reached the footer -> keep flying
-    } else {
-      playing = false; // grabbed the scrollbar -> stop autoplay, scrub
-      t = raw * TIMELINE_END;
+      return;
     }
+    // Safari fires extra settle events past the one selfScroll swallowed; those
+    // are still parked on the clock's target, so don't mistake them for a grab.
+    if (playing && lastTarget >= 0 && Math.abs(y - lastTarget) <= SCRUB_TOL) return;
+    playing = false; // grabbed the scrollbar -> stop autoplay, scrub
+    t = raw * TIMELINE_END;
   }
 
   // While playing, follow the clock with the scrollbar -- but once the timeline
@@ -245,7 +255,7 @@
   onclick={() => (playing = true)}
   aria-label="play"
 >
-  <RoughIcon svg={ChevronDown} />
+  {@html ChevronDown}
 </button>
 
 <footer class:show={progress >= 1}>
@@ -430,6 +440,11 @@
     }
     50% {
       translate: -50% calc(-50% + 10px);
+    }
+  }
+  @media (max-width: 600px) {
+    .topbar {
+      gap: 1rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {

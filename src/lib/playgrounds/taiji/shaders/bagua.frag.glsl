@@ -54,7 +54,6 @@ void main() {
     int bitCount = int(uBitCount + 0.5);
     vec2 uv = vUV * 2.0 - 1.0;
     float barWidth = PI / float(1 << bitCount);
-    // scale uv to fit the bagua
     uv *= CIRCLE_RADIUS + (BAR_HEIGHT + BAR_MARGIN) * float(bitCount * 2);
     float v = bagua(uv, bitCount, barWidth);
     fragColor = vec4(v, v, v, alpha * v);

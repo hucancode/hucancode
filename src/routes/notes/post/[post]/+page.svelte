@@ -30,7 +30,7 @@
     <ul>
       {#each categories as category}
         <li>
-          <a href="/notes/category/{category}/" rainbow="3">
+          <a href="/notes/category/{category}/">
             {category}
           </a>
         </li>

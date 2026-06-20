@@ -1,4 +1,3 @@
-// "永" (yong) - classic Chinese calligraphy practice character, cursive (草書)
 const YONG = {
   symbol: {
     strokes: [

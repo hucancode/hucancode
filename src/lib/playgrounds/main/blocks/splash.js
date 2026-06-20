@@ -1,10 +1,3 @@
-// Ink splash: a procedural-noise wash that bleeds in at the start and keeps
-// spreading across the 2D phase, following the glyph trace (reveal-aware in the
-// shader). Persistent: once the spread reaches full it holds under the 3D dragon.
-//
-// Starts at scene t=0, so block-local time == scene time; the smooth-eased tweens
-// reproduce the old smooth(clamp(t/dur)) ramps.
-
 import { track } from "../stage/index.js";
 import { SPLASH_FADE_IN } from "../config.js";
 

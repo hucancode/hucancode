@@ -57,7 +57,7 @@ In other words, if the least significant digit of $i$ in binary is 0, then $
 There exists a simple implementation of $g$ using bitwise operator as follow
 
 $$
-g(i) = i\&(i+1)
+g(i) = i \\& (i+1)
 $$
 
 ### Example of $g$
@@ -69,10 +69,10 @@ $$
 It means $B_{11}$ will be covering $A[8,11]$
 
 $$
-\begin{align*}
-g(12) = g(1100_2) = 1100_2 = 12 \\
-g(14) = g(1110_2) = 1110_2 = 14
-\end{align*}
+\\begin{aligned}
+g(12) &= g(1100_2) = 1100_2 = 12 \\cr
+g(14) &= g(1110_2) = 1110_2 = 14 
+\\end{aligned}
 $$
 
 It means $B_{12}, B_{14}$ will be respectively covering $A_{12}, A_{14}$ only

@@ -1,28 +1,15 @@
-// The 2D ink-dragon head LEADS through the corridor PHASES, sampling pre-built
-// WORLD-space curves (built in index.js with the corridor stations).
-//
-//   flyin -> descent (circle-chain + enso connector) -> enso -> roam2 -> loop3
-//
-// SPEED is continuous across every seam. Each phase is traversed by a CUBIC eased
-// progress with PRESCRIBED endpoint speeds (world units/sec), so neighbouring
-// phases meet at the same speed — no crawl, no snap:
-//   flyin   : 0          -> descentStart   (accelerate from rest as it catches the camera)
-//   descent : descentStart -> CRUISE_SP    (cubic; descentStart chosen so the curve length fits)
-//   enso    : CRUISE_SP   -> SP3           (decelerates; ensoHeadProgress)
-//   roam2   : SP3 (constant; == 3D loop speed) -> deterministic handoff
-//
-// The head does NOT trace the glyph; the glyph reveals on its own (glyph block).
-//
-//   end        absolute scene time the phase ends. Infinity = runs out.
-//   continuous entering from the previous phase is positionally smooth, so the
-//              rigid body keeps trailing (no reseed). false -> body is refit.
-//   path(t)    head sampler { fn, a }: fn(a) is the head point, a the arc param.
+// Head leads through corridor phases; speed continuous across every seam via
+// cubic-eased progress with prescribed endpoint speeds (world units/sec):
+//   flyin   : 0          -> descentStart   (accel from rest)
+//   descent : descentStart -> CRUISE_SP    (cubic; start chosen so curve length fits)
+//   enso    : CRUISE_SP   -> SP3           (decel; ensoHeadProgress)
+//   roam2   : SP3 (constant; == 3D loop speed)
 
 import { clamp, lerp } from "$lib/math/scalar.js";
 import { BLOCK_DUR, ENSO_REVS, CRUISE_SP, SP3 } from "./config.js";
 import { ensoPos, ensoHeadProgress } from "./frame-path.js";
 
-// cubic Hermite progress g(0)=0, g(1)=1 with endpoint slopes m0, m1.
+// cubic Hermite progress g(0)=0, g(1)=1 with endpoint slopes m0, m1
 function cubicG(x, m0, m1) {
   const t2 = x * x, t3 = t2 * x;
   return (t3 - 2 * t2 + x) * m0 + (3 * t2 - 2 * t3) + (t3 - t2) * m1;
@@ -33,18 +20,18 @@ export function createHeadPath({ timing, paths }) {
   const { flyin, descent, roam2, ensoCenter } = paths;
   const descentCurve = descent.curve;
 
-  // arc length the head actually rides on each curve (skip the body lead-in /
-  // tangent-guide tails via headStart/headEnd).
+  // arc length head rides on each curve (skip body lead-in / tangent-guide tails
+  // via headStart/headEnd)
   const arcOf = (c) => (c.headEnd ?? c.total) - (c.headStart || 0);
 
-  // descent: choose the START speed so the cubic (start -> CRUISE_SP) covers the
-  // whole curve length over its duration. avg = L/dur; start = 2*avg - end keeps the
-  // integral exact for a cubic whose endpoint slopes average to 1.
+  // descent: choose START speed so cubic (start -> CRUISE_SP) covers whole curve
+  // length over its duration. avg = L/dur; start = 2*avg - end keeps integral
+  // exact for cubic whose endpoint slopes average to 1.
   const descentDur = ensoStart - roam1Start;
   const descentAvg = arcOf(descentCurve) / descentDur;
   const descentStart = Math.max(0, 2 * descentAvg - CRUISE_SP);
 
-  // sample a curve by a cubic-eased progress with prescribed endpoint SPEEDS.
+  // sample curve by cubic-eased progress with prescribed endpoint speeds
   const cruise = (curve, t, t0, dur, s0, s1) => {
     const hs = curve.headStart || 0, he = curve.headEnd ?? curve.total, L = (he - hs) || 1e-6;
     const x = clamp((t - t0) / dur, 0, 1);
@@ -67,8 +54,8 @@ export function createHeadPath({ timing, paths }) {
       path: (t) => ({ fn: () => flyinHead(t), a: 0 }) },
     { name: "descent", end: ensoStart, continuous: false,
       path: (t) => ({ fn: () => descentHead(t), a: 0 }) },
-    // continuous: the descent ends at the enso top with the circle tangent + speed
-    // CRUISE_SP, so the body keeps trailing onto the enso (which decelerates to SP3).
+    // continuous: descent ends at enso top with circle tangent + speed CRUISE_SP,
+    // so body keeps trailing onto enso (which decelerates to SP3)
     { name: "enso", end: ensoExit, continuous: true,
       path: (t) => ({ fn: ensoHead, a: ensoHeadProgress(frac(t, ensoStart, BLOCK_DUR.enso)) }) },
     { name: "roam2", end: loop3Start, continuous: true,
@@ -81,8 +68,8 @@ export function createHeadPath({ timing, paths }) {
     for (let i = 0; i < PHASES.length; i++) if (t < PHASES[i].end) return i;
     return PHASES.length - 1;
   }
-  // sample a phase at its OWN time t (flyin/descent samplers ignore `a` and read t
-  // directly via the cubic speed law; the others use the arc/frac `a`).
+  // sample phase at its own time t (flyin/descent samplers ignore `a`, read t
+  // directly via cubic speed law; others use arc/frac `a`)
   const pathAt = (t) => PHASES[phaseOf(t)].path(t);
 
   function posAt(t) {
@@ -96,7 +83,7 @@ export function createHeadPath({ timing, paths }) {
     return { x: p.x, y: p.y, dir: { x: dx / m, y: dy / m } };
   }
 
-  // debug: the FULL 2D head motion line across every phase, in world coords.
+  // debug: full 2D head motion line across every phase, world coords
   function samplePath2d(n = 600) {
     const out = [];
     for (let i = 0; i <= n; i++) {
