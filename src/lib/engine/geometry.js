@@ -1,12 +1,9 @@
-// Non-indexed geometry builders (box / cylinder / plane) + translate + merge.
-// Non-indexed so merge() is plain concatenation.
-
 export class Geometry {
   constructor() {
     this.attributes = {};
     this.index = null;
     this.drawRange = null;
-    this.dynamic = false; // hint: per-frame attribute/index re-uploads expected
+    this.dynamic = false;
   }
   setAttribute(name, array, itemSize) {
     this.attributes[name] = { array, itemSize, count: array.length / itemSize, needsUpdate: false };
@@ -19,8 +16,6 @@ export class Geometry {
     this.index = { array, needsUpdate: false };
     return this;
   }
-  // restrict draw to [start, start+count). indexed -> index-buffer
-  // offsets/counts; else vertex offsets/counts.
   setDrawRange(start, count) {
     this.drawRange = { start, count };
     return this;
@@ -40,7 +35,6 @@ export class Geometry {
   dispose() {}
 }
 
-// box, non-indexed, faces order: +X, -X, +Y, -Y, +Z, -Z (6 verts each)
 export function boxGeometry(w = 1, h = 1, d = 1) {
   const hx = w / 2, hy = h / 2, hz = d / 2;
   // per face: normal + 4 corners wound CCW
@@ -115,7 +109,6 @@ export function planeGeometry(w = 1, h = 1) {
     .setAttribute("uv", new Float32Array(uv), 2);
 }
 
-// concatenate non-indexed geometries sharing same attribute set
 export function mergeGeometries(geos) {
   const names = Object.keys(geos[0].attributes);
   const out = new Geometry();

@@ -1,7 +1,3 @@
-// Procedural-noise wash bleeds in at start, keeps spreading across 2D phase,
-// follows glyph trace (reveal-aware in shader). Persistent: holds full under
-// 3D dragon.
-
 import { track } from "../stage/index.js";
 import { SPLASH_FADE_IN } from "../config.js";
 

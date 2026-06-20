@@ -1,7 +1,3 @@
-// During B4 dragon leads stroke as enso sweeps in (1.5 revolutions; ensoSweep
-// drives shader). Held full after sweep, then eases to ENSO_FADE_TARGET as 3D
-// dragon takes over. Persistent from ensoStart.
-
 import { track } from "../stage/index.js";
 import { clamp } from "$lib/math/scalar.js";
 import { ENSO_DUR, ENSO_FADE_TARGET } from "../config.js";

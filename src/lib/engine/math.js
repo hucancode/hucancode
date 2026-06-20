@@ -91,7 +91,7 @@ export class Vec3 {
   }
 }
 
-// Euler angles, XYZ order. Plain storage; Node composes matrix from it per frame.
+// Euler angles, XYZ order.
 export class Euler {
   constructor(x = 0, y = 0, z = 0) {
     this.x = x;

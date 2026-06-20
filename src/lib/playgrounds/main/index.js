@@ -1,14 +1,6 @@
-// Backend-agnostic scene for /paint. Owns cinematic timeline, scripted flight
-// path (glyph -> enso -> rosette roam -> 3D loop), 2D ink-dragon body, 3D dragon
-// path frames. Produces plain FrameState each frame; zero GPU calls so any
-// backend can render it.
-//
-// Everything on ONE ground plane (x/y plane). Camera looks straight DOWN during
-// glyph trace, then tilts to 45deg elevation as 2D dragon hands off to 3D; ground
-// grid wipes in radially after 2D dragon gone.
-//
-// This file = WIRING. initScene builds paths + schedule, then constructs blocks
-// (so branch points are real numbers, not placeholders) and wires timeline.
+// Backend-agnostic scene for /paint: builds paths + schedule, constructs blocks,
+// wires timeline. Everything on ONE ground plane (x/y); camera looks straight
+// DOWN during glyph trace, then tilts to 45deg as 2D hands off to 3D.
 
 import { clamp, lerp, smooth } from "$lib/math/scalar.js";
 import { mulberry32 } from "$lib/math/random.js";
@@ -189,10 +181,8 @@ export function initScene() {
   bodyCtrl.reseed(timing.flyinStart, BODY_LEN * ENTRY_GROW_MIN);
 }
 
-// reused frame-state scratch (zero per-frame allocation). buildState mutates in
-// place and returns _frame; renderer consumes synchronously, so single instance
-// avoids minting ~15 short-lived objects per frame (no GC hitch on infinite 3D
-// loop). constant fields set once here.
+// reused frame-state scratch: buildState mutates in place and returns _frame
+// (renderer consumes synchronously) -> zero per-frame allocation.
 const EMPTY_F32 = new Float32Array(0);
 const _frame = {
   aspect: 1,

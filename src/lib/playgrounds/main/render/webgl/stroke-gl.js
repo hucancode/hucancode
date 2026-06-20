@@ -1,6 +1,4 @@
-// Ribbon geometry for ink strokes. given polyline + line width -> typed arrays
-// (positions xy, lineUV) + indices. clearance margins match stroke fragment
-// shader so ink can bleed past nominal edge.
+// Ribbon geometry for ink strokes. clearance margins MUST match the stroke fragment shader so ink can bleed past the nominal edge.
 
 const MITER_LIMIT = 4.0;
 export const PERP_CLEARANCE = 0.35;
@@ -12,9 +10,7 @@ function totalArcOf(points, n) {
   return acc;
 }
 
-// persistent scratch reused across frames. body length constant -> alloc once,
-// no per-frame churn. caller uploads synchronously before next buildRibbon, so
-// sharing safe.
+// persistent scratch reused across frames; caller uploads synchronously before the next buildRibbon, so sharing is safe
 const _ext0 = { x: 0, y: 0 };
 const _extN = { x: 0, y: 0 };
 let _ribbon = null;

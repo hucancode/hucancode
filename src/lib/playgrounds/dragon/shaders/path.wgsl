@@ -1,8 +1,4 @@
-// Flight-path overlay: transform the baked frame origins and draw them as a
-// line strip. WGSL twin of the inline GLSL PATH_VERT/PATH_FRAG in index.js.
-//
 // Uniform struct fields MUST match the `uniforms` list in index.js, in order.
-
 struct Uni {
   uViewProj: mat4x4<f32>,
   uColor: vec3<f32>,

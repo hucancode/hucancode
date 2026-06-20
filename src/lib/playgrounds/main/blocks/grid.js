@@ -1,6 +1,3 @@
-// Grid wipes in radially from origin over GRID_REVEAL_DUR. Minor grid trails major
-// by GRID_MINOR_LAG. Persistent: holds revealed after.
-
 import { track } from "../stage/index.js";
 import { GRID_MAX_OPACITY, GRID_REVEAL_DUR, GRID_MINOR_LAG } from "../config.js";
 

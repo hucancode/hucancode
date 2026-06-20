@@ -1,7 +1,5 @@
-// OBJ parser + prep for path-deform shader. Mesh aligned along longest axis
-// -> X, X span remapped to [0, bodyLen] (path units) so position.x
-// parameterises path; y,z native (scaled by uGirth). Normals reordered to
-// match, renormalised for Phong.
+// OBJ parser + prep for path-deform shader: longest axis -> X, remapped to
+// [0, bodyLen] so position.x parameterises the path; y,z native.
 
 function parseObj(text) {
   const verts = [];

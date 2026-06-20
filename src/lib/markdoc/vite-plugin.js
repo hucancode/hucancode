@@ -66,7 +66,6 @@ function transformMathExpressions(content) {
     return `{% math type="block" %}${math.trim()}{% /math %}`;
   });
 
-  // don't match escaped dollars or double dollars
   content = content.replace(/(?<!\\)\$(?!\$)(.*?)(?<!\\)\$(?!\$)/g, (match, math) => {
     return `{% math type="inline" %}${math.trim()}{% /math %}`;
   });

@@ -1,10 +1,4 @@
-// Sumi-e ink flower — WGSL twin of shaders/flower.frag.glsl. One fullscreen
-// triangle; petals are SDF brush strokes folded in polar space, stacked in
-// concentric layers. Same ink machinery as the GLSL version.
-//
-// Uniform struct fields MUST match the `uniforms` list in index.js, in order
-// (the engine packs a uniform buffer from that list — engine/gpu/webgpu.js).
-
+// Uniform struct fields MUST match the `uniforms` list in index.js, in order.
 struct Uni {
   uResolution: vec2<f32>,
   uPetals: f32, uLayers: f32, uLength: f32, uWidth: f32,

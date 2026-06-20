@@ -1,7 +1,4 @@
-// Column-major 4x4 matrices, allocation-free: every op writes caller-owned `out`
-// Float32Array(16) so hot per-frame code reuses scratch buffers. multiply safe
-// when out aliases a or b.
-
+// Column-major 4x4 matrices, allocation-free: every op writes caller-owned `out`.
 export const create = () => new Float32Array(16);
 
 export function identity(out) {
@@ -10,7 +7,7 @@ export function identity(out) {
   return out;
 }
 
-// out = a * b. caches a into locals first, so out may alias a, b, or both.
+// out = a * b (out may alias a, b, or both)
 export function multiply(out, a, b) {
   const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
   const a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];

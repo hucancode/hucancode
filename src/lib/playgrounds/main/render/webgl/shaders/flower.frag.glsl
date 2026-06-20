@@ -1,13 +1,6 @@
 #version 300 es
 precision highp float;
 
-// Bloom flower for /paint — a sumi-e ink flower seated at a path-circle centre.
-// Same petal SDF + dry-brush ink machinery as the standalone /flower showcase, but
-// instead of an opaque paper background it outputs PREMULTIPLIED ink coverage so it
-// composites over the live scene. Every petal knob is driven by uBloom (0 = tight
-// bud, 1 = full bloom): rings fade in one by one, petals lengthen + widen, the
-// whole flower un-curls. uSeed gives each flower its own petal count / twist / size.
-
 const float PI  = 3.14159265;
 const float PI2 = 6.28318531;
 
@@ -21,7 +14,7 @@ uniform float uPetals;     // base petals per ring
 uniform float uLayers;     // max concentric rings at full bloom
 uniform vec3  uInkColor;
 
-// --- ink noise (Dave Hoskins hash + simplex), shared with the standalone -----
+// ink noise (Dave Hoskins hash + simplex)
 vec2 hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
     p3 += dot(p3, p3.yzx + 33.33);
@@ -43,7 +36,6 @@ float noise(in vec2 p) {
 }
 float noise01(vec2 p) { return clamp((noise(p) + 0.5) * 0.5, 0.0, 1.0); }
 
-// petal knobs, resolved from bloom — recomputed once per fragment (cheap)
 struct Knobs {
     float petals, layers, len, wid, tipSharp, tipNotch, baseBias, layerScale,
           layerTwist, swirl, wobble, inkFlow, waterFlow;
@@ -71,8 +63,7 @@ Knobs bloomKnobs() {
     return k;
 }
 
-// straight-alpha ink wash for one petal ring; returns vec4(rgb, coverage). Same
-// posterized dry-brush "flying white" as the standalone, alpha = coverage*tone.
+// straight-alpha ink wash for one petal ring; returns vec4(rgb, coverage = fill*tone)
 vec4 inkStroke(vec2 uvLine, float tAlong, float sd, vec3 brushRGB, Knobs k) {
     float water = clamp(k.waterFlow, 0.0, 1.0);
 

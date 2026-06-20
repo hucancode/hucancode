@@ -102,8 +102,6 @@ export const config = {
         
         let content = '';
         if (node.children && Array.isArray(node.children)) {
-          // traverse all children so multi-line blocks (e.g. \begin{aligned})
-          // keep every row, not just first text node.
           content = extractTextFromNode(node.children);
         }
         

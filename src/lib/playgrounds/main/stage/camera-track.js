@@ -1,24 +1,12 @@
-// CAMERA TRACK. camera is global state (view-proj, grid, every composite layer,
-// path planners), so block output would force awkward ordering. own track instead.
-//
-// Corridor model: look-at descends in world-Y through descent window, then HOLDS
-// and pitch tilts in. camY + camPitch together here so descend->pitch handoff
-// can't drift: camY holds (C0) and camPitch starts zero-slope smoothstep at same
-// instant -> no kink.
-
 import { clamp, lerp, smooth, ramp } from "$lib/math/scalar.js";
 import { CAM_PITCH_ANGLE } from "../config.js";
 
-// descent: { enabled, yTop, yBottom, startT, endT } world-Y glide of look-at.
-// pitch: { anchorT, dur } when/how-long final tilt. yaw: { gateStart, gateEnd }
-// gates user yaw in (locked 0 during 2D phase, lerps in as 3D dragon takes over).
 export function createCameraTrack({ descent, pitch, yaw }) {
   const d = descent || {};
   const p = pitch || {};
   const y = yaw || {};
 
-  // descending look-at world-Y; held at yBottom outside window. descent disabled
-  // -> stays at 0 (stationary scene).
+  // descending look-at world-Y; held at yBottom outside window
   function camY(t) {
     if (!d.enabled) return 0;
     const k = clamp((t - d.startT) / Math.max(1e-6, d.endT - d.startT), 0, 1);

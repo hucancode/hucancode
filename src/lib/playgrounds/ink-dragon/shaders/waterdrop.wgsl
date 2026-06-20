@@ -1,10 +1,5 @@
-// Verlet whisker: a curve-texture sampled polyline SDF rendered on a fullscreen
-// quad. WGSL twin of basic.vert.glsl + waterdrop.frag.glsl. The curve points
-// (x, y, cumulativeArc) are packed one-per-texel into an rgba32float DATA TEXTURE
-// (1 row); sampled with textureLoad (exact texel, matching the GLSL NEAREST fetch).
-//
+// curve points (x, y, cumulativeArc) packed one-per-texel into a 1-row rgba32float texture.
 // Uniform struct fields MUST match the `uniforms` list in index.js, in order.
-
 struct Uni {
   uModel: mat4x4<f32>,
   uAspect: f32,

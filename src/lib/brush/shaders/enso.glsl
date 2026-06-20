@@ -1,8 +1,7 @@
 const float PI  = 3.14159265;
 const float PI2 = 6.28318531;
 const bool  CLOCKWISE = true;
-// Set this to false will render a straight line instead of a circle
-// I find this easier to debug in cartesian than polar coordinate
+// false -> straight line instead of circle (cartesian, easier to debug)
 const bool  POLAR = true;
 
 float uRadius       = 0.55;
@@ -141,8 +140,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float aspect = iResolution.x / iResolution.y;
     vec2 uv = vec2((vUV.x * 2.0 - 1.0) * aspect, vUV.y * 2.0 - 1.0);
     float uSweepAmt = 0.65 + 0.35 * sin(iTime * 0.6);
-    
-    // Adjust driver values via mouse here
+
     float mx = clamp(iMouse.x / iResolution.x, 0.0, 1.0);
     uInkFlow      = mix(2.0, 0.5, mx);
     //uWaterFlow    = mix(0.1, 1.0, mx);

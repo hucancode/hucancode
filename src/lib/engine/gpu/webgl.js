@@ -1,5 +1,3 @@
-// WebGL2 implementation of backend-agnostic GPU device (see ./index.js).
-
 const TEX = {
   rgba8: { internal: "RGBA8", format: "RGBA", type: "UNSIGNED_BYTE" },
   rgba32f: { internal: "RGBA32F", format: "RGBA", type: "FLOAT" },
@@ -68,7 +66,6 @@ export function createWebGLDevice(canvas) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl[F.internal], w, h, 0, gl[F.format], gl[F.type], data);
     return {
       _tex: tex, format, get width() { return w; }, get height() { return h; },
-      // pass dw/dh to (re)size a data texture (segs/frames grow)
       write(d, dw = w, dh = h) {
         gl.bindTexture(gl.TEXTURE_2D, tex);
         if (dw !== w || dh !== h) { gl.texImage2D(gl.TEXTURE_2D, 0, gl[F.internal], dw, dh, 0, gl[F.format], gl[F.type], d); w = dw; h = dh; }
@@ -124,7 +121,6 @@ export function createWebGLDevice(canvas) {
     applyDepth(sh.desc.depth);
     gl.bindVertexArray(sh._vao);
 
-    // pointers set each draw — buffers vary per call
     const buffers = args.buffers || [];
     for (let bi = 0; bi < sh._layouts.length; bi++) {
       const L = sh._layouts[bi];

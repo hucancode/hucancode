@@ -1,9 +1,7 @@
 #version 300 es
 precision highp float;
 
-// Ink ribbon stroke, raw-WebGL2 port of scenes/shaders/stroke.frag.glsl.
 // uSimple = 1 takes a cheap flat-alpha path (used for the small whiskers).
-
 uniform float uInkFlow;
 uniform float uStrands;
 uniform float uWaterFlow;

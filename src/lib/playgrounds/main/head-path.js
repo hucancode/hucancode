@@ -1,20 +1,9 @@
-// 2D ink-dragon head LEADS through corridor phases, sampling pre-built
-// world-space curves (built in index.js with corridor stations).
-//
-//   flyin -> descent (circle-chain + enso connector) -> enso -> roam2 -> loop3
-//
-// Speed continuous across every seam. Each phase traversed by cubic eased
-// progress with prescribed endpoint speeds (world units/sec) -> neighbouring
-// phases meet at same speed:
-//   flyin   : 0          -> descentStart   (accel from rest as it catches camera)
-//   descent : descentStart -> CRUISE_SP    (cubic; descentStart chosen so curve length fits)
+// Head leads through corridor phases; speed continuous across every seam via
+// cubic-eased progress with prescribed endpoint speeds (world units/sec):
+//   flyin   : 0          -> descentStart   (accel from rest)
+//   descent : descentStart -> CRUISE_SP    (cubic; start chosen so curve length fits)
 //   enso    : CRUISE_SP   -> SP3           (decel; ensoHeadProgress)
-//   roam2   : SP3 (constant; == 3D loop speed) -> deterministic handoff
-//
-//   end        scene time phase ends. Infinity = runs out.
-//   continuous entry from prev phase positionally smooth -> rigid body keeps
-//              trailing (no reseed). false -> body refit.
-//   path(t)    head sampler { fn, a }: fn(a) = head point, a = arc param.
+//   roam2   : SP3 (constant; == 3D loop speed)
 
 import { clamp, lerp } from "$lib/math/scalar.js";
 import { BLOCK_DUR, ENSO_REVS, CRUISE_SP, SP3 } from "./config.js";

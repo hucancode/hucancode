@@ -1,12 +1,4 @@
-// Lego brick toon shader — WGSL twin of the inline GLSL in index.js. One point
-// light + banded diffuse for the classic plastic look. A shared uViewProj
-// (proj*view through device.correctViewProj) times a per-object uModel positions
-// the brick; the brick model is a rigid rotation so the upper 3x3 of uModel is a
-// valid normal transform.
-//
-// Uniform struct fields MUST match the `uniforms` list in index.js, in order
-// (the engine packs a uniform buffer from that list — engine/gpu/webgpu.js).
-
+// Fields MUST match the `uniforms` list order in index.js.
 struct Uni {
   uViewProj: mat4x4<f32>,
   uModel: mat4x4<f32>,

@@ -1,8 +1,4 @@
-// Bagua ring — WGSL twin of shaders/bagua.frag.glsl. Fullscreen quad; vertex
-// shader rotates sampled coords (uRot) and scales clip size (uScale). The eight
-// trigrams are stems of broken/full bars laid around a ring by polar angle.
 // Uniform struct fields MUST match the `uniforms` list in index.js.
-
 struct Uni {
   uScale: vec2<f32>,
   uRot: f32,
@@ -43,9 +39,7 @@ fn rangeInvert(l: f32, r: f32, x: f32) -> f32 {
   return smoothstep(l, l + EPSILON, x) + smoothstep(r + EPSILON, r, x);
 }
 fn rotateMat(angle: f32) -> mat2x2<f32> {
-  // columns must match the GLSL mat2(cos,-sin,sin,cos): col0=(cos,-sin),
-  // col1=(sin,cos). WGSL `uv * M` is row-vec×matrix, same as GLSL — so identical
-  // columns give identical rotation. (The flipped sign here dropped 6/8 trigrams.)
+  // columns col0=(cos,-sin), col1=(sin,cos); WGSL uv*M is row-vec×matrix, matches GLSL
   return mat2x2<f32>(cos(angle), -sin(angle), sin(angle), cos(angle));
 }
 

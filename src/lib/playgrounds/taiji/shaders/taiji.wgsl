@@ -1,8 +1,4 @@
-// Taiji symbol — WGSL twin of shaders/taiji.frag.glsl. Fullscreen quad; vertex
-// shader rotates sampled coords (uRot, the disc spin) and scales clip size
-// (uScale). The yin-yang is built from intersected white/black SDF circles.
 // Uniform struct fields MUST match the `uniforms` list in index.js.
-
 struct Uni {
   uScale: vec2<f32>,
   uRot: f32,

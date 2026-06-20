@@ -1,11 +1,3 @@
-// Sumi-e ink flowers at centres of circles the 2D dragon's path built from
-// (descent chain + roam2 rosette). dragon rides circle rims -> flower "entered"
-// when head reaches its circle's arc; then opens bud->bloom over FLOWER_BLOOM_DUR.
-//
-// scrub-safe: tEnter (earliest scene time head reaches each circle) precomputed
-// once; per-frame bloom = pure fn of t, smooth((t - tEnter) / dur) -> scrubbing
-// replays exactly, no integration/history.
-
 import { clamp, smooth } from "$lib/math/scalar.js";
 import {
   FLOWER_ENTER_BAND, FLOWER_BLOOM_DUR, FLOWER_SAMPLE_DT, FLOWER_FILL,

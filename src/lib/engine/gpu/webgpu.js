@@ -1,8 +1,6 @@
-// WebGPU implementation of backend-agnostic GPU device (see ./index.js).
-// Screen pass is 4x MSAA + resolve, matching WebGL's free antialiased default
-// framebuffer. Per-shader uniform-buffer RING: one frame = single submit, so every
-// draw sharing a shader needs its own uniform buffer (GPU reads them all at submit
-// time) — ring hands out fresh slot per draw, resets each frame.
+// Screen pass is 4x MSAA + resolve. Per-shader uniform-buffer RING: one frame =
+// single submit, so every draw sharing a shader needs its own uniform buffer
+// (GPU reads them all at submit time); ring hands out a fresh slot per draw.
 
 import { makeWebGPUContext } from "../webgpu.js";
 import { mat4 } from "../math.js";
@@ -17,8 +15,8 @@ const U_ALIGN = { f32: 4, i32: 4, vec2: 8, vec3: 16, vec4: 16, mat4: 16 };
 const U_SIZE = { f32: 4, i32: 4, vec2: 8, vec3: 12, vec4: 16, mat4: 64 };
 const align = (n, a) => Math.ceil(n / a) * a;
 
-// std140-ish layout matching WGSL uniform address space (vec3/vec4/mat4 align to
-// 16). WGSL uniform struct must declare same fields in this order.
+// std140-ish layout: vec3/vec4/mat4 align to 16. WGSL uniform struct MUST
+// declare the same fields in this order.
 function uniformLayout(uniforms) {
   let off = 0;
   const fields = uniforms.map((u) => {
@@ -142,7 +140,6 @@ export async function createWebGPUDevice(canvas) {
     return sh;
   }
 
-  // one fresh uniform buffer per draw, recycled each frame (reset in beginFrame)
   function nextUbo(sh) {
     if (sh._ring >= sh._ubos.length)
       sh._ubos.push({ buffer: device.createBuffer({ size: sh._ulayout.size, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), bgCache: new Map() });
@@ -164,9 +161,8 @@ export async function createWebGPUDevice(canvas) {
       holder = sh._noUbo || (sh._noUbo = { bgCache: new Map() });
     }
 
-    // Bind-group cache: ring buffer for this slot stable across frames; only bound
-    // TEXTURE set varies. Cache one bind group per texture-signature so alternating
-    // texture sets reuse cached group — zero createBindGroup in steady state.
+    // Cache one bind group per texture-signature (only the bound texture set
+    // varies) so steady-state draws create zero bind groups.
     let sig = "";
     for (const t of texList) { const tex = args.textures && args.textures[t.name]; sig += (tex ? tex._id : 0) + ":"; }
     let bg = holder.bgCache.get(sig);

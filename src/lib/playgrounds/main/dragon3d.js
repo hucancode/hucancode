@@ -1,6 +1,3 @@
-// 3D dragon: frame buffers built on SAME 2D path (z=0 tail) then loop3, so mesh
-// overlaps ink dragon through crossfade, then flies orbit forever.
-
 import { clamp } from "$lib/math/scalar.js";
 import { D3, BODY_LEN, SP3 } from "./config.js";
 
@@ -83,9 +80,6 @@ export function createDragon3d({ timing }) {
     return _branchArc + (t - timing.loop3Start) * SP3;
   }
 
-  // Write per-frame draw params into d (= _frame.dragon3d; no alloc). Picks
-  // buffer (transition window vs pure loop3 ring) + head offset; shader wraps
-  // mod-N over whole buffer.
   function writeState(d, t, viewProj) {
     const bodyArc = _bodyArc;
     const headArc = headArcAt(t);

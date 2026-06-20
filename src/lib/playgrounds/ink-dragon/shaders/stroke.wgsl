@@ -1,10 +1,5 @@
-// Ink ribbon body stroke. WGSL twin of stroke-polyline.vert.glsl + stroke.frag.glsl.
-// position carries world coords (x in [-aspect,+aspect], y in [-1,+1]); aLineUV
-// is the 0..1 (perp_t, arc_t) parameter. The orthographic camera is identity, so
-// clip = world with x divided back by aspect. Drawn straight to screen (no flip).
-//
+// position carries world coords (x in [-aspect,+aspect], y in [-1,+1]); aLineUV is 0..1 (perp_t, arc_t).
 // Uniform struct fields MUST match the `uniforms` list in index.js, in order.
-
 struct Uni {
   uAspect: f32,
   uInkFlow: f32,

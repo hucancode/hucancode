@@ -1,9 +1,4 @@
-// Shader bundle. one entry per draw program, both GLSL (WebGL2) + WGSL (WebGPU)
-// variants plus backend-agnostic pipeline descriptor.
-//
-// vertex attributes carry GLSL `name` (getAttribLocation) + WGSL `location`.
-// `uniforms` ordered {name,type}: WebGL sets by name, WebGPU packs into uniform
-// buffer whose WGSL struct declares same fields in same order.
+// `uniforms` order is load-bearing: WebGPU packs into a buffer whose WGSL struct must declare the same fields in the same order.
 
 import GLYPH_FRAG from "./webgl/shaders/glyph.frag.glsl?raw";
 import SPLASH_FRAG from "./webgl/shaders/splash.frag.glsl?raw";
@@ -44,7 +39,6 @@ const VEC3 = (name) => ({ name, type: "vec3" });
 const VEC4 = (name) => ({ name, type: "vec4" });
 const MAT4 = (name) => ({ name, type: "mat4" });
 
-// attribute-buffer layouts. stride in bytes, format f32 components
 const BUF_STROKE_POS = { stride: 8, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x2", offset: 0 }] };
 const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };
 const BUF_HEAD = { stride: 16, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x2", offset: 0 }, { name: "aUV", location: 1, format: "float32x2", offset: 8 }] };
@@ -53,8 +47,6 @@ const BUF_DRAGON_NRM = { stride: 12, step: "vertex", attributes: [{ name: "aNorm
 const BUF_FLOWER_INST = { stride: 32, step: "instance", attributes: [{ name: "iData0", location: 1, format: "float32x4", offset: 0 }, { name: "iData1", location: 2, format: "float32x4", offset: 16 }] };
 const BUF_LINE = { stride: 12, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x3", offset: 0 }] };
 
-// Pass A = offscreen ink layers (rgba8, no MSAA, no depth, premult accum)
-// Pass B = screen (4x MSAA, depth attachment for 3D dragon)
 export const PROGRAMS = {
   glyph: {
     glsl: { vertex: FS_TRI_VERT, fragment: GLYPH_FRAG }, wgsl: GLYPH_WGSL,
@@ -108,7 +100,6 @@ export const PROGRAMS = {
     textures: [{ name: "uFrames", binding: 1 }],
     blend: "straight", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
   },
-  // debug overlays (?debug only). share line.wgsl, differ in topology
   line: {
     glsl: { vertex: LINE_VERT, fragment: LINE_FRAG }, wgsl: LINE_WGSL,
     buffers: [BUF_LINE],

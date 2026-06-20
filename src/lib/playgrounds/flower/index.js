@@ -1,6 +1,3 @@
-// full-screen triangle runs flower fragment shader, renders petals procedurally
-// in polar space. no mesh, no camera; every knob is a shader uniform.
-
 import { createDevice } from "$lib/engine/index.js";
 import FLOWER_FRAG from "./shaders/flower.frag.glsl?raw";
 import FLOWER_WGSL from "./shaders/flower.wgsl?raw";

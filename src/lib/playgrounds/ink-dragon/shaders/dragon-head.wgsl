@@ -1,8 +1,4 @@
-// Dragon head silhouette plane. WGSL twin of basic.vert.glsl + dragon-head.frag.glsl.
-// A TRS-transformed quad; the fragment evaluates a top-down dragon-head SDF.
-//
 // Uniform struct fields MUST match the `uniforms` list in index.js, in order.
-
 struct Uni {
   uModel: mat4x4<f32>,
   uBrushColor: vec4<f32>,

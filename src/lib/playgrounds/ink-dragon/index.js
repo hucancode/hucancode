@@ -1,7 +1,3 @@
-// Layering back-to-front: paper (opaque) -> body -> whiskers -> head, alpha
-// blended. orthographic camera identity -> world coords map to clip (x/aspect).
-// Drawn straight to swapchain -> no render-to-texture V-flip on WebGPU.
-
 import { createDevice, mat4, planeGeometry } from "$lib/engine/index.js";
 import BASIC_VERT from "./shaders/basic.vert.glsl?raw";
 import POLYLINE_VERT from "./shaders/stroke-polyline.vert.glsl?raw";
@@ -48,7 +44,6 @@ let whiskerStrokes = [null, null];
 let aspect = 1;
 let bodyWireframe = false;
 
-// head transform: world-space TRS, aspect-corrected to clip
 const IDENTITY = mat4.identity(mat4.create());
 const headMatrix = mat4.identity(mat4.create());
 const headTRS = mat4.create();
@@ -120,8 +115,6 @@ function sampleBezier(seg, t) {
   };
 }
 
-// smooth control polyline into denser sample array. perSegment > 1
-// bezier-smooths; perSegment <= 1 returns raw control points
 function smoothChain(controlPoints, perSegment, maxPoints) {
   if (controlPoints.length < 2) return [];
   if (perSegment <= 1) {
@@ -205,7 +198,6 @@ export async function init(canvasEl) {
   device.resize(canvas.width, canvas.height);
   aspect = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
 
-  // "straight" blend = src-alpha / one-minus-src-alpha
   pPaper = device.shader({
     glsl: { vertex: BASIC_VERT, fragment: PAPER_FRAG }, wgsl: PAPER_WGSL,
     buffers: [BUF_POS, BUF_UV],
@@ -268,7 +260,6 @@ export async function init(canvasEl) {
   bodyPosBuf = device.buffer({ kind: "vertex", size: 0, dynamic: true });
   bodyUVBuf = device.buffer({ kind: "vertex", size: 0, dynamic: true });
   bodyIdxBuf = device.buffer({ kind: "index", size: 0, dynamic: true });
-  // index buffer static (built once in makePolylineStroke) -> upload now
   bodyIdxBuf.write(bodyStroke.geom.index.array);
 
   for (let i = 0; i < 2; i++) {
@@ -423,8 +414,6 @@ export function worldToScreen(p, w, h) {
   const v = (p.y + 1) * 0.5;
   return { x: u * w, y: (1 - v) * h };
 }
-
-// Chain physics: body + two verlet whiskers.
 
 const WHISKER_ANCHOR_X = 0.5;
 const WHISKER_ANCHOR_Y = 0.08;

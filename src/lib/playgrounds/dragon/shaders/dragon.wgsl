@@ -1,12 +1,4 @@
-// 3D dragon path-deform + dim Phong. WGSL twin of the inline GLSL VERT/FRAG in
-// index.js. The straight mesh (x normalised to [0,1]) is bent onto the closed
-// Catmull-Rom flight path by sampling two adjacent precomputed frame matrices
-// (from the frames DATA TEXTURE, rgba32float, one column-major mat4 / row) and
-// lerping. uViewProj is the engine-corrected camera matrix (clip z remapped on
-// WebGPU; see device.correctViewProj).
-//
 // Uniform struct fields MUST match the `uniforms` list in index.js, in order.
-
 struct Uni {
   uN: f32,
   uPathLen: f32,

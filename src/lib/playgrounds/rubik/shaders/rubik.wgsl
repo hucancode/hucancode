@@ -1,10 +1,4 @@
-// Rubik cubelet — WGSL twin of the inline GLSL in index.js. Each cubelet is a unit
-// box with a per-vertex face color; a single shared uViewProj (= proj*view, passed
-// through device.correctViewProj) times a per-cubelet uModel places it in clip space.
-//
-// Uniform struct fields MUST match the `uniforms` list in index.js, in order
-// (the engine packs a uniform buffer from that list — engine/gpu/webgpu.js).
-
+// Uniform struct fields MUST match the `uniforms` list order in index.js.
 struct Uni {
   uViewProj: mat4x4<f32>,
   uModel: mat4x4<f32>,

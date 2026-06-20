@@ -1,27 +1,17 @@
 #version 300 es
 precision highp float;
 
-// Enso circle brush stroke (polar). Ported from shaders/st/enso.glsl: the stroke
-// is laid out in polar coords (a ring of radius uRadius about the origin) and
-// SWEPT by uSweep (0..1), which the scene drives from the 2D dragon head's
-// fraction around the circle -> the head LEADS the growing brush stroke. Renders
-// into its own offscreen target with STRAIGHT alpha (ink colour + coverage), so
-// it composites behind the glyph like the splash wash.
-
 out vec4 fragColor;
 
 uniform vec2  uResolution;
 uniform float uRadius;     // ring radius (world units; world quad spans y[-1,1])
 uniform float uSweep;      // 0..1 fraction of the stroke drawn (head leads this)
 uniform float uAngleStart; // ring start angle (polar atan2(x,y) convention)
-uniform float uLineWidth;  // brush thickness (polar line width)
-uniform float uClock;      // scene time -> slow bristle drift
+uniform float uLineWidth;
+uniform float uClock;
 
 const float PI2 = 6.28318531;
-// The scene sweeps the head counter-clockwise (ensoPos: ensoA0 + frac*TAU),
-// which is INCREASING standard atan2(y,x) = DECREASING atan2(x,y).
-// CLOCKWISE=true flips `a` so phase grows with decreasing atan2(x,y),
-// keeping the head exactly at the stroke front.
+// CLOCKWISE flips `a` so phase grows with decreasing atan2(x,y), keeping the head at the stroke front.
 const bool  CLOCKWISE = true;
 uniform vec3 uInkColor;
 
@@ -34,8 +24,6 @@ const float uWidthAnchor = 1.0;
 const float uInkFlow     = 2.0;
 const float uWaterFlow   = 0.5;
 
-// Per-layer brush settings — base constants get scaled into 3 of these.
-// bleed: watery soft wash, fades at the ends. wet: mid body. dry: rich dark core.
 struct Brush {
     float inkFlow;
     float waterFlow;
@@ -68,8 +56,7 @@ float rand(vec2 co)   { return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758
 float dtoa(float d, float amount) { return clamp(1.0 / (clamp(d, 1.0 / amount, 1.0) * amount), 0.0, 1.0); }
 float smoothf(float x) { return x * x * x * (x * (x * 6.0 - 15.0) + 10.0); }
 
-// Coverage (alpha) of the brush stroke at a point in line-space; mirrors the
-// reference colorBrushStroke but returns alpha instead of compositing onto a bg.
+// Coverage (alpha) of the brush stroke at a point in line-space.
 float strokeAlpha(vec2 uvLine, vec2 paperUV, vec2 lineSize, float sdGeometry, Brush b) {
     float posInLineY = (uvLine.y / max(lineSize.y, 1e-6)) * b.taper;
     float inkFlow = max(b.inkFlow, 0.05);

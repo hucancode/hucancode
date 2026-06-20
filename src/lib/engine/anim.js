@@ -1,14 +1,3 @@
-// Tween engine, replaces animejs. Animates numeric props on plain objects (+
-// arrays) on single shared rAF ticker. Per-property from/to (to may be
-// per-target fn), staggered delays, per-property easing, loop/alternate/
-// reversed, round, begin/update/complete callbacks.
-//
-// API mirrors animejs slice scenes use:
-//   animate(targets, params)         -> Animation
-//   stagger(step)                    -> (el, i) => i * step
-//   utils.remove(targetOrArray)      -> cancel tweens on those targets
-//   eases.<name> / eases.<name>()    -> easing fn (called or bare)
-
 const OPTION_KEYS = new Set([
   "duration", "delay", "ease", "round", "loop", "alternate", "reversed",
   "iterations", "onBegin", "onUpdate", "onComplete", "autoplay", "alternateLoop",
@@ -64,7 +53,6 @@ class Animation {
       });
     }
 
-    // per-target delay + from/to. captures current value as default from
     this.tracks = this.targets.map((tg, i) => {
       const delay = typeof this.delaySpec === "function"
         ? this.delaySpec(tg, i, this.targets.length)
@@ -97,7 +85,6 @@ class Animation {
       const finished = rawIter >= this.count;
       let localT;
       if (finished) {
-        // settle on final edge, respect alternate parity
         const lastIter = this.count - 1;
         localT = this.alternate && lastIter % 2 === 1 ? 0 : 1;
         tr.done = true;
@@ -156,15 +143,12 @@ export const utils = {
   },
 };
 
-// each entry callable both ways: `eases.inQuad` used directly as easing fn,
-// and `eases.inElastic()` (animejs factory style) returns easing fn
 function makeEase(fn) {
   const e = (t) => (t === undefined ? e : fn(t));
   return e;
 }
 function resolveEase(e) {
   if (!e) return null;
-  // factory passed un-called (e.g. eases.outElastic) still works as fn
   return typeof e === "function" ? e : null;
 }
 
@@ -231,7 +215,6 @@ const raw = {
     t < 0.5 ? (1 - bounceOut(1 - 2 * t)) / 2 : (1 + bounceOut(2 * t - 1)) / 2,
 };
 
-// outIn* = first half outX, second half inX. mirror of inOut
 function outIn(inFn, outFn) {
   return (t) => (t < 0.5 ? outFn(2 * t) / 2 : inFn(2 * t - 1) / 2 + 0.5);
 }

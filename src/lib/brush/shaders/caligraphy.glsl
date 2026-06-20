@@ -2,38 +2,28 @@
 #define GRID_SIZE    1.8
 #define ANIMATE      1
 #define ANIM_SPEED   1.0
-#define ANIM_HOLD    2.0        // seconds holding the finished glyph before looping
-#define BASE_RADIUS  0.08       // brush half-width in world units at pressure 1
+#define ANIM_HOLD    2.0
+#define BASE_RADIUS  0.08
 #define MIN_PRESS    0.0
 
-#define SAMPLES      10         // SDF sub-segments per curve (higher = smoother)
+#define SAMPLES      10
 
-#define INK_BLEED    0         // 1 = feathered noisy ink edge + bleed halo
-#define BLEED_WIDTH  0.015     // world-space spread of the bleed halo
-#define BLEED_FREQ   90.0      // edge-wiggle frequency (paper fiber scale)
-#define BLEED_JITTER 0.2       // how much noise distorts the silhouette
-#define BLEED_HALO   0.5       // max coverage of the diluted outer bleed
-#define GRAIN        0.05      // paper grain strength (0 = off)
-#define VIGNETTE     0.5       // edge darkening strength (0 = off)
+#define INK_BLEED    0
+#define BLEED_WIDTH  0.015
+#define BLEED_FREQ   90.0
+#define BLEED_JITTER 0.2
+#define BLEED_HALO   0.5
+#define GRAIN        0.05
+#define VIGNETTE     0.5
 
 #define GLYPH        2
 
-// Each Seg is self-contained: endpoints, control, pressures, belly, timeline.
-//   p1,p2   segment endpoints (world)
-//   ctrl    resolved bezier control (auto Catmull-rom already applied)
-//   pr1,pr2 endpoint pressures (0..1)
-//   k       belly pressure value (only if hasBelly)
-//   belly   parametric belly position; hasBelly 1 = use belly curve
-//   t0,dur  reveal timeline (seconds); v0,v1 endpoint speeds (reveal shape)
 struct Seg {
     vec2 p1; vec2 p2; vec2 ctrl;
     float pr1; float pr2; float k; float belly; int hasBelly;
     float t0; float dur; float v0; float v1;
 };
-// ===== BAKED data by tools =====
 #if GLYPH == 0
-// 永, 7 strokes
-
 const int NSEG = 23;
 const float TOTAL_TIME = 2.88137;
 const Seg SEGS[NSEG] = Seg[NSEG](
@@ -63,8 +53,6 @@ const Seg SEGS[NSEG] = Seg[NSEG](
 );
 
 #elif GLYPH == 1
-
-// 龍, 21 strokes (https://www.instagram.com/reel/DA9o7nFNgTv/)
 const int NSEG = 59;
 const float TOTAL_TIME = 5.13929;
 const Seg SEGS[NSEG] = Seg[NSEG](
@@ -130,8 +118,6 @@ const Seg SEGS[NSEG] = Seg[NSEG](
 );
 
 #else
-
-// 福 - 11 strokes, highly stylized (https://www.instagram.com/matsushitayouna/reel/DZewnPqhvN7/)
 const int NSEG = 42;
 const float TOTAL_TIME = 3.58781;
 const Seg SEGS[NSEG] = Seg[NSEG](
@@ -181,8 +167,6 @@ const Seg SEGS[NSEG] = Seg[NSEG](
 
 #endif
 
-// ===== end baked data =====
-
 const vec3 PAPER_COLOR = vec3(1.000, 0.988, 0.878);
 const vec3 INK_COLOR   = vec3(0.067, 0.067, 0.067);
 const vec4 GRID_COLOR  = vec4(0.784, 0.235, 0.235, 0.25);
@@ -193,9 +177,7 @@ vec2 bez(vec2 p1, vec2 c, vec2 p2, float t) {
     return u * u * u * p1 + (3.0 * u * u * t + 3.0 * u * t * t) * c + t * t * t * p2;
 }
 
-// Pressure along a segment at arc progress s. Belly curve = quadratic value
-// curve through (belly,k) with endpoints (0,A),(1,B): solve bezier_x(t)=s for t,
-// return bezier_y(t).  (mirrors engine.js pressureAt)
+// Pressure at arc progress s: quad value curve through (belly,k), endpoints (0,A),(1,B); solve bezier_x(t)=s, return bezier_y(t).
 float pressureAt(float A, float B, float k, float s, float bellyX) {
     float cx = clamp(bellyX, 0.0, 1.0);
     float a = 1.0 - 2.0 * cx, b = 2.0 * cx, c = -s;
@@ -211,10 +193,8 @@ float pressureAt(float A, float B, float k, float s, float bellyX) {
     return u * u * A + 2.0 * u * t * k + t * t * B;
 }
 
-// Revealed arc fraction at time-fraction tp, exact inverse of the engine's
-// auto-timing (velocity linear in ARC: travelTime uses ∫ds/v -> log). Solving
-// for arc at time τ=tp·dur gives  r = v0·(ratio^tp - 1)/(v1 - v0),  ratio=v1/v0.
-// (v0==v1 -> linear r=tp). Matches engine.js sampleStroke exactly.
+// Revealed arc fraction at time-fraction tp (inverse of velocity-linear-in-arc timing):
+// r = v0·(ratio^tp - 1)/(v1 - v0), ratio=v1/v0; v0==v1 -> linear r=tp.
 float revealArc(float tp, float v0, float v1) {
     float dv = v1 - v0;
     if (abs(dv) < 1e-5) return clamp(tp, 0.0, 1.0);
@@ -222,9 +202,7 @@ float revealArc(float tp, float v0, float v1) {
     return clamp(v0 * (pow(ratio, tp) - 1.0) / dv, 0.0, 1.0);
 }
 
-// Exact 2D signed distance to a round cone (capsule with linearly-varying
-// radius r1->r2). Round caps + round joins, true taper. (Inigo Quilez.)
-// https://iquilezles.org/articles/distfunctions/
+// 2D signed distance to a round cone (capsule with linear radius r1->r2). https://iquilezles.org/articles/distfunctions/
 float sdRoundedCone(vec2 p, vec2 a, vec2 b, float r1, float r2) {
     vec2 ba = b - a;
     float l2 = dot(ba, ba);
@@ -257,14 +235,12 @@ float komeGrid(vec2 w, float aa) {
     float hw = GRID_SIZE * 0.5;
     vec2 bl = vec2(-hw, -hw), br = vec2(hw, -hw);
     vec2 tr = vec2(hw, hw),   tl = vec2(-hw, hw);
-    float lw = aa * 0.9;                       // line half-width
+    float lw = aa * 0.9;
     float g = 0.0;
-    // outer square
     g = max(g, lineCover(w, bl, br, lw, aa));
     g = max(g, lineCover(w, br, tr, lw, aa));
     g = max(g, lineCover(w, tr, tl, lw, aa));
     g = max(g, lineCover(w, tl, bl, lw, aa));
-    // center cross + diagonals
     g = max(g, lineCover(w, vec2(-hw, 0.0), vec2(hw, 0.0), lw, aa));
     g = max(g, lineCover(w, vec2(0.0, -hw), vec2(0.0, hw), lw, aa));
     g = max(g, lineCover(w, bl, tr, lw, aa));
@@ -273,12 +249,10 @@ float komeGrid(vec2 w, float aa) {
 }
 
 
-// cheap hash -> [-1,1] grain per pixel
 float grainNoise(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453) * 2.0 - 1.0;
 }
 
-// gradient noise (from the enso brush) for ink bleed + bristle texture
 vec2 hash2(vec2 p) {
     p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
     return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
@@ -313,30 +287,25 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float T = TOTAL_TIME;
 #endif
 
-    // accumulate the nearest signed distance to the variable-width ink tube
     float dmin = 1e9;
     for (int i = 0; i < NSEG; i++) {
         Seg s = SEGS[i];
         vec2 p1 = s.p1, p2 = s.p2, c = s.ctrl;
         float pa = s.pr1, pb = s.pr2;
 
-        // reveal: how much of this segment's arc is drawn at time T
 #if ANIMATE
         float tp = clamp((T - s.t0) / s.dur, 0.0, 1.0);
-        if (tp <= 0.0) continue;                           // not started yet
+        if (tp <= 0.0) continue;
         float r = revealArc(tp, s.v0, s.v1);
 #else
-        float r = 1.0;                                     // fully drawn
+        float r = 1.0;
 #endif
 
-        // cheap reject: bezier lives inside hull of {p1,c,p2}. If the pixel is
-        // farther than (hull radius + max brush radius + aa) it can never be
-        // the nearest ink edge — skip the whole sample walk.
+        // reject: bezier lives inside hull of {p1,c,p2}
         vec2 cen = (p1 + p2) * 0.5;
         float hullR = max(length(p1 - cen), length(c - cen));
         if (length(w - cen) - hullR - BASE_RADIUS > aa + BLEED_WIDTH) continue;
 
-        // walk the revealed portion [0, r] as round-cone sub-segments
         vec2 prevPos = bez(p1, c, p2, 0.0);
         float prevRad = BASE_RADIUS * max(MIN_PRESS, pa);
         for (int k = 1; k <= SAMPLES; k++) {
@@ -356,10 +325,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float eN   = vnoise(w * BLEED_FREQ);
     float edge = dmin + eN * BLEED_WIDTH * BLEED_JITTER * T / TOTAL_TIME;
     float core = smoothstep(aa, -aa, edge);
-    float halo = smoothstep(BLEED_WIDTH, -aa, edge);   // diluted outer spread
+    float halo = smoothstep(BLEED_WIDTH, -aa, edge);
     float ink  = max(core, halo * BLEED_HALO * T / (TOTAL_TIME + ANIM_HOLD));
 #else
-    float ink = smoothstep(aa, -aa, dmin);             // single clean AA edge
+    float ink = smoothstep(aa, -aa, dmin);
 #endif
 
     col = mix(col, INK_COLOR, ink);

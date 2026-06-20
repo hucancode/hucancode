@@ -1,5 +1,4 @@
-// Deterministic PRNG. Seed once -> fresh-but-STABLE sequence within session so
-// timeline scrubbing replays same generated paths.
+// Deterministic mulberry32 PRNG, seeded for stable replayable sequences.
 export function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {

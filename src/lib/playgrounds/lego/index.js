@@ -1,8 +1,3 @@
-// one brick generated from tunable params (stud counts, body depth, wall
-// thickness, stud size); rebuilt live as user drags sliders. in-scene toon shader
-// (one point light + banded diffuse) for plastic look. brick auto-spins so 3D form reads.
-// brick model is rigid rotation so upper 3x3 of uModel is valid normal transform.
-
 import {
   createDevice, Camera, mat4, Vec3, Euler,
   boxGeometry, cylinderGeometry, mergeGeometries,
@@ -14,18 +9,18 @@ import FRAG from "./shaders/lego.frag.glsl?raw";
 const GRADIENT_STEP = 5;
 
 const config = {
-  width: 4,        // studs along X
-  height: 2,       // studs along Z
-  depth: 1,        // body height
-  thickness: 0.2,  // wall thickness
+  width: 4,
+  height: 2,
+  depth: 1,
+  thickness: 0.2,
   studRadius: 0.4,
   studHeight: 0.3,
   color: "#fab387",
-  spin: 1,         // auto-rotation speed
+  spin: 1,
 };
 
 let canvas, device, shader, camera, disposed = false;
-let brick = null; // { posBuf, normBuf, count }
+let brick = null;
 let color = [0.98, 0.7, 0.53];
 let yaw = 0.6, pitch = 0.5;
 let dragging = false, lastX = 0, lastY = 0;
@@ -42,7 +37,6 @@ function colorRGB(hex) {
   return [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
 }
 
-// four walls + top plank + grid of stud cylinders, merged
 function makeLegoPiece() {
   const width = Math.max(1, Math.round(config.width));
   const height = Math.max(1, Math.round(config.height));
@@ -86,7 +80,6 @@ function rebuild() {
     normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
     count: g.attributes.position.count,
   };
-  // frame brick: camera distance scales with largest footprint
   camera._dist = Math.max(config.width, config.height, 3) * 2.4;
 }
 

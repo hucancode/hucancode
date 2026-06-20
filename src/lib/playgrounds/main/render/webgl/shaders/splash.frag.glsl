@@ -1,13 +1,6 @@
 #version 300 es
 precision highp float;
 
-// Ink-splash wash. A procedural-noise quad: an ink blob centred at the origin
-// that GROWS over time (uGrow) out to uSpread, with a sharp fbm-fingered edge so
-// it splatters randomly around the circle. The coverage is POSTERISED to ~3 ink
-// tones (sumi-e light/mid/dark), with magicBox speckles flung past the rim.
-// Rendered into its own offscreen target (straight alpha), composited behind the
-// glyph.
-
 out vec4 fragColor;
 
 uniform vec2  uResolution;
@@ -19,7 +12,7 @@ uniform float uClock;    // absolute scene time -> slow noise drift
 uniform vec3 uInkDark;
 uniform vec3 uInkLight;
 
-// ---- simplex noise + fbm (from the sumi-e reference shader) -----------------
+// simplex noise + fbm
 vec2 hash(vec2 p) {
     p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
     return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
@@ -43,7 +36,7 @@ float fbm(vec2 p) {
     return s;
 }
 
-// ---- magicBox fractal for splatter speckles (from "Magic Fractal" by dgreensp)
+// magicBox fractal for splatter speckles (from "Magic Fractal" by dgreensp)
 float magicBox(vec3 p) {
     const float MAGIC = 0.55;
     p = 1.0 - abs(1.0 - mod(p, 2.0));

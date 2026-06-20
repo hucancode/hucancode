@@ -1,7 +1,3 @@
-// 2D roam geometry: enso circle, straight lead-in, rosette of tangent circles
-// the ink dragon walks, smooth C-branch from glyph end onto enso. Pure builders:
-// fed entry/heading + session PRNG, return paths head-path module samples.
-
 import { TAU, clamp } from "$lib/math/scalar.js";
 import { arcLengthCurve } from "$lib/math/curve.js";
 import {

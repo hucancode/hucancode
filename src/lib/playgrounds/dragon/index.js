@@ -1,9 +1,3 @@
-// dragon mesh deformed along closed Catmull-Rom flight path on GPU: path sampled
-// into N orthonormal frames (column-major mat4 each) packed into float texture;
-// vertex shader maps mesh.x along path and bends cross-section into local frame.
-// advancing head offset flies it forever. all curve/baking logic lives here in
-// scene; engine only transports data and draws.
-
 import { createDevice, Camera, loadDragonMesh } from "$lib/engine/index.js";
 import { buildSpline } from "$lib/math/curve.js";
 import DRAGON_WGSL from "./shaders/dragon.wgsl?raw";
@@ -17,8 +11,6 @@ const CANVAS_ID = "dragon";
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 const N_FRAMES = 384;
 const MAX_DRAGON = 8;
-
-// flight-path line: transform baked frame positions, draw strip
 
 const F32 = (name) => ({ name, type: "f32" });
 const VEC3 = (name) => ({ name, type: "vec3" });
@@ -35,7 +27,7 @@ const config = {
 };
 
 let canvas, device, prog, pathProg, camera, dragonPos, dragonNorm, dragonCount = 0;
-let dragons = []; // { tex, pathBuf, pathCount, pathLen, bodyLen, girth, headOffset, color }
+let dragons = [];
 let time = 0, lastT = 0;
 let disposed = false;
 
@@ -46,7 +38,6 @@ function getCurrentDragonCount() {
   return dragons.length;
 }
 
-// presets -> array of {x,y,z} control points
 function buildPath(preset, n, s) {
   const pts = [];
   if (preset === "circle") {
@@ -65,8 +56,7 @@ function buildPath(preset, n, s) {
   return pts;
 }
 
-// sample spline into N orthonormal frames (column-major mat4 each), packed into
-// Float32Array(N*16) for RGBA32F frame texture
+// sample spline into N orthonormal frames (column-major mat4 each)
 function bakeFrames(points) {
   const spline = buildSpline(points);
   const total = spline.total;
@@ -103,8 +93,7 @@ function randomColor() {
 function makeDragon() {
   if (!device || !dragonCount || dragons.length >= MAX_DRAGON) return;
   const { frames, pathLen } = bakeFrames(buildPath(config.preset, config.points, config.spread));
-  // frame origins as closed line strip for path overlay. append first point again
-  // to close loop: line-strip, not line-loop.
+  // append first point again to close the loop (line-strip, not line-loop)
   const pathCount = N_FRAMES + 1;
   const pathPos = new Float32Array(pathCount * 3);
   for (let i = 0; i < N_FRAMES; i++) {
@@ -138,7 +127,6 @@ function clearDragon() {
   dragons = [];
 }
 
-// rebuild every dragon onto freshly generated path (knob change / "new path")
 function regenerate() {
   const count = Math.max(1, dragons.length);
   clearDragon();
@@ -207,11 +195,9 @@ function render() {
   time += dt;
 
   syncSize();
-  // viewProj through camera seam (WebGPU remaps clip z to [0,1]); copy shared
-  // scratch before reusing across draws.
+  // copy shared scratch before reusing across draws
   const vp = device.correctViewProj(camera.viewProjMatrix).slice();
 
-  // animated coloured key light, or steady white from above
   let lightDir, lightColor, ambient;
   if (config.showLights) {
     lightDir = [Math.sin(time * 0.7) * 0.6 + 0.2, Math.cos(time * 0.5) * 0.8 + 0.6, Math.cos(time * 0.3) * 0.6 + 0.3];
@@ -226,7 +212,7 @@ function render() {
   device.beginFrame();
   device.pass({ target: "screen", clear: [0, 0, 0, 0], depth: true, depthClear: 1 }, (p) => {
     for (const d of dragons) {
-      // wrap by pathLen (closed loop) so offset stays bounded over long runs
+      // wrap by pathLen so offset stays bounded over long runs
       d.headOffset = (d.headOffset + config.speed * d.pathLen) % d.pathLen;
       p.draw(prog, {
         buffers: [dragonPos, dragonNorm], count: dragonCount, textures: { uFrames: d.tex },

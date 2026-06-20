@@ -1,10 +1,4 @@
-// Ensō — WGSL twin of shaders/enso.frag.glsl. One fullscreen triangle; the
-// sumi-e brush circle is an SDF in (along, perp) coords mapped around a ring in
-// polar space. Same ink machinery (bristle noise, taper, paper bleed) as GLSL.
-//
-// Uniform struct fields MUST match the `uniforms` list in index.js, in order
-// (the engine packs a uniform buffer from that list — engine/gpu/webgpu.js).
-
+// Uniform struct fields MUST match the `uniforms` list in index.js, in order.
 struct Uni {
   uResolution: vec2<f32>,
   uClockwise: f32,

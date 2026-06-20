@@ -1,6 +1,3 @@
-// full-screen triangle runs ensō fragment shader, renders sumi-e brush circle
-// procedurally in polar space. no mesh, no camera; every knob is a shader uniform.
-
 import { createDevice } from "$lib/engine/index.js";
 import ENSO_FRAG from "./shaders/enso.frag.glsl?raw";
 import ENSO_WGSL from "./shaders/enso.wgsl?raw";

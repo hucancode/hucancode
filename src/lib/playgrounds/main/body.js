@@ -1,14 +1,10 @@
-// 2D ink dragon's kinematic body: chain of BODY_N points trailing head. Two
-// modes: refit on motion line each frame (physics off, default), or verlet chain
-// that lags tip. reads head sampler (posAt) so trail flows across phase seams.
-
 import { lerp } from "$lib/math/scalar.js";
 import { BODY_N, BODY_LEN, PROP_SPEED, MAX_BEND } from "./config.js";
 
 export function createBodyController({ headPath, timing }) {
   const { posAt } = headPath;
   let body = [];
-  let _next = null; // persistent scratch chain swapped with body in step (no per-frame alloc)
+  let _next = null;
 
   // Fit body along motion line: head at path point for t, rest trailing back by
   // arc length. Walk backward in SCENE-TIME through global sampler (posAt), NOT
@@ -102,7 +98,6 @@ export function createBodyController({ headPath, timing }) {
         }
       }
     }
-    // swap: result becomes body, old body becomes reusable scratch (no alloc)
     _next = body;
     body = next;
   }

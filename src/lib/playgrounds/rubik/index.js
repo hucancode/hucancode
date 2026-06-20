@@ -1,8 +1,3 @@
-// each cubelet is unit box with per-face vertex colors and world-space base matrix.
-// face turn rotates selected layer about world axis through origin, then bakes 90°
-// into base matrices. layer membership read back from cubelet world translation,
-// so no scene graph / reparenting needed.
-
 import { createDevice, Camera, boxGeometry, mat4, animate, stagger, utils, eases } from "$lib/engine/index.js";
 import RUBIK_WGSL from "./shaders/rubik.wgsl?raw";
 import VERT from "./shaders/rubik.vert.glsl?raw";
@@ -13,7 +8,7 @@ const FACE_TO_COLOR = [0x40a02b, 0x89b4fa, 0xf9e2af, 0xf8fafc, 0xef4444, 0xfe640
 const BLACK = 0x181825;
 const RUBIK_SIZE = 8;
 const CUBE_MARGIN = 0.1;
-const CELL = (1 + CUBE_MARGIN) * RUBIK_SIZE; // world spacing between cubelets
+const CELL = (1 + CUBE_MARGIN) * RUBIK_SIZE;
 const CUBE_NUM_DEFAULT = 3;
 
 const RANDOM_EASES = [
@@ -27,12 +22,11 @@ const config = { speed: 1, autoplay: true, randomEase: true };
 let cubeNum = CUBE_NUM_DEFAULT;
 
 let canvas, device, shader, camera, disposed = false;
-let cubes = []; // { posBuf, colorBuf, count, base:mat4, intro:{x,y} }
-let move = null; // { idx:[], axis, angle:{v}, sign }
+let cubes = [];
+let move = null;
 let busy = false;
 let running = false;
 
-// user controls YAW only; pitch fixed 45deg, no roll. radius scales with cube size to keep framed.
 const CAM_PITCH = Math.PI / 4;
 let yaw = Math.PI / 4;
 let dragging = false;
@@ -40,7 +34,7 @@ let lastX = 0;
 const _rot = mat4.create();
 const _model = mat4.create();
 const _t = mat4.create();
-const _vp = mat4.create(); // stable per-frame copy of correctViewProj (shared scratch)
+const _vp = mat4.create();
 
 function setConfig(patch) {
   Object.assign(config, patch);
@@ -67,12 +61,11 @@ function faceColor(x, y, z, face) {
   return isInFace(x, y, z, face, 1) ? FACE_TO_COLOR[face] : BLACK;
 }
 
-// unit box, 6 verts/face, faces ordered +X,-X,+Y,-Y,+Z,-Z (matches faceColor index);
-// paint each face's 6 verts. returns { position, color, count }.
+// unit box, 6 verts/face, faces ordered +X,-X,+Y,-Y,+Z,-Z (matches faceColor index)
 function makeCubeData(x, y, z) {
   const g = boxGeometry(1, 1, 1);
   const pos = g.attributes.position.array;
-  const count = g.attributes.position.count; // 36
+  const count = g.attributes.position.count;
   const color = new Float32Array(36 * 3);
   for (let face = 0; face < 6; face++) {
     const c = colorRGB(faceColor(x, y, z, face));
@@ -163,7 +156,6 @@ function startMove(face, depth, magnitude) {
     delay: 200 / spd,
     ease,
     onComplete: () => {
-      // bake turn into base matrices, then snap to grid
       const R = rotationFor(axis, target);
       for (const i of idx) {
         mat4.multiply(cubes[i].base, R, cubes[i].base);
@@ -210,7 +202,6 @@ function entrance() {
   });
 }
 
-// drag horizontally to spin cube (yaw only)
 function onDown(e) {
   dragging = true;
   lastX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -248,7 +239,7 @@ async function init(canvasEl) {
     depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
   });
   camera = new Camera(45, w / h, 1, 2000);
-  camera.up.set(0, 1, 0); // no roll
+  camera.up.set(0, 1, 0);
   buildCubes();
   entrance();
   canvas.addEventListener("pointerdown", onDown);
@@ -257,7 +248,6 @@ async function init(canvasEl) {
 }
 
 function placeCamera() {
-  // half-diagonal of cube + margin -> keep all on screen
   const r = (cubeNum * CELL) * 2.2 + RUBIK_SIZE * 2, cp = Math.cos(CAM_PITCH);
   camera.position.set(r * cp * Math.cos(yaw), r * Math.sin(CAM_PITCH), r * cp * Math.sin(yaw));
   camera.lookAt(0, 0, 0);
@@ -279,16 +269,12 @@ function render() {
   syncSize();
   placeCamera();
   camera.update();
-  // viewProj through camera seam (WebGPU remaps clip z to [0,1]). correctViewProj
-  // returns SHARED scratch overwritten each call -> copy before cubelet loop since
-  // passed as uniform to every cubelet draw.
   mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
 
   device.beginFrame();
   device.pass({ target: "screen", clear: [0, 0, 0, 0], depth: true, depthClear: 1 }, (p) => {
     for (let i = 0; i < cubes.length; i++) {
       const cube = cubes[i];
-      // base, optionally turned by live layer rotation, plus intro offset
       let model = cube.base;
       if (move && move.idx.includes(i)) {
         mat4.multiply(_model, rotationFor(move.axis, move.angle.v), cube.base);

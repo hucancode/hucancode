@@ -1,9 +1,3 @@
-// Glyph sits at station Y == ensoCenter.y, below camera at B3 start, off-screen
-// until descending camera nears it (enters screen bottom ~GLYPH_RISE_DELAY in).
-// Trace delayed to that moment so whole reveal stays on-screen, finishes as glyph
-// reaches mid-screen (block end). Then holds, eases to GLYPH_FADE_TARGET as 3D
-// dragon takes over.
-
 import { track } from "../stage/index.js";
 import { BLOCK_DUR, GLYPH_FADE_TARGET } from "../config.js";
 
@@ -21,8 +15,6 @@ export function createGlyphBlock({ timing, glyph }) {
     outputs: ["playhead", "glyphAlpha"],
     defaults(ctx) { ctx.playhead = 0; ctx.glyphAlpha = 0; },
     tracks: {
-      // hold playhead 0 until glyph clears screen bottom, then trace full symbol
-      // over visible rise. lead shifts ramp start later.
       playhead: track.tween(0, glyph.total, { dur: traceDur, lead: -GLYPH_RISE_DELAY }),
       glyphAlpha: track.keyframes([
         { at: GLYPH_RISE_DELAY - 1.0, v: 0 },

@@ -1,5 +1,5 @@
 #version 300 es
-// uFlipY = +1 WebGL, -1 WebGPU. emit clip space direct (no gl_FragCoord) -> offscreen render-to-texture V axis differs per API.
+// uFlipY = +1 WebGL, -1 WebGPU (offscreen render-to-texture V axis differs per API).
 precision highp float;
 in vec2 aPos;
 in vec2 aLineUV;

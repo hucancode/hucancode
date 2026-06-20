@@ -1,24 +1,18 @@
-// 2D dragon reveals (B1), leads through corridor, fades under 3D dragon (B6).
-// Owns alpha / head fade / size ramp, drives body controller. Body has history,
-// so stays imperative.
-
 import { ramp } from "$lib/math/scalar.js";
 import { BODY_LEN, HEAD_SIZE, ENABLE_PHYSICS } from "../config.js";
 
 export function createInkBlock({ timing, bodyCtrl, headPath, grow }) {
-  let lastInkPhase = -1; // path phase body last fitted in. refit on change
+  let lastInkPhase = -1;
   const refit = (ctx) => {
     bodyCtrl.reseed(ctx.t, BODY_LEN * grow.len(ctx.t));
     lastInkPhase = headPath.phaseOf(ctx.t);
   };
   return {
     name: "inkDragon",
-    at: 0,                          // 2D dragon reveals first (top-middle)
-    duration: timing.loop3Start,    // gone by loop3
+    at: 0,
+    duration: timing.loop3Start,
     outputs: ["inkAlpha", "headAlpha", "inkWidthScale", "headSize"],
     defaults(ctx) { ctx.inkAlpha = 0; ctx.headAlpha = 1; ctx.inkWidthScale = 1; ctx.headSize = HEAD_SIZE; },
-    // on enter/seek: refit body on-path so scrub lands on valid on-curve pose
-    // (no physics history, no straight teleport).
     setup: refit,
     seek: refit,
     update(ctx) {

@@ -1,8 +1,3 @@
-// three full-screen-ish quads layered with alpha: cloud/ink paper background,
-// bagua ring, spinning taiji symbol. each its own fragment shader on a quad;
-// vertex shader rotates sampled coords (disc spin) and keeps symbol square
-// regardless of aspect. three layers alpha-blend ('straight') in one screen pass.
-
 import { createDevice, Color, animate, utils, eases } from "$lib/engine/index.js";
 import CLOUD_FRAG from "./shaders/cloud.frag.glsl?raw";
 import BAGUA_FRAG from "./shaders/bagua.frag.glsl?raw";
@@ -10,8 +5,6 @@ import TAIJI_FRAG from "./shaders/taiji.frag.glsl?raw";
 import CLOUD_WGSL from "./shaders/cloud.wgsl?raw";
 import BAGUA_WGSL from "./shaders/bagua.wgsl?raw";
 import TAIJI_WGSL from "./shaders/taiji.wgsl?raw";
-// fullscreen quad from gl_VertexID (6 verts), rotate sampled coords (uRot), scale
-// clip-space size (uScale); same as WGSL vs().
 import VERT from "./shaders/taiji.vert.glsl?raw";
 
 const config = { taijiSpin: 0.01, cloudSpeed: 4, bitCount: 3, stroke: 0.04, dot: 0.12 };

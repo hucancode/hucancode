@@ -1,7 +1,3 @@
-// Declarative property tracks. track = pure fn (local, ctx) => value, local =
-// block-local time (seconds). pure of `local` -> scrub-safe: scrub/reverse
-// re-evaluates with no integration or history.
-
 import { clamp, lerp, smooth } from "$lib/math/scalar.js";
 
 // easing registry: name -> (x in [0,1]) -> eased x in [0,1]

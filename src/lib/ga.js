@@ -10,7 +10,6 @@ function initGA() {
   window.dataLayer = window.dataLayer || [];
   gtag("js", new Date());
   gtag("config", GA_MEASUREMENT_ID);
-  // console.log('GA initialized, dataLayer:', window.dataLayer);
 }
 
 export { GA_MEASUREMENT_ID, gtag, initGA };

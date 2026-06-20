@@ -1,8 +1,4 @@
-// Cloud / ink-paper background — WGSL twin of shaders/cloud.frag.glsl. A
-// fullscreen quad whose vertex shader rotates the sampled coords (uRot) and
-// scales the clip-space size (uScale). fbm domain warp tinted into a circular
-// wash. Uniform struct fields MUST match the `uniforms` list in index.js.
-
+// Uniform struct fields MUST match the `uniforms` list in index.js.
 struct Uni {
   uScale: vec2<f32>,
   uRot: f32,

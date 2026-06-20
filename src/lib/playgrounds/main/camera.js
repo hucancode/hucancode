@@ -1,7 +1,5 @@
-// Orbit camera (perspective; column-major mat4). Yaw user-controllable, pitch
-// scripted by camera track. camY slides look-at point down world in +/-Y
-// (corridor descent); world translated by -camY so descending camera sees
-// corridor scroll upward. Reused scratch -> zero per-frame allocation.
+// Orbit camera (perspective; column-major mat4). camY slides look-at down world
+// +/-Y; world translated by -camY so descending camera sees corridor scroll up.
 
 import * as mat4 from "$lib/math/mat4.js";
 import { CAM } from "./config.js";

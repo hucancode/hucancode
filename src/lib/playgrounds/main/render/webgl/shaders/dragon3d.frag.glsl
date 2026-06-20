@@ -1,9 +1,6 @@
 #version 300 es
 precision highp float;
 
-// 3D dragon shading: dim Phong (two-sided diffuse + spec). Orthographic-ish view
-// direction (+z). uOpacity fades in. No emissive / rim glow.
-
 in vec3 vNormal;
 uniform float uOpacity;
 uniform float uLightBoost;

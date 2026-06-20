@@ -1,10 +1,4 @@
-// Live calligraphy ink renderer — WGSL twin of caligraphy-playground.frag.glsl.
-// Fullscreen triangle; the baked Seg[] table arrives as an rgba32f texture
-// (5 texels/seg, height = NSEG). See the GLSL file for the optimization notes
-// (header-texel reject, capsule sdf, bounded loop). Math is identical.
-//
 // Uniform struct order MUST match the `uniforms` list in render.js.
-
 struct Uni {
   uResolution: vec2<f32>,
   uBaseRadius: f32,
@@ -112,8 +106,7 @@ fn grainNoise(p: vec2<f32>) -> f32 {
 
 @fragment
 fn fs(in: VsOut) -> @location(0) vec4<f32> {
-  // @builtin(position) is y-down (top-left origin); GLSL gl_FragCoord is y-up.
-  // flip Y so world->screen mapping matches the WebGL backend exactly.
+  // @builtin(position) is y-down; GLSL gl_FragCoord is y-up. flip Y to match WebGL backend.
   let frag = vec2(in.pos.x, u.uResolution.y - in.pos.y);
   let wv = (2.0 * frag - u.uResolution) / u.uResolution.y;
   let w = wv / u.uZoom + u.uPan;
@@ -152,7 +145,7 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
     }
     let hasBelly = i32(Cc.z + 0.5);
 
-    var prevPos = p1;                                    // bez(p1,c,p2,0) == p1
+    var prevPos = p1;
     var prevRad = u.uBaseRadius * max(MIN_PRESS, pa);
     for (var k = 1; k <= SAMPLES; k = k + 1) {
       let t = (f32(k) / f32(SAMPLES)) * r;

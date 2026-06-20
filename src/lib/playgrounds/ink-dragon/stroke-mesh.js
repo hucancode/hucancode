@@ -1,7 +1,3 @@
-// Ribbon mesh for dragon body stroke. Two verts per ribbon-point, offset by
-// +/- miter normal * half mesh band width. Mesh band wider than stroke by
-// clearance margin (perp + arc) so frag shader can bleed ink past stroke edge.
-// aLineUV carries (perp_t, arc_t) in 0..1.
 import { Geometry } from "$lib/engine/index.js";
 
 const MITER_LIMIT     = 4.0;

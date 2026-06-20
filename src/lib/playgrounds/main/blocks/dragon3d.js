@@ -1,7 +1,3 @@
-// Fades 3D dragon in over crossfade (B6), then loops forever. Persistent.
-// Owns only opacity. Mesh draw params written elsewhere (dragon3d model writes
-// _frame.dragon3d).
-
 import { track } from "../stage/index.js";
 
 export function createDragon3dBlock({ timing }) {
