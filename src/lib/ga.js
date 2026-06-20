@@ -12,4 +12,28 @@ function initGA() {
   gtag("config", GA_MEASUREMENT_ID);
 }
 
-export { GA_MEASUREMENT_ID, gtag, initGA };
+// fire each event at most once per page load
+const fired = new Set();
+function trackOnce(key, name, params) {
+  if (!browser || fired.has(key)) return;
+  fired.add(key);
+  gtag("event", name, params);
+}
+
+// which GPU backend the client got (webgpu vs webgl2)
+function trackBackend(backend) {
+  trackOnce("backend", "gpu_backend", { backend });
+}
+
+// timeline travel milestones: 20% / 50% / 100%
+const MILESTONES = [0.2, 0.5, 1];
+function trackMilestone(progress) {
+  for (const m of MILESTONES) {
+    if (progress >= m) {
+      const pct = Math.round(m * 100);
+      trackOnce(`ms_${pct}`, "timeline_progress", { percent: pct });
+    }
+  }
+}
+
+export { GA_MEASUREMENT_ID, gtag, initGA, trackBackend, trackMilestone };

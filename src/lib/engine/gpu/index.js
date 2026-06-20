@@ -4,6 +4,7 @@
 
 import { createWebGLDevice } from "./webgl.js";
 import { createWebGPUDevice } from "./webgpu.js";
+import { trackBackend } from "$lib/ga.js";
 
 export { Camera } from "../camera.js";
 
@@ -20,7 +21,9 @@ export async function createDevice(canvas, { prefer = "webgpu" } = {}) {
   for (const name of ORDER(prefer)) {
     if (!available(name)) continue;
     try {
-      return name === "webgpu" ? await createWebGPUDevice(canvas) : createWebGLDevice(canvas);
+      const device = name === "webgpu" ? await createWebGPUDevice(canvas) : createWebGLDevice(canvas);
+      trackBackend(device.backend);
+      return device;
     } catch (e) {
       lastErr = e;
       console.warn(`[gpu] ${name} device unavailable, trying next`, e);
