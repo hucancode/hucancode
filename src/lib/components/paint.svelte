@@ -93,10 +93,14 @@
     if (qs.get("play") === "1") playing = true;
     if (qs.get("debug") === "1") debug = { path2d: true, path3d: true };
     if (qs.get("yaw")) orbitYaw = parseFloat(qs.get("yaw")) || 0;
+    // ?backend=webgl|webgpu forces a backend (default: webgpu, falls back to webgl)
+    const qb = qs.get("backend");
+    const prefer = qb === "webgl" || qb === "webgpu" ? qb : "webgpu";
     const endMount = mark("onMount total");
     profile("initScene", () => initScene());
     sizeCanvas();
-    renderer = await profile("createRenderer", () => createRenderer(canvasEl, { prefer: "webgl" }));
+    renderer = await profile("createRenderer", () => createRenderer(canvasEl, { prefer }));
+    console.log(`[paint] render backend: ${renderer.backend}`);
     sizeCanvas();
     endMount();
 

@@ -1,21 +1,18 @@
-// FrameState contract for the /main (paint) scene's render backends.
+// FrameState contract for the /main (paint) scene's renderer.
 //
-// The generic backend seam (the Renderer interface below + backend selection)
-// lives in the engine: engine/backend.js. This file pins down THIS scene's
-// data contract — the FrameState shape its backends consume.
+// This file pins down THIS scene's data contract — the FrameState shape the
+// renderer consumes. The renderer itself (render/scene.js) is written ONCE
+// against the engine GPU device (engine/gpu), which runs it on WebGPU (preferred)
+// or WebGL2 (fallback); there is no longer a renderer per backend.
 //
-// The scene (main.js) is backend-agnostic: every frame it produces a plain-data
-// FrameState describing what each layer looks like at scene time t. A backend
-// turns that description into pixels. Today there is a WebGL2 backend
-// (render/webgl); a WebGPU backend can be added later (render/webgpu) without
-// touching the scene, because both implement this same interface.
+// The scene (main.js) is render-agnostic: every frame it produces a plain-data
+// FrameState describing what each layer looks like at scene time t, and the
+// renderer turns that description into pixels.
 //
-// The interface is intentionally *layer-oriented* (glyph quad, ink-dragon
-// quad, 3D dragon) rather than a generic GPU API - that keeps both backends
-// small and the seam obvious.
+// The FrameState is intentionally *layer-oriented* (glyph quad, ink-dragon
+// quad, 3D dragon) rather than a generic GPU API — that keeps the seam obvious.
 //
-// Renderer = {                       // contract owner: engine/backend.js
-//   init(canvas): Promise<void>   create context, offscreen targets, programs
+// Renderer = {                       // implemented by render/scene.js
 //   resize(w, h): void            resize swapchain + offscreen targets
 //   frame(state: FrameState): void upload per-frame data + draw all passes
 //   destroy(): void               release GPU resources

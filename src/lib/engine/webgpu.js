@@ -6,7 +6,7 @@
 //
 // Standard WGPU init; the only environment assumption is `navigator.gpu`. Call
 // is async (adapter/device requests are promises). Throws if WebGPU is absent
-// or no adapter is granted, so createRenderer() (backend.js) can fall back.
+// or no adapter is granted, so createDevice() (gpu/) can fall back to WebGL2.
 
 export async function makeWebGPUContext(canvas, opts = {}) {
   if (typeof navigator === "undefined" || !navigator.gpu)
@@ -15,6 +15,16 @@ export async function makeWebGPUContext(canvas, opts = {}) {
     powerPreference: opts.powerPreference || "high-performance",
   });
   if (!adapter) throw new Error("no WebGPU adapter");
+  // Reject software adapters (llvmpipe / SwiftShader / etc): they render on the
+  // CPU — far slower than the WebGL2 fallback on real hardware. Throwing lets
+  // createDevice() fall back to WebGL2. Pass opts.allowSoftware to override.
+  if (!opts.allowSoftware) {
+    if (adapter.isFallbackAdapter) throw new Error("WebGPU adapter is software (fallback)");
+    const info = adapter.info || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : null);
+    const sig = info ? `${info.vendor || ""} ${info.architecture || ""} ${info.device || ""} ${info.description || ""}`.toLowerCase() : "";
+    if (/swiftshader|llvmpipe|lavapipe|softpipe|software|basic render|microsoft basic/.test(sig))
+      throw new Error("WebGPU adapter is software: " + sig.trim());
+  }
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
   if (!context) throw new Error("WebGPU canvas context unavailable");
