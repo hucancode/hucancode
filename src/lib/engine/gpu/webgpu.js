@@ -1,9 +1,8 @@
-// WebGPU implementation of the backend-agnostic GPU device (see ./index.js).
-// The screen pass is 4x MSAA + resolve, matching the antialiased default
-// framebuffer the WebGL backend gets for free. Per-shader uniform-buffer RING:
-// one frame is a single submit, so every draw that shares a shader needs its own
-// uniform buffer (the GPU reads them all at submit time) — the ring hands out a
-// fresh slot per draw and resets each frame.
+// WebGPU implementation of backend-agnostic GPU device (see ./index.js).
+// Screen pass is 4x MSAA + resolve, matching WebGL's free antialiased default
+// framebuffer. Per-shader uniform-buffer RING: one frame = single submit, so every
+// draw sharing a shader needs its own uniform buffer (GPU reads them all at submit
+// time) — ring hands out fresh slot per draw, resets each frame.
 
 import { makeWebGPUContext } from "../webgpu.js";
 import { mat4 } from "../math.js";
@@ -18,8 +17,8 @@ const U_ALIGN = { f32: 4, i32: 4, vec2: 8, vec3: 16, vec4: 16, mat4: 16 };
 const U_SIZE = { f32: 4, i32: 4, vec2: 8, vec3: 12, vec4: 16, mat4: 64 };
 const align = (n, a) => Math.ceil(n / a) * a;
 
-// std140-ish layout matching WGSL's uniform address space (vec3/vec4/mat4 align
-// to 16). The WGSL uniform struct must declare the same fields in this order.
+// std140-ish layout matching WGSL uniform address space (vec3/vec4/mat4 align to
+// 16). WGSL uniform struct must declare same fields in this order.
 function uniformLayout(uniforms) {
   let off = 0;
   const fields = uniforms.map((u) => {
@@ -46,9 +45,9 @@ function packUniforms(layout, values, view) {
   }
 }
 
-// clip-space z remap: the camera's projection is GL convention (z in [-1, 1]);
-// WebGPU clips to [0, 1], so left uncorrected the 3D dragon / composite quads get
-// near-plane clipped. R * viewProj maps z' = 0.5 z + 0.5 w. (column-major)
+// clip-space z remap: camera projection is GL convention (z in [-1, 1]); WebGPU
+// clips to [0, 1], so uncorrected geometry gets near-plane clipped. R * viewProj
+// maps z' = 0.5 z + 0.5 w. column-major
 const Z_REMAP = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 1]);
 
 export async function createWebGPUDevice(canvas) {
@@ -143,8 +142,7 @@ export async function createWebGPUDevice(canvas) {
     return sh;
   }
 
-  // ring slot = { buffer, bindGroup, sig }; one fresh uniform buffer per draw,
-  // recycled each frame (reset in beginFrame).
+  // one fresh uniform buffer per draw, recycled each frame (reset in beginFrame)
   function nextUbo(sh) {
     if (sh._ring >= sh._ubos.length)
       sh._ubos.push({ buffer: device.createBuffer({ size: sh._ulayout.size, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), bgCache: new Map() });
@@ -166,10 +164,9 @@ export async function createWebGPUDevice(canvas) {
       holder = sh._noUbo || (sh._noUbo = { bgCache: new Map() });
     }
 
-    // Bind-group cache: the ring buffer for this slot is stable across frames; the
-    // only thing that varies is the bound TEXTURE set. Cache one bind group per
-    // texture-signature so even alternating texture sets (e.g. the dragon's two
-    // frame buffers) reuse a cached group — zero createBindGroup in steady state.
+    // Bind-group cache: ring buffer for this slot stable across frames; only bound
+    // TEXTURE set varies. Cache one bind group per texture-signature so alternating
+    // texture sets reuse cached group — zero createBindGroup in steady state.
     let sig = "";
     for (const t of texList) { const tex = args.textures && args.textures[t.name]; sig += (tex ? tex._id : 0) + ":"; }
     let bg = holder.bgCache.get(sig);
@@ -180,7 +177,7 @@ export async function createWebGPUDevice(canvas) {
       if (sh._samplerBinding != null) entries.push({ binding: sh._samplerBinding, resource: sampler });
       bg = device.createBindGroup({ layout: sh._bgl, entries });
       holder.bgCache.set(sig, bg);
-      if (holder.bgCache.size > 8) { const k = holder.bgCache.keys().next().value; holder.bgCache.delete(k); } // bound it (texture reallocs change ids)
+      if (holder.bgCache.size > 8) { const k = holder.bgCache.keys().next().value; holder.bgCache.delete(k); } // bound size (texture reallocs change ids)
     }
     rp.setBindGroup(0, bg);
 

@@ -1,8 +1,6 @@
-// Ribbon geometry for ink strokes - raw-WebGL2 port of the geometry math in
-// scenes/stroke-polyline-mesh.js. Pure math: given a polyline + line width it
-// returns interleaved-free typed arrays (positions xy, lineUV) + indices the
-// renderer uploads to dynamic buffers. The clearance margins match the stroke
-// fragment shader so ink can bleed past the nominal edge.
+// Ribbon geometry for ink strokes. given polyline + line width -> typed arrays
+// (positions xy, lineUV) + indices. clearance margins match stroke fragment
+// shader so ink can bleed past nominal edge.
 
 const MITER_LIMIT = 4.0;
 export const PERP_CLEARANCE = 0.35;
@@ -14,10 +12,9 @@ function totalArcOf(points, n) {
   return acc;
 }
 
-// Persistent scratch reused across frames. The body length is constant, so these
-// are allocated once and reused -> no per-frame typed-array / object churn. The
-// returned arrays are consumed (uploaded) synchronously by the caller before the
-// next buildRibbon, so sharing them is safe.
+// persistent scratch reused across frames. body length constant -> alloc once,
+// no per-frame churn. caller uploads synchronously before next buildRibbon, so
+// sharing safe.
 const _ext0 = { x: 0, y: 0 };
 const _extN = { x: 0, y: 0 };
 let _ribbon = null;
@@ -31,8 +28,6 @@ function ensureScratch(nRibbon) {
   _indices = new Uint16Array((nRibbon - 1) * 6);
 }
 
-// Returns { positions: Float32Array(2*V), uvs: Float32Array(2*V),
-//           indices: Uint16Array, indexCount } or null if < 2 points.
 export function buildRibbon(points, lineWidth) {
   const nPoly = points.length;
   if (nPoly < 2) return null;

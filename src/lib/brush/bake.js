@@ -1,17 +1,12 @@
-// Bake a symbol into a flat GLSL data table for the caligraphy shadertoy glsl.
-//
-// Mirrors engine.js math: derives auto connectors (牽絲), auto control points,
-// pressure-belly arc, and auto timing once, then emits a const Seg[] table the
-// shader can walk directly (no Catmull-rom / belly search / timing loop).
-//
-// Pure JS (no DOM / Node deps) so both tools/bake_caligraphy.mjs and the Svelte
-// playground share one source of truth. Call bakeGLSL(symbol, opts).
+// Bake symbol into flat GLSL data table for caligraphy shadertoy glsl.
+// mirrors engine.js math: derives auto connectors (牽絲), auto control points,
+// pressure-belly arc, auto timing once, then emits const Seg[] table shader walks
+// directly (no Catmull-rom / belly search / timing loop).
+// pure JS so tools/bake_caligraphy.mjs and Svelte playground share one source of truth.
 
-// ---- engine constants (verbatim from engine.js) ---------------------------
 const AUTO_TENSION = 0.5;
 const MIN_SPEED = 0.05, THIN_GAIN = 2.0, CORNER = 0.7, THIN = 0.6;
 
-// ---- engine math (mirrors engine.js) --------------------------------------
 const clampN = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const mirror = (a, b) => ({ x: 2 * b.x - a.x, y: 2 * b.y - a.y });
 
@@ -25,10 +20,9 @@ function resolveControl(stroke, segIdx) {
   return autoControl(p0, p1, p2, p3);
 }
 
-// G1 auto control: intersection of the Catmull-rom endpoint tangent lines so
-// neighbouring auto segments share a tangent at each anchor (no corners). Falls
-// back to the averaged Catmull handles when degenerate/overshooting.
-// (verbatim mirror of engine.js autoControl)
+// G1 auto control: intersection of Catmull-rom endpoint tangent lines so
+// neighbouring auto segs share tangent at each anchor (no corners). degenerate/
+// overshoot -> averaged Catmull handles. mirror of engine.js autoControl.
 function autoControl(p0, p1, p2, p3) {
   const t1x = p2.x - p0.x, t1y = p2.y - p0.y;
   const t2x = p3.x - p1.x, t2y = p3.y - p1.y;
@@ -70,7 +64,7 @@ function pathArc(stroke, segIdx) {
   return total || 1e-6;
 }
 
-// belly arc fraction (dense 96, nearest curve point to control) - samplePath
+// belly arc fraction (dense 96, nearest curve point to control); mirror of samplePath
 function bellyArc(stroke, segIdx) {
   const pts = stroke.points;
   const c = resolveControl(stroke, segIdx);
@@ -118,7 +112,7 @@ function travelTime(L, sa, sb, a) {
   return Math.log((sa + m * a) / sa) / m;
 }
 
-// ---- connectors (mirrors engine.js) ---------------------------------------
+// connectors, mirror of engine.js
 function tangentOut(stroke) {
   const pts = stroke.points, n = pts.length;
   if (n < 2) return null;
@@ -161,8 +155,8 @@ function connectorStroke(a, b, connect) {
     paths: [{ delay: 0, duration: Math.max(0.05, g), ctrl, pctrl: { k } }],
   };
 }
-// Expand to {stroke, si, connector}: original strokes keep their source index
-// `si`; auto-connectors carry the index of the stroke they follow (connector:true).
+// expand to {stroke, si, connector}: original strokes keep source index si;
+// auto-connectors carry index of stroke they follow (connector:true).
 function expandStrokes(symbol, connect) {
   const strokes = symbol.strokes;
   const out = [];
@@ -175,10 +169,9 @@ function expandStrokes(symbol, connect) {
   return out;
 }
 
-// ---- seg table (shared by bakeGLSL text emit + live GL renderer) ----------
-// Walk the symbol once, deriving auto connectors, control points, pressure
-// belly and auto timing into a flat array of self-contained Segs.
-// Returns { segs, strokeCount, total }.
+// seg table shared by bakeGLSL text emit + live GL renderer. walk symbol once,
+// deriving auto connectors, control points, pressure belly, auto timing into flat
+// array of self-contained Segs. returns { segs, strokeCount, total }.
 export function bakeSegs(symbol, opts = {}) {
   const connect = opts.connect || { enabled: true, thread: 0.18 };
   const speed = opts.timing ? opts.timing.speed : 1.0;
@@ -210,13 +203,11 @@ export function bakeSegs(symbol, opts = {}) {
   return { segs, strokeCount: expanded.length, total: cursor };
 }
 
-// ---- bake -----------------------------------------------------------------
-// Returns { glsl, segCount, strokeCount, total }.
+// returns { glsl, segCount, strokeCount, total }
 export function bakeGLSL(symbol, opts = {}) {
   const glyph = opts.glyph || "?";
   const { segs, strokeCount: expandedCount, total } = bakeSegs(symbol, opts);
 
-  // ---- emit GLSL ----------------------------------------------------------
   const f = n => {
     const s = Number(n).toFixed(5);
     return s.replace(/0+$/, "").replace(/\.$/, ".0");

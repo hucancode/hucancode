@@ -1,6 +1,5 @@
-// Perspective camera — purely a matrix helper (projection + view). No scene
-// graph: the scene positions things in world space and feeds the camera's
-// matrices to its own shaders.
+// Perspective camera, matrix helper (projection + view). No scene graph: scene
+// positions things in world space, feeds camera matrices to own shaders.
 
 import { Vec3, mat4 } from "./math.js";
 
@@ -26,7 +25,7 @@ export class Camera {
     mat4.perspective(this.projectionMatrix, (this.fov * Math.PI) / 180, this.aspect, this.near, this.far);
     return this;
   }
-  // rebuild view + cached view*projection (call once per frame after moving)
+  // rebuild view + cached view*projection. call once per frame after moving
   update() {
     mat4.lookAt(this.viewMatrix, this.position, this.target, this.up);
     mat4.multiply(this.viewProjMatrix, this.projectionMatrix, this.viewMatrix);

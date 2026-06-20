@@ -1,41 +1,30 @@
-// Brush engine.
 // Data model:
 //   Symbol = { strokes: Stroke[] }
-//   Stroke = { id, points: Point[], paths: Path[] }   (paths.length === points.length - 1)
-//   Point  = { id, x, y, pressure }                   (pressure 0..1)
+//   Stroke = { id, points, paths }   paths.length === points.length - 1
+//   Point  = { id, x, y, pressure }  pressure 0..1
 //   Path   = { duration, ctrl, pctrl }
-//             ctrl  = third point {x,y} steering the segment, or null = auto.
-//                     A straight segment has ctrl at the chord midpoint.
-//             pctrl = pressure curve control {k}, or null = linear.
-//                     The pressure of a path is a quadratic bezier value curve
-//                     with endpoints (0,A) and (1,B); pctrl bends it so the
-//                     curve passes through value k at the belly - the arc
-//                     position of the geometry control point ctrl.
+//     ctrl  = third point {x,y} steering segment, null = auto. straight seg -> ctrl at chord midpoint.
+//     pctrl = pressure curve control {k}, null = linear. pressure is quadratic bezier value curve
+//             endpoints (0,A),(1,B); pctrl bends it through value k at belly (arc pos of ctrl).
 //
-// Sampling:
-//   For each path between point i and i+1, build a quadratic bezier through the
-//   control point: B(t) = (1-t)^2 p1 + 2(1-t)t ctrl + t^2 p2.
-//   Resample the curve so samples are roughly arc-length uniform; for each
-//   arc fraction s in [0..1]:
-//     - position p(s) on the curve
-//     - pressure = pressureAt(pctrl, A, B, s)             (pressure curve)
-//     - localTime = s * duration                          (linear; s -> t)
-//   Width comes from pressure alone; the renderer stamps solid circles.
+// Sampling: per path between point i, i+1, quad bezier through ctrl:
+//   B(t) = (1-t)^2 p1 + 2(1-t)t ctrl + t^2 p2. resample arc-length uniform; per arc fraction s:
+//   pos p(s); pressure = pressureAt(pctrl,A,B,s); localTime = s*duration. width from pressure.
 
 let _id = 0;
 export const uid = () => ++_id;
 export const setUidFloor = (n) => { if (n > _id) _id = n; };
 
 export const DEFAULT_PATH = () => ({
-  delay: 0.0,    // dead time (s) before this path starts drawing
+  delay: 0.0,    // dead time (s) before path starts drawing
   duration: 1.0,
-  ctrl: null,    // third point {x,y}, or null = auto from neighbours
-  pctrl: null,   // pressure control {k}, or null = linear A->B
+  ctrl: null,    // third point {x,y}, null = auto from neighbours
+  pctrl: null,   // pressure control {k}, null = linear A->B
 });
 
 const AUTO_TENSION = 0.5;
 
-// Resolve the control point. Explicit override, else G1 catmull-rom auto.
+// explicit override, else G1 catmull-rom auto
 export function resolveControl(stroke, segIdx) {
   const path = stroke.paths[segIdx];
   if (path.ctrl) return { x: path.ctrl.x, y: path.ctrl.y };
@@ -47,13 +36,10 @@ export function resolveControl(stroke, segIdx) {
   return autoControl(p0, p1, p2, p3);
 }
 
-// Auto quad control for segment p1->p2 given neighbours p0,p3.
-// Put it at the intersection of the Catmull-rom endpoint tangent lines
-// (tangent at p1 ∝ p2-p0, at p2 ∝ p3-p1). Adjacent auto segments then share
-// the same tangent at each anchor → G1 (tangent-continuous) joins, no corners.
-// Falls back to the averaged Catmull handles when the intersection is
-// degenerate or overshoots (near-straight, or an inflection inside the segment
-// where one quadratic can't be G1 anyway).
+// auto quad control for seg p1->p2 given neighbours p0,p3.
+// place at intersection of Catmull-rom endpoint tangent lines (tangent at p1 ∝ p2-p0, at p2 ∝ p3-p1).
+// adjacent auto segs share tangent at each anchor -> G1 joins, no corners.
+// degenerate/overshoot (near-straight, or inflection inside seg) -> fall back to averaged Catmull handles.
 function autoControl(p0, p1, p2, p3) {
   const t1x = p2.x - p0.x, t1y = p2.y - p0.y;
   const t2x = p3.x - p1.x, t2y = p3.y - p1.y;
@@ -86,23 +72,20 @@ export function makeStroke(points = []) {
   return { id: uid(), points: pts, paths };
 }
 
-// Stroke with raw point list (no auto 2-point default). 1-point strokes
-// are valid but not rendered (need >=2 points for any path).
+// 1-point strokes valid but not rendered (need >=2 points for any path)
 export function makeStrokeRaw(points) {
   const paths = new Array(Math.max(0, points.length - 1)).fill(0).map(DEFAULT_PATH);
   return { id: uid(), points: [...points], paths };
 }
 
-// Append new point at end of stroke.
 export function addPoint(stroke, x, y, pressure = 0.5) {
   stroke.points.push(makePoint(x, y, pressure));
   if (stroke.points.length >= 2) stroke.paths.push(DEFAULT_PATH());
   return stroke;
 }
 
-// Insert new point immediately after points[idx]. New path between
-// points[idx] and the new point; the path previously connecting
-// points[idx] -> points[idx+1] now connects new point -> points[idx+1].
+// insert point after points[idx]. new path between points[idx] and new point;
+// old path points[idx]->points[idx+1] now connects new point->points[idx+1].
 export function insertPointAfter(stroke, idx, x, y, pressure = 0.5) {
   const q = makePoint(x, y, pressure);
   stroke.points.splice(idx + 1, 0, q);
@@ -130,7 +113,7 @@ function cubic(p0, h1, h2, p1, t) {
   };
 }
 
-// Sample one path with arc-length uniform fractions s in [0..1].
+// sample one path with arc-length uniform fractions s in [0..1]
 function samplePath(stroke, segIdx, sampleDensity) {
   const pts = stroke.points;
   const path = stroke.paths[segIdx];
@@ -150,8 +133,7 @@ function samplePath(stroke, segIdx, sampleDensity) {
   }
   const total = cum[dense] || 1e-6;
 
-  // belly = arc fraction of the curve point nearest the control point.
-  // this is where the pressure curve thins/swells to pctrl.k.
+  // belly = arc fraction of curve point nearest control point. where pressure thins/swells to pctrl.k.
   let bellyX = 0.5, bestD = Infinity;
   for (let i = 0; i <= dense; i++) {
     const dx = xs[i].x - c.x, dy = xs[i].y - c.y;
@@ -191,16 +173,10 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 function clampN(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-// --- Auto timing --------------------------------------------------
-// Instead of authoring each path's duration, derive the brush velocity from the
-// geometry and pressure, then integrate to get time. Calligraphic feel:
-//   - slow down at a pivot (sharp turn between segments)
-//   - accelerate leaving the pivot (speed recovers along the next segment)
-//   - accelerate further on thin line (low pressure → faster, drier stroke)
-// timing = { speed }   (the only user knob)
-//   speed = base brush velocity (world units / sec) on a straight, full ink run.
-// Cornering brake and thin-line boost are fixed internal constants - timing is
-// always auto-computed; only the base speed is configurable.
+// Auto timing: derive brush velocity from geometry + pressure, integrate for time.
+// slow at pivot (sharp turn), accelerate leaving pivot, accelerate on thin line (low pressure -> faster, drier).
+// timing = { speed } = base velocity (world units/sec) on straight full-ink run.
+// corner brake + thin boost are fixed constants; only base speed configurable.
 export const DEFAULT_TIMING = () => ({ speed: 1.0 });
 
 const MIN_SPEED = 0.05;
@@ -208,8 +184,7 @@ const THIN_GAIN = 2.0;
 const CORNER = 0.7;   // pivot brake strength (0..1)
 const THIN   = 0.6;   // low-pressure speed boost (0..1)
 
-// Arc length of one path's curve (fixed resolution so duration is independent
-// of render sample density → playback timeline stays stable).
+// fixed resolution so duration independent of render sample density -> stable playback timeline
 function pathArc(stroke, segIdx) {
   const pts = stroke.points;
   const c = resolveControl(stroke, segIdx);
@@ -224,7 +199,7 @@ function pathArc(stroke, segIdx) {
   return total || 1e-6;
 }
 
-// Pivot sharpness at interior point i: 0 = straight through, 1 = full reversal.
+// pivot sharpness at interior point i: 0 = straight through, 1 = full reversal
 function turnSharp(stroke, i) {
   const pts = stroke.points;
   if (i <= 0 || i >= pts.length - 1) return 0;   // endpoints: no pivot
@@ -236,15 +211,15 @@ function turnSharp(stroke, i) {
   return (1 - dot) / 2;
 }
 
-// Target brush speed at point i: braked by pivot sharpness, boosted when thin.
+// target brush speed at point i: braked by pivot sharpness, boosted when thin
 function pointSpeed(stroke, i, timing) {
   const cf = 1 - CORNER * turnSharp(stroke, i);          // pivot brake
   const tf = 1 + THIN * (1 - stroke.points[i].pressure) * THIN_GAIN; // thin boost
   return Math.max(MIN_SPEED, (timing.speed || 1) * cf * tf);
 }
 
-// Time to travel arc a (0..L) when speed varies linearly sa→sb along the arc.
-// ∫ ds / (sa + (sb-sa)·s/L) - closed form; reduces to a/sa when speed constant.
+// time to travel arc a (0..L) when speed varies linearly sa->sb along arc.
+// ∫ ds / (sa + (sb-sa)·s/L) closed form; reduces to a/sa when speed constant.
 function travelTime(L, sa, sb, a) {
   if (L <= 0) return 0;
   const d = sb - sa;
@@ -253,16 +228,13 @@ function travelTime(L, sa, sb, a) {
   return Math.log((sa + m * a) / sa) / m;
 }
 
-// Auto timing always applies (incl. connectors) whenever a timing config exists.
 const useAuto = (stroke, timing) => !!timing;
 
-// Pressure value along a path at progress s in [0..1].
-// Endpoints (0,A) and (1,B). With pctrl = {k} the curve is the quadratic
-// bezier through control (bellyX,k): the "belly" thins (or swells) to k at the
-// belly position bellyX (arc fraction of the geometry control point).
-// pctrl null -> straight line (linear A->B).
-//   The bezier is P(t) = (1-t)^2 P0 + 2(1-t)t C + t^2 P2 in (progress,value).
-//   Solve bezier_x(t) = s for t, then return bezier_y(t).
+// pressure value along path at progress s in [0..1]. endpoints (0,A),(1,B).
+// pctrl={k} -> quad bezier through control (bellyX,k): belly thins/swells to k at
+// bellyX (arc fraction of geometry control point). pctrl null -> linear A->B.
+// bezier P(t) = (1-t)^2 P0 + 2(1-t)t C + t^2 P2 in (progress,value).
+// solve bezier_x(t) = s for t, return bezier_y(t).
 export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
   if (!pctrl) return A + (B - A) * s;
   const cx = clamp01(bellyX);
@@ -281,19 +253,14 @@ export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
   return u * u * A + 2 * u * t * k + t * t * B;
 }
 
-// --- Auto connectors (牽絲 / trailing silk) ---------------------------------
-// Cursive feel comes from thin threads linking the end of one stroke to the
-// start of the next. Rather than authoring them by hand, derive a connector
-// stroke between every consecutive pair. Connectors are pure derived geometry:
-// never stored on the symbol, never editable, regenerated each frame.
-//
-// connect = { enabled, thread }
-//   thread = max belly thickness - the thin waist. Ends match the stroke's own
-//            end pressure; the belly is capped here and never exceeds an end.
-// Connector timing is auto-computed like any stroke (driven by base speed).
+// Auto connectors (牽絲 / trailing silk): thin threads linking end of one stroke
+// to start of next, derived per consecutive pair. pure derived geometry: never
+// stored on symbol, never editable, regenerated each frame.
+// connect = { enabled, thread }. thread = max belly thickness (thin waist).
+// ends match stroke end pressure; belly capped at thread, never exceeds an end.
 export const DEFAULT_CONNECT = () => ({ enabled: false, thread: 0.18 });
 
-// Unit tangent leaving a stroke at its last point (quad derivative at t=1).
+// unit tangent leaving stroke at last point (quad derivative at t=1)
 function tangentOut(stroke) {
   const pts = stroke.points;
   const n = pts.length;
@@ -306,7 +273,7 @@ function tangentOut(stroke) {
   return { x: dx / m, y: dy / m };
 }
 
-// Unit tangent the stroke departs along from its first point (quad deriv at t=0).
+// unit tangent stroke departs along from first point (quad deriv at t=0)
 function tangentIn(stroke) {
   const pts = stroke.points;
   if (pts.length < 2) return null;
@@ -318,9 +285,8 @@ function tangentIn(stroke) {
   return { x: dx / m, y: dy / m };
 }
 
-// Control point of the connector: the point on A's exit tangent that (for a
-// true intersection) also lies on B's entry tangent - so the thread leaves A
-// and arrives B tangentially. Clamped to the gap; degenerate -> midpoint bow.
+// connector control point: point on A's exit tangent that also lies on B's entry
+// tangent -> thread leaves A and arrives B tangentially. clamped to gap; degenerate -> midpoint bow.
 function connectorControl(A, u, B, v, g) {
   const wx = B.x - A.x, wy = B.y - A.y;
   const det = u.x * v.y - u.y * v.x;
@@ -333,7 +299,7 @@ function connectorControl(A, u, B, v, g) {
   return { x: A.x + u.x * a, y: A.y + u.y * a };
 }
 
-// Build the virtual connector stroke from stroke a -> stroke b, or null.
+// build virtual connector stroke from stroke a -> stroke b, or null
 export function connectorStroke(a, b, connect) {
   if (!a.points.length || !b.points.length) return null;
   const A = a.points[a.points.length - 1];
@@ -346,10 +312,9 @@ export function connectorStroke(a, b, connect) {
   const ctrl = connectorControl(A, u, B, v, g);
   const pA = A.pressure;                            // ends match stroke pressure exactly
   const pB = B.pressure;
-  // belly is the thin waist: capped at thread, never thicker than either end,
-  // independent of gap so it never collapses to nothing.
+  // belly thin waist: capped at thread, never thicker than either end, gap-independent so never collapses
   const k = Math.min(connect.thread, pA, pB);
-  // duration is a manual-mode fallback only; auto timing overrides it.
+  // manual-mode fallback only; auto timing overrides
   const duration = Math.max(0.05, g);
   return {
     id: `c:${a.id}>${b.id}`,
@@ -362,8 +327,8 @@ export function connectorStroke(a, b, connect) {
   };
 }
 
-// Real strokes interleaved with derived connectors, in draw/timeline order.
-// connect falsy or disabled -> just the real strokes (back-compat).
+// real strokes interleaved with derived connectors, in draw/timeline order.
+// connect falsy or disabled -> real strokes only.
 export function expandStrokes(symbol, connect) {
   const strokes = symbol?.strokes || [];
   if (!connect || !connect.enabled) return strokes;
@@ -379,8 +344,8 @@ export function expandStrokes(symbol, connect) {
   return out;
 }
 
-// Total animation time of one stroke. Auto timing → integrate the speed field
-// per path; manual → sum authored path durations. Authored delays always apply.
+// total time of one stroke. auto -> integrate speed field per path; manual -> sum
+// authored path durations. authored delays always apply.
 export function strokeDuration(stroke, timing) {
   if (!stroke || !stroke.paths) return 0;
   let t = 0;
@@ -398,30 +363,27 @@ export function strokeDuration(stroke, timing) {
   return t;
 }
 
-// Total animation time of a whole symbol (strokes + connectors, in order).
 export function symbolDuration(symbol, connect, timing) {
   let t = 0;
   for (const s of expandStrokes(symbol, connect)) t += strokeDuration(s, timing);
   return t;
 }
 
-// --- Playback ---------------------------------------------------------------
-// A playback state tracks a global time cursor over a symbol's sequential
-// timeline: { t, playing, duration }. Feed it to drawSymbol via { playhead }.
-
+// playback state tracks global time cursor over symbol's sequential timeline:
+// { t, playing, duration }. feed to drawSymbol via { playhead }.
 export function makePlayback(symbol, connect, timing) {
   return { t: 0, playing: false, duration: symbolDuration(symbol, connect, timing) };
 }
 
-// Keep duration in sync with the (possibly edited) symbol, re-clamping t.
+// keep duration in sync with edited symbol, re-clamp t
 export function syncPlayback(state, symbol, connect, timing) {
   state.duration = symbolDuration(symbol, connect, timing);
   if (state.t > state.duration) state.t = state.duration;
   return state;
 }
 
-// Advance (dt > 0) or rewind (dt < 0) the cursor, clamped to [0, duration].
-// Reaching the end stops playback. Mutates and returns the state.
+// advance (dt>0) or rewind (dt<0) cursor, clamped to [0, duration].
+// reaching end stops playback. mutates and returns state.
 export function step(state, dt) {
   let t = state.t + dt;
   if (t <= 0) { t = 0; }
@@ -430,7 +392,7 @@ export function step(state, dt) {
   return state;
 }
 
-// Returns flat array of samples across all paths with global time and speed.
+// flat array of samples across all paths with global time and speed
 export function sampleStroke(stroke, sampleDensity = 80, timing) {
   if (!stroke || stroke.points.length < 2) return [];
   const auto = useAuto(stroke, timing);
@@ -438,10 +400,9 @@ export function sampleStroke(stroke, sampleDensity = 80, timing) {
   const all = [];
   for (let i = 0; i < stroke.paths.length; i++) {
     const path = stroke.paths[i];
-    tOffset += path.delay || 0;          // dead time before this path draws
+    tOffset += path.delay || 0;          // dead time before path draws
     const { samples } = samplePath(stroke, i, sampleDensity);
-    // auto: integrate the linear speed field (endpoint speeds) over the arc so
-    // sample time matches strokeDuration's integral exactly.
+    // auto: integrate linear speed field over arc so sample time matches strokeDuration integral exactly
     let L = 0, sa = 0, sb = 0, dur = 0;
     if (auto) {
       L = pathArc(stroke, i);
@@ -449,7 +410,7 @@ export function sampleStroke(stroke, sampleDensity = 80, timing) {
       sb = pointSpeed(stroke, i + 1, timing);
       dur = travelTime(L, sa, sb, L);
     }
-    // skip the first sample on subsequent paths (duplicate of prev tail)
+    // skip first sample on subsequent paths (duplicate of prev tail)
     const start = i === 0 ? 0 : 1;
     for (let k = start; k < samples.length; k++) {
       const s = samples[k];
@@ -464,7 +425,7 @@ export function sampleStroke(stroke, sampleDensity = 80, timing) {
     }
     tOffset += auto ? dur : path.duration;
   }
-  // compute speed: ds_world / dt (smoothed via neighbour deltas)
+  // speed: ds_world / dt, smoothed via neighbour deltas
   for (let i = 0; i < all.length; i++) {
     const prev = all[Math.max(0, i - 1)];
     const next = all[Math.min(all.length - 1, i + 1)];

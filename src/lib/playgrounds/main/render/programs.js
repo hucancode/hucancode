@@ -1,13 +1,10 @@
-// Shader bundle for the /paint scene. One entry per draw program, each carrying
-// BOTH language variants (GLSL for the WebGL2 backend, WGSL for WebGPU) plus the
-// backend-agnostic pipeline descriptor the engine GPU device consumes
-// (engine/gpu). The scene renderer (scene.js) builds device.shader() from these.
+// Shader bundle. one entry per draw program, both GLSL (WebGL2) + WGSL (WebGPU)
+// variants plus backend-agnostic pipeline descriptor.
 //
-// Vertex attributes carry a GLSL `name` (getAttribLocation) and a WGSL `location`.
-// `uniforms` is an ordered {name,type} list: WebGL sets by name, WebGPU packs into
-// a uniform buffer whose WGSL struct declares the same fields in the same order.
+// vertex attributes carry GLSL `name` (getAttribLocation) + WGSL `location`.
+// `uniforms` ordered {name,type}: WebGL sets by name, WebGPU packs into uniform
+// buffer whose WGSL struct declares same fields in same order.
 
-// fragment GLSL (existing, hand-written calligraphy/ink shaders)
 import GLYPH_FRAG from "./webgl/shaders/glyph.frag.glsl?raw";
 import SPLASH_FRAG from "./webgl/shaders/splash.frag.glsl?raw";
 import ENSO_FRAG from "./webgl/shaders/enso.frag.glsl?raw";
@@ -18,8 +15,16 @@ import GRID_FRAG from "./webgl/shaders/grid.frag.glsl?raw";
 import GRID_VERT from "./webgl/shaders/grid.vert.glsl?raw";
 import DRAGON3D_FRAG from "./webgl/shaders/dragon3d.frag.glsl?raw";
 import DRAGON3D_VERT from "./webgl/shaders/dragon3d.vert.glsl?raw";
+import FS_TRI_VERT from "./webgl/shaders/fs-tri.vert.glsl?raw";
+import COMPOSITE_VERT from "./webgl/shaders/composite.vert.glsl?raw";
+import COMPOSITE_FRAG from "./webgl/shaders/composite.frag.glsl?raw";
+import BLIT_FRAG from "./webgl/shaders/blit.frag.glsl?raw";
+import STROKE_VERT from "./webgl/shaders/stroke.vert.glsl?raw";
+import HEAD_VERT from "./webgl/shaders/head.vert.glsl?raw";
+import FLOWER_VERT from "./webgl/shaders/flower.vert.glsl?raw";
+import LINE_VERT from "./webgl/shaders/line.vert.glsl?raw";
+import LINE_FRAG from "./webgl/shaders/line.frag.glsl?raw";
 
-// WGSL (one module per program; vs/fs entry points)
 import GLYPH_WGSL from "./webgpu/shaders/glyph.wgsl?raw";
 import SPLASH_WGSL from "./webgpu/shaders/splash.wgsl?raw";
 import ENSO_WGSL from "./webgpu/shaders/enso.wgsl?raw";
@@ -32,106 +37,6 @@ import DRAGON3D_WGSL from "./webgpu/shaders/dragon3d.wgsl?raw";
 import LINE_WGSL from "./webgpu/shaders/line.wgsl?raw";
 import BLIT_WGSL from "./webgpu/shaders/blit.wgsl?raw";
 
-// ---- inline GLSL vertex/fragment (were inline strings in the old renderer) ----
-const FS_TRI_VERT = `#version 300 es
-precision highp float;
-const vec2 POS[3] = vec2[3](vec2(-1.0,-1.0), vec2(3.0,-1.0), vec2(-1.0,3.0));
-out vec2 vUV;
-void main() { vec2 p = POS[gl_VertexID]; vUV = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }`;
-
-const COMPOSITE_VERT = `#version 300 es
-precision highp float;
-uniform float uAspect;
-uniform float uZ;
-uniform float uStationY;
-uniform mat4 uViewProj;
-out vec2 vUV;
-const vec2 C[4] = vec2[4](vec2(0.0,0.0), vec2(1.0,0.0), vec2(0.0,1.0), vec2(1.0,1.0));
-void main() {
-  vec2 c = C[gl_VertexID];
-  vUV = c;
-  vec3 world = vec3((c.x * 2.0 - 1.0) * uAspect, c.y * 2.0 - 1.0 + uStationY, uZ);
-  gl_Position = uViewProj * vec4(world, 1.0);
-}`;
-const COMPOSITE_FRAG = `#version 300 es
-precision highp float;
-uniform sampler2D uTex;
-uniform float uOpacity;
-in vec2 vUV;
-out vec4 fragColor;
-void main() { fragColor = texture(uTex, vUV) * uOpacity; }`;
-
-const BLIT_FRAG = `#version 300 es
-precision highp float;
-uniform sampler2D uTex;
-in vec2 vUV;
-out vec4 fragColor;
-void main() { fragColor = texture(uTex, vUV); }`;
-
-// uFlipY = +1 on WebGL, -1 on WebGPU: these emit clip space directly (no
-// gl_FragCoord), so the offscreen render-to-texture V axis differs between APIs.
-const STROKE_VERT = `#version 300 es
-precision highp float;
-in vec2 aPos;
-in vec2 aLineUV;
-uniform float uAspect;
-uniform float uCamY;
-uniform float uFlipY;
-out vec2 vUV01;
-out vec2 vWorld;
-void main() {
-  vUV01 = aLineUV;
-  vWorld = aPos;
-  gl_Position = vec4(aPos.x / uAspect, (aPos.y - uCamY) * uFlipY, 0.0, 1.0);
-}`;
-
-const HEAD_VERT = `#version 300 es
-precision highp float;
-in vec2 aPos;
-in vec2 aUV;
-uniform float uAspect;
-uniform float uCamY;
-uniform float uFlipY;
-out vec2 vUV;
-void main() { vUV = aUV; gl_Position = vec4(aPos.x / uAspect, (aPos.y - uCamY) * uFlipY, 0.0, 1.0); }`;
-
-// instanced: per-instance iData0 = (cx, cy, scale, z), iData1 = (bloom, seed, alpha, _)
-const FLOWER_VERT = `#version 300 es
-precision highp float;
-layout(location = 1) in vec4 iData0;
-layout(location = 2) in vec4 iData1;
-uniform mat4 uViewProj;
-out vec2 vLocal;
-out float vBloom;
-out float vSeed;
-out float vAlpha;
-const vec2 C[4] = vec2[4](vec2(-1.0,-1.0), vec2(1.0,-1.0), vec2(-1.0,1.0), vec2(1.0,1.0));
-void main() {
-  vec2 c = C[gl_VertexID];
-  vLocal = c;
-  vBloom = iData1.x; vSeed = iData1.y; vAlpha = iData1.z;
-  vec3 world = vec3(iData0.xy + c * iData0.z, iData0.w);
-  gl_Position = uViewProj * vec4(world, 1.0);
-}`;
-
-const LINE_VERT = `#version 300 es
-precision highp float;
-in vec3 aPos;
-uniform mat4 uVP;
-uniform float uAspect;
-uniform int u3D;
-void main() {
-  gl_PointSize = 10.0;
-  if (u3D == 1) gl_Position = uVP * vec4(aPos, 1.0);
-  else gl_Position = vec4(aPos.x / uAspect, aPos.y, 0.0, 1.0);
-}`;
-const LINE_FRAG = `#version 300 es
-precision highp float;
-uniform vec4 uColor;
-out vec4 fragColor;
-void main() { fragColor = uColor; }`;
-
-// ---- reusable descriptor fragments ----
 const VEC2 = (name) => ({ name, type: "vec2" });
 const F32 = (name) => ({ name, type: "f32" });
 const I32 = (name) => ({ name, type: "i32" });
@@ -139,7 +44,7 @@ const VEC3 = (name) => ({ name, type: "vec3" });
 const VEC4 = (name) => ({ name, type: "vec4" });
 const MAT4 = (name) => ({ name, type: "mat4" });
 
-// attribute-buffer layouts (stride in bytes; format f32 components)
+// attribute-buffer layouts. stride in bytes, format f32 components
 const BUF_STROKE_POS = { stride: 8, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x2", offset: 0 }] };
 const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };
 const BUF_HEAD = { stride: 16, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x2", offset: 0 }, { name: "aUV", location: 1, format: "float32x2", offset: 8 }] };
@@ -148,8 +53,8 @@ const BUF_DRAGON_NRM = { stride: 12, step: "vertex", attributes: [{ name: "aNorm
 const BUF_FLOWER_INST = { stride: 32, step: "instance", attributes: [{ name: "iData0", location: 1, format: "float32x4", offset: 0 }, { name: "iData1", location: 2, format: "float32x4", offset: 16 }] };
 const BUF_LINE = { stride: 12, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x3", offset: 0 }] };
 
-// Pass A = offscreen ink layers (rgba8, no MSAA, no depth, premultiplied accum).
-// Pass B = screen (4x MSAA, depth attachment for the 3D dragon).
+// Pass A = offscreen ink layers (rgba8, no MSAA, no depth, premult accum)
+// Pass B = screen (4x MSAA, depth attachment for 3D dragon)
 export const PROGRAMS = {
   glyph: {
     glsl: { vertex: FS_TRI_VERT, fragment: GLYPH_FRAG }, wgsl: GLYPH_WGSL,
@@ -203,7 +108,7 @@ export const PROGRAMS = {
     textures: [{ name: "uFrames", binding: 1 }],
     blend: "straight", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
   },
-  // debug overlays (only used under ?debug); share line.wgsl, differ in topology
+  // debug overlays (?debug only). share line.wgsl, differ in topology
   line: {
     glsl: { vertex: LINE_VERT, fragment: LINE_FRAG }, wgsl: LINE_WGSL,
     buffers: [BUF_LINE],

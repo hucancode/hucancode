@@ -1,7 +1,6 @@
-// Dragon3d block: fades the 3D dragon in over the crossfade (B6), coincident with
-// the still-solid 2D ink, then it loops forever. Persistent. The mesh draw params
-// are written elsewhere (the dragon3d model writes _frame.dragon3d); this block
-// only owns the opacity. (The glyph/enso fades are owned by their own blocks.)
+// Fades 3D dragon in over crossfade (B6), then loops forever. Persistent.
+// Owns only opacity. Mesh draw params written elsewhere (dragon3d model writes
+// _frame.dragon3d).
 
 import { track } from "../stage/index.js";
 

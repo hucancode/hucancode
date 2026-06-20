@@ -1,6 +1,4 @@
-// WebGL2 implementation of the backend-agnostic GPU device (see ./index.js for
-// the interface + rationale). Mirrors what the old hand-rolled paint renderer
-// did with raw gl calls, behind the shared resource/shader/pass API.
+// WebGL2 implementation of backend-agnostic GPU device (see ./index.js).
 
 const TEX = {
   rgba8: { internal: "RGBA8", format: "RGBA", type: "UNSIGNED_BYTE" },
@@ -70,7 +68,7 @@ export function createWebGLDevice(canvas) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl[F.internal], w, h, 0, gl[F.format], gl[F.type], data);
     return {
       _tex: tex, format, get width() { return w; }, get height() { return h; },
-      // upload pixel data; pass rows to (re)size a data texture (segs/frames grow)
+      // pass dw/dh to (re)size a data texture (segs/frames grow)
       write(d, dw = w, dh = h) {
         gl.bindTexture(gl.TEXTURE_2D, tex);
         if (dw !== w || dh !== h) { gl.texImage2D(gl.TEXTURE_2D, 0, gl[F.internal], dw, dh, 0, gl[F.format], gl[F.type], d); w = dw; h = dh; }
@@ -98,7 +96,6 @@ export function createWebGLDevice(canvas) {
       throw new Error("program link failed:\n" + gl.getProgramInfoLog(prog));
     gl.deleteShader(v); gl.deleteShader(f);
 
-    // resolve attribute + uniform + sampler locations by name (GLSL side)
     const layouts = (desc.buffers || []).map((b) => ({
       stride: b.stride, instanced: b.step === "instance",
       attrs: b.attributes.map((a) => ({ loc: gl.getAttribLocation(prog, a.name), comps: FMT[a.format], offset: a.offset || 0 })),
@@ -127,7 +124,7 @@ export function createWebGLDevice(canvas) {
     applyDepth(sh.desc.depth);
     gl.bindVertexArray(sh._vao);
 
-    // vertex attributes (pointers set each draw — buffers vary per call)
+    // pointers set each draw — buffers vary per call
     const buffers = args.buffers || [];
     for (let bi = 0; bi < sh._layouts.length; bi++) {
       const L = sh._layouts[bi];
@@ -179,8 +176,7 @@ export function createWebGLDevice(canvas) {
     fn({ draw: (sh, args) => drawImpl(sh, args) });
   }
 
-  // viewProj passthrough: WebGL clip-space z is already [-1, 1] (the camera's
-  // native convention), so no correction is needed.
+  // WebGL clip-space z already [-1, 1] (camera's native convention), no correction
   function correctViewProj(m) { return m; }
 
   return {

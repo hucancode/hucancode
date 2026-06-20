@@ -1,49 +1,18 @@
-// Lego — standalone WebGL2 procedural-brick showcase (no three.js, no animejs).
-// One brick is generated from tunable parameters (stud counts, body depth, wall
-// thickness, stud size); the playground rebuilds it live as the user drags the
-// sliders. A small in-scene toon shader (one point light + banded diffuse) gives
-// it the classic plastic look. The brick auto-spins so its 3D form reads.
+// one brick generated from tunable params (stud counts, body depth, wall
+// thickness, stud size); rebuilt live as user drags sliders. in-scene toon shader
+// (one point light + banded diffuse) for plastic look. brick auto-spins so 3D form reads.
+// brick model is rigid rotation so upper 3x3 of uModel is valid normal transform.
 
 import {
-  makeContext, Camera, mat4, Vec3, Euler,
+  createDevice, Camera, mat4, Vec3, Euler,
   boxGeometry, cylinderGeometry, mergeGeometries,
 } from "$lib/engine/index.js";
-
-const VERT = `#version 300 es
-in vec3 position;
-in vec3 normal;
-uniform mat4 uProj;
-uniform mat4 uModelView;
-uniform mat4 uModel;
-uniform mat4 uNormal;
-out vec3 vN;
-out vec3 vW;
-void main() {
-  vN = mat3(uNormal) * normal;
-  vW = (uModel * vec4(position, 1.0)).xyz;
-  gl_Position = uProj * uModelView * vec4(position, 1.0);
-}`;
-
-const FRAG = `#version 300 es
-precision mediump float;
-in vec3 vN;
-in vec3 vW;
-uniform vec3 uColor;
-uniform vec3 uLightPos;
-uniform float uSteps;
-out vec4 fragColor;
-void main() {
-  vec3 N = normalize(vN);
-  vec3 L = normalize(uLightPos - vW);
-  float d = max(dot(N, L), 0.0);
-  d = floor(d * uSteps) / uSteps;           // toon banding
-  vec3 col = uColor * (0.3 + 0.7 * d);
-  fragColor = vec4(col, 1.0);
-}`;
+import LEGO_WGSL from "./shaders/lego.wgsl?raw";
+import VERT from "./shaders/lego.vert.glsl?raw";
+import FRAG from "./shaders/lego.frag.glsl?raw";
 
 const GRADIENT_STEP = 5;
 
-// Tunable, procedural-generation parameters driven by the playground page.
 const config = {
   width: 4,        // studs along X
   height: 2,       // studs along Z
@@ -55,16 +24,15 @@ const config = {
   spin: 1,         // auto-rotation speed
 };
 
-let canvas, gl, ctx, prog, camera;
-let brick = null;
+let canvas, device, shader, camera, disposed = false;
+let brick = null; // { posBuf, normBuf, count }
 let color = [0.98, 0.7, 0.53];
 let yaw = 0.6, pitch = 0.5;
 let dragging = false, lastX = 0, lastY = 0;
 let lastT = 0;
 const light = new Vec3(30, 40, 30);
 const _model = mat4.create();
-const _mv = mat4.create();
-const _nm = mat4.create();
+const _vp = mat4.create();
 const _origin = new Vec3(0, 0, 0);
 const _scale = new Vec3(1, 1, 1);
 const _rot = new Euler();
@@ -74,7 +42,7 @@ function colorRGB(hex) {
   return [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
 }
 
-// build one brick: four walls + a top plank + a grid of stud cylinders, merged
+// four walls + top plank + grid of stud cylinders, merged
 function makeLegoPiece() {
   const width = Math.max(1, Math.round(config.width));
   const height = Math.max(1, Math.round(config.height));
@@ -104,16 +72,21 @@ function makeLegoPiece() {
 }
 
 function disposeBrick() {
-  if (!brick || !gl) return;
-  if (brick._vbos) for (const k in brick._vbos) gl.deleteBuffer(brick._vbos[k]);
-  if (brick._vaos) for (const v of brick._vaos.values()) gl.deleteVertexArray(v);
+  if (!brick) return;
+  brick.posBuf?.destroy();
+  brick.normBuf?.destroy();
   brick = null;
 }
 
 function rebuild() {
   disposeBrick();
-  brick = makeLegoPiece();
-  // frame the brick: camera distance scales with its largest footprint
+  const g = makeLegoPiece();
+  brick = {
+    posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
+    normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
+    count: g.attributes.position.count,
+  };
+  // frame brick: camera distance scales with largest footprint
   camera._dist = Math.max(config.width, config.height, 3) * 2.4;
 }
 
@@ -122,7 +95,7 @@ function setConfig(patch) {
   const needsRebuild = structural.some((k) => k in patch);
   Object.assign(config, patch);
   if ("color" in patch) color = colorRGB(config.color);
-  if (needsRebuild && gl) rebuild();
+  if (needsRebuild && device) rebuild();
 }
 
 function onDown(e) {
@@ -142,15 +115,31 @@ function onUp() {
   dragging = false;
 }
 
-function init(canvasEl) {
+async function init(canvasEl) {
   canvas = canvasEl;
+  disposed = false;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = canvas.clientWidth, h = canvas.clientHeight;
-  ctx = makeContext(canvas);
-  gl = ctx.gl;
-  ctx.resize(w, h, dpr);
-  gl.enable(gl.DEPTH_TEST);
-  prog = ctx.program(VERT, FRAG);
+  canvas.width = Math.max(1, Math.floor(w * dpr));
+  canvas.height = Math.max(1, Math.floor(h * dpr));
+  device = await createDevice(canvas);
+  if (disposed) { device.destroy(); device = null; return; }
+  device.resize(canvas.width, canvas.height);
+  shader = device.shader({
+    glsl: { vertex: VERT, fragment: FRAG }, wgsl: LEGO_WGSL,
+    buffers: [
+      { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
+      { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
+    ],
+    uniforms: [
+      { name: "uViewProj", type: "mat4" },
+      { name: "uModel", type: "mat4" },
+      { name: "uColor", type: "vec3" },
+      { name: "uLightPos", type: "vec3" },
+      { name: "uSteps", type: "f32" },
+    ],
+    depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+  });
   camera = new Camera(45, w / h, 0.1, 2000);
   camera.up.set(0, 1, 0);
   color = colorRGB(config.color);
@@ -164,48 +153,56 @@ function init(canvasEl) {
 function syncSize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = canvas.clientWidth, h = canvas.clientHeight;
-  if (canvas.width === Math.floor(w * dpr) && canvas.height === Math.floor(h * dpr)) return;
-  ctx.resize(w, h, dpr);
+  const tw = Math.max(1, Math.floor(w * dpr)), th = Math.max(1, Math.floor(h * dpr));
+  if (canvas.width === tw && canvas.height === th) return;
+  canvas.width = tw; canvas.height = th;
+  device.resize(tw, th);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 
 function render() {
-  if (!gl || !brick) return;
+  if (!device || !shader || !brick) return;
   const now = performance.now();
   const dt = Math.min((now - lastT) / 1000, 0.05);
   lastT = now;
   if (!dragging) yaw += config.spin * dt * 0.4;
 
   syncSize();
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   const d = camera._dist || 12, cp = Math.cos(pitch);
   camera.position.set(d * cp * Math.sin(yaw), d * Math.sin(pitch), d * cp * Math.cos(yaw));
   camera.lookAt(0, 0, 0);
   camera.update();
+  // viewProj through camera seam (WebGPU remaps clip z to [0,1])
+  mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
 
   mat4.compose(_model, _origin, _rot, _scale);
-  mat4.multiply(_mv, camera.viewMatrix, _model);
-  mat4.normalFromMat4(_nm, _model);
-  prog.use();
-  prog.set("uProj", camera.projectionMatrix)
-    .set("uModelView", _mv).set("uModel", _model).set("uNormal", _nm)
-    .set("uColor", color).set("uLightPos", light).set("uSteps", GRADIENT_STEP);
-  prog.draw(brick);
+
+  device.beginFrame();
+  device.pass({ target: "screen", clear: [0, 0, 0, 0], depth: true, depthClear: 1 }, (p) => {
+    p.draw(shader, {
+      buffers: [brick.posBuf, brick.normBuf],
+      count: brick.count,
+      uniforms: {
+        uViewProj: _vp, uModel: _model,
+        uColor: color, uLightPos: [light.x, light.y, light.z], uSteps: GRADIENT_STEP,
+      },
+    });
+  });
+  device.endFrame();
 }
 
 function destroy() {
+  disposed = true;
   if (canvas) {
     canvas.removeEventListener("pointerdown", onDown);
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
   }
   disposeBrick();
-  if (prog) prog.dispose();
-  gl = null;
+  shader = null;
+  if (device) { device.destroy(); device = null; }
 }
 
 export { init, render, destroy, setConfig, config };

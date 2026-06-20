@@ -1,28 +1,25 @@
-// Load + prepare the 3D dragon mesh for the path-deform shader.
-// Tiny OBJ parser (positions + normals + triangulated faces). The mesh is
-// aligned along its longest axis -> X, X span remapped to [0, bodyLen] (path
-// units) so position.x parameterises the path; y,z stay native (scaled by
-// uGirth). Normals are reordered to match and renormalised (for Phong).
+// OBJ parser + prep for path-deform shader. Mesh aligned along longest axis
+// -> X, X span remapped to [0, bodyLen] (path units) so position.x
+// parameterises path; y,z native (scaled by uGirth). Normals reordered to
+// match, renormalised for Phong.
 
 function parseObj(text) {
-  const verts = []; // [x,y,z]
-  const norms = []; // [x,y,z]
-  const triV = []; // position indices (0-based), 3 per triangle
-  const triN = []; // normal indices (0-based) or -1
+  const verts = [];
+  const norms = [];
+  const triV = [];
+  const triN = [];
   const lines = text.split("\n");
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li];
     const c0 = line.charCodeAt(0), c1 = line.charCodeAt(1), c2 = line.charCodeAt(2);
     if (c0 === 118 && c1 === 32) {
-      // "v "
       const p = line.split(/\s+/);
       verts.push([parseFloat(p[1]), parseFloat(p[2]), parseFloat(p[3])]);
     } else if (c0 === 118 && c1 === 110 && c2 === 32) {
-      // "vn "
       const p = line.split(/\s+/);
       norms.push([parseFloat(p[1]), parseFloat(p[2]), parseFloat(p[3])]);
     } else if (c0 === 102 && c1 === 32) {
-      // "f " - tokens v, v/vt, v//vn, v/vt/vn. Triangulate fan.
+      // "f " tokens v, v/vt, v//vn, v/vt/vn. triangulate fan
       const p = line.split(/\s+/);
       const vidx = [], nidx = [];
       for (let i = 1; i < p.length; i++) {
@@ -48,7 +45,7 @@ export async function loadDragonMesh(url, bodyLen) {
   const text = await res.text();
   const { verts, norms, triV, triN } = parseObj(text);
 
-  // bbox to find the longest axis
+  // bbox -> longest axis
   const min = [Infinity, Infinity, Infinity];
   const max = [-Infinity, -Infinity, -Infinity];
   for (const v of verts) {
@@ -70,10 +67,10 @@ export async function loadDragonMesh(url, bodyLen) {
   const normals = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     const v = verts[triV[i]];
-    positions[i * 3 + 0] = (v[longAxis] - min[longAxis]) * xScale; // longest axis -> X
+    positions[i * 3 + 0] = (v[longAxis] - min[longAxis]) * xScale;
     positions[i * 3 + 1] = v[a1];
     positions[i * 3 + 2] = v[a2];
-    // normal: reorder axes the same way, renormalise (no scale)
+    // normal: reorder axes same way, renormalise (no scale)
     const nm = triN[i] >= 0 ? norms[triN[i]] : null;
     let nx = nm ? nm[longAxis] : 0, ny = nm ? nm[a1] : 0, nz = nm ? nm[a2] : 1;
     const l = Math.hypot(nx, ny, nz) || 1;

@@ -1,136 +1,116 @@
-// Static tunables for the /paint scene. Pure data — no derived schedule times
-// (those live in timing.js, since the branch time depends on the generated path
-// length). Grouped by subsystem; every consumer imports the names it needs.
+// Static tunables for /paint scene. Pure data; derived schedule times live in
+// timing.js.
 
-// ---- corridor (scroll-down camera) -----------------------------------------
-// The camera look-at descends in world-Y; objects live at fixed Y "stations" and
-// the dragon flies down with the camera. The schedule is block-driven (durations
-// below), no longer derived from a generated path length.
+// camera look-at descends in world-Y; objects live at fixed Y "stations", dragon
+// flies down with camera. schedule block-driven (durations below).
 export const BLOCK_DUR = {
-  flyin: 2,     // B1: dragon reveals top-middle, flies down to catch the camera
+  flyin: 2,     // B1: dragon reveals top-middle, flies down to catch camera
   roam1: 5,     // B2: tangent-circle chain roam, arrives mid-screen
-  approach: 5,  // B3: glyph traces in from below; dragon leads to the enso border
-  enso: 2,      // B4: enso traces, dragon leads, exits the bottom after 1.5 revs
-  roam2: 4,     // B5: resume circle roam (longer); camera stops descending, starts pitch
-  crossfade: 2, // B6: 2D dragon out, 3D dragon in on the same path
+  approach: 5,  // B3: glyph traces in from below; dragon leads to enso border
+  enso: 2,      // B4: enso traces, dragon leads, exits bottom after 1.5 revs
+  roam2: 4,     // B5: resume circle roam; camera stops descending, starts pitch
+  crossfade: 2, // B6: 2D dragon out, 3D dragon in on same path
   loop3: 5,     // B7: 3D dragon loops (persistent past this)
 };
-export const CORRIDOR_DROP = 6.0;   // total world-Y the look-at descends over B1-B3
-export const CORRIDOR_TAIL = 8.0;   // seconds of 3D loop kept after the handoff
-export const FLYIN_TOP_Y = 0.8;     // dragon spawn height above the start look-at (top-middle)
-export const FLYIN_BOW = 0.18;      // lateral bow of the slightly-curved fly-in line
+export const CORRIDOR_DROP = 6.0;   // total world-Y look-at descends over B1-B3
+export const CORRIDOR_TAIL = 8.0;   // seconds of 3D loop kept after handoff
+export const FLYIN_TOP_Y = 0.8;     // dragon spawn height above start look-at
+export const FLYIN_BOW = 0.18;      // lateral bow of fly-in line
 
-// circle-chain roam: a string of externally-tangent circles. The march heading
-// aims MOSTLY LATERAL with a gentle downward drift and a pull back toward the
-// centre line (x->0), so the dragon weaves SIDE-TO-SIDE AROUND centre while slowly
-// sinking — it never drifts off screen and the path is long (so the head can cruise
-// it at a healthy, near-constant speed: no start crawl). Each circle is swept by a
-// target fraction (rotating ~1/2 : 3/4 : full for an even mix); the winding + lap
-// winding ALTERNATES (C1 S-weave), so the per-circle sweep is fixed by the march
-// geometry and a short hop gets an extra lap; the lateral weave makes the sweep
-// angles naturally spread across ~1/2..full turns (the soft trace-fraction mix).
-// The downward drift is gentle + uniform so the dragon sinks steadily with arc
-// length (tracking the linear camera -> stays vertically centred).
+// circle-chain roam: string of externally-tangent circles. march heading aims
+// mostly lateral with gentle downward drift + pull toward centre line (x->0) ->
+// dragon weaves side-to-side around centre while slowly sinking. winding
+// alternates per circle (C1 S-weave). downward drift uniform -> sinks steadily
+// with arc length, tracking linear camera.
 export const CHAIN_R = [0.28, 0.5];      // [min,max] circle radius (world units)
 export const CHAIN_TURN = 0.6;           // random heading wander per circle (rad)
-export const CHAIN_DOWN_BIAS = 0.4;      // how fast the march eases toward its target heading
-export const CHAIN_LATERAL = 0.9;        // horizontal weight of the march target (sideways)
-export const CHAIN_DESCEND = 0.32;       // downward weight of the march target (small -> mostly lateral)
-export const CHAIN_CENTER_R = 0.40;      // |x| at which the centring pull saturates
-export const CHAIN_MIN_SWEEP = 0.35;     // skip tiny in/out hops below this trace fraction (turns)
-export const CHAIN_LEN_FRAC = 0.85;      // descent length target as a fraction of CRUISE_SP*descentDur
-                                         // (raises descentAvg -> descentStart, killing the start crawl)
-export const CHAIN_MAX = 60;             // hard cap on circles per roam (safety)
+export const CHAIN_DOWN_BIAS = 0.4;      // how fast march eases toward target heading
+export const CHAIN_LATERAL = 0.9;        // horizontal weight of march target
+export const CHAIN_DESCEND = 0.32;       // downward weight of march target (small -> mostly lateral)
+export const CHAIN_CENTER_R = 0.40;      // |x| at which centring pull saturates
+export const CHAIN_MIN_SWEEP = 0.35;     // skip in/out hops below this trace fraction (turns)
+export const CHAIN_LEN_FRAC = 0.85;      // descent length target as fraction of CRUISE_SP*descentDur
+                                         // (raises descentAvg -> descentStart, kills start crawl)
+export const CHAIN_MAX = 60;             // cap on circles per roam (safety)
 
-// ---- flight path -----------------------------------------------------------
 export const ENSO_R = 0.4;           // enso radius (world units; <1 keeps it on-screen)
-export const ENSO_WIDTH = 0.15;       // enso brush thickness (polar line width in the shader)
-export const ENSO_CLEARANCE = 0.06;  // gap between the brush OUTER edge and the dragon head path
-// dragon traces just outside the brush so the contour clears the painted stroke
+export const ENSO_WIDTH = 0.15;       // enso brush thickness (polar line width in shader)
+export const ENSO_CLEARANCE = 0.06;  // gap between brush outer edge and dragon head path
+// dragon traces just outside brush so contour clears painted stroke
 export const ENSO_HEAD_R = ENSO_R + ENSO_WIDTH * 0.5 + ENSO_CLEARANCE;
 export const GROW_DUR = 2.5;         // body eases to full size over this span from roam1Start
-export const ENTRY_GROW_MIN = 0.2;   // body length fraction at entry (fly-in), grows to 1 by the enso
+export const ENTRY_GROW_MIN = 0.2;   // body length fraction at entry (fly-in), grows to 1 by enso
 export const ENTRY_SIZE_MIN = 0.4;   // body width / head size fraction at entry, grows to 1
 
-// ---- 2D roam frame (rosette of tangent circles) ----------------------------
-export const FRAME_SMALL_R = 0.5;          // vesica-lobe radius as a fraction of ENSO_R
-export const FRAME_MEDIUM_N = 8;           // medium circles externally tangent to the enso
-export const FRAME_MEDIUM_R = 0.7;         // medium radius as a fraction of ENSO_R (clamped)
-export const FRAME_INNER_AXIS = Math.PI / 8; // vesica-pair axis (offset off the medium spokes)
-export const FRAME_BRANCH_P = 0.5;         // chance to switch circles at a touching point
-export const FRAME_MIN_LEN = 18.0;         // keep walking until the path is at least this long
-export const FRAME_MAX_STEPS = 160;        // hard cap on arcs walked (safety)
+export const FRAME_SMALL_R = 0.5;          // vesica-lobe radius as fraction of ENSO_R
+export const FRAME_MEDIUM_N = 8;           // medium circles externally tangent to enso
+export const FRAME_MEDIUM_R = 0.7;         // medium radius as fraction of ENSO_R (clamped)
+export const FRAME_INNER_AXIS = Math.PI / 8; // vesica-pair axis (offset off medium spokes)
+export const FRAME_BRANCH_P = 0.5;         // chance to switch circles at touching point
+export const FRAME_MIN_LEN = 18.0;         // keep walking until path at least this long
+export const FRAME_MAX_STEPS = 160;        // cap on arcs walked (safety)
 export const FRAME_SAMPLES = 96;           // dense samples per full (2π) revolution
 export const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolerance
 
-// ---- bloom flowers (seated in the path circles) ----------------------------
-// One sumi-e flower sits at the CENTRE of every circle the 2D dragon's path is
-// built from (descent chain + roam2 rosette). A flower stays a tight bud until the
-// dragon's head reaches its circle's rim (the head rides the arcs), then opens over
-// FLOWER_BLOOM_DUR. Bloom is a pure function of scene time (per-flower enter time is
-// precomputed once) so timeline scrubbing replays it exactly.
-export const FLOWER_ENTER_BAND = 0.14;   // head within r*(1+band) of a centre = "on/inside" that circle
-export const FLOWER_BLOOM_DUR = 2.2;     // seconds a flower takes to open from bud to full
+// one sumi-e flower at centre of every circle the 2D dragon's path built from
+// (descent chain + roam2 rosette). bud until head reaches circle rim, then opens
+// over FLOWER_BLOOM_DUR. bloom pure fn of scene time (enter time precomputed) ->
+// timeline scrubbing replays exactly.
+export const FLOWER_ENTER_BAND = 0.14;   // head within r*(1+band) of centre = "on/inside" circle
+export const FLOWER_BLOOM_DUR = 2.2;     // seconds a flower takes to open bud->full
 export const FLOWER_SAMPLE_DT = 1 / 120; // enter-time precompute sampling step (s)
 export const FLOWER_PETALS = 6;          // base petals per ring (varied ±1 per flower)
 export const FLOWER_LAYERS = 3;          // concentric petal rings at full bloom
-export const FLOWER_FILL = 0.13;         // flower radius as a fraction of its circle radius
+export const FLOWER_FILL = 0.13;         // flower radius as fraction of its circle radius
 export const FLOWER_SIZE_JITTER = [0.45, 2.8]; // per-flower [min,max] size multiplier (seed-driven)
-export const FLOWER_OPACITY_JITTER = [0.35, 1.0]; // ink opacity [biggest,smallest] — small opaque, big translucent
+export const FLOWER_OPACITY_JITTER = [0.35, 1.0]; // ink opacity [biggest,smallest]; small opaque, big translucent
 
-// ---- 3D loop ---------------------------------------------------------------
-export const R3D = 0.95;            // 3D orbit radius (x/y) — rings the rosette
+export const R3D = 0.95;            // 3D orbit radius (x/y); rings the rosette
 export const Z3D = 0.45;            // 3D orbit out-of-plane amplitude
-export const LOOP3_PIVOTS = 24;     // pivots around the orbit (more -> crisper petals)
+export const LOOP3_PIVOTS = 24;     // pivots around orbit (more -> crisper petals)
 export const LOOP3_WAVES = 3;       // z undulations per orbit (full periods)
 export const LOOP3_LOBES = 3;       // radial petals
-export const LOOP3_LOBE_DEPTH = 0.45; // how far each petal dips inward, as a fraction of R3D
+export const LOOP3_LOBE_DEPTH = 0.45; // how far each petal dips inward, as fraction of R3D
 export const SP3 = 1.5;             // 3D dragon speed
 export const ENSO_REVS = 1.5;       // enso trace covers 1.5 revolutions (exit at bottom-most point)
-export const ENSO_DUR = BLOCK_DUR.enso; // enso trace spans the B4 block
-// 2D cruise speed: the enso head ENTERS at this speed and decelerates to SP3 over
-// the 1.5-rev trace (linear-decel: ensoLen = (CRUISE_SP+SP3)/2 * ENSO_DUR). The
-// descent ramps up to CRUISE_SP so the descent->enso join has no speed bump.
+export const ENSO_DUR = BLOCK_DUR.enso; // enso trace spans B4 block
+// 2D cruise speed: enso head enters at this, decelerates to SP3 over 1.5-rev
+// trace (linear-decel: ensoLen = (CRUISE_SP+SP3)/2 * ENSO_DUR). descent ramps up
+// to CRUISE_SP so descent->enso join has no speed bump.
 export const CRUISE_SP = (2 * ENSO_REVS * 2 * Math.PI * ENSO_R) / ENSO_DUR - SP3;
 export const CROSSFADE = BLOCK_DUR.crossfade; // 2D->3D crossfade duration (== B6)
-export const CAM_PITCH_DUR = 4.0;   // camera pitch tilt duration (settles after the crossfade)
-export const MAX_EXIT_TURN = Math.PI / 4; // cap on the peel-off turn at the branch onto loop3
-export const MIN_TURN = Math.PI / 9;      // floor on the turn angle at a pivot
-export const MAX_TURN = Math.PI / 2;      // angle above which a pivot counts as a "sharp" turn
-export const MAX_SHARP_RUN = 2;           // a sharp turn is fine, but not N in a row
+export const CAM_PITCH_DUR = 4.0;   // camera pitch tilt duration (settles after crossfade)
+export const MAX_EXIT_TURN = Math.PI / 4; // cap on peel-off turn at branch onto loop3
+export const MIN_TURN = Math.PI / 9;      // floor on turn angle at a pivot
+export const MAX_TURN = Math.PI / 2;      // angle above which a pivot counts "sharp"
+export const MAX_SHARP_RUN = 2;           // sharp turn fine, but not N in a row
 export const RELAX_ITERS = 5;             // relaxation passes
-export const D3_FADEIN_FRAC = 0.55;       // fraction of the crossfade spent fading the 3D dragon IN
+export const D3_FADEIN_FRAC = 0.55;       // fraction of crossfade spent fading 3D dragon in
 
-// ---- camera ----------------------------------------------------------------
 export const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg elevation tilt
 export const CAM = { fov: (45 * Math.PI) / 180, dist: 2.6 };
 
-// ---- fades / grid ----------------------------------------------------------
-export const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as the 3D dragon takes over
-export const ENSO_FADE_TARGET = 0.85;  // enso circle eases to this opacity as the 3D dragon takes over
-export const GRID_REVEAL_DUR = 8.0;  // grid wipes in slowly (spans past the fly-in, into the roam)
+export const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as 3D dragon takes over
+export const ENSO_FADE_TARGET = 0.85;  // enso circle eases to this opacity as 3D dragon takes over
+export const GRID_REVEAL_DUR = 8.0;  // grid wipes in slowly (spans past fly-in, into roam)
 export const GRID_MAX_OPACITY = 0.85;
 export const GRID_MINOR_DIV = 5;  // minor cells per major cell
-export const GRID_MINOR_LAG = 1.5; // seconds the minor grid wipe-in trails the major reveal
+export const GRID_MINOR_LAG = 1.5; // seconds minor grid wipe-in trails major reveal
 export const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
 
-// ---- 2D ink dragon body ----------------------------------------------------
 export const BODY_N = 20;
 export const BODY_LEN = 0.8;
 export const PROP_SPEED = 0.2; // chain relaxation per step (verlet lag)
-export const ENABLE_PHYSICS = false; // false -> body rigidly matches the line of motion
+export const ENABLE_PHYSICS = false; // false -> body rigidly matches line of motion
 export const MAX_BEND = (60 * Math.PI) / 180;
 export const HEAD_SIZE = 0.1;
 
-// ---- 3D mesh ---------------------------------------------------------------
 export const D3 = { N: 512, bodyFactor: 1.2, depth: 10 };
-export const D3_GIRTH = 0.006; // cross-section scale for the 3D mesh
+export const D3_GIRTH = 0.006; // cross-section scale for 3D mesh
 
-// ---- ink splash ------------------------------------------------------------
 export const SPLASH_SPREAD = 1.2; // max blob radius (world units)
 export const SPLASH_AMOUNT = 0.05; // 0..1 amount of ink blobs
-export const SPLASH_FADE_IN = 5.0; // seconds for the wash to fade in at the start
+export const SPLASH_FADE_IN = 5.0; // seconds for wash to fade in at start
 
-// ---- glyph -----------------------------------------------------------------
 export const GLYPH_SCALE = 0.36;
 export const GLYPH_RADIUS = 0.06 * GLYPH_SCALE;

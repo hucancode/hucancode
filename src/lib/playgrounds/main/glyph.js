@@ -1,7 +1,5 @@
-// The glyph (long-life symbol): baked once into quadratic-bezier segments. The
-// glyph traces itself in during B3 (the dragon does NOT ride it). buildGlyph()
-// returns an immutable handle the rest of the scene reads — the segments and the
-// total playhead length (driven by the glyph block's trace tween).
+// Glyph (long-life symbol): baked once into quadratic-bezier segments. Glyph
+// traces itself in during B3 (dragon does NOT ride it).
 
 import { longSymbol } from "$lib/brush/long.js";
 import { bakeSegs } from "$lib/brush/bake.js";

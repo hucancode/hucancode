@@ -15,10 +15,14 @@
     render();
   }
 
+  let cancelled = false;
   onMount(() => {
     setCubeSize(size);
-    init(canvas);
-    loop();
+    init(canvas).then(() => {
+      if (cancelled) return;
+      loop();
+    });
+    return () => { cancelled = true; };
   });
 
   onDestroy(() => {

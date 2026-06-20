@@ -1,4 +1,4 @@
-// Matrices are Float32Array(16), column-major (same layout three/WebGL expect).
+// Matrices Float32Array(16), column-major (WebGL layout).
 
 export class Vec3 {
   constructor(x = 0, y = 0, z = 0) {
@@ -73,14 +73,14 @@ export class Vec3 {
   normalize() {
     return this.divideScalar(this.length() || 1);
   }
-  // overwrite from a column-major mat4's translation
+  // column-major mat4 translation
   setFromMatrixPosition(m) {
     this.x = m[12];
     this.y = m[13];
     this.z = m[14];
     return this;
   }
-  // full mat4 transform (perspective divide) — used by getWorldPosition chains
+  // full mat4 transform, perspective divide
   applyMatrix4(m) {
     const { x, y, z } = this;
     const w = m[3] * x + m[7] * y + m[11] * z + m[15] || 1;
@@ -91,8 +91,7 @@ export class Vec3 {
   }
 }
 
-// Euler angles, XYZ order (matches three's default). Plain storage — the Node
-// composes a matrix from it each frame.
+// Euler angles, XYZ order. Plain storage; Node composes matrix from it per frame.
 export class Euler {
   constructor(x = 0, y = 0, z = 0) {
     this.x = x;
@@ -155,7 +154,6 @@ export class Color {
 }
 
 
-// mat4 ops live in the shared math module (single source of truth).
 export * as mat4 from "../math/mat4.js";
 
 export const DEG2RAD = Math.PI / 180;

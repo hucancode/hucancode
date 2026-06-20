@@ -1,15 +1,6 @@
-// The /paint scene renderer — ONE backend-agnostic renderer over the engine GPU
-// device (engine/gpu). Implements the render/renderer.js Renderer contract
-// (init/resize/frame/destroy) consuming a plain FrameState, and runs on WebGPU
-// (preferred) or WebGL2 (fallback) without change. Replaces the old pair of
-// hand-rolled per-backend renderers.
-//
-// Pass A: render glyph ink, ink splash, enso, and the ink-dragon ribbon into four
-//         offscreen targets (premultiplied accumulation blend).
-// Pass B: clear to paper, draw the ground grid + bloom flowers, composite the four
-//         ink layers as world-plane quads through the orbit camera, then draw the
-//         depth-tested 3D dragon on top. The screen pass is 4x MSAA on WebGPU; the
-//         WebGL2 default framebuffer is antialiased for free.
+// Pass A: glyph ink, splash, enso, ink-dragon ribbon -> 4 offscreen targets (premult accum blend)
+// Pass B: clear paper, grid + flowers, composite 4 ink layers as world-plane quads thru orbit cam,
+//         depth-tested 3D dragon on top. screen pass 4x MSAA on WebGPU; WebGL2 default fb AA'd free
 
 import { loadDragonMesh } from "$lib/engine/index.js";
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./webgl/stroke-gl.js";
@@ -20,7 +11,7 @@ const FLOWER_Z = -0.005;
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 const STATIC_THROTTLE = 8;
 
-// Kanagawa palette (light/dark), copied verbatim from the old WebGL renderer.
+// Kanagawa palette (light/dark)
 const PAPER_LIGHT = [0.949, 0.925, 0.737, 1.0];
 const INK_LIGHT = [0.086, 0.086, 0.114, 0.95];
 const PAPER_DARK = [0.086, 0.086, 0.114, 1.0];
@@ -44,23 +35,22 @@ const HEAD_CORNERS = [[-1.2, -0.8, 0, 0], [1.2, -0.8, 1, 0], [-1.2, 0.8, 0, 1], 
 const BODY_PARAMS = { inkFlow: 1.0, strands: 3.0, waterFlow: 0.8, wobble: 0.3, widthEnd: 0.2, widthOffset: 0.5, widthRange: 1.0, widthAnchor: 0.5 };
 
 export function makeSceneRenderer(device, canvas) {
-  // stroke/head emit clip space directly (no gl_FragCoord), so render-to-texture
-  // is V-flipped on WebGPU vs WebGL. flip clip Y on WebGPU to compensate.
+  // stroke/head emit clip space directly (no gl_FragCoord) -> render-to-texture
+  // V-flipped on WebGPU vs WebGL. flip clip Y on WebGPU to compensate
   const FLIP_Y = device.backend === "webgpu" ? -1 : 1;
   const sh = {};
-  let tGlyph, tSplash, tEnso, tInk;       // offscreen targets
-  let segTex;                             // glyph seg data texture (rgba32f)
+  let tGlyph, tSplash, tEnso, tInk;
+  let segTex;
   const framesTexCache = new Map();       // dragon frames: array-identity -> texture (<=2 live)
-  let strokePos, strokeUV, strokeIdx, headBuf, flowerInst; // dynamic buffers
+  let strokePos, strokeUV, strokeIdx, headBuf, flowerInst;
   let dragonPos, dragonNorm, dragonCount = 0;
   let w = 1, h = 1, frameCount = 0;
 
-  // caches mirroring the old renderer's steady-state throttling
   let glyphCacheKey = NaN;
   let segRef = null, segRows = 0, segBuf = new Float32Array(0);
   const headData = new Float32Array(16);
   let flowerData = new Float32Array(0);
-  // debug-only scratch (one vbuf per overlay draw — they coexist in a frame)
+  // debug-only scratch. one vbuf per overlay draw, coexist in frame
   const lineBufs = [];
   let lineScratch = new Float32Array(0);
 
@@ -80,7 +70,7 @@ export function makeSceneRenderer(device, canvas) {
     const mesh = await loadDragonMesh(DRAGON_OBJ, 1.0);
     dragonPos = device.buffer({ kind: "vertex", data: mesh.positions });
     dragonNorm = device.buffer({ kind: "vertex", data: mesh.normals });
-    dragonCount = mesh.vertexCount; // gates the draw; publish last
+    dragonCount = mesh.vertexCount; // gates draw, publish last
   }
 
   function resize(nw, nh) {
@@ -91,11 +81,11 @@ export function makeSceneRenderer(device, canvas) {
     tSplash = device.target({ width: Math.ceil(w / 2), height: Math.ceil(h / 2) });   // soft wash -> half-res
     tEnso = device.target({ width: w, height: h });
     tInk = device.target({ width: w, height: h });                                    // full-res dragon ribbon
-    glyphCacheKey = NaN; // targets recreated -> force a glyph re-render
+    glyphCacheKey = NaN; // targets recreated -> force glyph re-render
   }
 
-  // pack baked glyph segs into the rgba32f data texture (4 texels/seg). Uploaded
-  // only when the seg array identity changes (scene reload), like the old path.
+  // pack baked glyph segs into rgba32f data texture (4 texels/seg). upload only
+  // when seg array identity changes (scene reload)
   function uploadSegs(segs) {
     const n = segs ? segs.length : 0;
     if (n === 0) return 0;
@@ -115,10 +105,9 @@ export function makeSceneRenderer(device, canvas) {
     return n;
   }
 
-  // Dragon path frames are STATIC per buffer; the scene alternates between a small
-  // set (transition buffer + loop ring) near the handoff. Cache a texture per
-  // frames-array identity so each is uploaded exactly ONCE and we just switch which
-  // texture binds — never realloc or re-upload per frame. At most ~2 live.
+  // dragon path frames STATIC per buffer. scene alternates small set (transition
+  // buffer + loop ring) near handoff. cache texture per frames-array identity ->
+  // each uploaded ONCE, switch which texture binds, no realloc/re-upload per frame
   function getFramesTex(d3) {
     if (!d3.frames) return null;
     let t = framesTexCache.get(d3.frames);
@@ -126,7 +115,7 @@ export function makeSceneRenderer(device, canvas) {
       t = device.texture({ width: 4, height: d3.frameCount, format: "rgba32f", filter: "nearest" });
       t.write(d3.frames, 4, d3.frameCount);
       framesTexCache.set(d3.frames, t);
-      if (framesTexCache.size > 4) { // bound it: a rebuild() may mint fresh arrays
+      if (framesTexCache.size > 4) { // bound: rebuild() may mint fresh arrays
         const k = framesTexCache.keys().next().value;
         framesTexCache.get(k).destroy(); framesTexCache.delete(k);
       }
@@ -214,12 +203,12 @@ export function makeSceneRenderer(device, canvas) {
     const camY = state.camY || 0;
     const nSeg = uploadSegs(state.glyph.segs);
     const framesT = getFramesTex(state.dragon3d);
-    // every viewProj goes through the camera seam (WebGPU remaps clip z to [0,1])
+    // every viewProj thru camera seam (WebGPU remaps clip z to [0,1])
     const vp = device.correctViewProj(state.dragon3d.viewProj);
 
     device.beginFrame();
 
-    // ---- Pass A: offscreen ink layers ----
+    // Pass A: offscreen ink layers
     if (nSeg > 0 && state.glyph.playhead !== glyphCacheKey) {
       glyphCacheKey = state.glyph.playhead;
       device.pass({ target: tGlyph, clear: [0, 0, 0, 0] }, (p) =>
@@ -248,7 +237,7 @@ export function makeSceneRenderer(device, canvas) {
       if ((d.head.alpha ?? 1) > 0) drawHead(p, d.head, aspect, d.head.alpha ?? 1, camY);
     });
 
-    // ---- Pass B: composite to screen + 3D dragon ----
+    // Pass B: composite to screen + 3D dragon
     const paper = getPaper();
     device.pass({ target: "screen", clear: paper, depth: true, depthClear: 1 }, (p) => {
       if (state.grid && state.grid.reveal > 0)

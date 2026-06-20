@@ -14,7 +14,6 @@ function extractFrontmatter(content) {
   const frontmatterString = match[1];
   const contentWithoutFrontmatter = content.slice(match[0].length);
   
-  // Parse frontmatter
   const frontmatter = {};
   frontmatterString.split('\n').forEach(line => {
     const colonIndex = line.indexOf(':');
@@ -22,7 +21,6 @@ function extractFrontmatter(content) {
       const key = line.slice(0, colonIndex).trim();
       let value = line.slice(colonIndex + 1).trim();
       
-      // Handle arrays (categories)
       if (value.startsWith('[') || line.trim() === `${key}:`) {
         const lines = [line];
         const arrayMatch = frontmatterString.match(new RegExp(`${key}:\\s*\\n((?:\\s+-\\s+.*\\n?)+)`));
@@ -33,7 +31,6 @@ function extractFrontmatter(content) {
             .map(l => l.replace(/^\s*-\s*/, '').trim());
         }
       } else {
-        // Remove quotes if present
         value = value.replace(/^["']|["']$/g, '');
       }
       
@@ -45,14 +42,11 @@ function extractFrontmatter(content) {
 }
 
 function transformMarkdocToJS(content, frontmatter, filename) {
-  // Process math expressions
   content = transformMathExpressions(content);
 
-  // Parse and transform Markdoc
   const ast = Markdoc.parse(content);
   const renderable = Markdoc.transform(ast, config);
-  
-  // Generate module code
+
   return `
 import MarkdocRenderer from '$lib/markdoc/renderer.svelte';
 
@@ -68,13 +62,11 @@ export default {
 }
 
 function transformMathExpressions(content) {
-  // Transform block math ($$...$$)
   content = content.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
     return `{% math type="block" %}${math.trim()}{% /math %}`;
   });
-  
-  // Transform inline math ($...$)
-  // Be careful not to match escaped dollars or double dollars
+
+  // don't match escaped dollars or double dollars
   content = content.replace(/(?<!\\)\$(?!\$)(.*?)(?<!\\)\$(?!\$)/g, (match, math) => {
     return `{% math type="inline" %}${math.trim()}{% /math %}`;
   });
@@ -105,7 +97,6 @@ export function markdocPlugin() {
     
     handleHotUpdate({ file, server }) {
       if (file.endsWith('.md')) {
-        // Trigger full reload for markdown changes
         server.ws.send({
           type: 'full-reload',
           path: '*'

@@ -1,8 +1,6 @@
-// The 2D ink dragon's kinematic body: a chain of BODY_N points trailing the head.
-// Two modes — refit ON the motion line each frame (physics off, the default), or
-// a verlet chain that lags the tip. createBodyController owns the chain + scratch
-// and exposes reseed / step / writeHead. It reads the head sampler (posAt) so the
-// trail flows across phase seams.
+// 2D ink dragon's kinematic body: chain of BODY_N points trailing head. Two
+// modes: refit on motion line each frame (physics off, default), or verlet chain
+// that lags tip. reads head sampler (posAt) so trail flows across phase seams.
 
 import { lerp } from "$lib/math/scalar.js";
 import { BODY_N, BODY_LEN, PROP_SPEED, MAX_BEND } from "./config.js";
@@ -12,15 +10,14 @@ export function createBodyController({ headPath, timing }) {
   let body = [];
   let _next = null; // persistent scratch chain swapped with body in step (no per-frame alloc)
 
-  // Fit the body ALONG the motion line: head at the path point for t, the rest
-  // trailing back by arc length. Walk backward IN SCENE-TIME through the global
-  // sampler (posAt), NOT the current phase's own parameter — so the trail flows
-  // across phase seams. Used on seek (no teleport) and every frame when physics
-  // is disabled.
+  // Fit body along motion line: head at path point for t, rest trailing back by
+  // arc length. Walk backward in SCENE-TIME through global sampler (posAt), NOT
+  // current phase's own param -> trail flows across phase seams. Used on seek (no
+  // teleport) and every frame when physics disabled.
   function reseed(t, len = BODY_LEN) {
-    const dt = 0.004;             // scene-time step walking backward from the head
-    const t0 = timing.flyinStart; // the dragon does not exist before this -> floor
-    const tHead = Math.min(Math.max(t, t0), timing.branch); // head holds at the branch in loop3
+    const dt = 0.004;             // scene-time step walking backward from head
+    const t0 = timing.flyinStart; // dragon does not exist before this -> floor
+    const tHead = Math.min(Math.max(t, t0), timing.branch); // head holds at branch in loop3
     const head = posAt(tHead);
     const pts = [{ x: head.x, y: head.y }];
     const arcs = [0];
@@ -32,8 +29,8 @@ export function createBodyController({ headPath, timing }) {
       pts.push({ x: q.x, y: q.y }); arcs.push(acc); prev = pts[pts.length - 1];
     }
     body = new Array(BODY_N);
-    // degenerate: head sits at the timeline start (no trail yet) -> collapse the
-    // whole body onto the head point.
+    // degenerate: head at timeline start (no trail yet) -> collapse whole body
+    // onto head point
     if (pts.length < 2) {
       for (let i = 0; i < BODY_N; i++) body[i] = { x: pts[0].x, y: pts[0].y };
       return;
@@ -55,7 +52,7 @@ export function createBodyController({ headPath, timing }) {
     for (let i = 0; i < n; i++) _next[i] = { x: 0, y: 0 };
   }
 
-  // Verlet chain trailing the tip target: distance constraint back from the tip,
+  // Verlet chain trailing tip target: distance constraint back from tip,
   // max-bend clamp, forward re-constraint.
   function step(tip, len = BODY_LEN) {
     const N = body.length;
@@ -105,15 +102,15 @@ export function createBodyController({ headPath, timing }) {
         }
       }
     }
-    // swap: result becomes body, old body becomes the reusable scratch (no alloc)
+    // swap: result becomes body, old body becomes reusable scratch (no alloc)
     _next = body;
     body = next;
   }
 
-  // Write the head pose (neck-offset position + heading) into `head` in place.
-  // The head aligns with the true PATH tangent at the tip when given — the verlet
-  // body chain lags on curves, so its last-segment heading drifts off the edge
-  // tangent; fall back to that heading only if the tangent is degenerate.
+  // Write head pose (neck-offset position + heading) into `head` in place. Head
+  // aligns with true PATH tangent at tip when given; verlet chain lags on curves
+  // so its last-segment heading drifts off edge tangent. fall back to that heading
+  // only if tangent degenerate.
   function writeHead(head, tangent) {
     const n = body.length;
     const tip = body[n - 1], prev = body[n - 2];

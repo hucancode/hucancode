@@ -44,7 +44,6 @@ export const config = {
         content: { type: String }
       },
       transform(node, config) {
-        // Get the raw content from the node
         const content = node.attributes.content || '';
         
         return {
@@ -67,7 +66,6 @@ export const config = {
         const attributes = node.transformAttributes(config);
         const children = node.transformChildren(config);
         
-        // Generate ID from heading text if not provided
         if (!attributes.id && node.children) {
           const text = node.children
             .map(child => typeof child === 'string' ? child : '')
@@ -102,11 +100,10 @@ export const config = {
       transform(node, config) {
         const attributes = node.transformAttributes(config);
         
-        // Extract content from children - handle various node types
         let content = '';
         if (node.children && Array.isArray(node.children)) {
-          // Traverse all children so multi-line blocks (e.g. \begin{aligned})
-          // keep every row, not just the first text node.
+          // traverse all children so multi-line blocks (e.g. \begin{aligned})
+          // keep every row, not just first text node.
           content = extractTextFromNode(node.children);
         }
         

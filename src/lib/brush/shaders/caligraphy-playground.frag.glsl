@@ -1,10 +1,22 @@
 #version 300 es
 precision highp float;
 
-// Live calligraphy ink renderer. Same SDF / pressure / reveal math as the
-// shadertoy st/caligraphy.glsl, but the baked Seg[] table arrives as a float
-// texture (bake.js -> render-gl.js) instead of a compile-time const array, so
-// the playground can re-render an edited glyph every frame.
+// Live calligraphy ink renderer (optimized for low-end GPUs).
+//
+// The baked Seg[] table arrives as a float texture (bake.js -> render.js) so an
+// edited glyph re-renders live. Same pressure / reveal / SDF math as the
+// shadertoy st/caligraphy.glsl, with three changes that matter on mobile:
+//
+//   1. Per-seg HEADER texel (center, hullRadius, t0) is fetched FIRST, so the
+//      cheap spatial + not-yet-revealed reject costs ONE texture fetch. The
+//      other 4 texels load only for segments that actually touch this pixel
+//      (was 4 dependent fetches/seg for EVERY pixel, even blank paper).
+//   2. Variable-radius CAPSULE sdf (one sqrt) replaces the exact round-cone
+//      (several sqrt + sign branches). Visually identical at SAMPLES sub-steps.
+//   3. Constant loop bound so the GLSL compiler can bound the per-pixel loop.
+//
+// The seg center + hull radius are precomputed CPU-side at bake time (were
+// recomputed per pixel per seg before).
 
 out vec4 fragColor;
 
@@ -17,9 +29,10 @@ uniform int   uShowGrid;
 uniform int   uMode;         // 0 = full (edit), 1 = animated reveal up to uTime
 uniform float uTime;         // playhead (s) when uMode == 1
 uniform int   uNSeg;
-uniform sampler2D uSegTex;   // RGBA32F, 4 texels per seg, height = NSEG
+uniform sampler2D uSegTex;   // RGBA32F, 5 texels per seg, height = NSEG
 
 #define SAMPLES   10
+#define MAX_SEG   256        // hard loop cap (compiler-friendly bound)
 #define MIN_PRESS 0.0
 #define GRAIN     0.05
 #define VIGNETTE  0.5
@@ -27,25 +40,6 @@ uniform sampler2D uSegTex;   // RGBA32F, 4 texels per seg, height = NSEG
 const vec3 PAPER_COLOR = vec3(1.000, 0.988, 0.878);
 const vec3 INK_COLOR   = vec3(0.067, 0.067, 0.067);
 const vec4 GRID_COLOR  = vec4(0.784, 0.235, 0.235, 0.25);
-
-struct Seg {
-    vec2 p1; vec2 p2; vec2 ctrl;
-    float pr1; float pr2; float k; float belly; int hasBelly;
-    float t0; float dur; float v0; float v1;
-};
-
-Seg getSeg(int i) {
-    vec4 a = texelFetch(uSegTex, ivec2(0, i), 0);
-    vec4 b = texelFetch(uSegTex, ivec2(1, i), 0);
-    vec4 c = texelFetch(uSegTex, ivec2(2, i), 0);
-    vec4 d = texelFetch(uSegTex, ivec2(3, i), 0);
-    Seg s;
-    s.p1 = a.xy; s.p2 = a.zw;
-    s.ctrl = b.xy; s.pr1 = b.z; s.pr2 = b.w;
-    s.k = c.x; s.belly = c.y; s.hasBelly = int(c.z + 0.5); s.t0 = c.w;
-    s.dur = d.x; s.v0 = d.y; s.v1 = d.z;
-    return s;
-}
 
 // Degenerate-cubic bezier (both handles = c) == quadratic through p1,c,p2.
 vec2 bez(vec2 p1, vec2 c, vec2 p2, float t) {
@@ -77,25 +71,12 @@ float revealArc(float tp, float v0, float v1) {
     return clamp(v0 * (pow(ratio, tp) - 1.0) / dv, 0.0, 1.0);
 }
 
-// Exact 2D signed distance to a round cone (capsule, radius r1->r2). (Inigo Quilez)
-float sdRoundedCone(vec2 p, vec2 a, vec2 b, float r1, float r2) {
-    vec2 ba = b - a;
-    float l2 = dot(ba, ba);
-    if (l2 < 1e-12) return length(p - a) - r1;
-    float rr = r1 - r2;
-    float a2 = l2 - rr * rr;
-    float il2 = 1.0 / l2;
-    vec2 pa = p - a;
-    float y = dot(pa, ba);
-    float z = y - l2;
-    vec2 xv = pa * l2 - ba * y;
-    float x2 = dot(xv, xv);
-    float y2 = y * y * l2;
-    float z2 = z * z * l2;
-    float k = sign(rr) * rr * rr * x2;
-    if (sign(z) * a2 * z2 > k) return sqrt(x2 + z2) * il2 - r2;
-    if (sign(y) * a2 * y2 < k) return sqrt(x2 + y2) * il2 - r1;
-    return (sqrt(x2 * a2 * il2) + y * rr) * il2 - r1;
+// Variable-radius capsule (round caps + linear taper) — one sqrt. Consecutive
+// sub-segment radii are nearly equal, so this matches the exact round cone.
+float sdCapsule(vec2 p, vec2 a, vec2 b, float ra, float rb) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-12), 0.0, 1.0);
+    return length(pa - ba * h) - mix(ra, rb, h);
 }
 
 float lineCover(vec2 p, vec2 a, vec2 b, float halfW, float aa) {
@@ -128,50 +109,50 @@ float grainNoise(vec2 p) {
 
 void main() {
     vec2 frag = gl_FragCoord.xy;
-    // view-space coord, then undo zoom/pan to get the world coord this pixel maps to
     vec2 wv = (2.0 * frag - uResolution) / uResolution.y;
     vec2 w  = wv / uZoom + uPan;
 
-    float px = (2.0 / uResolution.y) / uZoom;   // world units per pixel
+    float px = (2.0 / uResolution.y) / uZoom;
     float aa = 1.5 * px;
 
     vec3 col = PAPER_COLOR;
-
     if (uShowGrid == 1) {
         float g = komeGrid(w, aa, uGridSize);
         col = mix(col, GRID_COLOR.rgb, g * GRID_COLOR.a);
     }
 
     float dmin = 1e9;
-    for (int i = 0; i < uNSeg; i++) {
-        Seg s = getSeg(i);
-        vec2 p1 = s.p1, p2 = s.p2, c = s.ctrl;
-        float pa = s.pr1, pb = s.pr2;
+    for (int i = 0; i < MAX_SEG; i++) {
+        if (i >= uNSeg) break;
 
-        float r;
+        // HEADER (texel 0): center.xy, hullRadius, t0 — one fetch gates the seg.
+        vec4 H = texelFetch(uSegTex, ivec2(0, i), 0);
+        if (uMode == 1 && uTime <= H.w) continue;            // not started yet
+        if (length(w - H.xy) - H.z - uBaseRadius > aa) continue; // outside reach
+
+        // survived: load the geometry texels.
+        vec4 A = texelFetch(uSegTex, ivec2(1, i), 0);        // p1.xy, p2.xy
+        vec4 B = texelFetch(uSegTex, ivec2(2, i), 0);        // ctrl.xy, pr1, pr2
+        vec4 C = texelFetch(uSegTex, ivec2(3, i), 0);        // k, belly, hasBelly, dur
+        vec2 p1 = A.xy, p2 = A.zw, c = B.xy;
+        float pa = B.z, pb = B.w;
+
+        float r = 1.0;
         if (uMode == 1) {
-            float tp = clamp((uTime - s.t0) / s.dur, 0.0, 1.0);
-            if (tp <= 0.0) continue;
-            r = revealArc(tp, s.v0, s.v1);
-        } else {
-            r = 1.0;
+            vec4 D = texelFetch(uSegTex, ivec2(4, i), 0);    // v0, v1
+            float tp = clamp((uTime - H.w) / max(C.w, 1e-6), 0.0, 1.0);
+            r = revealArc(tp, D.x, D.y);
         }
+        int hasBelly = int(C.z + 0.5);
 
-        // cheap reject: skip if pixel is outside the curve hull + brush + aa
-        vec2 cen = (p1 + p2) * 0.5;
-        float hullR = max(length(p1 - cen), length(c - cen));
-        if (length(w - cen) - hullR - uBaseRadius > aa) continue;
-
-        vec2 prevPos = bez(p1, c, p2, 0.0);
+        vec2 prevPos = p1;                                   // bez(p1,c,p2,0) == p1
         float prevRad = uBaseRadius * max(MIN_PRESS, pa);
         for (int k = 1; k <= SAMPLES; k++) {
             float t = (float(k) / float(SAMPLES)) * r;
-            float pr = (s.hasBelly == 1)
-                ? pressureAt(pa, pb, s.k, t, s.belly)
-                : mix(pa, pb, t);
+            float pr = (hasBelly == 1) ? pressureAt(pa, pb, C.x, t, C.y) : mix(pa, pb, t);
             vec2 pos = bez(p1, c, p2, t);
             float rad = uBaseRadius * max(MIN_PRESS, pr);
-            dmin = min(dmin, sdRoundedCone(w, prevPos, pos, prevRad, rad));
+            dmin = min(dmin, sdCapsule(w, prevPos, pos, prevRad, rad));
             prevPos = pos;
             prevRad = rad;
         }
