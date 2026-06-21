@@ -61,11 +61,10 @@
     window.scrollTo(0, y);
   }
 
-  // User scroll. OUR own programmatic scroll sets selfScroll, so the resulting
-  // event is swallowed -- robust against mobile URL-bar clamp moving scrollY off
-  // the requested px (a position match would misfire and pause playback).
-  // Grabbing the scrollbar mid-track stops autoplay and scrubs; scrolling all
-  // the way to the footer resumes playback (unless the user explicitly paused).
+  // It's HARD to make scroll automatic but not invasive. Current attempt:
+  // - Programmatic scroll sets selfScroll, so the resulting event is swallowed
+  // - Grabbing the scrollbar mid-track and drag it far enough stops autoplay
+  // - Scrolling all the way to the footer resumes playback unless the user explicitly paused
   function onScroll() {
     if (!browser) return;
     if (selfScroll) {

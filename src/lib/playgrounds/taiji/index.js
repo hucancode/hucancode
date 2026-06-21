@@ -83,7 +83,7 @@ function render() {
   const c2 = [color2.r, color2.g, color2.b];
 
   device.beginFrame();
-  device.pass({ target: "screen", clear: [0, 0, 0, 0] }, (p) => {
+  device.pass({ target: "screen", clear: [0.06, 0.07, 0.09, 1] }, (p) => {
     p.draw(pCloud, { count: 6, uniforms: { uScale: [1, 1], uRot: 0, time, alpha: cloudA.v } });
     p.draw(pBagua, {
       count: 6,
