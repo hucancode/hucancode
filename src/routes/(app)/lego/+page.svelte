@@ -221,7 +221,7 @@
 </script>
 
 <svelte:head>
-  <title>Lego Eagle</title>
+  <title>Lego</title>
 </svelte:head>
 
 <nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
