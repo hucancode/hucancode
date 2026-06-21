@@ -235,7 +235,7 @@ function render() {
   const eye = [camera.position.x, camera.position.y, camera.position.z];
 
   device.beginFrame();
-  device.pass({ target: "screen", clear: [0, 0, 0, 0], depth: true, depthClear: 1 }, (p) => {
+  device.pass({ target: "screen", clear: [0.11, 0.11, 0.17, 1], depth: true, depthClear: 1 }, (p) => {
     if (inspecting) {
       _pos.set(0, 0, 0);
       _rot.set(inspect.rx, inspect.ry, inspect.rz);
