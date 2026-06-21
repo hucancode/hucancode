@@ -146,12 +146,19 @@ function clipSolid(faces, n, d) {
 // axis (y-face -> z, z-face -> x, x-face -> z).
 const RUN_AXIS = { 0: 2, 1: 2, 2: 0 };
 
-// ---- slope op -> per-cell clip plane ---------------------------------------
+// ---- slope op -> clip half-space list --------------------------------------
 // A slope/curve cut ALWAYS ends at a BOUNDARY (low, full `depth` drop) and runs
 // `length` cells inward, where it starts at full height. The run axis is deduced
 // from `face`; `dir` (+1 fwd / -1 back) picks which boundary along it the ramp
 // descends to; `length` decides where it starts (length = whole axis ->
-// edge-to-edge slope). Returns (idx) -> {n,d} | null clip half-space per cell.
+// edge-to-edge slope).
+//
+// The cut surface is sampled along the run axis and turned into a list of chord
+// half-spaces (material kept BELOW each chord); the whole part is then clipped by
+// every plane. A straight ramp is one plane. A `round` curve is sampled at
+// SUB sub-steps PER CELL: the material under a curved slope is convex, so the
+// intersection of the inscribed chords is a smooth faceted surface that
+// converges to the true quarter-cosine. `op.seg` overrides the per-cell steps.
 function slopePlanes(op, W, H, D) {
   const dims = [W, H, D];
   const fa = AXES[op.face[0]];                 // face axis index
@@ -170,29 +177,43 @@ function slopePlanes(op, W, H, D) {
   const lCoord = (b) => (b - lHalf) * lU;        // world coord of boundary b
   const tAt = (b) => (ls > 0 ? b - start : start - b);  // cells from start toward dir
 
-  // drop(t): descent from the face over t in [0,L] cells from the start
+  // drop(t): descent from the face over t in [0,L] cells from the start.
+  // round -> circular quarter-arc (1 - sqrt(1-x^2)): flat shoulder up top, a full
+  // round bulge, steepening to the toe. Convex, so chord clipping stays exact.
   const drop = (t) => {
     const x = Math.max(0, Math.min(1, t / L));
-    const r = op.round ? (1 - Math.cos(x * Math.PI / 2)) : x;
+    const r = op.round ? (1 - Math.sqrt(1 - x * x)) : x;
     return r * Dp * fU;
   };
+  const surf = (b) => faceLevel - fs * drop(tAt(b));   // surface coord at boundary b
 
-  return (idx) => {
-    const li = idx[la];
-    const dA = drop(tAt(li)), dB = drop(tAt(li + 1));
-    if (dA < EPS && dB < EPS) return null;       // wrong side of center: full
-    // surface level (along face normal) at the cell's two `la` boundaries
-    const sA = faceLevel - fs * dA, sB = faceLevel - fs * dB;
-    const cA = lCoord(li), cB = lCoord(li + 1);
-    // plane through (cA,sA),(cB,sB) in the (la,fa) plane; keep material below it
-    const dl = cB - cA, df = sB - sA;
-    let nl = -df * fs, nf = dl * fs;
-    if (nf * fs < 0) { nl = -nl; nf = -nf; }      // outward along +fs
-    const n = [0, 0, 0]; n[la] = nl; n[fa] = nf;
-    const nn = norm(n);
-    const pt = [0, 0, 0]; pt[la] = cA; pt[fa] = sA;
-    return { n: nn, d: dot(nn, pt) };
-  };
+  // sub-steps per cell: a straight ramp needs 1 (it is exactly planar); a curve
+  // gets many so the facets disappear. Sample boundaries from `start` toward dir.
+  const sub = Math.max(1, (op.seg | 0) || (op.round ? 8 : 1));
+  const n = L * sub;
+  const planes = [];
+  let cA = lCoord(start), sA = surf(start);
+  for (let i = 1; i <= n; i++) {
+    const b = start + ls * (i / sub);
+    const cB = lCoord(b), sB = surf(b);
+    const pl = planeThrough(cA, sA, cB, sB, la, fa, fs);
+    if (pl) planes.push(pl);
+    cA = cB; sA = sB;
+  }
+  return planes;
+}
+
+// half-space through surface points (cA,sA),(cB,sB) in the (la,fa) plane, normal
+// pointing outward along +fs; keep material on the -n side (n·p <= d).
+function planeThrough(cA, sA, cB, sB, la, fa, fs) {
+  const dl = cB - cA, df = sB - sA;
+  let nl = -df * fs, nf = dl * fs;
+  if (nf * fs < 0) { nl = -nl; nf = -nf; }       // outward along +fs
+  const v = [0, 0, 0]; v[la] = nl; v[fa] = nf;
+  const nn = norm(v);
+  if (!isFinite(nn[0]) || (Math.abs(nl) < EPS && Math.abs(nf) < EPS)) return null;
+  const pt = [0, 0, 0]; pt[la] = cA; pt[fa] = sA;
+  return { n: nn, d: dot(nn, pt) };
 }
 
 // ---- push op -> removed-cell test ------------------------------------------
@@ -351,10 +372,11 @@ export function makeSolid(def) {
     if (pushOps.some((t) => t(idx))) return false;            // carved away
     const orig = cellFaces(idx[0], idx[1], idx[2], W, H, D)[OUTER_FACE[fa] + (fs > 0 ? 1 : 0)];
     let faces = cellFaces(idx[0], idx[1], idx[2], W, H, D);
-    for (const plane of slopeOps) {
-      const pl = plane(idx);
-      if (pl) faces = clipSolid(faces, pl.n, pl.d);
-      if (!faces.length) return false;
+    for (const planes of slopeOps) {
+      for (const pl of planes) {
+        faces = clipSolid(faces, pl.n, pl.d);
+        if (!faces.length) return false;
+      }
     }
     return faces.some((f) => samePoly(f, orig));              // outer face survived intact
   }
@@ -366,9 +388,11 @@ export function makeSolid(def) {
         const idx = [i, j, k];
         if (pushOps.some((t) => t(idx))) continue;       // carved away
         let faces = cellFaces(i, j, k, W, H, D);
-        for (const plane of slopeOps) {
-          const pl = plane(idx);
-          if (pl) faces = clipSolid(faces, pl.n, pl.d);
+        for (const planes of slopeOps) {
+          for (const pl of planes) {
+            faces = clipSolid(faces, pl.n, pl.d);
+            if (!faces.length) break;
+          }
           if (!faces.length) break;
         }
         if (faces.length) allFaces.push(...faces);
