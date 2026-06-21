@@ -230,12 +230,16 @@ export function validateAssembly(model) {
   };
 }
 
-// Standalone query (TODO): can defB clutch onto defA via this single connection?
-// { connected, clutch, conflict, collision }.
+// Standalone query: can defB clutch onto defA via this single connection?
+// Seats B on A with placeAll (so stud-snap + flush seating match a real build),
+// then runs the lattice rules. ok = a real clutch with no stud conflict and no
+// interpenetration. -> { ok, connected, clutch, conflict, collision }.
 export function canConnect(defA, defB, conn = {}) {
   const model = { parts: { a: defA, b: defB }, root: "a", connections: [{ a: "a", b: "b", ...conn }] };
   const { placed } = placeAll(model);
   const A = placed.get("a"), B = placed.get("b");
+  if (!A || !B) return { ok: false, connected: false, clutch: 0, conflict: 0, collision: false };
   const m = mate(A, B);
-  return { ...m, collision: collides([A], B).hit };
+  const collision = collides([A], B).hit;
+  return { ...m, collision, ok: m.connected && !collision };
 }
