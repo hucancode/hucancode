@@ -241,8 +241,9 @@ function rotateGeo(g, axis, ang) {
 // are skipped automatically.
 function buildStuds(op, W, H, D, intact) {
   const out = [];
-  const fa = AXES[op.face[0]];
-  const fs = op.face[1] === "+" ? 1 : -1;
+  const face = op.face ?? "y+";          // default studs to the top face
+  const fa = AXES[face[0]];
+  const fs = face[1] === "+" ? 1 : -1;
   const female = op.kind === "female";
   const hw = W / 2, hd = D / 2, hh = (H / 2) * PLATE_H;
 

@@ -3,15 +3,22 @@
 // A model = { parts: {id: spec}, root, baseY?, connections: [...] }.
 // Each connection mounts part B onto a FACE of an already-placed part A:
 //   { a, b, on:"top|bottom|front|back|left|right",
-//     off:[du,dv],         // in-plane offset on A's face, in studs (default 0,0)
-//     bFace:"bottom",      // B's mating face (default "bottom")
-//     bOff:[du,dv],        // in-plane offset on B's mating face (default 0,0)
-//     angle: deg }         // twist of B about the mount normal (default 0)
+//     off:[du,dv],         // in-plane offset on A's face, in whole studs (0,0)
+//     rot:[rx,ry,rz] }     // B's rotation, each a multiple of 90°
+//                          // (legacy `angle` == rot Y; default 0,0,0)
 //
-// B's mating face is laid flush against A's `on` face; heights/positions fall
-// out of the stack. Resolution order = connection order = build order.
+// Faces and rotations are in WORLD axes — mounting does NOT inherit A's
+// rotation. So a flipped/rotated anchor carries nothing into its children: B is
+// rotated only by its own `rot`, then seated on A. Mount order per connection:
+//   1. rotate B locally by `rot`,
+//   2. seat B against A's `on` face: contact point = A's center pushed out along
+//      the face normal by A's half-extent along it; B is then pushed out by its
+//      OWN half-extent along that normal, so the rotated box rests flush (no
+//      sink, any rotation),
+//   3. slide along the face by `off` (in studs).
+// Heights/positions fall out of the stack. Order = connection order = build order.
 
-import { TYPE_HEIGHT, BRICK_H } from "./brick.js";
+import { TYPE_HEIGHT, BRICK_H, PLATE_H } from "./brick.js";
 
 const D2R = Math.PI / 180;
 
@@ -43,37 +50,37 @@ function mat4(R, C) {
 
 // ---- part dimensions -------------------------------------------------------
 function dims(spec) {
-  const sx = spec.size ? spec.size[0] : (spec.sx ?? spec.studsX ?? 2);
-  const sz = spec.size ? spec.size[1] : (spec.sz ?? spec.studsZ ?? 2);
+  // op-model part: size = [W(studs X), H(plates Y), D(studs Z)]
+  if (Array.isArray(spec.size)) {
+    const sx = spec.size[0] ?? 2;
+    const sz = spec.size[2] ?? spec.size[0] ?? 2;
+    const h = (spec.size[1] ?? 3) * PLATE_H;
+    return { sx, sz, h, hw: sx / 2, hd: sz / 2, hh: h / 2 };
+  }
+  // legacy preset: sx/sz footprint + type/height
+  const sx = spec.sx ?? spec.studsX ?? 2;
+  const sz = spec.sz ?? spec.studsZ ?? 2;
   const h = spec.h ?? spec.height ?? TYPE_HEIGHT[spec.type] ?? BRICK_H;
   return { sx, sz, h, hw: sx / 2, hd: sz / 2, hh: h / 2 };
 }
 
-// face center + in-plane axes (A local frame). off applied as du*u + dv*v.
-function facePoint(d, face, off = [0, 0]) {
-  const [du, dv] = off;
-  switch (face) {
-    case "top":    return [du, d.hh, dv];
-    case "bottom": return [du, -d.hh, dv];
-    case "front":  return [du, dv, d.hd];
-    case "back":   return [du, dv, -d.hd];
-    case "right":  return [d.hw, dv, du];
-    case "left":   return [-d.hw, dv, du];
-  }
-  return [du, d.hh, dv];
-}
+// world face: outward normal n + the two in-plane axes (u,v) that `off` slides on
+const FACES = {
+  top:    { n: [0, 1, 0],  u: [1, 0, 0], v: [0, 0, 1] },
+  bottom: { n: [0, -1, 0], u: [1, 0, 0], v: [0, 0, 1] },
+  front:  { n: [0, 0, 1],  u: [1, 0, 0], v: [0, 1, 0] },
+  back:   { n: [0, 0, -1], u: [1, 0, 0], v: [0, 1, 0] },
+  right:  { n: [1, 0, 0],  u: [0, 0, 1], v: [0, 1, 0] },
+  left:   { n: [-1, 0, 0], u: [0, 0, 1], v: [0, 1, 0] },
+};
 
-// rotation aligning B's mating face (default bottom, -Y) onto A's `on` face
-function mountRot(on) {
-  switch (on) {
-    case "top":    return I3;
-    case "bottom": return rotX(Math.PI);
-    case "front":  return rotX(Math.PI / 2);
-    case "back":   return rotX(-Math.PI / 2);
-    case "right":  return rotZ(-Math.PI / 2);
-    case "left":   return rotZ(Math.PI / 2);
-  }
-  return I3;
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const scale3 = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
+
+// half-extent of a box (half-sizes hw,hh,hd, rotation R) along a unit world dir w
+function halfAlong(d, R, w) {
+  const ex = [R[0], R[3], R[6]], ey = [R[1], R[4], R[7]], ez = [R[2], R[5], R[8]];
+  return d.hw * Math.abs(dot3(w, ex)) + d.hh * Math.abs(dot3(w, ey)) + d.hd * Math.abs(dot3(w, ez));
 }
 
 export function resolveAssembly(model) {
@@ -93,15 +100,21 @@ export function resolveAssembly(model) {
     const Bspec = model.parts[conn.b];
     const bd = dims(Bspec);
     const on = conn.on ?? "top";
-    const bFace = conn.bFace ?? "bottom";
 
-    // world contact point on A's face
-    const Pa = add(A.C, apply3(A.R, facePoint(A.d, on, conn.off ?? [0, 0])));
-    // B orientation: A frame -> twist about mount normal -> align mating face
-    const Rb = mul3(A.R, mul3(rotY((conn.angle ?? 0) * D2R), mountRot(on)));
-    // place B so its mating-face point coincides with Pa
-    const Pb = facePoint(bd, bFace, conn.bOff ?? [0, 0]);
-    const Cb = sub(Pa, apply3(Rb, Pb));
+    const F = FACES[on] ?? FACES.top;
+    const N = F.n;
+
+    // 1) rotate B locally (world axes, each a multiple of 90°); legacy `angle` == rot Y
+    const r = conn.rot ?? [0, conn.angle ?? 0, 0];
+    const Rb = mul3(rotX(r[0] * D2R), mul3(rotY(r[1] * D2R), rotZ(r[2] * D2R)));
+
+    // 2) contact point: A's center -> out to its `on` face -> slide by `off`
+    const [du, dv] = conn.off ?? [0, 0];
+    const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))),
+                   add(scale3(F.u, du), scale3(F.v, dv)));
+
+    // 3) seat B flush: push out along the face normal by B's own half-extent
+    const Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
 
     placed.set(conn.b, { R: Rb, C: Cb, d: bd, spec: Bspec });
     order.push(conn.b);

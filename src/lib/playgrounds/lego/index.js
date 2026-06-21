@@ -16,14 +16,15 @@ const STEP = 110;        // ms between piece placements
 const DUR = 600;         // ms per piece drop
 
 const config = {
-  spin: 0.4,
+  spin: 0.0,
   explode: 0,
 };
 
 let canvas, device, shader, camera, disposed = false;
 let mode = "assemble";          // "assemble" | "inspect"
-let inspect = null;             // single isolated piece
+let inspect = null;
 let inspectSpec = null;
+let activeModel = MODEL;
 let pieces = [];
 let centroid = new Vec3(0, 0, 0);
 let yaw = 0.6, pitch = 0.35;
@@ -46,16 +47,17 @@ function disposePieces() {
   pieces = [];
 }
 
-function buildEagle() {
+function buildEagle(model = activeModel) {
+  activeModel = model;
   utils.remove(pieces);
   disposePieces();
   const cache = new Map();
-  const { pieces: placed, centroid: cen } = resolveAssembly(MODEL);
+  const { pieces: placed, centroid: cen } = resolveAssembly(model);
   pieces = placed.map((pl) => {
     const key = JSON.stringify(pl.spec);
     let geom = cache.get(key);
     if (!geom) {
-      const g = makeBrick(pl.spec);
+      const g = Array.isArray(pl.spec.size) ? makeSolid(pl.spec) : makeBrick(pl.spec);
       geom = {
         posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
         normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
@@ -120,6 +122,10 @@ function setConfig(patch) {
     if (mode === "inspect") buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
   }
   if (patch.spec) buildInspect(patch.spec);
+  if (patch.model) {                                              // live edit: show fully assembled
+    try { buildEagle(patch.model); setProgress(1); }
+    catch (e) { console.warn("[lego] invalid model", e); }
+  }
   if ("progress" in patch && pieces.length) setProgress(patch.progress);
   if (patch.replay && pieces.length) play();
 }
@@ -134,7 +140,7 @@ function onMove(e) {
   const x = e.touches ? e.touches[0].clientX : e.clientX;
   const y = e.touches ? e.touches[0].clientY : e.clientY;
   yaw -= (x - lastX) * 0.01;
-  pitch = Math.max(-1.2, Math.min(1.2, pitch - (y - lastY) * 0.01));
+  pitch = Math.max(-1.2, Math.min(1.2, pitch + (y - lastY) * 0.01));
   lastX = x; lastY = y;
 }
 function onUp() {
