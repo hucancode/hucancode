@@ -22,7 +22,6 @@ import { TYPE_HEIGHT, BRICK_H, PLATE_H } from "./brick.js";
 
 const D2R = Math.PI / 180;
 
-// ---- tiny row-major 3x3 rotation lib ---------------------------------------
 const I3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 const rotX = (t) => { const c = Math.cos(t), s = Math.sin(t); return [1, 0, 0, 0, c, -s, 0, s, c]; };
 const rotY = (t) => { const c = Math.cos(t), s = Math.sin(t); return [c, 0, s, 0, 1, 0, -s, 0, c]; };
@@ -48,7 +47,6 @@ function mat4(R, C) {
   return m;
 }
 
-// ---- part dimensions -------------------------------------------------------
 function dims(spec) {
   // op-model part: size = [W(studs X), H(plates Y), D(studs Z)]
   if (Array.isArray(spec.size)) {

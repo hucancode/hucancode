@@ -53,7 +53,6 @@ const AXES = { x: 0, y: 1, z: 2 };
 // per-axis world unit: Y measured in plates, X/Z in studs
 const unit = (ax) => (ax === 1 ? PLATE_H : 1);
 
-// ---- vector helpers --------------------------------------------------------
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const cross = (a, b) => [
@@ -102,7 +101,6 @@ function clipPoly(poly, n, d) {
 
 // order a set of coplanar points into a CCW ring whose face normal == n
 function orderRing(pts, n) {
-  // dedupe
   const uniq = [];
   for (const p of pts) {
     if (!uniq.some((q) => Math.abs(q[0] - p[0]) < 1e-5 && Math.abs(q[1] - p[1]) < 1e-5 && Math.abs(q[2] - p[2]) < 1e-5))
@@ -146,7 +144,6 @@ function clipSolid(faces, n, d) {
 // axis (y-face -> z, z-face -> x, x-face -> z).
 const RUN_AXIS = { 0: 2, 1: 2, 2: 0 };
 
-// ---- slope op -> clip half-space list --------------------------------------
 // A slope/curve cut ALWAYS ends at a BOUNDARY (low, full `depth` drop) and runs
 // `length` cells inward, where it starts at full height. The run axis is deduced
 // from `face`; `dir` (+1 fwd / -1 back) picks which boundary along it the ramp
@@ -216,7 +213,6 @@ function planeThrough(cA, sA, cB, sB, la, fa, fs) {
   return { n: nn, d: dot(nn, pt) };
 }
 
-// ---- push op -> removed-cell test ------------------------------------------
 function pushTest(op, W, H, D) {
   const dims = [W, H, D];
   const fa = AXES[op.face[0]];
@@ -239,7 +235,6 @@ function pushTest(op, W, H, D) {
   };
 }
 
-// ---- rounded corners -> vertical clip half-spaces --------------------------
 // Round the 4 vertical edges of the box. The footprint becomes a rounded
 // rectangle (convex): the straight faces come from the cell cubes, these chords
 // add the corner arcs. radius defaults to half a stud, clamped to min(hw,hd) —
@@ -269,7 +264,6 @@ function cornerPlanes(def, W, D) {
   return planes;
 }
 
-// ---- studs -----------------------------------------------------------------
 const studGeo = (r = STUD_R, h = STUD_H, radial = 20) => cylinderGeometry(r, r, h, radial);
 
 function rotateGeo(g, axis, ang) {
@@ -359,7 +353,6 @@ function samePoly(a, b) {
 // index of the outer face in cellFaces() output, per face axis (+1 for + side)
 const OUTER_FACE = { 0: 2, 1: 4, 2: 0 };
 
-// ---- face list -> Geometry -------------------------------------------------
 function facesToGeometry(faceList) {
   const pos = [], nor = [];
   for (const f of faceList) {
@@ -376,7 +369,6 @@ function facesToGeometry(faceList) {
     .setAttribute("uv", uv, 2);
 }
 
-// ---- main entry ------------------------------------------------------------
 export function makeSolid(def) {
   const W = Math.max(1, (def.size?.[0] ?? 2) | 0);
   const H = Math.max(1, (def.size?.[1] ?? 3) | 0);
@@ -441,7 +433,6 @@ export function makeSolid(def) {
   return mergeGeometries(geos);
 }
 
-// ---- preset helpers for the playground UI ----------------------------------
 // quick builders for common parts in the new op model
 export const PRESETS = {
   brick: (W, D) => ({ size: [W, 3, D], ops: [{ op: "studs", face: "y+" }, { op: "studs", face: "y-", kind: "female" }] }),

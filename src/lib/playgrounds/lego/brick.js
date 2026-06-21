@@ -34,8 +34,6 @@ export const TYPES = Object.keys(TYPE_HEIGHT);
 
 const STUD_R = 0.3, STUD_H = 0.2, TUBE_R = 0.3;
 
-// ---- low-level geometry helpers -------------------------------------------
-
 // Geometry (position/normal/uv) from a triangle list, flat normals.
 // outward=true reorients each tri so its normal points away from the origin
 // (valid for bodies that are star-convex about the centered origin) — removes
@@ -79,7 +77,6 @@ function rotateGeo(g, axis, ang) {
 
 const stud = (R = STUD_R, BH = STUD_H, radial = 20) => cylinderGeometry(R, R, BH, radial);
 
-// ---- body from a 2D profile extruded along an axis -------------------------
 // profile: list of [u,v] forming the cross-section; extruded by `len` along
 // `axis`. (u,v) map: axis X -> (z,y); axis Z -> (x,y). Auto-outward normals.
 function extrude(profile, axis, len) {
@@ -185,18 +182,12 @@ function cutPoly(sx, sz, cuts, c) {
   c = Math.min(c, sx, sz);
   const has = (n) => cuts.includes(n);
   const pts = [];
-  // back-left
   has("back-left") ? pts.push([-hw + c, -hd], [-hw, -hd + c]) : pts.push([-hw, -hd]);
-  // back-right
   has("back-right") ? pts.push([hw - c, -hd], [hw, -hd + c]) : pts.push([hw, -hd]);
-  // front-right
   has("front-right") ? pts.push([hw, hd - c], [hw - c, hd]) : pts.push([hw, hd]);
-  // front-left
   has("front-left") ? pts.push([-hw + c, hd], [-hw, hd - c]) : pts.push([-hw, hd]);
   return pts;
 }
-
-// ---- studs / tubes ---------------------------------------------------------
 
 // male studs on top (dir +1) or bottom (dir -1) of an sx*sz grid, culled to a
 // stud-index mask and/or footprint polygon and/or a per-cell keep() test.
@@ -237,8 +228,6 @@ function sideStuds(face, sx, sz, h, R = STUD_R, BH = STUD_H) {
   if (face === "left")   for (let j = 0; j < sz; j++) out.push(mk(-hw - BH / 2, j - (sz - 1) / 2, "z", Math.PI / 2));
   return out;
 }
-
-// ---- main entry: notation --------------------------------------------------
 
 export function makePart(spec) {
   const [sx, sz] = spec.size ?? [2, 2];
@@ -282,7 +271,6 @@ export function makePart(spec) {
     else if (b.edge === "left") topKeep = (x, z) => x >= -hw + dep + 1e-6;
   }
 
-  // surfaces
   if (f.top === "male")
     parts.push(...faceStuds(sx, sz, h, +1, { mask: spec.studMaskTop ?? spec.studMask, poly, keep: topKeep }));
   if (f.bottom === "male")
@@ -295,7 +283,6 @@ export function makePart(spec) {
   return mergeGeometries(parts);
 }
 
-// ---- legacy preset adapter -------------------------------------------------
 // maps the old `type` specs (sx/sz/height/...) onto makePart notation.
 
 export function makeBrick(spec) {
