@@ -210,7 +210,7 @@ function render() {
   }
 
   device.beginFrame();
-  device.pass({ target: "screen", clear: [0.06, 0.07, 0.09, 1], depth: true, depthClear: 1 }, (p) => {
+  device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
     for (const d of dragons) {
       // wrap by pathLen so offset stays bounded over long runs
       d.headOffset = (d.headOffset + config.speed * d.pathLen) % d.pathLen;

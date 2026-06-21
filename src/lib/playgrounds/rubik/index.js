@@ -272,7 +272,7 @@ function render() {
   mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
 
   device.beginFrame();
-  device.pass({ target: "screen", clear: [0.06, 0.07, 0.09, 1], depth: true, depthClear: 1 }, (p) => {
+  device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
     for (let i = 0; i < cubes.length; i++) {
       const cube = cubes[i];
       let model = cube.base;

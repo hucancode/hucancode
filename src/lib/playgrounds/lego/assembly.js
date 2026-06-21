@@ -101,23 +101,66 @@ function studSnap(axis, A, Rb, bd) {
   return ((aN - bN) & 1) ? 0.5 : 0;                      // differ in parity -> half-stud
 }
 
+// Detect connections that would introduce a cycle. An edge a->b makes b a child
+// of a; it is invalid if b can already reach a through earlier-accepted edges (or
+// it is a self-loop a==a). Returns a Set of offending connection indices. Parts
+// may have multiple parents (a DAG) — only back-edges that close a loop are bad.
+export function cycleEdges(model) {
+  const conns = model.connections ?? [];
+  const adj = new Map();                 // accepted edges: a -> [b, ...]
+  const bad = new Set();
+  const reaches = (from, target) => {    // DFS: can `from` reach `target`?
+    const stack = [from], seen = new Set();
+    while (stack.length) {
+      const x = stack.pop();
+      if (x === target) return true;
+      if (seen.has(x)) continue;
+      seen.add(x);
+      for (const y of adj.get(x) ?? []) stack.push(y);
+    }
+    return false;
+  };
+  conns.forEach((c, i) => {
+    if (c.a === c.b || reaches(c.b, c.a)) { bad.add(i); return; }
+    if (!adj.has(c.a)) adj.set(c.a, []);
+    adj.get(c.a).push(c.b);
+  });
+  return bad;
+}
+
 // Resolve every part to { id, spec, d, R, C } in build order. Shared by the
 // renderer and the validators so all three agree on placement.
 function placeAll(model) {
   const placed = new Map();
   const order = [];
 
-  const rootId = model.root;
-  const rootSpec = model.parts[rootId];
-  const rd = dims(rootSpec);
-  const R0 = model.rootAngle ? rotY(model.rootAngle * D2R) : I3;
-  placed.set(rootId, { id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0], depth: 0, mountN: [0, 1, 0] });
-  order.push(rootId);
+  // Cycle-forming connections are ignored entirely (their `b` keeps no parent
+  // from them, so it may itself become a root).
+  const bad = cycleEdges(model);
+  const conns = (model.connections ?? []).filter((_, i) => !bad.has(i));
 
-  for (const conn of model.connections) {
+  // Roots auto-deduced: every part that never appears as a (valid) connection's
+  // `b` (i.e. has no parent). Multiple roots are allowed — each is seated at the
+  // origin. Fallback to explicit model.root / first part if nothing is
+  // parentless.
+  const children = new Set(conns.map((c) => c.b));
+  let roots = Object.keys(model.parts).filter((id) => !children.has(id));
+  if (roots.length === 0) roots = [model.root ?? Object.keys(model.parts)[0]];
+
+  const R0 = model.rootAngle ? rotY(model.rootAngle * D2R) : I3;
+  for (const rootId of roots) {
+    const rootSpec = model.parts[rootId];
+    if (!rootSpec) continue;
+    const rd = dims(rootSpec);
+    placed.set(rootId, { id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0], depth: 0, mountN: [0, 1, 0] });
+    order.push(rootId);
+  }
+
+  for (const conn of conns) {
     const A = placed.get(conn.a);
     if (!A) { console.warn(`[assembly] unknown anchor ${conn.a}`); continue; }
     const Bspec = model.parts[conn.b];
+    if (!Bspec) { console.warn(`[assembly] unknown part ${conn.b}`); continue; }
     const bd = dims(Bspec);
     const F = FACES[conn.on ?? "top"] ?? FACES.top;
 

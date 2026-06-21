@@ -3,6 +3,7 @@
   import Scene from "$lib/components/lego.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import { PALETTE, MODEL } from "$lib/playgrounds/lego/eagle.js";
+  import { cycleEdges } from "$lib/playgrounds/lego/assembly.js";
 
   let scene = $state(null);
   let view = $state("assemble"); // "assemble" | "inspect"
@@ -14,6 +15,8 @@
   let manual = $state(false);
 
   const COLORS = Object.keys(PALETTE);
+  // colors are stored as real hex; PALETTE keys are presets resolved to hex.
+  const hexOf = (c) => (PALETTE[c] ?? c ?? "#888888").toLowerCase();
   const FACES = ["y+", "y-", "x+", "x-", "z+", "z-"];
   const MOUNTS = ["top", "bottom", "front", "back", "left", "right"];
 
@@ -35,15 +38,20 @@
   }
   let model = $state(loadModel());
   let sel = $state(Object.keys(loadModel().parts)[0] ?? "");
-  let iso = $state(false);          // isolate: show only the selected part
+  let iso = $state(true);           // isolate: show only the selected part (default on)
   let connIso = $state(false);      // isolate: show only the selected connection's 2 parts
-  let copied = $state(false);
+  let showCode = $state(false);     // code textarea hidden by default
   let saved = $state(false);
   let loaded = $state(false);
   let noStore = $state(false);    // load attempted but nothing valid saved
   let selConn = $state(null);       // selected connection (object ref)
 
   const partIds = $derived(Object.keys(model.parts));
+  // roots = parts that never appear as a connection's `b` (no parent)
+  const badConns = $derived(cycleEdges(model));   // cycle-forming link indices
+  const childIds = $derived(new Set(
+    model.connections.filter((_, i) => !badConns.has(i)).map((c) => c.b)));
+  const isRoot = (id) => !childIds.has(id);
 
   // ---- part ops editing ---------------------------------------------------
   const OP_DEFAULTS = {
@@ -166,11 +174,6 @@
   }
   const code = $derived(serializeModel($state.snapshot(model)));
 
-  async function copyCode() {
-    try { await navigator.clipboard.writeText(code); copied = true; setTimeout(() => (copied = false), 1200); }
-    catch { /* clipboard blocked — textarea fallback */ }
-  }
-
   // ---- scene wiring -------------------------------------------------------
   $effect(() => { scene?.apply({ spin, explode }); });
   $effect(() => { if (view === "assemble" && manual) scene?.apply({ progress }); });
@@ -234,8 +237,8 @@
       <header>
         <strong>{idx + 1}. {o.op}</strong>
         <span class="ctl">
-          <button type="button" onclick={() => opMove(spec, idx, -1)} disabled={idx === 0}>↑</button>
-          <button type="button" onclick={() => opMove(spec, idx, 1)} disabled={idx === spec.ops.length - 1}>↓</button>
+          <button type="button" onclick={() => opMove(spec, idx, -1)} disabled={idx === 0}>▲</button>
+          <button type="button" onclick={() => opMove(spec, idx, 1)} disabled={idx === spec.ops.length - 1}>▼</button>
           <button type="button" onclick={() => opRemove(spec, idx)}>✕</button>
         </span>
       </header>
@@ -302,20 +305,32 @@
       <legend>mode</legend>
       <div class="tabs">
         <button type="button" class:on={view === "assemble"} onclick={() => (view = "assemble")}>Assemble</button>
-        <button type="button" class:on={view === "inspect"} onclick={() => (view = "inspect")}>Inspect</button>
+        <button type="button" class:on={view === "inspect"} onclick={() => (view = "inspect")}>Brick Design</button>
       </div>
     </fieldset>
 
     {#if view === "assemble"}
       <fieldset>
         <legend>build</legend>
-        <button type="button" onclick={replay}>▶ Assemble</button>
         <label>
-          <span>Step</span>
+          <button type="button" onclick={replay}>▶ Assemble</button>
           <input type="range" min="0" max="1" step="0.01" bind:value={progress}
             oninput={() => (manual = true)} />
           <output>{Math.round(progress * 100)}%</output>
         </label>
+        <label><span>Base Y</span>
+          <input type="range" min="-8" max="8" step="0.1" bind:value={model.baseY} /><output>{(model.baseY ?? 0).toFixed(1)}</output></label>
+        <div class="tabs">
+          <button type="button" onclick={saveModel}>{saved ? "✓ saved" : "💾 save"}</button>
+          <button type="button" onclick={loadFromStore}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>
+        </div>
+        <div class="tabs">
+          <button type="button" onclick={() => (showCode = !showCode)}>{showCode ? "▲ hide code" : "▼ show code"}</button>
+          <button type="button" onclick={resetModel}>↺ reset</button>
+        </div>
+        {#if showCode}
+          <textarea class="code" readonly rows="6">{code}</textarea>
+        {/if}
       </fieldset>
 
       <fieldset>
@@ -338,12 +353,13 @@
         <ul class="parts">
           {#each model.connections as c, idx (c)}
             <li>
-              <button type="button" class="pick" class:on={c === selConn} onclick={() => (selConn = c)}>
-                {idx + 1}. {c.a} → {c.b}
+              <button type="button" class="pick" class:on={c === selConn} class:invalid={badConns.has(idx)}
+                onclick={() => (selConn = c)} title={badConns.has(idx) ? "cycle — ignored" : ""}>
+                {c.a} → {c.b}{#if badConns.has(idx)}<em> ⚠ cycle</em>{/if}
               </button>
               <span class="ctl">
-                <button type="button" onclick={() => moveConn(idx, -1)} disabled={idx === 0}>↑</button>
-                <button type="button" onclick={() => moveConn(idx, 1)} disabled={idx === model.connections.length - 1}>↓</button>
+                <button type="button" onclick={() => moveConn(idx, -1)} disabled={idx === 0}>▲</button>
+                <button type="button" onclick={() => moveConn(idx, 1)} disabled={idx === model.connections.length - 1}>▼</button>
                 <button type="button" class="del" onclick={() => removeConn(idx)}>✕</button>
               </span>
             </li>
@@ -378,24 +394,6 @@
               oninput={(e) => setConnRot(c, 2, e.currentTarget.value)} /><output>{connRot(c)[2]}</output></label>
         </fieldset>
       {/if}
-
-      <fieldset>
-        <legend>assembly</legend>
-        <label><span>Root</span>
-          <select bind:value={model.root}>{#each partIds as id}<option value={id}>{id}</option>{/each}</select></label>
-        <label><span>Base Y</span>
-          <input type="range" min="-8" max="8" step="0.1" bind:value={model.baseY} /><output>{(model.baseY ?? 0).toFixed(1)}</output></label>
-        <div class="tabs">
-          <button type="button" onclick={saveModel}>{saved ? "✓ saved" : "💾 save"}</button>
-          <button type="button" onclick={loadFromStore}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>
-        </div>
-        <div class="tabs">
-          <button type="button" onclick={copyCode}>{copied ? "✓ copied" : "⧉ copy code"}</button>
-          <button type="button" onclick={resetModel}>↺ reset</button>
-        </div>
-        <textarea class="code" readonly rows="6">{code}</textarea>
-      </fieldset>
-
     {:else}
       <fieldset>
         <legend>parts <button type="button" class="add" onclick={addPart}>+ part</button></legend>
@@ -407,8 +405,8 @@
           {#each partIds as id (id)}
             <li>
               <button type="button" class="pick" class:on={id === sel} onclick={() => (sel = id)}>
-                <span class="sw" style:background={PALETTE[model.parts[id].color] ?? "#888"}></span>
-                {id}{#if model.root === id}<em> root</em>{/if}
+                <span class="sw" style:background={hexOf(model.parts[id].color)}></span>
+                {id}{#if isRoot(id)}<em> root</em>{/if}
               </button>
               <button type="button" class="del" onclick={() => removePart(id)}>✕</button>
             </li>
@@ -419,11 +417,19 @@
       {#if model.parts[sel]}
         {@const spec = model.parts[sel]}
         <fieldset>
-          <legend>inspect — {sel}</legend>
+          <legend>{sel}</legend>
           <label><span>Name</span>
             <input class="id" value={sel} onchange={(e) => renamePart(sel, e.currentTarget.value)} /></label>
           <label><span>Color</span>
-            <select bind:value={spec.color}>{#each COLORS as c}<option value={c}>{c}</option>{/each}</select></label>
+            <span class="swatches">
+              {#each COLORS as c}
+                <button type="button" class="chip" class:on={hexOf(spec.color) === hexOf(c)}
+                  style:background={PALETTE[c]} title={c}
+                  aria-label={c} onclick={() => (spec.color = PALETTE[c])}></button>
+              {/each}
+              <input class="picker" type="color" value={hexOf(spec.color)}
+                oninput={(e) => (spec.color = e.currentTarget.value)} title="custom color" />
+            </span></label>
           <label><span>Width X</span>
             <input type="range" min="1" max="8" step="1" bind:value={spec.size[0]} /><output>{spec.size[0]}</output></label>
           <label><span>Plates Y</span>
@@ -456,9 +462,16 @@
   .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
   .parts li { display: flex; align-items: center; gap: 0.25rem; }
   .pick { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
-  .pick.on { opacity: 1; font-weight: 600; background: color-mix(in srgb, currentColor 12%, transparent); }
+  .pick.on { opacity: 1; font-weight: 600; }
+  .pick.invalid { color: #e0524f; opacity: 0.9; }
+  .pick.invalid em { color: #e0524f; opacity: 1; font-weight: 600; }
   .pick em { opacity: 0.5; font-style: normal; font-size: 0.7rem; }
+  .hint { margin: 0 0 0.4rem; font-size: 0.72rem; opacity: 0.55; }
   .sw { width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+  .swatches { display: flex; gap: 0.3rem; }
+  .chip { width: 1.4rem; height: 1.4rem; border-radius: 0.3rem; border: 2px solid transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); cursor: pointer; padding: 0; }
+  .chip.on { border-color: currentColor; }
+  .picker { cursor: pointer; }
   .del { opacity: 0.5; padding: 0 0.4rem; }
   .op { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 0.4rem; padding: 0.4rem 0.5rem; margin-top: 0.4rem; }
   .op header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
