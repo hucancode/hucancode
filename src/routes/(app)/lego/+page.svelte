@@ -4,6 +4,10 @@
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import { PALETTE, MODEL } from "$lib/playgrounds/lego/eagle.js";
   import { cycleEdges } from "$lib/playgrounds/lego/assembly.js";
+  import { STICKS } from "$lib/playgrounds/lego/solid.js";
+
+  const range = (n) => Array.from({ length: n }, (_, i) => i);
+  const endCount = (spec) => STICKS[spec.stick]?.ends ?? 0;
 
   let scene = $state(null);
   let view = $state("assemble"); // "assemble" | "inspect"
@@ -21,22 +25,44 @@
   const MOUNTS = ["top", "bottom", "front", "back", "left", "right"];
 
   // ---- live MODEL graph (op-model parts + connections) --------------------
-  const STORAGE_KEY = "lego-eagle-model";
+  const SLOT_COUNT = 5;
+  const LEGACY_KEY = "lego-eagle-model";       // old single-slot store
+  const slotKey = (i) => `lego-eagle-slot-${i}`;
   // op-model = every part has size[] + ops[]; reject stale/legacy stores
   function isOpModel(m) {
     return m && m.parts && Object.values(m.parts).every(
       (p) => Array.isArray(p.size) && Array.isArray(p.ops));
   }
+  // slot entry = { model, at }; returns entry or null
+  function readEntry(i) {
+    if (!browser) return null;
+    try {
+      const e = JSON.parse(localStorage.getItem(slotKey(i)));
+      if (e && isOpModel(e.model)) return e;
+    } catch { /* corrupt slot -> empty */ }
+    return null;
+  }
+  function slotMeta() {
+    return Array.from({ length: SLOT_COUNT }, (_, i) => {
+      const e = readEntry(i);
+      return { filled: !!e, at: e?.at ?? null };
+    });
+  }
+  // initial: slot 0, else migrate legacy single store, else default
   function loadModel() {
+    const e = readEntry(0);
+    if (e) return e.model;
     if (browser) {
       try {
-        const m = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        const m = JSON.parse(localStorage.getItem(LEGACY_KEY));
         if (isOpModel(m)) return m;
       } catch { /* corrupt store -> default */ }
     }
     return structuredClone(MODEL);
   }
   let model = $state(loadModel());
+  let slot = $state(0);             // active save slot index
+  let slots = $state(slotMeta());   // per-slot { filled, at }
   let sel = $state(Object.keys(loadModel().parts)[0] ?? "");
   let iso = $state(true);           // isolate: show only the selected part (default on)
   let connIso = $state(false);      // isolate: show only the selected connection's 2 parts
@@ -58,8 +84,14 @@
     slope: () => ({ op: "slope", face: "y+", dir: 1, length: 2, depth: 2, round: false }),
     push: () => ({ op: "push", face: "z+", depth: 1, width: 1, height: 1, at: [0, 0] }),
     studs: () => ({ op: "studs", face: "y+", kind: "male" }),
+    ball: () => ({ op: "ball", face: "y+", kind: "male", at: { cell: [0, 0] } }),
+    hinge: () => ({ op: "hinge", face: "y+", kind: "male", at: { cell: [0, 0] } }),
   };
-  const opAdd = (spec, t) => { spec.ops = [...spec.ops, OP_DEFAULTS[t]()]; };
+  const opAdd = (spec, t) => {
+    // on a stick, connectors target an `end` index instead of a box face
+    const op = spec.stick ? { op: t, end: 0, kind: "male" } : OP_DEFAULTS[t]();
+    spec.ops = [...spec.ops, op];
+  };
   const opRemove = (spec, i) => { spec.ops = spec.ops.filter((_, j) => j !== i); };
   const opMove = (spec, i, d) => {
     const j = i + d;
@@ -89,6 +121,18 @@
     model.parts[id] = {
       size: [2, 3, 3],
       ops: [{ op: "studs", face: "y+" }, { op: "studs", face: "y-", kind: "female" }],
+      color: COLORS[0],
+    };
+    sel = id;
+  }
+  // I/Y/T connector stick: a part with branching rods; one male stud per end.
+  function addStick(type) {
+    let n = 1, id = `${type.toLowerCase()}stick1`;
+    while (model.parts[id]) id = `${type.toLowerCase()}stick${++n}`;
+    model.parts[id] = {
+      stick: type,
+      size: STICKS[type].size.slice(),
+      ops: range(STICKS[type].ends).map((i) => ({ op: "studs", end: i, kind: "male" })),
       color: COLORS[0],
     };
     sel = id;
@@ -149,6 +193,21 @@
     c.off = o;
   };
 
+  // joint articulation: ball = free jrot[u,v,n]°, hinge = jangle° on one axis
+  const JOINTS = ["none", "ball", "hinge"];
+  const HINGE_AXES = ["u", "v", "n"];
+  function setJoint(c, kind) {
+    if (kind === "ball") { c.joint = "ball"; c.jrot = c.jrot ?? [0, 0, 0]; delete c.jangle; delete c.axis; }
+    else if (kind === "hinge") { c.joint = "hinge"; c.jangle = c.jangle ?? 0; c.axis = c.axis ?? "u"; delete c.jrot; }
+    else { delete c.joint; delete c.jrot; delete c.jangle; delete c.axis; }
+  }
+  const jrotOf = (c) => c.jrot ?? [0, 0, 0];
+  function setJrot(c, i, v) {
+    const r = jrotOf(c).slice();
+    r[i] = +v;
+    c.jrot = r;
+  }
+
   function resetModel() {
     model = structuredClone(MODEL);
     sel = partIds[0] ?? "";
@@ -197,22 +256,28 @@
     else
       scene?.apply({ mode: "assemble", model: $state.snapshot(model) });
   });
-  // explicit save / load (no autosave)
+  // explicit save / load per slot (no autosave)
   function saveModel() {
     if (!browser) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify($state.snapshot(model)));
+    const entry = { model: $state.snapshot(model), at: new Date().toISOString() };
+    localStorage.setItem(slotKey(slot), JSON.stringify(entry));
+    slots = slotMeta();
     saved = true; setTimeout(() => (saved = false), 1200);
   }
   function loadFromStore() {
-    if (!browser) return;
-    let m = null;
-    try { m = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { /* corrupt */ }
-    if (!isOpModel(m)) { noStore = true; setTimeout(() => (noStore = false), 1200); return; }
-    model = m;
-    sel = Object.keys(m.parts)[0] ?? "";
-    selConn = m.connections?.[0] ?? null;
+    const e = readEntry(slot);
+    if (!e) { noStore = true; setTimeout(() => (noStore = false), 1200); return; }
+    model = e.model;
+    sel = Object.keys(e.model.parts)[0] ?? "";
+    selConn = e.model.connections?.[0] ?? null;
     loaded = true; setTimeout(() => (loaded = false), 1200);
   }
+  function clearSlot() {
+    if (!browser) return;
+    localStorage.removeItem(slotKey(slot));
+    slots = slotMeta();
+  }
+  const slotLabel = (at) => at ? new Date(at).toLocaleString() : "empty";
 
   function replay() {
     manual = false;
@@ -227,10 +292,17 @@
 <nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
 
 {#snippet opsEditor(spec)}
+  {#if !spec.stick}
+    <div class="tabs">
+      <button type="button" onclick={() => opAdd(spec, "slope")}>+ slope</button>
+      <button type="button" onclick={() => opAdd(spec, "push")}>+ push</button>
+      <button type="button" onclick={() => opAdd(spec, "studs")}>+ studs</button>
+    </div>
+  {/if}
   <div class="tabs">
-    <button type="button" onclick={() => opAdd(spec, "slope")}>+ slope</button>
-    <button type="button" onclick={() => opAdd(spec, "push")}>+ push</button>
-    <button type="button" onclick={() => opAdd(spec, "studs")}>+ studs</button>
+    {#if spec.stick}<button type="button" onclick={() => opAdd(spec, "studs")}>+ studs</button>{/if}
+    <button type="button" onclick={() => opAdd(spec, "ball")}>+ ball</button>
+    <button type="button" onclick={() => opAdd(spec, "hinge")}>+ hinge</button>
   </div>
   {#each spec.ops as o, idx (o)}
     <div class="op">
@@ -268,7 +340,12 @@
         <label><span>At V</span>
           <input type="range" min="0" max="8" step="1" bind:value={o.at[1]} /><output>{o.at[1]}</output></label>
 
-      {:else if o.op === "studs"}
+      {:else if (o.op === "studs" || o.op === "ball" || o.op === "hinge") && spec.stick}
+        <label><span>End</span>
+          <select bind:value={o.end}>{#each range(endCount(spec)) as i}<option value={i}>{i}</option>{/each}</select></label>
+        <span class="ctl">male end</span>
+
+      {:else if o.op === "studs" || o.op === "ball" || o.op === "hinge"}
         <label><span>Face</span>
           <select bind:value={o.face}>{#each FACES as f}<option value={f}>{f}</option>{/each}</select></label>
         <label><span>Kind</span>
@@ -320,9 +397,18 @@
         </label>
         <label><span>Base Y</span>
           <input type="range" min="-8" max="8" step="0.1" bind:value={model.baseY} /><output>{(model.baseY ?? 0).toFixed(1)}</output></label>
+        <div class="slots">
+          {#each slots as s, i (i)}
+            <button type="button" class="slot" class:on={slot === i} class:filled={s.filled}
+              onclick={() => (slot = i)} title={slotLabel(s.at)}>
+              {i + 1}{#if s.filled}<em>●</em>{/if}
+            </button>
+          {/each}
+        </div>
         <div class="tabs">
           <button type="button" onclick={saveModel}>{saved ? "✓ saved" : "💾 save"}</button>
-          <button type="button" onclick={loadFromStore}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>
+          <button type="button" onclick={loadFromStore} disabled={!slots[slot].filled}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>
+          <button type="button" onclick={clearSlot} disabled={!slots[slot].filled}>🗑 clear</button>
         </div>
         <div class="tabs">
           <button type="button" onclick={() => (showCode = !showCode)}>{showCode ? "▲ hide code" : "▼ show code"}</button>
@@ -392,11 +478,36 @@
           <label><span>Rot Z°</span>
             <input type="range" min="0" max="270" step="90" value={connRot(c)[2]}
               oninput={(e) => setConnRot(c, 2, e.currentTarget.value)} /><output>{connRot(c)[2]}</output></label>
+          <label><span>Joint</span>
+            <select value={c.joint ?? "none"} onchange={(e) => setJoint(c, e.currentTarget.value)}>
+              {#each JOINTS as j}<option value={j}>{j}</option>{/each}</select></label>
+          {#if c.joint === "ball"}
+            <label><span>Spin U°</span>
+              <input type="range" min="-180" max="180" step="5" value={jrotOf(c)[0]}
+                oninput={(e) => setJrot(c, 0, e.currentTarget.value)} /><output>{jrotOf(c)[0]}</output></label>
+            <label><span>Spin V°</span>
+              <input type="range" min="-180" max="180" step="5" value={jrotOf(c)[1]}
+                oninput={(e) => setJrot(c, 1, e.currentTarget.value)} /><output>{jrotOf(c)[1]}</output></label>
+            <label><span>Spin N°</span>
+              <input type="range" min="-180" max="180" step="5" value={jrotOf(c)[2]}
+                oninput={(e) => setJrot(c, 2, e.currentTarget.value)} /><output>{jrotOf(c)[2]}</output></label>
+          {:else if c.joint === "hinge"}
+            <label><span>Pin axis</span>
+              <select bind:value={c.axis}>{#each HINGE_AXES as a}<option value={a}>{a}</option>{/each}</select></label>
+            <label><span>Angle°</span>
+              <input type="range" min="-180" max="180" step="5" value={c.jangle ?? 0}
+                oninput={(e) => (c.jangle = +e.currentTarget.value)} /><output>{c.jangle ?? 0}</output></label>
+          {/if}
         </fieldset>
       {/if}
     {:else}
       <fieldset>
-        <legend>parts <button type="button" class="add" onclick={addPart}>+ part</button></legend>
+        <legend>parts
+          <button type="button" class="add" onclick={addPart}>+ part</button>
+          <button type="button" class="add" onclick={() => addStick("I")}>+ I</button>
+          <button type="button" class="add" onclick={() => addStick("Y")}>+ Y</button>
+          <button type="button" class="add" onclick={() => addStick("T")}>+ T</button>
+        </legend>
         <label class="iso">
           <input type="checkbox" bind:checked={iso} />
           <span>isolate selected</span>
@@ -430,17 +541,21 @@
               <input class="picker" type="color" value={hexOf(spec.color)}
                 oninput={(e) => (spec.color = e.currentTarget.value)} title="custom color" />
             </span></label>
-          <label><span>Width X</span>
-            <input type="range" min="1" max="8" step="1" bind:value={spec.size[0]} /><output>{spec.size[0]}</output></label>
-          <label><span>Plates Y</span>
-            <input type="range" min="1" max="12" step="1" bind:value={spec.size[1]} /><output>{spec.size[1]}</output></label>
-          <label><span>Depth Z</span>
-            <input type="range" min="1" max="8" step="1" bind:value={spec.size[2]} /><output>{spec.size[2]}</output></label>
-          <label><span>Round corners</span><input type="checkbox" bind:checked={spec.round} /></label>
-          {#if spec.round}
-            <label><span>Radius</span>
-              <input type="range" min="0.1" max="2" step="0.05" value={spec.cornerR ?? 0.5}
-                oninput={(e) => (spec.cornerR = +e.currentTarget.value)} /><output>{(spec.cornerR ?? 0.5).toFixed(2)}</output></label>
+          {#if spec.stick}
+            <p class="hint">{spec.stick}-stick · {endCount(spec)} ends · add connectors below</p>
+          {:else}
+            <label><span>Width X</span>
+              <input type="range" min="1" max="8" step="1" bind:value={spec.size[0]} /><output>{spec.size[0]}</output></label>
+            <label><span>Plates Y</span>
+              <input type="range" min="1" max="12" step="1" bind:value={spec.size[1]} /><output>{spec.size[1]}</output></label>
+            <label><span>Depth Z</span>
+              <input type="range" min="1" max="8" step="1" bind:value={spec.size[2]} /><output>{spec.size[2]}</output></label>
+            <label><span>Round corners</span><input type="checkbox" bind:checked={spec.round} /></label>
+            {#if spec.round}
+              <label><span>Radius</span>
+                <input type="range" min="0.1" max="2" step="0.05" value={spec.cornerR ?? 0.5}
+                  oninput={(e) => (spec.cornerR = +e.currentTarget.value)} /><output>{(spec.cornerR ?? 0.5).toFixed(2)}</output></label>
+            {/if}
           {/if}
         </fieldset>
 
@@ -457,7 +572,14 @@
   .tabs { display: flex; gap: 0.25rem; }
   .tabs button { flex: 1; opacity: 0.55; }
   .tabs button.on { opacity: 1; font-weight: 600; }
+  .tabs button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .slots { display: flex; gap: 0.25rem; margin-bottom: 0.25rem; }
+  .slot { flex: 1; opacity: 0.5; padding: 0.2rem 0; border-radius: 0.3rem; }
+  .slot.filled { opacity: 0.8; }
+  .slot.on { opacity: 1; font-weight: 600; outline: 1px solid currentColor; }
+  .slot em { font-style: normal; font-size: 0.55rem; vertical-align: super; opacity: 0.7; }
   .add { font-size: 0.75rem; opacity: 0.7; margin-left: 0.5rem; }
+  .hint { font-size: 0.7rem; opacity: 0.6; margin: 0.25rem 0; }
   .iso { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem; }
   .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
   .parts li { display: flex; align-items: center; gap: 0.25rem; }

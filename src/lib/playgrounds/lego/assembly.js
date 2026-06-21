@@ -6,7 +6,13 @@
 //     off:[du,dv],         // in-plane offset on A's face, in whole studs (0,0)
 //     rot:[rx,ry,rz],      // B's rotation, each a multiple of 90° (legacy
 //                          // `angle` == rot Y; default 0,0,0)
+//     joint, jrot, jangle, axis,  // articulated joint (see jointRot below)
 //     local:false }        // mount frame (see below)
+//
+// JOINT. An optional articulation applied AFTER seating: B (and its subtree) is
+// rotated about the seat point. joint:"ball" -> free spin, jrot:[x,y,z]° about
+// the mount U/V/N axes. joint:"hinge" -> 1-DOF, jangle° about a single mount
+// axis (`axis`: "u"|"v"|"n", default "u"). Absent/"none" -> rigid as before.
 //
 // MOUNT FRAME. By default faces and rotations are WORLD axes: mounting does NOT
 // inherit A's rotation, so a flipped/rotated anchor carries nothing into its
@@ -79,6 +85,42 @@ const FACES = {
 const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const scale3 = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
 const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+// Rodrigues row-major 3x3 rotation by `t` rad about an arbitrary unit-ish axis.
+function rotAxis(axis, t) {
+  const l = Math.hypot(axis[0], axis[1], axis[2]) || 1;
+  const x = axis[0] / l, y = axis[1] / l, z = axis[2] / l;
+  const c = Math.cos(t), s = Math.sin(t), C = 1 - c;
+  return [
+    c + x * x * C, x * y * C - z * s, x * z * C + y * s,
+    y * x * C + z * s, c + y * y * C, y * z * C - x * s,
+    z * x * C - y * s, z * y * C + x * s, c + z * z * C,
+  ];
+}
+
+// Row-major 3x3 rotation taking +Y onto unit dir n (n is axis-aligned in practice).
+function rotYToDir(n) {
+  if (n[1] > 0.9999) return I3;
+  if (n[1] < -0.9999) return rotX(Math.PI);
+  return rotAxis(cross3([0, 1, 0], n), Math.acos(Math.max(-1, Math.min(1, n[1]))));
+}
+
+// Joint articulation for a connection, expressed in the mount frame (U,V,N):
+//   ball  — free spin: jrot[x,y,z]° about the U, V, N axes.
+//   hinge — 1-DOF: jangle° about a single chosen mount axis (`axis`: u|v|n,
+//           default u, the in-plane pin). Returns a world-space 3x3 (identity
+//           when the connection has no joint).
+function jointRot(conn, U, V, N) {
+  if (!conn.joint || conn.joint === "none") return I3;
+  if (conn.joint === "hinge") {
+    const ax = conn.axis === "v" ? V : conn.axis === "n" ? N : U;
+    return rotAxis(ax, (conn.jangle ?? 0) * D2R);
+  }
+  const [jx, jy, jz] = conn.jrot ?? [0, 0, 0];   // ball: compose U then V then N
+  return mul3(rotAxis(N, jz * D2R), mul3(rotAxis(V, jy * D2R), rotAxis(U, jx * D2R)));
+}
 
 // half-extent of a box (half-sizes hw,hh,hd, rotation R) along a unit world dir w
 function halfAlong(d, R, w) {
@@ -133,6 +175,7 @@ export function cycleEdges(model) {
 function placeAll(model) {
   const placed = new Map();
   const order = [];
+  const rings = [];   // coupling rings at stick-to-stick joints
 
   // Cycle-forming connections are ignored entirely (their `b` keeps no parent
   // from them, so it may itself become a root).
@@ -181,23 +224,39 @@ function placeAll(model) {
     const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))),
                    add(scale3(U, du + su), scale3(V, dv + sv)));
     // seat B flush: push out along the face normal by B's own half-extent
-    const Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
+    let Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
+
+    // joint articulation: swing B (and so its whole subtree) about the seat
+    // point Pa. ball = free, hinge = single axis. No joint -> Rj is identity.
+    const Rj = jointRot(conn, U, V, N);
+    if (Rj !== I3) { Rb = mul3(Rj, Rb); Cb = add(Pa, apply3(Rj, sub3(Cb, Pa))); }
 
     placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN: N });
     order.push(conn.b);
+
+    // two sticks can't clutch (both male ends) — a coupling ring wraps the joint.
+    if (A.spec?.stick && Bspec.stick)
+      rings.push({ C: Pa, R: rotYToDir(N), depth: (A.depth ?? 0) + 1 });
   }
 
-  return { placed, list: order.map((id) => placed.get(id)) };
+  return { placed, list: order.map((id) => placed.get(id)), rings };
 }
 
+const RING_SPEC = { ring: true };
+
 export function resolveAssembly(model) {
-  const { list } = placeAll(model);
+  const { list, rings } = placeAll(model);
   let cx = 0, cy = 0, cz = 0;
   const pieces = list.map((p) => {
     cx += p.C[0]; cy += p.C[1]; cz += p.C[2];
     return { id: p.id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice(), mountN: p.mountN.slice(), depth: p.depth };
   });
   const n = pieces.length || 1;
+  // coupling rings ride along as extra pieces (not part of the centroid average)
+  rings.forEach((rg, i) => pieces.push({
+    id: `__ring${i}`, spec: RING_SPEC, color: "#555555",
+    model: mat4(rg.R, rg.C), center: rg.C.slice(), mountN: [0, 1, 0], depth: rg.depth,
+  }));
   return { pieces, centroid: [cx / n, cy / n, cz / n] };
 }
 
