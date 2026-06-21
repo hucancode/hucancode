@@ -2,15 +2,17 @@ import {
   createDevice, Camera, mat4, Vec3, Euler, DEG2RAD,
   animate, stagger, utils, eases,
 } from "$lib/engine/index.js";
-import { makeBrick } from "./brick.js";
 import { makeSolid } from "./solid.js";
-import { resolveAssembly } from "./assembly.js";
+import { resolveAssembly, validateAssembly } from "./assembly.js";
 import { MODEL, PALETTE, VIEW } from "./eagle.js";
 import LEGO_WGSL from "./shaders/lego.wgsl?raw";
 import VERT from "./shaders/lego.vert.glsl?raw";
 import FRAG from "./shaders/lego.frag.glsl?raw";
+import GRID_WGSL from "./shaders/grid.wgsl?raw";
+import GRID_VERT from "./shaders/grid.vert.glsl?raw";
+import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
 
-const GRADIENT_STEP = 5;
+const GROUND = { ext: 40, y: 0, step: 4, minorDiv: 4, opacity: 0.5, color: [0.45, 0.5, 0.58] };
 const FALL = 7;          // drop-in height (world units)
 const STEP = 110;        // ms between piece placements
 const DUR = 600;         // ms per piece drop
@@ -20,7 +22,7 @@ const config = {
   explode: 0,
 };
 
-let canvas, device, shader, camera, disposed = false;
+let canvas, device, shader, gridShader, camera, disposed = false;
 let mode = "assemble";          // "assemble" | "inspect"
 let inspect = null;
 let inspectSpec = null;
@@ -53,11 +55,15 @@ function buildEagle(model = activeModel) {
   disposePieces();
   const cache = new Map();
   const { pieces: placed, centroid: cen } = resolveAssembly(model);
+  if (model.validate) {
+    const rep = validateAssembly(model);
+    if (!rep.ok) console.info("[lego] assembly report", rep);
+  }
   pieces = placed.map((pl) => {
     const key = JSON.stringify(pl.spec);
     let geom = cache.get(key);
     if (!geom) {
-      const g = Array.isArray(pl.spec.size) ? makeSolid(pl.spec) : makeBrick(pl.spec);
+      const g = makeSolid(pl.spec);
       geom = {
         posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
         normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
@@ -85,9 +91,7 @@ function buildInspect(spec) {
   inspectSpec = spec;            // remember even if device not ready yet
   if (!device) return;
   disposeInspect();
-  // new op-model def (has `size` array + `ops`) builds via makeSolid;
-  // legacy preset spec falls back to makeBrick.
-  const g = Array.isArray(spec.size) ? makeSolid(spec) : makeBrick(spec);
+  const g = makeSolid(spec);
   inspect = {
     posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
     normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
@@ -168,9 +172,22 @@ async function init(canvasEl) {
       { name: "uModel", type: "mat4" },
       { name: "uColor", type: "vec3" },
       { name: "uLightPos", type: "vec3" },
-      { name: "uSteps", type: "f32" },
+      { name: "uViewPos", type: "vec3" },
     ],
     depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+  });
+  gridShader = device.shader({
+    glsl: { vertex: GRID_VERT, fragment: GRID_FRAG }, wgsl: GRID_WGSL,
+    uniforms: [
+      { name: "uViewProj", type: "mat4" },
+      { name: "uExt", type: "f32" },
+      { name: "uY", type: "f32" },
+      { name: "uStep", type: "f32" },
+      { name: "uMinorDiv", type: "f32" },
+      { name: "uOpacity", type: "f32" },
+      { name: "uColor", type: "vec3" },
+    ],
+    depth: "none", blend: "premult", topology: "tri-strip", target: "screen", sampleCount: 4,
   });
   camera = new Camera(45, w / h, 0.1, 2000);
   camera.up.set(0, 1, 0);
@@ -215,6 +232,7 @@ function render() {
   camera.lookAt(0, lookY, 0);
   camera.update();
   mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
+  const eye = [camera.position.x, camera.position.y, camera.position.z];
 
   device.beginFrame();
   device.pass({ target: "screen", clear: [0, 0, 0, 0], depth: true, depthClear: 1 }, (p) => {
@@ -227,10 +245,19 @@ function render() {
         count: inspect.count,
         uniforms: {
           uViewProj: _vp, uModel: _model,
-          uColor: inspect.color, uLightPos: [light.x, light.y, light.z], uSteps: GRADIENT_STEP,
+          uColor: inspect.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
         },
       });
       return;
+    }
+    if (gridShader) {
+      p.draw(gridShader, {
+        count: 4,
+        uniforms: {
+          uViewProj: _vp, uExt: GROUND.ext, uY: GROUND.y, uStep: GROUND.step,
+          uMinorDiv: GROUND.minorDiv, uOpacity: GROUND.opacity, uColor: GROUND.color,
+        },
+      });
     }
     const ex = config.explode;
     for (const pc of pieces) {
@@ -247,7 +274,7 @@ function render() {
         count: pc.count,
         uniforms: {
           uViewProj: _vp, uModel: _model,
-          uColor: pc.color, uLightPos: [light.x, light.y, light.z], uSteps: GRADIENT_STEP,
+          uColor: pc.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
         },
       });
     }
@@ -273,6 +300,7 @@ function destroy() {
   }
   pieces = [];
   shader = null;
+  gridShader = null;
   if (device) { device.destroy(); device = null; }
 }
 

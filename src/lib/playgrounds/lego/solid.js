@@ -46,7 +46,7 @@ import {
 
 export const PLATE_H = 0.4;
 export const BRICK_H = 1.2;            // 3 plates
-const STUD_R = 0.3, STUD_H = 0.2, TUBE_R = 0.3;
+const STUD_R = 0.3, STUD_H = 0.2;
 const EPS = 1e-6;
 
 const AXES = { x: 0, y: 1, z: 2 };
@@ -280,62 +280,70 @@ function rotateGeo(g, axis, ang) {
   return g;
 }
 
-// build studs for a studs-op. `intact(fa,fs,u,v)` reports whether the boundary
-// cell at that face position survived every cut with a flat, full outer face;
-// studs are only grown there, so cells sliced by a slope or removed by a push
-// are skipped automatically.
+// in-plane cell grid [U,V] of a face: y -> X*Z, x -> Z*Y, z -> X*Y. (u,v) match
+// faceIntact's pax order, so the same indices drive geometry, the connector map,
+// and the lattice queries.
+const faceGrid = (fa, W, H, D) => (fa === 1 ? [W, D] : fa === 0 ? [D, H] : [W, H]);
+
+// Which face cells (u,v) a studs-op covers. Top/bottom honour the full `at`
+// selector over the X*Z grid; side faces only ever populate the mid-height row
+// (vertical SNOT columns are out of scope), so `at.cell[0]` selects a column.
+function studHits(op, W, H, D) {
+  const fa = AXES[(op.face ?? "y+")[0]];
+  if (fa === 1) {
+    return (u, v) => {
+      if (!op.at) return true;
+      if ("cell" in op.at) return u === op.at.cell[0] && v === op.at.cell[1];
+      if ("row" in op.at) return v === op.at.row;
+      if ("col" in op.at) return u === op.at.col;
+      return true;
+    };
+  }
+  const jMid = Math.min(H - 1, Math.floor(H / 2)); // layer holding y=0
+  return (u, v) => {
+    if (v !== jMid) return false;
+    if (op.at && "cell" in op.at) return u === op.at.cell[0];
+    return true;
+  };
+}
+
+// build male studs for a studs-op. `intact(fa,fs,u,v)` reports whether the
+// boundary cell at that face position survived every cut with a flat, full outer
+// face; studs are only grown there, so cells sliced by a slope or removed by a
+// push are skipped automatically. (Female ops carve holes in the mesher instead.)
 function buildStuds(op, W, H, D, intact) {
   const out = [];
   const face = op.face ?? "y+";          // default studs to the top face
   const fa = AXES[face[0]];
   const fs = face[1] === "+" ? 1 : -1;
-  const female = op.kind === "female";
   const hw = W / 2, hd = D / 2, hh = (H / 2) * PLATE_H;
-
-  // selector over the face grid (two in-plane axes)
-  const wantTop = (i, k) => {
-    if (!op.at) return true;
-    if ("cell" in op.at) return i === op.at.cell[0] && k === op.at.cell[1];
-    if ("row" in op.at) return k === op.at.row;
-    if ("col" in op.at) return i === op.at.col;
-    return true;
-  };
+  const hit = studHits(op, W, H, D);
 
   if (fa === 1) {                                  // top / bottom: X*Z grid
     const dir = fs;
-    for (let i = 0; i < W; i++) for (let k = 0; k < D; k++) {
-      if (!wantTop(i, k)) continue;
-      if (!intact(fa, fs, i, k)) continue;         // skip uneven / carved cells
-      const x = i + 0.5 - hw, z = k + 0.5 - hd;
-      if (female) {
-        const tubeH = PLATE_H * 0.7;
-        const y = dir * (hh - tubeH / 2);
-        out.push(cylinderGeometry(TUBE_R, TUBE_R, tubeH, 14).translate(x, y, z));
-      } else {
-        const y = dir * (hh + STUD_H / 2);
-        const s = studGeo();
-        if (dir < 0) rotateGeo(s, "x", Math.PI);
-        out.push(s.translate(x, y, z));
-      }
+    for (let u = 0; u < W; u++) for (let v = 0; v < D; v++) {
+      if (!hit(u, v) || !intact(fa, fs, u, v)) continue;
+      const x = u + 0.5 - hw, z = v + 0.5 - hd;
+      const y = dir * (hh + STUD_H / 2);
+      const s = studGeo();
+      if (dir < 0) rotateGeo(s, "x", Math.PI);
+      out.push(s.translate(x, y, z));
     }
     return out;
   }
 
-  // side faces: a single row of studs along the horizontal in-plane axis, at
-  // mid-height. (vertical SNOT columns are out of scope for v1)
-  const along = fa === 0 ? 2 : 0;                  // x-face -> z, z-face -> x
-  const n = along === 0 ? W : D;
-  const jMid = Math.min(H - 1, Math.floor(H / 2)); // layer holding y=0
-  for (let t = 0; t < n; t++) {
-    if (op.at && "cell" in op.at && t !== op.at.cell[0]) continue;
-    if (!intact(fa, fs, t, jMid)) continue;        // skip uneven / carved cells
+  // side faces: studs only (the mid row that hit() allows); sockets on walls
+  // would need explicit geometry and are out of scope.
+  const [U, V] = faceGrid(fa, W, H, D);
+  for (let u = 0; u < U; u++) for (let v = 0; v < V; v++) {
+    if (!hit(u, v) || !intact(fa, fs, u, v)) continue;
     const s = studGeo();
     let x = 0, z = 0;
-    if (fa === 0) {                                // left/right
-      x = fs * (hw + STUD_H / 2); z = t + 0.5 - hd;
+    if (fa === 0) {                                // left/right (u = z)
+      x = fs * (hw + STUD_H / 2); z = u + 0.5 - hd;
       rotateGeo(s, "z", -fs * Math.PI / 2);
-    } else {                                       // front/back
-      z = fs * (hd + STUD_H / 2); x = t + 0.5 - hw;
+    } else {                                       // front/back (u = x)
+      z = fs * (hd + STUD_H / 2); x = u + 0.5 - hw;
       rotateGeo(s, "x", fs * Math.PI / 2);
     }
     out.push(s.translate(x, 0, z));
@@ -353,6 +361,56 @@ function samePoly(a, b) {
 // index of the outer face in cellFaces() output, per face axis (+1 for + side)
 const OUTER_FACE = { 0: 2, 1: 4, 2: 0 };
 
+const vadd = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const vscale = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
+
+// Reverse a polygon's winding if needed so its face normal points along `want`.
+// Keeps the CCW-outward convention cellFaces uses, so facesToGeometry derives the
+// right normal regardless of how the points were generated.
+function windTo(poly, want) {
+  const n = norm(cross(sub(poly[1], poly[0]), sub(poly[2], poly[0])));
+  return n[0] * want[0] + n[1] * want[1] + n[2] * want[2] < 0 ? poly.slice().reverse() : poly;
+}
+
+const HOLE_DEPTH = STUD_H;   // an anti-stud hole as deep as a male stud is tall
+
+// Anti-stud hole pushed into one face cell: replaces the flat cap with a ring
+// (the cell square minus a disk), a cylindrical wall sunk into the body, and a
+// floor. P = face-cell center on the surface, n = outward face normal, e1/e2 =
+// unit in-plane axes with world half-extents a/b. A male stud from the mating
+// brick seats into this recess.
+function holeFaces(P, n, e1, e2, a, b, seg = 16) {
+  const R = Math.min(STUD_R, 0.85 * Math.min(a, b));
+  const into = vscale(n, -HOLE_DEPTH);
+  const circ = (ang) => vadd(P, vadd(vscale(e1, R * Math.cos(ang)), vscale(e2, R * Math.sin(ang))));
+  const square = (ang) => {                       // ray from center to the cell edge
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const t = Math.min(a / (Math.abs(c) || 1e-9), b / (Math.abs(s) || 1e-9));
+    return vadd(P, vadd(vscale(e1, t * c), vscale(e2, t * s)));
+  };
+  const radialIn = (ang) => norm(vscale(vadd(vscale(e1, Math.cos(ang)), vscale(e2, Math.sin(ang))), -1));
+  const bottom = vadd(P, into);
+  const polys = [];
+  for (let i = 0; i < seg; i++) {
+    const a0 = (i / seg) * 2 * Math.PI, a1 = ((i + 1) / seg) * 2 * Math.PI;
+    const co0 = circ(a0), co1 = circ(a1);
+    const cb0 = vadd(co0, into), cb1 = vadd(co1, into);
+    polys.push(windTo([square(a0), square(a1), co1, co0], n));        // ring on the surface
+    polys.push(windTo([co0, co1, cb1, cb0], radialIn((a0 + a1) / 2))); // wall, facing in
+    polys.push(windTo([cb0, cb1, bottom], n));                        // floor, facing out
+  }
+  return polys;
+}
+
+// Place an anti-stud hole at solid cell (i,j,k) on face (fa,fs). y in plate units.
+function holeForCell(i, j, k, fa, fs, W, H, D) {
+  const hw = W / 2, hd = D / 2, hh = (H / 2) * PLATE_H;
+  const x = i + 0.5 - hw, z = k + 0.5 - hd, y = (j + 0.5 - H / 2) * PLATE_H;
+  if (fa === 1) return holeFaces([x, fs * hh, z], [0, fs, 0], [1, 0, 0], [0, 0, 1], 0.5, 0.5);
+  if (fa === 0) return holeFaces([fs * hw, y, z], [fs, 0, 0], [0, 0, 1], [0, 1, 0], 0.5, 0.5 * PLATE_H);
+  return holeFaces([x, y, fs * hd], [0, 0, fs], [1, 0, 0], [0, 1, 0], 0.5, 0.5 * PLATE_H);
+}
+
 function facesToGeometry(faceList) {
   const pos = [], nor = [];
   for (const f of faceList) {
@@ -369,25 +427,26 @@ function facesToGeometry(faceList) {
     .setAttribute("uv", uv, 2);
 }
 
-export function makeSolid(def) {
+// Evaluate a def into the shared shape data both the mesher and the lattice
+// queries read. CUTS FIRST: push + slope are gathered up front so studs (and the
+// connector map) see the post-cut shape regardless of op list order.
+function evalShape(def) {
   const W = Math.max(1, (def.size?.[0] ?? 2) | 0);
   const H = Math.max(1, (def.size?.[1] ?? 3) | 0);
   const D = Math.max(1, (def.size?.[2] ?? 2) | 0);
   const ops = def.ops ?? [];
-
   const dims = [W, H, D];
-  // CUTS FIRST: push + slope are gathered and applied before any stud grows, so
-  // studs see the latest (post-cut) shape regardless of op list order.
   const slopeOps = ops.filter((o) => o.op === "slope").map((o) => slopePlanes(o, W, H, D));
   const pushOps = ops.filter((o) => o.op === "push").map((o) => pushTest(o, W, H, D));
   const studOps = ops.filter((o) => o.op === "studs");
   // rounded vertical corners are a property of the base box, applied to every
-  // cell. Studs ignore them (faceIntact below uses only slope/push), so a 1x1
-  // cylinder still keeps its stud.
+  // cell. faceIntact ignores them (uses only slope/push), so a 1x1 cylinder
+  // still keeps its stud.
   const corners = cornerPlanes(def, W, D);
 
   // does the boundary cell at face (fa,fs), in-plane index (u,v), still have a
-  // flat, full outer face after every cut? used to skip studs on uneven cells.
+  // flat, full outer face after every cut? used to skip studs on uneven cells
+  // and to mark carved cells as 'none' in the connector map.
   function faceIntact(fa, fs, u, v) {
     const idx = [0, 0, 0];
     idx[fa] = fs > 0 ? dims[fa] - 1 : 0;
@@ -407,6 +466,61 @@ export function makeSolid(def) {
     return faces.some((f) => samePoly(f, orig));              // outer face survived intact
   }
 
+  return { W, H, D, dims, slopeOps, pushOps, studOps, corners, faceIntact };
+}
+
+const FACES6 = ["y+", "y-", "x+", "x-", "z+", "z-"];
+
+// Connector classification per face cell — the queryable "stud map".
+export const CONN = { none: 0, flat: 1, socket: 2, male: 3 };
+
+// partConnectors(def): for each of the 6 faces, a U*V grid (row-major v*U+u) of
+// CONN values. 'male' = a stud protrudes, 'socket' = a recess that receives a
+// stud (female studs op), 'flat' = a smooth solid wall (no clutch), 'none' = no
+// surface (cell carved away by push/slope). This is the single source of truth
+// for mating: a stud (male) clutches into a socket on the opposing face.
+export function partConnectors(def) {
+  const { W, H, D, studOps, faceIntact } = evalShape(def);
+  const faces = {};
+  for (const face of FACES6) {
+    const fa = AXES[face[0]], fs = face[1] === "+" ? 1 : -1;
+    const [U, V] = faceGrid(fa, W, H, D);
+    const hits = studOps
+      .filter((o) => (o.face ?? "y+") === face)
+      .map((o) => ({ male: o.kind !== "female", hit: studHits(o, W, H, D) }));
+    const grid = new Uint8Array(U * V);
+    for (let u = 0; u < U; u++) for (let v = 0; v < V; v++) {
+      if (!faceIntact(fa, fs, u, v)) { grid[v * U + u] = CONN.none; continue; }
+      let val = CONN.flat;
+      for (const { male, hit } of hits) if (hit(u, v)) { val = male ? CONN.male : CONN.socket; break; }
+      grid[v * U + u] = val;
+    }
+    faces[face] = { U, V, grid };
+  }
+  return { W, H, D, faces };
+}
+
+// Solid cells of a part (cell-space indices not removed by a push), plus the
+// box dims. Slope-sliced cells are kept (still occupy most of their volume) —
+// conservative for collision tests. Used to build a world occupancy grid.
+export function solidCells(def) {
+  const { W, H, D, pushOps } = evalShape(def);
+  const cells = [];
+  for (let i = 0; i < W; i++)
+    for (let j = 0; j < H; j++)
+      for (let k = 0; k < D; k++)
+        if (!pushOps.some((t) => t([i, j, k]))) cells.push([i, j, k]);
+  return { W, H, D, cells };
+}
+
+export function makeSolid(def) {
+  const { W, H, D, slopeOps, pushOps, studOps, corners, faceIntact } = evalShape(def);
+  // female studs become anti-stud holes: each replaces a flat outer cap with a
+  // recessed cylinder. Marked per boundary cell so the cap can be dropped below.
+  const femaleOps = studOps
+    .filter((o) => o.kind === "female")
+    .map((o) => { const f = o.face ?? "y+"; return { fa: AXES[f[0]], fs: f[1] === "+" ? 1 : -1, hit: studHits(o, W, H, D) }; });
+
   const allFaces = [];
   for (let i = 0; i < W; i++)
     for (let j = 0; j < H; j++)
@@ -425,11 +539,24 @@ export function makeSolid(def) {
           if (!faces.length) break;
           faces = clipSolid(faces, pl.n, pl.d);
         }
+        // punch anti-stud holes: drop the flat cap on a female boundary cell and
+        // add the recess. Only where the cap survived intact (skips sloped/rounded
+        // cells, whose cap won't match) so no orphan hole is left floating.
+        for (const fop of femaleOps) {
+          if (idx[fop.fa] !== (fop.fs > 0 ? [W, H, D][fop.fa] - 1 : 0)) continue;
+          const pax = fop.fa === 0 ? [2, 1] : fop.fa === 1 ? [0, 2] : [0, 1];
+          const u = idx[pax[0]], v = idx[pax[1]];
+          if (!fop.hit(u, v) || !faceIntact(fop.fa, fop.fs, u, v)) continue;
+          const orig = cellFaces(i, j, k, W, H, D)[OUTER_FACE[fop.fa] + (fop.fs > 0 ? 1 : 0)];
+          const before = faces.length;
+          faces = faces.filter((f) => !samePoly(f, orig));
+          if (faces.length < before) allFaces.push(...holeForCell(i, j, k, fop.fa, fop.fs, W, H, D));
+        }
         if (faces.length) allFaces.push(...faces);
       }
 
   const geos = [facesToGeometry(allFaces)];
-  for (const op of studOps) geos.push(...buildStuds(op, W, H, D, faceIntact));
+  for (const op of studOps) if (op.kind !== "female") geos.push(...buildStuds(op, W, H, D, faceIntact));
   return mergeGeometries(geos);
 }
 

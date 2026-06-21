@@ -384,7 +384,7 @@
         <label><span>Root</span>
           <select bind:value={model.root}>{#each partIds as id}<option value={id}>{id}</option>{/each}</select></label>
         <label><span>Base Y</span>
-          <input type="number" step="0.1" bind:value={model.baseY} /></label>
+          <input type="range" min="-8" max="8" step="0.1" bind:value={model.baseY} /><output>{(model.baseY ?? 0).toFixed(1)}</output></label>
         <div class="tabs">
           <button type="button" onclick={saveModel}>{saved ? "✓ saved" : "💾 save"}</button>
           <button type="button" onclick={loadFromStore}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>

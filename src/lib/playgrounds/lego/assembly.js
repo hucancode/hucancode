@@ -4,21 +4,32 @@
 // Each connection mounts part B onto a FACE of an already-placed part A:
 //   { a, b, on:"top|bottom|front|back|left|right",
 //     off:[du,dv],         // in-plane offset on A's face, in whole studs (0,0)
-//     rot:[rx,ry,rz] }     // B's rotation, each a multiple of 90°
-//                          // (legacy `angle` == rot Y; default 0,0,0)
+//     rot:[rx,ry,rz],      // B's rotation, each a multiple of 90° (legacy
+//                          // `angle` == rot Y; default 0,0,0)
+//     local:false }        // mount frame (see below)
 //
-// Faces and rotations are in WORLD axes — mounting does NOT inherit A's
-// rotation. So a flipped/rotated anchor carries nothing into its children: B is
-// rotated only by its own `rot`, then seated on A. Mount order per connection:
-//   1. rotate B locally by `rot`,
+// MOUNT FRAME. By default faces and rotations are WORLD axes: mounting does NOT
+// inherit A's rotation, so a flipped/rotated anchor carries nothing into its
+// children (B is rotated only by its own `rot`, then seated on A). This is right
+// for normal stacking — an upright plate placed on top of an inverted slope stays
+// upright. Set `local:true` to seat B in A's LOCAL frame instead: B inherits A's
+// orientation and the face/offset are taken relative to A. Chaining `local`
+// connections builds a sub-assembly that rotates as a unit when its root rotates.
+//
+// Seat order per connection:
+//   1. rotate B (by `rot`, composed onto A's frame when local),
 //   2. seat B against A's `on` face: contact point = A's center pushed out along
 //      the face normal by A's half-extent along it; B is then pushed out by its
-//      OWN half-extent along that normal, so the rotated box rests flush (no
-//      sink, any rotation),
+//      OWN half-extent along that normal, so the rotated box rests flush,
 //   3. slide along the face by `off` (in studs).
 // Heights/positions fall out of the stack. Order = connection order = build order.
+//
+// resolveAssembly() returns render pieces. validateAssembly() / canConnect() run
+// the real-lego rules (stud mating + collision) from lattice.js over the same
+// placements — they never block a build, only report.
 
-import { TYPE_HEIGHT, BRICK_H, PLATE_H } from "./brick.js";
+import { PLATE_H } from "./solid.js";
+import { mate, collides, cellBoxes } from "./lattice.js";
 
 const D2R = Math.PI / 180;
 
@@ -47,18 +58,11 @@ function mat4(R, C) {
   return m;
 }
 
+// op-model footprint: size = [W(studs X), H(plates Y), D(studs Z)]
 function dims(spec) {
-  // op-model part: size = [W(studs X), H(plates Y), D(studs Z)]
-  if (Array.isArray(spec.size)) {
-    const sx = spec.size[0] ?? 2;
-    const sz = spec.size[2] ?? spec.size[0] ?? 2;
-    const h = (spec.size[1] ?? 3) * PLATE_H;
-    return { sx, sz, h, hw: sx / 2, hd: sz / 2, hh: h / 2 };
-  }
-  // legacy preset: sx/sz footprint + type/height
-  const sx = spec.sx ?? spec.studsX ?? 2;
-  const sz = spec.sz ?? spec.studsZ ?? 2;
-  const h = spec.h ?? spec.height ?? TYPE_HEIGHT[spec.type] ?? BRICK_H;
+  const sx = spec.size?.[0] ?? 2;
+  const sz = spec.size?.[2] ?? spec.size?.[0] ?? 2;
+  const h = (spec.size?.[1] ?? 3) * PLATE_H;
   return { sx, sz, h, hw: sx / 2, hd: sz / 2, hh: h / 2 };
 }
 
@@ -74,6 +78,7 @@ const FACES = {
 
 const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const scale3 = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 
 // half-extent of a box (half-sizes hw,hh,hd, rotation R) along a unit world dir w
 function halfAlong(d, R, w) {
@@ -96,7 +101,9 @@ function studSnap(axis, A, Rb, bd) {
   return ((aN - bN) & 1) ? 0.5 : 0;                      // differ in parity -> half-stud
 }
 
-export function resolveAssembly(model) {
+// Resolve every part to { id, spec, d, R, C } in build order. Shared by the
+// renderer and the validators so all three agree on placement.
+function placeAll(model) {
   const placed = new Map();
   const order = [];
 
@@ -104,7 +111,7 @@ export function resolveAssembly(model) {
   const rootSpec = model.parts[rootId];
   const rd = dims(rootSpec);
   const R0 = model.rootAngle ? rotY(model.rootAngle * D2R) : I3;
-  placed.set(rootId, { R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0], d: rd, spec: rootSpec });
+  placed.set(rootId, { id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0] });
   order.push(rootId);
 
   for (const conn of model.connections) {
@@ -112,40 +119,80 @@ export function resolveAssembly(model) {
     if (!A) { console.warn(`[assembly] unknown anchor ${conn.a}`); continue; }
     const Bspec = model.parts[conn.b];
     const bd = dims(Bspec);
-    const on = conn.on ?? "top";
+    const F = FACES[conn.on ?? "top"] ?? FACES.top;
 
-    const F = FACES[on] ?? FACES.top;
-    const N = F.n;
+    // mount frame: world axes by default, A's local frame when `local`
+    const faceR = conn.local ? A.R : I3;
+    const N = apply3(faceR, F.n), U = apply3(faceR, F.u), V = apply3(faceR, F.v);
 
-    // 1) rotate B locally (world axes, each a multiple of 90°); legacy `angle` == rot Y
+    // rotate B (legacy `angle` == rot Y); compose onto A's frame when local
     const r = conn.rot ?? [0, conn.angle ?? 0, 0];
-    const Rb = mul3(rotX(r[0] * D2R), mul3(rotY(r[1] * D2R), rotZ(r[2] * D2R)));
+    let Rb = mul3(rotX(r[0] * D2R), mul3(rotY(r[1] * D2R), rotZ(r[2] * D2R)));
+    if (conn.local) Rb = mul3(A.R, Rb);
 
-    // 2) contact point: A's center -> out to its `on` face -> slide by `off`.
-    // Base seat snaps to A's stud grid (parity-aware) so B clutches a stud
-    // instead of landing between two; `off` slides in whole studs on top.
+    // contact point: A's center -> out to its `on` face -> slide by `off`. Base
+    // seat snaps to A's stud grid (parity-aware) so B clutches a stud instead of
+    // landing between two; `off` slides in whole studs on top.
     const [du, dv] = conn.off ?? [0, 0];
-    const su = studSnap(F.u, A, Rb, bd), sv = studSnap(F.v, A, Rb, bd);
+    const su = studSnap(U, A, Rb, bd), sv = studSnap(V, A, Rb, bd);
     const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))),
-                   add(scale3(F.u, du + su), scale3(F.v, dv + sv)));
-
-    // 3) seat B flush: push out along the face normal by B's own half-extent
+                   add(scale3(U, du + su), scale3(V, dv + sv)));
+    // seat B flush: push out along the face normal by B's own half-extent
     const Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
 
-    placed.set(conn.b, { R: Rb, C: Cb, d: bd, spec: Bspec });
+    placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb });
     order.push(conn.b);
   }
 
-  // emit in build order with model matrices + centroid
-  let cx = 0, cy = 0, cz = 0;
-  const out = order.map((id) => {
-    const p = placed.get(id);
-    cx += p.C[0]; cy += p.C[1]; cz += p.C[2];
-    return { id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice() };
-  });
-  const n = out.length || 1;
-  return { pieces: out, centroid: [cx / n, cy / n, cz / n] };
+  return { placed, list: order.map((id) => placed.get(id)) };
 }
 
-const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+export function resolveAssembly(model) {
+  const { list } = placeAll(model);
+  let cx = 0, cy = 0, cz = 0;
+  const pieces = list.map((p) => {
+    cx += p.C[0]; cy += p.C[1]; cz += p.C[2];
+    return { id: p.id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice() };
+  });
+  const n = pieces.length || 1;
+  return { pieces, centroid: [cx / n, cy / n, cz / n] };
+}
+
+// Run the real-lego rules over a model: every connection should clutch (a stud
+// into a socket) with no stud-vs-stud conflict, and no part should interpenetrate
+// one placed before it. Pure report — never mutates or blocks the build.
+export function validateAssembly(model) {
+  const { placed, list } = placeAll(model);
+  const conns = (model.connections ?? []).map((conn) => {
+    const A = placed.get(conn.a), B = placed.get(conn.b);
+    if (!A || !B) return { a: conn.a, b: conn.b, connected: false, missing: true };
+    const m = mate(A, B);
+    return { a: conn.a, b: conn.b, ...m };
+  });
+
+  const seen = [];
+  const overlaps = [];
+  for (const p of list) {
+    const hit = collides(seen, p);
+    if (hit.hit) overlaps.push({ id: p.id, with: hit.with });
+    seen.push({ ...p, boxes: cellBoxes(p) });
+  }
+
+  return {
+    ok: conns.every((c) => c.connected) && overlaps.length === 0,
+    loose: conns.filter((c) => !c.connected),
+    conflicts: conns.filter((c) => c.conflict > 0),
+    collisions: overlaps,
+    connections: conns,
+  };
+}
+
+// Standalone query (TODO): can defB clutch onto defA via this single connection?
+// { connected, clutch, conflict, collision }.
+export function canConnect(defA, defB, conn = {}) {
+  const model = { parts: { a: defA, b: defB }, root: "a", connections: [{ a: "a", b: "b", ...conn }] };
+  const { placed } = placeAll(model);
+  const A = placed.get("a"), B = placed.get("b");
+  const m = mate(A, B);
+  return { ...m, collision: collides([A], B).hit };
+}
