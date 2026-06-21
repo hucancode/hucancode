@@ -4,7 +4,7 @@
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import { PALETTE, MODEL } from "$lib/playgrounds/lego/eagle.js";
   import { cycleEdges } from "$lib/playgrounds/lego/assembly.js";
-  import { STICKS } from "$lib/playgrounds/lego/solid.js";
+  import { STICKS, stickSize } from "$lib/playgrounds/lego/solid.js";
 
   const range = (n) => Array.from({ length: n }, (_, i) => i);
   const endCount = (spec) => STICKS[spec.stick]?.ends ?? 0;
@@ -85,7 +85,7 @@
     push: () => ({ op: "push", face: "z+", depth: 1, width: 1, height: 1, at: [0, 0] }),
     studs: () => ({ op: "studs", face: "y+", kind: "male" }),
     ball: () => ({ op: "ball", face: "y+", kind: "male", at: { cell: [0, 0] } }),
-    hinge: () => ({ op: "hinge", face: "y+", kind: "male", at: { cell: [0, 0] } }),
+    hinge: () => ({ op: "hinge", face: "y+", pin: "x", kind: "male", at: { cell: [0, 0] } }),
   };
   const opAdd = (spec, t) => {
     // on a stick, connectors target an `end` index instead of a box face
@@ -100,6 +100,18 @@
     [next[i], next[j]] = [next[j], next[i]];
     spec.ops = next;
   };
+  // hinge: pin axis must lie in the mount face (≠ face axis); position is a cell
+  const pinAxes = (face) => ["x", "y", "z"].filter((a) => a !== (face ?? "y+")[0]);
+  function setHingeFace(o, f) {
+    o.face = f;
+    if (!pinAxes(f).includes(o.pin)) o.pin = pinAxes(f)[0];   // keep pin valid
+  }
+  const hingeCell = (o) => (o.at?.cell ?? [0, 0]);
+  function setHingeCell(o, i, v) {
+    const cell = hingeCell(o).slice();
+    cell[i] = +v;
+    o.at = { cell };
+  }
   function studRegion(o) {
     if (!o.at) return "all";
     if ("row" in o.at) return "row";
@@ -126,16 +138,23 @@
     sel = id;
   }
   // I/Y/T connector stick: a part with branching rods; one male stud per end.
-  function addStick(type) {
-    let n = 1, id = `${type.toLowerCase()}stick1`;
-    while (model.parts[id]) id = `${type.toLowerCase()}stick${++n}`;
+  function addStick() {
+    let n = 1, id = "stick1";
+    while (model.parts[id]) id = `stick${++n}`;
+    const len = STICKS.I.len;
     model.parts[id] = {
-      stick: type,
-      size: STICKS[type].size.slice(),
-      ops: range(STICKS[type].ends).map((i) => ({ op: "studs", end: i, kind: "male" })),
+      stick: "I",
+      len,
+      size: stickSize(len),
+      ops: range(STICKS.I.ends).map((i) => ({ op: "studs", end: i, kind: "male" })),
       color: COLORS[0],
     };
     sel = id;
+  }
+  // stick length: half-length in studs; keep the bounding-box size in sync
+  function setStickLen(spec, v) {
+    spec.len = +v;
+    spec.size = stickSize(+v);
   }
   function removePart(id) {
     const { [id]: _, ...rest } = model.parts;
@@ -343,9 +362,25 @@
       {:else if (o.op === "studs" || o.op === "ball" || o.op === "hinge") && spec.stick}
         <label><span>End</span>
           <select bind:value={o.end}>{#each range(endCount(spec)) as i}<option value={i}>{i}</option>{/each}</select></label>
-        <span class="ctl">male end</span>
+        <label><span>Kind</span>
+          <select bind:value={o.kind}><option value="male">male</option><option value="female">female</option></select></label>
 
-      {:else if o.op === "studs" || o.op === "ball" || o.op === "hinge"}
+      {:else if o.op === "hinge"}
+        <label><span>Face</span>
+          <select value={o.face} onchange={(e) => setHingeFace(o, e.currentTarget.value)}>
+            {#each FACES as f}<option value={f}>{f}</option>{/each}</select></label>
+        <label><span>Pin axis</span>
+          <select bind:value={o.pin}>{#each pinAxes(o.face) as a}<option value={a}>{a}</option>{/each}</select></label>
+        <label><span>Kind</span>
+          <select bind:value={o.kind}><option value="male">male</option><option value="female">female</option></select></label>
+        <label><span>At U</span>
+          <input type="range" min="0" max="11" step="1" value={hingeCell(o)[0]}
+            oninput={(e) => setHingeCell(o, 0, e.currentTarget.value)} /><output>{hingeCell(o)[0]}</output></label>
+        <label><span>At V</span>
+          <input type="range" min="0" max="11" step="1" value={hingeCell(o)[1]}
+            oninput={(e) => setHingeCell(o, 1, e.currentTarget.value)} /><output>{hingeCell(o)[1]}</output></label>
+
+      {:else if o.op === "studs" || o.op === "ball"}
         <label><span>Face</span>
           <select bind:value={o.face}>{#each FACES as f}<option value={f}>{f}</option>{/each}</select></label>
         <label><span>Kind</span>
@@ -504,9 +539,7 @@
       <fieldset>
         <legend>parts
           <button type="button" class="add" onclick={addPart}>+ part</button>
-          <button type="button" class="add" onclick={() => addStick("I")}>+ I</button>
-          <button type="button" class="add" onclick={() => addStick("Y")}>+ Y</button>
-          <button type="button" class="add" onclick={() => addStick("T")}>+ T</button>
+          <button type="button" class="add" onclick={addStick}>+ stick</button>
         </legend>
         <label class="iso">
           <input type="checkbox" bind:checked={iso} />
@@ -542,7 +575,9 @@
                 oninput={(e) => (spec.color = e.currentTarget.value)} title="custom color" />
             </span></label>
           {#if spec.stick}
-            <p class="hint">{spec.stick}-stick · {endCount(spec)} ends · add connectors below</p>
+            <label><span>Length</span>
+              <input type="range" min="0.1" max="5" step="0.1" value={spec.len ?? 1.4}
+                oninput={(e) => setStickLen(spec, e.currentTarget.value)} /><output>{(spec.len ?? 1.4).toFixed(1)}</output></label>
           {:else}
             <label><span>Width X</span>
               <input type="range" min="1" max="8" step="1" bind:value={spec.size[0]} /><output>{spec.size[0]}</output></label>

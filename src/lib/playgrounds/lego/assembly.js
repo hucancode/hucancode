@@ -86,7 +86,6 @@ const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const scale3 = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
 const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
 // Rodrigues row-major 3x3 rotation by `t` rad about an arbitrary unit-ish axis.
 function rotAxis(axis, t) {
@@ -98,13 +97,6 @@ function rotAxis(axis, t) {
     y * x * C + z * s, c + y * y * C, y * z * C - x * s,
     z * x * C - y * s, z * y * C + x * s, c + z * z * C,
   ];
-}
-
-// Row-major 3x3 rotation taking +Y onto unit dir n (n is axis-aligned in practice).
-function rotYToDir(n) {
-  if (n[1] > 0.9999) return I3;
-  if (n[1] < -0.9999) return rotX(Math.PI);
-  return rotAxis(cross3([0, 1, 0], n), Math.acos(Math.max(-1, Math.min(1, n[1]))));
 }
 
 // Joint articulation for a connection, expressed in the mount frame (U,V,N):
@@ -175,7 +167,6 @@ export function cycleEdges(model) {
 function placeAll(model) {
   const placed = new Map();
   const order = [];
-  const rings = [];   // coupling rings at stick-to-stick joints
 
   // Cycle-forming connections are ignored entirely (their `b` keeps no parent
   // from them, so it may itself become a root).
@@ -233,30 +224,19 @@ function placeAll(model) {
 
     placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN: N });
     order.push(conn.b);
-
-    // two sticks can't clutch (both male ends) — a coupling ring wraps the joint.
-    if (A.spec?.stick && Bspec.stick)
-      rings.push({ C: Pa, R: rotYToDir(N), depth: (A.depth ?? 0) + 1 });
   }
 
-  return { placed, list: order.map((id) => placed.get(id)), rings };
+  return { placed, list: order.map((id) => placed.get(id)) };
 }
 
-const RING_SPEC = { ring: true };
-
 export function resolveAssembly(model) {
-  const { list, rings } = placeAll(model);
+  const { list } = placeAll(model);
   let cx = 0, cy = 0, cz = 0;
   const pieces = list.map((p) => {
     cx += p.C[0]; cy += p.C[1]; cz += p.C[2];
     return { id: p.id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice(), mountN: p.mountN.slice(), depth: p.depth };
   });
   const n = pieces.length || 1;
-  // coupling rings ride along as extra pieces (not part of the centroid average)
-  rings.forEach((rg, i) => pieces.push({
-    id: `__ring${i}`, spec: RING_SPEC, color: "#555555",
-    model: mat4(rg.R, rg.C), center: rg.C.slice(), mountN: [0, 1, 0], depth: rg.depth,
-  }));
   return { pieces, centroid: [cx / n, cy / n, cz / n] };
 }
 

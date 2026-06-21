@@ -50,17 +50,20 @@
 // they are occluded by the opaque solid, so no face culling is needed.
 
 import {
-  Geometry, cylinderGeometry, mergeGeometries,
+  Geometry, boxGeometry, cylinderGeometry, mergeGeometries,
 } from "$lib/engine/index.js";
 
 export const PLATE_H = 0.4;
 export const BRICK_H = 1.2;            // 3 plates
 const STUD_R = 0.3, STUD_H = 0.2;
+const STUD_NECK_R = 0.2, STUD_NECK_H = 0.14;   // stick tip -> stud transition
 // ball joint: a sphere on a thin neck (male) / a raised socket ring (female).
 const BALL_R = 0.32, NECK_R = 0.14, NECK_H = 0.16;
-// hinge joint: a knuckle barrel along the face tangent (male) / a two-prong
-// clevis straddling where the barrel seats (female). 1-DOF: swings about the pin.
-const HINGE_R = 0.22, HINGE_LEN = 0.78, CLEVIS_W = 0.22, CLEVIS_GAP = 0.5;
+// hinge joint: a vertical disc standing off the face, pierced by the pin (male) /
+// a two-disc clevis the male disc slots between (female). 1-DOF: swings about the
+// pin. Disc plane contains the surface normal; thin axis (pin) is the face tangent.
+const HINGE_R = 0.3, HINGE_TH = 0.34;
+const HINGE_NECK_R = 0.12, HINGE_NECK_H = 0.12;   // stick/face -> hinge transition (< ROD_R 0.2)
 const EPS = 1e-6;
 
 const AXES = { x: 0, y: 1, z: 2 };
@@ -388,25 +391,54 @@ function sphereGeometry(r = 0.5, seg = 16, rings = 10) {
     .setAttribute("uv", new Float32Array(uv), 2);
 }
 
-// Torus with its hole along +Y (ring radius R, tube radius r). Used as the
-// coupling ring wrapped around a stick-to-stick joint.
-function ringGeometry(R = 0.42, r = 0.13, seg = 22, sides = 10) {
+// assemble a triangle-soup geometry from a push() callback
+function soup(emit) {
   const pos = [], nor = [], uv = [];
-  const vert = (i, j) => {
-    const a = (i / seg) * 2 * Math.PI, b = (j / sides) * 2 * Math.PI;
-    const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
-    return [[(R + r * cb) * ca, r * sb, (R + r * cb) * sa], [cb * ca, sb, cb * sa]];
-  };
-  for (let i = 0; i < seg; i++) for (let j = 0; j < sides; j++) {
-    const [a, na] = vert(i, j), [b, nb] = vert(i + 1, j), [c, nc] = vert(i + 1, j + 1), [d, nd] = vert(i, j + 1);
-    for (const [p, n] of [[a, na], [b, nb], [d, nd], [b, nb], [c, nc], [d, nd]]) {
-      pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); uv.push(0, 0);
-    }
-  }
+  emit((p, n) => { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); uv.push(0, 0); });
   return new Geometry()
     .setAttribute("position", new Float32Array(pos), 3)
     .setAttribute("normal", new Float32Array(nor), 3)
     .setAttribute("uv", new Float32Array(uv), 2);
+}
+
+// Hollow hemisphere shell (dome): bulges +Y, open toward -Y. Outer + inner walls
+// + an equator rim. A female ball joint = this dome capping over a male ball.
+function domeShell(R, t, seg = 16, rings = 6) {
+  const pt = (rad, th, ph) => [rad * Math.sin(th) * Math.cos(ph), rad * Math.cos(th), rad * Math.sin(th) * Math.sin(ph)];
+  return soup((tri) => {
+    const quad = (a, b, c, d, nf) => { for (const p of [a, b, d, b, c, d]) tri(p, nf(p)); };
+    for (let i = 0; i < rings; i++) for (let j = 0; j < seg; j++) {
+      const t0 = (i / rings) * (Math.PI / 2), t1 = ((i + 1) / rings) * (Math.PI / 2);
+      const p0 = (j / seg) * 2 * Math.PI, p1 = ((j + 1) / seg) * 2 * Math.PI;
+      quad(pt(R, t0, p0), pt(R, t1, p0), pt(R, t1, p1), pt(R, t0, p1), (p) => norm(p));           // outer
+      quad(pt(R - t, t0, p1), pt(R - t, t1, p1), pt(R - t, t1, p0), pt(R - t, t0, p0), (p) => norm(vscale(p, -1))); // inner
+    }
+    for (let j = 0; j < seg; j++) {                          // equator rim (y=0), facing -Y
+      const p0 = (j / seg) * 2 * Math.PI, p1 = ((j + 1) / seg) * 2 * Math.PI;
+      quad(pt(R, Math.PI / 2, p0), pt(R, Math.PI / 2, p1), pt(R - t, Math.PI / 2, p1), pt(R - t, Math.PI / 2, p0), () => [0, -1, 0]);
+    }
+  });
+}
+
+// Extruded ring (straight-walled hollow tube) along +Y: outer + inner walls and
+// flat top/bottom rims. A female stud receiver collar — a male stud passes the hole.
+function tubeRing(rOut, rIn, h, seg = 20) {
+  const hh = h / 2;
+  const P = (r, y, a) => [r * Math.cos(a), y, r * Math.sin(a)];
+  return soup((tri) => {
+    const quad = (a, b, c, d, na, nb) => { tri(a, na); tri(b, nb); tri(d, na); tri(b, nb); tri(c, nb); tri(d, na); };
+    for (let i = 0; i < seg; i++) {
+      const a0 = (i / seg) * 2 * Math.PI, a1 = ((i + 1) / seg) * 2 * Math.PI;
+      const o0 = [Math.cos(a0), 0, Math.sin(a0)], o1 = [Math.cos(a1), 0, Math.sin(a1)];
+      quad(P(rOut, -hh, a0), P(rOut, -hh, a1), P(rOut, hh, a1), P(rOut, hh, a0), o0, o1);           // outer wall
+      quad(P(rIn, -hh, a1), P(rIn, -hh, a0), P(rIn, hh, a0), P(rIn, hh, a1), vscale(o1, -1), vscale(o0, -1)); // inner wall
+      for (const [y, ny] of [[hh, [0, 1, 0]], [-hh, [0, -1, 0]]]) {                                  // rims
+        const w = ny[1] > 0 ? [P(rIn, y, a0), P(rOut, y, a0), P(rOut, y, a1), P(rIn, y, a1)]
+          : [P(rIn, y, a1), P(rOut, y, a1), P(rOut, y, a0), P(rIn, y, a0)];
+        tri(w[0], ny); tri(w[1], ny); tri(w[2], ny); tri(w[0], ny); tri(w[2], ny); tri(w[3], ny);
+      }
+    }
+  });
 }
 
 // Rotate a +Y-aligned geo so its axis points along an axis-aligned unit dir.
@@ -455,45 +487,87 @@ function buildBalls(op, W, H, D, intact) {
   return out;
 }
 
-// hinge joint (1-DOF): male = a knuckle barrel lying along the face's u-tangent;
-// female = a two-prong clevis straddling where that barrel seats. Both stand off
-// the face by HINGE_R so the pin axis clears the surface.
+// remap a geo's local x/y/z onto orthonormal world axes ex/ey/ez and translate to c
+function transformGeo(g, ex, ey, ez, c) {
+  for (const key of ["position", "normal"]) {
+    const a = g.attributes[key].array, t = key === "position";
+    for (let i = 0; i < a.length; i += 3) {
+      const x = a[i], y = a[i + 1], z = a[i + 2];
+      a[i] = x * ex[0] + y * ey[0] + z * ez[0] + (t ? c[0] : 0);
+      a[i + 1] = x * ex[1] + y * ey[1] + z * ez[1] + (t ? c[1] : 0);
+      a[i + 2] = x * ex[2] + y * ey[2] + z * ez[2] + (t ? c[2] : 0);
+    }
+  }
+  return g;
+}
+// axis-aligned box in the (ax,ay,az) frame, centered at `center`, half-extents h*
+const slab = (center, ax, ay, az, hx, hy, hz) =>
+  transformGeo(boxGeometry(2 * hx, 2 * hy, 2 * hz), ax, ay, az, center);
+
+// transition neck (80% radius) standing off the surface/tip P along n, under the
+// hinge. Shared by male + female so both lift off the stick on the same stub.
+const hingeNeck = (P, n) => alignToDir(cylinderGeometry(HINGE_NECK_R, HINGE_NECK_R, HINGE_NECK_H, 14), n)
+  .translate(P[0] + n[0] * HINGE_NECK_H / 2, P[1] + n[1] * HINGE_NECK_H / 2, P[2] + n[2] * HINGE_NECK_H / 2);
+
+// male disc: a flat coin, thin axis = pin, standing in the (n,q) plane at center c
+const hingeMale = (c, pin) => alignToDir(cylinderGeometry(HINGE_R, HINGE_R, HINGE_TH, 20), pin).translate(c[0], c[1], c[2]);
+// female: an extruded flat U cradling the male disc — two uprights (thin along q)
+// plus a base, open toward +n, perpendicular to the male's faces. pin runs along p.
+function hingeFemaleU(c, n, q, pin) {
+  // gap between the uprights tracks the male disc thickness (+clearance), so the
+  // disc clutches in snugly instead of rattling in a radius-wide slot.
+  const wall = 0.1, clear = 0.04, W = HINGE_TH / 2 + clear + wall / 2, T = 0.18;
+  const parts = [
+    slab(vadd(c, vscale(n, -(HINGE_R - wall / 2))), q, n, pin, W + wall / 2, wall / 2, T), // base
+  ];
+  for (const s of [1, -1]) parts.push(slab(vadd(c, vscale(q, s * W)), q, n, pin, wall / 2, HINGE_R, T)); // uprights
+  return mergeGeometries(parts);
+}
+
+// default pin axis (an in-face tangent) for a mount face axis
+const defaultPin = (fa) => (fa === 0 ? "z" : "x");
+const AXIS_IDX = { x: 0, y: 1, z: 2 };
+
+// hinge joint (1-DOF): a vertical disc (male) or an extruded U cradle (female) on
+// a mount FACE, pierced by a PIN along a settable world axis. The pin must lie in
+// the surface; a pin parallel to the face normal would point inward, so it is
+// skipped (renders nothing). `at.cell:[u,v]` selects a cell over the full grid.
 function buildHinge(op, W, H, D, intact) {
   const out = [];
   const male = op.kind !== "female";
-  eachJointCell(op, W, H, D, intact, ({ P, n, e1 }, fa, fs) => {
-    const off = HINGE_R + 0.04;
-    const c = [P[0] + n[0] * off, P[1] + n[1] * off, P[2] + n[2] * off]; // pin center
-    if (male) {
-      const bar = alignYTo(cylinderGeometry(HINGE_R, HINGE_R, HINGE_LEN, 16), e1);
-      out.push(bar.translate(c[0], c[1], c[2]));
-    } else {
-      for (const s of [1, -1]) {
-        const d = s * (CLEVIS_GAP / 2 + CLEVIS_W / 2);
-        const prong = alignYTo(cylinderGeometry(HINGE_R, HINGE_R, CLEVIS_W, 16), e1);
-        out.push(prong.translate(c[0] + e1[0] * d, c[1] + e1[1] * d, c[2] + e1[2] * d));
-      }
-    }
-  });
+  const face = op.face ?? "y+";
+  const fa = AXES[face[0]], fs = face[1] === "+" ? 1 : -1;
+  const pinIdx = AXIS_IDX[op.pin ?? defaultPin(fa)];
+  if (pinIdx === fa) return out;                 // pin out of surface -> invalid
+  const pin = [0, 0, 0]; pin[pinIdx] = 1;
+  const [U, V] = faceGrid(fa, W, H, D);
+  const sel = op.at?.cell;                        // [u,v] or undefined = whole face
+  for (let u = 0; u < U; u++) for (let v = 0; v < V; v++) {
+    if (sel && (u !== sel[0] || v !== sel[1])) continue;
+    if (!intact(fa, fs, u, v)) continue;
+    const { P, n } = faceCellFrame(fa, fs, u, v, W, H, D);
+    const q = norm(cross(n, pin));               // in-face tangent perpendicular to pin
+    const c = vadd(P, vscale(n, HINGE_NECK_H + HINGE_R)); // lifted off the face by the neck
+    // female U is rotated 90° about n vs the male disc (uprights straddle the pin)
+    out.push(hingeNeck(P, n), male ? hingeMale(c, pin) : hingeFemaleU(c, n, pin, q));
+  }
   return out;
 }
 
-// ---- stick parts (I / Y / T connector rods) ----------------------------
-// A "stick" is a hub with thin rods radiating to its ENDS. It is NOT a box, so
+// ---- stick parts (I connector rod) -------------------------------------
+// A "stick" is a straight rod with a connector at each END. It is NOT a box, so
 // it bypasses the cell mesher (makeStick below). Connector ops on a stick target
-// an `end` index instead of a face; each end is a tip frame {P,n,e1,e2} the same
-// male/female builders + carved socket reuse. `size` is a bounding box kept only
-// so seating + collision treat the stick as a simple block.
-const ROD_R = 0.2, HUB_R = 0.32;
-const R3 = Math.sqrt(3) / 2;                          // 0.866, for 120° Y arms
-const STICK = {
-  I: { size: [1, 1, 3], L: 1.4, dirs: [[0, 0, 1], [0, 0, -1]] },
-  T: { size: [3, 1, 2], L: 1.4, dirs: [[0, 0, -1], [1, 0, 0], [-1, 0, 0]] },
-  Y: { size: [3, 1, 3], L: 1.4, dirs: [[0, 0, 1], [-R3, 0, -0.5], [R3, 0, -0.5]] },
-};
-// public view for the UI: type -> { size, ends } (end count)
-export const STICKS = Object.fromEntries(
-  Object.entries(STICK).map(([k, v]) => [k, { size: v.size, ends: v.dirs.length }]));
+// an `end` index instead of a face; each end is a tip frame {P,n,e1,e2} the male
+// builders + the "covering" female shells reuse. `len` = half-length (center to
+// each tip, in studs). `size` is a bounding box kept only so seating + collision
+// treat the stick as a simple block.
+const ROD_R = 0.2;
+const STICK = { I: { dirs: [[0, 0, 1], [0, 0, -1]] } };
+const STICK_LEN = 1.4;                               // default half-length
+// bounding box for a given half-length (Z spans 2*len)
+export const stickSize = (len = STICK_LEN) => [1, 1, Math.max(1, Math.round(2 * len))];
+// public view for the UI
+export const STICKS = { I: { ends: 2, len: STICK_LEN } };
 
 // two perpendicular unit tangents to n
 function basis(n) {
@@ -503,12 +577,13 @@ function basis(n) {
 }
 
 // tip frames of a stick: P = tip point, n = outward arm dir, e1/e2 = tangents
-function stickEnds(type) {
-  const s = STICK[type] ?? STICK.I;
+function stickEnds(def) {
+  const s = STICK[def.stick] ?? STICK.I;
+  const len = def.len ?? STICK_LEN;
   return s.dirs.map((d) => {
     const n = norm(d);
     const [e1, e2] = basis(n);
-    return { P: vscale(n, s.L), n, e1, e2 };
+    return { P: vscale(n, len), n, e1, e2 };
   });
 }
 
@@ -542,35 +617,41 @@ function alignToDir(g, dir) {
   return rotateGeoAxis(g, cross([0, 1, 0], d), Math.acos(Math.max(-1, Math.min(1, d[1]))));
 }
 
-// connector hardware at a stick end frame, mirroring the face builders but for an
-// arbitrary tip direction. Female ball = carved socket bowl; female stud = hole.
+// connector hardware at a stick end frame, mirroring the face builders for an
+// arbitrary tip direction. Female shells COVER the mating male: ball -> a hollow
+// dome, hinge -> a U-yoke, stud -> a collar ring.
 function endConnector(op, { P, n, e1, e2 }) {
   const male = op.kind !== "female";
   const at = (g, v) => g.translate(v[0], v[1], v[2]);
   if (op.op === "ball") {
-    if (!male) return [facesToGeometry(socketFaces(P, n, e1, e2, BALL_R * 1.3, BALL_R * 1.3, BALL_R))];
+    if (male) {
+      const neck = at(alignToDir(cylinderGeometry(NECK_R, NECK_R, NECK_H, 12), n), vadd(P, vscale(n, NECK_H / 2)));
+      const ball = at(sphereGeometry(BALL_R, 16, 10), vadd(P, vscale(n, NECK_H + BALL_R)));
+      return [neck, ball];
+    }
+    // female: neck + a hollow hemisphere socket opening OUTWARD (+n) to cup a male
+    // ball. Dome aligned to -n so its open side faces away from the stick.
     const neck = at(alignToDir(cylinderGeometry(NECK_R, NECK_R, NECK_H, 12), n), vadd(P, vscale(n, NECK_H / 2)));
-    const ball = at(sphereGeometry(BALL_R, 16, 10), vadd(P, vscale(n, NECK_H + BALL_R)));
-    return [neck, ball];
+    const cup = at(alignToDir(domeShell(BALL_R + 0.06, 0.08), vscale(n, -1)), vadd(P, vscale(n, NECK_H + BALL_R)));
+    return [neck, cup];
   }
   if (op.op === "hinge") {
-    const c = vadd(P, vscale(n, HINGE_R + 0.04));
-    if (male) return [at(alignToDir(cylinderGeometry(HINGE_R, HINGE_R, HINGE_LEN, 16), e1), c)];
-    return [1, -1].map((s) =>
-      at(alignToDir(cylinderGeometry(HINGE_R, HINGE_R, CLEVIS_W, 16), e1), vadd(c, vscale(e1, s * (CLEVIS_GAP / 2 + CLEVIS_W / 2)))));
+    const c = vadd(P, vscale(n, HINGE_NECK_H + HINGE_R)); // pin = e1; lifted by the neck
+    return [hingeNeck(P, n), male ? hingeMale(c, e1) : hingeFemaleU(c, n, e1, e2)];
   }
-  // studs
-  if (!male) return [facesToGeometry(holeFaces(P, n, e1, e2, STUD_R * 1.4, STUD_R * 1.4))];
-  return [at(alignToDir(cylinderGeometry(STUD_R, STUD_R, STUD_H, 16), n), vadd(P, vscale(n, STUD_H / 2)))];
+  // studs: a transition neck off the tip, then male = peg / female = extruded ring
+  const neck = at(alignToDir(cylinderGeometry(STUD_NECK_R, STUD_NECK_R, STUD_NECK_H, 14), n), vadd(P, vscale(n, STUD_NECK_H / 2)));
+  const top = vadd(P, vscale(n, STUD_NECK_H + STUD_H / 2));
+  if (male) return [neck, at(alignToDir(cylinderGeometry(STUD_R, STUD_R, STUD_H, 16), n), top)];
+  return [neck, at(alignToDir(tubeRing(STUD_R + 0.08, STUD_R - 0.12, STUD_H, 18), n), top)];
 }
 
-// mesh a stick: a center hub + one rod per end + each end's connector hardware.
+// mesh a stick: one continuous bar (a rod per colinear end) + end connectors.
 function makeStick(def) {
-  const ends = stickEnds(def.stick);
-  const L = (STICK[def.stick] ?? STICK.I).L;
-  // hub only where arms branch (Y/T); a straight I-stick is one continuous bar.
-  const geos = ends.length > 2 ? [sphereGeometry(HUB_R, 14, 8)] : [];
+  const ends = stickEnds(def);
+  const geos = [];
   ends.forEach((f, i) => {
+    const L = Math.hypot(f.P[0], f.P[1], f.P[2]);
     const rod = alignToDir(cylinderGeometry(ROD_R, ROD_R, L, 12), f.n);
     geos.push(rod.translate(f.P[0] / 2, f.P[1] / 2, f.P[2] / 2));
     for (const op of def.ops ?? [])
@@ -783,8 +864,7 @@ export function solidCells(def) {
 }
 
 export function makeSolid(def) {
-  if (def.ring) return ringGeometry();             // stick-to-stick coupling ring
-  if (def.stick) return makeStick(def);            // I/Y/T rods, not a cell box
+  if (def.stick) return makeStick(def);            // straight connector rod, not a box
   const { W, H, D, slopeOps, pushOps, studOps, corners, faceIntact } = evalShape(def);
   // Carved female recesses: female studs -> a cylindrical anti-stud hole; female
   // balls -> a spherical socket. Each drops the flat outer cap on its boundary
