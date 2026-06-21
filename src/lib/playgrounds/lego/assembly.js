@@ -111,7 +111,7 @@ function placeAll(model) {
   const rootSpec = model.parts[rootId];
   const rd = dims(rootSpec);
   const R0 = model.rootAngle ? rotY(model.rootAngle * D2R) : I3;
-  placed.set(rootId, { id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0] });
+  placed.set(rootId, { id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0], depth: 0, mountN: [0, 1, 0] });
   order.push(rootId);
 
   for (const conn of model.connections) {
@@ -140,7 +140,7 @@ function placeAll(model) {
     // seat B flush: push out along the face normal by B's own half-extent
     const Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
 
-    placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb });
+    placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN: N });
     order.push(conn.b);
   }
 
@@ -152,7 +152,7 @@ export function resolveAssembly(model) {
   let cx = 0, cy = 0, cz = 0;
   const pieces = list.map((p) => {
     cx += p.C[0]; cy += p.C[1]; cz += p.C[2];
-    return { id: p.id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice() };
+    return { id: p.id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice(), mountN: p.mountN.slice(), depth: p.depth };
   });
   const n = pieces.length || 1;
   return { pieces, centroid: [cx / n, cy / n, cz / n] };

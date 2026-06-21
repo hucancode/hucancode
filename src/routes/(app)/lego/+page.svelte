@@ -5,10 +5,10 @@
   import { PALETTE, MODEL } from "$lib/playgrounds/lego/eagle.js";
 
   let scene = $state(null);
-  let view = $state("inspect"); // "assemble" | "inspect"
+  let view = $state("assemble"); // "assemble" | "inspect"
 
   // assemble controls
-  let spin = $state(0.0);
+  let spin = $state(0.4);
   let explode = $state(0);
   let progress = $state(1);
   let manual = $state(false);

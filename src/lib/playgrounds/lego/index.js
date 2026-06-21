@@ -1,6 +1,6 @@
 import {
   createDevice, Camera, mat4, Vec3, Euler, DEG2RAD,
-  animate, stagger, utils, eases,
+  animate, utils, eases,
 } from "$lib/engine/index.js";
 import { makeSolid } from "./solid.js";
 import { resolveAssembly, validateAssembly } from "./assembly.js";
@@ -13,12 +13,23 @@ import GRID_VERT from "./shaders/grid.vert.glsl?raw";
 import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
 
 const GROUND = { ext: 40, y: 0, step: 4, minorDiv: 4, opacity: 0.5, color: [0.45, 0.5, 0.58] };
-const FALL = 7;          // drop-in height (world units)
-const STEP = 110;        // ms between piece placements
-const DUR = 600;         // ms per piece drop
+const DUR = 2000;         // ms per piece (flight + snap)
+const DEPTH_STEP = 800;  // ms stagger per hierarchy level
+const JITTER = 600;      // ms random extra delay within a level
+const FLIGHT = 0.7;     // fraction of timeline spent flying (rest = snap)
+const SCATTER_MIN = 14, SCATTER_MAX = 24;   // start radius around origin
+const OFF_MIN = 2.5, OFF_MAX = 4.0;         // pre-snap standoff along mount normal
+const SPIN_MIN = 1.5, SPIN_MAX = 4.0;       // self-rotation during flight, in revolutions
+
+// random per-piece ease pools. flight = smooth in/out; snap = overshoot/bounce
+const FLIGHT_EASES = [eases.inOutCubic, eases.inOutQuart, eases.inOutQuint, eases.inOutSine, eases.inOutExpo];
+const SNAP_EASES = [eases.outBack, eases.outElastic, eases.outBounce, eases.outQuint, eases.outBack, eases.outCubic];
+const pick = (a) => a[(Math.random() * a.length) | 0];
+const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+const spin = () => (Math.random() < 0.5 ? -1 : 1) * rand(SPIN_MIN, SPIN_MAX) * Math.PI * 2;
 
 const config = {
-  spin: 0.0,
+  spin: 0.4,
   explode: 0,
 };
 
@@ -71,12 +82,38 @@ function buildEagle(model = activeModel) {
       };
       cache.set(key, geom);
     }
+    // final orientation (recomposes pl.model)
+    mat4.decompose(pl.model, _pos, _rot, _scale);
+    const frx = _rot.x, fry = _rot.y, frz = _rot.z;
+    const [cx, cy, cz] = pl.center;
+    const n = pl.mountN;
+    const off = rand(OFF_MIN, OFF_MAX);
+    // pre-snap target: standoff along mount normal
+    const ex = cx + n[0] * off, ey = cy + n[1] * off, ez = cz + n[2] * off;
+    // scatter start: random point + orientation around origin
+    const uu = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, sr = Math.sqrt(1 - uu * uu);
+    const radius = rand(SCATTER_MIN, SCATTER_MAX);
+    const sx = sr * Math.cos(th) * radius, sy = uu * radius, sz = sr * Math.sin(th) * radius;
+    // polar flight params (twirl around origin: orbit by whole turns, land on E)
+    const a0 = Math.atan2(sz, sx), a1 = Math.atan2(ez, ex);
+    let da = a1 - a0; da = Math.atan2(Math.sin(da), Math.cos(da));
+    da += pick([-2, -1, 1, 2]) * Math.PI * 2;
     return {
       posBuf: geom.posBuf, normBuf: geom.normBuf, count: geom.count,
       color: colorRGB(PALETTE[pl.color] ?? pl.color),
       model: pl.model,           // world transform (column-major mat4)
-      cx: pl.center[0], cy: pl.center[1], cz: pl.center[2],
+      cx, cy, cz,
+      // animation state
       _p: 0,
+      _depth: pl.depth ?? 0,
+      _delay: (pl.depth ?? 0) * DEPTH_STEP + rand(0, JITTER),
+      _nx: n[0], _ny: n[1], _nz: n[2], _off: off,
+      _frx: frx, _fry: fry, _frz: frz,                         // final euler
+      // start euler = final minus several full turns per axis -> sweeps >1 rev, lands exactly on final
+      _srx: frx + spin(), _sry: fry + spin(), _srz: frz + spin(),
+      _r0: Math.hypot(sx, sz), _a0: a0, _sy: sy,               // flight start (polar)
+      _r1: Math.hypot(ex, ez), _da: da, _ey: ey,              // flight end (polar) -> pre-snap
+      _flightEase: pick(FLIGHT_EASES), _snapEase: pick(SNAP_EASES),
     };
   });
   centroid.set(cen[0], cen[1], cen[2]);
@@ -106,8 +143,10 @@ function buildInspect(spec) {
 function play() {
   utils.remove(pieces);
   for (const p of pieces) p._p = 0;
+  // linear drive; flight + snap phases (each its own random ease) read _p in render.
+  // deeper pieces start later via per-piece _delay.
   animate(pieces, {
-    _p: 1, duration: DUR, delay: stagger(STEP), ease: eases.outBounce,
+    _p: 1, duration: DUR, delay: (p) => p._delay, ease: eases.linear,
   });
 }
 
@@ -212,6 +251,30 @@ function syncSize() {
   camera.updateProjectionMatrix();
 }
 
+// pose a flying/snapping piece into `out` from its progress _p.
+//   flight phase [0,FLIGHT): scatter -> pre-snap, orbiting origin (polar), random ease
+//   snap phase   [FLIGHT,1]: pre-snap -> final seat, random overshoot/bounce ease
+function poseModel(out, pc) {
+  const p = pc._p;
+  if (p < FLIGHT) {
+    const tf = pc._flightEase(p / FLIGHT);
+    const a = pc._a0 + pc._da * tf;
+    const r = pc._r0 + (pc._r1 - pc._r0) * tf;
+    _pos.set(r * Math.cos(a), pc._sy + (pc._ey - pc._sy) * tf, r * Math.sin(a));
+    _rot.set(
+      pc._srx + (pc._frx - pc._srx) * tf,
+      pc._sry + (pc._fry - pc._sry) * tf,
+      pc._srz + (pc._frz - pc._srz) * tf,
+    );
+  } else {
+    const ts = pc._snapEase((p - FLIGHT) / (1 - FLIGHT));
+    const k = 1 - ts;                       // standoff remaining (ts may overshoot past seat)
+    _pos.set(pc.cx + pc._nx * pc._off * k, pc.cy + pc._ny * pc._off * k, pc.cz + pc._nz * pc._off * k);
+    _rot.set(pc._frx, pc._fry, pc._frz);
+  }
+  mat4.compose(out, _pos, _rot, _scale);
+}
+
 function render() {
   if (!device || !shader) return;
   const now = performance.now();
@@ -262,12 +325,11 @@ function render() {
     const ex = config.explode;
     for (const pc of pieces) {
       if (pc._p <= 0) continue;                 // not yet placed
-      const drop = (1 - pc._p) * FALL;
-      // start from the piece's resolved world matrix, then offset translation
-      // for the drop-in animation and explode view
-      mat4.copy(_model, pc.model);
+      if (pc._p >= 1) mat4.copy(_model, pc.model);   // at rest: exact resolved matrix
+      else poseModel(_model, pc);                     // flying / snapping
+      // explode view: push each piece out from the centroid
       _model[12] += (pc.cx - centroid.x) * ex;
-      _model[13] += drop + (pc.cy - centroid.y) * ex;
+      _model[13] += (pc.cy - centroid.y) * ex;
       _model[14] += (pc.cz - centroid.z) * ex;
       p.draw(shader, {
         buffers: [pc.posBuf, pc.normBuf],
