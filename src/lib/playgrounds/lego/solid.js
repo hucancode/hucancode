@@ -1,0 +1,395 @@
+// Op-based parametric brick definition + mesher.
+//
+// A part = an integer bounding box plus a list of ops applied in order:
+//
+//   { size: [W, H, D],   // integer studs (X), plates (Y), studs (Z)
+//     ops: [ ... ] }
+//
+// OPS
+//   slope cut   { op:"slope", face, dir, length, depth, round? }
+//       face   surface that ramps down  ("x+","x-","y+","y-","z+","z-")
+//       dir    +1 forward | -1 backward; the run axis is deduced from `face`
+//              (y-face -> z, z-face -> x, x-face -> z) and dir picks which end
+//       length run in cells; the ramp ENDS at the `dir` boundary (full depth)
+//              and STARTS `length` cells inward at full height (>=1)
+//       depth  drop into the body along the face normal, in cells (>=1)
+//       round  true -> convex quarter-curve instead of a straight ramp
+//
+//   push cut    { op:"push", face, depth, width, height, at? }
+//       face   face to carve into
+//       depth  cells inward from that face (>=1)
+//       width  extent in the face's first in-plane axis (>=1)
+//       height extent in the face's second in-plane axis (>=1)
+//       at     [u,v] lower-corner index offset in those axes (default [0,0])
+//       in-plane axes: x-face -> (z,y) ; y-face -> (x,z) ; z-face -> (x,y)
+//
+//   studs       { op:"studs", face, kind?, at? }
+//       face   "y+"|"y-"|"x+"|"x-"|"z+"|"z-"
+//       kind   "male" (protrude) | "female" (clutch tube)   default male
+//       at     region selector on the face grid:
+//                undefined -> whole face
+//                { row:k }  -> one row  (constant grid-2 index)
+//                { col:i }  -> one col  (constant grid-1 index)
+//                { cell:[i,k] } -> single stud
+//       Studs are GROWN AFTER all cuts. A stud is only placed where the cell at
+//       that face survived every cut with its outer face still flat & full; cells
+//       made uneven by a slope or removed by a push are skipped automatically.
+//
+// Body centered at origin. X/Z pitch = 1 world unit/stud. Y unit = PLATE_H.
+// Cells are unit cubes (in cell space); a cell may be removed (push) or sliced
+// by one or more half-space planes (slope). Internal faces are left in place —
+// they are occluded by the opaque solid, so no face culling is needed.
+
+import {
+  Geometry, cylinderGeometry, mergeGeometries,
+} from "$lib/engine/index.js";
+
+export const PLATE_H = 0.4;
+export const BRICK_H = 1.2;            // 3 plates
+const STUD_R = 0.3, STUD_H = 0.2, TUBE_R = 0.3;
+const EPS = 1e-6;
+
+const AXES = { x: 0, y: 1, z: 2 };
+// per-axis world unit: Y measured in plates, X/Z in studs
+const unit = (ax) => (ax === 1 ? PLATE_H : 1);
+
+// ---- vector helpers --------------------------------------------------------
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const cross = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+function norm(v) { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; }
+
+// ---- convex polyhedron, stored as a list of CCW-outward polygon faces ------
+// world cube for one cell of size [W,H,D] at grid index (i,j,k)
+function cellFaces(i, j, k, W, H, D) {
+  const x0 = i - W / 2, x1 = x0 + 1;
+  const y0 = (j - H / 2) * PLATE_H, y1 = y0 + PLATE_H;
+  const z0 = k - D / 2, z1 = z0 + 1;
+  const v = [
+    [x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0],   // 0-3 z- face
+    [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1],   // 4-7 z+ face
+  ];
+  // each face CCW when viewed from outside
+  return [
+    [v[1], v[0], v[3], v[2]],   // z- (normal -z)
+    [v[4], v[5], v[6], v[7]],   // z+ (normal +z)
+    [v[0], v[4], v[7], v[3]],   // x- (normal -x)
+    [v[5], v[1], v[2], v[6]],   // x+ (normal +x)
+    [v[0], v[1], v[5], v[4]],   // y- (normal -y)
+    [v[3], v[7], v[6], v[2]],   // y+ (normal +y)
+  ];
+}
+
+// Sutherland-Hodgman clip of one polygon by half-space  n·p <= d (keep side).
+function clipPoly(poly, n, d) {
+  const out = [];
+  const N = poly.length;
+  for (let i = 0; i < N; i++) {
+    const A = poly[i], B = poly[(i + 1) % N];
+    const da = dot(n, A) - d, db = dot(n, B) - d;
+    if (da <= EPS) out.push(A);
+    if ((da < -EPS && db > EPS) || (da > EPS && db < -EPS)) {
+      const t = da / (da - db);
+      out.push([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]);
+    }
+  }
+  return out;
+}
+
+// order a set of coplanar points into a CCW ring whose face normal == n
+function orderRing(pts, n) {
+  // dedupe
+  const uniq = [];
+  for (const p of pts) {
+    if (!uniq.some((q) => Math.abs(q[0] - p[0]) < 1e-5 && Math.abs(q[1] - p[1]) < 1e-5 && Math.abs(q[2] - p[2]) < 1e-5))
+      uniq.push(p);
+  }
+  if (uniq.length < 3) return null;
+  const c = [0, 0, 0];
+  for (const p of uniq) { c[0] += p[0]; c[1] += p[1]; c[2] += p[2]; }
+  c[0] /= uniq.length; c[1] /= uniq.length; c[2] /= uniq.length;
+  // plane basis
+  let u = Math.abs(n[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  u = norm(cross(n, u));
+  const w = cross(n, u);
+  uniq.sort((a, b) => {
+    const da = sub(a, c), db = sub(b, c);
+    return Math.atan2(dot(da, w), dot(da, u)) - Math.atan2(dot(db, w), dot(db, u));
+  });
+  return uniq;
+}
+
+// clip a polyhedron (face list) by half-space n·p <= d; returns new face list.
+// The cut surface (cap) is rebuilt from every kept vertex lying ON the plane —
+// this is robust even when the plane passes exactly through cube corners (the
+// common integer-slope case), where edge-crossing detection alone finds none.
+function clipSolid(faces, n, d) {
+  const next = [], capPts = [];
+  for (const f of faces) {
+    const poly = clipPoly(f, n, d);
+    if (poly.length < 3) continue;
+    next.push(poly);
+    for (const p of poly) if (Math.abs(dot(n, p) - d) < 1e-5) capPts.push(p);
+  }
+  if (capPts.length >= 3) {
+    const ring = orderRing(capPts, n);   // cap faces toward +n (outward)
+    if (ring) next.push(ring);
+  }
+  return next;
+}
+
+// the run axis is DEDUCED from the face: first of [z,x,y] that isn't the face
+// axis (y-face -> z, z-face -> x, x-face -> z).
+const RUN_AXIS = { 0: 2, 1: 2, 2: 0 };
+
+// ---- slope op -> per-cell clip plane ---------------------------------------
+// A slope/curve cut ALWAYS ends at a BOUNDARY (low, full `depth` drop) and runs
+// `length` cells inward, where it starts at full height. The run axis is deduced
+// from `face`; `dir` (+1 fwd / -1 back) picks which boundary along it the ramp
+// descends to; `length` decides where it starts (length = whole axis ->
+// edge-to-edge slope). Returns (idx) -> {n,d} | null clip half-space per cell.
+function slopePlanes(op, W, H, D) {
+  const dims = [W, H, D];
+  const fa = AXES[op.face[0]];                 // face axis index
+  const fs = op.face[1] === "+" ? 1 : -1;      // outer side sign
+  const la = RUN_AXIS[fa];                     // run axis, deduced from face
+  const ls = op.dir >= 0 ? 1 : -1;             // boundary the ramp descends to
+  const Dp = Math.max(1, op.depth | 0);
+  const fU = unit(fa), lU = unit(la);
+  const faceLevel = fs * (dims[fa] / 2) * fU;  // world coord of the face
+
+  const dim = dims[la];
+  const L = Math.max(1, Math.min(op.length | 0 || dim, dim));
+  // high (start) grid boundary, `length` cells in from the `dir` boundary
+  const start = ls > 0 ? dim - L : L;
+  const lHalf = dim / 2;
+  const lCoord = (b) => (b - lHalf) * lU;        // world coord of boundary b
+  const tAt = (b) => (ls > 0 ? b - start : start - b);  // cells from start toward dir
+
+  // drop(t): descent from the face over t in [0,L] cells from the start
+  const drop = (t) => {
+    const x = Math.max(0, Math.min(1, t / L));
+    const r = op.round ? (1 - Math.cos(x * Math.PI / 2)) : x;
+    return r * Dp * fU;
+  };
+
+  return (idx) => {
+    const li = idx[la];
+    const dA = drop(tAt(li)), dB = drop(tAt(li + 1));
+    if (dA < EPS && dB < EPS) return null;       // wrong side of center: full
+    // surface level (along face normal) at the cell's two `la` boundaries
+    const sA = faceLevel - fs * dA, sB = faceLevel - fs * dB;
+    const cA = lCoord(li), cB = lCoord(li + 1);
+    // plane through (cA,sA),(cB,sB) in the (la,fa) plane; keep material below it
+    const dl = cB - cA, df = sB - sA;
+    let nl = -df * fs, nf = dl * fs;
+    if (nf * fs < 0) { nl = -nl; nf = -nf; }      // outward along +fs
+    const n = [0, 0, 0]; n[la] = nl; n[fa] = nf;
+    const nn = norm(n);
+    const pt = [0, 0, 0]; pt[la] = cA; pt[fa] = sA;
+    return { n: nn, d: dot(nn, pt) };
+  };
+}
+
+// ---- push op -> removed-cell test ------------------------------------------
+function pushTest(op, W, H, D) {
+  const dims = [W, H, D];
+  const fa = AXES[op.face[0]];
+  const fs = op.face[1] === "+" ? 1 : -1;
+  // in-plane axes per face axis
+  const planeAxes = fa === 0 ? [2, 1] : fa === 1 ? [0, 2] : [0, 1]; // [width, height]
+  const [ua, va] = planeAxes;
+  const depth = Math.max(1, op.depth | 0);
+  const wN = Math.max(1, op.width | 0);
+  const hN = Math.max(1, op.height | 0);
+  const [au, av] = op.at ?? [0, 0];
+  // face-normal cell range
+  const f0 = fs > 0 ? dims[fa] - depth : 0;
+  const f1 = fs > 0 ? dims[fa] - 1 : depth - 1;
+  return (idx) => {
+    const fi = idx[fa]; if (fi < f0 || fi > f1) return false;
+    const ui = idx[ua]; if (ui < au || ui > au + wN - 1) return false;
+    const vi = idx[va]; if (vi < av || vi > av + hN - 1) return false;
+    return true;
+  };
+}
+
+// ---- studs -----------------------------------------------------------------
+const studGeo = (r = STUD_R, h = STUD_H, radial = 20) => cylinderGeometry(r, r, h, radial);
+
+function rotateGeo(g, axis, ang) {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  for (const key of ["position", "normal"]) {
+    const a = g.attributes[key].array;
+    for (let i = 0; i < a.length; i += 3) {
+      const x = a[i], y = a[i + 1], z = a[i + 2];
+      if (axis === "y") { a[i] = c * x + s * z; a[i + 2] = -s * x + c * z; }
+      else if (axis === "z") { a[i] = c * x - s * y; a[i + 1] = s * x + c * y; }
+      else { a[i + 1] = c * y - s * z; a[i + 2] = s * y + c * z; }
+    }
+  }
+  return g;
+}
+
+// build studs for a studs-op. `intact(fa,fs,u,v)` reports whether the boundary
+// cell at that face position survived every cut with a flat, full outer face;
+// studs are only grown there, so cells sliced by a slope or removed by a push
+// are skipped automatically.
+function buildStuds(op, W, H, D, intact) {
+  const out = [];
+  const fa = AXES[op.face[0]];
+  const fs = op.face[1] === "+" ? 1 : -1;
+  const female = op.kind === "female";
+  const hw = W / 2, hd = D / 2, hh = (H / 2) * PLATE_H;
+
+  // selector over the face grid (two in-plane axes)
+  const wantTop = (i, k) => {
+    if (!op.at) return true;
+    if ("cell" in op.at) return i === op.at.cell[0] && k === op.at.cell[1];
+    if ("row" in op.at) return k === op.at.row;
+    if ("col" in op.at) return i === op.at.col;
+    return true;
+  };
+
+  if (fa === 1) {                                  // top / bottom: X*Z grid
+    const dir = fs;
+    for (let i = 0; i < W; i++) for (let k = 0; k < D; k++) {
+      if (!wantTop(i, k)) continue;
+      if (!intact(fa, fs, i, k)) continue;         // skip uneven / carved cells
+      const x = i + 0.5 - hw, z = k + 0.5 - hd;
+      if (female) {
+        const tubeH = PLATE_H * 0.7;
+        const y = dir * (hh - tubeH / 2);
+        out.push(cylinderGeometry(TUBE_R, TUBE_R, tubeH, 14).translate(x, y, z));
+      } else {
+        const y = dir * (hh + STUD_H / 2);
+        const s = studGeo();
+        if (dir < 0) rotateGeo(s, "x", Math.PI);
+        out.push(s.translate(x, y, z));
+      }
+    }
+    return out;
+  }
+
+  // side faces: a single row of studs along the horizontal in-plane axis, at
+  // mid-height. (vertical SNOT columns are out of scope for v1)
+  const along = fa === 0 ? 2 : 0;                  // x-face -> z, z-face -> x
+  const n = along === 0 ? W : D;
+  const jMid = Math.min(H - 1, Math.floor(H / 2)); // layer holding y=0
+  for (let t = 0; t < n; t++) {
+    if (op.at && "cell" in op.at && t !== op.at.cell[0]) continue;
+    if (!intact(fa, fs, t, jMid)) continue;        // skip uneven / carved cells
+    const s = studGeo();
+    let x = 0, z = 0;
+    if (fa === 0) {                                // left/right
+      x = fs * (hw + STUD_H / 2); z = t + 0.5 - hd;
+      rotateGeo(s, "z", -fs * Math.PI / 2);
+    } else {                                       // front/back
+      z = fs * (hd + STUD_H / 2); x = t + 0.5 - hw;
+      rotateGeo(s, "x", fs * Math.PI / 2);
+    }
+    out.push(s.translate(x, 0, z));
+  }
+  return out;
+}
+
+// two polygons share the same vertex set (order-independent, within EPS)
+function samePoly(a, b) {
+  if (a.length !== b.length) return false;
+  return a.every((p) => b.some((q) =>
+    Math.abs(p[0] - q[0]) < 1e-5 && Math.abs(p[1] - q[1]) < 1e-5 && Math.abs(p[2] - q[2]) < 1e-5));
+}
+
+// index of the outer face in cellFaces() output, per face axis (+1 for + side)
+const OUTER_FACE = { 0: 2, 1: 4, 2: 0 };
+
+// ---- face list -> Geometry -------------------------------------------------
+function facesToGeometry(faceList) {
+  const pos = [], nor = [];
+  for (const f of faceList) {
+    if (f.length < 3) continue;
+    const n = norm(cross(sub(f[1], f[0]), sub(f[2], f[0])));
+    for (let i = 1; i < f.length - 1; i++) {
+      for (const p of [f[0], f[i], f[i + 1]]) { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); }
+    }
+  }
+  const uv = new Float32Array((pos.length / 3) * 2);
+  return new Geometry()
+    .setAttribute("position", new Float32Array(pos), 3)
+    .setAttribute("normal", new Float32Array(nor), 3)
+    .setAttribute("uv", uv, 2);
+}
+
+// ---- main entry ------------------------------------------------------------
+export function makeSolid(def) {
+  const W = Math.max(1, (def.size?.[0] ?? 2) | 0);
+  const H = Math.max(1, (def.size?.[1] ?? 3) | 0);
+  const D = Math.max(1, (def.size?.[2] ?? 2) | 0);
+  const ops = def.ops ?? [];
+
+  const dims = [W, H, D];
+  // CUTS FIRST: push + slope are gathered and applied before any stud grows, so
+  // studs see the latest (post-cut) shape regardless of op list order.
+  const slopeOps = ops.filter((o) => o.op === "slope").map((o) => slopePlanes(o, W, H, D));
+  const pushOps = ops.filter((o) => o.op === "push").map((o) => pushTest(o, W, H, D));
+  const studOps = ops.filter((o) => o.op === "studs");
+
+  // does the boundary cell at face (fa,fs), in-plane index (u,v), still have a
+  // flat, full outer face after every cut? used to skip studs on uneven cells.
+  function faceIntact(fa, fs, u, v) {
+    const idx = [0, 0, 0];
+    idx[fa] = fs > 0 ? dims[fa] - 1 : 0;
+    const pax = fa === 0 ? [2, 1] : fa === 1 ? [0, 2] : [0, 1];
+    idx[pax[0]] = u; idx[pax[1]] = v;
+    if (idx[pax[0]] < 0 || idx[pax[0]] >= dims[pax[0]]) return false;
+    if (idx[pax[1]] < 0 || idx[pax[1]] >= dims[pax[1]]) return false;
+    if (pushOps.some((t) => t(idx))) return false;            // carved away
+    const orig = cellFaces(idx[0], idx[1], idx[2], W, H, D)[OUTER_FACE[fa] + (fs > 0 ? 1 : 0)];
+    let faces = cellFaces(idx[0], idx[1], idx[2], W, H, D);
+    for (const plane of slopeOps) {
+      const pl = plane(idx);
+      if (pl) faces = clipSolid(faces, pl.n, pl.d);
+      if (!faces.length) return false;
+    }
+    return faces.some((f) => samePoly(f, orig));              // outer face survived intact
+  }
+
+  const allFaces = [];
+  for (let i = 0; i < W; i++)
+    for (let j = 0; j < H; j++)
+      for (let k = 0; k < D; k++) {
+        const idx = [i, j, k];
+        if (pushOps.some((t) => t(idx))) continue;       // carved away
+        let faces = cellFaces(i, j, k, W, H, D);
+        for (const plane of slopeOps) {
+          const pl = plane(idx);
+          if (pl) faces = clipSolid(faces, pl.n, pl.d);
+          if (!faces.length) break;
+        }
+        if (faces.length) allFaces.push(...faces);
+      }
+
+  const geos = [facesToGeometry(allFaces)];
+  for (const op of studOps) geos.push(...buildStuds(op, W, H, D, faceIntact));
+  return mergeGeometries(geos);
+}
+
+// ---- preset helpers for the playground UI ----------------------------------
+// quick builders for common parts in the new op model
+export const PRESETS = {
+  brick: (W, D) => ({ size: [W, 3, D], ops: [{ op: "studs", face: "y+" }, { op: "studs", face: "y-", kind: "female" }] }),
+  plate: (W, D) => ({ size: [W, 1, D], ops: [{ op: "studs", face: "y+" }, { op: "studs", face: "y-", kind: "female" }] }),
+  tile: (W, D) => ({ size: [W, 1, D], ops: [] }),
+  slope: (W, D) => ({ size: [W, 3, D], ops: [
+    { op: "slope", face: "y+", dir: 1, length: D - 1, depth: 2 },
+    { op: "studs", face: "y+", at: { row: 0 } },
+  ] }),
+  curve: (W, D) => ({ size: [W, 3, D], ops: [
+    { op: "slope", face: "y+", dir: 1, length: D, depth: 2, round: true },
+    { op: "studs", face: "y+", at: { row: 0 } },
+  ] }),
+};
