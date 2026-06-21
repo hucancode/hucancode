@@ -239,6 +239,36 @@ function pushTest(op, W, H, D) {
   };
 }
 
+// ---- rounded corners -> vertical clip half-spaces --------------------------
+// Round the 4 vertical edges of the box. The footprint becomes a rounded
+// rectangle (convex): the straight faces come from the cell cubes, these chords
+// add the corner arcs. radius defaults to half a stud, clamped to min(hw,hd) —
+// so a 1x1 (hw=hd=0.5) rounds to a full cylinder. Planes are Y-invariant, so the
+// whole height of every cell is clipped. `def.round` enables; `def.cornerR`
+// (studs) and `def.cornerSeg` tune radius and smoothness.
+function cornerPlanes(def, W, D) {
+  if (!def.round) return [];
+  const hw = W / 2, hd = D / 2;
+  const r = Math.min(hw, hd, def.cornerR ?? 0.5);
+  if (r <= EPS) return [];
+  const seg = Math.max(2, (def.cornerSeg | 0) || 8);
+  const planes = [];
+  for (const sx of [1, -1]) for (const sz of [1, -1]) {
+    const cx = sx * (hw - r), cz = sz * (hd - r);   // arc center, inset from corner
+    let px = cx + sx * r, pz = cz;                   // phi=0: tangent to the x face
+    for (let i = 1; i <= seg; i++) {
+      const phi = (i / seg) * (Math.PI / 2);
+      const qx = cx + sx * r * Math.cos(phi), qz = cz + sz * r * Math.sin(phi);
+      let nx = qz - pz, nz = -(qx - px);             // perp to the chord
+      if (nx * ((px + qx) / 2 - cx) + nz * ((pz + qz) / 2 - cz) < 0) { nx = -nx; nz = -nz; }
+      const len = Math.hypot(nx, nz) || 1; nx /= len; nz /= len;
+      planes.push({ n: [nx, 0, nz], d: nx * px + nz * pz });   // keep material inside
+      px = qx; pz = qz;
+    }
+  }
+  return planes;
+}
+
 // ---- studs -----------------------------------------------------------------
 const studGeo = (r = STUD_R, h = STUD_H, radial = 20) => cylinderGeometry(r, r, h, radial);
 
@@ -359,6 +389,10 @@ export function makeSolid(def) {
   const slopeOps = ops.filter((o) => o.op === "slope").map((o) => slopePlanes(o, W, H, D));
   const pushOps = ops.filter((o) => o.op === "push").map((o) => pushTest(o, W, H, D));
   const studOps = ops.filter((o) => o.op === "studs");
+  // rounded vertical corners are a property of the base box, applied to every
+  // cell. Studs ignore them (faceIntact below uses only slope/push), so a 1x1
+  // cylinder still keeps its stud.
+  const corners = cornerPlanes(def, W, D);
 
   // does the boundary cell at face (fa,fs), in-plane index (u,v), still have a
   // flat, full outer face after every cut? used to skip studs on uneven cells.
@@ -394,6 +428,10 @@ export function makeSolid(def) {
             if (!faces.length) break;
           }
           if (!faces.length) break;
+        }
+        for (const pl of corners) {
+          if (!faces.length) break;
+          faces = clipSolid(faces, pl.n, pl.d);
         }
         if (faces.length) allFaces.push(...faces);
       }

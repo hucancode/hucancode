@@ -430,6 +430,12 @@
             <input type="range" min="1" max="12" step="1" bind:value={spec.size[1]} /><output>{spec.size[1]}</output></label>
           <label><span>Depth Z</span>
             <input type="range" min="1" max="8" step="1" bind:value={spec.size[2]} /><output>{spec.size[2]}</output></label>
+          <label><span>Round corners</span><input type="checkbox" bind:checked={spec.round} /></label>
+          {#if spec.round}
+            <label><span>Radius</span>
+              <input type="range" min="0.1" max="2" step="0.05" value={spec.cornerR ?? 0.5}
+                oninput={(e) => (spec.cornerR = +e.currentTarget.value)} /><output>{(spec.cornerR ?? 0.5).toFixed(2)}</output></label>
+          {/if}
         </fieldset>
 
         <fieldset>

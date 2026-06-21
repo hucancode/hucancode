@@ -83,6 +83,21 @@ function halfAlong(d, R, w) {
   return d.hw * Math.abs(dot3(w, ex)) + d.hh * Math.abs(dot3(w, ey)) + d.hd * Math.abs(dot3(w, ez));
 }
 
+// Stud-grid snap along an in-plane mount axis. Studs sit on a unit grid whose
+// phase depends on parity: an N-stud span has its studs at half-integer offsets
+// from the part center when N is even, integer when N is odd. Seating B centered
+// on A only lands on a stud when A and B have the SAME parity along that axis;
+// when they differ the contact falls in the gap between two studs (e.g. a 1x1 on
+// a 1x2). Correct by a half-stud so B's stud grid aligns with A's.
+// Only horizontal stud axes (X/Z) are snapped; the vertical Y axis is plates, not
+// studs, so it is left alone.
+function studSnap(axis, A, Rb, bd) {
+  if (Math.abs(axis[1]) > 0.5) return 0;                 // vertical (plate) axis
+  const aN = Math.round(2 * halfAlong(A.d, A.R, axis));  // A's stud count along axis
+  const bN = Math.round(2 * halfAlong(bd, Rb, axis));    // B's stud count along axis
+  return ((aN - bN) & 1) ? 0.5 : 0;                      // differ in parity -> half-stud
+}
+
 export function resolveAssembly(model) {
   const placed = new Map();
   const order = [];
@@ -108,10 +123,13 @@ export function resolveAssembly(model) {
     const r = conn.rot ?? [0, conn.angle ?? 0, 0];
     const Rb = mul3(rotX(r[0] * D2R), mul3(rotY(r[1] * D2R), rotZ(r[2] * D2R)));
 
-    // 2) contact point: A's center -> out to its `on` face -> slide by `off`
+    // 2) contact point: A's center -> out to its `on` face -> slide by `off`.
+    // Base seat snaps to A's stud grid (parity-aware) so B clutches a stud
+    // instead of landing between two; `off` slides in whole studs on top.
     const [du, dv] = conn.off ?? [0, 0];
+    const su = studSnap(F.u, A, Rb, bd), sv = studSnap(F.v, A, Rb, bd);
     const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))),
-                   add(scale3(F.u, du), scale3(F.v, dv)));
+                   add(scale3(F.u, du + su), scale3(F.v, dv + sv)));
 
     // 3) seat B flush: push out along the face normal by B's own half-extent
     const Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
