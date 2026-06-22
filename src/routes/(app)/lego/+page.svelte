@@ -2,7 +2,7 @@
   import { browser } from "$app/environment";
   import Scene from "$lib/components/lego.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
-  import { PALETTE, MODEL } from "$lib/playgrounds/lego/eagle.js";
+  import { PALETTE, MODEL } from "$lib/playgrounds/lego/dragon.js";
   import { cycleEdges, connMode } from "$lib/playgrounds/lego/assembly.js";
   import { STICKS, stickSize } from "$lib/playgrounds/lego/solid.js";
 

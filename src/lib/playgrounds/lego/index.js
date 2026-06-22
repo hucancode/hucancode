@@ -4,7 +4,7 @@ import {
 } from "$lib/engine/index.js";
 import { makeSolid } from "./solid.js";
 import { resolveAssembly } from "./assembly.js";
-import { MODEL, PALETTE, VIEW } from "./eagle.js";
+import { MODEL, PALETTE, VIEW } from "./dragon.js";
 import LEGO_WGSL from "./shaders/lego.wgsl?raw";
 import VERT from "./shaders/lego.vert.glsl?raw";
 import FRAG from "./shaders/lego.frag.glsl?raw";
