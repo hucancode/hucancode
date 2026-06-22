@@ -720,16 +720,23 @@ function endConnector(op, { P, n, e1, e2 }) {
 }
 
 // mesh a stick: one continuous bar (a rod per colinear end) + end connectors.
-function makeStick(def) {
+// opts.only / opts.skip mirror makeSolid: isolate / omit one end connector op.
+function makeStick(def, opts = {}) {
   const ends = stickEnds(def);
+  if (opts.only != null) {
+    const o = (def.ops ?? [])[opts.only];
+    return mergeGeometries(endConnector(o, ends[o.end ?? 0]));
+  }
   const geos = [];
   ends.forEach((f, i) => {
     const L = Math.hypot(f.P[0], f.P[1], f.P[2]);
     const rod = alignToDir(cylinderGeometry(ROD_R, ROD_R, L, 12), f.n);
     geos.push(rod.translate(f.P[0] / 2, f.P[1] / 2, f.P[2] / 2));
-    for (const op of def.ops ?? [])
+    (def.ops ?? []).forEach((op, oi) => {
+      if (oi === opts.skip) return;
       if ((op.end ?? 0) === i && (op.op === "studs" || op.op === "ball" || op.op === "hinge"))
         geos.push(...endConnector(op, f));
+    });
   });
   return mergeGeometries(geos);
 }
@@ -892,9 +899,20 @@ function evalShape(def) {
 }
 
 
-export function makeSolid(def) {
-  if (def.stick) return makeStick(def);            // straight connector rod, not a box
+// opts (for splitting a hinged part into "body" + "linked knuckle" render pieces):
+//   only — op index: build ONLY that joint op's hardware (the knuckle), nothing else
+//   skip — op index: build everything EXCEPT that op (the body, minus its knuckle)
+export function makeSolid(def, opts = {}) {
+  if (def.stick) return makeStick(def, opts);      // straight connector rod, not a box
   const { W, H, D, slopeOps, pushOps, studOps, corners, faceIntact } = evalShape(def);
+  if (opts.only != null) {                          // just the linked knuckle / joint
+    const o = (def.ops ?? [])[opts.only];
+    const g = o?.op === "ball" ? buildBalls(o, W, H, D, faceIntact) : buildHinge(o, W, H, D, faceIntact);
+    return g.length ? mergeGeometries(g) : new Geometry()
+      .setAttribute("position", new Float32Array(0), 3)
+      .setAttribute("normal", new Float32Array(0), 3)
+      .setAttribute("uv", new Float32Array(0), 2);
+  }
   // Carved female recesses: female studs -> a cylindrical anti-stud hole; female
   // balls -> a spherical socket. Each drops the flat outer cap on its boundary
   // cell, then adds its own recess geometry. `build(i,j,k,fa,fs,W,H,D)` returns
@@ -944,10 +962,11 @@ export function makeSolid(def) {
   const geos = [facesToGeometry(allFaces)];
   for (const op of studOps) if (op.kind !== "female") geos.push(...buildStuds(op, W, H, D, faceIntact));
   // joint hardware: ball + hinge ops emit additive geometry on their face cells.
-  for (const op of def.ops ?? []) {
+  (def.ops ?? []).forEach((op, i) => {
+    if (i === opts.skip) return;                    // this knuckle is a separate piece
     if (op.op === "ball") geos.push(...buildBalls(op, W, H, D, faceIntact));
     else if (op.op === "hinge") geos.push(...buildHinge(op, W, H, D, faceIntact));
-  }
+  });
   return mergeGeometries(geos);
 }
 

@@ -67,10 +67,10 @@ function buildEagle(model = activeModel) {
   const cache = new Map();
   const { pieces: placed, centroid: cen } = resolveAssembly(model);
   pieces = placed.map((pl) => {
-    const key = JSON.stringify(pl.spec);
+    const key = JSON.stringify(pl.spec) + "|" + JSON.stringify(pl.mesh ?? null);
     let geom = cache.get(key);
     if (!geom) {
-      const g = makeSolid(pl.spec);
+      const g = makeSolid(pl.spec, pl.mesh ?? undefined);
       geom = {
         posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
         normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),

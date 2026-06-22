@@ -113,12 +113,12 @@ export function connMode(conn) {
   return conn.joint && conn.joint !== "none" ? "free" : "grid";
 }
 
-// Pick the joint op (ball/hinge) a connection links on a part: the explicit index
-// if it points at one of that type, else the first op of that type, else null.
-function jointOpOf(spec, idx, type) {
+// Index of the joint op (ball/hinge) a connection links on a part: the explicit
+// index if it points at one of that type, else the first op of that type, else -1.
+function jointIdxOf(spec, idx, type) {
   const ops = spec?.ops ?? [];
-  if (idx != null && ops[idx]?.op === type) return ops[idx];
-  return ops.find((o) => o.op === type) ?? null;
+  if (idx != null && ops[idx]?.op === type) return idx;
+  return ops.findIndex((o) => o.op === type);
 }
 
 // Joint articulation for a connection, expressed in the mount frame (U,V,N):
@@ -192,6 +192,7 @@ export function cycleEdges(model) {
 function placeAll(model) {
   const placed = new Map();
   const order = [];
+  const ghosts = [];           // render-only extra pieces (e.g. a hinge's seated knuckle)
 
   // Cycle-forming connections are ignored entirely (their `b` keeps no parent
   // from them, so it may itself become a root).
@@ -233,24 +234,38 @@ function placeAll(model) {
     //   free — articulated joint: B's joint center is mated to A's joint center
     //          (a shared hinge pin / ball center) and swings about THAT point.
     const mode = connMode(conn);
-    let Rb, Cb, mountN = N;
+    let Rb, Cb, mountN = N, mesh = null, ghost = null;
     const jt = conn.joint === "ball" ? "ball" : "hinge";
-    const aOp = mode === "free" ? jointOpOf(A.spec, conn.ah, jt) : null;
-    const bOp = mode === "free" ? jointOpOf(Bspec, conn.bh, jt) : null;
+    const aIdx = mode === "free" ? jointIdxOf(A.spec, conn.ah, jt) : -1;
+    const bIdx = mode === "free" ? jointIdxOf(Bspec, conn.bh, jt) : -1;
+    const aOp = aIdx >= 0 ? A.spec.ops[aIdx] : null;
+    const bOp = bIdx >= 0 ? Bspec.ops[bIdx] : null;
     if (mode === "free" && aOp && bOp) {
       const fa = jointFrame(A.spec, aOp), fb = jointFrame(Bspec, bOp);   // local frames
       const nA = norm3(apply3(A.R, fa.n)), pinA = norm3(apply3(A.R, fa.pin));
-      const qA = norm3(cross3(nA, pinA));
       const pivot = add(A.C, apply3(A.R, fa.center));      // shared hinge pin / ball center
-      // seat B so its joint faces A's (normal opposes, pin parallel) and its joint
-      // center lands on the pivot. Rb maps B's local joint basis -> this world basis.
+      // base seat: B's joint faces A's (normal opposes, pin parallel), joint center
+      // on the pivot. seat(R) returns the center so B's local joint center -> pivot.
       const nt = scale3(nA, -1), qt = cross3(nt, pinA);
-      const qb = cross3(fb.n, fb.pin);
-      Rb = mul3(matCols(nt, pinA, qt), matRows(fb.n, fb.pin, qb));
-      Cb = sub3(pivot, apply3(Rb, fb.center));
-      const Rj = jointRot(conn, pinA, qA, nA);             // pitch about pin, yaw about normal
-      if (Rj !== I3) { Rb = mul3(Rj, Rb); Cb = add(pivot, apply3(Rj, sub3(Cb, pivot))); }
-      mountN = nA;
+      const R0 = mul3(matCols(nt, pinA, qt), matRows(fb.n, fb.pin, cross3(fb.n, fb.pin)));
+      const seat = (R) => sub3(pivot, apply3(R, fb.center));
+      if (jt === "hinge") {
+        // Two pieces: the KNUCKLE stays interlocked (swings about the pin only); the
+        // BODY additionally yaws about the joint normal — "rotate the block, not the
+        // hinge". Both pivot about the shared ring center.
+        const pitch = (conn.jpitch ?? conn.jangle ?? 0) * D2R, yaw = (conn.jyaw ?? 0) * D2R;
+        const Rring = pitch ? mul3(rotAxis(pinA, pitch), R0) : R0;
+        // yaw the block first (about the normal), THEN fold the hinge (about the pin)
+        const Ryaw = yaw ? mul3(rotAxis(nA, yaw), R0) : R0;
+        const Rbody = pitch ? mul3(rotAxis(pinA, pitch), Ryaw) : Ryaw;
+        Rb = Rbody; Cb = seat(Rbody); mountN = nA;
+        mesh = { skip: bIdx };                             // body omits the linked knuckle
+        ghost = { id: `${conn.b}#knuckle`, spec: Bspec, def: Bspec, d: bd, R: Rring, C: seat(Rring),
+          depth: (A.depth ?? 0) + 1, mountN: nA, mesh: { only: bIdx } };
+      } else {
+        const Rj = jointRot(conn, pinA, norm3(qt), nA);    // ball: whole B spins about center
+        Rb = Rj !== I3 ? mul3(Rj, R0) : R0; Cb = seat(Rb); mountN = nA;
+      }
     } else if (mode === "free") {
       // fallback (parts lack a matching joint op): flush seat, pivot at joint center
       Rb = conn.local ? A.R : I3;
@@ -267,11 +282,12 @@ function placeAll(model) {
       Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));       // flush along normal
     }
 
-    placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN });
+    placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN, mesh });
     order.push(conn.b);
+    if (ghost) ghosts.push(ghost);
   }
 
-  return { placed, list: order.map((id) => placed.get(id)) };
+  return { placed, list: [...order.map((id) => placed.get(id)), ...ghosts] };
 }
 
 export function resolveAssembly(model) {
@@ -279,7 +295,7 @@ export function resolveAssembly(model) {
   let cx = 0, cy = 0, cz = 0;
   const pieces = list.map((p) => {
     cx += p.C[0]; cy += p.C[1]; cz += p.C[2];
-    return { id: p.id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice(), mountN: p.mountN.slice(), depth: p.depth };
+    return { id: p.id, spec: p.spec, color: p.spec.color, model: mat4(p.R, p.C), center: p.C.slice(), mountN: p.mountN.slice(), depth: p.depth, mesh: p.mesh ?? null };
   });
   const n = pieces.length || 1;
   return { pieces, centroid: [cx / n, cy / n, cz / n] };
