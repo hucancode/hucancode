@@ -3,7 +3,7 @@ import {
   animate, utils, eases,
 } from "$lib/engine/index.js";
 import { makeSolid } from "./solid.js";
-import { resolveAssembly, validateAssembly } from "./assembly.js";
+import { resolveAssembly } from "./assembly.js";
 import { MODEL, PALETTE, VIEW } from "./eagle.js";
 import LEGO_WGSL from "./shaders/lego.wgsl?raw";
 import VERT from "./shaders/lego.vert.glsl?raw";
@@ -29,7 +29,7 @@ const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 const spin = () => (Math.random() < 0.5 ? -1 : 1) * rand(SPIN_MIN, SPIN_MAX) * Math.PI * 2;
 
 const config = {
-  spin: 0.4,
+  spin: 0.0,
   explode: 0,
 };
 
@@ -66,10 +66,6 @@ function buildEagle(model = activeModel) {
   disposePieces();
   const cache = new Map();
   const { pieces: placed, centroid: cen } = resolveAssembly(model);
-  if (model.validate) {
-    const rep = validateAssembly(model);
-    if (!rep.ok) console.info("[lego] assembly report", rep);
-  }
   pieces = placed.map((pl) => {
     const key = JSON.stringify(pl.spec);
     let geom = cache.get(key);

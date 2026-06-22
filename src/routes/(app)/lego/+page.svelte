@@ -3,7 +3,7 @@
   import Scene from "$lib/components/lego.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import { PALETTE, MODEL } from "$lib/playgrounds/lego/eagle.js";
-  import { cycleEdges } from "$lib/playgrounds/lego/assembly.js";
+  import { cycleEdges, connMode } from "$lib/playgrounds/lego/assembly.js";
   import { STICKS, stickSize } from "$lib/playgrounds/lego/solid.js";
 
   const range = (n) => Array.from({ length: n }, (_, i) => i);
@@ -13,7 +13,7 @@
   let view = $state("assemble"); // "assemble" | "inspect"
 
   // assemble controls
-  let spin = $state(0.4);
+  let spin = $state(0.0);
   let explode = $state(0);
   let progress = $state(1);
   let manual = $state(false);
@@ -85,11 +85,11 @@
     push: () => ({ op: "push", face: "z+", depth: 1, width: 1, height: 1, at: [0, 0] }),
     studs: () => ({ op: "studs", face: "y+", kind: "male" }),
     ball: () => ({ op: "ball", face: "y+", kind: "male", at: { cell: [0, 0] } }),
-    hinge: () => ({ op: "hinge", face: "y+", pin: "x", kind: "male", at: { cell: [0, 0] } }),
+    hinge: () => ({ op: "hinge", face: "y+", pin: "x", kind: "male", shape: "O", at: { cell: [0, 0] } }),
   };
   const opAdd = (spec, t) => {
     // on a stick, connectors target an `end` index instead of a box face
-    const op = spec.stick ? { op: t, end: 0, kind: "male" } : OP_DEFAULTS[t]();
+    const op = spec.stick ? { op: t, end: 0, kind: "male", ...(t === "hinge" ? { shape: "O" } : {}) } : OP_DEFAULTS[t]();
     spec.ops = [...spec.ops, op];
   };
   const opRemove = (spec, i) => { spec.ops = spec.ops.filter((_, j) => j !== i); };
@@ -212,13 +212,30 @@
     c.off = o;
   };
 
-  // joint articulation: ball = free jrot[u,v,n]°, hinge = jangle° on one axis
-  const JOINTS = ["none", "ball", "hinge"];
-  const HINGE_AXES = ["u", "v", "n"];
+  // where B attaches drives the rotation logic: "face" = rigid stud clutch (90°
+  // rot + parity snap); "hinge" = articulated pivot (continuous joint). Exclusive.
+  const ATTACH = ["face", "hinge"];
+  const FREE_JOINTS = ["hinge", "ball"];
+  // a hinge attach needs a hinge connector op on BOTH linked parts
+  const hingesOf = (id) => (model.parts[id]?.ops ?? [])
+    .map((o, i) => ({ i, o })).filter((x) => x.o.op === "hinge");
+  const hasHinge = (id) => hingesOf(id).length > 0;
+  const canHinge = (c) => hasHinge(c.a) && hasHinge(c.b);
+  const hingeLabel = (o) => o.end != null
+    ? `end${o.end} ${o.kind ?? "male"} ${o.shape ?? "O"}`
+    : `${o.face ?? "y+"} ${o.kind ?? "male"} ${o.shape ?? "O"}`;
+  const attachOf = (c) => c.attach ?? (connMode(c) === "free" ? "hinge" : "face");
+  function setAttach(c, a) {
+    if (a === "hinge" && !canHinge(c)) return;          // both parts need a hinge op
+    c.attach = a;
+    if (a === "hinge") { if (c.joint !== "ball" && c.joint !== "hinge") setJoint(c, "hinge"); }
+    else setJoint(c, "none");
+  }
+  // joint articulation: ball = free jrot[u,v,n]°, hinge = pitch (pin/X) + yaw (N/Y)
   function setJoint(c, kind) {
     if (kind === "ball") { c.joint = "ball"; c.jrot = c.jrot ?? [0, 0, 0]; delete c.jangle; delete c.axis; }
-    else if (kind === "hinge") { c.joint = "hinge"; c.jangle = c.jangle ?? 0; c.axis = c.axis ?? "u"; delete c.jrot; }
-    else { delete c.joint; delete c.jrot; delete c.jangle; delete c.axis; }
+    else if (kind === "hinge") { c.joint = "hinge"; c.jpitch = c.jpitch ?? c.jangle ?? 0; c.jyaw = c.jyaw ?? 0; delete c.jrot; delete c.jangle; delete c.axis; }
+    else { delete c.joint; delete c.jrot; delete c.jangle; delete c.axis; delete c.jpitch; delete c.jyaw; }
   }
   const jrotOf = (c) => c.jrot ?? [0, 0, 0];
   function setJrot(c, i, v) {
@@ -364,6 +381,10 @@
           <select bind:value={o.end}>{#each range(endCount(spec)) as i}<option value={i}>{i}</option>{/each}</select></label>
         <label><span>Kind</span>
           <select bind:value={o.kind}><option value="male">male</option><option value="female">female</option></select></label>
+        {#if o.op === "hinge"}
+          <label><span>Shape</span>
+            <select bind:value={o.shape}><option value="O">O (closed)</option><option value="C">C (open)</option></select></label>
+        {/if}
 
       {:else if o.op === "hinge"}
         <label><span>Face</span>
@@ -373,6 +394,13 @@
           <select bind:value={o.pin}>{#each pinAxes(o.face) as a}<option value={a}>{a}</option>{/each}</select></label>
         <label><span>Kind</span>
           <select bind:value={o.kind}><option value="male">male</option><option value="female">female</option></select></label>
+        <label><span>Shape</span>
+          <select bind:value={o.shape}><option value="O">O (closed)</option><option value="C">C (open)</option></select></label>
+        {#if o.kind === "female"}
+          <label><span>Span</span>
+            <input type="range" min="1" max="6" step="1" value={o.span ?? 1}
+              oninput={(e) => (o.span = +e.currentTarget.value)} /><output>{o.span ?? 1}</output></label>
+        {/if}
         <label><span>At U</span>
           <input type="range" min="0" max="11" step="1" value={hingeCell(o)[0]}
             oninput={(e) => setHingeCell(o, 0, e.currentTarget.value)} /><output>{hingeCell(o)[0]}</output></label>
@@ -496,26 +524,45 @@
             <select bind:value={c.a}>{#each partIds as id}<option value={id}>{id}</option>{/each}</select></label>
           <label><span>B (mount)</span>
             <select bind:value={c.b}>{#each partIds as id}<option value={id}>{id}</option>{/each}</select></label>
-          <label><span>On face</span>
-            <select bind:value={c.on}>{#each MOUNTS as f}<option value={f}>{f}</option>{/each}</select></label>
           <label><span>Off U</span>
             <input type="range" min="-8" max="8" step="1" value={c.off?.[0] ?? 0}
               oninput={(e) => setOff(c, 0, e.currentTarget.value)} /><output>{c.off?.[0] ?? 0}</output></label>
           <label><span>Off V</span>
             <input type="range" min="-8" max="8" step="1" value={c.off?.[1] ?? 0}
               oninput={(e) => setOff(c, 1, e.currentTarget.value)} /><output>{c.off?.[1] ?? 0}</output></label>
-          <label><span>Rot X°</span>
-            <input type="range" min="0" max="270" step="90" value={connRot(c)[0]}
-              oninput={(e) => setConnRot(c, 0, e.currentTarget.value)} /><output>{connRot(c)[0]}</output></label>
-          <label><span>Rot Y°</span>
-            <input type="range" min="0" max="270" step="90" value={connRot(c)[1]}
-              oninput={(e) => setConnRot(c, 1, e.currentTarget.value)} /><output>{connRot(c)[1]}</output></label>
-          <label><span>Rot Z°</span>
-            <input type="range" min="0" max="270" step="90" value={connRot(c)[2]}
-              oninput={(e) => setConnRot(c, 2, e.currentTarget.value)} /><output>{connRot(c)[2]}</output></label>
-          <label><span>Joint</span>
-            <select value={c.joint ?? "none"} onchange={(e) => setJoint(c, e.currentTarget.value)}>
-              {#each JOINTS as j}<option value={j}>{j}</option>{/each}</select></label>
+          <label><span>Attach</span>
+            <select value={attachOf(c)} onchange={(e) => setAttach(c, e.currentTarget.value)}>
+              {#each ATTACH as a}<option value={a} disabled={a === "hinge" && !canHinge(c)}>{a}</option>{/each}</select></label>
+          {#if attachOf(c) === "hinge"}
+            {#if hingesOf(c.a).length > 1}
+              <label><span>A hinge</span>
+                <select value={c.ah ?? hingesOf(c.a)[0].i} onchange={(e) => (c.ah = +e.currentTarget.value)}>
+                  {#each hingesOf(c.a) as h}<option value={h.i}>{hingeLabel(h.o)}</option>{/each}</select></label>
+            {/if}
+            {#if hingesOf(c.b).length > 1}
+              <label><span>B hinge</span>
+                <select value={c.bh ?? hingesOf(c.b)[0].i} onchange={(e) => (c.bh = +e.currentTarget.value)}>
+                  {#each hingesOf(c.b) as h}<option value={h.i}>{hingeLabel(h.o)}</option>{/each}</select></label>
+            {/if}
+          {/if}
+          {#if attachOf(c) === "face"}
+            <label><span>On face</span>
+              <select bind:value={c.on}>{#each MOUNTS as f}<option value={f}>{f}</option>{/each}</select></label>
+          {/if}
+          {#if connMode(c) === "grid"}
+            <label><span>Rot X°</span>
+              <input type="range" min="0" max="270" step="90" value={connRot(c)[0]}
+                oninput={(e) => setConnRot(c, 0, e.currentTarget.value)} /><output>{connRot(c)[0]}</output></label>
+            <label><span>Rot Y°</span>
+              <input type="range" min="0" max="270" step="90" value={connRot(c)[1]}
+                oninput={(e) => setConnRot(c, 1, e.currentTarget.value)} /><output>{connRot(c)[1]}</output></label>
+            <label><span>Rot Z°</span>
+              <input type="range" min="0" max="270" step="90" value={connRot(c)[2]}
+                oninput={(e) => setConnRot(c, 2, e.currentTarget.value)} /><output>{connRot(c)[2]}</output></label>
+          {:else}
+            <label><span>Joint</span>
+              <select value={c.joint ?? "hinge"} onchange={(e) => setJoint(c, e.currentTarget.value)}>
+                {#each FREE_JOINTS as j}<option value={j}>{j}</option>{/each}</select></label>
           {#if c.joint === "ball"}
             <label><span>Spin U°</span>
               <input type="range" min="-180" max="180" step="5" value={jrotOf(c)[0]}
@@ -527,11 +574,13 @@
               <input type="range" min="-180" max="180" step="5" value={jrotOf(c)[2]}
                 oninput={(e) => setJrot(c, 2, e.currentTarget.value)} /><output>{jrotOf(c)[2]}</output></label>
           {:else if c.joint === "hinge"}
-            <label><span>Pin axis</span>
-              <select bind:value={c.axis}>{#each HINGE_AXES as a}<option value={a}>{a}</option>{/each}</select></label>
-            <label><span>Angle°</span>
-              <input type="range" min="-180" max="180" step="5" value={c.jangle ?? 0}
-                oninput={(e) => (c.jangle = +e.currentTarget.value)} /><output>{c.jangle ?? 0}</output></label>
+            <label><span>Pitch X°</span>
+              <input type="range" min="-180" max="180" step="5" value={c.jpitch ?? 0}
+                oninput={(e) => (c.jpitch = +e.currentTarget.value)} /><output>{c.jpitch ?? 0}</output></label>
+            <label><span>Yaw Y°</span>
+              <input type="range" min="-180" max="180" step="5" value={c.jyaw ?? 0}
+                oninput={(e) => (c.jyaw = +e.currentTarget.value)} /><output>{c.jyaw ?? 0}</output></label>
+          {/if}
           {/if}
         </fieldset>
       {/if}
