@@ -1,7 +1,9 @@
-// LEGO Classic Bald Eagle (11015) — as an assembly graph.
-// parts = the bricks (notation/preset specs, each with a color key).
-// connections = how they clutch together (face + offset + twist). Positions and
-// heights are derived by the assembly resolver; no hand coordinates.
+// LEGO Bald
+// parts = the brick library (notation/preset specs, each with a color key).
+// root = the assembly tree; each node clones a brick and stores how it clutches
+// onto its parent (face + offset + twist). Positions and heights are derived by
+// the assembly resolver; no hand coordinates. A brick reused by several nodes is
+// defined once (the two wings/bodies, two eyes share one spec each).
 // +Z = front (head/beak), -Z = back (tail), +X = right wing, Y = up.
 
 export const PALETTE = {
@@ -26,22 +28,29 @@ export const MODEL = {
     eye: { size: [1, 1, 1], ops: [{ op: "studs", face: "y+", kind: "male" }], color: "BK", round: true },
     backCover: { size: [4, 3, 3], ops: [{ op: "studs", face: "y-", kind: "female" }, { op: "slope", face: "y+", dir: 1, length: 2, depth: 2, round: true }, { op: "slope", face: "y+", dir: -1, length: 2, depth: 2, round: true }], color: "BR" },
   },
-  root: "base",
   baseY: 0,
-  connections: [
-    { a: "base", b: "body", on: "top", off: [0, 1], rot: [0, 0, 180] },
-    { a: "base", b: "body", on: "top", off: [0, -2], rot: [180, 0, 0] },
-    { a: "body", b: "deck", on: "top", off: [0, -2] },
-    { a: "deck", b: "tail", on: "top", off: [0, -4], rot: [0, 180, 0] },
-    { a: "deck", b: "chest", on: "top", off: [0, 2] },
-    { a: "chest", b: "neck", on: "top", off: [0, 0] },
-    { a: "neck", b: "head", on: "top", off: [0, 0] },
-    { a: "head", b: "crown", on: "top", off: [0, 0] },
-    { a: "head", b: "beak", on: "front" },
-    { a: "head", b: "eye", on: "left", rot: [0, 0, 270], off: [0, 0] },
-    { a: "head", b: "eye", on: "right", rot: [0, 0, 90] },
-    { a: "deck", b: "backCover", on: "top", off: [0, -1], rot: [0, 0, 0] },
-  ],
+  root: {
+    part: "base",
+    children: [
+      { part: "body", on: "top", off: [0, 1], rot: [0, 0, 180], children: [
+        { part: "deck", on: "top", off: [0, -2], children: [
+          { part: "tail", on: "top", off: [0, -4], rot: [0, 180, 0] },
+          { part: "chest", on: "top", off: [0, 2], children: [
+            { part: "neck", on: "top", off: [0, 0], children: [
+              { part: "head", on: "top", off: [0, 0], children: [
+                { part: "crown", on: "top", off: [0, 0] },
+                { part: "beak", on: "front" },
+                { part: "eye", on: "left", rot: [0, 0, 270], off: [0, 0] },
+                { part: "eye", on: "right", rot: [0, 0, 90] },
+              ] },
+            ] },
+          ] },
+          { part: "backCover", on: "top", off: [0, -1], rot: [0, 0, 0] },
+        ] },
+      ] },
+      { part: "body", on: "top", off: [0, -2], rot: [180, 0, 0] },
+    ],
+  },
 };
 
 // vertical look-at target + camera distance for framing

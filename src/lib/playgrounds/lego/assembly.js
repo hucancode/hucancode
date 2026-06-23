@@ -1,37 +1,39 @@
-// Assembly engine: resolve a part graph into world transforms.
+// Assembly engine: resolve a part TREE into world transforms.
 //
-// A model = { parts: {id: spec}, root, baseY?, connections: [...] }.
-// A part id may be reused across many connections; each mount spawns a fresh
-// clone of that spec, so mirrored/repeated bricks (two eyes, two antlers) need
-// only ONE part def. See placeAll for clone/parent rules.
-// Each connection mounts part B onto a FACE of an already-placed part A:
-//   { a, b, on:"top|bottom|front|back|left|right",
-//     off:[du,dv],         // in-plane offset on A's face, in whole studs (0,0)
-//     rot:[rx,ry,rz],      // B's rotation, each a multiple of 90° (legacy
+// MODEL = { parts: {id: spec}, baseY?, root: <node> }.
+//   parts — the brick library (op-model specs, each with a color).
+//   root  — the top NODE of the assembly tree (seated at the origin).
+//
+// A NODE is a clone of a brick plus how it attaches to its PARENT node:
+//   { part,                // id into `parts` — which brick this node stamps
+//     children: [...node], // sub-nodes mounted onto this one
+//     on:"top|bottom|front|back|left|right",
+//     off:[du,dv],         // in-plane offset on the parent face, whole studs
+//     rot:[rx,ry,rz],      // node rotation, each a multiple of 90° (legacy
 //                          // `angle` == rot Y; default 0,0,0)
-//     joint, jrot, jangle, axis,  // articulated joint (see jointRot below)
+//     attach, joint, jpitch, jyaw, jrot, ah, bh,  // articulation (see below)
 //     local:false }        // mount frame (see below)
+// Reusing a brick is just adding more nodes that point at the same `part`; no
+// spec is ever duplicated (two eyes, two antlers = two nodes, one brick def).
 //
-// JOINT. An optional articulation applied AFTER seating: B (and its subtree) is
-// rotated about the seat point. joint:"ball" -> free spin, jrot:[x,y,z]° about
-// the mount U/V/N axes. joint:"hinge" -> 1-DOF, jangle° about a single mount
-// axis (`axis`: "u"|"v"|"n", default "u"). Absent/"none" -> rigid as before.
+// JOINT. Optional articulation applied AFTER seating: the node (and its subtree)
+// rotates about the seat point. joint:"ball" -> free spin, jrot:[x,y,z]° about the
+// mount U/V/N axes. joint:"hinge" -> 1-DOF pin swing (jpitch+jyaw). Absent -> rigid.
 //
-// MOUNT FRAME. By default faces and rotations are WORLD axes: mounting does NOT
-// inherit A's rotation, so a flipped/rotated anchor carries nothing into its
-// children (B is rotated only by its own `rot`, then seated on A). This is right
-// for normal stacking — an upright plate placed on top of an inverted slope stays
-// upright. Set `local:true` to seat B in A's LOCAL frame instead: B inherits A's
-// orientation and the face/offset are taken relative to A. Chaining `local`
-// connections builds a sub-assembly that rotates as a unit when its root rotates.
+// MOUNT FRAME. By default faces and rotations are WORLD axes: a node does NOT
+// inherit its parent's rotation, so a flipped/rotated parent carries nothing into
+// its children. Set `local:true` to seat in the parent's LOCAL frame instead: the
+// node inherits the parent orientation and the face/offset are taken relative to
+// it. Chaining local nodes builds a sub-assembly that rotates as a unit.
 //
-// Seat order per connection:
-//   1. rotate B (by `rot`, composed onto A's frame when local),
-//   2. seat B against A's `on` face: contact point = A's center pushed out along
-//      the face normal by A's half-extent along it; B is then pushed out by its
-//      OWN half-extent along that normal, so the rotated box rests flush,
+// Seat order per node:
+//   1. rotate the node (by `rot`, composed onto the parent frame when local),
+//   2. seat it against the parent `on` face: contact point = parent center pushed
+//      out along the face normal by the parent half-extent; the node is then
+//      pushed out by its OWN half-extent so the rotated box rests flush,
 //   3. slide along the face by `off` (in studs).
-// Heights/positions fall out of the stack. Order = connection order = build order.
+// Heights/positions fall out of the stack. Build order = DFS preorder (a parent
+// before its children).
 //
 // resolveAssembly() returns render pieces. (Lattice mating/collision validation
 // was removed for simplicity — placement is purely geometric, never blocked.)
@@ -163,140 +165,107 @@ function studSnap(axis, A, Rb, bd) {
   return ((aN - bN) & 1) ? 0.5 : 0;                      // differ in parity -> half-stud
 }
 
-// Detect connections that would introduce a cycle. An edge a->b makes b a child
-// of a; it is invalid if b can already reach a through earlier-accepted edges (or
-// it is a self-loop a==a). Returns a Set of offending connection indices. Parts
-// may have multiple parents (a DAG) — only back-edges that close a loop are bad.
-export function cycleEdges(model) {
-  const conns = model.connections ?? [];
-  const adj = new Map();                 // accepted edges: a -> [b, ...]
-  const bad = new Set();
-  const reaches = (from, target) => {    // DFS: can `from` reach `target`?
-    const stack = [from], seen = new Set();
-    while (stack.length) {
-      const x = stack.pop();
-      if (x === target) return true;
-      if (seen.has(x)) continue;
-      seen.add(x);
-      for (const y of adj.get(x) ?? []) stack.push(y);
+// Seat a child NODE (carrying the attachment) onto its already-placed parent A.
+// Returns { placement, ghost }. The seating math is identical to the legacy
+// per-connection resolver — only the inputs changed (node vs connection).
+function seatChild(A, conn, Bspec, bd) {
+  const F = FACES[conn.on ?? "top"] ?? FACES.top;
+
+  // mount frame: world axes by default, parent's local frame when `local`
+  const faceR = conn.local ? A.R : I3;
+  const N = apply3(faceR, F.n), U = apply3(faceR, F.u), V = apply3(faceR, F.v);
+  const [du, dv] = conn.off ?? [0, 0];
+
+  // Two exclusive seating modes with completely different logic:
+  //   grid — rigid LEGO clutch: 90° `rot`, parity stud-snap, whole-stud `off`.
+  //   free — articulated joint: the node's joint center is mated to A's joint
+  //          center (a shared hinge pin / ball center) and swings about THAT point.
+  const mode = connMode(conn);
+  let Rb, Cb, mountN = N, mesh = null, ghost = null;
+  const jt = conn.joint === "ball" ? "ball" : "hinge";
+  const aIdx = mode === "free" ? jointIdxOf(A.spec, conn.ah, jt) : -1;
+  const bIdx = mode === "free" ? jointIdxOf(Bspec, conn.bh, jt) : -1;
+  const aOp = aIdx >= 0 ? A.spec.ops[aIdx] : null;
+  const bOp = bIdx >= 0 ? Bspec.ops[bIdx] : null;
+  if (mode === "free" && aOp && bOp) {
+    const fa = jointFrame(A.spec, aOp), fb = jointFrame(Bspec, bOp);   // local frames
+    const nA = norm3(apply3(A.R, fa.n)), pinA = norm3(apply3(A.R, fa.pin));
+    const pivot = add(A.C, apply3(A.R, fa.center));      // shared hinge pin / ball center
+    // base seat: node's joint faces A's (normal opposes, pin parallel), joint center
+    // on the pivot. seat(R) returns the center so the node's joint center -> pivot.
+    const nt = scale3(nA, -1), qt = cross3(nt, pinA);
+    const R0 = mul3(matCols(nt, pinA, qt), matRows(fb.n, fb.pin, cross3(fb.n, fb.pin)));
+    const seat = (R) => sub3(pivot, apply3(R, fb.center));
+    if (jt === "hinge") {
+      // Two pieces: the KNUCKLE stays interlocked (swings about the pin only); the
+      // BODY additionally yaws about the joint normal — "rotate the block, not the
+      // hinge". Both pivot about the shared ring center.
+      const pitch = (conn.jpitch ?? conn.jangle ?? 0) * D2R, yaw = (conn.jyaw ?? 0) * D2R;
+      const Rring = pitch ? mul3(rotAxis(pinA, pitch), R0) : R0;
+      // yaw the block first (about the normal), THEN fold the hinge (about the pin)
+      const Ryaw = yaw ? mul3(rotAxis(nA, yaw), R0) : R0;
+      const Rbody = pitch ? mul3(rotAxis(pinA, pitch), Ryaw) : Ryaw;
+      Rb = Rbody; Cb = seat(Rbody); mountN = nA;
+      mesh = { skip: bIdx };                             // body omits the linked knuckle
+      ghost = { id: `${conn.part}#knuckle`, spec: Bspec, d: bd, R: Rring, C: seat(Rring),
+        depth: (A.depth ?? 0) + 1, mountN: nA, mesh: { only: bIdx } };
+    } else {
+      const Rj = jointRot(conn, pinA, norm3(qt), nA);    // ball: whole node spins about center
+      Rb = Rj !== I3 ? mul3(Rj, R0) : R0; Cb = seat(Rb); mountN = nA;
     }
-    return false;
-  };
-  conns.forEach((c, i) => {
-    if (c.a === c.b || reaches(c.b, c.a)) { bad.add(i); return; }
-    if (!adj.has(c.a)) adj.set(c.a, []);
-    adj.get(c.a).push(c.b);
-  });
-  return bad;
+  } else if (mode === "free") {
+    // fallback (parts lack a matching joint op): flush seat, pivot at joint center
+    Rb = conn.local ? A.R : I3;
+    const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))), add(scale3(U, du), scale3(V, dv)));
+    Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
+    const Rj = jointRot(conn, U, V, N);
+    if (Rj !== I3) { Rb = mul3(Rj, Rb); Cb = add(Pa, apply3(Rj, sub3(Cb, Pa))); }
+  } else {
+    const r = conn.rot ?? [0, conn.angle ?? 0, 0];       // legacy `angle` == rot Y
+    Rb = mul3(rotX(r[0] * D2R), mul3(rotY(r[1] * D2R), rotZ(r[2] * D2R)));
+    if (conn.local) Rb = mul3(A.R, Rb);
+    const su = studSnap(U, A, Rb, bd), sv = studSnap(V, A, Rb, bd);  // parity-correct to A's stud grid
+    const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))), add(scale3(U, du + su), scale3(V, dv + sv)));
+    Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));       // flush along normal
+  }
+
+  const placement = { id: conn.part, spec: Bspec, d: bd, R: Rb, C: Cb,
+    depth: (A.depth ?? 0) + 1, mountN, mesh };
+  return { placement, ghost };
 }
 
-// Resolve every part to { id, spec, d, R, C } in build order. Shared by the
-// renderer and the validators so all three agree on placement.
-//
-// CLONES. A part id may be mounted by more than one connection; each spawns its
-// own placement instance, so a single part def can be stamped out many times
-// (two eyes, two antlers...) without duplicating the spec. `nodes` holds every
-// instance; `byId` maps an id to its FIRST (canonical) instance, which is what a
-// later connection's `a` resolves to as a parent. Clones are therefore leaves —
-// to branch off a specific instance, give it its own part id.
+// Walk the assembly tree, DFS preorder (parent before children), placing every
+// node into { id, spec, d, R, C, depth, mountN, mesh }. Shared by the renderer
+// and the UI so both agree on placement. The root node seats at the origin and
+// carries no attachment; each child seats onto its parent via seatChild. Hinges
+// also emit a render-only "ghost" knuckle that stays interlocked as the body folds.
 function placeAll(model) {
-  const byId = new Map();      // id -> first placement, for parent lookup
-  const nodes = [];            // every placement instance, in build order
-  const ghosts = [];           // render-only extra pieces (e.g. a hinge's seated knuckle)
-  const emit = (node) => { nodes.push(node); if (!byId.has(node.id)) byId.set(node.id, node); };
-
-  // Cycle-forming connections are ignored entirely (their `b` keeps no parent
-  // from them, so it may itself become a root).
-  const bad = cycleEdges(model);
-  const conns = (model.connections ?? []).filter((_, i) => !bad.has(i));
-
-  // Roots auto-deduced: every part that never appears as a (valid) connection's
-  // `b` (i.e. has no parent). Multiple roots are allowed — each is seated at the
-  // origin. Fallback to explicit model.root / first part if nothing is
-  // parentless.
-  const children = new Set(conns.map((c) => c.b));
-  let roots = Object.keys(model.parts).filter((id) => !children.has(id));
-  if (roots.length === 0) roots = [model.root ?? Object.keys(model.parts)[0]];
-
+  const nodes = [];      // every placement, DFS preorder = build order
+  const ghosts = [];     // render-only knuckles
   const R0 = model.rootAngle ? rotY(model.rootAngle * D2R) : I3;
-  for (const rootId of roots) {
-    const rootSpec = model.parts[rootId];
-    if (!rootSpec) continue;
-    const rd = dims(rootSpec);
-    emit({ id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0], depth: 0, mountN: [0, 1, 0] });
-  }
+  const baseY = model.baseY ?? 0;
 
-  for (const conn of conns) {
-    const A = byId.get(conn.a);
-    if (!A) { console.warn(`[assembly] unknown anchor ${conn.a}`); continue; }
-    const Bspec = model.parts[conn.b];
-    if (!Bspec) { console.warn(`[assembly] unknown part ${conn.b}`); continue; }
-    const bd = dims(Bspec);
-    const F = FACES[conn.on ?? "top"] ?? FACES.top;
-
-    // mount frame: world axes by default, A's local frame when `local`
-    const faceR = conn.local ? A.R : I3;
-    const N = apply3(faceR, F.n), U = apply3(faceR, F.u), V = apply3(faceR, F.v);
-    const [du, dv] = conn.off ?? [0, 0];
-
-    // Two exclusive seating modes with completely different logic:
-    //   grid — rigid LEGO clutch: 90° `rot`, parity stud-snap, whole-stud `off`.
-    //   free — articulated joint: B's joint center is mated to A's joint center
-    //          (a shared hinge pin / ball center) and swings about THAT point.
-    const mode = connMode(conn);
-    let Rb, Cb, mountN = N, mesh = null, ghost = null;
-    const jt = conn.joint === "ball" ? "ball" : "hinge";
-    const aIdx = mode === "free" ? jointIdxOf(A.spec, conn.ah, jt) : -1;
-    const bIdx = mode === "free" ? jointIdxOf(Bspec, conn.bh, jt) : -1;
-    const aOp = aIdx >= 0 ? A.spec.ops[aIdx] : null;
-    const bOp = bIdx >= 0 ? Bspec.ops[bIdx] : null;
-    if (mode === "free" && aOp && bOp) {
-      const fa = jointFrame(A.spec, aOp), fb = jointFrame(Bspec, bOp);   // local frames
-      const nA = norm3(apply3(A.R, fa.n)), pinA = norm3(apply3(A.R, fa.pin));
-      const pivot = add(A.C, apply3(A.R, fa.center));      // shared hinge pin / ball center
-      // base seat: B's joint faces A's (normal opposes, pin parallel), joint center
-      // on the pivot. seat(R) returns the center so B's local joint center -> pivot.
-      const nt = scale3(nA, -1), qt = cross3(nt, pinA);
-      const R0 = mul3(matCols(nt, pinA, qt), matRows(fb.n, fb.pin, cross3(fb.n, fb.pin)));
-      const seat = (R) => sub3(pivot, apply3(R, fb.center));
-      if (jt === "hinge") {
-        // Two pieces: the KNUCKLE stays interlocked (swings about the pin only); the
-        // BODY additionally yaws about the joint normal — "rotate the block, not the
-        // hinge". Both pivot about the shared ring center.
-        const pitch = (conn.jpitch ?? conn.jangle ?? 0) * D2R, yaw = (conn.jyaw ?? 0) * D2R;
-        const Rring = pitch ? mul3(rotAxis(pinA, pitch), R0) : R0;
-        // yaw the block first (about the normal), THEN fold the hinge (about the pin)
-        const Ryaw = yaw ? mul3(rotAxis(nA, yaw), R0) : R0;
-        const Rbody = pitch ? mul3(rotAxis(pinA, pitch), Ryaw) : Ryaw;
-        Rb = Rbody; Cb = seat(Rbody); mountN = nA;
-        mesh = { skip: bIdx };                             // body omits the linked knuckle
-        ghost = { id: `${conn.b}#knuckle`, spec: Bspec, def: Bspec, d: bd, R: Rring, C: seat(Rring),
-          depth: (A.depth ?? 0) + 1, mountN: nA, mesh: { only: bIdx } };
-      } else {
-        const Rj = jointRot(conn, pinA, norm3(qt), nA);    // ball: whole B spins about center
-        Rb = Rj !== I3 ? mul3(Rj, R0) : R0; Cb = seat(Rb); mountN = nA;
-      }
-    } else if (mode === "free") {
-      // fallback (parts lack a matching joint op): flush seat, pivot at joint center
-      Rb = conn.local ? A.R : I3;
-      const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))), add(scale3(U, du), scale3(V, dv)));
-      Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));
-      const Rj = jointRot(conn, U, V, N);
-      if (Rj !== I3) { Rb = mul3(Rj, Rb); Cb = add(Pa, apply3(Rj, sub3(Cb, Pa))); }
+  const walk = (node, A) => {
+    if (!node) return;
+    const spec = model.parts?.[node.part];
+    if (!spec) { console.warn(`[assembly] unknown part ${node?.part}`); return; }
+    const d = dims(spec);
+    let placement;
+    if (!A) {
+      placement = { id: node.part, spec, d, R: R0, C: [0, baseY + d.hh, 0],
+        depth: 0, mountN: [0, 1, 0], mesh: null };
+      nodes.push(placement);
     } else {
-      const r = conn.rot ?? [0, conn.angle ?? 0, 0];       // legacy `angle` == rot Y
-      Rb = mul3(rotX(r[0] * D2R), mul3(rotY(r[1] * D2R), rotZ(r[2] * D2R)));
-      if (conn.local) Rb = mul3(A.R, Rb);
-      const su = studSnap(U, A, Rb, bd), sv = studSnap(V, A, Rb, bd);  // parity-correct to A's stud grid
-      const Pa = add(add(A.C, scale3(N, halfAlong(A.d, A.R, N))), add(scale3(U, du + su), scale3(V, dv + sv)));
-      Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));       // flush along normal
+      const { placement: pl, ghost } = seatChild(A, node, spec, d);
+      placement = pl;
+      nodes.push(pl);
+      if (ghost) ghosts.push(ghost);
     }
+    for (const ch of node.children ?? []) walk(ch, placement);
+  };
+  walk(model.root, null);
 
-    emit({ id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN, mesh });
-    if (ghost) ghosts.push(ghost);
-  }
-
-  return { byId, list: [...nodes, ...ghosts] };
+  return { list: [...nodes, ...ghosts] };
 }
 
 export function resolveAssembly(model) {
