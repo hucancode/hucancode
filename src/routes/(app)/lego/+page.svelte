@@ -2,7 +2,7 @@
   import { browser } from "$app/environment";
   import Scene from "$lib/components/lego.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
-  import { PALETTE, MODEL } from "$lib/playgrounds/lego/dragon.js";
+  import { PALETTE, MODEL, TEMPLATES, DEFAULT } from "$lib/playgrounds/lego/templates.js";
   import { connMode } from "$lib/playgrounds/lego/assembly.js";
   import { STICKS, stickSize } from "$lib/playgrounds/lego/solid.js";
 
@@ -11,6 +11,7 @@
 
   let scene = $state(null);
   let view = $state("assemble"); // "assemble" | "inspect"
+  let template = $state(DEFAULT.id);   // active template in the picker
 
   // viewport HUD controls
   let spin = $state(0.0);
@@ -228,6 +229,17 @@
     spec.len = +v;
     spec.size = stickSize(+v);
   }
+  // pointy stick ends: spec.tips = list of end indices tapered to a point
+  const tipSel = (s) => {
+    const t = s.tips ?? [];
+    if (t.length >= 2) return "both";
+    if (t.includes(1)) return "1";
+    if (t.includes(0)) return "0";
+    return "none";
+  };
+  function setTips(s, v) {
+    s.tips = v === "both" ? [0, 1] : v === "none" ? undefined : [Number(v)];
+  }
   // remove a brick from the library AND prune every tree node that clones it
   function pruneNodes(node, id) {
     if (!node?.children) return;
@@ -311,6 +323,17 @@
     model = structuredClone(MODEL);
     sel = Object.keys(model.parts)[0] ?? "";
     selNode = model.root?.children?.[0] ?? model.root;
+  }
+
+  // load a template into the editor (fresh clone) and reframe the camera
+  function pickTemplate(id) {
+    const t = TEMPLATES.find((x) => x.id === id);
+    if (!t) return;
+    template = id;
+    model = structuredClone(t.MODEL);
+    sel = Object.keys(model.parts)[0] ?? "";
+    selNode = model.root?.children?.[0] ?? model.root ?? null;
+    if (t.VIEW) scene?.apply({ view: t.VIEW });
   }
 
   // ---- serialize MODEL back to source ------------------------------------
@@ -536,6 +559,13 @@
 
     {#if view === "assemble"}
       <fieldset>
+        <legend>template</legend>
+        <select class="tpl" value={template} onchange={(e) => pickTemplate(e.currentTarget.value)}>
+          {#each TEMPLATES as t}<option value={t.id}>{t.name}</option>{/each}
+        </select>
+      </fieldset>
+
+      <fieldset>
         <legend>storage</legend>
         <div class="slots">
           {#each slots as s, i (i)}
@@ -695,6 +725,13 @@
             <label><span>Length</span>
               <input type="range" min="0.1" max="5" step="0.1" value={spec.len ?? 1.4}
                 oninput={(e) => setStickLen(spec, e.currentTarget.value)} /><output>{(spec.len ?? 1.4).toFixed(1)}</output></label>
+            <label><span>Pointy tip</span>
+              <select value={tipSel(spec)} onchange={(e) => setTips(spec, e.currentTarget.value)}>
+                <option value="none">none</option>
+                <option value="0">end 0</option>
+                <option value="1">end 1</option>
+                <option value="both">both</option>
+              </select></label>
           {:else}
             <label><span>Width X</span>
               <input type="range" min="1" max="8" step="1" bind:value={spec.size[0]} /><output>{spec.size[0]}</output></label>
@@ -770,4 +807,5 @@
   .ctl button:disabled { opacity: 0.25; }
   .id { flex: 1; }
   .code { width: 100%; font-family: monospace; font-size: 0.7rem; margin-top: 0.4rem; white-space: pre; overflow: auto; }
+  .tpl { width: 100%; }
 </style>

@@ -10,28 +10,31 @@ export const PALETTE = {
 };
 export const MODEL = {
   parts: {
-    neck: { size: [3, 4, 2], ops: [{ op: "ball", face: "z-", kind: "male", at: { cell: [1, 0] } }, { op: "push", face: "z+", depth: 1, width: 5, height: 3, at: [0, 0] }], color: "DK", round: false },
-    head: { size: [3, 3, 5], ops: [{ op: "ball", face: "y-", kind: "female", at: { cell: [1, 0] } }, { op: "hinge", face: "y-", pin: "x", kind: "female", shape: "O", at: { cell: [1, 2] } }, { op: "slope", face: "y+", dir: 1, length: 2, depth: 1, round: true }, { op: "studs", face: "y+", kind: "male" }], color: "GR" },
-    snout: { size: [3, 3, 1], ops: [{ op: "slope", face: "y+", dir: 1, length: 1, depth: 1, round: true }, { op: "studs", face: "z+", kind: "male" }], color: "GR" },
+    neck: { size: [3, 4, 3], ops: [{ op: "ball", face: "z-", kind: "male", at: { cell: [1, 0] } }, { op: "push", face: "z+", depth: 1, width: 5, height: 3, at: [0, 0] }], color: "DK", round: false },
+    head: { size: [3, 4, 5], ops: [{ op: "hinge", face: "y-", pin: "x", kind: "female", shape: "O", at: { cell: [1, 1] } }, { op: "slope", face: "y+", dir: 1, length: 2, depth: 6, round: true }, { op: "studs", face: "y+", kind: "male" }], color: "GR", round: false },
+    snout: { size: [3, 1, 1], ops: [{ op: "studs", face: "y-", kind: "male" }], color: "GR", round: false },
     lipU: { size: [3, 1, 2], ops: [{ op: "studs", face: "y-", kind: "male", at: { row: 1 } }], color: "TN", round: false },
     jaw: { size: [3, 1, 4], ops: [{ op: "hinge", face: "y+", pin: "x", kind: "male", shape: "O", at: { cell: [1, 0] } }, { op: "studs", face: "y+", kind: "male", at: { row: 3 } }], color: "TN", round: false },
     antler: { size: [1, 4, 1], ops: [{ op: "slope", face: "y+", dir: 1, length: 4, depth: 1, round: true }, { op: "studs", face: "y-", kind: "female" }], color: "BR" },
     frill: { size: [1, 1, 3], ops: [{ op: "slope", face: "z+", dir: 1, length: 2, depth: 1, round: true }], color: "DK", round: false },
     eye: { size: [1, 1, 1], ops: [{ op: "studs", face: "y+", kind: "male" }], color: "RD", round: true },
+    head_back: { size: [3, 3, 3], ops: [{ op: "slope", face: "y+", dir: -1, length: 1, depth: 2, round: false }], color: "#c1272d", round: false },
   },
   baseY: 3.5,
   root: { part: "neck", children: [
-    { part: "head", on: "top", attach: "face", off: [0, 1], children: [
-      { part: "snout", on: "front", off: [0, 0], local: true, rot: [0, 0, 0] },
-      { part: "lipU", on: "bottom", off: [0, 2], local: true },
+    { part: "head", on: "top", attach: "face", off: [0, 3], rot: [0, 0, 0], children: [
+      { part: "lipU", on: "bottom", off: [0, 1], local: true, children: [
+        { part: "snout", on: "front", off: [0, 0], local: true, rot: [270, 0, 0] }
+      ] },
       { part: "antler", on: "top", off: [-1, -2], rot: [0, 0, 0], local: true },
       { part: "antler", on: "top", off: [1, -2], rot: [0, 0, 0], local: true },
-      { part: "frill", on: "left", off: [-1, 0], rot: [180, 180, 0], local: true },
-      { part: "frill", on: "right", off: [-1, 0], rot: [0, 0, 0], local: true },
-      { part: "eye", on: "left", off: [1, 0], rot: [0, 0, 270], local: true },
-      { part: "eye", on: "right", off: [1, 0], rot: [0, 0, 90], local: true },
-      { part: "jaw", on: "bottom", joint: "hinge", jpitch: 30, jyaw: 0 }
-    ] }
+      { part: "frill", on: "left", off: [-3, 0], rot: [180, 180, 0], local: true },
+      { part: "frill", on: "right", off: [-3, 0], rot: [0, 0, 0], local: true },
+      { part: "eye", on: "left", off: [0, 0], rot: [0, 0, 270], local: true },
+      { part: "eye", on: "right", off: [0, 0], rot: [0, 0, 90], local: true },
+      { part: "jaw", on: "bottom", joint: "hinge", jpitch: 10, jyaw: 0 }
+    ] },
+    { part: "head_back", on: "top", off: [0, -1], rot: [0, 0, 0] }
   ] },
 };
 

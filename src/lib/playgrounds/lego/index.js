@@ -4,7 +4,7 @@ import {
 } from "$lib/engine/index.js";
 import { makeSolid } from "./solid.js";
 import { resolveAssembly } from "./assembly.js";
-import { MODEL, PALETTE, VIEW } from "./dragon.js";
+import { MODEL, PALETTE, VIEW } from "./templates.js";
 import LEGO_WGSL from "./shaders/lego.wgsl?raw";
 import VERT from "./shaders/lego.vert.glsl?raw";
 import FRAG from "./shaders/lego.frag.glsl?raw";
@@ -34,6 +34,7 @@ const config = {
 };
 
 let canvas, device, shader, gridShader, camera, disposed = false;
+let viewCfg = VIEW;             // active camera framing; swapped when a template loads
 let mode = "assemble";          // "assemble" | "inspect"
 let inspect = null;
 let inspectSpec = null;
@@ -163,6 +164,10 @@ function setConfig(patch) {
     try { buildEagle(patch.model); setProgress(1); }
     catch (e) { console.warn("[lego] invalid model", e); }
   }
+  if (patch.view) {                                               // template framing swap
+    viewCfg = patch.view;
+    if (camera) camera._dist = patch.view.dist;
+  }
   if ("progress" in patch && pieces.length) setProgress(patch.progress);
   if (patch.replay && pieces.length) play();
 }
@@ -224,7 +229,7 @@ async function init(canvasEl) {
   });
   camera = new Camera(45, w / h, 0.1, 2000);
   camera.up.set(0, 1, 0);
-  camera._dist = VIEW.dist;
+  camera._dist = viewCfg.dist;
   buildEagle();
   play();
   if (mode === "inspect") buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
@@ -279,7 +284,7 @@ function render() {
   syncSize();
 
   const inspecting = mode === "inspect" && inspect;
-  const lookY = inspecting ? 0 : VIEW.lookY;
+  const lookY = inspecting ? 0 : viewCfg.lookY;
   const d = (inspecting ? 6 : camera._dist) || 15, cp = Math.cos(pitch);
   camera.position.set(
     d * cp * Math.sin(yaw),

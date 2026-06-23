@@ -721,16 +721,26 @@ function endConnector(op, { P, n, e1, e2 }) {
 
 // mesh a stick: one continuous bar (a rod per colinear end) + end connectors.
 // opts.only / opts.skip mirror makeSolid: isolate / omit one end connector op.
+// `def.tips` = array of end indices to taper to a POINT (rod cones to radius 0 at
+// that tip) — a spike/claw end instead of a flat rod.
 function makeStick(def, opts = {}) {
   const ends = stickEnds(def);
   if (opts.only != null) {
     const o = (def.ops ?? [])[opts.only];
     return mergeGeometries(endConnector(o, ends[o.end ?? 0]));
   }
+  const tips = new Set(def.tips ?? []);
+  // each end's outer radius (0 = pointy), and the shared center radius. With ONE
+  // pointy end the cone spans the WHOLE length (root ROD_R -> center ROD_R/2 ->
+  // tip 0); with BOTH ends pointy keep a full-width middle so it tapers from the
+  // center out to each tip (a double spike).
+  const tipR = ends.map((_, i) => (tips.has(i) ? 0 : ROD_R));
+  const allPointy = ends.length > 0 && tipR.every((r) => r === 0);
+  const centerR = allPointy ? ROD_R : tipR.reduce((a, b) => a + b, 0) / (tipR.length || 1);
   const geos = [];
   ends.forEach((f, i) => {
     const L = Math.hypot(f.P[0], f.P[1], f.P[2]);
-    const rod = alignToDir(cylinderGeometry(ROD_R, ROD_R, L, 12), f.n);
+    const rod = alignToDir(cylinderGeometry(tipR[i], centerR, L, 12), f.n);
     geos.push(rod.translate(f.P[0] / 2, f.P[1] / 2, f.P[2] / 2));
     (def.ops ?? []).forEach((op, oi) => {
       if (oi === opts.skip) return;
