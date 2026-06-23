@@ -451,15 +451,13 @@
 
     {#if view === "assemble"}
       <fieldset>
-        <legend>build</legend>
+        <legend>Storage</legend>
         <label>
           <button type="button" onclick={replay}>▶ Assemble</button>
           <input type="range" min="0" max="1" step="0.01" bind:value={progress}
             oninput={() => (manual = true)} />
           <output>{Math.round(progress * 100)}%</output>
         </label>
-        <label><span>Base Y</span>
-          <input type="range" min="-8" max="8" step="0.1" bind:value={model.baseY} /><output>{(model.baseY ?? 0).toFixed(1)}</output></label>
         <div class="slots">
           {#each slots as s, i (i)}
             <button type="button" class="slot" class:on={slot === i} class:filled={s.filled}
@@ -493,6 +491,10 @@
           <span>Explode</span>
           <input type="range" min="0" max="2" step="0.05" bind:value={explode} />
           <output>{explode.toFixed(2)}</output>
+        </label>
+        <label>
+          <span>Base Y</span>
+          <input type="range" min="-8" max="8" step="0.1" bind:value={model.baseY} /><output>{(model.baseY ?? 0).toFixed(1)}</output>
         </label>
       </fieldset>
 
@@ -663,7 +665,6 @@
   .slot.on { opacity: 1; font-weight: 600; outline: 1px solid currentColor; }
   .slot em { font-style: normal; font-size: 0.55rem; vertical-align: super; opacity: 0.7; }
   .add { font-size: 0.75rem; opacity: 0.7; margin-left: 0.5rem; }
-  .hint { font-size: 0.7rem; opacity: 0.6; margin: 0.25rem 0; }
   .iso { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem; }
   .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
   .parts li { display: flex; align-items: center; gap: 0.25rem; }

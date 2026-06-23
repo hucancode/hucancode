@@ -1,6 +1,9 @@
 // Assembly engine: resolve a part graph into world transforms.
 //
 // A model = { parts: {id: spec}, root, baseY?, connections: [...] }.
+// A part id may be reused across many connections; each mount spawns a fresh
+// clone of that spec, so mirrored/repeated bricks (two eyes, two antlers) need
+// only ONE part def. See placeAll for clone/parent rules.
 // Each connection mounts part B onto a FACE of an already-placed part A:
 //   { a, b, on:"top|bottom|front|back|left|right",
 //     off:[du,dv],         // in-plane offset on A's face, in whole studs (0,0)
@@ -189,10 +192,18 @@ export function cycleEdges(model) {
 
 // Resolve every part to { id, spec, d, R, C } in build order. Shared by the
 // renderer and the validators so all three agree on placement.
+//
+// CLONES. A part id may be mounted by more than one connection; each spawns its
+// own placement instance, so a single part def can be stamped out many times
+// (two eyes, two antlers...) without duplicating the spec. `nodes` holds every
+// instance; `byId` maps an id to its FIRST (canonical) instance, which is what a
+// later connection's `a` resolves to as a parent. Clones are therefore leaves —
+// to branch off a specific instance, give it its own part id.
 function placeAll(model) {
-  const placed = new Map();
-  const order = [];
+  const byId = new Map();      // id -> first placement, for parent lookup
+  const nodes = [];            // every placement instance, in build order
   const ghosts = [];           // render-only extra pieces (e.g. a hinge's seated knuckle)
+  const emit = (node) => { nodes.push(node); if (!byId.has(node.id)) byId.set(node.id, node); };
 
   // Cycle-forming connections are ignored entirely (their `b` keeps no parent
   // from them, so it may itself become a root).
@@ -212,12 +223,11 @@ function placeAll(model) {
     const rootSpec = model.parts[rootId];
     if (!rootSpec) continue;
     const rd = dims(rootSpec);
-    placed.set(rootId, { id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0], depth: 0, mountN: [0, 1, 0] });
-    order.push(rootId);
+    emit({ id: rootId, spec: rootSpec, def: rootSpec, d: rd, R: R0, C: [0, (model.baseY ?? 0) + rd.hh, 0], depth: 0, mountN: [0, 1, 0] });
   }
 
   for (const conn of conns) {
-    const A = placed.get(conn.a);
+    const A = byId.get(conn.a);
     if (!A) { console.warn(`[assembly] unknown anchor ${conn.a}`); continue; }
     const Bspec = model.parts[conn.b];
     if (!Bspec) { console.warn(`[assembly] unknown part ${conn.b}`); continue; }
@@ -282,12 +292,11 @@ function placeAll(model) {
       Cb = add(Pa, scale3(N, halfAlong(bd, Rb, N)));       // flush along normal
     }
 
-    placed.set(conn.b, { id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN, mesh });
-    order.push(conn.b);
+    emit({ id: conn.b, spec: Bspec, def: Bspec, d: bd, R: Rb, C: Cb, depth: (A.depth ?? 0) + 1, mountN, mesh });
     if (ghost) ghosts.push(ghost);
   }
 
-  return { placed, list: [...order.map((id) => placed.get(id)), ...ghosts] };
+  return { byId, list: [...nodes, ...ghosts] };
 }
 
 export function resolveAssembly(model) {
