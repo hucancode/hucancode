@@ -8,7 +8,8 @@ const D2R = Math.PI / 180;
 
 // primitive id (matches shader). dims are authored in shader param order:
 //   box [hx,hy,hz]  sphere [r]  cyl [r,h]  capsule [r,h]  cone [r1,h,r2]
-//   torus [R,r]  pyramid [baseHalf,halfHeight]
+//   torus [R,r]  pyramid [baseHalf,halfHeight,topHalf]  (topHalf 0 = pointed,
+//     >0 = a cut-off / truncated square pyramid; base at -Y, top at +Y)
 export const TYPE = { sphere: 0, box: 1, cyl: 2, capsule: 3, cone: 4, torus: 5, pyramid: 6 };
 export const OP = { union: 0, subtract: 1, intersect: 2 };
 const TEXELS = 6; // float4s per node

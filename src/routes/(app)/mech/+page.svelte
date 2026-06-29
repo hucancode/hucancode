@@ -2,16 +2,15 @@
   import { browser } from "$app/environment";
   import Scene from "$lib/components/mech.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
-  import { generateMech, ARCHETYPES, PALETTE } from "$lib/playgrounds/mech/design/index.js";
+  import { buildHumanoidRig } from "$lib/playgrounds/mech/rig/index.js";
+  import { rigToPrimitives, PALETTE } from "$lib/playgrounds/mech/design/index.js";
   import { texRowOf } from "$lib/playgrounds/mech/sdf.js";
 
   let scene = $state(null);
 
-  // design-engine params (what the artist controls) ------------------------
-  let archetype = $state("vanguard");
-  let seed = $state(1);
-  let detail = $state(1.0);
-  let accent = $state(PALETTE.accent);
+  // engine params (what the artist controls) -------------------------------
+  let fingers = $state(true);          // rig engine: include hands/fingers
+  let accent = $state(PALETTE.accent); // design engine: focal hue
   const ACCENTS = ["#d6552f", "#e8b730", "#3fb6d0", "#6fcf57", "#c64bd0", "#e0e0e0"];
 
   // HUD state
@@ -21,52 +20,47 @@
   let ground = $state(false);
   let light = $state(0.6);
 
-  const STORE = "mech-model";
+  const STORE = "mech-rig";
   const clone = (m) => structuredClone(m);
-  let model = $state(loadModel());
-  let sel = $state(0);           // selected authored node index
+  // RIG is the editable source of truth. design engine derives primitives from it
+  // live; render engine draws those. (rig -> design -> render, one way.)
+  let rig = $state(loadRig());
+  let sel = $state(0);           // selected bone index
   let saved = $state(false), loaded = $state(false), noStore = $state(false);
   let showCode = $state(false);
 
-  function loadModel() {
+  function build() { return buildHumanoidRig({ fingers }); }
+  function loadRig() {
     if (browser) {
       try {
-        const m = JSON.parse(localStorage.getItem(STORE));
-        if (m && Array.isArray(m.nodes)) return m;
-      } catch { /* fall through to a freshly generated default */ }
+        const r = JSON.parse(localStorage.getItem(STORE));
+        if (r && Array.isArray(r.bones)) return r;
+      } catch { /* fall through to a freshly built rig */ }
     }
-    return generateMech({ archetype: "vanguard", seed: 1, detail: 1.0 });
+    return build();
   }
-
-  // run the design engine, then hand the primitive list to the render engine
+  // rebuild the rig from the fingers param (discards manual edits)
   function regen() {
-    model = generateMech({ archetype, seed, detail, accent });
+    rig = build();
     sel = 0;
     scene?.apply({ resetView: true });
   }
-  function reseed() {
-    seed = Math.floor(Math.random() * 9999) + 1;
-    regen();
-  }
 
-  const TYPES = ["box", "sphere", "cyl", "capsule", "cone", "torus", "pyramid"];
-  const OPS = ["union", "subtract", "intersect"];
-  const COLORS = Object.keys(PALETTE);
-  const hexOf = (c) => (PALETTE[c] ?? c ?? "#8b94a6").toLowerCase();
+  // design engine output — recomputes whenever the rig or accent changes
+  const model = $derived(rigToPrimitives($state.snapshot(rig), { accent }));
 
-  // which dims slots a primitive uses, and how to label them
-  const DIMS_META = {
-    box: [["Half-W", 0], ["Half-H", 1], ["Half-D", 2]],
-    sphere: [["Radius", 0]],
-    cyl: [["Radius", 0], ["Half-len", 1]],
-    capsule: [["Radius", 0], ["Half-len", 1]],
-    cone: [["R bottom", 0], ["Half-len", 1], ["R top", 2]],
-    torus: [["Ring R", 0], ["Tube r", 1]],
-    pyramid: [["Base half", 0], ["Half-height", 1]],
-  };
+  const KINDS = ["pelvis", "torso", "head", "shoulder", "hip", "limb", "hand", "foot", "digit"];
+  const JOINTS = [["0 weld", 0], ["1 yaw", 1], ["2 pitch", 2], ["3 uni · 2-axis", 3], ["4 ball", 4]];
+  const AX = { X: [1, 0, 0], Y: [0, 1, 0], Z: [0, 0, 1] };
+  const axisLabel = (v) => (!v ? "X" : v[0] ? "X" : v[1] ? "Y" : "Z");
 
-  const node = $derived(model.nodes[sel] ?? null);
-  const stageLabel = $derived(["", "1 · base shapes", "2 · + boolean ops", "3 · + micro detail"][stage]);
+  const bone = $derived(rig.bones[sel] ?? null);
+  const stageLabel = $derived(["", "1 · limbs + joints", "2 · joint mechanics", "3 · hands + detail"][stage]);
+  // map the selected bone to its first packed primitive row, for the render highlight
+  const selectedRow = $derived.by(() => {
+    const idx = model.nodes.findIndex((n) => n._bone === sel);
+    return idx < 0 ? -1 : texRowOf(model, idx);
+  });
 
   // ---- push reactive state into the scene ---------------------------------
   $effect(() => { scene?.apply({ stage }); });
@@ -74,57 +68,55 @@
   $effect(() => { scene?.apply({ shadow: shadow ? 1 : 0 }); });
   $effect(() => { scene?.apply({ ground: ground ? 1 : 0 }); });
   $effect(() => { scene?.apply({ lightAngle: light }); });
-  // re-pack the whole model on any geometry edit (deep dependency via snapshot)
-  $effect(() => { scene?.apply({ model: $state.snapshot(model) }); });
-  // highlight the selected authored node (account for sym row expansion)
-  $effect(() => { scene?.apply({ selected: texRowOf($state.snapshot(model), sel) }); });
+  // re-derive + re-pack on any rig or accent edit
+  $effect(() => { scene?.apply({ model }); });
+  $effect(() => { scene?.apply({ selected: selectedRow }); });
 
-  // ---- node CRUD ----------------------------------------------------------
-  function addNode() {
-    const base = node ? clone($state.snapshot(node)) : null;
-    const n = base
-      ? { ...base, pos: [(base.pos?.[0] ?? 0) + 0.4, base.pos?.[1] ?? 0, base.pos?.[2] ?? 0] }
-      : { type: "box", pos: [0, 0, 0], rot: [0, 0, 0], dims: [0.5, 0.5, 0.5], round: 0.06, op: "union", k: 0, color: "#8b94a6", stage };
-    model.nodes = [...model.nodes, n];
-    sel = model.nodes.length - 1;
+  // ---- bone CRUD ----------------------------------------------------------
+  function addBone() {
+    const a = bone ? bone.b.slice() : [0, 0, 0];
+    const b = [a[0], a[1] - 0.6, a[2]];
+    rig.bones = [...rig.bones, {
+      id: `bone${rig.bones.length}`, parent: bone?.id ?? null, kind: "limb",
+      a, b, radius: 0.2, joint: 2, axis1: [1, 0, 0], sym: bone?.sym ?? false,
+    }];
+    sel = rig.bones.length - 1;
   }
-  function removeNode(i) {
-    model.nodes = model.nodes.filter((_, j) => j !== i);
-    sel = Math.max(0, Math.min(sel, model.nodes.length - 1));
+  function removeBone(i) {
+    rig.bones = rig.bones.filter((_, j) => j !== i);
+    sel = Math.max(0, Math.min(sel, rig.bones.length - 1));
   }
-  function dup(i) {
-    const n = clone($state.snapshot(model.nodes[i]));
-    n.pos = [(n.pos?.[0] ?? 0) + 0.4, n.pos?.[1] ?? 0, n.pos?.[2] ?? 0];
-    model.nodes = [...model.nodes.slice(0, i + 1), n, ...model.nodes.slice(i + 1)];
+  function dupBone(i) {
+    const n = clone($state.snapshot(rig.bones[i]));
+    n.id = `${n.id}_copy`;
+    n.a = [n.a[0] + 0.3, n.a[1], n.a[2]];
+    n.b = [n.b[0] + 0.3, n.b[1], n.b[2]];
+    rig.bones = [...rig.bones.slice(0, i + 1), n, ...rig.bones.slice(i + 1)];
     sel = i + 1;
   }
-  const setVec = (key, i, v) => {
-    const a = (node[key] ?? [0, 0, 0]).slice();
-    a[i] = +v; node[key] = a;
+  const setPt = (key, i, v) => {
+    const a = (bone[key] ?? [0, 0, 0]).slice();
+    a[i] = +v; bone[key] = a;
   };
-  const ensureDims = (i, v) => {
-    const a = (node.dims ?? []).slice();
-    while (a.length <= i) a.push(0);
-    a[i] = +v; node.dims = a;
-  };
+  const setAxis = (key, label) => { bone[key] = AX[label].slice(); };
 
-  function resetModel() { regen(); }
+  function resetRig() { regen(); }
 
   function save() {
     if (!browser) return;
-    localStorage.setItem(STORE, JSON.stringify($state.snapshot(model)));
+    localStorage.setItem(STORE, JSON.stringify($state.snapshot(rig)));
     saved = true; setTimeout(() => (saved = false), 1200);
   }
   function load() {
     if (!browser) return;
     try {
-      const m = JSON.parse(localStorage.getItem(STORE));
-      if (m && Array.isArray(m.nodes)) { model = m; sel = 0; loaded = true; setTimeout(() => (loaded = false), 1200); return; }
+      const r = JSON.parse(localStorage.getItem(STORE));
+      if (r && Array.isArray(r.bones)) { rig = r; sel = 0; loaded = true; setTimeout(() => (loaded = false), 1200); return; }
     } catch { /* nothing valid */ }
     noStore = true; setTimeout(() => (noStore = false), 1200);
   }
 
-  const code = $derived(JSON.stringify($state.snapshot(model), null, 1));
+  const code = $derived(JSON.stringify($state.snapshot(rig), null, 1));
 </script>
 
 <svelte:head><title>Mech</title></svelte:head>
@@ -151,13 +143,8 @@
 
   <aside>
     <fieldset>
-      <legend>design engine</legend>
-      <label><span>Archetype</span>
-        <select bind:value={archetype} onchange={regen}>
-          {#each ARCHETYPES as a}<option value={a.id}>{a.name}</option>{/each}
-        </select></label>
-      <label><span>Detail</span>
-        <input type="range" min="0.4" max="2" step="0.1" bind:value={detail} /><output>{detail.toFixed(1)}</output></label>
+      <legend>rig + design</legend>
+      <label class="chk"><input type="checkbox" bind:checked={fingers} onchange={regen} /> <span>Hands &amp; fingers</span></label>
       <div class="grp">accent</div>
       <span class="swatches">
         {#each ACCENTS as c}
@@ -165,10 +152,7 @@
             style:background={c} aria-label={c} onclick={() => (accent = c)}></button>
         {/each}
       </span>
-      <div class="tabs">
-        <button type="button" class="go" onclick={regen}>⚙ generate</button>
-        <button type="button" onclick={reseed}>🎲 seed {seed}</button>
-      </div>
+      <button type="button" class="go wide" onclick={regen}>⚙ regenerate</button>
     </fieldset>
 
     <fieldset>
@@ -176,81 +160,65 @@
       <div class="tabs">
         <button type="button" onclick={save}>{saved ? "✓ saved" : "💾 save"}</button>
         <button type="button" onclick={load}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>
-        <button type="button" onclick={resetModel}>↺ reset</button>
+        <button type="button" onclick={resetRig}>↺ reset</button>
       </div>
       <button type="button" class="wide" onclick={() => (showCode = !showCode)}>{showCode ? "▲ hide code" : "▼ show code"}</button>
       {#if showCode}<textarea class="code" readonly rows="7">{code}</textarea>{/if}
     </fieldset>
 
     <fieldset>
-      <legend>parts <button type="button" class="add" onclick={addNode}>+ node</button></legend>
+      <legend>rig · bones <button type="button" class="add" onclick={addBone}>+ bone</button></legend>
       <ul class="parts">
-        {#each model.nodes as n, i (i)}
+        {#each rig.bones as b, i (i)}
           <li>
             <button type="button" class="pick" class:on={i === sel} onclick={() => (sel = i)}>
-              <span class="sw" style:background={n.op === "subtract" ? "transparent" : hexOf(n.color)}
-                class:cut={n.op === "subtract"}></span>
-              <span class="nm">{n.type}{n.op && n.op !== "union" ? ` · ${n.op}` : ""}{n.sym ? " ⇄" : ""}</span>
-              <em>s{n.stage ?? 1}</em>
+              <span class="jt jt{b.joint}" title={JOINTS[b.joint]?.[0]}>{b.joint}</span>
+              <span class="nm">{b.id}</span>
+              <em>{b.kind}{b.sym ? " ⇄" : ""}</em>
             </button>
             <span class="ctl">
-              <button type="button" onclick={() => dup(i)} title="duplicate">⧉</button>
-              <button type="button" class="del" onclick={() => removeNode(i)}>✕</button>
+              <button type="button" onclick={() => dupBone(i)} title="duplicate">⧉</button>
+              <button type="button" class="del" onclick={() => removeBone(i)}>✕</button>
             </span>
           </li>
         {/each}
       </ul>
     </fieldset>
 
-    {#if node}
+    {#if bone}
       <fieldset>
-        <legend>node {sel} — {node.type}</legend>
-        <label><span>Primitive</span>
-          <select bind:value={node.type}>{#each TYPES as t}<option value={t}>{t}</option>{/each}</select></label>
-        <label><span>CSG op</span>
-          <select bind:value={node.op}>{#each OPS as o}<option value={o}>{o}</option>{/each}</select></label>
-        <label><span>Pipeline step</span>
-          <select bind:value={node.stage}><option value={1}>1 base</option><option value={2}>2 boolean</option><option value={3}>3 detail</option></select></label>
-        <label class="chk"><input type="checkbox" bind:checked={node.sym} /> <span>Mirror L/R (X)</span></label>
+        <legend>bone — {bone.id}</legend>
+        <label><span>ID</span>
+          <input class="id" value={bone.id} onchange={(e) => (bone.id = e.currentTarget.value)} /></label>
+        <label><span>Part kind</span>
+          <select bind:value={bone.kind}>{#each KINDS as k}<option value={k}>{k}</option>{/each}</select></label>
+        <label><span>Joint</span>
+          <select value={bone.joint} onchange={(e) => (bone.joint = +e.currentTarget.value)}>
+            {#each JOINTS as [lab, v]}<option value={v}>{lab}</option>{/each}</select></label>
+        <label class="chk"><input type="checkbox" bind:checked={bone.sym} /> <span>Mirror L/R (X)</span></label>
+        <label><span>Radius</span>
+          <input type="range" min="0.02" max="0.8" step="0.01" value={bone.radius}
+            oninput={(e) => (bone.radius = +e.currentTarget.value)} /><output>{bone.radius.toFixed(2)}</output></label>
 
-        <div class="grp">dimensions</div>
-        {#each DIMS_META[node.type] ?? [] as [lab, idx]}
-          <label><span>{lab}</span>
-            <input type="range" min="0.02" max="2" step="0.02" value={node.dims?.[idx] ?? 0}
-              oninput={(e) => ensureDims(idx, e.currentTarget.value)} /><output>{(node.dims?.[idx] ?? 0).toFixed(2)}</output></label>
-        {/each}
-        <label><span>Bevel</span>
-          <input type="range" min="0" max="0.3" step="0.005" value={node.round ?? 0}
-            oninput={(e) => (node.round = +e.currentTarget.value)} /><output>{(node.round ?? 0).toFixed(3)}</output></label>
-        <label><span>Smooth k</span>
-          <input type="range" min="0" max="0.4" step="0.01" value={node.k ?? 0}
-            oninput={(e) => (node.k = +e.currentTarget.value)} /><output>{(node.k ?? 0).toFixed(2)}</output></label>
-
-        <div class="grp">position</div>
-        {#each ["X", "Y", "Z"] as ax, i}
-          <label><span>Pos {ax}</span>
-            <input type="range" min="-4" max="4.5" step="0.02" value={node.pos?.[i] ?? 0}
-              oninput={(e) => setVec("pos", i, e.currentTarget.value)} /><output>{(node.pos?.[i] ?? 0).toFixed(2)}</output></label>
-        {/each}
-        <div class="grp">rotation°</div>
-        {#each ["X", "Y", "Z"] as ax, i}
-          <label><span>Rot {ax}</span>
-            <input type="range" min="-180" max="180" step="1" value={node.rot?.[i] ?? 0}
-              oninput={(e) => setVec("rot", i, e.currentTarget.value)} /><output>{node.rot?.[i] ?? 0}</output></label>
-        {/each}
-
-        {#if node.op !== "subtract"}
-          <div class="grp">color</div>
-          <span class="swatches">
-            {#each COLORS as c}
-              <button type="button" class="chip" class:on={hexOf(node.color) === hexOf(c)}
-                style:background={PALETTE[c]} title={c} aria-label={c}
-                onclick={() => (node.color = PALETTE[c])}></button>
-            {/each}
-            <input class="picker" type="color" value={hexOf(node.color)}
-              oninput={(e) => (node.color = e.currentTarget.value)} title="custom" />
-          </span>
+        {#if bone.joint === 2 || bone.joint === 3}
+          <div class="grp">joint axis</div>
+          <label><span>Pitch axis</span>
+            <select value={axisLabel(bone.axis1)} onchange={(e) => setAxis("axis1", e.currentTarget.value)}>
+              <option>X</option><option>Y</option><option>Z</option></select></label>
         {/if}
+
+        <div class="grp">A · proximal (joint)</div>
+        {#each ["X", "Y", "Z"] as ax, i}
+          <label><span>A {ax}</span>
+            <input type="range" min="-3" max="3.5" step="0.02" value={bone.a?.[i] ?? 0}
+              oninput={(e) => setPt("a", i, e.currentTarget.value)} /><output>{(bone.a?.[i] ?? 0).toFixed(2)}</output></label>
+        {/each}
+        <div class="grp">B · distal (end)</div>
+        {#each ["X", "Y", "Z"] as ax, i}
+          <label><span>B {ax}</span>
+            <input type="range" min="-3" max="3.5" step="0.02" value={bone.b?.[i] ?? 0}
+              oninput={(e) => setPt("b", i, e.currentTarget.value)} /><output>{(bone.b?.[i] ?? 0).toFixed(2)}</output></label>
+        {/each}
       </fieldset>
     {/if}
   </aside>
@@ -296,6 +264,11 @@
   .parts li { display: flex; align-items: center; gap: 0.2rem; }
   .pick { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.18rem 0.35rem; border-radius: 0.3rem; }
   .pick.on { opacity: 1; font-weight: 600; outline: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+  .jt { flex: none; width: 1.1rem; height: 1.1rem; border-radius: 0.25rem; display: grid; place-items: center;
+    font-size: 0.62rem; font-weight: 700; color: #111; background: #6b7280; }
+  .jt0 { background: #6b7280; } .jt1 { background: #c79a3c; }
+  .jt2 { background: #e8b730; } .jt3 { background: #3fb6d0; } .jt4 { background: #d6552f; }
+  .id { flex: 1; }
   .pick .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pick em { font-style: normal; font-size: 0.6rem; opacity: 0.55; }
   .sw { width: 0.85rem; height: 0.85rem; border-radius: 0.2rem; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); flex: none; }

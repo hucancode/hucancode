@@ -24,7 +24,7 @@ struct Uni {
 @group(0) @binding(0) var<uniform> u: Uni;
 @group(0) @binding(1) var nodeTex: texture_2d<f32>;
 
-const MAXN: i32 = 96;
+const MAXN: i32 = 256;
 
 struct VsOut {
   @builtin(position) pos: vec4<f32>,
@@ -49,22 +49,6 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
   return mix(b, a, h) - k * h * (1.0 - h);
 }
 fn smax(a: f32, b: f32, k: f32) -> f32 { return -smin(-a, -b, k); }
-
-// square pyramid (iq), unit base side 1 centered, apex at y=h
-fn sdPyramidUnit(p0: vec3<f32>, h: f32) -> f32 {
-  let m2 = h * h + 0.25;
-  let axz0 = abs(p0.xz);
-  let axz = select(axz0, axz0.yx, axz0.y > axz0.x);
-  let pxz = axz - vec2<f32>(0.5);
-  let py = p0.y;
-  let q = vec3<f32>(pxz.y, h * py - 0.5 * pxz.x, h * pxz.x + 0.5 * py);
-  let s = max(-q.x, 0.0);
-  let t = clamp((q.y - 0.5 * pxz.y) / (m2 + 0.25), 0.0, 1.0);
-  let a = m2 * (q.x + s) * (q.x + s) + q.y * q.y;
-  let b = m2 * (q.x + 0.5 * t) * (q.x + 0.5 * t) + (q.y - m2 * t) * (q.y - m2 * t);
-  let d2 = select(min(a, b), 0.0, min(q.y, -q.x * m2 - q.y * 0.5) > 0.0);
-  return sqrt((d2 + q.z * q.z) / m2) * sign(max(q.z, -py));
-}
 
 fn prim(q: vec3<f32>, ty: i32, P: vec4<f32>, r: f32) -> f32 {
   if (ty == 0) { return length(q) - P.x; }
@@ -95,10 +79,18 @@ fn prim(q: vec3<f32>, ty: i32, P: vec4<f32>, r: f32) -> f32 {
     let t2 = vec2<f32>(length(q.xz) - P.x, q.y);
     return length(t2) - P.y - r;
   }
-  // pyramid: base half P.x, half-height P.y, apex +Y
-  let sc = max(2.0 * P.x, 1e-3);
-  let pl = vec3<f32>(q.x / sc, (q.y + P.y) / sc, q.z / sc);
-  return sdPyramidUnit(pl, (2.0 * P.y) / sc) * sc - r;
+  // truncated square pyramid: base half P.x (bottom -Y), TOP half P.z (top +Y),
+  // half-height P.y. P.z = 0 -> a pointed apex (a plain pyramid). square-section
+  // capped-cone math (Chebyshev radius), so the same param does taper + cut-off.
+  let qx = max(abs(q.x), abs(q.z));
+  let q2 = vec2<f32>(qx, q.y);
+  let h = P.y; let r1 = P.x; let r2 = P.z;
+  let k1 = vec2<f32>(r2, h);
+  let k2 = vec2<f32>(r2 - r1, 2.0 * h);
+  let ca = vec2<f32>(q2.x - min(q2.x, select(r2, r1, q2.y < 0.0)), abs(q2.y) - h);
+  let cb = q2 - k1 + k2 * clamp(dot(k1 - q2, k2) / dot(k2, k2), 0.0, 1.0);
+  let sgn = select(1.0, -1.0, cb.x < 0.0 && ca.y < 0.0);
+  return sgn * sqrt(min(dot(ca, ca), dot(cb, cb))) - r;
 }
 
 // local point for node i given world p

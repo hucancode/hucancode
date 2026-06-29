@@ -1,127 +1,161 @@
 // MECH DESIGN ENGINE
-// Turns a small set of artistic parameters into a list of render primitives.
-// It knows design; it does NOT know how primitives are drawn. Output is the same
-// flat node format the render engine packs ({type,pos,rot,dims,op,round,k,color,
-// stage,sym}). The render engine never imports this file.
+// Fulfils the rig contract: walks the skeleton and DERIVES render primitives.
+//   - each bone -> a limb solid (capsule / box / sphere by kind)
+//   - each joint -> mechanical hardware whose SHAPE encodes its DOF:
+//       1 yaw   -> a tube along the bone + a ring capping each end
+//       2 pitch -> one cylinder crossing perpendicular (a hinge pin)
+//       3 uni   -> a yaw ring + a perpendicular pitch cylinder through it
+//       4 ball  -> a ball-and-socket sphere (+ socket lip)
+// It knows design (shape, material, proportion-of-detail); it does NOT know how
+// primitives are drawn, and it never reads back from the render engine.
 //
-// Principles encoded below (referenced by NAME in the code):
-//   SYMMETRY      bilateral — author one side, emit `sym` so render mirrors it.
-//   PROPORTION    a canon of ratios off a base unit U (φ where it reads well).
-//   HIERARCHY     primary masses (torso/pelvis) > secondary (limbs) > tertiary
-//                 (detail); bevel + size scale with rank.
-//   SILHOUETTE    heroic read: shoulders wider than hips, stable foot base.
-//   RHYTHM        repeated detail (vents/bolts) on an even beat, seed-jittered.
-//   FOCAL POINT   one accent hue + the glowing cockpit, placed on the upper third.
-//   CONTRAST      big smooth plates against small sharp detail.
+// Principles still applied on top of the rig: limited PALETTE (unity), brass at
+// every mechanism (legibility), accent + glass as the FOCAL point, bevels for
+// CONTRAST of big smooth limbs vs small sharp hardware.
 
-import { rng } from "./rng.js";
 import { PALETTE } from "./palette.js";
 
-const PHI = 1.618;
+const D2R = 180 / Math.PI;
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+const len = (v) => Math.hypot(v[0], v[1], v[2]);
+const mul = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
+const addv = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 
-// archetypes = named points in the parameter space (a "canon" each). vanguard is
-// the reference build; titan/scout are proportional re-castings of the same body.
-export const ARCHETYPES = [
-  { id: "vanguard", name: "Vanguard (heroic)", params: { u: 1.0, shoulderW: 1.0, hipW: 1.0, limb: 1.0, reach: 1.0, head: 1.0 } },
-  { id: "titan", name: "Titan (heavy)", params: { u: 1.12, shoulderW: 1.22, hipW: 1.14, limb: 1.34, reach: 0.92, head: 0.85 } },
-  { id: "scout", name: "Scout (light)", params: { u: 0.9, shoulderW: 0.88, hipW: 0.84, limb: 0.78, reach: 1.16, head: 1.08 } },
-];
+// euler (deg, our Rz*Ry*Rx convention) that rotates +Y onto unit dir d.
+// derivation: with rz=0, column-1 of Ry*Rx = [sy*sx, cx, cy*sx]; match to d.
+function eulerFromY(d) {
+  const hyp = Math.hypot(d[0], d[2]);
+  const rx = Math.atan2(hyp, d[1]) * D2R;
+  const ry = Math.atan2(d[0], d[2]) * D2R;
+  return [rx, ry, 0];
+}
 
-export function generateMech(opts = {}) {
-  const arch = ARCHETYPES.find((a) => a.id === (opts.archetype || "vanguard")) || ARCHETYPES[0];
-  const p = arch.params;
-  const rand = rng(((opts.seed ?? 1) >>> 0) * 2654435761 + 1);
-  const accent = opts.accent || PALETTE.accent;
-  const detail = opts.detail ?? 1.0;
-  const { steel, dark, brass, glass, gun } = PALETTE;
-
-  // PROPORTION: derive every coordinate from these so a canon change re-poses the
-  // whole body coherently. U = overall scale, REACH = vertical stretch, W/H =
-  // shoulder/hip spread (SILHOUETTE), LB = limb bulk (HIERARCHY/CONTRAST).
-  const U = p.u, REACH = p.reach, LB = p.limb, HEAD = p.head;
-  const W = p.shoulderW, H = p.hipW;
-  const up = (x, y, z) => [x * W * U, y * REACH * U, z * U];   // upper-body frame
-  const lo = (x, y, z) => [x * H * U, y * REACH * U, z * U];   // lower-body frame
-  const ce = (x, y, z) => [x * U, y * REACH * U, z * U];       // centerline
-  const jitter = (a) => (rand() - 0.5) * a;
-
+export function rigToPrimitives(rig, style = {}) {
+  const { steel, dark, brass, glass } = PALETTE;
+  const accent = style.accent || PALETTE.accent;
   const nodes = [];
+  let curBone = -1; // which rig bone the current primitives belong to (for editor highlight)
   const add = (type, pos, dims, o = {}) => nodes.push({
     type, pos, dims,
     rot: o.rot, op: o.op, k: o.k, sym: o.sym,
-    round: o.round ?? 0.06, color: o.color ?? steel, stage: o.stage ?? 1,
+    round: o.round ?? 0.04, color: o.color ?? steel, stage: o.stage ?? 1,
+    _bone: curBone,
   });
 
-  // ===== STEP 1 — base shapes + connections (PRIMARY/SECONDARY masses) =====
-  // torso: stacked cuboids, chest:abdomen heights ~ φ (PROPORTION)
-  add("box", ce(0, 2.35, 0), [1.12 * U * W, 0.92 * U, 0.62 * U], { round: 0.1, color: steel });
-  add("box", ce(0, 1.45, 0.02), [0.72 * U, 0.5 * U, 0.46 * U], { round: 0.08, color: dark });
-  // neck tube (connection) + head, head a third smaller plays to HIERARCHY
-  add("cyl", ce(0, 3.18, -0.02), [0.2 * U, 0.16 * U], { round: 0.04, color: dark });
-  add("box", ce(0, 3.6, 0.04), [0.44 * U * HEAD, 0.36 * U * HEAD, 0.42 * U * HEAD], { round: 0.12, color: steel });
-  // shoulders = ball joints (SYMMETRY via sym); arm chain: capsule, elbow, forearm
-  add("sphere", up(1.26, 2.66, 0), [0.46 * U], { color: dark, sym: true });
-  add("capsule", up(1.32, 1.96, 0), [0.23 * U * LB, 0.46 * U], { rot: [0, 0, 6], color: steel, sym: true });
-  add("cyl", up(1.36, 1.4, 0), [0.21 * U * LB, 0.24 * U], { rot: [0, 0, 90], color: brass, sym: true });
-  add("box", up(1.38, 0.92, 0.06), [0.27 * U * LB, 0.5 * U, 0.31 * U * LB], { round: 0.06, color: steel, sym: true });
-  // pelvis + hip balls + leg chain (wider foot than knee = stable SILHOUETTE)
-  add("box", ce(0, 0.86, 0), [0.82 * U * H, 0.42 * U, 0.52 * U], { round: 0.08, color: dark });
-  add("sphere", lo(0.56, 0.66, 0), [0.31 * U], { color: brass, sym: true });
-  add("capsule", lo(0.56, 0.02, 0), [0.27 * U * LB, 0.5 * U], { color: steel, sym: true });
-  add("cyl", lo(0.56, -0.66, 0), [0.25 * U * LB, 0.27 * U], { rot: [0, 0, 90], color: brass, sym: true });
-  add("box", lo(0.56, -1.36, 0.04), [0.29 * U * LB, 0.56 * U, 0.35 * U * LB], { round: 0.06, color: steel, sym: true });
-  add("box", lo(0.56, -1.98, 0.2), [0.35 * U * LB, 0.18 * U, 0.56 * U], { round: 0.05, color: dark, sym: true });
-
-  // ===== STEP 2 — modify: split / extrude / boolean subtract =================
-  // SPLIT the chest into two plates with a center groove (boolean subtract)
-  add("box", ce(0, 2.4, 0.2), [0.05 * U, 0.78 * U, 0.5 * U], { op: "subtract", color: dark, stage: 2 });
-  // EXTRUDE a collar, then angular shoulder pads in ACCENT (FOCAL secondary)
-  add("box", ce(0, 3.02, 0), [0.92 * U * W, 0.16 * U, 0.5 * U], { round: 0.06, color: dark, stage: 2 });
-  add("box", up(1.4, 2.92, 0), [0.46 * U, 0.26 * U, 0.5 * U], { rot: [0, 0, -14], round: 0.12, color: accent, stage: 2, sym: true });
-  // SUBTRACT the cockpit canopy then fill with glass — FOCAL POINT on upper third
-  add("box", ce(0, 2.55, 0.55), [0.4 * U, 0.34 * U, 0.2 * U], { op: "subtract", stage: 2 });
-  add("box", ce(0, 2.55, 0.5), [0.34 * U, 0.28 * U, 0.12 * U], { round: 0.05, color: glass, stage: 2 });
-  // SUBTRACT a visor slot + glowing bar
-  add("box", ce(0, 3.6 + 0.04, 0.42), [0.3 * U * HEAD, 0.08 * U, 0.12 * U], { op: "subtract", stage: 2 });
-  add("box", ce(0, 3.64, 0.42), [0.26 * U * HEAD, 0.05 * U, 0.08 * U], { round: 0.02, color: glass, stage: 2 });
-  // forearm cannon: barrel cylinder, then SUBTRACT the bore (CONTRAST: gun metal)
-  add("cyl", up(1.38, 0.92, 0.62), [0.19 * U * LB, 0.42 * U], { rot: [90, 0, 0], round: 0.04, color: gun, stage: 2, sym: true });
-  add("cyl", up(1.38, 0.92, 1.0), [0.1 * U, 0.3 * U], { rot: [90, 0, 0], op: "subtract", stage: 2, sym: true });
-  // knee guard plate (extrude) in ACCENT
-  add("box", lo(0.56, -0.66, 0.26), [0.24 * U, 0.3 * U, 0.16 * U], { round: 0.08, color: accent, stage: 2, sym: true });
-  // toe split groove (subtract)
-  add("box", lo(0.56, -1.98, 0.46), [0.37 * U * LB, 0.2 * U, 0.05 * U], { op: "subtract", stage: 2, sym: true });
-
-  // ===== STEP 3 — micro detail: cut-lines / vents / bolts / antenna ==========
-  // CONTRAST + RHYTHM. thigh cut-line (single seam)
-  add("box", lo(0.56, 0.02, 0.27), [0.04 * U, 0.42 * U, 0.04 * U], { op: "subtract", stage: 3, sym: true });
-  // RHYTHM: a run of shin vents on an even beat; count scales with detail density
-  const vents = Math.max(1, Math.round(3 * detail));
-  for (let i = 0; i < vents; i++) {
-    const y = -1.3 - i * (0.4 / vents) - 0.02;
-    add("box", lo(0.56, y, 0.4), [0.18 * U, 0.04 * U, 0.04 * U], { op: "subtract", stage: 3, sym: true });
+  // ---- mechanical joint hardware, SHAPE == degrees of freedom --------------
+  //   yaw spins about the bone direction `dir`; pitch spins about `pax` (the X
+  //   pin). each rendered piece reads its allowed motion directly.
+  function emitJoint(pos, type, dir, pax, r, sym) {
+    if (type <= 0) return;                 // weld: no hardware
+    const eDir = eulerFromY(dir);          // orient a part along the bone
+    const ePax = eulerFromY(pax);          // orient a part along the pitch axis
+    if (type === 4) {
+      // BALL: sphere in the socket + a dark socket lip (torus) around it
+      add("sphere", pos, [r * 0.95], { color: brass, round: 0, stage: 1, sym });
+      add("torus", pos, [r * 1.0, r * 0.2], { rot: eDir, color: dark, stage: 2, sym });
+      return;
+    }
+    if (type === 1) {
+      // YAW: a tube ALONG the bone + a ring capping each end (twist about dir)
+      add("cyl", pos, [r * 0.45, r * 1.3], { rot: eDir, color: brass, round: 0.03, stage: 1, sym });
+      add("torus", addv(pos, mul(dir, r * 0.62)), [r * 0.78, r * 0.16], { rot: eDir, color: dark, stage: 2, sym });
+      add("torus", addv(pos, mul(dir, -r * 0.62)), [r * 0.78, r * 0.16], { rot: eDir, color: dark, stage: 2, sym });
+      return;
+    }
+    if (type === 2) {
+      // PITCH: one cylinder crossing perpendicular to both parts (a hinge pin)
+      add("cyl", pos, [r * 0.45, r * 2.0], { rot: ePax, color: brass, round: 0.03, stage: 1, sym });
+      add("cyl", addv(pos, mul(pax, r * 1.0)), [r * 0.72, r * 0.12], { rot: ePax, color: dark, stage: 2, sym });
+      add("cyl", addv(pos, mul(pax, -r * 1.0)), [r * 0.72, r * 0.12], { rot: ePax, color: dark, stage: 2, sym });
+      return;
+    }
+    // UNI (2-axis): a yaw ring (normal = dir) with a perpendicular pitch pin
+    // crossing through its centre.
+    add("torus", pos, [r * 0.85, r * 0.18], { rot: eDir, color: dark, stage: 1, sym });
+    add("cyl", pos, [r * 0.42, r * 1.7], { rot: ePax, color: brass, round: 0.03, stage: 2, sym });
   }
-  // bolts on the shoulder pad (tertiary detail), seed-jittered so it isn't sterile
-  add("cyl", up(1.55, 3.0, 0.36), [0.05 * U, 0.06 * U], { rot: [90, 0, 0], round: 0.02, color: brass, stage: 3, sym: true });
-  add("cyl", up(1.25, 3.0, 0.36), [0.05 * U, 0.06 * U], { rot: [90, 0, 0], round: 0.02, color: brass, stage: 3, sym: true });
-  // rivets along the collar
-  add("sphere", ce(0.5 + jitter(0.04), 3.05, 0.46), [0.05 * U], { color: brass, stage: 3, sym: true });
-  // abdomen panel seam (cut-line)
-  add("box", ce(0, 1.7, 0.46), [0.6 * U, 0.03 * U, 0.04 * U], { op: "subtract", stage: 3 });
-  // antenna — a thin vertical accent breaking the silhouette asymmetrically
-  add("cyl", ce(0.32, 4.05, -0.08), [0.025 * U, 0.34 * U], { rot: [10, 0, 0], round: 0.01, color: accent, stage: 3, sym: true });
 
-  // camera/ground framing derived from the canon so any archetype sits right
-  const footBottom = (-1.98 * REACH - 0.18) * U;
+  // ---- limb solids, one shape per bone kind --------------------------------
+  for (let bi = 0; bi < rig.bones.length; bi++) {
+    const bone = rig.bones[bi];
+    curBone = bi;
+    const v = sub(bone.b, bone.a);
+    const L = len(v) || 0.001;
+    const dir = mul(v, 1 / L);
+    const c = mid(bone.a, bone.b);
+    const r = bone.radius;
+    const rot = eulerFromY(dir);
+    const sym = !!bone.sym;
+    const jr = Math.max(r * 0.95, 0.05);
+
+    if (bone.kind === "pelvis") {
+      // cut-off upside-down pyramid: wide hips on top, narrow flat slot at the crotch.
+      add("pyramid", c, [r * 0.6, L / 2, r * 1.05], { rot, round: 0.05, color: dark, sym, stage: 1 });
+    } else if (bone.kind === "torso") {
+      // cut-off upside-down pyramid: wide shoulders on top, narrow flat waist slot.
+      add("pyramid", c, [r * 0.5, L / 2, r], { rot, round: 0.05, color: steel, sym, stage: 1 });
+      // FOCAL: cockpit carved into the chest, glass fill (upper third)
+      const ck = addv(c, [0, L * 0.28, r * 0.5]);
+      add("box", ck, [r * 0.42, r * 0.42, r * 0.3], { op: "subtract", stage: 2 });
+      add("box", addv(ck, [0, 0, -r * 0.06]), [r * 0.36, r * 0.34, r * 0.16], { round: 0.04, color: glass, stage: 2 });
+      // BELLY: the torso<->pelvis connector, enlarged. there is no belly part, so
+      // this oversized rounded connector plugs the waist slot and reads as one.
+      add("sphere", bone.a, [r * 0.92], { color: steel, round: 0, sym, stage: 1 });
+      add("torus", bone.a, [r * 0.7, r * 0.16], { rot, color: brass, stage: 2, sym }); // belly band, hints the 2-axis
+    } else if (bone.kind === "head") {
+      add("box", c, [r * 1.0, L / 2, r * 0.95], { round: 0.16, color: steel, sym, stage: 1 });
+      const vz = addv(c, [0, 0, r * 0.85]);
+      add("box", vz, [r * 0.7, r * 0.2, r * 0.3], { op: "subtract", stage: 2 });
+      add("box", vz, [r * 0.6, r * 0.13, r * 0.16], { round: 0.03, color: glass, stage: 2 });
+      // accent antenna breaking the silhouette
+      add("cyl", addv(bone.b, [r * 0.7, r * 0.5, -r * 0.3]), [r * 0.07, r * 0.9], { rot: [12, 0, 0], color: accent, round: 0.01, stage: 3, sym: true });
+    } else if (bone.kind === "shoulder") {
+      // single box spanning torso end -> arm end; flat ends are the connector slots
+      add("box", c, [r, L / 2 + r * 0.4, r * 0.85], { rot, round: 0.08, color: steel, sym, stage: 1 });
+    } else if (bone.kind === "hip") {
+      // single cylinder spanning pelvis end -> thigh end; flat caps are the slots
+      add("cyl", c, [r * 0.9, L / 2 + r * 0.3], { rot, round: 0.06, color: dark, sym, stage: 1 });
+    } else if (bone.kind === "hand") {
+      add("box", c, [r, L / 2 + r * 0.2, r * 0.55], { rot, round: 0.05, color: steel, sym, stage: 1 });
+    } else if (bone.kind === "foot") {
+      add("box", c, [r * 0.95, r * 0.45, L / 2], { rot, round: 0.05, color: dark, sym, stage: 1 });
+    } else if (bone.kind === "digit") {
+      // cylinder = flat-capped slots at each knuckle
+      add("cyl", c, [r, Math.max(0.02, L / 2)], { rot, round: 0.02, color: steel, sym, stage: 3 });
+    } else if (/^(forearm|thigh|shin)/.test(bone.id)) {
+      // cut-off upside-down pyramid: wide flat base (slot) at the proximal joint,
+      // tapering to a smaller flat slot at the distal joint.
+      add("pyramid", c, [r, L / 2, r * 0.5], { rot, round: 0.03, color: steel, sym, stage: 1 });
+    } else {
+      // generic limb (upper arm, etc.) = tapered cut-off cone, flat ends as slots
+      add("cone", c, [r * 1.05, L / 2, r * 0.78], { rot, round: 0.03, color: steel, sym, stage: 1 });
+    }
+
+    // accent guard plate over the knee (the shin's hinge)
+    if (bone.id === "shinL") {
+      add("box", addv(bone.a, [0, 0, r * 1.0]), [r * 0.85, r * 1.1, r * 0.5], { round: 0.08, color: accent, stage: 2, sym });
+    }
+
+    // joint hardware at the proximal end. digits stay cheap: a single crossing
+    // pin (pitch) regardless of DOF, so a hand isn't dozens of primitives.
+    if (bone.kind === "digit") {
+      if (bone.joint > 0) {
+        const pax = bone.axis1 || [1, 0, 0];
+        add("cyl", bone.a, [r * 1.05, r * 1.5], { rot: eulerFromY(pax), color: brass, round: 0.02, stage: 3, sym });
+      }
+    } else if (bone.kind !== "torso") {
+      // torso's connector is the belly (emitted above), not standard joint hardware
+      emitJoint(bone.a, bone.joint, dir, bone.axis1 || [1, 0, 0], jr, sym);
+    }
+  }
+
   return {
-    name: arch.name,
-    archetype: arch.id,
-    seed: opts.seed ?? 1,
-    accent,
-    detail,
     nodes,
-    floorY: footBottom - 0.1,
-    midY: 0.9 * REACH * U,
-    dist: 9.5 * U * (0.85 + 0.2 * REACH),
+    floorY: rig.meta.floorY,
+    midY: rig.meta.midY,
+    dist: rig.meta.dist,
+    archetype: rig.meta.archetype,
+    name: rig.meta.name,
   };
 }

@@ -1,5 +1,5 @@
-// Design engine public surface. The render engine never imports this; the page
-// uses it to turn artistic params into a primitive list, then hands that list to
-// the render engine.
-export { generateMech, ARCHETYPES } from "./generate.js";
+// Design engine public surface. Takes a rig ({ bones, meta }) from the rig engine
+// and returns a primitive list for the render engine. Imports neither engine's
+// internals beyond the rig data contract.
+export { rigToPrimitives } from "./generate.js";
 export { PALETTE } from "./palette.js";

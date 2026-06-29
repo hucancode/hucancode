@@ -26,7 +26,7 @@ uniform float uTime;
 uniform float uShadow;
 uniform float uGround;
 
-const int MAXN = 96;
+const int MAXN = 256;
 
 vec4 texelF(int i, int c) { return texelFetch(nodeTex, ivec2(c, i), 0); }
 
@@ -36,22 +36,6 @@ float smin(float a, float b, float k) {
   return mix(b, a, h) - k * h * (1.0 - h);
 }
 float smax(float a, float b, float k) { return -smin(-a, -b, k); }
-
-// square pyramid (iq), unit base side 1 centered, apex at y=h
-float sdPyramidUnit(vec3 p0, float h) {
-  float m2 = h * h + 0.25;
-  vec2 axz0 = abs(p0.xz);
-  vec2 axz = (axz0.y > axz0.x) ? axz0.yx : axz0;
-  vec2 pxz = axz - vec2(0.5);
-  float py = p0.y;
-  vec3 q = vec3(pxz.y, h * py - 0.5 * pxz.x, h * pxz.x + 0.5 * py);
-  float s = max(-q.x, 0.0);
-  float t = clamp((q.y - 0.5 * pxz.y) / (m2 + 0.25), 0.0, 1.0);
-  float a = m2 * (q.x + s) * (q.x + s) + q.y * q.y;
-  float b = m2 * (q.x + 0.5 * t) * (q.x + 0.5 * t) + (q.y - m2 * t) * (q.y - m2 * t);
-  float d2 = (min(q.y, -q.x * m2 - q.y * 0.5) > 0.0) ? 0.0 : min(a, b);
-  return sqrt((d2 + q.z * q.z) / m2) * sign(max(q.z, -py));
-}
 
 float prim(vec3 q, int ty, vec4 P, float r) {
   if (ty == 0) return length(q) - P.x;
@@ -82,10 +66,18 @@ float prim(vec3 q, int ty, vec4 P, float r) {
     vec2 t2 = vec2(length(q.xz) - P.x, q.y);
     return length(t2) - P.y - r;
   }
-  // pyramid: base half P.x, half-height P.y, apex +Y
-  float sc = max(2.0 * P.x, 1e-3);
-  vec3 pl = vec3(q.x / sc, (q.y + P.y) / sc, q.z / sc);
-  return sdPyramidUnit(pl, (2.0 * P.y) / sc) * sc - r;
+  // truncated square pyramid: base half P.x (bottom -Y), TOP half P.z (top +Y),
+  // half-height P.y. P.z = 0 -> a pointed apex (a plain pyramid). square-section
+  // capped-cone math (Chebyshev radius), so the same param does taper + cut-off.
+  float qx = max(abs(q.x), abs(q.z));
+  vec2 q2 = vec2(qx, q.y);
+  float h = P.y, r1 = P.x, r2 = P.z;
+  vec2 k1 = vec2(r2, h);
+  vec2 k2 = vec2(r2 - r1, 2.0 * h);
+  vec2 ca = vec2(q2.x - min(q2.x, (q2.y < 0.0) ? r1 : r2), abs(q2.y) - h);
+  vec2 cb = q2 - k1 + k2 * clamp(dot(k1 - q2, k2) / dot(k2, k2), 0.0, 1.0);
+  float sgn = (cb.x < 0.0 && ca.y < 0.0) ? -1.0 : 1.0;
+  return sgn * sqrt(min(dot(ca, ca), dot(cb, cb))) - r;
 }
 
 vec3 localP(int i, vec3 p) {
