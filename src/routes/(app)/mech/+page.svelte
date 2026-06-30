@@ -3,7 +3,7 @@
   import Scene from "$lib/components/mech.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import { buildHumanoidRig } from "$lib/playgrounds/mech/rig/index.js";
-  import { rigToPrimitives, jointCatalog, JOINT_PARAMS, PALETTE } from "$lib/playgrounds/mech/design/index.js";
+  import { rigToPrimitives, jointCatalog, JOINT_PARAMS, JOINT_NAMES, PALETTE } from "$lib/playgrounds/mech/design/index.js";
   import { texRowOf } from "$lib/playgrounds/mech/sdf.js";
 
   let scene = $state(null);
@@ -52,10 +52,13 @@
   // editable joint-catalog params (cloned from the design-engine defaults) + the
   // sliders that drive them. each entry: [key, label, min, max].
   let jparams = $state(structuredClone(JOINT_PARAMS));
+  let selJoint = $state(JOINT_NAMES[0]);   // which joint the catalog renders + configs
+  const JOINT_LABELS = { hinge: "hinge", hingePivot: "hinge-pivot", pivot: "pivot", ball: "ball" };
   const JOINT_CTL = {
-    hinge: [["ratio", "male / female", 0.1, 0.9], ["gapRatio", "gap / male", 0, 0.6], ["height", "height", 0.5, 2.0], ["bevel", "bevel", 0, 2.5]],
+    hinge: [["width", "width", 0.2, 0.7], ["depth", "depth", 0.2, 0.9], ["femaleWidth", "female arm", 0.1, 2.0], ["maleWidth", "male arm", 0.1, 2.0], ["gapWidth", "gap", 0, 1.0], ["height", "height", 0.8, 3.0], ["tongueLength", "tongue length", 0, 1], ["socketLength", "socket length", 0, 1], ["socketThickness", "socket thickness", 0, 1], ["bevel", "bevel", 0, 2.5]],
+    hingePivot: [["width", "width", 0.2, 0.7], ["depth", "depth", 0.2, 0.9], ["femaleWidth", "female arm", 0.1, 2.0], ["maleWidth", "male arm", 0.1, 2.0], ["gapWidth", "gap", 0, 1.0], ["height", "height", 0.8, 3.0], ["tongueLength", "tongue length", 0, 1], ["socketLength", "socket length", 0, 1], ["socketThickness", "socket thickness", 0, 1], ["discRadius", "disc radius", 0.2, 1.2], ["discThickness", "disc thickness", 0.03, 0.3], ["bevel", "bevel", 0, 2.5]],
     pivot: [["radius", "radius", 0.3, 1.2], ["thickness", "ring thickness", 0.04, 0.4], ["gap", "ring gap", 0.2, 2.0], ["height", "height", 0.5, 2.0], ["bevel", "bevel", 0, 2.5]],
-    ball: [["ballRadius", "ball radius", 0.2, 0.8], ["socketRadius", "socket radius", 0.5, 1.4], ["gap", "gap", 0, 0.3], ["socketHeight", "socket height", 0.2, 0.9], ["bevel", "bevel", 0, 2.5]],
+    ball: [["ballRadius", "ball radius", 0.3, 0.9], ["band", "yoke band", 0.08, 0.4], ["wrap", "yoke wrap", 1.2, 2.8], ["bevel", "bevel", 0, 2.5]],
   };
   function resetJoints() { jparams = structuredClone(JOINT_PARAMS); }
 
@@ -63,7 +66,7 @@
   // recomputes whenever the rig, accent, view, or joint params change.
   const model = $derived(
     view === "joints"
-      ? jointCatalog({ accent, params: $state.snapshot(jparams) })
+      ? jointCatalog({ accent, which: selJoint, params: $state.snapshot(jparams) })
       : rigToPrimitives($state.snapshot(rig), { accent }),
   );
 
@@ -91,7 +94,7 @@
   $effect(() => { scene?.apply({ selected: selectedRow }); });
   // refit the camera when switching mech <-> catalog (each model ships its own
   // framing distance). runs after the model effect, so dist is already current.
-  $effect(() => { view; scene?.apply({ resetView: true }); });
+  $effect(() => { view; selJoint; scene?.apply({ resetView: true }); });
 
   // ---- bone CRUD ----------------------------------------------------------
   function addBone() {
@@ -167,21 +170,26 @@
       <legend>view</legend>
       <div class="tabs">
         <button type="button" class:on={view === "mech"} onclick={() => (view = "mech")}>🤖 mech</button>
-        <button type="button" class:on={view === "joints"} onclick={() => (view = "joints")}>⚙ joint catalog</button>
+        <button type="button" class:on={view === "joints"} onclick={() => (view = "joints")}>⚙ joints</button>
       </div>
     </fieldset>
 
     {#if view === "joints"}
     <fieldset>
-      <legend>joint params <button type="button" class="add" onclick={resetJoints}>↺ reset</button></legend>
-      {#each Object.entries(JOINT_CTL) as [jn, ctls]}
-        <div class="grp">{jn}</div>
-        {#each ctls as [key, label, min, max]}
-          <label><span>{label}</span>
-            <input type="range" {min} {max} step="0.01" value={jparams[jn][key]}
-              oninput={(e) => (jparams[jn][key] = +e.currentTarget.value)} />
-            <output>{jparams[jn][key].toFixed(2)}</output></label>
+      <legend>joint</legend>
+      <ul class="jlist">
+        {#each JOINT_NAMES as jn}
+          <li><button type="button" class:on={selJoint === jn} onclick={() => (selJoint = jn)}>{JOINT_LABELS[jn] ?? jn}</button></li>
         {/each}
+      </ul>
+    </fieldset>
+    <fieldset>
+      <legend>{JOINT_LABELS[selJoint] ?? selJoint} params <button type="button" class="add" onclick={resetJoints}>↺ reset</button></legend>
+      {#each JOINT_CTL[selJoint] as [key, label, min, max]}
+        <label><span>{label}</span>
+          <input type="range" {min} {max} step="0.01" value={jparams[selJoint][key]}
+            oninput={(e) => (jparams[selJoint][key] = +e.currentTarget.value)} />
+          <output>{jparams[selJoint][key].toFixed(2)}</output></label>
       {/each}
     </fieldset>
     {:else}
@@ -302,6 +310,9 @@
   .tabs { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
   .tabs button { flex: 1; }
   .tabs button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
+  .jlist { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+  .jlist button { width: 100%; text-align: left; }
+  .jlist button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
   .cat { list-style: none; margin: 0.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
   .cat li { display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.74rem; line-height: 1.35; opacity: 0.85; }
   .cat li .jt { align-self: flex-start; margin-top: 0.1rem; }

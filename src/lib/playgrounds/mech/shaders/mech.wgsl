@@ -79,6 +79,27 @@ fn prim(q: vec3<f32>, ty: i32, P: vec4<f32>, r: f32) -> f32 {
     let t2 = vec2<f32>(length(q.xz) - P.x, q.y);
     return length(t2) - P.y - r;
   }
+  if (ty == 7) {
+    // female ball socket: a spherical shell bowl kept below P.z (open at +Y). a
+    // valid intersection SDF (shell ∩ half-space) — self-contained, so it NEVER
+    // carves neighbours or the floor the way a subtract node would.
+    //   P.x = mid radius   P.y = wall half-thickness   P.z = open-plane height
+    let shell = abs(length(q) - P.x) - P.y;
+    let cap = q.y - P.z;
+    return max(shell, cap) - r;
+  }
+  if (ty == 8) {
+    // open C-arc with a RECTANGULAR cross-section: a box [P.y,P.z] swept on a
+    // circle of radius P.x in the XY plane, kept across ±P.w about +Y (flat
+    // end-caps). square-torus ∩ angular wedge — self-contained, hard edges.
+    var qq = q;
+    qq.x = abs(qq.x);
+    let u = length(qq.xy) - P.x;                 // radial offset from the ring centreline
+    let d2 = abs(vec2<f32>(u, qq.z)) - vec2<f32>(P.y, P.z);
+    let ring = length(max(d2, vec2<f32>(0.0))) + min(max(d2.x, d2.y), 0.0);
+    let cap = dot(qq.xy, vec2<f32>(cos(P.w), -sin(P.w)));  // radial end-plane at angle P.w
+    return max(ring, cap) - r;
+  }
   // truncated square pyramid: base half P.x (bottom -Y), TOP half P.z (top +Y),
   // half-height P.y. P.z = 0 -> a pointed apex (a plain pyramid). square-section
   // capped-cone math (Chebyshev radius), so the same param does taper + cut-off.

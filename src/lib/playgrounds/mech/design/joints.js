@@ -2,7 +2,7 @@
 // SDF hardware so its SHAPE reads its motion at a glance:
 //   hinge  (1-axis pitch) -> a female U clevis + a male I tongue, pin HORIZONTAL
 //   pivot  (1-axis yaw)   -> two rings stacked, a shaft pierced VERTICALLY
-//   ball   (3-axis)       -> two sockets clamping one ball between them
+//   ball   (3-axis)       -> two perpendicular C-yokes interlocking around a ball
 // Each builder takes a param object (see JOINT_PARAMS for editable fields) and
 // emits primitives in LOCAL space around [0,0,0]; place() offsets a whole joint
 // into the scene. Subtracts stay local to their joint, so laying the joints
@@ -31,33 +31,88 @@ function place(nodes, origin) {
 // `bevel` is a multiplier on every primitive's round (edge softness); the rest
 // are joint-specific. all in r-units except the unitless ratios/bevel.
 export const JOINT_PARAMS = {
-  hinge: { ratio: 0.44, gapRatio: 0.25, height: 1.0, bevel: 0.2 },
+  hinge: { width: 0.36, femaleWidth: 1.0, maleWidth: 1.0, gapWidth: 0.25, depth: 0.36, height: 1.6, tongueLength: 0.4, socketLength: 0.4, socketThickness: 0.2, bevel: 0.2 },
+  hingePivot: { width: 0.36, femaleWidth: 1.0, maleWidth: 1.0, gapWidth: 0.25, depth: 0.36, height: 1.6, tongueLength: 0.4, socketLength: 0.4, socketThickness: 0.2, discRadius: 0.62, discThickness: 0.08, bevel: 0.2 },
   pivot: { radius: 0.72, thickness: 0.1, gap: 1.0, height: 1.0, bevel: 0.2 },
-  ball: { ballRadius: 0.46, socketRadius: 0.95, gap: 0.04, socketHeight: 0.55, bevel: 0.2 },
+  ball: { ballRadius: 0.6, band: 0.2, wrap: 2.0, bevel: 0.2 },
 };
 
-const HINGE_FEMALE_W = 0.36; // the female U block half-width is fixed; male/gap scale off it
+// derive every hinge dimension from the params, so hingeJoint and hingePivot
+// share the exact socket math (the disc must seat flush on the female top).
+function hingeMetrics(p = {}) {
+  const { width = 0.36, femaleWidth = 1.0, maleWidth = 1.0, gapWidth = 0.25, height = 1.0, depth = 0.5, tongueLength = 0.4, socketLength = 0.4, socketThickness = 0.2 } = p;
+  // X split: normalize the three width weights, split `width` between arm/tongue/gap
+  const wf = Math.max(femaleWidth, 0), wm = Math.max(maleWidth, 0), wg = Math.max(gapWidth, 0);
+  const xsum = wf + wm + wg || 1;
+  const femaleW = width;                // outer half-width (full span of the U block)
+  const maleW = (wm / xsum) * width;    // tongue half-width = the male share
+  const gap = (wg / xsum) * width;      // slot clearance = the gap share (per side)
+  const slotHalf = maleW + gap;         // -> arm = width - slotHalf = the female share
+  const pinHalf = femaleW + 0.1;        // pin reaches past the U's outer faces
+  const tongueZ = depth * 0.68;         // tongue slab half-depth (= the knuckle radius / arch)
+  // Y split: tongue / socket-arm-extension / panel are 0..1 weights, normalized to
+  // sum 1, then distributed across `height`.
+  const ft = Math.max(tongueLength, 0), fa = Math.max(socketLength, 0), fp = Math.max(socketThickness, 0);
+  const ysum = ft + fa + fp || 1;
+  const tongueDown = (ft / ysum) * height; // male tongue reach below the pin (base at 0)
+  const armExtra = (fa / ysum) * height;   // arm extension DOWN past the arch (0 = fit arch)
+  const panelT = (fp / ysum) * height;     // top panel thickness
+  const pinY = tongueDown;                 // eye height; tongue base sits at y=0
+  const MH = pinY;                          // tongue spans [0, pinY], eye at the top
+  const slotTop = pinY + tongueZ;           // arm top / panel bottom (just covers the eye)
+  const SH = slotTop + panelT;              // female top
+  const armBottom = pinY - tongueZ - armExtra; // arms reach down from the pin; 0 -> arch bottom
+  const slotBot = armBottom - 0.2;          // slot opens below the arms (clevis open at bottom)
+  return { femaleW, maleW, gap, slotHalf, pinHalf, tongueZ, pinY, MH, panelT, slotTop, armBottom, SH, slotBot, depth, width };
+}
 
-// HINGE — pin axis = X. A female U (solid block carved from below into a clevis)
-// receives a male I (a slab with a rounded head on the pin axis). A brass pin
+// HINGE — pin axis = X. A female U (a block carved from below into a clevis)
+// receives a male I (a slab with a rounded head on the pin axis); a brass pin
 // runs horizontally through both. One axis of rotation, about X. The slot is a
-// subtract emitted before the tongue, so the cut shapes only the U.
-//   ratio    = male/female width (tongue vs U block)
-//   gapRatio = slot clearance as a fraction of the tongue width
-//   height   = vertical scale
+// subtract emitted before the tongue, so the cut shapes only the U (stays local).
+//   width       = overall half-width along the pin axis (the female outer width)
+//   femaleWidth/maleWidth/gapWidth = the three pieces the width splits into along
+//     the pin axis: the female arm (each side), the male tongue, the slot gap. RAW
+//     weights — normalized to sum 1, distributed across `width`.
+//   depth       = half-depth along Z (set == width for a square footprint)
+//   height      = FULL joint height scale
+//   tongueLength/socketLength/socketThickness = 0..1 weights, normalized to sum 1,
+//     splitting `height` between: the male tongue reach below the pin, how far the
+//     female arms extend DOWN past the arch (0 = fit the arch exactly), and the
+//     top panel thickness.
 export function hingeJoint(p = {}) {
-  const { r = 0.55, ratio = 0.44, gapRatio = 0.25, height = 1.0 } = p;
-  const femaleW = HINGE_FEMALE_W;
-  const maleW = femaleW * ratio;       // tongue width derived from the ratio
-  const gap = maleW * gapRatio;        // clearance scales with the tongue
-  const slotHalf = maleW + gap;        // slot just clears the tongue + clearance
-  const pinHalf = femaleW + 0.1;       // pin reaches past the U block's outer faces
+  const { r = 0.55 } = p;
+  const m = hingeMetrics(p);
   return [
-    N("box", [0, r * 0.85 * height, 0], [r * femaleW, r * 0.62 * height, r * 0.5], { color: steel, round: 0.06 }), // U block
-    N("box", [0, r * 0.45 * height, 0], [r * slotHalf, r * 0.5 * height, r * 0.7], { op: "subtract", round: 0.04 }), // slot -> clevis
-    N("box", [0, -r * 0.2 * height, 0], [r * maleW, r * 0.7 * height, r * 0.34], { color: dark, round: 0.02 }), // I slab
-    N("cyl", [0, r * 0.5 * height, 0], [r * 0.34, r * maleW], { rot: ROT_X, color: dark, round: 0.02 }), // rounded head
-    N("cyl", [0, r * 0.5 * height, 0], [r * 0.12, r * pinHalf], { rot: ROT_X, color: brass, round: 0.02, stage: 2 }), // pin
+    // female U: a block spanning the arms + top panel, then a slot carved up from
+    // below -> two prongs + a top panel. slot deeper in z so the clevis is open f/b.
+    N("box", [0, r * (m.armBottom + m.SH) / 2, 0], [r * m.femaleW, r * (m.SH - m.armBottom) / 2, r * m.depth], { color: steel, round: 0.06 }),
+    N("box", [0, r * (m.slotTop + m.slotBot) / 2, 0], [r * m.slotHalf, r * (m.slotTop - m.slotBot) / 2, r * (m.depth + 0.2)], { op: "subtract", round: 0.04 }),
+    // male I tongue: a slab rising from below UP TO the knuckle centre, capped by
+    // a cylinder of the same half-depth so its lower half merges into the slab -> a
+    // rounded hinge eye, the pin through its centre.
+    N("box", [0, r * (m.pinY - m.MH) / 2, 0], [r * m.maleW, r * (m.pinY + m.MH) / 2, r * m.tongueZ], { color: dark, round: 0.02 }),
+    N("cyl", [0, r * m.pinY, 0], [r * m.tongueZ, r * m.maleW], { rot: ROT_X, color: dark, round: 0.02 }), // rounded eye
+    N("cyl", [0, r * m.pinY, 0], [r * 0.12, r * m.pinHalf], { rot: ROT_X, color: brass, round: 0.02, stage: 2 }), // pin
+  ];
+}
+
+// HINGE-PIVOT — a hinge with a turntable DISC mounted on TOP of the female,
+// axis vertical. Two axes of motion: the hinge gives pitch (about the X pin),
+// the disc adds yaw (about Y). All hinge params apply; plus the disc geometry.
+//   discRadius    = disc radius (r-units)        discThickness = disc half-height
+export function hingePivotJoint(p = {}) {
+  const { r = 0.55, discRadius = 0.62, discThickness = 0.08 } = p;
+  const base = hingeJoint(p);
+  const { SH } = hingeMetrics(p);                  // == full height; disc seats on it
+  const top = r * SH;                             // top face of the female U block
+  const discY = top + r * discThickness;          // disc seats on the top face
+  return [
+    ...base,
+    N("cyl", [0, discY, 0], [r * discRadius, r * discThickness], { color: steel, round: 0.03 }),                       // turntable disc
+    N("cyl", [0, discY + r * discThickness * 0.5, 0], [r * discRadius * 0.6, r * discThickness], { op: "subtract", round: 0.02 }), // dished top face
+    N("cyl", [0, discY + r * discThickness, 0], [r * 0.12, r * 0.06], { color: brass, round: 0.02, stage: 2 }),        // hub bolt
+    N("box", [0, discY + r * discThickness * 0.5, r * discRadius * 0.7], [r * 0.04, r * discThickness, r * discRadius * 0.3], { color: brass, round: 0.01, stage: 2 }), // index pointer (radial tick)
   ];
 }
 
@@ -93,54 +148,48 @@ export function pivotJoint(p = {}) {
   ];
 }
 
-// BALL — 3-axis. Two identical FEMALE sockets with a single ball clamped between
-// them: the lower socket's cup faces UP, the upper socket's cup faces DOWN, and
-// one brass ball seats in both, free to swivel. Each socket is a squashed dome =
-// a spherical CAP (sphere with a box subtracting the far half; intersect would be
-// globally destructive in this running CSG, so caps are cut, not intersected).
-// ORDER: both socket bodies union, then the two cap cuts, then ONE cup subtract
-// hollows the shared cavity in both domes, then the ball is unioned LAST so the
-// cup-cut never carves it.
-//   ballRadius = the ball       socketRadius = socket dome sphere radius
-//   gap        = ball<->cup clearance   socketHeight = visible dome thickness
+// BALL — 3-axis. One ball cradled by two C-yokes that interlock at 90°, like a
+// gimbal: the upper yoke wraps the top hemisphere and rises to the upper member,
+// the lower yoke (rotated 90° about Y) wraps the bottom and drops to the lower
+// member. Each yoke is one `arc` primitive — a hard-edged curved BAR (rectangular
+// cross-section, flat end-caps), NOT a round tube — a self-contained SDF, so it
+// can never carve a neighbour or the floor. The ball is a solid sphere seated in
+// the crossing of the two C's.
+//   ballRadius = the ball     band = yoke bar half-thickness (radial)
+//   wrap       = how far each C wraps (radians, ±about its pole; >π/2 grips past
+//                the equator and interlocks with its perpendicular partner)
 export function ballJoint(p = {}) {
-  const { r = 0.55, ballRadius = 0.46, socketRadius = 0.95, gap = 0.04, socketHeight = 0.55 } = p;
-  const sr = socketRadius, cupR = ballRadius + gap, sh = socketHeight;
-  // cut box sized to the sphere: half-height reaches well past the far pole so a
-  // big socketRadius never lets the far cap re-emerge; its TOP sits exactly on
-  // the keep-plane (±sh), so only the sh-thick near cap survives.
-  const boxHy = 2 * sr + 0.5, boxXZ = sr + 0.8, shaftC = sh + 0.45;
+  const { r = 0.55, ballRadius = 0.6, band = 0.2, wrap = 2.0 } = p;
+  const radialHalf = band, axialHalf = band * 1.6;   // bar wider across (a plate) than thick
+  const ringR = ballRadius + radialHalf;             // inner face of the bar rides on the ball
+  const reach = ringR + radialHalf + 0.35;           // where the member shaft meets the yoke pole
+  // arc prim wraps +Y; upper yoke uses it as-is, lower yoke flips (Rx 180 ->
+  // wraps -Y) and turns 90° (Ry) so the two C's cross perpendicular.
+  const yoke = [r * ringR, r * radialHalf, r * axialHalf, wrap];
   return [
-    N("sphere", [0, -r * sr, 0], [r * sr], { color: steel, round: 0 }), // lower socket body (pole at y=0)
-    N("sphere", [0, r * sr, 0], [r * sr], { color: steel, round: 0 }),  // upper socket body
-    N("box", [0, -r * (sh + boxHy), 0], [r * boxXZ, r * boxHy, r * boxXZ], { op: "subtract" }), // cut lower -> cup faces up
-    N("box", [0, r * (sh + boxHy), 0], [r * boxXZ, r * boxHy, r * boxXZ], { op: "subtract" }),  // cut upper -> cup faces down
-    N("sphere", [0, 0, 0], [r * cupR], { op: "subtract" }),             // hollow the shared cup in both domes
-    N("cyl", [0, -r * shaftC, 0], [r * 0.2, r * 0.5], { color: steel, round: 0.03 }), // lower member shaft
-    N("cyl", [0, r * shaftC, 0], [r * 0.2, r * 0.5], { color: steel, round: 0.03 }),  // upper member shaft
-    N("sphere", [0, 0, 0], [r * ballRadius], { color: brass, round: 0 }), // the connecting ball
+    N("arc", [0, 0, 0], yoke, { color: dark, round: 0.02 }),                     // upper C-yoke (wraps +Y)
+    N("arc", [0, 0, 0], yoke, { rot: [180, 90, 0], color: dark, round: 0.02 }),  // lower C-yoke (wraps -Y, ⟂)
+    N("cyl", [0, r * reach, 0], [r * 0.2, r * 0.5], { color: steel, round: 0.03 }),   // upper member shaft
+    N("cyl", [0, -r * reach, 0], [r * 0.2, r * 0.5], { color: steel, round: 0.03 }),  // lower member shaft
+    N("sphere", [0, 0, 0], [r * ballRadius], { color: steel, round: 0 }),             // the polished ball
+    N("cyl", [0, 0, r * (ballRadius + 0.02)], [r * 0.12, r * 0.05], { rot: [90, 0, 0], color: brass, round: 0.01, stage: 2 }), // hub bolt
   ];
 }
 
-export const JOINT_BUILDERS = { hinge: hingeJoint, pivot: pivotJoint, ball: ballJoint };
-export const JOINT_NAMES = ["hinge", "pivot", "ball"];
+export const JOINT_BUILDERS = { hinge: hingeJoint, hingePivot: hingePivotJoint, pivot: pivotJoint, ball: ballJoint };
+export const JOINT_NAMES = ["hinge", "hingePivot", "pivot", "ball"];
 
-// lay the three joints in a row for the reference view. returns a render model
-// in the same shape rigToPrimitives produces ({ nodes, floorY, midY, dist }).
-// style.params = { hinge?, pivot?, ball? } overrides merged over JOINT_PARAMS.
+// build ONE joint, centred, for the reference view. returns a render model in the
+// same shape rigToPrimitives produces ({ nodes, floorY, midY, dist }).
+//   style.which  = joint name to render (default: first)
+//   style.params = { [name]: overrides } merged over JOINT_PARAMS
 export function jointCatalog(style = {}) {
   const r = style.r ?? 0.6;
-  const layoutGap = style.gap ?? 2.8;
   const params = style.params || {};
-  const order = JOINT_NAMES;
-  const nodes = [];
-  order.forEach((name, i) => {
-    const x = (i - (order.length - 1) / 2) * layoutGap;
-    const bp = { r, accent: style.accent, ...JOINT_PARAMS[name], ...(params[name] || {}) };
-    const bevel = bp.bevel ?? 1;
-    // scale every edge round by the joint's bevel (softness) before placing
-    const built = JOINT_BUILDERS[name](bp).map((n) => ({ ...n, round: (n.round ?? 0) * bevel }));
-    nodes.push(...place(built, [x, 0, 0]));
-  });
-  return { nodes, floorY: -1.6, midY: 0.15, dist: 9.5, name: "joint catalog" };
+  const name = JOINT_BUILDERS[style.which] ? style.which : JOINT_NAMES[0];
+  const bp = { r, accent: style.accent, ...JOINT_PARAMS[name], ...(params[name] || {}) };
+  const bevel = bp.bevel ?? 1;
+  // scale every edge round by the joint's bevel (softness)
+  const nodes = JOINT_BUILDERS[name](bp).map((n) => ({ ...n, round: (n.round ?? 0) * bevel }));
+  return { nodes, floorY: -1.6, midY: 0.15, dist: 5.5, name };
 }

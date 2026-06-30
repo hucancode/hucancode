@@ -10,7 +10,16 @@ const D2R = Math.PI / 180;
 //   box [hx,hy,hz]  sphere [r]  cyl [r,h]  capsule [r,h]  cone [r1,h,r2]
 //   torus [R,r]  pyramid [baseHalf,halfHeight,topHalf]  (topHalf 0 = pointed,
 //     >0 = a cut-off / truncated square pyramid; base at -Y, top at +Y)
-export const TYPE = { sphere: 0, box: 1, cyl: 2, capsule: 3, cone: 4, torus: 5, pyramid: 6 };
+//   socket [midR,wallHalf,openY]  a female ball-socket: a spherical shell bowl
+//     open at the top (+Y). self-contained (no boolean), so it never carves
+//     neighbours. inner radius = midR-wallHalf seats a ball; openY>0 wraps past
+//     the equator to grip it, openY<0 = a shallow saucer.
+//   arc [ringR,radialHalf,axialHalf,wrap]  an open C in the XY plane with a
+//     RECTANGULAR cross-section (a hard-edged curved bar, not a round tube): a
+//     box of half-extents [radialHalf,axialHalf] swept on a circle of radius
+//     ringR, SOLID only across ±wrap (radians) about +Y, with flat end-caps.
+//     self-contained — used in perpendicular pairs to cradle a ball, no boolean.
+export const TYPE = { sphere: 0, box: 1, cyl: 2, capsule: 3, cone: 4, torus: 5, pyramid: 6, socket: 7, arc: 8 };
 export const OP = { union: 0, subtract: 1, intersect: 2 };
 const TEXELS = 6; // float4s per node
 
