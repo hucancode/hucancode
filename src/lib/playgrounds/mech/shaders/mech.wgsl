@@ -117,7 +117,7 @@ fn mapD(p: vec3<f32>) -> f32 {
   return d;
 }
 
-struct Hit { d: f32, col: vec3<f32>, emi: f32 };
+struct Hit { d: f32, col: vec3<f32>, emi: f32, floor: f32 };
 
 // field + nearest-surface albedo (subtract/intersect keep the base color)
 fn mapC(p: vec3<f32>) -> Hit {
@@ -126,6 +126,7 @@ fn mapC(p: vec3<f32>) -> Hit {
   var cd = h.d;                      // floor as the initial color candidate (off -> never picked)
   h.col = vec3<f32>(0.05, 0.06, 0.08);
   h.emi = 0.0;
+  h.floor = 1.0;                     // until a solid node out-ranks the floor plane
   let sel = i32(u.uSelected);
   let n = i32(u.uCount);
   for (var i = 0; i < MAXN; i = i + 1) {
@@ -136,7 +137,7 @@ fn mapC(p: vec3<f32>) -> Hit {
     let op = i32(c1.w); let k = texelF(i, 3).w;
     if (op == 0) {
       h.d = smin(h.d, pd, k);
-      if (pd < cd) { cd = pd; h.col = texelF(i, 5).xyz; h.emi = select(0.0, 1.0, i == sel); }
+      if (pd < cd) { cd = pd; h.col = texelF(i, 5).xyz; h.emi = select(0.0, 1.0, i == sel); h.floor = 0.0; }
     } else if (op == 1) {
       h.d = smax(h.d, -pd, k);
     } else {
@@ -178,6 +179,22 @@ fn ao(p: vec3<f32>, nrm: vec3<f32>) -> f32 {
   return clamp(1.0 - 2.2 * s, 0.0, 1.0);
 }
 
+// procedural grid floor: AA minor lines every 1 unit, brighter major lines
+// every 5, fading out with distance so it doesn't moire into the haze. replaces
+// the flat ground albedo with a blueprint-style map.
+fn gridFloor(pxz: vec2<f32>, fade: f32) -> vec3<f32> {
+  let base = vec3<f32>(0.04, 0.05, 0.07);
+  let g1 = abs(fract(pxz - 0.5) - 0.5) / max(fwidth(pxz), vec2<f32>(1e-4));
+  let m1 = 1.0 - clamp(min(g1.x, g1.y), 0.0, 1.0);
+  let p5 = pxz / 5.0;
+  let g5 = abs(fract(p5 - 0.5) - 0.5) / max(fwidth(p5), vec2<f32>(1e-4));
+  let m5 = 1.0 - clamp(min(g5.x, g5.y), 0.0, 1.0);
+  var c = base;
+  c = mix(c, vec3<f32>(0.11, 0.14, 0.19), m1 * 0.7 * fade);
+  c = mix(c, vec3<f32>(0.24, 0.31, 0.42), m5 * fade);
+  return c;
+}
+
 @fragment
 fn fs(in: VsOut) -> @location(0) vec4<f32> {
   let rd = normalize(u.uCamFwd + in.vUv.x * u.uCamRight + in.vUv.y * u.uCamUp);
@@ -197,6 +214,8 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
   if (hit) {
     let p = ro + rd * t;
     let m = mapC(p);
+    var alb = m.col;
+    if (m.floor > 0.5) { alb = gridFloor(p.xz, clamp(1.3 - t * 0.03, 0.0, 1.0)); }
     let nrm = calcNormal(p);
     let v = normalize(u.uCamPos - p);
     let L = normalize(u.uLightDir);
@@ -208,12 +227,12 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
     let spe = pow(clamp(dot(nrm, hv), 0.0, 1.0), 42.0);
     let fres = pow(1.0 - clamp(dot(nrm, v), 0.0, 1.0), 4.0);
     let amb = clamp(0.5 + 0.5 * nrm.y, 0.0, 1.0);
-    outc = m.col * (u.uFillColor * amb * occ + u.uKeyColor * dif * sh);
+    outc = alb * (u.uFillColor * amb * occ + u.uKeyColor * dif * sh);
     outc = outc + u.uKeyColor * spe * sh * 0.7;
     outc = outc + u.uFillColor * fres * 0.35 * occ;
     // emissive parts (glass/visor) + selection pulse
     let glow = 0.35 + m.emi * (0.4 + 0.4 * sin(u.uTime * 6.0));
-    outc = outc + m.col * m.emi * glow;
+    outc = outc + alb * m.emi * glow;
     // distance haze toward the background
     let fog = 1.0 - exp(-0.0009 * t * t);
     outc = mix(outc, mix(u.uBgBot, u.uBgTop, 0.5), fog * 0.5);

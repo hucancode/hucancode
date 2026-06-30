@@ -101,11 +101,12 @@ float mapD(vec3 p) {
   return d;
 }
 
-float mapC(vec3 p, out vec3 col, out float emi) {
+float mapC(vec3 p, out vec3 col, out float emi, out float isFloor) {
   float d = (uGround > 0.5) ? (p.y - uFloorY) : 1e9;
   float cd = d;
   col = vec3(0.05, 0.06, 0.08);
   emi = 0.0;
+  isFloor = 1.0;                   // until a solid node out-ranks the floor plane
   int sel = int(uSelected);
   int n = int(uCount);
   for (int i = 0; i < MAXN; i++) {
@@ -116,7 +117,7 @@ float mapC(vec3 p, out vec3 col, out float emi) {
     float k = texelF(i, 3).w;
     if (op == 0) {
       d = smin(d, pd, k);
-      if (pd < cd) { cd = pd; col = texelF(i, 5).xyz; emi = (i == sel) ? 1.0 : 0.0; }
+      if (pd < cd) { cd = pd; col = texelF(i, 5).xyz; emi = (i == sel) ? 1.0 : 0.0; isFloor = 0.0; }
     } else if (op == 1) {
       d = smax(d, -pd, k);
     } else {
@@ -157,6 +158,22 @@ float ao(vec3 p, vec3 nrm) {
   return clamp(1.0 - 2.2 * s, 0.0, 1.0);
 }
 
+// procedural grid floor: AA minor lines every 1 unit, brighter major lines every
+// 5, fading with distance so it doesn't moire into the haze. replaces the flat
+// ground albedo with a blueprint-style map.
+vec3 gridFloor(vec2 pxz, float fade) {
+  vec3 base = vec3(0.04, 0.05, 0.07);
+  vec2 g1 = abs(fract(pxz - 0.5) - 0.5) / max(fwidth(pxz), vec2(1e-4));
+  float m1 = 1.0 - clamp(min(g1.x, g1.y), 0.0, 1.0);
+  vec2 p5 = pxz / 5.0;
+  vec2 g5 = abs(fract(p5 - 0.5) - 0.5) / max(fwidth(p5), vec2(1e-4));
+  float m5 = 1.0 - clamp(min(g5.x, g5.y), 0.0, 1.0);
+  vec3 c = base;
+  c = mix(c, vec3(0.11, 0.14, 0.19), m1 * 0.7 * fade);
+  c = mix(c, vec3(0.24, 0.31, 0.42), m5 * fade);
+  return c;
+}
+
 void main() {
   vec3 rd = normalize(uCamFwd + vUv.x * uCamRight + vUv.y * uCamUp);
   vec3 ro = uCamPos;
@@ -173,8 +190,9 @@ void main() {
   vec3 outc;
   if (hit) {
     vec3 p = ro + rd * t;
-    vec3 col; float emi;
-    mapC(p, col, emi);
+    vec3 col; float emi; float isFloor;
+    mapC(p, col, emi, isFloor);
+    vec3 alb = (isFloor > 0.5) ? gridFloor(p.xz, clamp(1.3 - t * 0.03, 0.0, 1.0)) : col;
     vec3 nrm = calcNormal(p);
     vec3 v = normalize(uCamPos - p);
     vec3 L = normalize(uLightDir);
@@ -185,11 +203,11 @@ void main() {
     float spe = pow(clamp(dot(nrm, hv), 0.0, 1.0), 42.0);
     float fres = pow(1.0 - clamp(dot(nrm, v), 0.0, 1.0), 4.0);
     float amb = clamp(0.5 + 0.5 * nrm.y, 0.0, 1.0);
-    outc = col * (uFillColor * amb * occ + uKeyColor * dif * sh);
+    outc = alb * (uFillColor * amb * occ + uKeyColor * dif * sh);
     outc += uKeyColor * spe * sh * 0.7;
     outc += uFillColor * fres * 0.35 * occ;
     float glow = 0.35 + emi * (0.4 + 0.4 * sin(uTime * 6.0));
-    outc += col * emi * glow;
+    outc += alb * emi * glow;
     float fog = 1.0 - exp(-0.0009 * t * t);
     outc = mix(outc, mix(uBgBot, uBgTop, 0.5), fog * 0.5);
   } else {

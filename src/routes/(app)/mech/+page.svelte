@@ -3,10 +3,13 @@
   import Scene from "$lib/components/mech.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
   import { buildHumanoidRig } from "$lib/playgrounds/mech/rig/index.js";
-  import { rigToPrimitives, PALETTE } from "$lib/playgrounds/mech/design/index.js";
+  import { rigToPrimitives, jointCatalog, JOINT_PARAMS, PALETTE } from "$lib/playgrounds/mech/design/index.js";
   import { texRowOf } from "$lib/playgrounds/mech/sdf.js";
 
   let scene = $state(null);
+
+  // what the viewport shows: the assembled mech, or the joint reference catalog
+  let view = $state("mech");           // "mech" | "joints"
 
   // engine params (what the artist controls) -------------------------------
   let fingers = $state(true);          // rig engine: include hands/fingers
@@ -46,8 +49,23 @@
     scene?.apply({ resetView: true });
   }
 
-  // design engine output — recomputes whenever the rig or accent changes
-  const model = $derived(rigToPrimitives($state.snapshot(rig), { accent }));
+  // editable joint-catalog params (cloned from the design-engine defaults) + the
+  // sliders that drive them. each entry: [key, label, min, max].
+  let jparams = $state(structuredClone(JOINT_PARAMS));
+  const JOINT_CTL = {
+    hinge: [["ratio", "male / female", 0.1, 0.9], ["gapRatio", "gap / male", 0, 0.6], ["height", "height", 0.5, 2.0], ["bevel", "bevel", 0, 2.5]],
+    pivot: [["radius", "radius", 0.3, 1.2], ["thickness", "ring thickness", 0.04, 0.4], ["gap", "ring gap", 0.2, 2.0], ["height", "height", 0.5, 2.0], ["bevel", "bevel", 0, 2.5]],
+    ball: [["ballRadius", "ball radius", 0.2, 0.8], ["socketRadius", "socket radius", 0.5, 1.4], ["gap", "gap", 0, 0.3], ["socketHeight", "socket height", 0.2, 0.9], ["bevel", "bevel", 0, 2.5]],
+  };
+  function resetJoints() { jparams = structuredClone(JOINT_PARAMS); }
+
+  // design engine output — the assembled mech, or the joint catalog reference.
+  // recomputes whenever the rig, accent, view, or joint params change.
+  const model = $derived(
+    view === "joints"
+      ? jointCatalog({ accent, params: $state.snapshot(jparams) })
+      : rigToPrimitives($state.snapshot(rig), { accent }),
+  );
 
   const KINDS = ["pelvis", "torso", "head", "shoulder", "hip", "limb", "hand", "foot", "digit"];
   const JOINTS = [["0 weld", 0], ["1 yaw", 1], ["2 pitch", 2], ["3 uni · 2-axis", 3], ["4 ball", 4]];
@@ -71,6 +89,9 @@
   // re-derive + re-pack on any rig or accent edit
   $effect(() => { scene?.apply({ model }); });
   $effect(() => { scene?.apply({ selected: selectedRow }); });
+  // refit the camera when switching mech <-> catalog (each model ships its own
+  // framing distance). runs after the model effect, so dist is already current.
+  $effect(() => { view; scene?.apply({ resetView: true }); });
 
   // ---- bone CRUD ----------------------------------------------------------
   function addBone() {
@@ -142,6 +163,28 @@
   </section>
 
   <aside>
+    <fieldset>
+      <legend>view</legend>
+      <div class="tabs">
+        <button type="button" class:on={view === "mech"} onclick={() => (view = "mech")}>🤖 mech</button>
+        <button type="button" class:on={view === "joints"} onclick={() => (view = "joints")}>⚙ joint catalog</button>
+      </div>
+    </fieldset>
+
+    {#if view === "joints"}
+    <fieldset>
+      <legend>joint params <button type="button" class="add" onclick={resetJoints}>↺ reset</button></legend>
+      {#each Object.entries(JOINT_CTL) as [jn, ctls]}
+        <div class="grp">{jn}</div>
+        {#each ctls as [key, label, min, max]}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step="0.01" value={jparams[jn][key]}
+              oninput={(e) => (jparams[jn][key] = +e.currentTarget.value)} />
+            <output>{jparams[jn][key].toFixed(2)}</output></label>
+        {/each}
+      {/each}
+    </fieldset>
+    {:else}
     <fieldset>
       <legend>rig + design</legend>
       <label class="chk"><input type="checkbox" bind:checked={fingers} onchange={regen} /> <span>Hands &amp; fingers</span></label>
@@ -221,6 +264,7 @@
         {/each}
       </fieldset>
     {/if}
+    {/if}
   </aside>
 </main>
 
@@ -257,6 +301,12 @@
   .grp { margin: 0.5rem 0 0.1rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.5; }
   .tabs { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
   .tabs button { flex: 1; }
+  .tabs button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
+  .cat { list-style: none; margin: 0.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .cat li { display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.74rem; line-height: 1.35; opacity: 0.85; }
+  .cat li .jt { align-self: flex-start; margin-top: 0.1rem; }
+  .cat b { font-weight: 600; }
+  .hint { font-size: 0.68rem; opacity: 0.5; margin: 0.6rem 0 0; }
   .go { font-weight: 600; }
   .wide { width: 100%; margin-top: 0.4rem; }
   .add { font-size: 0.75rem; opacity: 0.75; margin-left: 0.4rem; }
