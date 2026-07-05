@@ -13,32 +13,30 @@
 import {
   box, cylinder, cone, coneCut, sphere, hemisphere, cutHemisphere, halfCylinder,
   halfCylinderBox, boxCylinder, quarterCylinder, rotX, rotY, rotZ, translate, bake,
+  meshOf,
 } from "./primitives.js";
 
 const HPI = Math.PI / 2;
 
-// deterministic rng: same seed -> same palette
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
 }
 
-function hsl(h, s, l) {
-  const f = (n) => {
-    const k = (n + h * 12) % 12;
-    return l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-  };
-  return [f(0), f(8), f(4)];
-}
+// curated mech palette
+const PALETTE = [
+  "#c0392b", "#e67e22", "#f1c40f", "#7dcb2f", "#27ae60", "#1abc9c",
+  "#3498db", "#2c5aa0", "#8e44ad", "#d354a4", "#c8a165", "#8d6e63",
+  "#95a5a6", "#5d6d7e", "#e8e4d8", "#37474f",
+].map((h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255));
 
-export function makePainter(seed) {
-  const rnd = mulberry32(seed);
-  return () => hsl(rnd(), 0.45 + rnd() * 0.35, 0.45 + rnd() * 0.2);
+// color = palette[f(shape id, seed)]: identical primitives with the same
+// parameters get the SAME color (like lego pieces); bumping the seed remaps
+// shapes to other palette entries but keeps the identity property.
+export function colorOf(id, seed = 1) {
+  const h = (hashStr(id || "anon") ^ Math.imul(seed, 0x9e3779b1)) >>> 0;
+  return PALETTE[h % PALETTE.length];
 }
 
 // ---- editable per-joint parameters (defaults = the Blender proportions) ----
@@ -237,7 +235,8 @@ export function ballBlock(fixed, moving, p = {}, pose = {}) {
   const rOut = q.ballR + 0.02 + q.socketT;         // socket outer radius (ball + clearance + wall)
   const drop = q.ballR * 0.55;                     // socket base plane below the ball center
   fixed(translate(box(q.baseW, q.baseT, q.baseW), 0, -drop - q.baseT / 2, 0));
-  fixed(translate(cutHemisphere(rOut, q.socketT, q.cut, 28, 8), 0, -drop, 0));
+  // cutHemisphere wall + cut are fractions of r
+  fixed(translate(cutHemisphere(rOut, q.socketT / rOut, q.cut, 28, 8), 0, -drop, 0));
   mv(sphere(q.ballR, 20, 14));
   const top = q.ballR + q.shaftLen;
   mv(cylinder(q.shaftR, top, 18));
@@ -337,11 +336,11 @@ function head(add, p, pose = {}) {
   for (const s of [1, -1])                                     // eyeballs in the holes
     add(translate(sphere(p.eyeR, 16, 10), s * (W * 0.21 + p.eyeR * 0.55), 0.55, 0.3));
   // brow: slope box over the window, dropping toward the snout
-  add(translate(box(W, 0.26, 0.5, 0.16), 0, 1.03, 0.15));
+  add(translate(box(W, 0.26, 0.5, 0.62), 0, 1.03, 0.15));
   // snout: slope-top box, nose end lower
-  add(translate(box(W * 0.65, 0.5, p.snoutLen, 0.22), 0, 0.62, 0.5 + p.snoutLen / 2));
+  add(translate(box(W * 0.65, 0.5, p.snoutLen, 0.44), 0, 0.62, 0.5 + p.snoutLen / 2));
   // nose tip: small steep slope block
-  add(translate(box(W * 0.45, 0.24, 0.18, 0.12), 0, 0.49, 0.5 + p.snoutLen + 0.09));
+  add(translate(box(W * 0.45, 0.24, 0.18, 0.5), 0, 0.49, 0.5 + p.snoutLen + 0.09));
   // upper fangs: hang from the snout underside near the tip
   for (const x of [-W * 0.22, W * 0.22])
     add(translate(box(0.08, 0.16, 0.08), x, 0.31, 0.5 + p.snoutLen - 0.1));
@@ -377,7 +376,7 @@ function head(add, p, pose = {}) {
     const x = s * W * 0.32;
     add(translate(box(0.3, 0.3, 0.36), x, 1.05, -0.64));                     // base mount on the roof
     add(translate(box(0.2, 0.24, L), x, 1.1, -0.82 - L / 2));                // long shaft along -Z
-    add(translate(rotY(box(0.2, 0.24, 0.55, 0.23), Math.PI), x, 1.1, -0.82 - L - 0.275)); // pointy tip
+    add(translate(rotY(box(0.2, 0.24, 0.55, 0.96), Math.PI), x, 1.1, -0.82 - L - 0.275)); // pointy tip
   }
   // crest fin: D-plate on the skull roof, round side up, body sunk into the box
   {
@@ -386,7 +385,7 @@ function head(add, p, pose = {}) {
     add(translate(g, 0.045, 0.92, -0.5));
   }
   // neck mount: box + cylinder boss pointing out the back (-Z)
-  add(translate(rotX(boxCylinder(0.5, 0.16, 0.5, 0.28, "in", 20), -HPI), 0, 0.55, -0.9));
+  add(translate(rotX(boxCylinder(0.5, 0.16, 0.5, 1.75, "in", 20), -HPI), 0, 0.55, -0.9));
 }
 
 // DRAGON BODY SEGMENT — same construction as the Blender kit piece: solid
@@ -593,10 +592,10 @@ export const PRIM_PARAMS = {
   box: { w: 1, h: 1, d: 1, slope: 0, curve: 0 },
   sphere: { r: 0.6 },
   hemisphere: { r: 0.6 },
-  cutHemisphere: { r: 0.6, t: 0.15, cut: 0.7 },
+  cutHemisphere: { r: 0.6, t: 0.25, cut: 0.7 },
   halfCylinder: { r: 0.5, h: 1.2 },
   halfCylinderBox: { r: 0.5, h: 1.2, depth: 0.5 },
-  boxCylinder: { w: 1, boxH: 0.5, d: 1, cylH: 0.4, fit: "in" },
+  boxCylinder: { w: 1, boxH: 0.5, d: 1, cylH: 0.8, fit: "in" },
   quarterCylinder: { r: 0.5, h: 0.3 },
 };
 export const PRIM_NAMES = Object.keys(PRIM_PARAMS);
@@ -618,18 +617,24 @@ const PRIM_BUILD = {
 // ---- model assembly ----------------------------------------------------------
 
 function collect(builderFn, seed, params, pose) {
-  const paint = makePainter(seed);
   const items = [];
-  const add = (g) => items.push({ ...bake(g), color: paint() });
+  const add = (g) => {
+    const b = bake(g);
+    items.push({ ...b, color: colorOf(b.id, seed) });
+  };
   builderFn(add, params, pose);
-  return items;
+  // unit meshes referenced by the items — the renderer draws one instanced
+  // call per key
+  const meshes = {};
+  for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
+  return { items, meshes };
 }
 
 export function partModel(name, seed = 1, params = null, pose = null) {
   const key = PART_BUILDERS[name] ? name : PART_NAMES[0];
   const b = PART_BUILDERS[key];
   const p = { ...PART_PARAMS[key], ...(params || {}) };
-  return { items: collect(b, seed, p, pose || {}), name };
+  return { ...collect(b, seed, p, pose || {}), name };
 }
 
 // raw build for external assemblers (the dragon rig): the caller supplies the
@@ -696,5 +701,5 @@ export function partSlots(name, params = null) {
 export function primitiveModel(name, params, seed = 1) {
   const build = PRIM_BUILD[name] || PRIM_BUILD.cylinder;
   const p = { ...PRIM_PARAMS[name], ...(params || {}) };
-  return { items: collect((add) => add(build(p)), seed), name };
+  return { ...collect((add) => add(build(p)), seed), name };
 }

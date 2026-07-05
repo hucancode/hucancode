@@ -21,6 +21,8 @@
   let jparams = $state(structuredClone(PART_PARAMS));
   let jpose = $state(structuredClone(JOINT_POSE));   // runtime joint rotations, degrees
   let drig = $state(structuredClone(DRAGON_POSE));   // dragon rig pose
+  let autoplay = $state(false);                      // fly the loop automatically
+  const LAP_SECONDS = 4;
   let seed = $state(1);                    // color shuffle seed
 
   // HUD
@@ -83,13 +85,13 @@
     cylinder: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
     cone: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
     coneCut: [["r0", "base radius", 0.1, 1.2], ["r1", "top radius", 0, 1.2], ["h", "height", 0.1, 2.5]],
-    box: [["w", "width", 0.1, 2.5], ["h", "height", 0.1, 2.5], ["d", "depth", 0.1, 2.5], ["slope", "top slope", 0, 1.5], ["curve", "slope curve", -1, 1]],
+    box: [["w", "width", 0.1, 2.5], ["h", "height", 0.1, 2.5], ["d", "depth", 0.1, 2.5], ["slope", "top slope %", 0, 1], ["curve", "slope curve", -1, 1]],
     sphere: [["r", "radius", 0.1, 1.4]],
     hemisphere: [["r", "radius", 0.1, 1.4]],
-    cutHemisphere: [["r", "radius", 0.15, 1.2], ["t", "wall", 0.04, 0.3], ["cut", "cut height", 0.2, 0.9]],
+    cutHemisphere: [["r", "radius", 0.15, 1.2], ["t", "wall %", 0.05, 0.5], ["cut", "cut height %", 0.2, 0.9]],
     halfCylinder: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
     halfCylinderBox: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5], ["depth", "box depth", 0.05, 1.5]],
-    boxCylinder: [["w", "box width", 0.2, 2.2], ["d", "box depth", 0.2, 2.2], ["boxH", "box height", 0.1, 1.5], ["cylH", "cylinder height", 0.05, 1.5]],
+    boxCylinder: [["w", "box width", 0.2, 2.2], ["d", "box depth", 0.2, 2.2], ["boxH", "box height", 0.1, 1.5], ["cylH", "cylinder h %", 0.1, 3]],
     quarterCylinder: [["r", "radius", 0.1, 1.2], ["h", "thickness", 0.05, 1.5]],
   };
 
@@ -113,6 +115,19 @@
   $effect(() => { scene?.apply({ model }); });
   // fixed per-view distance (no auto-fit): the dragon rides a big loop
   $effect(() => { selPart; selPrim; scene?.apply({ resetView: true, dist: view === "dragon" ? 24 : 6 }); });
+  // autoplay: advance the loop offset each frame while enabled
+  $effect(() => {
+    if (!autoplay || view !== "dragon") return;
+    let raf, last = performance.now();
+    const tick = (t) => {
+      const dt = Math.min((t - last) / 1000, 0.1);
+      last = t;
+      drig.offset = (drig.offset + dt / LAP_SECONDS) % 1;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  });
 </script>
 
 <svelte:head><title>Mech</title></svelte:head>
@@ -178,7 +193,7 @@
     {:else if view === "dragon"}
       <fieldset>
         <legend>dragon rig <button type="button" class="add" onclick={resetDragon}>↺ reset</button></legend>
-        <p class="hint">parts chained by mount slots, bones drive the joints; the body rides a closed catmull-rom loop</p>
+        <label class="chk"><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
         {#each DRAGON_CTL as [key, label, min, max, step]}
           <label><span>{label}</span>
             <input type="range" {min} {max} {step} value={drig[key]}
@@ -245,6 +260,9 @@
   output { min-width: 2.6rem; text-align: right; opacity: 0.8; font-variant-numeric: tabular-nums; }
   .grp { margin: 0.5rem 0 0.1rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.5; }
   .hint { margin: 0 0 0.4rem; font-size: 0.7rem; opacity: 0.55; }
+  .chk { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0 0.5rem; }
+  .chk input { flex: 0 0 auto; }
+  .chk span { min-width: 0; }
   .tabs { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
   .tabs button { flex: 1; }
   .tabs button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }

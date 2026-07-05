@@ -1,7 +1,19 @@
-// PRIMITIVE ENGINE — procedurally generated vertices (triangle soup), no SDF.
-// Every builder returns { positions, normals } as plain JS arrays (xyz triplets,
-// non-indexed), Y up. Curved sides get smooth normals, flat faces get face
-// normals, so a low segment count still reads as machined metal.
+// PRIMITIVE ENGINE. A primitive call returns a lightweight HANDLE { key, m, t }
+// a reference to a shared UNIT MESH in the registry plus an affine transform (3x3 linear, row-major,
+// + translation). rotX/rotY/rotZ/translate COMPOSE INTO THE MATRIX; vertices
+// are generated once per distinct key and the renderer draws ONE INSTANCED
+// CALL per key.
+//
+// Shape params that survive into the KEY are RATIOS (percentages), so scaling
+// width/height/depth is pure instance scale:
+//   box             slope = FRACTION of height (0..1) + curve; key=(slope,curve)
+//   coneCut         key = r1/r0 taper ratio
+//   cutHemisphere   wall t and cut = FRACTIONS of r; key=(t,cut)
+//   halfCylinderBox (arch box) box depth = FRACTION of r in the key; height
+//                   is a free scale axis — same depth ratio => same mesh
+//   boxCylinder     (stamper) cylinder height = FRACTION of box height;
+//                   key=(cylPct,fit) — w/boxH/d are free scale axes
+//   cylinder/sphere/... key = segment counts only, size is all scale
 //
 // Origin conventions (per the catalog spec):
 //   cylinder        origin = center of the BASE circle, body spans y 0..h
@@ -18,6 +30,68 @@
 //                   fit "out" -> cylinder circumscribes the box footprint
 
 const TAU = Math.PI * 2;
+const q4 = (v) => +(+v).toFixed(4);
+
+// ---- unit-mesh registry ------------------------------------------------------
+
+const REGISTRY = new Map();          // key -> { positions: F32, normals: F32 }
+
+export function meshOf(key) {
+  return REGISTRY.get(key);
+}
+
+// handle factory: register the unit mesh on first use, return an instance
+// handle with a pure-scale starting matrix. `id` = shape identity INCLUDING
+// size (key + creation scale; rotations don't change it) — consumers color
+// by it so identical pieces match.
+function H(key, gen, sx, sy, sz) {
+  if (!REGISTRY.has(key)) {
+    const g = gen();
+    REGISTRY.set(key, {
+      positions: new Float32Array(g.positions),
+      normals: new Float32Array(g.normals),
+    });
+  }
+  return {
+    key,
+    id: `${key}@${q4(sx)},${q4(sy)},${q4(sz)}`,
+    m: [sx, 0, 0, 0, sy, 0, 0, 0, sz],
+    t: [0, 0, 0],
+  };
+}
+
+// ---- handle transforms (chainable — matrix composition, no vertex work) ------
+
+export function translate(g, x, y, z) {
+  g.t[0] += x; g.t[1] += y; g.t[2] += z;
+  return g;
+}
+
+function rotAxis(g, i, j, rad) {
+  const c = Math.cos(rad), s = Math.sin(rad);
+  const m = g.m, t = g.t;
+  for (let col = 0; col < 3; col++) {
+    const a = m[i * 3 + col], b = m[j * 3 + col];
+    m[i * 3 + col] = c * a - s * b;
+    m[j * 3 + col] = s * a + c * b;
+  }
+  const a = t[i], b = t[j];
+  t[i] = c * a - s * b;
+  t[j] = s * a + c * b;
+  return g;
+}
+
+// standard right-handed axis rotations, radians
+export const rotX = (g, r) => rotAxis(g, 1, 2, r); // y,z
+export const rotY = (g, r) => rotAxis(g, 2, 0, r); // z,x
+export const rotZ = (g, r) => rotAxis(g, 0, 1, r); // x,y
+
+// finalize a handle for the model item list
+export function bake(g) {
+  return { key: g.key, id: g.id, m: g.m.slice(), t: g.t.slice() };
+}
+
+// ---- soup helpers (used only inside unit-mesh generators) --------------------
 
 function geo() {
   return { positions: [], normals: [] };
@@ -48,42 +122,21 @@ function merge(...gs) {
   return out;
 }
 
-// ---- in-place transforms (chainable) --------------------------------------
-
-export function translate(g, x, y, z) {
+function soupTranslate(g, x, y, z) {
   const p = g.positions;
   for (let i = 0; i < p.length; i += 3) { p[i] += x; p[i + 1] += y; p[i + 2] += z; }
   return g;
 }
 
-function rotAxis(g, i, j, rad) {
-  const c = Math.cos(rad), s = Math.sin(rad);
-  const p = g.positions, n = g.normals;
-  for (const arr of [p, n]) {
-    for (let k = 0; k < arr.length; k += 3) {
-      const a = arr[k + i], b = arr[k + j];
-      arr[k + i] = c * a - s * b;
-      arr[k + j] = s * a + c * b;
-    }
-  }
-  return g;
-}
+// ---- unit-mesh generators ----------------------------------------------------
 
-// standard right-handed axis rotations, radians
-export const rotX = (g, r) => rotAxis(g, 1, 2, r); // y,z
-export const rotY = (g, r) => rotAxis(g, 2, 0, r); // z,x
-export const rotZ = (g, r) => rotAxis(g, 0, 1, r); // x,y
-
-// ---- primitives ------------------------------------------------------------
-
-// slope = absolute drop of the top face's front (+Z) edge, 0 = flat top.
-// curve bends the sloped top: -1 = concave (scooped), 0 = straight,
-// +1 = convex (bulged out, like a lego curved slope). only acts on the slope,
-// so a flat-top box ignores it. clamped so the front wall never inverts.
-export function box(w = 1, h = 1, d = 1, slope = 0, curve = 0) {
+// unit box (1x1x1, centered). slope = FRACTION of the height dropped at the
+// top face's front (+Z) edge; curve bends the sloped top (-1 concave, 0
+// straight, +1 convex) and only acts when slope > 0.
+function genBox(slope, curve) {
   const g = geo();
-  const x = w / 2, y = h / 2, z = d / 2;
-  const s = Math.max(0, Math.min(slope, h - 1e-4));
+  const x = 0.5, y = 0.5, z = 0.5, d = 1;
+  const s = Math.max(0, Math.min(slope, 1 - 1e-4));
   const k = Math.max(-1, Math.min(1, curve));
   const N = s > 0 && k !== 0 ? 12 : 1;               // subdivide only when curved
   const yAt = (u) => y - s * (u - k * u * (1 - u));  // top profile, back -> front
@@ -104,7 +157,7 @@ export function box(w = 1, h = 1, d = 1, slope = 0, curve = 0) {
 }
 
 // arc sweep of a cylinder side + caps, shared by cylinder / halfCylinder.
-//   a0..a1 = swept angle range. addFlat closes a partial sweep with flat faces.
+//   a0..a1 = swept angle range. caps closes top/bottom with fans.
 function cylBody(r, h, seg, a0, a1, caps = true) {
   const g = geo();
   for (let i = 0; i < seg; i++) {
@@ -125,61 +178,50 @@ function cylBody(r, h, seg, a0, a1, caps = true) {
   return g;
 }
 
-export function cylinder(r = 0.5, h = 1, seg = 24) {
-  return cylBody(r, h, seg, 0, TAU);
-}
-
-// truncated cone (frustum): base radius r0 at y=0, top radius r1 at y=h,
-// origin = base circle center. side normals tilt with the slope.
-// r1 = 0 degenerates into a true cone (apex fan instead of a top cap).
-export function coneCut(r0 = 0.5, r1 = 0.25, h = 1, seg = 24) {
+// unit truncated cone: base r=1 at y=0 to top r=q at y=1. q=0 -> true cone.
+function genConeCut(q, seg) {
   const g = geo();
-  const ny = (r0 - r1) / h;                 // slope -> normal tilt
+  const ny = 1 - q;                          // slope -> normal tilt (r0=1, h=1)
   const il = 1 / Math.hypot(1, ny);
   const nrm = (c, s) => [c * il, ny * il, s * il];
   for (let i = 0; i < seg; i++) {
     const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
     const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
     const n0 = nrm(c0, s0), n1 = nrm(c1, s1);
-    const p00 = [r0 * c0, 0, r0 * s0], p01 = [r0 * c1, 0, r0 * s1];
-    if (r1 > 1e-6) {
-      const p10 = [r1 * c0, h, r1 * s0], p11 = [r1 * c1, h, r1 * s1];
+    const p00 = [c0, 0, s0], p01 = [c1, 0, s1];
+    if (q > 1e-6) {
+      const p10 = [q * c0, 1, q * s0], p11 = [q * c1, 1, q * s1];
       triS(g, p00, p01, p11, n0, n1, n1);
       triS(g, p00, p11, p10, n0, n1, n0);
-      tri(g, [0, h, 0], p10, p11, [0, 1, 0]);            // top cap
+      tri(g, [0, 1, 0], p10, p11, [0, 1, 0]);            // top cap
     } else {
-      triS(g, p00, p01, [0, h, 0], n0, n1, nrm((c0 + c1) / 2, (s0 + s1) / 2));
+      triS(g, p00, p01, [0, 1, 0], n0, n1, nrm((c0 + c1) / 2, (s0 + s1) / 2));
     }
     tri(g, [0, 0, 0], p01, p00, [0, -1, 0]);             // base cap
   }
   return g;
 }
 
-export function cone(r = 0.5, h = 1, seg = 24) {
-  return coneCut(r, 0, h, seg);
-}
-
-export function sphere(r = 0.5, seg = 24, rings = 16) {
+// unit sphere / hemisphere lathes
+function genSphere(seg, rings) {
   const g = geo();
   const pt = (u, v) => {
     const th = u * TAU, ph = v * Math.PI;
     const sp = Math.sin(ph);
-    return [Math.cos(th) * sp, Math.cos(ph), Math.sin(th) * sp]; // unit
+    return [Math.cos(th) * sp, Math.cos(ph), Math.sin(th) * sp];
   };
   for (let j = 0; j < rings; j++) {
     for (let i = 0; i < seg; i++) {
       const n00 = pt(i / seg, j / rings), n01 = pt((i + 1) / seg, j / rings);
       const n10 = pt(i / seg, (j + 1) / rings), n11 = pt((i + 1) / seg, (j + 1) / rings);
-      const s = (n) => [n[0] * r, n[1] * r, n[2] * r];
-      triS(g, s(n00), s(n10), s(n11), n00, n10, n11);
-      triS(g, s(n00), s(n11), s(n01), n00, n11, n01);
+      triS(g, n00, n10, n11, n00, n10, n11);
+      triS(g, n00, n11, n01, n00, n11, n01);
     }
   }
   return g;
 }
 
-// dome up, origin at base circle center, closed with a base disc
-export function hemisphere(r = 0.5, seg = 24, rings = 8) {
+function genHemisphere(seg, rings) {
   const g = geo();
   const pt = (u, v) => {
     const th = u * TAU, ph = (v * Math.PI) / 2; // 0 = pole, PI/2 = equator
@@ -190,26 +232,22 @@ export function hemisphere(r = 0.5, seg = 24, rings = 8) {
     for (let i = 0; i < seg; i++) {
       const n00 = pt(i / seg, j / rings), n01 = pt((i + 1) / seg, j / rings);
       const n10 = pt(i / seg, (j + 1) / rings), n11 = pt((i + 1) / seg, (j + 1) / rings);
-      const s = (n) => [n[0] * r, n[1] * r, n[2] * r];
-      triS(g, s(n00), s(n10), s(n11), n00, n10, n11);
-      triS(g, s(n00), s(n11), s(n01), n00, n11, n01);
+      triS(g, n00, n10, n11, n00, n10, n11);
+      triS(g, n00, n11, n01, n00, n11, n01);
     }
   }
   for (let i = 0; i < seg; i++) {           // base disc, facing down
     const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
-    tri(g, [0, 0, 0], [r * Math.cos(t1), 0, r * Math.sin(t1)], [r * Math.cos(t0), 0, r * Math.sin(t0)], [0, -1, 0]);
+    tri(g, [0, 0, 0], [Math.cos(t1), 0, Math.sin(t1)], [Math.cos(t0), 0, Math.sin(t0)], [0, -1, 0]);
   }
   return g;
 }
 
-// CUT HEMISPHERE — a hemisphere SHELL (wall thickness t) with the top sliced
-// off at height cut*r, leaving a round opening: a socket that a ball can sit
-// in. origin = base circle center, dome up. Outer + inner (cavity) spherical
-// bands, a flat lip ring at the opening and a flat base ring at y=0.
-export function cutHemisphere(r = 0.5, t = 0.12, cut = 0.7, seg = 24, rings = 6) {
+// unit cut hemisphere: shell r=1, wall t + cut plane = FRACTIONS of r
+function genCutHemisphere(t, cut, seg, rings) {
   const g = geo();
-  const ri = Math.max(0.05, r - t);
-  const yc = Math.min(cut * r, ri - 1e-3);   // cut plane height (same for both surfaces)
+  const ri = Math.max(0.05, 1 - t);
+  const yc = Math.min(cut, ri - 1e-3);       // cut plane height (same for both surfaces)
   const band = (rad, out) => {
     const ph0 = Math.acos(Math.min(1, yc / rad));
     for (let j = 0; j < rings; j++) {
@@ -226,41 +264,40 @@ export function cutHemisphere(r = 0.5, t = 0.12, cut = 0.7, seg = 24, rings = 6)
       }
     }
   };
-  band(r, true);                             // outer surface
+  band(1, true);                             // outer surface
   band(ri, false);                           // cavity surface, normals inward
-  const ro = Math.sqrt(Math.max(0, r * r - yc * yc));
+  const ro = Math.sqrt(Math.max(0, 1 - yc * yc));
   const rr = Math.sqrt(Math.max(0, ri * ri - yc * yc));
   for (let i = 0; i < seg; i++) {
     const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
     const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
     // lip ring at the opening (up) + base ring at y=0 (down)
     quad(g, [rr * c0, yc, rr * s0], [rr * c1, yc, rr * s1], [ro * c1, yc, ro * s1], [ro * c0, yc, ro * s0], [0, 1, 0]);
-    quad(g, [ri * c1, 0, ri * s1], [ri * c0, 0, ri * s0], [r * c0, 0, r * s0], [r * c1, 0, r * s1], [0, -1, 0]);
+    quad(g, [ri * c1, 0, ri * s1], [ri * c0, 0, ri * s0], [c0, 0, s0], [c1, 0, s1], [0, -1, 0]);
   }
   return g;
 }
 
-// half cylinder: round side +Z (sweep 0..PI through +Z), flat face on the XZ...
-// -> flat face is the XY plane at z=0, half-disc caps top/bottom.
-//   flat=false omits the closing rectangle (for the box-joined variant).
-export function halfCylinder(r = 0.5, h = 1, seg = 12, flat = true) {
-  const g = cylBody(r, h, seg, 0, Math.PI, false);
+// unit half cylinder: round side +Z, flat face on the XY plane, y 0..1.
+//   flat=false omits the closing rectangle (for the arch-box variant).
+function genHalfCylinder(seg, flat) {
+  const g = cylBody(1, 1, seg, 0, Math.PI, false);
   for (let i = 0; i < seg; i++) {           // half-disc caps
     const t0 = (i / seg) * Math.PI, t1 = ((i + 1) / seg) * Math.PI;
     const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
-    tri(g, [0, h, 0], [r * c0, h, r * s0], [r * c1, h, r * s1], [0, 1, 0]);
-    tri(g, [0, 0, 0], [r * c1, 0, r * s1], [r * c0, 0, r * s0], [0, -1, 0]);
+    tri(g, [0, 1, 0], [c0, 1, s0], [c1, 1, s1], [0, 1, 0]);
+    tri(g, [0, 0, 0], [c1, 0, s1], [c0, 0, s0], [0, -1, 0]);
   }
-  if (flat) quad(g, [r, 0, 0], [r, h, 0], [-r, h, 0], [-r, 0, 0], [0, 0, -1]);
+  if (flat) quad(g, [1, 0, 0], [1, 1, 0], [-1, 1, 0], [-1, 0, 0], [0, 0, -1]);
   return g;
 }
 
-// half cylinder joined with a box on the missing (-Z) half. one solid D-block;
-// the shared internal wall is omitted. origin = center of the base circle.
-export function halfCylinderBox(r = 0.5, h = 1, depth = 0.5, seg = 12) {
-  const hc = halfCylinder(r, h, seg, false);
+// unit arch box: half cylinder r=1 joined with a box on the -Z side reaching
+// depth dp (= depth/r ratio). One solid D-block; internal wall omitted.
+function genHalfCylinderBox(dp, seg) {
+  const hc = genHalfCylinder(seg, false);
   const b = geo();
-  const x = r, z0 = -depth, z1 = 0;
+  const x = 1, z0 = -dp, z1 = 0, h = 1;
   quad(b, [x, 0, z1], [x, 0, z0], [x, h, z0], [x, h, z1], [1, 0, 0]);
   quad(b, [-x, 0, z0], [-x, 0, z1], [-x, h, z1], [-x, h, z0], [-1, 0, 0]);
   quad(b, [-x, h, z1], [x, h, z1], [x, h, z0], [-x, h, z0], [0, 1, 0]);
@@ -269,41 +306,90 @@ export function halfCylinderBox(r = 0.5, h = 1, depth = 0.5, seg = 12) {
   return merge(hc, b);
 }
 
-// quarter cylinder (1/4 disc plate): arc sweeps the +X..+Z quadrant, the two
-// straight edges (along +X and +Z) are closed with flat faces. origin = the
-// corner of the quarter at the base, thickness along +Y (y 0..h).
-export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
+// unit quarter cylinder: 1/4 disc plate, arc sweeps +X..+Z, corner origin
+function genQuarterCylinder(seg) {
   const QP = Math.PI / 2;
-  const g = cylBody(r, h, seg, 0, QP, false);
+  const g = cylBody(1, 1, seg, 0, QP, false);
   for (let i = 0; i < seg; i++) {           // quarter-disc caps
     const t0 = (i / seg) * QP, t1 = ((i + 1) / seg) * QP;
     const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
-    tri(g, [0, h, 0], [r * c0, h, r * s0], [r * c1, h, r * s1], [0, 1, 0]);
-    tri(g, [0, 0, 0], [r * c1, 0, r * s1], [r * c0, 0, r * s0], [0, -1, 0]);
+    tri(g, [0, 1, 0], [c0, 1, s0], [c1, 1, s1], [0, 1, 0]);
+    tri(g, [0, 0, 0], [c1, 0, s1], [c0, 0, s0], [0, -1, 0]);
   }
-  quad(g, [0, 0, 0], [0, h, 0], [r, h, 0], [r, 0, 0], [0, 0, -1]);  // edge along +X
-  quad(g, [0, 0, 0], [0, 0, r], [0, h, r], [0, h, 0], [-1, 0, 0]);  // edge along +Z
+  quad(g, [0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1]);  // edge along +X
+  quad(g, [0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0], [-1, 0, 0]);  // edge along +Z
   return g;
 }
 
-// box with a cylinder standing on its top face. origin = cylinder base center.
-// box spans y -boxH..0; cylinder y 0..cylH. fit: "in" inscribed, "out"
-// circumscribed (radius covers the corners). rOverride forces a radius.
-export function boxCylinder(w = 1, boxH = 0.5, d = 1, cylH = 0.4, fit = "in", seg = 24, rOverride = 0) {
-  const r = rOverride > 0 ? rOverride : fit === "out" ? Math.hypot(w, d) / 2 : Math.min(w, d) / 2;
-  const b = translate(box(w, boxH, d), 0, -boxH / 2, 0);
-  const c = cylinder(r, cylH, seg);
+// unit stamper: 1x1x1 box (y -1..0) + cylinder on top, height cp (= FRACTION
+// of the box height). fit "in" -> r=0.5 inscribed, "out" -> r=sqrt(2)/2.
+function genBoxCylinder(cp, fit, seg) {
+  const r = fit === "out" ? Math.SQRT2 / 2 : 0.5;
+  const b = soupTranslate(genBox(0, 0), 0, -0.5, 0);
+  const c = cylBody(r, cp, seg, 0, TAU);
   return merge(b, c);
 }
 
-// ---- output ----------------------------------------------------------------
+// ---- primitives (public API: same signatures, now instance handles) ---------
 
-// finalize a geometry (or a merged list) into typed arrays for the GPU
-export function bake(g) {
-  return {
-    positions: new Float32Array(g.positions),
-    normals: new Float32Array(g.normals),
-  };
+// slope = FRACTION of height dropped at the top's front edge (0..1); curve
+// -1 concave .. +1 convex, only acts on the slope.
+export function box(w = 1, h = 1, d = 1, slope = 0, curve = 0) {
+  const sp = q4(Math.max(0, Math.min(slope, 0.9999)));
+  const k = q4(Math.max(-1, Math.min(1, curve)));
+  return H(`box:${sp}:${k}`, () => genBox(sp, k), w, h, d);
+}
+
+export function cylinder(r = 0.5, h = 1, seg = 24) {
+  return H(`cyl:${seg}`, () => cylBody(1, 1, seg, 0, TAU), r, h, r);
+}
+
+// truncated cone: only the taper RATIO r1/r0 shapes the mesh
+export function coneCut(r0 = 0.5, r1 = 0.25, h = 1, seg = 24) {
+  const q = q4(Math.max(0, r1 / r0));
+  return H(`coneCut:${q}:${seg}`, () => genConeCut(q, seg), r0, h, r0);
+}
+
+// a cone IS coneCut(r, 0, ...)
+export function cone(r = 0.5, h = 1, seg = 24) {
+  return coneCut(r, 0, h, seg);
+}
+
+export function sphere(r = 0.5, seg = 24, rings = 16) {
+  return H(`sph:${seg}:${rings}`, () => genSphere(seg, rings), r, r, r);
+}
+
+export function hemisphere(r = 0.5, seg = 24, rings = 8) {
+  return H(`hemi:${seg}:${rings}`, () => genHemisphere(seg, rings), r, r, r);
+}
+
+// socket shell — wall t and cut height are FRACTIONS of r
+export function cutHemisphere(r = 0.5, t = 0.25, cut = 0.7, seg = 24, rings = 6) {
+  const tp = q4(Math.max(0.02, Math.min(t, 0.95)));
+  const cp = q4(Math.max(0, Math.min(cut, 0.98)));
+  return H(`cutHemi:${tp}:${cp}:${seg}:${rings}`, () => genCutHemisphere(tp, cp, seg, rings), r, r, r);
+}
+
+export function halfCylinder(r = 0.5, h = 1, seg = 12) {
+  return H(`halfCyl:${seg}`, () => genHalfCylinder(seg, true), r, h, r);
+}
+
+// arch box — the box depth enters the KEY as a FRACTION of r; height is a
+// free scale axis, so all arch boxes with one depth ratio share a mesh
+export function halfCylinderBox(r = 0.5, h = 1, depth = 0.5, seg = 12) {
+  const dp = q4(depth / r);
+  return H(`archBox:${dp}:${seg}`, () => genHalfCylinderBox(dp, seg), r, h, r);
+}
+
+export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
+  return H(`qCyl:${seg}`, () => genQuarterCylinder(seg), r, h, r);
+}
+
+// stamper — cylH = FRACTION of boxH; w/boxH/d are free scale axes (the
+// cylinder radius follows the footprint, so w != d stretches it with the box)
+export function boxCylinder(w = 1, boxH = 0.5, d = 1, cylH = 0.8, fit = "in", seg = 24) {
+  const cp = q4(Math.max(0.01, cylH));
+  return H(`stamper:${cp}:${fit}:${seg}`, () => genBoxCylinder(cp, fit, seg), w, boxH, d);
 }
 
 export const PRIMS = { cylinder, cone, coneCut, box, sphere, hemisphere, cutHemisphere, halfCylinder, halfCylinderBox, boxCylinder, quarterCylinder };

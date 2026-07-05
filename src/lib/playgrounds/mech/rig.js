@@ -20,8 +20,8 @@
 // The body chain is posed on a CLOSED CATMULL-ROM LOOP: joint pivots are
 // chord-marched along the curve at exact part pitches (so every male ball
 // lands exactly in its female socket) and `offset` slides the dragon along.
-import { buildPart, partSlots, makePainter } from "./parts.js";
-import { bake } from "./primitives.js";
+import { buildPart, partSlots, colorOf } from "./parts.js";
+import { bake, meshOf } from "./primitives.js";
 
 // ---- tiny rigid-transform math: 3x3 row-major rotation + translation ------
 const I3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -209,16 +209,25 @@ const DRAGON_DEF = [
   { name: "seg4", part: "bodySegment", params: SEG_P, parent: "seg3", at: "rear", slot: "front", spine: true },
   { name: "taper", part: "bodySegment2", params: TAPER_P, parent: "seg4", at: "rear", slot: "front", spine: true },
   { name: "tail", part: "tail", params: TAIL_P, parent: "taper", at: "rear", slot: "front", spine: true },
-  { name: "armL", part: "arm", parent: "seg1", at: "flankL", slot: "mount", pose: ["armSwing", "elbow"] },
-  { name: "armR", part: "arm", parent: "seg1", at: "flankR", slot: "mount", pose: ["armSwing", "elbow"], mirror: true },
-  { name: "legL", part: "leg", parent: "seg4", at: "flankL", slot: "mount", pose: ["legSwing", "knee"] },
-  { name: "legR", part: "leg", parent: "seg4", at: "flankR", slot: "mount", pose: ["legSwing", "knee"], mirror: true },
+  { name: "armL", part: "arm", parent: "seg1", at: "flankL", slot: "mount", pose: ["armSwing", "elbow"], phase: 0 },
+  { name: "armR", part: "arm", parent: "seg1", at: "flankR", slot: "mount", pose: ["armSwing", "elbow"], phase: 0.5, mirror: true },
+  { name: "legL", part: "leg", parent: "seg4", at: "flankL", slot: "mount", pose: ["legSwing", "knee"], phase: 0.5 },
+  { name: "legR", part: "leg", parent: "seg4", at: "flankR", slot: "mount", pose: ["legSwing", "knee"], phase: 0, mirror: true },
 ];
 
-// closed flight loop the spine rides (roughly a ring, undulating in Y)
+// SWIM STROKE — a second animation layered on the base limb pose, its
+// timeline driven by the SAME loop offset: `strokes` paddle cycles per lap,
+// swing/bend = oscillation amplitudes (degrees) around the pose sliders, and
+// bend LAGS swing by a quarter cycle so each limb whips like a paddle.
+// Left/right run at OPPOSITE phases, and so do front/rear — diagonal pairs
+// stroke together (armL+legR, then armR+legL), a trot-like paddling gait.
+const SWIM = { strokes: 4, swing: 22, bend: 20 };
+
+// closed flight loop the spine rides (roughly a ring, strongly undulating in Y
+// — alternating crests and troughs so the dragon visibly swims up and down)
 const LOOP_PTS = [
-  [5.6, 3.0, 0], [3.9, 3.5, 3.9], [0, 3.1, 5.5], [-3.9, 3.6, 3.9],
-  [-5.6, 2.8, 0], [-3.9, 2.6, -3.9], [0, 3.2, -5.5], [3.9, 2.7, -3.9],
+  [5.6, 5.5, 0], [3.9, 2.7, 3.9], [0, 5.2, 5.5], [-3.9, 2.5, 3.9],
+  [-5.6, 5.6, 0], [-3.9, 2.6, -3.9], [0, 5.0, -5.5], [3.9, 2.8, -3.9],
 ];
 
 const deg = (r) => (r * 180) / Math.PI;
@@ -282,9 +291,12 @@ export function dragonModel(seed = 1, pose = {}) {
         : frames[0];
       setBall(sk, ids, M);
     } else {
-      sk.bones[ids[0]].angle = rad(o[d.pose[0]]);   // spinF = fore/aft swing (X)
+      // swim layer: stroke phase = loop offset (the one timeline drives both
+      // the body's ride along the curve and the limb paddling)
+      const ph = ((((o.offset % 1) + 1) % 1) * SWIM.strokes + (d.phase || 0)) * 2 * Math.PI;
+      sk.bones[ids[0]].angle = rad(o[d.pose[0]] + SWIM.swing * Math.sin(ph));  // spinF = fore/aft swing (X)
       d.bendBone = sk.add(`${d.name}.bend`, ids[2], [0, -1, 0], "x");
-      sk.bones[d.bendBone].angle = rad(o[d.pose[1]]);
+      sk.bones[d.bendBone].angle = rad(o[d.pose[1]] + SWIM.bend * Math.sin(ph - Math.PI / 2));
     }
     d.ids = ids;
     boneOf[d.name] = ids[2];
@@ -294,21 +306,24 @@ export function dragonModel(seed = 1, pose = {}) {
   const W = sk.resolve();
 
   // --- instantiate parts through the bone worlds, seated by their slot:
-  // part transform = bone world ∘ T(-slot.pos), so the slot lands on the bone
-  const paint = makePainter(seed);
+  // part transform = bone world ∘ T(-slot.pos), so the slot lands on the bone.
+  // Primitives are instance HANDLES { key, m, t } — placing a part is pure
+  // matrix composition, no vertex work; the renderer instances by key.
   const items = [];
   const put = (name, params, ppose, t, mirror = false) => {
     buildPart(name, (g) => {
-      const b = bake(g), pos = b.positions, nor = b.normals;
-      if (mirror)
-        for (let i = 0; i < pos.length; i += 3) { pos[i] = -pos[i]; nor[i] = -nor[i]; }
-      for (let i = 0; i < pos.length; i += 3) {
-        const p = m3MulV(t.r, [pos[i], pos[i + 1], pos[i + 2]]);
-        const n = m3MulV(t.r, [nor[i], nor[i + 1], nor[i + 2]]);
-        pos[i] = p[0] + t.t[0]; pos[i + 1] = p[1] + t.t[1]; pos[i + 2] = p[2] + t.t[2];
-        nor[i] = n[0]; nor[i + 1] = n[1]; nor[i + 2] = n[2];
+      const b = bake(g);
+      if (mirror) {                                  // X-flip = negate the output x row
+        for (let c = 0; c < 3; c++) b.m[c] = -b.m[c];
+        b.t[0] = -b.t[0];
       }
-      items.push({ positions: pos, normals: nor, color: paint() });
+      // identical shapes share a color no matter which part emitted them
+      items.push({
+        key: b.key,
+        m: m3Mul(t.r, b.m),
+        t: vAdd(m3MulV(t.r, b.t), t.t),
+        color: colorOf(b.id, seed),
+      });
     }, params, ppose);
   };
 
@@ -326,5 +341,7 @@ export function dragonModel(seed = 1, pose = {}) {
     put(d.part, d.params ?? null, ppose, t, !!d.mirror);
   }
 
-  return { items, name: "dragon", skeleton: sk };
+  const meshes = {};
+  for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
+  return { items, meshes, name: "dragon", skeleton: sk };
 }

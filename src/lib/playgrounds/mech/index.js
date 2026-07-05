@@ -1,7 +1,9 @@
 // RENDER ENGINE — draws procedurally generated MESHES (triangle soup), no SDF.
-// The page feeds it a model ({ items: [{ positions, normals, color }] }) built
-// by parts.js; vertices are already in world space, so each item is one draw
-// with its own color. Camera is a simple orbit around the model's bounds.
+// INSTANCED: the model is { items: [{ key, m, t, color }], meshes: {key: soup} }
+// (parts.js/rig.js emit instance handles — a unit-mesh key + affine transform).
+// Items are grouped by key and each group is ONE instanced draw; per-instance
+// data = model matrix rows, normal matrix rows (inverse-transpose, handles
+// non-uniform scale + mirroring) and color.
 import { createDevice, Camera, mat4 } from "$lib/engine/index.js";
 import MECH_WGSL from "./shaders/mech.wgsl?raw";
 import VERT from "./shaders/mech.vert.glsl?raw";
@@ -33,19 +35,56 @@ const config = {
 };
 
 function disposeItems() {
-  for (const it of items) { it.posBuf?.destroy(); it.normBuf?.destroy(); }
+  for (const it of items) { it.posBuf?.destroy(); it.normBuf?.destroy(); it.instBuf?.destroy(); }
   items = [];
 }
+
+// inverse-transpose of a row-major 3x3 = cofactor matrix / det
+function invT3(m) {
+  const [a, b, c, d, e, f, g, h, i] = m;
+  const A = e * i - f * h, B = f * g - d * i, C = d * h - e * g;
+  const det = a * A + b * B + c * C || 1;
+  return [
+    A / det, B / det, C / det,
+    (c * h - b * i) / det, (a * i - c * g) / det, (b * g - a * h) / det,
+    (b * f - c * e) / det, (c * d - a * f) / det, (a * e - b * d) / det,
+  ];
+}
+
+const INST_FLOATS = 28;   // 3 vec4 model rows + 3 vec4 normal rows + color
 
 function rebuild(model) {
   if (!device) { pending = model; return; }
   disposeItems();
-  items = model.items.map((it) => ({
-    posBuf: device.buffer({ kind: "vertex", data: it.positions }),
-    normBuf: device.buffer({ kind: "vertex", data: it.normals }),
-    count: it.positions.length / 3,
-    color: it.color,
-  }));
+  const groups = new Map();                    // mesh key -> [items]
+  for (const it of model.items) {
+    if (!groups.has(it.key)) groups.set(it.key, []);
+    groups.get(it.key).push(it);
+  }
+  for (const [key, list] of groups) {
+    const mesh = model.meshes?.[key];
+    if (!mesh) continue;
+    const data = new Float32Array(list.length * INST_FLOATS);
+    list.forEach((it, i) => {
+      const m = it.m, t = it.t, n = invT3(m), c = it.color;
+      data.set([
+        m[0], m[1], m[2], t[0],
+        m[3], m[4], m[5], t[1],
+        m[6], m[7], m[8], t[2],
+        n[0], n[1], n[2], 0,
+        n[3], n[4], n[5], 0,
+        n[6], n[7], n[8], 0,
+        c[0], c[1], c[2], 1,
+      ], i * INST_FLOATS);
+    });
+    items.push({
+      posBuf: device.buffer({ kind: "vertex", data: mesh.positions }),
+      normBuf: device.buffer({ kind: "vertex", data: mesh.normals }),
+      instBuf: device.buffer({ kind: "vertex", data }),
+      count: mesh.positions.length / 3,
+      instances: list.length,
+    });
+  }
 }
 
 function setConfig(patch) {
@@ -93,10 +132,18 @@ async function init(canvasEl) {
     buffers: [
       { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
       { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
+      { stride: INST_FLOATS * 4, step: "instance", attributes: [
+        { name: "iM0", location: 2, format: "float32x4", offset: 0 },
+        { name: "iM1", location: 3, format: "float32x4", offset: 16 },
+        { name: "iM2", location: 4, format: "float32x4", offset: 32 },
+        { name: "iN0", location: 5, format: "float32x4", offset: 48 },
+        { name: "iN1", location: 6, format: "float32x4", offset: 64 },
+        { name: "iN2", location: 7, format: "float32x4", offset: 80 },
+        { name: "iColor", location: 8, format: "float32x4", offset: 96 },
+      ] },
     ],
     uniforms: [
       { name: "uViewProj", type: "mat4" },
-      { name: "uColor", type: "vec3" },
       { name: "uLightPos", type: "vec3" },
       { name: "uViewPos", type: "vec3" },
     ],
@@ -167,9 +214,10 @@ function render() {
     }
     for (const it of items) {
       p.draw(shader, {
-        buffers: [it.posBuf, it.normBuf],
+        buffers: [it.posBuf, it.normBuf, it.instBuf],
         count: it.count,
-        uniforms: { uViewProj: _vp, uColor: it.color, uLightPos: light, uViewPos: eye },
+        instances: it.instances,
+        uniforms: { uViewProj: _vp, uLightPos: light, uViewPos: eye },
       });
     }
   });
