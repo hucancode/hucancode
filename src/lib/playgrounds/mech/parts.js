@@ -175,7 +175,20 @@ export function jointMounts(kind, p = {}, sides = {}) {
 // RUNTIME pose (radians, separate from the modeling params): pose.swing
 // rotates the male half about the pin. A consumer with extra geometry riding
 // the male half can instead keep articulating the whole `moving` channel.
+// ---- joint sub-assembly tagging ---------------------------------------------
+// Every joint block brackets its primitive emissions so a consumer (e.g. an
+// assembly animation) can group primitives by their owning joint. Nested
+// blocks stack (hinge1Block calls hingeBlock); primitives emitted outside any
+// block belong to the part body (null).
+let _jseq = 0;
+const _jstack = [];
+const jbegin = () => _jstack.push(`j${++_jseq}`);
+const jend = () => _jstack.pop();
+export const currentJointGroup = () => _jstack[_jstack.length - 1] ?? null;
+export const resetJointGroups = () => { _jseq = 0; };
+
 export function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
+  jbegin();
   const base = { ...JOINT_DEFAULTS.hinge, ...p };
   const dF = hingeDims({ ...base, ...(sides.female || {}) });
   const dM = hingeDims({ ...base, ...(sides.male || {}) });
@@ -185,6 +198,7 @@ export function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
   // pin = bare shaft (no end caps), poking a touch past the female outer faces
   const halfSpan = dF.gapW / 2 + dF.armT + 0.05;
   fixed(translate(rotZ(cylinder(base.pinR, 2 * halfSpan, 20), -HPI), -halfSpan, 0, 0));
+  jend();
 }
 
 // HINGE1 BLOCK — 2-axis joint: a rounded-U hinge (pin = X, the swing axis)
@@ -198,6 +212,7 @@ export function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
 // pose.twistM spins ONLY the male boss disc about its own axis (a turntable
 // under the male bridge; the male U itself is rigid with the pin).
 export function hinge1Block(fixed, moving, p = {}, sides = {}, pose = {}) {
+  jbegin();
   const base = { ...JOINT_DEFAULTS.hinge, ...p };
   const fx = pose.twistF ? (g) => fixed(rotY(g, pose.twistF)) : fixed;
   const mv = (g) => {
@@ -214,6 +229,7 @@ export function hinge1Block(fixed, moving, p = {}, sides = {}, pose = {}) {
   fx(translate(cylinder(bossR(dF.gapW + 2 * dF.armT, dF.depth), bossH, 24), 0, topF, 0));
   const botM = dM.armH - dM.tip + dM.bridgeT;      // male bridge bottom
   mvBoss(translate(cylinder(bossR(dM.gap + 2 * dM.armT, dM.depth), bossH, 24), 0, -botM - bossH, 0));
+  jend();
 }
 
 // BALL BLOCK — ball-and-socket, ball center = local origin. Female (fixed) =
@@ -224,6 +240,7 @@ export function hinge1Block(fixed, moving, p = {}, sides = {}, pose = {}) {
 // RUNTIME pose (radians): pose.rx/ry/rz — one full xyz rotation of the male
 // half about the ball center.
 export function ballBlock(fixed, moving, p = {}, pose = {}) {
+  jbegin();
   const q = { ...JOINT_DEFAULTS.ball, ...p };
   const mv = (g) => {
     let h = g;
@@ -241,6 +258,7 @@ export function ballBlock(fixed, moving, p = {}, pose = {}) {
   const top = q.ballR + q.shaftLen;
   mv(cylinder(q.shaftR, top, 18));
   mv(translate(box(q.baseW * 0.75, q.baseT, q.baseW * 0.75), 0, top + q.baseT / 2, 0));
+  jend();
 }
 
 // HINGE3 BLOCK — clevis + tongue, pin = Y axis (vertical shaft through the
@@ -255,6 +273,7 @@ export function ballBlock(fixed, moving, p = {}, pose = {}) {
 // chain with it — and pose.spinM spins ONLY the mount-2 barrel stack about
 // its own axis (Z); the tongue eye stays rigid with the pin.
 export function hinge3Block(fixed, moving, p = {}, pose = {}) {
+  jbegin();
   const q = { ...JOINT_DEFAULTS.hinge3, ...p };
   const fx = pose.spinF ? (g) => fixed(rotX(g, pose.spinF)) : fixed;
   const mv = (g) => {
@@ -286,6 +305,7 @@ export function hinge3Block(fixed, moving, p = {}, pose = {}) {
   mvBase(translate(rotX(cylinder(q.barrelR, q.barrelLen, 24), HPI), 0, 0, q.tongueLen));
   mvBase(translate(rotX(cylinder(disc1R, 0.09, 24), HPI), 0, 0, q.tongueLen + q.barrelLen));
   mvBase(translate(rotX(cylinder(q.barrelR + 0.02, 0.08, 24), HPI), 0, 0, q.tongueLen + q.barrelLen + 0.09));
+  jend();
 }
 
 // PIVOT BLOCK — spin axis = Y through the local origin: symmetric barrel with
@@ -294,6 +314,7 @@ export function hinge3Block(fixed, moving, p = {}, pose = {}) {
 // stacks about the Y axis — 2 rotations. (The stacks are bodies of
 // revolution, so the spin only shows once geometry hangs off an end.)
 export function pivotBlock(add, p = {}, pose = {}) {
+  jbegin();
   const q = { ...JOINT_DEFAULTS.pivot, ...p };
   const hb = q.barrelLen / 2;
   add(translate(cylinder(q.barrelR, q.barrelLen, 28), 0, -hb, 0));  // barrel
@@ -305,6 +326,7 @@ export function pivotBlock(add, p = {}, pose = {}) {
     at(cylinder(q.neckR, q.neckLen, 20), hb + 0.1);       // neck
     at(cylinder(q.capR, 0.1, 24), hb + 0.1 + q.neckLen);  // end cap
   }
+  jend();
 }
 
 // ---- the parts ----------------------------------------------------------------

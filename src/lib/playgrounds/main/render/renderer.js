@@ -27,6 +27,11 @@
 //     widthScale,                         // body stroke width mult
 //   },
 //   dragon3d: {
+//     // mech rig (D3_STYLE "mech"): instanced part handles over shared unit meshes
+//     items: { key, m: number[9], t: [x,y,z], color, a }[],  // row-major linear + translation + alpha
+//     meshes: { [key]: { positions, normals } },
+//     eye: [x,y,z],                       // camera world pos (specular)
+//     // legacy obj mesh (D3_STYLE "obj"): spine-deformed along path frames
 //     frames: Float32Array,               // N * 16, column-major mat4 path frames
 //     frameCount,                         // N
 //     pathLen,                            // total arc length of path

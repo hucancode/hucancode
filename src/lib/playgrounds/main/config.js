@@ -9,7 +9,7 @@ export const BLOCK_DUR = {
   approach: 5,  // B3: glyph traces in from below; dragon leads to enso border
   enso: 2,      // B4: enso traces, dragon leads, exits bottom after 1.5 revs
   roam2: 4,     // B5: resume circle roam; camera stops descending, starts pitch
-  crossfade: 2, // B6: 2D dragon out, 3D dragon in on same path
+  crossfade: 6, // B6: 2D dragon out, 3D dragon assembles in on same path
   loop3: 5,     // B7: 3D dragon loops (persistent past this)
 };
 export const CORRIDOR_DROP = 6.0;   // total world-Y look-at descends over B1-B3
@@ -65,12 +65,15 @@ export const FLOWER_FILL = 0.13;         // flower radius as fraction of its cir
 export const FLOWER_SIZE_JITTER = [0.45, 2.8]; // per-flower [min,max] size multiplier (seed-driven)
 export const FLOWER_OPACITY_JITTER = [0.35, 1.0]; // ink opacity [biggest,smallest]; small opaque, big translucent
 
-export const R3D = 0.95;            // 3D orbit radius (x/y); rings the rosette
-export const Z3D = 0.45;            // 3D orbit out-of-plane amplitude
-export const LOOP3_PIVOTS = 24;     // pivots around orbit (more -> crisper petals)
-export const LOOP3_WAVES = 3;       // z undulations per orbit (full periods)
-export const LOOP3_LOBES = 3;       // radial petals
-export const LOOP3_LOBE_DEPTH = 0.45; // how far each petal dips inward, as fraction of R3D
+// 3D orbit: built from CIRCLES like the 2D paths — a ring of equal
+// externally-tangent circles walked with alternating winding (C1 S-weave,
+// the descent-chain rule) -> closed loop of pure circular arcs with
+// meaningful turns; per-tangency heights (cosine-eased along each arc) give
+// the height variation.
+export const R3D = 0.95;            // outer reach of the weave (x/y); rings the rosette
+export const Z3D = 0.4;             // 3D orbit out-of-plane amplitude
+export const LOOP3_CIRCLES = 8;     // tangent circles in the orbit ring (EVEN)
+export const LOOP3_WAVES = 2;       // z undulations per orbit (full periods)
 export const SP3 = 1.5;             // 3D dragon speed
 export const ENSO_REVS = 1.5;       // enso trace covers 1.5 revolutions (exit at bottom-most point)
 export const ENSO_DUR = BLOCK_DUR.enso; // enso trace spans B4 block
@@ -107,6 +110,10 @@ export const HEAD_SIZE = 0.1;
 
 export const D3 = { N: 512, bodyFactor: 1.2, depth: 10 };
 export const D3_GIRTH = 0.006; // cross-section scale for 3D mesh
+// which 3D dragon rides the loop: "mech" = procedural mech rig (instanced part
+// kit from the /mech playground), "obj" = legacy skinned dragon-low.obj mesh
+export const D3_STYLE = "mech";
+export const D3_MECH_SCALE = 0.5; // mech dragon size vs the obj ribbon's bodyArc
 
 export const SPLASH_SPREAD = 1.2; // max blob radius (world units)
 export const SPLASH_AMOUNT = 0.05; // 0..1 amount of ink blobs

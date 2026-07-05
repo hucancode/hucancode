@@ -10,6 +10,8 @@ import GRID_FRAG from "./webgl/shaders/grid.frag.glsl?raw";
 import GRID_VERT from "./webgl/shaders/grid.vert.glsl?raw";
 import DRAGON3D_FRAG from "./webgl/shaders/dragon3d.frag.glsl?raw";
 import DRAGON3D_VERT from "./webgl/shaders/dragon3d.vert.glsl?raw";
+import MECH_DRAGON_FRAG from "./webgl/shaders/mech-dragon.frag.glsl?raw";
+import MECH_DRAGON_VERT from "./webgl/shaders/mech-dragon.vert.glsl?raw";
 import FS_TRI_VERT from "./webgl/shaders/fs-tri.vert.glsl?raw";
 import COMPOSITE_VERT from "./webgl/shaders/composite.vert.glsl?raw";
 import COMPOSITE_FRAG from "./webgl/shaders/composite.frag.glsl?raw";
@@ -29,6 +31,7 @@ import COMPOSITE_WGSL from "./webgpu/shaders/composite.wgsl?raw";
 import GRID_WGSL from "./webgpu/shaders/grid.wgsl?raw";
 import FLOWER_WGSL from "./webgpu/shaders/flower.wgsl?raw";
 import DRAGON3D_WGSL from "./webgpu/shaders/dragon3d.wgsl?raw";
+import MECH_DRAGON_WGSL from "./webgpu/shaders/mech-dragon.wgsl?raw";
 import LINE_WGSL from "./webgpu/shaders/line.wgsl?raw";
 import BLIT_WGSL from "./webgpu/shaders/blit.wgsl?raw";
 
@@ -46,6 +49,16 @@ const BUF_DRAGON_POS = { stride: 12, step: "vertex", attributes: [{ name: "aPos"
 const BUF_DRAGON_NRM = { stride: 12, step: "vertex", attributes: [{ name: "aNormal", location: 1, format: "float32x3", offset: 0 }] };
 const BUF_FLOWER_INST = { stride: 32, step: "instance", attributes: [{ name: "iData0", location: 1, format: "float32x4", offset: 0 }, { name: "iData1", location: 2, format: "float32x4", offset: 16 }] };
 const BUF_LINE = { stride: 12, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x3", offset: 0 }] };
+// per-instance: 3 model matrix rows + 3 normal matrix rows + color = 28 floats
+const BUF_MECH_INST = { stride: 112, step: "instance", attributes: [
+  { name: "iM0", location: 2, format: "float32x4", offset: 0 },
+  { name: "iM1", location: 3, format: "float32x4", offset: 16 },
+  { name: "iM2", location: 4, format: "float32x4", offset: 32 },
+  { name: "iN0", location: 5, format: "float32x4", offset: 48 },
+  { name: "iN1", location: 6, format: "float32x4", offset: 64 },
+  { name: "iN2", location: 7, format: "float32x4", offset: 80 },
+  { name: "iColor", location: 8, format: "float32x4", offset: 96 },
+] };
 
 export const PROGRAMS = {
   glyph: {
@@ -98,6 +111,12 @@ export const PROGRAMS = {
     buffers: [BUF_DRAGON_POS, BUF_DRAGON_NRM],
     uniforms: [MAT4("uViewProj"), F32("uN"), F32("uPathLen"), F32("uBodyLen"), F32("uHeadOffset"), F32("uGirth"), F32("uOpacity"), F32("uLightBoost"), VEC3("uAlbedo")],
     textures: [{ name: "uFrames", binding: 1 }],
+    blend: "straight", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
+  },
+  mechDragon: {
+    glsl: { vertex: MECH_DRAGON_VERT, fragment: MECH_DRAGON_FRAG }, wgsl: MECH_DRAGON_WGSL,
+    buffers: [BUF_DRAGON_POS, BUF_DRAGON_NRM, BUF_MECH_INST],
+    uniforms: [MAT4("uViewProj"), VEC3("uLightPos"), VEC3("uViewPos"), F32("uOpacity")],
     blend: "straight", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
   },
   line: {

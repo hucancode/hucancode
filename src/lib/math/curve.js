@@ -97,7 +97,9 @@ export function orbitPivots(count, radius, zAmp, waves, phase, lobes = 0, lobeDe
   for (let k = 0; k < count; k++) {
     const f = k / count;
     const a = phase + f * TAU;
-    const g = lobes > 0 ? 0.5 + 0.5 * Math.cos(lobes * f * TAU) : 0;
+    // lobe dip phased so pivot 0 (the ring ENTRY) sits on a lobe OUTER
+    // (g=0, full radius) — entry tangent stays circular, connector stays tame
+    const g = lobes > 0 ? 0.5 - 0.5 * Math.cos(lobes * f * TAU) : 0;
     const r = radius * (1 - lobeDepth * g);
     pts[k] = { x: r * Math.cos(a), y: r * Math.sin(a), z: zAmp * Math.sin(waves * f * TAU) };
   }

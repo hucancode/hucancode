@@ -20,7 +20,7 @@
 // The body chain is posed on a CLOSED CATMULL-ROM LOOP: joint pivots are
 // chord-marched along the curve at exact part pitches (so every male ball
 // lands exactly in its female socket) and `offset` slides the dragon along.
-import { buildPart, partSlots, colorOf } from "./parts.js";
+import { buildPart, partSlots, colorOf, currentJointGroup, resetJointGroups } from "./parts.js";
 import { bake, meshOf } from "./primitives.js";
 
 // ---- tiny rigid-transform math: 3x3 row-major rotation + translation ------
@@ -207,12 +207,14 @@ const DRAGON_DEF = [
   { name: "seg2", part: "bodySegment", params: SEG_P, parent: "seg1", at: "rear", slot: "front", spine: true },
   { name: "seg3", part: "bodySegment", params: SEG_P, parent: "seg2", at: "rear", slot: "front", spine: true },
   { name: "seg4", part: "bodySegment", params: SEG_P, parent: "seg3", at: "rear", slot: "front", spine: true },
-  { name: "taper", part: "bodySegment2", params: TAPER_P, parent: "seg4", at: "rear", slot: "front", spine: true },
+  { name: "seg5", part: "bodySegment", params: SEG_P, parent: "seg4", at: "rear", slot: "front", spine: true },
+  { name: "seg6", part: "bodySegment", params: SEG_P, parent: "seg5", at: "rear", slot: "front", spine: true },
+  { name: "taper", part: "bodySegment2", params: TAPER_P, parent: "seg6", at: "rear", slot: "front", spine: true },
   { name: "tail", part: "tail", params: TAIL_P, parent: "taper", at: "rear", slot: "front", spine: true },
   { name: "armL", part: "arm", parent: "seg1", at: "flankL", slot: "mount", pose: ["armSwing", "elbow"], phase: 0 },
   { name: "armR", part: "arm", parent: "seg1", at: "flankR", slot: "mount", pose: ["armSwing", "elbow"], phase: 0.5, mirror: true },
-  { name: "legL", part: "leg", parent: "seg4", at: "flankL", slot: "mount", pose: ["legSwing", "knee"], phase: 0.5 },
-  { name: "legR", part: "leg", parent: "seg4", at: "flankR", slot: "mount", pose: ["legSwing", "knee"], phase: 0, mirror: true },
+  { name: "legL", part: "leg", parent: "seg6", at: "flankL", slot: "mount", pose: ["legSwing", "knee"], phase: 0.5 },
+  { name: "legR", part: "leg", parent: "seg6", at: "flankR", slot: "mount", pose: ["legSwing", "knee"], phase: 0, mirror: true },
 ];
 
 // SWIM STROKE — a second animation layered on the base limb pose, its
@@ -226,8 +228,8 @@ const SWIM = { strokes: 4, swing: 22, bend: 20 };
 // closed flight loop the spine rides (roughly a ring, strongly undulating in Y
 // — alternating crests and troughs so the dragon visibly swims up and down)
 const LOOP_PTS = [
-  [5.6, 5.5, 0], [3.9, 2.7, 3.9], [0, 5.2, 5.5], [-3.9, 2.5, 3.9],
-  [-5.6, 5.6, 0], [-3.9, 2.6, -3.9], [0, 5.0, -5.5], [3.9, 2.8, -3.9],
+  [7.8, 5.5, 0], [5.5, 2.7, 5.5], [0, 5.2, 7.7], [-5.5, 2.5, 5.5],
+  [-7.8, 5.6, 0], [-5.5, 2.6, -5.5], [0, 5.0, -7.7], [5.5, 2.8, -5.5],
 ];
 
 const deg = (r) => (r * 180) / Math.PI;
@@ -238,7 +240,26 @@ const mirrorSlot = (s) => ({
   f: [-s.f[0], s.f[1], s.f[2]],
 });
 
-export function dragonModel(seed = 1, pose = {}) {
+// total chord length of the spine chain (sum of link pitches) — an external
+// caller uses this to scale its path so the dragon covers a chosen arc of it
+export function dragonPitch() {
+  const slots = {};
+  for (const d of DRAGON_DEF) {
+    if (!d.spine && d.parent) continue;
+    slots[d.name] = partSlots(d.part, d.params);
+    slots[d.name].slot0 = slots[d.name][d.spine ? d.slot : (d.pivot ?? d.slot)];
+  }
+  let sum = 0;
+  for (const d of DRAGON_DEF)
+    if (d.spine) sum += vLen(vSub(slots[d.parent][d.at].pos, slots[d.parent].slot0.pos));
+  return sum;
+}
+
+// `path` (optional) = external ride curve { total, posAt(s), tangentAt(s) } in
+// RIG SPACE (y-up); defaults to the built-in flight loop. pose.swim (0..1,
+// optional) drives the paddle stroke phase separately from `offset` — needed
+// when the path is not a closed lap so offset alone can't phase the gait.
+export function dragonModel(seed = 1, pose = {}, path = null) {
   const o = { ...DRAGON_POSE, ...pose };
   const defs = DRAGON_DEF.map((d) => ({
     ...d,
@@ -254,7 +275,7 @@ export function dragonModel(seed = 1, pose = {}) {
   // --- spine joint pivots chord-marched backward from the head anchor; each
   // link's pitch = distance between its parent's mating slot and the parent's
   // own pivot slot (all read off the parts, which read off their joints) ---
-  const loop = makeLoop(LOOP_PTS);
+  const loop = path ?? makeLoop(LOOP_PTS);
   const pitchOf = (d) => {
     const par = byName[d.parent];
     return vLen(vSub(par.slots[d.at].pos, par.slots.slot0.pos));
@@ -293,7 +314,8 @@ export function dragonModel(seed = 1, pose = {}) {
     } else {
       // swim layer: stroke phase = loop offset (the one timeline drives both
       // the body's ride along the curve and the limb paddling)
-      const ph = ((((o.offset % 1) + 1) % 1) * SWIM.strokes + (d.phase || 0)) * 2 * Math.PI;
+      const swimLap = o.swim ?? o.offset;
+      const ph = ((((swimLap % 1) + 1) % 1) * SWIM.strokes + (d.phase || 0)) * 2 * Math.PI;
       sk.bones[ids[0]].angle = rad(o[d.pose[0]] + SWIM.swing * Math.sin(ph));  // spinF = fore/aft swing (X)
       d.bendBone = sk.add(`${d.name}.bend`, ids[2], [0, -1, 0], "x");
       sk.bones[d.bendBone].angle = rad(o[d.pose[1]] + SWIM.bend * Math.sin(ph - Math.PI / 2));
@@ -310,7 +332,8 @@ export function dragonModel(seed = 1, pose = {}) {
   // Primitives are instance HANDLES { key, m, t } — placing a part is pure
   // matrix composition, no vertex work; the renderer instances by key.
   const items = [];
-  const put = (name, params, ppose, t, mirror = false) => {
+  resetJointGroups();                                // stable group names per build
+  const put = (name, linkName, params, ppose, t, mirror = false) => {
     buildPart(name, (g) => {
       const b = bake(g);
       if (mirror) {                                  // X-flip = negate the output x row
@@ -323,6 +346,9 @@ export function dragonModel(seed = 1, pose = {}) {
         m: m3Mul(t.r, b.m),
         t: vAdd(m3MulV(t.r, b.t), t.t),
         color: colorOf(b.id, seed),
+        // sub-assembly this primitive belongs to: the emitting joint block,
+        // or the part body — assembly animations group by this
+        group: `${linkName}:${currentJointGroup() ?? "body"}`,
       });
     }, params, ppose);
   };
@@ -338,10 +364,143 @@ export function dragonModel(seed = 1, pose = {}) {
         spinM: deg(sk.bones[d.ids[2]].angle),
         [d.part === "arm" ? "elbow" : "knee"]: deg(sk.bones[d.bendBone].angle),
       };
-    put(d.part, d.params ?? null, ppose, t, !!d.mirror);
+    put(d.part, d.name, d.params ?? null, ppose, t, !!d.mirror);
   }
 
   const meshes = {};
   for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
   return { items, meshes, name: "dragon", skeleton: sk };
+}
+
+// ---- ASSEMBLY ANIMATION --------------------------------------------------------
+// The dragon builds itself in FOUR stages, hierarchically: primitives belong
+// to sub-assembly GROUPS (a part body or a joint block — the `group` tag on
+// every item), groups belong to the dragon.
+//   1. each primitive flies in from a scatter point to a small standoff near
+//      its stage-2 target (its seat in the group, which floats offset from
+//      the group's final position)
+//   2. the primitive SNAPS into its group — once a group's primitives are all
+//      seated, the assembled part/joint floats NEAR its final position
+//   3. the assembled groups HOVER a little (slow deterministic wobble)
+//   4. each group SNAPS into its final position (overshoot ease)
+// Each group gets a time offset (chain order, head first), each primitive
+// within a group another. All randomness is HASHED off group/item indices so
+// scrubbing the clock replays the exact same build. Distances are RIG UNITS,
+// stage times are fractions of the whole build (u in 0..1).
+export const ASSEMBLY = {
+  gSpan: 0.45,             // group start stagger (broad — groups clearly one by one)
+  pSpan: 0.08,             // primitive stagger within its group
+  pJit: 0.03,              // hashed extra primitive delay
+  fly: 0.15,               // stage 1 duration
+  snap2: 0.05,             // stage 2 duration
+  hoverIn: 0.06,           // hover wobble ramp-in once the group is assembled
+  hover: [0.05, 0.10],     // stage 3 duration per group (hashed) — groups are
+                           // independent: each snaps as soon as ITS hover ends
+  snap4: 0.07,             // stage 4 duration
+  fadeIn: 0.15,            // fraction of the flight spent fading a prim in
+  scatter: [12, 24],       // prim start distance from its target
+  standoff: [0.5, 1.0],    // prim pre-snap standoff distance
+  gOff: [1.2, 2.8],        // group near-final offset distance (stages 2-3)
+  hoverAmp: 0.25,          // stage 3 wobble amplitude
+  hoverFreq: 16,           // stage 3 wobble phase sweep over the whole build
+  revs: [0.75, 1.75],      // prim self-spin during flight, revolutions
+};
+
+// deterministic per-index random in [0,1)
+function hash01(i, salt) {
+  let h = (Math.imul(i, 374761393) + Math.imul(salt, 668265263)) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+const easeInOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeOutBack = (x) => 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
+
+function m3AxisAngle(ax, ay, az, t) {
+  const c = Math.cos(t), s = Math.sin(t), k = 1 - c;
+  return [
+    ax * ax * k + c, ax * ay * k - az * s, ax * az * k + ay * s,
+    ay * ax * k + az * s, ay * ay * k + c, ay * az * k - ax * s,
+    az * ax * k - ay * s, az * ay * k + ax * s, az * az * k + c,
+  ];
+}
+
+// Animate a dragonModel() item list at build progress u (0 = nothing placed,
+// 1 = fully assembled). Returns a NEW item list: items not yet spawned are
+// dropped, flying/hovering items get displaced m/t and an alpha `a`.
+export function assembleModel(items, u) {
+  if (u >= 1) return items;
+  if (u <= 0) return [];
+  const A = ASSEMBLY;
+  // group registry: first-seen order (stable per build, chain order)
+  const reg = new Map();
+  const gOf = new Int32Array(items.length), pOf = new Int32Array(items.length);
+  const counts = [];
+  items.forEach((it, i) => {
+    let gi = reg.get(it.group);
+    if (gi === undefined) { gi = reg.size; reg.set(it.group, gi); counts.push(0); }
+    gOf[i] = gi; pOf[i] = counts[gi]++;
+  });
+  const nG = reg.size;
+
+  const out = [];
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const gi = gOf[i];
+    const gFrac = nG > 1 ? gi / (nG - 1) : 0;
+    const gd = gFrac * A.gSpan;
+    const cnt = counts[gi];
+    const pFrac = cnt > 1 ? pOf[i] / (cnt - 1) : 0;
+    const pt = u - gd - pFrac * A.pSpan - hash01(i, 1) * A.pJit;
+    if (pt <= 0) continue;                           // not spawned yet
+
+    // ---- group offset (stages 2-4): near-final float + hover, snapped away
+    const gaz = Math.PI * 2 * hash01(gi, 20);
+    const gz = 0.1 + 0.6 * hash01(gi, 21);
+    const gs = Math.sqrt(Math.max(0, 1 - gz * gz));
+    const gLen = A.gOff[0] + (A.gOff[1] - A.gOff[0]) * hash01(gi, 22);
+    const gDone = gd + A.pSpan + A.pJit + A.fly + A.snap2;  // group fully seated
+    const hw = A.hoverAmp * Math.max(0, Math.min(1, (u - gDone) / A.hoverIn));
+    const hx = hw * Math.sin(u * A.hoverFreq * (0.8 + 0.4 * hash01(gi, 23)) + hash01(gi, 24) * 7);
+    const hy = hw * Math.sin(u * A.hoverFreq * (0.9 + 0.4 * hash01(gi, 25)) + hash01(gi, 26) * 7);
+    const hz = hw * Math.sin(u * A.hoverFreq * (0.7 + 0.4 * hash01(gi, 27)) + hash01(gi, 28) * 7);
+    // stage 4 rides this group's OWN clock: assembled -> hover -> snap
+    const hoverDur = A.hover[0] + (A.hover[1] - A.hover[0]) * hash01(gi, 29);
+    const s4p = Math.max(0, Math.min(1, (u - gDone - A.hoverIn - hoverDur) / A.snap4));
+    const seat = 1 - (s4p > 0 ? easeOutBack(s4p) : 0);
+    const ox = (Math.cos(gaz) * gs * gLen + hx) * seat;
+    const oy = (Math.sin(gaz) * gs * gLen + hy) * seat;
+    const oz = (gz * gLen + hz) * seat;
+
+    // ---- primitive offset (stages 1-2): scatter -> standoff -> seated
+    let m = it.m, a = 1, dist = 0;
+    if (pt < A.fly) {                                // stage 1: fly in
+      const fp = easeInOutCubic(pt / A.fly);
+      const r0 = A.scatter[0] + (A.scatter[1] - A.scatter[0]) * hash01(i, 4);
+      const off = A.standoff[0] + (A.standoff[1] - A.standoff[0]) * hash01(i, 5);
+      dist = off + (r0 - off) * (1 - fp);
+      // self-spin unwinds to 0 exactly when the flight ends
+      const revs = (hash01(i, 6) < 0.5 ? -1 : 1) *
+        (A.revs[0] + (A.revs[1] - A.revs[0]) * hash01(i, 7));
+      const ang = revs * 2 * Math.PI * (1 - fp);
+      const axY = 2 * hash01(i, 8) - 1, axS = Math.sqrt(Math.max(0, 1 - axY * axY));
+      const axA = Math.PI * 2 * hash01(i, 9);
+      m = m3Mul(m3AxisAngle(Math.cos(axA) * axS, axY, Math.sin(axA) * axS, ang), m);
+      a = Math.min(1, pt / (A.fly * A.fadeIn));
+    } else if (pt < A.fly + A.snap2) {               // stage 2: snap into the group
+      const off = A.standoff[0] + (A.standoff[1] - A.standoff[0]) * hash01(i, 5);
+      dist = off * (1 - easeOutBack((pt - A.fly) / A.snap2));
+    }
+    const tr = [it.t[0] + ox, it.t[1] + oy, it.t[2] + oz];
+    if (dist !== 0) {
+      // scatter direction: deterministic, mostly from above (rig is y-up)
+      const az = Math.PI * 2 * hash01(i, 2);
+      const dy = 0.25 + 0.7 * hash01(i, 3);
+      const s = Math.sqrt(Math.max(0, 1 - dy * dy));
+      tr[0] += Math.cos(az) * s * dist;
+      tr[1] += dy * dist;
+      tr[2] += Math.sin(az) * s * dist;
+    }
+    out.push({ ...it, m, t: tr, a });
+  }
+  return out;
 }

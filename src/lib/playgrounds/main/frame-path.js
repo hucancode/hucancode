@@ -263,6 +263,52 @@ function walkFrame(rng, circles, entry, heading) {
   return pts;
 }
 
+// 3D orbit built the way the 2D paths are: from CIRCLES. A ring of n equal
+// circles, each externally tangent to both neighbours, walked with alternating
+// winding (the same C1 S-weave rule as the descent chain) -> a closed wavy
+// loop of pure circular arcs that crosses the centre-ring radially at every
+// tangency, bulging alternately outside/inside. Height: every tangency point
+// gets z = zAmp*sin(waves*(k+1)/n*TAU) and each arc cosine-eases between its
+// end heights (zero z-slope at the joins -> C1 in z). The walk STARTS on the
+// zero-height tangency, so a connector meets the loop flat. `rot` places that
+// start tangency at world angle rot - PI/n; `reverse` runs the same loop
+// clockwise (start point unchanged). n must be EVEN so the winding
+// alternation closes consistently.
+export function generateOrbit3d(center, n, outerR, zAmp, waves, rot, reverse) {
+  const ox = center.x, oy = center.y;
+  const rc = outerR / (1 + Math.sin(Math.PI / n)); // centre-ring radius; weave peaks at outerR
+  const r = rc * Math.sin(Math.PI / n);            // circle radius = neighbour tangency
+  const C = [], P = [], Z = [];
+  for (let k = 0; k < n; k++) {
+    const a = rot + (k / n) * TAU;
+    C.push({ x: ox + rc * Math.cos(a), y: oy + rc * Math.sin(a) });
+  }
+  for (let k = 0; k < n; k++) {
+    const b = C[(k + 1) % n]; // equal radii -> tangency is the centre midpoint
+    P.push({ x: (C[k].x + b.x) / 2, y: (C[k].y + b.y) / 2 });
+    Z.push(zAmp * Math.sin(((waves * (k + 1)) / n) * TAU)); // k = n-1 -> exactly 0
+  }
+  const pts = [];
+  for (let k = 0; k < n; k++) {
+    const c = C[k];
+    const pin = P[(k + n - 1) % n], pout = P[k];
+    const zin = Z[(k + n - 1) % n], zout = Z[k];
+    const aIn = Math.atan2(pin.y - c.y, pin.x - c.x);
+    const aOut = Math.atan2(pout.y - c.y, pout.x - c.x);
+    const dir = k % 2 === 0 ? 1 : -1;              // alternate winding = C1 joins
+    let sweep = (((dir * (aOut - aIn)) % TAU) + TAU) % TAU;
+    if (sweep < FRAME_TAN_EPS) sweep += TAU;
+    const m = Math.max(2, Math.round((FRAME_SAMPLES * sweep) / TAU));
+    for (let i = k === 0 ? 0 : 1; i <= m; i++) {
+      const a = aIn + dir * sweep * (i / m);
+      const e = 0.5 - 0.5 * Math.cos(Math.PI * (i / m)); // C1 height ease
+      pts.push({ x: c.x + r * Math.cos(a), y: c.y + r * Math.sin(a), z: zin + (zout - zin) * e });
+    }
+  }
+  if (reverse) pts.reverse();
+  return pts;
+}
+
 // 2D roam path: walk rosette frame from enso exit, prepend two body lead-in
 // points behind entry (so verlet chain has something to trail), arc-length
 // parameterise dense polyline (open path). Returns curve (with headStart) plus

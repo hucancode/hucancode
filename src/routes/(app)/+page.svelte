@@ -4,6 +4,7 @@
   import Timeline from "$lib/components/timeline.svelte";
   import RoughIcon from "$lib/components/rough-icon.svelte";
   import { TIMELINE_END } from "$lib/playgrounds/main";
+  import { D3_STYLE } from "$lib/playgrounds/main/config.js";
   import Github from "$icons/simple-icons/github.svg?raw";
   import Profile from "$icons/google-material/profile.svg?raw";
   import PersonRaiseHand from "$icons/google-material/person-raise-hand.svg?raw";
@@ -151,8 +152,9 @@
 
 <svelte:head>
   <title>hucancode</title>
-  <!-- start the dragon mesh download during HTML parse; renderer fetch hits cache -->
-  <link rel="preload" href="/assets/obj/dragon-low.obj" as="fetch" crossorigin />
+  {#if D3_STYLE === "obj"}
+    <link rel="preload" href="/assets/obj/dragon-low.obj" as="fetch" crossorigin />
+  {/if}
 </svelte:head>
 <svelte:window onscroll={onScroll} onresize={placeHints} />
 
