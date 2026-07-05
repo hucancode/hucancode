@@ -3,8 +3,8 @@ import {
   animate, utils, eases,
 } from "$lib/engine/index.js";
 import { makeSolid } from "./solid.js";
-import { resolveAssembly, validateAssembly } from "./assembly.js";
-import { MODEL, PALETTE, VIEW } from "./eagle.js";
+import { resolveAssembly } from "./assembly.js";
+import { MODEL, PALETTE, VIEW } from "./templates.js";
 import LEGO_WGSL from "./shaders/lego.wgsl?raw";
 import VERT from "./shaders/lego.vert.glsl?raw";
 import FRAG from "./shaders/lego.frag.glsl?raw";
@@ -29,11 +29,12 @@ const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 const spin = () => (Math.random() < 0.5 ? -1 : 1) * rand(SPIN_MIN, SPIN_MAX) * Math.PI * 2;
 
 const config = {
-  spin: 0.4,
+  spin: 0.0,
   explode: 0,
 };
 
 let canvas, device, shader, gridShader, camera, disposed = false;
+let viewCfg = VIEW;             // active camera framing; swapped when a template loads
 let mode = "assemble";          // "assemble" | "inspect"
 let inspect = null;
 let inspectSpec = null;
@@ -66,15 +67,11 @@ function buildEagle(model = activeModel) {
   disposePieces();
   const cache = new Map();
   const { pieces: placed, centroid: cen } = resolveAssembly(model);
-  if (model.validate) {
-    const rep = validateAssembly(model);
-    if (!rep.ok) console.info("[lego] assembly report", rep);
-  }
   pieces = placed.map((pl) => {
-    const key = JSON.stringify(pl.spec);
+    const key = JSON.stringify(pl.spec) + "|" + JSON.stringify(pl.mesh ?? null);
     let geom = cache.get(key);
     if (!geom) {
-      const g = makeSolid(pl.spec);
+      const g = makeSolid(pl.spec, pl.mesh ?? undefined);
       geom = {
         posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
         normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
@@ -82,7 +79,6 @@ function buildEagle(model = activeModel) {
       };
       cache.set(key, geom);
     }
-    // final orientation (recomposes pl.model)
     mat4.decompose(pl.model, _pos, _rot, _scale);
     const frx = _rot.x, fry = _rot.y, frz = _rot.z;
     const [cx, cy, cz] = pl.center;
@@ -103,7 +99,6 @@ function buildEagle(model = activeModel) {
       color: colorRGB(PALETTE[pl.color] ?? pl.color),
       model: pl.model,           // world transform (column-major mat4)
       cx, cy, cz,
-      // animation state
       _p: 0,
       _depth: pl.depth ?? 0,
       _delay: (pl.depth ?? 0) * DEPTH_STEP + rand(0, JITTER),
@@ -125,7 +120,7 @@ function disposeInspect() {
 
 // build one isolated, origin-centered piece from a live spec
 function buildInspect(spec) {
-  inspectSpec = spec;            // remember even if device not ready yet
+  inspectSpec = spec;
   if (!device) return;
   disposeInspect();
   const g = makeSolid(spec);
@@ -168,6 +163,10 @@ function setConfig(patch) {
   if (patch.model) {                                              // live edit: show fully assembled
     try { buildEagle(patch.model); setProgress(1); }
     catch (e) { console.warn("[lego] invalid model", e); }
+  }
+  if (patch.view) {                                               // template framing swap
+    viewCfg = patch.view;
+    if (camera) camera._dist = patch.view.dist;
   }
   if ("progress" in patch && pieces.length) setProgress(patch.progress);
   if (patch.replay && pieces.length) play();
@@ -230,7 +229,7 @@ async function init(canvasEl) {
   });
   camera = new Camera(45, w / h, 0.1, 2000);
   camera.up.set(0, 1, 0);
-  camera._dist = VIEW.dist;
+  camera._dist = viewCfg.dist;
   buildEagle();
   play();
   if (mode === "inspect") buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
@@ -285,7 +284,7 @@ function render() {
   syncSize();
 
   const inspecting = mode === "inspect" && inspect;
-  const lookY = inspecting ? 0 : VIEW.lookY;
+  const lookY = inspecting ? 0 : viewCfg.lookY;
   const d = (inspecting ? 6 : camera._dist) || 15, cp = Math.cos(pitch);
   camera.position.set(
     d * cp * Math.sin(yaw),
@@ -324,9 +323,9 @@ function render() {
     }
     const ex = config.explode;
     for (const pc of pieces) {
-      if (pc._p <= 0) continue;                 // not yet placed
-      if (pc._p >= 1) mat4.copy(_model, pc.model);   // at rest: exact resolved matrix
-      else poseModel(_model, pc);                     // flying / snapping
+      if (pc._p <= 0) continue;
+      if (pc._p >= 1) mat4.copy(_model, pc.model);
+      else poseModel(_model, pc);
       // explode view: push each piece out from the centroid
       _model[12] += (pc.cx - centroid.x) * ex;
       _model[13] += (pc.cy - centroid.y) * ex;

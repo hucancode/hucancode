@@ -1,0 +1,21 @@
+// Template registry: every buildable model in one list, so the playground can
+// offer them in a picker. Each entry re-exports a model file's { MODEL, PALETTE,
+// VIEW }. PALETTE is the union of all color keys (identical keys share a hex), so
+// one merged palette resolves colors for any template.
+
+import * as head from "./dragon.js";
+import * as body from "./dragon_body.js";
+import * as eagle from "./eagle.js";
+
+export const TEMPLATES = [
+  { id: "dragon-head", name: "Dragon Head", ...head },
+  { id: "dragon-body", name: "Dragon Body", ...body },
+  { id: "eagle", name: "Eagle", ...eagle },
+];
+
+// merged palette: later entries win on key collisions (all share the same hex)
+export const PALETTE = Object.assign({}, ...TEMPLATES.map((t) => t.PALETTE ?? {}));
+
+export const DEFAULT = TEMPLATES[0];
+export const MODEL = DEFAULT.MODEL;
+export const VIEW = DEFAULT.VIEW;

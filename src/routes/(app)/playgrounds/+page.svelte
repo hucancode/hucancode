@@ -15,6 +15,7 @@
     { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: "/assets/thumb/ink-dragon.png" },
     { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: "/assets/thumb/caligraphy.png" },
     { href: "/lego", name: "Lego", icon: Cube, thumb: "/assets/thumb/lego.png" },
+    { href: "/mech", name: "Mech", icon: Cube, thumb: "/assets/thumb/mech.png" },
   ];
 
 </script>

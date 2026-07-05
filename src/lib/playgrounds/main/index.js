@@ -4,20 +4,19 @@
 
 import { clamp, lerp, smooth } from "$lib/math/scalar.js";
 import { mulberry32 } from "$lib/math/random.js";
-import { orbitPivots, clampExitPivot, relaxTurns, buildSpline, buildOpenSpline } from "$lib/math/curve.js";
+import { buildOpenSpline, arcLengthCurve } from "$lib/math/curve.js";
 import { makeTimeline, createCameraTrack } from "./stage/index.js";
 import {
   GLYPH_RADIUS, GRID, GRID_MINOR_DIV, SPLASH_SPREAD, SPLASH_AMOUNT,
   ENSO_R, ENSO_HEAD_R, ENSO_WIDTH, BODY_LEN, HEAD_SIZE, D3, D3_GIRTH, SP3,
   GROW_DUR, ENTRY_GROW_MIN, ENTRY_SIZE_MIN,
-  LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, LOOP3_LOBES, LOOP3_LOBE_DEPTH,
-  MAX_EXIT_TURN, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, RELAX_ITERS,
+  LOOP3_CIRCLES, R3D, Z3D, LOOP3_WAVES,
   CORRIDOR_DROP, FLYIN_TOP_Y, FLYIN_BOW, ENSO_REVS,
-  CRUISE_SP, CHAIN_LEN_FRAC,
+  CRUISE_SP, CHAIN_LEN_FRAC, CAM,
 } from "./config.js";
 import { computeTiming } from "./timing.js";
 import { buildGlyph } from "./glyph.js";
-import { ensoPos, generateFramePath, buildDescent } from "./frame-path.js";
+import { ensoPos, generateFramePath, buildDescent, generateOrbit3d } from "./frame-path.js";
 import { createHeadPath } from "./head-path.js";
 import { createBodyController } from "./body.js";
 import { createDragon3d } from "./dragon3d.js";
@@ -38,6 +37,7 @@ let timing = null;
 let glyph = null;
 let curvePath = null;   // 2D roam2 path 3D dragon transitions off of
 let loop3 = null;       // 3D orbit 3D dragon flies
+let conn3 = null;       // connector spur: 2D branch point -> ring entry
 let headPath = null;    // head phase sequence + samplers
 let bodyCtrl = null;    // 2D dragon body controller
 let dragon3d = null;    // 3D dragon frame buffers
@@ -147,20 +147,72 @@ export function initScene() {
     circles: descent.pool,
   });
 
-  // loop3: clean 3D orbit ringing roam2 flower, centred on enso station, starting
-  // at roam2 branch point (where 2D head ends == 3D loop begins)
+  // loop3: closed 3D circle-weave orbit (generateOrbit3d — built from tangent
+  // circles the way the 2D paths are) centred on the enso station. A PURE
+  // closed loop — inserting the branch point into the loop (old design) dents
+  // it into a hairpin the dragon hits every lap (measured 87deg turn at the
+  // seam). The dragon instead reaches the loop over a dedicated CONNECTOR
+  // spur, ridden once.
   const bp = curvePath.pos(branchArc);
   const tb = curvePath.tan(branchArc);
   const bpA = Math.atan2(bp.y - ensoCenter.y, bp.x - ensoCenter.x);
-  const rest = orbitPivots(LOOP3_PIVOTS, R3D, Z3D, LOOP3_WAVES, bpA, LOOP3_LOBES, LOOP3_LOBE_DEPTH)
-    .map((p) => ({ x: p.x + ensoCenter.x, y: p.y + ensoCenter.y, z: p.z })); // recentre on station
-  clampExitPivot(rest, { x: bp.x, y: bp.y, dir: { x: tb.x, y: tb.y } }, MAX_EXIT_TURN);
-  const ring3 = [{ x: bp.x, y: bp.y, z: 0 }, ...rest];
-  relaxTurns(ring3, MIN_TURN, MAX_TURN, MAX_SHARP_RUN, (i) => i >= 1, RELAX_ITERS);
-  loop3 = buildSpline(ring3);
+  // preferred winding follows the 2D exit tangent (else the connector tends
+  // to U-turn onto the loop) — but the weave crosses its centre-ring radially
+  // at the entry tangency, so BOTH windings go into the candidate search
+  const winding = (bp.x - ensoCenter.x) * tb.y - (bp.y - ensoCenter.y) * tb.x >= 0 ? 1 : -1;
+  // connector: cubic HERMITE from the 2D branch point onto the ring entry —
+  // exact tangent match at BOTH ends (the ring climbs at its entry, so its
+  // actual 3D tangent is used), no interior control points to wiggle around.
+  // Some branch geometries hook the connector for a given entry angle, so try
+  // a few entry offsets and keep the one whose connector turns the least.
+  const hermite = (ring0, rt0) => {
+    const span3 = Math.hypot(ring0.x - bp.x, ring0.y - bp.y, ring0.z || 0);
+    if (span3 < 0.25) return { hp: null, worst: Infinity }; // degenerate: entry on top of bp
+    const hL = Math.max(0.8, 1.15 * span3);         // tangent magnitude ~ span (wider spreads the turn)
+    const hp = new Array(49);
+    for (let i = 0; i <= 48; i++) {
+      const s = i / 48, s2 = s * s, s3 = s2 * s;
+      const h00 = 2 * s3 - 3 * s2 + 1, h10 = s3 - 2 * s2 + s;
+      const h01 = -2 * s3 + 3 * s2, h11 = s3 - s2;
+      hp[i] = {
+        x: h00 * bp.x + h10 * hL * tb.x + h01 * ring0.x + h11 * hL * rt0.x,
+        y: h00 * bp.y + h10 * hL * tb.y + h01 * ring0.y + h11 * hL * rt0.y,
+        z: h01 * ring0.z + h11 * hL * rt0.z,        // 2D side is planar (z=0)
+      };
+    }
+    // score by ARC-uniform tangent turn (parameter-uniform polyline angles hide
+    // cusps where the Hermite speed collapses)
+    const c = arcLengthCurve(hp, false);
+    let worst = 0;
+    const st = c.total / 60;
+    for (let s = 0; s < c.total - st; s += st) {
+      const a = c.tan(s), b = c.tan(s + st);
+      const dot = a.x * b.x + a.y * b.y + a.z * b.z;
+      worst = Math.max(worst, Math.acos(Math.min(1, Math.max(-1, dot))));
+    }
+    return { hp, worst };
+  };
+  // the weave crosses its centre-ring RADIALLY at every tangency, so entering
+  // AT a tangency often forces a ~90deg connector hook. Instead the entry may
+  // land ANYWHERE on the loop: search arc offsets (x both windings) for the
+  // tamest connector, then re-anchor the loop's s=0 at the winning offset.
+  const rot = bpA + Math.PI / LOOP3_CIRCLES; // anchor a tangency at the branch angle
+  let best = null;
+  for (const w of [winding, -winding]) {
+    const pts = generateOrbit3d(ensoCenter, LOOP3_CIRCLES, R3D, Z3D, LOOP3_WAVES, rot, w < 0);
+    const spline = arcLengthCurve(pts, true);
+    for (let j = 0; j < 48; j++) {
+      const s0 = (j / 48) * spline.total;
+      const cand = hermite(spline.pos(s0), spline.tan(s0));
+      if (cand.hp && (!best || cand.worst < best.worst)) best = { spline, s0, hp: cand.hp, worst: cand.worst };
+    }
+  }
+  const bs = best.spline, bs0 = best.s0;
+  loop3 = { total: bs.total, pos: (s) => bs.pos(s + bs0), tan: (s) => bs.tan(s + bs0) };
+  conn3 = arcLengthCurve(best.hp, false);
 
   dragon3d = createDragon3d({ timing });
-  dragon3d.build(loop3, curvePath);
+  dragon3d.build(loop3, curvePath, conn3);
 
   // blocks + timeline, built AFTER timing so branch points are real numbers. each
   // block independent; deps passed explicitly. camera is a first-class track
@@ -198,7 +250,11 @@ const _frame = {
     head: { pos: { x: 0, y: 0 }, dir: { x: 0, y: 1 }, size: HEAD_SIZE, alpha: 1 },
     widthScale: 1,
   },
-  dragon3d: { frames: null, frameCount: D3.N, pathLen: 1, bodyLen: BODY_LEN * D3.bodyFactor, headOffset: 0, girth: D3_GIRTH, viewProj: null, time: 0 },
+  dragon3d: {
+    frames: null, frameCount: D3.N, pathLen: 1, bodyLen: BODY_LEN * D3.bodyFactor, headOffset: 0, girth: D3_GIRTH, // legacy obj mesh
+    items: null, meshes: null, eye: [0, 0, CAM.dist], // mech rig instances + camera pos (specular)
+    viewProj: null, time: 0,
+  },
   debug: { show: false, buffer: "none", path2d: EMPTY_F32, path3d: EMPTY_F32, pool: EMPTY_F32 },
 };
 
@@ -214,7 +270,8 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
   // camera track so descend->pitch handoff stays in sync
   const userYaw = cameraTrack.yawGate(t, yaw || 0);
   const camY = cameraTrack.camY(t);
-  const viewProj = sceneViewProj(aspect, userYaw, cameraTrack.camPitch(t), camY);
+  const camPitch = cameraTrack.camPitch(t);
+  const viewProj = sceneViewProj(aspect, userYaw, camPitch, camY);
 
   _frame.aspect = aspect;
   _frame.camY = camY;
@@ -251,7 +308,13 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
   ink.head.alpha = _ctx.headAlpha;
   ink.widthScale = _ctx.inkWidthScale;
 
-  dragon3d.writeState(_frame.dragon3d, t, viewProj);
+  // camera world position (inverse of sceneViewProj's view chain) for specular
+  const vy = CAM.dist * Math.sin(camPitch), vz = CAM.dist * Math.cos(camPitch);
+  const eye = _frame.dragon3d.eye;
+  eye[0] = vy * Math.sin(userYaw);
+  eye[1] = vy * Math.cos(userYaw) + camY;
+  eye[2] = vz;
+  dragon3d.writeState(_frame.dragon3d, t, viewProj, _ctx.d3Alpha);
   buildDebugState(t, debug, debugBuffer);
   return _frame;
 }
@@ -270,6 +333,11 @@ function buildDebugState(t, debug, debugBuffer) {
   d.path2d = debug.path2d ? headPath.samplePath2d() : EMPTY_F32;
   d.path3d = debug.path3d ? dragon3d.samplePath3d() : EMPTY_F32;
   d.pool = poolPoints();
+}
+
+// test/debug access to the built ride paths (headless continuity probes)
+export function debugPaths() {
+  return { loop3, curvePath, conn3, timing };
 }
 
 // Circle centres as xyz triples (static; built once from roam pool).

@@ -47,7 +47,7 @@ vec3 sdPolyline(vec2 p, int n) {
         float d = length(p - sampleCurve(idx).xy);
         if (d < coarseBest) { coarseBest = d; coarseI = idx; }
     }
-    // Fine: full segment check within ±STRIDE of closest point
+    // Fine: full segment check within +-STRIDE of closest point
     float bestAbs = 1e9;
     float bestArc = 0.0;
     int flo = max(0, coarseI - STRIDE);
