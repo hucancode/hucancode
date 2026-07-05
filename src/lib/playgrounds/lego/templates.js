@@ -5,17 +5,11 @@
 
 import * as head from "./dragon.js";
 import * as body from "./dragon_body.js";
-import * as arm from "./dragon_arm.js";
-import * as leg from "./dragon_leg.js";
-import * as tail from "./dragon_tail.js";
 import * as eagle from "./eagle.js";
 
 export const TEMPLATES = [
-  { id: "dragon-body", name: "Dragon Body", ...body },
   { id: "dragon-head", name: "Dragon Head", ...head },
-  { id: "dragon-arm", name: "Dragon Arm", ...arm },
-  { id: "dragon-leg", name: "Dragon Leg", ...leg },
-  { id: "dragon-tail", name: "Dragon Tail", ...tail },
+  { id: "dragon-body", name: "Dragon Body", ...body },
   { id: "eagle", name: "Eagle", ...eagle },
 ];
 
