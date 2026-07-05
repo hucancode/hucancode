@@ -30,7 +30,7 @@ export const MODEL = {
     ], color: "DK", round: true },
 
     // toe: an I-stick claw rod (long axis Z), tapered to a point at end 0. The
-    // node twists it 90° about Y so the claw points out +X off the sole.
+    // node twists it 90deg about Y so the claw points out +X off the sole.
     toe: { stick: "I", len: 1.0, size: [1, 1, 2], tips: [0], ops: [], color: "BR" },
   },
   baseY: 6,

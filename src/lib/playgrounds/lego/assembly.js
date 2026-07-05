@@ -9,7 +9,7 @@
 //     children: [...node], // sub-nodes mounted onto this one
 //     on:"top|bottom|front|back|left|right",
 //     off:[du,dv],         // in-plane offset on the parent face, whole studs
-//     rot:[rx,ry,rz],      // node rotation, each a multiple of 90° (legacy
+//     rot:[rx,ry,rz],      // node rotation, each a multiple of 90deg (legacy
 //                          // `angle` == rot Y; default 0,0,0)
 //     attach, joint, jpitch, jyaw, jrot, ah, bh,  // articulation (see below)
 //     local:false }        // mount frame (see below)
@@ -17,7 +17,7 @@
 // spec is ever duplicated (two eyes, two antlers = two nodes, one brick def).
 //
 // JOINT. Optional articulation applied AFTER seating: the node (and its subtree)
-// rotates about the seat point. joint:"ball" -> free spin, jrot:[x,y,z]° about the
+// rotates about the seat point. joint:"ball" -> free spin, jrot:[x,y,z]deg about the
 // mount U/V/N axes. joint:"hinge" -> 1-DOF pin swing (jpitch+jyaw). Absent -> rigid.
 //
 // MOUNT FRAME. By default faces and rotations are WORLD axes: a node does NOT
@@ -108,7 +108,7 @@ function rotAxis(axis, t) {
 }
 
 // Seating mode of a connection, derived from where B attaches:
-//   attach "face"  -> "grid" (rigid stud clutch, 90° rot + parity snap)
+//   attach "face"  -> "grid" (rigid stud clutch, 90deg rot + parity snap)
 //   attach "hinge" -> "free" (articulated pivot, continuous joint)
 // Legacy fallbacks: explicit `mode`, else a joint field implies free.
 export function connMode(conn) {
@@ -127,7 +127,7 @@ function jointIdxOf(spec, idx, type) {
 }
 
 // Joint articulation for a connection, expressed in the mount frame (U,V,N):
-//   ball  — free spin: jrot[x,y,z]° about the U, V, N axes.
+//   ball  — free spin: jrot[x,y,z]deg about the U, V, N axes.
 //   hinge — 1-DOF: swings about U (the PIN) only. The knuckle is a solid of
 //           revolution about the pin, so swinging about the pin leaves the ring
 //           seated while the body moves; any other axis would tilt the ring out
@@ -177,7 +177,7 @@ function seatChild(A, conn, Bspec, bd) {
   const [du, dv] = conn.off ?? [0, 0];
 
   // Two exclusive seating modes with completely different logic:
-  //   grid — rigid LEGO clutch: 90° `rot`, parity stud-snap, whole-stud `off`.
+  //   grid — rigid LEGO clutch: 90deg `rot`, parity stud-snap, whole-stud `off`.
   //   free — articulated joint: the node's joint center is mated to A's joint
   //          center (a shared hinge pin / ball center) and swings about THAT point.
   const mode = connMode(conn);

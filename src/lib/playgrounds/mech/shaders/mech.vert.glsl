@@ -1,8 +1,11 @@
 #version 300 es
-out vec2 vUv;
-const vec2 P[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+in vec3 position;
+in vec3 normal;
+uniform mat4 uViewProj;
+out vec3 vN;
+out vec3 vW;
 void main() {
-  vec2 p = P[gl_VertexID];
-  vUv = p;
-  gl_Position = vec4(p, 0.0, 1.0);
+  vN = normal;
+  vW = position;
+  gl_Position = uViewProj * vec4(position, 1.0);
 }

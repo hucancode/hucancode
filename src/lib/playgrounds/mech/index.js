@@ -1,59 +1,58 @@
-// RENDER ENGINE — knows only render primitives (SDF nodes + CSG) and how to draw
-// them. It has no concept of "mech" or design rules; the page feeds it a model
-// ({ nodes, floorY, midY, dist }) produced by the design engine.
-import { createDevice } from "$lib/engine/index.js";
-import { pack } from "./sdf.js";
+// RENDER ENGINE — draws procedurally generated MESHES (triangle soup), no SDF.
+// The page feeds it a model ({ items: [{ positions, normals, color }] }) built
+// by parts.js; vertices are already in world space, so each item is one draw
+// with its own color. Camera is a simple orbit around the model's bounds.
+import { createDevice, Camera, mat4 } from "$lib/engine/index.js";
 import MECH_WGSL from "./shaders/mech.wgsl?raw";
 import VERT from "./shaders/mech.vert.glsl?raw";
 import FRAG from "./shaders/mech.frag.glsl?raw";
+import GRID_WGSL from "./shaders/grid.wgsl?raw";
+import GRID_VERT from "./shaders/grid.vert.glsl?raw";
+import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
 
-// fixed three-point-ish lighting; warm key + cool fill reads as "industrial"
-const KEY = [1.0, 0.93, 0.82];
-const FILL = [0.34, 0.4, 0.52];
-const BG_TOP = [0.07, 0.09, 0.13];
-const BG_BOT = [0.16, 0.14, 0.13];
-const FOV = 42;
+const BG = [0.07, 0.09, 0.13, 1];
+const LIGHT_R = 30, LIGHT_Y = 40;
+// grid on the XZ plane through y=0 -> marks every part's local origin
+const GROUND = { ext: 7, y: 0, step: 0.5, minorDiv: 5, opacity: 0.55, color: [0.45, 0.5, 0.58] };
 
-let canvas, device, shader, disposed = false;
-let nodeTex = null, nodeCount = 0;
-// empty until the page supplies a model — render engine ships no content of its own
-let model = { nodes: [], floorY: -2, midY: 0.9, dist: 9.5 };
-let floorY = model.floorY, midY = model.midY;
+let canvas, device, shader, gridShader, camera, disposed = false;
+let items = [];                    // [{ posBuf, normBuf, count, color }]
+let pending = null;                // model waiting for device init
 
-let yaw = 0.7, pitch = 0.12, dist = model.dist;
+// FIXED camera: orbit around the origin with constant defaults — no auto-fit,
+// the user frames the subject with drag + wheel
+const VIEW0 = { yaw: 0.7, pitch: 0.25, dist: 6 };
+let dist = VIEW0.dist;
+let yaw = VIEW0.yaw, pitch = VIEW0.pitch;
 let dragging = false, lastX = 0, lastY = 0;
-let lastT = 0, time = 0;
+let lastT = 0;
 
 const config = {
-  spin: 0.0,      // auto-rotate speed
-  stage: 3,       // max pipeline stage shown (1..3)
-  selected: -1,   // highlighted node row (-1 = none)
-  shadow: 0,      // soft shadows on/off (quality), off by default
-  ground: 0,      // implicit ground plane on/off, off by default
-  lightAngle: 0.6,
+  spin: 0.3,        // auto-rotate speed
+  lightAngle: 0.6,  // light orbit position
 };
 
-function rebuild(m = model) {
-  model = m;
-  floorY = model.floorY ?? -2;
-  midY = model.midY ?? 0.8;
-  if (model.dist) dist = model.dist;
-  if (!device) return;
-  const { data, count, width } = pack(model);
-  nodeCount = count;
-  if (!nodeTex) nodeTex = device.texture({ width, height: Math.max(1, count), format: "rgba32f", filter: "nearest", data });
-  else nodeTex.write(data, width, Math.max(1, count));
+function disposeItems() {
+  for (const it of items) { it.posBuf?.destroy(); it.normBuf?.destroy(); }
+  items = [];
+}
+
+function rebuild(model) {
+  if (!device) { pending = model; return; }
+  disposeItems();
+  items = model.items.map((it) => ({
+    posBuf: device.buffer({ kind: "vertex", data: it.positions }),
+    normBuf: device.buffer({ kind: "vertex", data: it.normals }),
+    count: it.positions.length / 3,
+    color: it.color,
+  }));
 }
 
 function setConfig(patch) {
   if ("spin" in patch) config.spin = patch.spin;
-  if ("stage" in patch) config.stage = patch.stage;
-  if ("selected" in patch) config.selected = patch.selected;
-  if ("shadow" in patch) config.shadow = patch.shadow;
-  if ("ground" in patch) config.ground = patch.ground;
   if ("lightAngle" in patch) config.lightAngle = patch.lightAngle;
-  if ("dist" in patch) dist = patch.dist;
-  if (patch.resetView) { yaw = 0.7; pitch = 0.12; dist = model.dist ?? 9.5; }
+  if ("dist" in patch) dist = patch.dist;                     // page-chosen framing, still not auto
+  if (patch.resetView) { yaw = VIEW0.yaw; pitch = VIEW0.pitch; dist = patch.dist ?? VIEW0.dist; }
   if (patch.model) {
     try { rebuild(patch.model); }
     catch (e) { console.warn("[mech] invalid model", e); }
@@ -76,13 +75,13 @@ function onMove(e) {
 function onUp() { dragging = false; }
 function onWheel(e) {
   e.preventDefault();
-  dist = Math.max(3.5, Math.min(24, dist * (1 + Math.sign(e.deltaY) * 0.08)));
+  dist = Math.max(1.5, Math.min(60, dist * (1 + Math.sign(e.deltaY) * 0.08)));
 }
 
 async function init(canvasEl) {
   canvas = canvasEl;
   disposed = false;
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = canvas.clientWidth, h = canvas.clientHeight;
   canvas.width = Math.max(1, Math.floor(w * dpr));
   canvas.height = Math.max(1, Math.floor(h * dpr));
@@ -91,28 +90,33 @@ async function init(canvasEl) {
   device.resize(canvas.width, canvas.height);
   shader = device.shader({
     glsl: { vertex: VERT, fragment: FRAG }, wgsl: MECH_WGSL,
-    textures: [{ name: "nodeTex", binding: 1 }],
-    uniforms: [
-      { name: "uCamPos", type: "vec3" },
-      { name: "uCamRight", type: "vec3" },
-      { name: "uCamUp", type: "vec3" },
-      { name: "uCamFwd", type: "vec3" },
-      { name: "uLightDir", type: "vec3" },
-      { name: "uKeyColor", type: "vec3" },
-      { name: "uFillColor", type: "vec3" },
-      { name: "uBgTop", type: "vec3" },
-      { name: "uBgBot", type: "vec3" },
-      { name: "uFloorY", type: "f32" },
-      { name: "uCount", type: "f32" },
-      { name: "uStage", type: "f32" },
-      { name: "uSelected", type: "f32" },
-      { name: "uTime", type: "f32" },
-      { name: "uShadow", type: "f32" },
-      { name: "uGround", type: "f32" },
+    buffers: [
+      { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
+      { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
     ],
-    depth: "none", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+    uniforms: [
+      { name: "uViewProj", type: "mat4" },
+      { name: "uColor", type: "vec3" },
+      { name: "uLightPos", type: "vec3" },
+      { name: "uViewPos", type: "vec3" },
+    ],
+    depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
   });
-  rebuild(model);
+  gridShader = device.shader({
+    glsl: { vertex: GRID_VERT, fragment: GRID_FRAG }, wgsl: GRID_WGSL,
+    uniforms: [
+      { name: "uViewProj", type: "mat4" },
+      { name: "uExt", type: "f32" },
+      { name: "uY", type: "f32" },
+      { name: "uStep", type: "f32" },
+      { name: "uMinorDiv", type: "f32" },
+      { name: "uOpacity", type: "f32" },
+      { name: "uColor", type: "vec3" },
+    ],
+    depth: "none", blend: "premult", topology: "tri-strip", target: "screen", sampleCount: 4,
+  });
+  camera = new Camera(45, w / h, 0.05, 500);
+  if (pending) { rebuild(pending); pending = null; }
   lastT = performance.now();
   canvas.addEventListener("pointerdown", onDown);
   canvas.addEventListener("wheel", onWheel, { passive: false });
@@ -121,66 +125,53 @@ async function init(canvasEl) {
 }
 
 function syncSize() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = canvas.clientWidth, h = canvas.clientHeight;
   const tw = Math.max(1, Math.floor(w * dpr)), th = Math.max(1, Math.floor(h * dpr));
   if (canvas.width === tw && canvas.height === th) return;
   canvas.width = tw; canvas.height = th;
   device.resize(tw, th);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
 }
 
-// camera basis -> ray-generation uniforms (prescaled by fov/aspect so the shader
-// just does fwd + uv.x*right + uv.y*up).
-function cameraUniforms() {
-  const aspect = canvas.width / canvas.height;
-  const cp = Math.cos(pitch);
-  const px = dist * cp * Math.sin(yaw);
-  const py = midY + dist * Math.sin(pitch);
-  const pz = dist * cp * Math.cos(yaw);
-  // forward = target - pos
-  let fx = -px, fy = midY - py, fz = -pz;
-  const fl = Math.hypot(fx, fy, fz) || 1; fx /= fl; fy /= fl; fz /= fl;
-  // right = normalize(cross(fwd, worldUp)), worldUp = (0,1,0) -> (-fz, 0, fx)
-  let rx = -fz, ry = 0, rz = fx;
-  const rl = Math.hypot(rx, ry, rz) || 1; rx /= rl; ry /= rl; rz /= rl;
-  // up = cross(right, fwd)
-  const ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx;
-  const tanHalf = Math.tan((FOV * Math.PI) / 180 / 2);
-  const sR = tanHalf * aspect, sU = tanHalf;
-  return {
-    pos: [px, py, pz],
-    right: [rx * sR, ry * sR, rz * sR],
-    up: [ux * sU, uy * sU, uz * sU],
-    fwd: [fx, fy, fz],
-  };
-}
+const _vp = mat4.create();
 
 function render() {
-  if (!device || !shader || !nodeTex) return;
+  if (!device || !shader) return;
   const now = performance.now();
   const dt = Math.min((now - lastT) / 1000, 0.05);
-  lastT = now; time += dt;
+  lastT = now;
   if (!dragging) yaw += config.spin * dt * 0.5;
 
   syncSize();
-  const cam = cameraUniforms();
+  const cp = Math.cos(pitch);
+  camera.position.set(dist * cp * Math.sin(yaw), dist * Math.sin(pitch), dist * cp * Math.cos(yaw));
+  camera.lookAt(0, 0, 0);
+  camera.update();
+  mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
+  const eye = [camera.position.x, camera.position.y, camera.position.z];
   const la = config.lightAngle;
-  const lightDir = [Math.cos(la) * 0.7, 0.85, Math.sin(la) * 0.7];
+  const light = [Math.cos(la) * LIGHT_R, LIGHT_Y, Math.sin(la) * LIGHT_R];
 
   device.beginFrame();
-  device.pass({ target: "screen", clear: [0.07, 0.09, 0.13, 1] }, (p) => {
-    p.draw(shader, {
-      count: 3,
-      textures: { nodeTex },
-      uniforms: {
-        uCamPos: cam.pos, uCamRight: cam.right, uCamUp: cam.up, uCamFwd: cam.fwd,
-        uLightDir: lightDir, uKeyColor: KEY, uFillColor: FILL,
-        uBgTop: BG_TOP, uBgBot: BG_BOT,
-        uFloorY: floorY, uCount: nodeCount, uStage: config.stage,
-        uSelected: config.selected, uTime: time, uShadow: config.shadow,
-        uGround: config.ground,
-      },
-    });
+  device.pass({ target: "screen", clear: BG, depth: true, depthClear: 1 }, (p) => {
+    if (gridShader) {
+      p.draw(gridShader, {
+        count: 4,
+        uniforms: {
+          uViewProj: _vp, uExt: GROUND.ext, uY: GROUND.y, uStep: GROUND.step,
+          uMinorDiv: GROUND.minorDiv, uOpacity: GROUND.opacity, uColor: GROUND.color,
+        },
+      });
+    }
+    for (const it of items) {
+      p.draw(shader, {
+        buffers: [it.posBuf, it.normBuf],
+        count: it.count,
+        uniforms: { uViewProj: _vp, uColor: it.color, uLightPos: light, uViewPos: eye },
+      });
+    }
   });
   device.endFrame();
 }
@@ -193,8 +184,9 @@ function destroy() {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
   }
-  nodeTex?.destroy(); nodeTex = null;
+  disposeItems();
   shader = null;
+  gridShader = null;
   if (device) { device.destroy(); device = null; }
 }
 

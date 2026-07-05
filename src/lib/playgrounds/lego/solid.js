@@ -547,7 +547,7 @@ function knuckle(c, pin, A, B, ro, ri, th, a0, a1, seg = 24) {
   });
 }
 
-// C-arc covers a 270° sweep, leaving a 90° mouth centered on +A (= outward, +n).
+// C-arc covers a 270deg sweep, leaving a 90deg mouth centered on +A (= outward, +n).
 const knuckleArc = (shape) => (shape === "C" ? [Math.PI / 4, Math.PI * 7 / 4] : [0, Math.PI * 2]);
 
 // male hinge: a single knuckle (C or O) on a neck, lifted off P along n, pierced

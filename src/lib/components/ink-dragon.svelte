@@ -202,7 +202,7 @@
       fx /= m;
       fy /= m;
     }
-    // bias forward, ±60° turn, viewport-clamped step
+    // bias forward, +-60deg turn, viewport-clamped step
     for (let i = 0; i < 24; i++) {
       const ang = (Math.random() * 2 - 1) * (Math.PI / 3);
       const c = Math.cos(ang),

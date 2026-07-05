@@ -1,146 +1,118 @@
 <script>
-  import { browser } from "$app/environment";
   import Scene from "$lib/components/mech.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
-  import { buildHumanoidRig } from "$lib/playgrounds/mech/rig/index.js";
-  import { rigToPrimitives, jointCatalog, JOINT_PARAMS, JOINT_NAMES, PALETTE } from "$lib/playgrounds/mech/design/index.js";
-  import { texRowOf } from "$lib/playgrounds/mech/sdf.js";
+  import {
+    partModel, primitiveModel,
+    PART_NAMES, PRIM_NAMES, PRIM_PARAMS, PART_PARAMS, JOINT_POSE,
+  } from "$lib/playgrounds/mech/parts.js";
+  import { dragonModel, DRAGON_POSE } from "$lib/playgrounds/mech/rig.js";
 
   let scene = $state(null);
 
-  // what the viewport shows: the assembled mech, or the joint reference catalog
-  let view = $state("mech");           // "mech" | "joints"
+  // joints live in the parts tab (a joint is a catalog part in its own right)
+  const JOINTS = ["hinge1", "hinge2", "hinge3", "pivot1", "ball1"];
+  const PARTS = PART_NAMES.filter((n) => !JOINTS.includes(n));
 
-  // engine params (what the artist controls) -------------------------------
-  let fingers = $state(true);          // rig engine: include hands/fingers
-  let accent = $state(PALETTE.accent); // design engine: focal hue
-  const ACCENTS = ["#d6552f", "#e8b730", "#3fb6d0", "#6fcf57", "#c64bd0", "#e0e0e0"];
+  let view = $state("parts");             // "parts" | "primitives" | "dragon"
+  let selPart = $state(PARTS[0]);         // a part OR a joint name
+  let selPrim = $state(PRIM_NAMES[0]);
+  const isJoint = (n) => JOINTS.includes(n);
+  let pparams = $state(structuredClone(PRIM_PARAMS));
+  let jparams = $state(structuredClone(PART_PARAMS));
+  let jpose = $state(structuredClone(JOINT_POSE));   // runtime joint rotations, degrees
+  let drig = $state(structuredClone(DRAGON_POSE));   // dragon rig pose
+  let seed = $state(1);                    // color shuffle seed
 
-  // HUD state
-  let stage = $state(3);        // pipeline reveal: 1 base, 2 +bool, 3 +detail
+  // HUD
   let spin = $state(0.3);
-  let shadow = $state(false);
-  let ground = $state(false);
   let light = $state(0.6);
 
-  const STORE = "mech-rig";
-  const clone = (m) => structuredClone(m);
-  // RIG is the editable source of truth. design engine derives primitives from it
-  // live; render engine draws those. (rig -> design -> render, one way.)
-  let rig = $state(loadRig());
-  let sel = $state(0);           // selected bone index
-  let saved = $state(false), loaded = $state(false), noStore = $state(false);
-  let showCode = $state(false);
-
-  function build() { return buildHumanoidRig({ fingers }); }
-  function loadRig() {
-    if (browser) {
-      try {
-        const r = JSON.parse(localStorage.getItem(STORE));
-        if (r && Array.isArray(r.bones)) return r;
-      } catch { /* fall through to a freshly built rig */ }
-    }
-    return build();
-  }
-  // rebuild the rig from the fingers param (discards manual edits)
-  function regen() {
-    rig = build();
-    sel = 0;
-    scene?.apply({ resetView: true });
-  }
-
-  // editable joint-catalog params (cloned from the design-engine defaults) + the
-  // sliders that drive them. each entry: [key, label, min, max].
-  let jparams = $state(structuredClone(JOINT_PARAMS));
-  let selJoint = $state(JOINT_NAMES[0]);   // which joint the catalog renders + configs
-  const JOINT_LABELS = { hinge: "hinge", hingePivot: "hinge-pivot", pivot: "pivot", ball: "ball" };
-  const JOINT_CTL = {
-    hinge: [["width", "width", 0.2, 0.7], ["depth", "depth", 0.2, 0.9], ["femaleWidth", "female arm", 0.1, 2.0], ["maleWidth", "male arm", 0.1, 2.0], ["gapWidth", "gap", 0, 1.0], ["height", "height", 0.8, 3.0], ["tongueLength", "tongue length", 0, 1], ["socketLength", "socket length", 0, 1], ["socketThickness", "socket thickness", 0, 1], ["bevel", "bevel", 0, 2.5]],
-    hingePivot: [["width", "width", 0.2, 0.7], ["depth", "depth", 0.2, 0.9], ["femaleWidth", "female arm", 0.1, 2.0], ["maleWidth", "male arm", 0.1, 2.0], ["gapWidth", "gap", 0, 1.0], ["height", "height", 0.8, 3.0], ["tongueLength", "tongue length", 0, 1], ["socketLength", "socket length", 0, 1], ["socketThickness", "socket thickness", 0, 1], ["discRadius", "disc radius", 0.2, 1.2], ["discThickness", "disc thickness", 0.03, 0.3], ["bevel", "bevel", 0, 2.5]],
-    pivot: [["radius", "radius", 0.3, 1.2], ["thickness", "ring thickness", 0.04, 0.4], ["gap", "ring gap", 0.2, 2.0], ["height", "height", 0.5, 2.0], ["bevel", "bevel", 0, 2.5]],
-    ball: [["ballRadius", "ball radius", 0.3, 0.9], ["band", "yoke band", 0.08, 0.4], ["wrap", "yoke wrap", 1.2, 2.8], ["bevel", "bevel", 0, 2.5]],
+  const PART_LABELS = {
+    head: "dragon head",
+    bodySegment: "body segment",
+    bodySegment2: "body segment 2",
+    arm: "dragon arm",
+    leg: "dragon leg",
+    tail: "dragon tail",
+    hinge1: "hinge 1",
+    hinge2: "hinge 2",
+    hinge3: "hinge 3",
+    pivot1: "pivot 1 · double pivot",
+    ball1: "ball 1 · ball + socket",
   };
-  function resetJoints() { jparams = structuredClone(JOINT_PARAMS); }
+  const PRIM_LABELS = {
+    cylinder: "cylinder", cone: "cone", coneCut: "cut cone",
+    box: "box", sphere: "sphere", hemisphere: "hemisphere",
+    cutHemisphere: "cut hemisphere",
+    halfCylinder: "half cylinder", halfCylinderBox: "arch box",
+    boxCylinder: "stamper", quarterCylinder: "quarter disc",
+  };
+  // [key, label, min, max] sliders per joint part
+  const PART_CTL = {
+    head: [["headW", "head width", 0.7, 2.0], ["snoutLen", "snout length", 0.5, 2.0], ["jawOpen", "jaw open deg", 0, 45], ["eyeR", "eye radius", 0.08, 0.3], ["hornLen", "horn length", 0.1, 1.2]],
+    bodySegment: [["bodyR", "body radius", 0.3, 0.9], ["segLen", "segment length", 0.8, 3.0], ["discs", "belly discs", 2, 7, 1], ["finR", "fin radius", 0.15, 0.8]],
+    bodySegment2: [["rFront", "front radius", 0.25, 0.9], ["rRear", "rear radius", 0.15, 0.8], ["segLen", "segment length", 0.8, 3.0], ["finR", "fin radius", 0.15, 0.8]],
+    arm: [["upperLen", "upper arm", 0.25, 1.2], ["foreLen", "forearm", 0.2, 1.2], ["elbowBend", "elbow bend deg", 0, 70], ["clawR", "claw radius", 0.15, 0.5]],
+    leg: [["thighLen", "thigh", 0.25, 1.2], ["shinLen", "shin", 0.2, 1.2], ["kneeBend", "knee bend deg", 0, 60], ["footLen", "foot length", 0.15, 0.9], ["clawR", "claw radius", 0.15, 0.5]],
+    tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
+    hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+    hinge3: [["tongueT", "tongue thickness", 0.1, 0.5], ["armT", "arm thickness", 0.06, 0.3], ["armLen", "arm length", 0.2, 1.0], ["barrelR", "barrel radius", 0.15, 0.6], ["barrelLen", "barrel length", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+    pivot1: [["barrelR", "barrel radius", 0.12, 0.6], ["barrelLen", "barrel length", 0.3, 1.8], ["flangeR", "flange radius", 0.2, 0.9], ["neckR", "neck radius", 0.08, 0.4], ["neckLen", "neck length", 0.05, 0.5], ["capR", "cap radius", 0.12, 0.6]],
+    hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+    ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6]],
+  };
+  // [key, label, min, max] runtime rotation sliders per joint (degrees)
+  const POSE_CTL = {
+    hinge1: [["swing", "swing deg", -90, 90], ["twistF", "twist female deg", -180, 180], ["twistM", "twist male deg", -180, 180]],
+    hinge2: [["swing", "swing deg", -90, 90]],
+    hinge3: [["swing", "swing deg", -90, 90], ["spinF", "spin mount 1 deg", -180, 180], ["spinM", "spin mount 2 deg", -180, 180]],
+    pivot1: [["spinA", "spin top deg", -180, 180], ["spinB", "spin bottom deg", -180, 180]],
+    ball1: [["rx", "rotate x deg", -50, 50], ["ry", "rotate y deg", -180, 180], ["rz", "rotate z deg", -50, 50]],
+  };
+  // dragon rig runtime controls — offset slides the body along the loop curve
+  const DRAGON_CTL = [
+    ["offset", "loop offset", 0, 1, 0.002],
+    ["jaw", "jaw open deg", 0, 45, 1],
+    ["armSwing", "arm swing deg", -60, 60, 1],
+    ["elbow", "elbow bend deg", 0, 70, 1],
+    ["legSwing", "leg swing deg", -60, 60, 1],
+    ["knee", "knee bend deg", 0, 60, 1],
+  ];
+  // [key, label, min, max] sliders per primitive; `fit` gets its own toggle
+  const PRIM_CTL = {
+    cylinder: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
+    cone: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
+    coneCut: [["r0", "base radius", 0.1, 1.2], ["r1", "top radius", 0, 1.2], ["h", "height", 0.1, 2.5]],
+    box: [["w", "width", 0.1, 2.5], ["h", "height", 0.1, 2.5], ["d", "depth", 0.1, 2.5], ["slope", "top slope", 0, 1.5], ["curve", "slope curve", -1, 1]],
+    sphere: [["r", "radius", 0.1, 1.4]],
+    hemisphere: [["r", "radius", 0.1, 1.4]],
+    cutHemisphere: [["r", "radius", 0.15, 1.2], ["t", "wall", 0.04, 0.3], ["cut", "cut height", 0.2, 0.9]],
+    halfCylinder: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
+    halfCylinderBox: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5], ["depth", "box depth", 0.05, 1.5]],
+    boxCylinder: [["w", "box width", 0.2, 2.2], ["d", "box depth", 0.2, 2.2], ["boxH", "box height", 0.1, 1.5], ["cylH", "cylinder height", 0.05, 1.5]],
+    quarterCylinder: [["r", "radius", 0.1, 1.2], ["h", "thickness", 0.05, 1.5]],
+  };
 
-  // design engine output — the assembled mech, or the joint catalog reference.
-  // recomputes whenever the rig, accent, view, or joint params change.
-  const model = $derived(
-    view === "joints"
-      ? jointCatalog({ accent, which: selJoint, params: $state.snapshot(jparams) })
-      : rigToPrimitives($state.snapshot(rig), { accent }),
-  );
+  function resetParams() { pparams[selPrim] = structuredClone(PRIM_PARAMS[selPrim]); }
+  function resetJointParams() {
+    jparams[selPart] = structuredClone(PART_PARAMS[selPart]);
+    if (isJoint(selPart)) jpose[selPart] = structuredClone(JOINT_POSE[selPart]);
+  }
+  function resetDragon() { drig = structuredClone(DRAGON_POSE); }
+  function shuffle() { seed = (seed + 1) | 0; }
 
-  const KINDS = ["pelvis", "torso", "head", "shoulder", "hip", "limb", "hand", "foot", "digit"];
-  const JOINTS = [["0 weld", 0], ["1 yaw", 1], ["2 pitch", 2], ["3 uni · 2-axis", 3], ["4 ball", 4]];
-  const AX = { X: [1, 0, 0], Y: [0, 1, 0], Z: [0, 0, 1] };
-  const axisLabel = (v) => (!v ? "X" : v[0] ? "X" : v[1] ? "Y" : "Z");
-
-  const bone = $derived(rig.bones[sel] ?? null);
-  const stageLabel = $derived(["", "1 · limbs + joints", "2 · joint mechanics", "3 · hands + detail"][stage]);
-  // map the selected bone to its first packed primitive row, for the render highlight
-  const selectedRow = $derived.by(() => {
-    const idx = model.nodes.findIndex((n) => n._bone === sel);
-    return idx < 0 ? -1 : texRowOf(model, idx);
+  const model = $derived.by(() => {
+    if (view === "primitives") return primitiveModel(selPrim, $state.snapshot(pparams)[selPrim], seed);
+    if (view === "dragon") return dragonModel(seed, $state.snapshot(drig));
+    if (isJoint(selPart)) return partModel(selPart, seed, $state.snapshot(jparams)[selPart], $state.snapshot(jpose)[selPart]);
+    return partModel(selPart, seed, $state.snapshot(jparams)[selPart]);
   });
 
-  // ---- push reactive state into the scene ---------------------------------
-  $effect(() => { scene?.apply({ stage }); });
   $effect(() => { scene?.apply({ spin }); });
-  $effect(() => { scene?.apply({ shadow: shadow ? 1 : 0 }); });
-  $effect(() => { scene?.apply({ ground: ground ? 1 : 0 }); });
   $effect(() => { scene?.apply({ lightAngle: light }); });
-  // re-derive + re-pack on any rig or accent edit
   $effect(() => { scene?.apply({ model }); });
-  $effect(() => { scene?.apply({ selected: selectedRow }); });
-  // refit the camera when switching mech <-> catalog (each model ships its own
-  // framing distance). runs after the model effect, so dist is already current.
-  $effect(() => { view; selJoint; scene?.apply({ resetView: true }); });
-
-  // ---- bone CRUD ----------------------------------------------------------
-  function addBone() {
-    const a = bone ? bone.b.slice() : [0, 0, 0];
-    const b = [a[0], a[1] - 0.6, a[2]];
-    rig.bones = [...rig.bones, {
-      id: `bone${rig.bones.length}`, parent: bone?.id ?? null, kind: "limb",
-      a, b, radius: 0.2, joint: 2, axis1: [1, 0, 0], sym: bone?.sym ?? false,
-    }];
-    sel = rig.bones.length - 1;
-  }
-  function removeBone(i) {
-    rig.bones = rig.bones.filter((_, j) => j !== i);
-    sel = Math.max(0, Math.min(sel, rig.bones.length - 1));
-  }
-  function dupBone(i) {
-    const n = clone($state.snapshot(rig.bones[i]));
-    n.id = `${n.id}_copy`;
-    n.a = [n.a[0] + 0.3, n.a[1], n.a[2]];
-    n.b = [n.b[0] + 0.3, n.b[1], n.b[2]];
-    rig.bones = [...rig.bones.slice(0, i + 1), n, ...rig.bones.slice(i + 1)];
-    sel = i + 1;
-  }
-  const setPt = (key, i, v) => {
-    const a = (bone[key] ?? [0, 0, 0]).slice();
-    a[i] = +v; bone[key] = a;
-  };
-  const setAxis = (key, label) => { bone[key] = AX[label].slice(); };
-
-  function resetRig() { regen(); }
-
-  function save() {
-    if (!browser) return;
-    localStorage.setItem(STORE, JSON.stringify($state.snapshot(rig)));
-    saved = true; setTimeout(() => (saved = false), 1200);
-  }
-  function load() {
-    if (!browser) return;
-    try {
-      const r = JSON.parse(localStorage.getItem(STORE));
-      if (r && Array.isArray(r.bones)) { rig = r; sel = 0; loaded = true; setTimeout(() => (loaded = false), 1200); return; }
-    } catch { /* nothing valid */ }
-    noStore = true; setTimeout(() => (noStore = false), 1200);
-  }
-
-  const code = $derived(JSON.stringify($state.snapshot(rig), null, 1));
+  // fixed per-view distance (no auto-fit): the dragon rides a big loop
+  $effect(() => { selPart; selPrim; scene?.apply({ resetView: true, dist: view === "dragon" ? 24 : 6 }); });
 </script>
 
 <svelte:head><title>Mech</title></svelte:head>
@@ -151,15 +123,10 @@
   <section>
     <Scene bind:this={scene} />
     <div class="hud">
-      <div class="row build">
-        <span class="stage-label">Pipeline {stageLabel}</span>
-        <input type="range" min="1" max="3" step="1" bind:value={stage} />
-      </div>
       <div class="row knobs">
         <label><span>Spin</span><input type="range" min="0" max="3" step="0.1" bind:value={spin} /></label>
         <label><span>Light</span><input type="range" min="0" max="6.28" step="0.05" bind:value={light} /></label>
-        <label class="chk"><input type="checkbox" bind:checked={shadow} /> Shadows</label>
-        <label class="chk"><input type="checkbox" bind:checked={ground} /> Ground</label>
+        <button type="button" onclick={shuffle}>🎨 shuffle colors</button>
         <button type="button" onclick={() => scene?.apply({ resetView: true })}>Reset view</button>
       </div>
     </div>
@@ -169,109 +136,83 @@
     <fieldset>
       <legend>view</legend>
       <div class="tabs">
-        <button type="button" class:on={view === "mech"} onclick={() => (view = "mech")}>🤖 mech</button>
-        <button type="button" class:on={view === "joints"} onclick={() => (view = "joints")}>⚙ joints</button>
+        <button type="button" class:on={view === "parts"} onclick={() => (view = "parts")}>parts</button>
+        <button type="button" class:on={view === "primitives"} onclick={() => (view = "primitives")}>blocks</button>
+        <button type="button" class:on={view === "dragon"} onclick={() => (view = "dragon")}>dragon</button>
       </div>
     </fieldset>
 
-    {#if view === "joints"}
-    <fieldset>
-      <legend>joint</legend>
-      <ul class="jlist">
-        {#each JOINT_NAMES as jn}
-          <li><button type="button" class:on={selJoint === jn} onclick={() => (selJoint = jn)}>{JOINT_LABELS[jn] ?? jn}</button></li>
-        {/each}
-      </ul>
-    </fieldset>
-    <fieldset>
-      <legend>{JOINT_LABELS[selJoint] ?? selJoint} params <button type="button" class="add" onclick={resetJoints}>↺ reset</button></legend>
-      {#each JOINT_CTL[selJoint] as [key, label, min, max]}
-        <label><span>{label}</span>
-          <input type="range" {min} {max} step="0.01" value={jparams[selJoint][key]}
-            oninput={(e) => (jparams[selJoint][key] = +e.currentTarget.value)} />
-          <output>{jparams[selJoint][key].toFixed(2)}</output></label>
-      {/each}
-    </fieldset>
-    {:else}
-    <fieldset>
-      <legend>rig + design</legend>
-      <label class="chk"><input type="checkbox" bind:checked={fingers} onchange={regen} /> <span>Hands &amp; fingers</span></label>
-      <div class="grp">accent</div>
-      <span class="swatches">
-        {#each ACCENTS as c}
-          <button type="button" class="chip" class:on={accent.toLowerCase() === c}
-            style:background={c} aria-label={c} onclick={() => (accent = c)}></button>
-        {/each}
-      </span>
-      <button type="button" class="go wide" onclick={regen}>⚙ regenerate</button>
-    </fieldset>
-
-    <fieldset>
-      <legend>storage</legend>
-      <div class="tabs">
-        <button type="button" onclick={save}>{saved ? "✓ saved" : "💾 save"}</button>
-        <button type="button" onclick={load}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>
-        <button type="button" onclick={resetRig}>↺ reset</button>
-      </div>
-      <button type="button" class="wide" onclick={() => (showCode = !showCode)}>{showCode ? "▲ hide code" : "▼ show code"}</button>
-      {#if showCode}<textarea class="code" readonly rows="7">{code}</textarea>{/if}
-    </fieldset>
-
-    <fieldset>
-      <legend>rig · bones <button type="button" class="add" onclick={addBone}>+ bone</button></legend>
-      <ul class="parts">
-        {#each rig.bones as b, i (i)}
-          <li>
-            <button type="button" class="pick" class:on={i === sel} onclick={() => (sel = i)}>
-              <span class="jt jt{b.joint}" title={JOINTS[b.joint]?.[0]}>{b.joint}</span>
-              <span class="nm">{b.id}</span>
-              <em>{b.kind}{b.sym ? " ⇄" : ""}</em>
-            </button>
-            <span class="ctl">
-              <button type="button" onclick={() => dupBone(i)} title="duplicate">⧉</button>
-              <button type="button" class="del" onclick={() => removeBone(i)}>✕</button>
-            </span>
-          </li>
-        {/each}
-      </ul>
-    </fieldset>
-
-    {#if bone}
+    {#if view === "parts"}
       <fieldset>
-        <legend>bone — {bone.id}</legend>
-        <label><span>ID</span>
-          <input class="id" value={bone.id} onchange={(e) => (bone.id = e.currentTarget.value)} /></label>
-        <label><span>Part kind</span>
-          <select bind:value={bone.kind}>{#each KINDS as k}<option value={k}>{k}</option>{/each}</select></label>
-        <label><span>Joint</span>
-          <select value={bone.joint} onchange={(e) => (bone.joint = +e.currentTarget.value)}>
-            {#each JOINTS as [lab, v]}<option value={v}>{lab}</option>{/each}</select></label>
-        <label class="chk"><input type="checkbox" bind:checked={bone.sym} /> <span>Mirror L/R (X)</span></label>
-        <label><span>Radius</span>
-          <input type="range" min="0.02" max="0.8" step="0.01" value={bone.radius}
-            oninput={(e) => (bone.radius = +e.currentTarget.value)} /><output>{bone.radius.toFixed(2)}</output></label>
-
-        {#if bone.joint === 2 || bone.joint === 3}
-          <div class="grp">joint axis</div>
-          <label><span>Pitch axis</span>
-            <select value={axisLabel(bone.axis1)} onchange={(e) => setAxis("axis1", e.currentTarget.value)}>
-              <option>X</option><option>Y</option><option>Z</option></select></label>
-        {/if}
-
-        <div class="grp">A · proximal (joint)</div>
-        {#each ["X", "Y", "Z"] as ax, i}
-          <label><span>A {ax}</span>
-            <input type="range" min="-3" max="3.5" step="0.02" value={bone.a?.[i] ?? 0}
-              oninput={(e) => setPt("a", i, e.currentTarget.value)} /><output>{(bone.a?.[i] ?? 0).toFixed(2)}</output></label>
+        <legend>parts</legend>
+        <ul class="jlist">
+          {#each PARTS as pn}
+            <li><button type="button" class:on={selPart === pn} onclick={() => (selPart = pn)}>{PART_LABELS[pn] ?? pn}</button></li>
+          {/each}
+        </ul>
+        <div class="grp">joints — mechanism blocks</div>
+        <ul class="jlist">
+          {#each JOINTS as jn}
+            <li><button type="button" class:on={selPart === jn} onclick={() => (selPart = jn)}>{PART_LABELS[jn] ?? jn}</button></li>
+          {/each}
+        </ul>
+      </fieldset>
+      <fieldset>
+        <legend>{PART_LABELS[selPart] ?? selPart} params <button type="button" class="add" onclick={resetJointParams}>↺ reset</button></legend>
+        {#each PART_CTL[selPart] as [key, label, min, max, step]}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selPart][key]}
+              oninput={(e) => (jparams[selPart][key] = +e.currentTarget.value)} />
+            <output>{jparams[selPart][key].toFixed(step ? 0 : 2)}</output></label>
         {/each}
-        <div class="grp">B · distal (end)</div>
-        {#each ["X", "Y", "Z"] as ax, i}
-          <label><span>B {ax}</span>
-            <input type="range" min="-3" max="3.5" step="0.02" value={bone.b?.[i] ?? 0}
-              oninput={(e) => setPt("b", i, e.currentTarget.value)} /><output>{(bone.b?.[i] ?? 0).toFixed(2)}</output></label>
+        {#if isJoint(selPart)}
+          <div class="grp">runtime pose — joint rotations</div>
+          {#each POSE_CTL[selPart] as [key, label, min, max]}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step="1" value={jpose[selPart][key]}
+                oninput={(e) => (jpose[selPart][key] = +e.currentTarget.value)} />
+              <output>{jpose[selPart][key].toFixed(0)}</output></label>
+          {/each}
+        {/if}
+      </fieldset>
+    {:else if view === "dragon"}
+      <fieldset>
+        <legend>dragon rig <button type="button" class="add" onclick={resetDragon}>↺ reset</button></legend>
+        <p class="hint">parts chained by mount slots, bones drive the joints; the body rides a closed catmull-rom loop</p>
+        {#each DRAGON_CTL as [key, label, min, max, step]}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} {step} value={drig[key]}
+              oninput={(e) => (drig[key] = +e.currentTarget.value)} />
+            <output>{drig[key].toFixed(step < 1 ? 2 : 0)}</output></label>
         {/each}
       </fieldset>
-    {/if}
+    {:else}
+      <fieldset>
+        <legend>primitives</legend>
+        <ul class="jlist">
+          {#each PRIM_NAMES as pn}
+            <li><button type="button" class:on={selPrim === pn} onclick={() => (selPrim = pn)}>{PRIM_LABELS[pn] ?? pn}</button></li>
+          {/each}
+        </ul>
+      </fieldset>
+      <fieldset>
+        <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" class="add" onclick={resetParams}>↺ reset</button></legend>
+        {#each PRIM_CTL[selPrim] as [key, label, min, max]}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step="0.01" value={pparams[selPrim][key]}
+              oninput={(e) => (pparams[selPrim][key] = +e.currentTarget.value)} />
+            <output>{pparams[selPrim][key].toFixed(2)}</output></label>
+        {/each}
+        {#if selPrim === "boxCylinder"}
+          <div class="grp">cylinder fit</div>
+          <div class="tabs">
+            <button type="button" class:on={pparams.boxCylinder.fit === "in"}
+              onclick={() => (pparams.boxCylinder.fit = "in")}>internal</button>
+            <button type="button" class:on={pparams.boxCylinder.fit === "out"}
+              onclick={() => (pparams.boxCylinder.fit = "out")}>external</button>
+          </div>
+        {/if}
+      </fieldset>
     {/if}
   </aside>
 </main>
@@ -288,12 +229,9 @@
     font-size: 0.75rem; pointer-events: none;
   }
   .hud .row { display: flex; align-items: center; gap: 0.6rem; pointer-events: auto; }
-  .stage-label { white-space: nowrap; font-weight: 600; min-width: 11rem; }
-  .hud .build input[type="range"] { flex: 1; }
   .hud .knobs { flex-wrap: wrap; }
   .hud .knobs label { display: flex; align-items: center; gap: 0.35rem; }
   .hud .knobs label span { opacity: 0.8; }
-  .chk { white-space: nowrap; }
   nav { position: absolute; z-index: 2; padding: 0.6rem 0.9rem; }
   .back { display: inline-flex; align-items: center; gap: 0.3rem; opacity: 0.85; }
 
@@ -302,44 +240,16 @@
   fieldset { border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 0.5rem; padding: 0.6rem; }
   legend { padding: 0 0.3rem; font-weight: 600; opacity: 0.85; }
   label { display: flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; margin: 0.2rem 0; }
-  label > span:first-child { min-width: 5rem; opacity: 0.8; }
+  label > span:first-child { min-width: 5.5rem; opacity: 0.8; }
   label input[type="range"] { flex: 1; }
   output { min-width: 2.6rem; text-align: right; opacity: 0.8; font-variant-numeric: tabular-nums; }
-  select, .tpl { width: 100%; }
   .grp { margin: 0.5rem 0 0.1rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.5; }
+  .hint { margin: 0 0 0.4rem; font-size: 0.7rem; opacity: 0.55; }
   .tabs { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
   .tabs button { flex: 1; }
   .tabs button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
   .jlist { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
   .jlist button { width: 100%; text-align: left; }
   .jlist button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
-  .cat { list-style: none; margin: 0.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-  .cat li { display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.74rem; line-height: 1.35; opacity: 0.85; }
-  .cat li .jt { align-self: flex-start; margin-top: 0.1rem; }
-  .cat b { font-weight: 600; }
-  .hint { font-size: 0.68rem; opacity: 0.5; margin: 0.6rem 0 0; }
-  .go { font-weight: 600; }
-  .wide { width: 100%; margin-top: 0.4rem; }
   .add { font-size: 0.75rem; opacity: 0.75; margin-left: 0.4rem; }
-  .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.12rem; max-height: 16rem; overflow-y: auto; }
-  .parts li { display: flex; align-items: center; gap: 0.2rem; }
-  .pick { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.18rem 0.35rem; border-radius: 0.3rem; }
-  .pick.on { opacity: 1; font-weight: 600; outline: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
-  .jt { flex: none; width: 1.1rem; height: 1.1rem; border-radius: 0.25rem; display: grid; place-items: center;
-    font-size: 0.62rem; font-weight: 700; color: #111; background: #6b7280; }
-  .jt0 { background: #6b7280; } .jt1 { background: #c79a3c; }
-  .jt2 { background: #e8b730; } .jt3 { background: #3fb6d0; } .jt4 { background: #d6552f; }
-  .id { flex: 1; }
-  .pick .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pick em { font-style: normal; font-size: 0.6rem; opacity: 0.55; }
-  .sw { width: 0.85rem; height: 0.85rem; border-radius: 0.2rem; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); flex: none; }
-  .sw.cut { border-style: dashed; background: repeating-linear-gradient(45deg, transparent, transparent 2px, currentColor 2px, currentColor 3px); opacity: 0.6; }
-  .ctl { display: flex; gap: 0.1rem; }
-  .ctl button { padding: 0 0.35rem; opacity: 0.6; }
-  .del:hover { color: #e0563a; opacity: 1; }
-  .swatches { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-  .chip { width: 1.4rem; height: 1.4rem; border-radius: 0.3rem; border: 2px solid transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); cursor: pointer; padding: 0; }
-  .chip.on { border-color: currentColor; }
-  .picker { width: 1.6rem; height: 1.4rem; padding: 0; cursor: pointer; }
-  .code { width: 100%; font-family: monospace; font-size: 0.66rem; margin-top: 0.4rem; white-space: pre; overflow: auto; }
 </style>
