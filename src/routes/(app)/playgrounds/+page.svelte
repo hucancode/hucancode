@@ -1,4 +1,5 @@
 <script>
+  import "$styles/playground.css";
   import { onMount } from "svelte";
   import rough from "roughjs";
   import Dragon from "$icons/game-icons/dragon.svg?raw";
@@ -24,7 +25,7 @@
 </svelte:head>
 
 <main>
-  <nav><a class="back" href="/">{@html Return} Home</a></nav>
+  <nav><a href="/">{@html Return} Home</a></nav>
   <ul>
     {#each playgrounds as p, i}
       <li>

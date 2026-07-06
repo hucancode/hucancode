@@ -32,10 +32,11 @@ import {
   I3, vAdd, vSub, vScale, vLen, vNorm, vCross, m3Mul, m3MulV, m3T, m3Rot,
 } from "../math/mat3.js";
 
-// orthonormal frame with local +Z aligned to z (columns X, Y, Z)
-function frameFromZ(z, up = [0, 1, 0]) {
+// orthonormal frame with local +Z aligned to z, +Y as up as possible
+// (columns X, Y, Z)
+function frameFromZ(z) {
   const Z = vNorm(z);
-  let X = vCross(up, Z);
+  let X = vCross([0, 1, 0], Z);
   if (vLen(X) < 1e-4) X = vCross([1, 0, 0], Z);   // tangent went vertical
   X = vNorm(X);
   const Y = vCross(Z, X);
@@ -79,11 +80,7 @@ function createSkeleton() {
       for (const b of bones) {
         let R = m3Rot(b.axis, b.angle);
         if (b.rest) R = m3Mul(b.rest, R);
-        if (b.parent < 0) out.push(xf(R, [...b.offset]));
-        else {
-          const p = out[b.parent];
-          out.push(xf(m3Mul(p.r, R), vAdd(p.t, m3MulV(p.r, b.offset))));
-        }
+        out.push(b.parent < 0 ? xf(R, [...b.offset]) : xfCompose(out[b.parent], xf(R, b.offset)));
       }
       return out;
     },
@@ -375,16 +372,6 @@ export function createDragonRig(seed = 1) {
       // parent, so the approach side (where the group floats pre-snap) is -n
       const an = vNorm(vScale(m3MulV(t.r, d.slots.slot0.n), -1));
       const depth = depthOf[d.name];
-      if (d.tpl) {                                     // static part: compose cached prims
-        for (const e of d.tpl)
-          items.push({
-            key: e.key,
-            m: m3Mul(t.r, e.m),
-            t: vAdd(m3MulV(t.r, e.t), t.t),
-            color: e.color, group: e.group, an, depth,
-          });
-        continue;
-      }
       let ppose = null;                                // posed part: rebuild through the sink
       if (d.name === "head") ppose = { jaw: sk.bones[jawB].angle };
       else if (d.pose)                                 // limb: bones feed the pose channel
@@ -394,7 +381,8 @@ export function createDragonRig(seed = 1) {
           spinM: sk.bones[d.ids[2]].angle,
           [d.part === "arm" ? "elbow" : "knee"]: sk.bones[d.bendBone].angle,
         };
-      for (const e of capture(d, ppose, []))
+      // static part: compose cached prims; posed part: rebuild through the sink
+      for (const e of d.tpl ?? capture(d, ppose, []))
         items.push({
           key: e.key,
           m: m3Mul(t.r, e.m),
@@ -404,10 +392,10 @@ export function createDragonRig(seed = 1) {
     }
 
     ensureMeshes(items);
-    return { items, meshes, name: "dragon", skeleton: sk };
+    return { items, meshes };
   }
 
-  return { model, pitch, skeleton: sk };
+  return { model, pitch };
 }
 
 // convenience wrappers keeping the old one-call API: the compiled rig is
@@ -420,10 +408,4 @@ function getRig(seed) {
 
 export function dragonModel(seed = 1, pose = {}, path = null) {
   return getRig(seed).model(pose, path);
-}
-
-// total chord length of the spine chain (sum of link pitches) — an external
-// caller uses this to scale its path so the dragon covers a chosen arc of it
-export function dragonPitch() {
-  return getRig(_rigSeed ?? 1).pitch;
 }

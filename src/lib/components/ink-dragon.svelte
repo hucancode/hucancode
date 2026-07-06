@@ -607,9 +607,9 @@
       <input type="range" min="0" max="180" step="1" bind:value={maxBendDeg} />
       <output>{maxBendDeg}&deg;</output>
     </label>
-    <div class="buttons">
-      <button type="button" onclick={() => resetBaseline()}>reset chain</button>
-    </div>
+    <menu>
+      <li><button type="button" onclick={() => resetBaseline()}>reset chain</button></li>
+    </menu>
   </fieldset>
 
   <fieldset>
@@ -696,9 +696,9 @@
       <input type="checkbox" bind:checked={wireframe} />
       <span>wireframe body</span>
     </label>
-    <p class="hint">
+    <small>
       drag on canvas: tip follows mouse, chain pulls along when stretched
-    </p>
+    </small>
   </fieldset>
 </aside>
 
@@ -780,10 +780,5 @@
   button {
     padding: 0.3rem 0.8rem;
     font-size: 0.9rem;
-  }
-  .hint {
-    margin: 0;
-    font-size: 0.8rem;
-    opacity: 0.7;
   }
 </style>

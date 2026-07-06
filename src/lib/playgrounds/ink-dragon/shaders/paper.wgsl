@@ -1,4 +1,3 @@
-// Uniform struct fields MUST match the `uniforms` list in index.js, in order.
 struct Uni {
   uModel: mat4x4<f32>,
   uAspect: f32,

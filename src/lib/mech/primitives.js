@@ -202,11 +202,12 @@ function genConeCut(q, seg) {
   return g;
 }
 
-// unit sphere / hemisphere lathes
-function genSphere(seg, rings) {
+// unit sphere / hemisphere lathe: phi sweeps 0 (pole) .. phiMax; base=true
+// closes the last ring with a downward disc (hemisphere: phiMax = PI/2)
+function genLathe(seg, rings, phiMax, base) {
   const g = geo();
   const pt = (u, v) => {
-    const th = u * TAU, ph = v * Math.PI;
+    const th = u * TAU, ph = v * phiMax;
     const sp = Math.sin(ph);
     return [Math.cos(th) * sp, Math.cos(ph), Math.sin(th) * sp];
   };
@@ -218,28 +219,11 @@ function genSphere(seg, rings) {
       triS(g, n00, n11, n01, n00, n11, n01);
     }
   }
-  return g;
-}
-
-function genHemisphere(seg, rings) {
-  const g = geo();
-  const pt = (u, v) => {
-    const th = u * TAU, ph = (v * Math.PI) / 2; // 0 = pole, PI/2 = equator
-    const sp = Math.sin(ph);
-    return [Math.cos(th) * sp, Math.cos(ph), Math.sin(th) * sp];
-  };
-  for (let j = 0; j < rings; j++) {
-    for (let i = 0; i < seg; i++) {
-      const n00 = pt(i / seg, j / rings), n01 = pt((i + 1) / seg, j / rings);
-      const n10 = pt(i / seg, (j + 1) / rings), n11 = pt((i + 1) / seg, (j + 1) / rings);
-      triS(g, n00, n10, n11, n00, n10, n11);
-      triS(g, n00, n11, n01, n00, n11, n01);
+  if (base)
+    for (let i = 0; i < seg; i++) {         // base disc, facing down
+      const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
+      tri(g, [0, 0, 0], [Math.cos(t1), 0, Math.sin(t1)], [Math.cos(t0), 0, Math.sin(t0)], [0, -1, 0]);
     }
-  }
-  for (let i = 0; i < seg; i++) {           // base disc, facing down
-    const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
-    tri(g, [0, 0, 0], [Math.cos(t1), 0, Math.sin(t1)], [Math.cos(t0), 0, Math.sin(t0)], [0, -1, 0]);
-  }
   return g;
 }
 
@@ -279,15 +263,10 @@ function genCutHemisphere(t, cut, seg, rings) {
 }
 
 // unit half cylinder: round side +Z, flat face on the XY plane, y 0..1.
+// cylBody's cap fans already close the half-disc top/bottom for an arc sweep.
 //   flat=false omits the closing rectangle (for the arch-box variant).
 function genHalfCylinder(seg, flat) {
-  const g = cylBody(1, 1, seg, 0, Math.PI, false);
-  for (let i = 0; i < seg; i++) {           // half-disc caps
-    const t0 = (i / seg) * Math.PI, t1 = ((i + 1) / seg) * Math.PI;
-    const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
-    tri(g, [0, 1, 0], [c0, 1, s0], [c1, 1, s1], [0, 1, 0]);
-    tri(g, [0, 0, 0], [c1, 0, s1], [c0, 0, s0], [0, -1, 0]);
-  }
+  const g = cylBody(1, 1, seg, 0, Math.PI);
   if (flat) quad(g, [1, 0, 0], [1, 1, 0], [-1, 1, 0], [-1, 0, 0], [0, 0, -1]);
   return g;
 }
@@ -306,16 +285,11 @@ function genHalfCylinderBox(dp, seg) {
   return merge(hc, b);
 }
 
-// unit quarter cylinder: 1/4 disc plate, arc sweeps +X..+Z, corner origin
+// unit quarter cylinder: 1/4 disc plate, arc sweeps +X..+Z, corner origin.
+// cylBody's cap fans close the quarter-disc top/bottom; only the two straight
+// edge walls remain to emit here.
 function genQuarterCylinder(seg) {
-  const QP = Math.PI / 2;
-  const g = cylBody(1, 1, seg, 0, QP, false);
-  for (let i = 0; i < seg; i++) {           // quarter-disc caps
-    const t0 = (i / seg) * QP, t1 = ((i + 1) / seg) * QP;
-    const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
-    tri(g, [0, 1, 0], [c0, 1, s0], [c1, 1, s1], [0, 1, 0]);
-    tri(g, [0, 0, 0], [c1, 0, s1], [c0, 0, s0], [0, -1, 0]);
-  }
+  const g = cylBody(1, 1, seg, 0, Math.PI / 2);
   quad(g, [0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1]);  // edge along +X
   quad(g, [0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0], [-1, 0, 0]);  // edge along +Z
   return g;
@@ -356,11 +330,11 @@ export function cone(r = 0.5, h = 1, seg = 24) {
 }
 
 export function sphere(r = 0.5, seg = 24, rings = 16) {
-  return H(`sph:${seg}:${rings}`, () => genSphere(seg, rings), r, r, r);
+  return H(`sph:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI, false), r, r, r);
 }
 
 export function hemisphere(r = 0.5, seg = 24, rings = 8) {
-  return H(`hemi:${seg}:${rings}`, () => genHemisphere(seg, rings), r, r, r);
+  return H(`hemi:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI / 2, true), r, r, r);
 }
 
 // socket shell — wall t and cut height are FRACTIONS of r
@@ -391,5 +365,3 @@ export function boxCylinder(w = 1, boxH = 0.5, d = 1, cylH = 0.8, fit = "in", se
   const cp = q4(Math.max(0.01, cylH));
   return H(`stamper:${cp}:${fit}:${seg}`, () => genBoxCylinder(cp, fit, seg), w, boxH, d);
 }
-
-export const PRIMS = { cylinder, cone, coneCut, box, sphere, hemisphere, cutHemisphere, halfCylinder, halfCylinderBox, boxCylinder, quarterCylinder };

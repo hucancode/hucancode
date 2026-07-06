@@ -25,7 +25,7 @@ export function ensoHeadProgress(tau) {
 }
 
 // enso start angle: top of circle; head sweeps counter-clockwise
-export const ensoA0 = Math.PI / 2;
+const ensoA0 = Math.PI / 2;
 
 // Head sweeps counter-clockwise circle of radius ENSO_R about center (default
 // origin), starting at top; frac in revolutions (0..1.5 traces 1.5 laps).
@@ -47,7 +47,7 @@ export function ensoPos(frac, center) {
 // length, matching camera's linear descent (stays vertically centred). Walks until
 // descended dropTarget or walked lenTarget of arc.
 // Returns { curve (with headStart), pool, points, end }.
-export function generateCircleChain(rng, entry, heading, dropTarget, lenTarget = 0) {
+function generateCircleChain(rng, entry, heading, dropTarget, lenTarget = 0) {
   const [rMin, rMax] = CHAIN_R;
   const rand = (a, b) => a + (b - a) * rng();
   const pts = [{ x: entry.x, y: entry.y, z: 0 }];

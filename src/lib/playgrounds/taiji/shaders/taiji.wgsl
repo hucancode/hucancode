@@ -1,4 +1,3 @@
-// Uniform struct fields MUST match the `uniforms` list in index.js.
 struct Uni {
   uScale: vec2<f32>,
   uRot: f32,

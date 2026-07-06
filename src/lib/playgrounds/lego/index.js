@@ -1,6 +1,6 @@
 import {
-  createDevice, Camera, mat4, Vec3, Euler, DEG2RAD,
-  animate, utils, eases,
+  createPlayground, createOrbit, mat4, Vec3,
+  animate, utils, eases, F32, VEC3, MAT4,
 } from "$lib/engine/index.js";
 import { makeSolid } from "./solid.js";
 import { resolveAssembly } from "./assembly.js";
@@ -33,7 +33,7 @@ const config = {
   explode: 0,
 };
 
-let canvas, device, shader, gridShader, camera, disposed = false;
+let device = null, shader, gridShader, orbit;
 let viewCfg = VIEW;             // active camera framing; swapped when a template loads
 let mode = "assemble";          // "assemble" | "inspect"
 let inspect = null;
@@ -41,23 +41,26 @@ let inspectSpec = null;
 let activeModel = MODEL;
 let pieces = [];
 let centroid = new Vec3(0, 0, 0);
-let yaw = 0.6, pitch = 0.35;
-let dragging = false, lastX = 0, lastY = 0;
-let lastT = 0;
 const light = new Vec3(30, 40, 30);
 const _model = mat4.create();
 const _vp = mat4.create();
 const _pos = new Vec3();
 const _scale = new Vec3(1, 1, 1);
-const _rot = new Euler();
+const _rot = new Vec3();   // euler XYZ angles for mat4.compose/decompose
 
 function colorRGB(hex) {
   if (typeof hex === "string") hex = parseInt(hex.replace("#", ""), 16);
   return [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
 }
 
+// pieces share cached buffers; destroy each unique buffer once
 function disposePieces() {
-  for (const p of pieces) { p.posBuf?.destroy(); p.normBuf?.destroy(); }
+  const seen = new Set();
+  for (const p of pieces) {
+    if (seen.has(p.posBuf)) continue;
+    seen.add(p.posBuf);
+    p.posBuf?.destroy(); p.normBuf?.destroy();
+  }
   pieces = [];
 }
 
@@ -129,9 +132,6 @@ function buildInspect(spec) {
     normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
     count: g.attributes.position.count,
     color: colorRGB(PALETTE[spec.color] ?? spec.color ?? "#cccccc"),
-    rx: (spec.rx ?? 0) * DEG2RAD,
-    ry: (spec.ry ?? 0) * DEG2RAD,
-    rz: (spec.rz ?? 0) * DEG2RAD,
   };
 }
 
@@ -164,90 +164,9 @@ function setConfig(patch) {
     try { buildEagle(patch.model); setProgress(1); }
     catch (e) { console.warn("[lego] invalid model", e); }
   }
-  if (patch.view) {                                               // template framing swap
-    viewCfg = patch.view;
-    if (camera) camera._dist = patch.view.dist;
-  }
+  if (patch.view) viewCfg = patch.view;                           // template framing swap
   if ("progress" in patch && pieces.length) setProgress(patch.progress);
   if (patch.replay && pieces.length) play();
-}
-
-function onDown(e) {
-  dragging = true;
-  lastX = e.touches ? e.touches[0].clientX : e.clientX;
-  lastY = e.touches ? e.touches[0].clientY : e.clientY;
-}
-function onMove(e) {
-  if (!dragging) return;
-  const x = e.touches ? e.touches[0].clientX : e.clientX;
-  const y = e.touches ? e.touches[0].clientY : e.clientY;
-  yaw -= (x - lastX) * 0.01;
-  pitch = Math.max(-1.2, Math.min(1.2, pitch + (y - lastY) * 0.01));
-  lastX = x; lastY = y;
-}
-function onUp() {
-  dragging = false;
-}
-
-async function init(canvasEl) {
-  canvas = canvasEl;
-  disposed = false;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  canvas.width = Math.max(1, Math.floor(w * dpr));
-  canvas.height = Math.max(1, Math.floor(h * dpr));
-  device = await createDevice(canvas);
-  if (disposed) { device.destroy(); device = null; return; }
-  device.resize(canvas.width, canvas.height);
-  shader = device.shader({
-    glsl: { vertex: VERT, fragment: FRAG }, wgsl: LEGO_WGSL,
-    buffers: [
-      { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
-      { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
-    ],
-    uniforms: [
-      { name: "uViewProj", type: "mat4" },
-      { name: "uModel", type: "mat4" },
-      { name: "uColor", type: "vec3" },
-      { name: "uLightPos", type: "vec3" },
-      { name: "uViewPos", type: "vec3" },
-    ],
-    depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
-  });
-  gridShader = device.shader({
-    glsl: { vertex: GRID_VERT, fragment: GRID_FRAG }, wgsl: GRID_WGSL,
-    uniforms: [
-      { name: "uViewProj", type: "mat4" },
-      { name: "uExt", type: "f32" },
-      { name: "uY", type: "f32" },
-      { name: "uStep", type: "f32" },
-      { name: "uMinorDiv", type: "f32" },
-      { name: "uOpacity", type: "f32" },
-      { name: "uColor", type: "vec3" },
-    ],
-    depth: "none", blend: "premult", topology: "tri-strip", target: "screen", sampleCount: 4,
-  });
-  camera = new Camera(45, w / h, 0.1, 2000);
-  camera.up.set(0, 1, 0);
-  camera._dist = viewCfg.dist;
-  buildEagle();
-  play();
-  if (mode === "inspect") buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
-  lastT = performance.now();
-  canvas.addEventListener("pointerdown", onDown);
-  window.addEventListener("pointermove", onMove);
-  window.addEventListener("pointerup", onUp);
-}
-
-function syncSize() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  const tw = Math.max(1, Math.floor(w * dpr)), th = Math.max(1, Math.floor(h * dpr));
-  if (canvas.width === tw && canvas.height === th) return;
-  canvas.width = tw; canvas.height = th;
-  device.resize(tw, th);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
 }
 
 // pose a flying/snapping piece into `out` from its progress _p.
@@ -274,45 +193,60 @@ function poseModel(out, pc) {
   mat4.compose(out, _pos, _rot, _scale);
 }
 
-function render() {
-  if (!device || !shader) return;
-  const now = performance.now();
-  const dt = Math.min((now - lastT) / 1000, 0.05);
-  lastT = now;
-  if (!dragging) yaw += config.spin * dt * 0.4;
+const { init, render, destroy } = createPlayground({
+  camera: { fov: 45, near: 0.1, far: 2000 },
+  init(ctx) {
+    device = ctx.device;
+    shader = device.shader({
+      glsl: { vertex: VERT, fragment: FRAG }, wgsl: LEGO_WGSL,
+      buffers: [
+        { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
+        { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
+      ],
+      uniforms: [
+        MAT4("uViewProj"), MAT4("uModel"), VEC3("uColor"), VEC3("uLightPos"), VEC3("uViewPos"),
+      ],
+      depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+    });
+    gridShader = device.shader({
+      glsl: { vertex: GRID_VERT, fragment: GRID_FRAG }, wgsl: GRID_WGSL,
+      uniforms: [
+        MAT4("uViewProj"), F32("uExt"), F32("uY"), F32("uStep"),
+        F32("uMinorDiv"), F32("uOpacity"), VEC3("uColor"),
+      ],
+      depth: "none", blend: "premult", topology: "tri-strip", target: "screen", sampleCount: 4,
+    });
+    orbit = createOrbit(ctx.canvas, { yaw: 0.6, pitch: 0.35, pitchClamp: 1.2 });
+    buildEagle();
+    play();
+    if (mode === "inspect") buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
+  },
+  frame(dt, { camera }) {
+    if (!orbit.dragging) orbit.yaw += config.spin * dt * 0.4;
 
-  syncSize();
+    const inspecting = mode === "inspect" && inspect;
+    const lookY = inspecting ? 0 : viewCfg.lookY;
+    orbit.dist = (inspecting ? 6 : viewCfg.dist) || 15;
+    orbit.placeCamera(camera, lookY);
+    mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
+    const eye = [camera.position.x, camera.position.y, camera.position.z];
 
-  const inspecting = mode === "inspect" && inspect;
-  const lookY = inspecting ? 0 : viewCfg.lookY;
-  const d = (inspecting ? 6 : camera._dist) || 15, cp = Math.cos(pitch);
-  camera.position.set(
-    d * cp * Math.sin(yaw),
-    lookY + d * Math.sin(pitch),
-    d * cp * Math.cos(yaw),
-  );
-  camera.lookAt(0, lookY, 0);
-  camera.update();
-  mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
-  const eye = [camera.position.x, camera.position.y, camera.position.z];
-
-  device.beginFrame();
-  device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
-    if (inspecting) {
-      _pos.set(0, 0, 0);
-      _rot.set(inspect.rx, inspect.ry, inspect.rz);
-      mat4.compose(_model, _pos, _rot, _scale);
-      p.draw(shader, {
-        buffers: [inspect.posBuf, inspect.normBuf],
-        count: inspect.count,
-        uniforms: {
-          uViewProj: _vp, uModel: _model,
-          uColor: inspect.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
-        },
-      });
-      return;
-    }
-    if (gridShader) {
+    device.beginFrame();
+    device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
+      if (inspecting) {
+        _pos.set(0, 0, 0);
+        _rot.set(0, 0, 0);
+        mat4.compose(_model, _pos, _rot, _scale);
+        p.draw(shader, {
+          buffers: [inspect.posBuf, inspect.normBuf],
+          count: inspect.count,
+          uniforms: {
+            uViewProj: _vp, uModel: _model,
+            uColor: inspect.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
+          },
+        });
+        return;
+      }
       p.draw(gridShader, {
         count: 4,
         uniforms: {
@@ -320,49 +254,37 @@ function render() {
           uMinorDiv: GROUND.minorDiv, uOpacity: GROUND.opacity, uColor: GROUND.color,
         },
       });
-    }
-    const ex = config.explode;
-    for (const pc of pieces) {
-      if (pc._p <= 0) continue;
-      if (pc._p >= 1) mat4.copy(_model, pc.model);
-      else poseModel(_model, pc);
-      // explode view: push each piece out from the centroid
-      _model[12] += (pc.cx - centroid.x) * ex;
-      _model[13] += (pc.cy - centroid.y) * ex;
-      _model[14] += (pc.cz - centroid.z) * ex;
-      p.draw(shader, {
-        buffers: [pc.posBuf, pc.normBuf],
-        count: pc.count,
-        uniforms: {
-          uViewProj: _vp, uModel: _model,
-          uColor: pc.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
-        },
-      });
-    }
-  });
-  device.endFrame();
-}
+      const ex = config.explode;
+      for (const pc of pieces) {
+        if (pc._p <= 0) continue;
+        if (pc._p >= 1) mat4.copy(_model, pc.model);
+        else poseModel(_model, pc);
+        // explode view: push each piece out from the centroid
+        _model[12] += (pc.cx - centroid.x) * ex;
+        _model[13] += (pc.cy - centroid.y) * ex;
+        _model[14] += (pc.cz - centroid.z) * ex;
+        p.draw(shader, {
+          buffers: [pc.posBuf, pc.normBuf],
+          count: pc.count,
+          uniforms: {
+            uViewProj: _vp, uModel: _model,
+            uColor: pc.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
+          },
+        });
+      }
+    });
+    device.endFrame();
+  },
+  destroy() {
+    orbit?.detach();
+    orbit = null;
+    utils.remove(pieces);
+    disposeInspect();
+    disposePieces();
+    shader = null;
+    gridShader = null;
+    device = null;
+  },
+});
 
-function destroy() {
-  disposed = true;
-  if (canvas) {
-    canvas.removeEventListener("pointerdown", onDown);
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", onUp);
-  }
-  utils.remove(pieces);
-  disposeInspect();
-  // pieces share cached buffers; destroy each unique buffer once
-  const seen = new Set();
-  for (const p of pieces) {
-    if (seen.has(p.posBuf)) continue;
-    seen.add(p.posBuf);
-    p.posBuf?.destroy(); p.normBuf?.destroy();
-  }
-  pieces = [];
-  shader = null;
-  gridShader = null;
-  if (device) { device.destroy(); device = null; }
-}
-
-export { init, render, destroy, setConfig, config };
+export { init, render, destroy, setConfig };

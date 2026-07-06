@@ -1,6 +1,5 @@
 <script>
   import Scene from "$lib/components/dragon.svelte";
-  import Return from "$icons/line-md/chevron-left.svg?raw";
 
   let scene = $state(null);
   const PRESETS = [
@@ -27,9 +26,6 @@
   <title>Dragon</title>
 </svelte:head>
 
-<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
-
-<main>
   <section>
     <Scene bind:this={scene} />
   </section>
@@ -89,10 +85,9 @@
       </label>
     </fieldset>
 
-    <div class="buttons">
-      <button onclick={() => scene?.newPath()}>↻ New path</button>
-      <button onclick={() => scene?.addDragon()}>＋ Add</button>
-      <button onclick={() => scene?.reset()}>Reset</button>
-    </div>
+    <menu>
+      <li><button onclick={() => scene?.newPath()}>↻ New path</button></li>
+      <li><button onclick={() => scene?.addDragon()}>＋ Add</button></li>
+      <li><button onclick={() => scene?.reset()}>Reset</button></li>
+    </menu>
   </aside>
-</main>

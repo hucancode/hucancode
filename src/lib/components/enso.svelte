@@ -1,19 +1,7 @@
 <script>
-  import { browser } from "$app/environment";
-  import { onMount, onDestroy } from "svelte";
-  import {
-    init,
-    destroy,
-    render,
-    setConfig,
-    setBrushColor,
-    setBgColor,
-  } from "$lib/playgrounds/enso";
-
-  let canvasEl;
-  let ready = $state(false);
-  let frameID = 0;
-  let observer;
+  import PlaygroundCanvas from "$lib/components/playground-canvas.svelte";
+  import * as enso from "$lib/playgrounds/enso";
+  import { setConfig, setBrushColor, setBgColor } from "$lib/playgrounds/enso";
 
   let radius = $state(0.55);
   let angleStart = $state(0.0);
@@ -45,7 +33,6 @@
   }
 
   $effect(() => {
-    if (!ready) return;
     setConfig({
       radius,
       angleStart,
@@ -66,44 +53,15 @@
     });
   });
   $effect(() => {
-    if (ready) setBrushColor(hexToRgba(brushHex));
+    setBrushColor(hexToRgba(brushHex));
   });
   $effect(() => {
-    if (ready) setBgColor(hexToRgba(bgHex));
-  });
-
-  function loop() {
-    frameID = requestAnimationFrame(loop);
-    render();
-  }
-
-  let cancelled = false;
-  onMount(() => {
-    init(canvasEl).then(() => {
-      if (cancelled) return;
-      ready = true;
-      observer = new IntersectionObserver(([e]) => {
-        if (e.isIntersecting) {
-          frameID = requestAnimationFrame(loop);
-        } else {
-          cancelAnimationFrame(frameID);
-        }
-      });
-      observer.observe(canvasEl);
-    });
-    return () => { cancelled = true; };
-  });
-
-  onDestroy(() => {
-    if (!browser) return;
-    cancelAnimationFrame(frameID);
-    observer?.disconnect();
-    destroy();
+    setBgColor(hexToRgba(bgHex));
   });
 </script>
 
 <section>
-  <canvas bind:this={canvasEl}></canvas>
+  <PlaygroundCanvas scene={enso} id="enso" />
 </section>
 <aside>
   <fieldset>
@@ -245,11 +203,11 @@
 
   <fieldset>
     <legend>color</legend>
-    <label class="color">
+    <label>
       <span>Ink</span>
       <input type="color" bind:value={brushHex} />
     </label>
-    <label class="color">
+    <label>
       <span>Paper</span>
       <input type="color" bind:value={bgHex} />
     </label>
@@ -257,20 +215,14 @@
 </aside>
 
 <style>
-  /* layout (main > section / aside) + fieldset/label styling come from global app.css */
+  /* layout + fieldset/label styling come from shared playground.css */
   section {
     max-width: 640px;
     aspect-ratio: 1 / 1;
   }
-  canvas {
-    width: 100%;
-    height: 100%;
+  section :global(canvas) {
     background: #f5eddc;
     border-radius: 0.25rem;
     touch-action: none;
-    display: block;
-  }
-  label.color {
-    grid-template-columns: 6rem 1fr;
   }
 </style>

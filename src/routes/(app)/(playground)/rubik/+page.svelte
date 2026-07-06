@@ -1,6 +1,5 @@
 <script>
   import Scene from "$lib/components/rubik.svelte";
-  import Return from "$icons/line-md/chevron-left.svg?raw";
 
   let scene = $state(null);
   let size = $state(3);
@@ -17,9 +16,6 @@
   <title>Rubik</title>
 </svelte:head>
 
-<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
-
-<main>
   <section>
     {#key size}
       <Scene bind:this={scene} {size} />
@@ -50,9 +46,8 @@
     </fieldset>
 
     {#if !autoplay}
-      <div class="buttons">
-        <button onclick={() => scene?.stepOnce()}>▶ One move</button>
-      </div>
+      <menu>
+        <li><button onclick={() => scene?.stepOnce()}>▶ One move</button></li>
+      </menu>
     {/if}
   </aside>
-</main>

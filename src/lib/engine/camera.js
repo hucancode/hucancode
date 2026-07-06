@@ -1,4 +1,5 @@
-import { Vec3, mat4 } from "./math.js";
+import { Vec3 } from "../math/vec3.js";
+import * as mat4 from "../math/mat4.js";
 
 export class Camera {
   constructor(fovDeg = 45, aspect = 1, near = 1, far = 2000) {

@@ -1,5 +1,6 @@
 import { m3Mul, m3MulV, m3Inv, m3AxisAngle, vScale } from "../math/mat3.js";
 import { qFromM3, qToM3, qSlerp } from "../math/quat.js";
+import { easeInOutCubic } from "../math/scalar.js";
 import { hash01, homingParams, simulateHoming, approachBlend, snapIn } from "./homing.js";
 
 // ---- ASSEMBLY ANIMATION --------------------------------------------------------
@@ -45,17 +46,8 @@ export const ASSEMBLY = {
   steps: 96,               // fixed integration steps per flight (determinism grid)
 };
 
-const easeInOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const easeOutBack = (x) => 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
 const Q_ID = [0, 0, 0, 1];
-
-// hashed fallback direction for item lists without rig `an` tags
-function hashDir(gi) {
-  const az = Math.PI * 2 * hash01(gi, 20);
-  const y = 0.1 + 0.6 * hash01(gi, 21);
-  const s = Math.sqrt(Math.max(0, 1 - y * y));
-  return [Math.cos(az) * s, y, Math.sin(az) * s];
-}
 
 // group seat centroids + assembly normals of a pose (same first-seen group
 // order as assembleModel's pass 1). Cached per item-array identity: callers
@@ -69,7 +61,7 @@ function poseGroups(arr) {
     let gi = reg.get(it.group);
     if (gi === undefined) {
       gi = reg.size; reg.set(it.group, gi);
-      cen.push([0, 0, 0]); an.push(it.an ?? null); cnt.push(0);
+      cen.push([0, 0, 0]); an.push(it.an); cnt.push(0);
     }
     const c = cen[gi];
     c[0] += it.t[0]; c[1] += it.t[1]; c[2] += it.t[2]; cnt[gi]++;
@@ -88,18 +80,16 @@ const quant64 = (uu) => Math.round(uu * 64) / 64;
 // 1 = fully assembled). Returns a NEW item list: items not yet spawned are
 // dropped, moving items get displaced m/t and an alpha `a`.
 //
-// `ref` (optional) = the ride sampled over build progress, in WORLD space.
+// `refFn` (optional) = the ride sampled over build progress, in WORLD space:
+// a function (uStart) -> same-order item list, the pose at that progress.
 // Phases 1-2 anchor on it (groups form at fixed spots instead of chasing the
 // moving body) and the homing flight aims at it (the mount point at each
-// moment of the flight). Two forms:
-//   - function (uStart) -> same-order item list: the pose at that progress
-//   - array: one frozen pose for the whole build
-// Without ref the live items are their own base (static body).
-export function assembleModel(items, u, ref = null) {
+// moment of the flight). Without it the live items are their own base
+// (static body).
+export function assembleModel(items, u, refFn = null) {
   if (u >= 1) return items;
   if (u <= 0) return [];
   const A = ASSEMBLY;
-  const refFn = typeof ref === "function" ? ref : ref ? () => ref : null;
 
   // ---- pass 1: group the items (first-seen order, stable per build).
   // `depth` = skeleton chain depth (head/root = 0), pose-independent — the
@@ -111,7 +101,7 @@ export function assembleModel(items, u, ref = null) {
     let gi = reg.get(it.group);
     if (gi === undefined) {
       gi = reg.size; reg.set(it.group, gi); counts.push(0);
-      gDepth.push(it.depth ?? gi); gFirst.push(i); gCen.push([0, 0, 0]);
+      gDepth.push(it.depth); gFirst.push(i); gCen.push([0, 0, 0]);
     }
     gOf[i] = gi; pOf[i] = counts[gi]++;
     const c = gCen[gi];
@@ -130,7 +120,7 @@ export function assembleModel(items, u, ref = null) {
     gDone.push(gd[gi] + A.pSpan + A.pJit + A.fly + A.snap2);  // group formed
     gRef.push(refFn ? refFn(gd[gi]) : null);
     const h = gRef[gi]?.[gFirst[gi]] ?? items[gFirst[gi]];
-    gAnW.push(h.an ?? hashDir(gi));
+    gAnW.push(h.an);
     gFar.push(A.gOff[0] + (A.gOff[1] - A.gOff[0]) * hash01(gi, 22));
     gCen[gi] = vScale(gCen[gi], 1 / counts[gi]);      // live seat centroid
   }
@@ -161,7 +151,7 @@ export function assembleModel(items, u, ref = null) {
     }
     gSeated.push(false);
     gCenA[gi] = vScale(gCenA[gi], 1 / counts[gi]);
-    const nLive = items[gFirst[gi]].an ?? hashDir(gi);
+    const nLive = items[gFirst[gi]].an;
     const [ax, ay, az] = gAnW[gi];
     const from = [
       gCenA[gi][0] + ax * gFar[gi],
@@ -173,7 +163,7 @@ export function assembleModel(items, u, ref = null) {
     const aimAt = refFn
       ? (tk) => {
           const pose = poseGroups(refFn(quant64(t0 + tk * tw)));
-          return { seat: pose.cen[gi], n: pose.an[gi] ?? hashDir(gi) };
+          return { seat: pose.cen[gi], n: pose.an[gi] };
         }
       : () => ({ seat: gCen[gi], n: nLive });
     let p, dir;

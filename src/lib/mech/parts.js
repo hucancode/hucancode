@@ -39,7 +39,7 @@ export function colorOf(id, seed = 1) {
   return PALETTE[h % PALETTE.length];
 }
 
-export const JOINT_DEFAULTS = {
+const JOINT_DEFAULTS = {
   hinge: { gap: 0.24, armT: 0.12, armH: 0.6, depth: 0.55, pinR: 0.14 },
   pivot: { barrelR: 0.3, barrelLen: 0.8, flangeR: 0.44, neckR: 0.17, neckLen: 0.16, capR: 0.32 },
   ball: { ballR: 0.3, socketT: 0.1, cut: 0.75, shaftR: 0.11, shaftLen: 0.3, baseW: 0.95, baseT: 0.14 },
@@ -104,11 +104,7 @@ function hinge3Dims(p) {
 
 function pivotDims(p) {
   const q = { ...JOINT_DEFAULTS.pivot, ...p };
-  const flangeT = 0.1, capT = 0.1;
-  return {
-    ...q, flangeT, capT,
-    end: q.barrelLen / 2 + flangeT + q.neckLen + capT, // barrel half -> cap outer face
-  };
+  return { ...q, flangeT: 0.1, capT: 0.1 };
 }
 
 // rounded arm: a D-plate (half-cylinder knuckle + box body) with its knuckle
@@ -150,57 +146,27 @@ export const JOINT_POSE = {
 };
 const rad = (d) => ((d || 0) * Math.PI) / 180;
 
-// MOUNT SLOTS — every joint declares where consumers attach to it: 2 slots,
+// MOUNT SLOTS — a joint declares where consumers attach to it: 2 slots,
 // each { pos, n, f } (origin + outward normal + forward tangent, f ⊥ n, so a
 // slot forms a full coordinate system) in the joint's LOCAL frame, before any
 // consumer transform. Slot `a` rides the fixed/female half, slot
 // `b` rides the moving/male half. Parts and the dragon rig snap geometry to
 // these instead of re-deriving offsets, so a joint redesign moves every
-// consumer automatically.
-export function jointMounts(kind, p = {}, sides = {}) {
-  switch (kind) {
-    case "hinge":
-    case "hinge2": {
-      const base = { ...JOINT_DEFAULTS.hinge, ...p };
-      const dF = hingeDims({ ...base, ...(sides.female || {}) });
-      const dM = hingeDims({ ...base, ...(sides.male || {}) });
-      return {
-        a: { pos: [0, dF.bridgeY, 0], n: [0, 1, 0], f: [0, 0, 1] },      // female bridge top
-        b: { pos: [0, -dM.bridgeY, 0], n: [0, -1, 0], f: [0, 0, 1] },    // male bridge bottom
-      };
-    }
-    case "hinge1": {
-      const m = jointMounts("hinge", p, sides);                          // boss on both bridges
-      return {
-        a: { pos: [0, m.a.pos[1] + HINGE1_BOSS_H, 0], n: [0, 1, 0], f: [0, 0, 1] },
-        b: { pos: [0, m.b.pos[1] - HINGE1_BOSS_H, 0], n: [0, -1, 0], f: [0, 0, 1] },
-      };
-    }
-    case "ball":
-    case "ball1": {
-      const d = ballDims(p);
-      return {
-        a: { pos: [0, -(d.drop + d.baseT), 0], n: [0, -1, 0], f: [0, 0, 1] },  // socket base underside
-        b: { pos: [0, d.top + d.baseT, 0], n: [0, 1, 0], f: [0, 0, 1] },       // male plate top
-      };
-    }
-    case "hinge3": {
-      const d = hinge3Dims(p);
-      return {
-        a: { pos: [d.armLen + d.bridgeT + d.discT, 0, 0], n: [1, 0, 0], f: [0, 1, 0] },                       // mount-1 disc face, f = pin axis
-        b: { pos: [0, 0, d.tongueLen + d.barrelLen + d.flangeT + d.capT], n: [0, 0, 1], f: [0, 1, 0] },       // mount-2 cap face, f = pin axis
-      };
-    }
-    case "pivot":
-    case "pivot1": {
-      const d = pivotDims(p);
-      return {
-        a: { pos: [0, d.end, 0], n: [0, 1, 0], f: [0, 0, 1] },
-        b: { pos: [0, -d.end, 0], n: [0, -1, 0], f: [0, 0, 1] },
-      };
-    }
+// consumer automatically. Only the joints parts actually chain through
+// declare mounts: "ball" and "hinge3".
+export function jointMounts(kind, p = {}) {
+  if (kind === "ball") {
+    const d = ballDims(p);
+    return {
+      a: { pos: [0, -(d.drop + d.baseT), 0], n: [0, -1, 0], f: [0, 0, 1] },  // socket base underside
+      b: { pos: [0, d.top + d.baseT, 0], n: [0, 1, 0], f: [0, 0, 1] },       // male plate top
+    };
   }
-  return {};
+  const d = hinge3Dims(p);                                                   // kind === "hinge3"
+  return {
+    a: { pos: [d.armLen + d.bridgeT + d.discT, 0, 0], n: [1, 0, 0], f: [0, 1, 0] },                       // mount-1 disc face, f = pin axis
+    b: { pos: [0, 0, d.tongueLen + d.barrelLen + d.flangeT + d.capT], n: [0, 0, 1], f: [0, 1, 0] },       // mount-2 cap face, f = pin axis
+  };
 }
 
 // HINGE BLOCK — pin shaft = X axis through the local origin. The female (wide,
@@ -247,7 +213,7 @@ export function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
 // the PARENT, so twistF carries the whole male chain with it — and
 // pose.twistM spins ONLY the male boss disc about its own axis (a turntable
 // under the male bridge; the male U itself is rigid with the pin).
-export function hinge1Block(fixed, moving, p = {}, sides = {}, pose = {}) {
+export function hinge1Block(fixed, moving, p = {}, pose = {}) {
   jbegin();
   const base = { ...JOINT_DEFAULTS.hinge, ...p };
   const fx = pose.twistF ? (g) => fixed(rotY(g, pose.twistF)) : fixed;
@@ -256,12 +222,11 @@ export function hinge1Block(fixed, moving, p = {}, sides = {}, pose = {}) {
     moving(pose.twistF ? rotY(h, pose.twistF) : h);
   };
   const mvBoss = (g) => mv(pose.twistM ? rotY(g, pose.twistM) : g);
-  hingeBlock(fx, mv, base, sides);
-  const dF = hingeDims({ ...base, ...(sides.female || {}) });
-  const dM = hingeDims({ ...base, ...(sides.male || {}) });
+  hingeBlock(fx, mv, base);
+  const d = hingeDims(base);
   const bossR = (w, depth) => Math.min(w, depth) * 0.45;
-  fx(translate(cylinder(bossR(dF.gapW + 2 * dF.armT, dF.depth), HINGE1_BOSS_H, 24), 0, dF.bridgeY, 0));                       // boss up from the female bridge top
-  mvBoss(translate(cylinder(bossR(dM.gap + 2 * dM.armT, dM.depth), HINGE1_BOSS_H, 24), 0, -dM.bridgeY - HINGE1_BOSS_H, 0));   // boss down from the male bridge bottom
+  fx(translate(cylinder(bossR(d.gapW + 2 * d.armT, d.depth), HINGE1_BOSS_H, 24), 0, d.bridgeY, 0));                       // boss up from the female bridge top
+  mvBoss(translate(cylinder(bossR(d.gap + 2 * d.armT, d.depth), HINGE1_BOSS_H, 24), 0, -d.bridgeY - HINGE1_BOSS_H, 0));   // boss down from the male bridge bottom
   jend();
 }
 
@@ -657,7 +622,7 @@ function hinge2(add, p, pose = {}) {
 }
 
 function hinge1(add, p, pose = {}) {
-  hinge1Block(add, add, p, {}, { swing: rad(pose.swing), twistF: rad(pose.twistF), twistM: rad(pose.twistM) });
+  hinge1Block(add, add, p, { swing: rad(pose.swing), twistF: rad(pose.twistF), twistM: rad(pose.twistM) });
 }
 
 function ball1(add, p, pose = {}) {
@@ -672,7 +637,7 @@ function pivot1(add, p, pose = {}) {
   pivotBlock(add, p, { spinA: rad(pose.spinA), spinB: rad(pose.spinB) });
 }
 
-export const PART_BUILDERS = { head, bodySegment, bodySegment2, arm, leg, tail, hinge1, hinge2, hinge3, pivot1, ball1 };
+const PART_BUILDERS = { head, bodySegment, bodySegment2, arm, leg, tail, hinge1, hinge2, hinge3, pivot1, ball1 };
 export const PART_NAMES = Object.keys(PART_BUILDERS);
 
 // ---- primitive reference (view one primitive alone) -------------------------
@@ -726,7 +691,7 @@ export function partModel(name, seed = 1, params = null, pose = null) {
   const key = PART_BUILDERS[name] ? name : PART_NAMES[0];
   const b = PART_BUILDERS[key];
   const p = { ...PART_PARAMS[key], ...(params || {}) };
-  return { ...collect(b, seed, p, pose || {}), name };
+  return collect(b, seed, p, pose || {});
 }
 
 // raw build for external assemblers (the dragon rig): the caller supplies the
@@ -787,5 +752,5 @@ export function partSlots(name, params = null) {
 export function primitiveModel(name, params, seed = 1) {
   const build = PRIM_BUILD[name] || PRIM_BUILD.cylinder;
   const p = { ...PRIM_PARAMS[name], ...(params || {}) };
-  return { ...collect((add) => add(build(p)), seed), name };
+  return collect((add) => add(build(p)), seed);
 }

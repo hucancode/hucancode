@@ -1,13 +1,13 @@
 <script>
   import { browser } from "$app/environment";
-  import Scene from "$lib/components/lego.svelte";
-  import Return from "$icons/line-md/chevron-left.svg?raw";
+  import Scene from "$lib/components/playground-canvas.svelte";
+  import * as lego from "$lib/playgrounds/lego";
   import { PALETTE, MODEL, TEMPLATES, DEFAULT } from "$lib/playgrounds/lego/templates.js";
   import { connMode } from "$lib/playgrounds/lego/assembly.js";
-  import { STICKS, stickSize } from "$lib/playgrounds/lego/solid.js";
+  import { STICK_ENDS, STICK_LEN, stickSize } from "$lib/playgrounds/lego/solid.js";
 
   const range = (n) => Array.from({ length: n }, (_, i) => i);
-  const endCount = (spec) => STICKS[spec.stick]?.ends ?? 0;
+  const endCount = (spec) => (spec.stick ? STICK_ENDS : 0);
 
   let scene = $state(null);
   let view = $state("assemble"); // "assemble" | "inspect"
@@ -214,12 +214,12 @@
   function addStick() {
     let n = 1, id = "stick1";
     while (model.parts[id]) id = `stick${++n}`;
-    const len = STICKS.I.len;
+    const len = STICK_LEN;
     model.parts[id] = {
       stick: "I",
       len,
       size: stickSize(len),
-      ops: range(STICKS.I.ends).map((i) => ({ op: "studs", end: i, kind: "male" })),
+      ops: range(STICK_ENDS).map((i) => ({ op: "studs", end: i, kind: "male" })),
       color: COLORS[0],
     };
     sel = id;
@@ -418,21 +418,19 @@
   <title>Lego</title>
 </svelte:head>
 
-<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
-
 {#snippet opsEditor(spec)}
   {#if !spec.stick}
-    <div class="tabs">
-      <button type="button" onclick={() => opAdd(spec, "slope")}>+ slope</button>
-      <button type="button" onclick={() => opAdd(spec, "push")}>+ push</button>
-      <button type="button" onclick={() => opAdd(spec, "studs")}>+ studs</button>
-    </div>
+    <menu>
+      <li><button type="button" onclick={() => opAdd(spec, "slope")}>+ slope</button></li>
+      <li><button type="button" onclick={() => opAdd(spec, "push")}>+ push</button></li>
+      <li><button type="button" onclick={() => opAdd(spec, "studs")}>+ studs</button></li>
+    </menu>
   {/if}
-  <div class="tabs">
-    {#if spec.stick}<button type="button" onclick={() => opAdd(spec, "studs")}>+ studs</button>{/if}
-    <button type="button" onclick={() => opAdd(spec, "ball")}>+ ball</button>
-    <button type="button" onclick={() => opAdd(spec, "hinge")}>+ hinge</button>
-  </div>
+  <menu>
+    {#if spec.stick}<li><button type="button" onclick={() => opAdd(spec, "studs")}>+ studs</button></li>{/if}
+    <li><button type="button" onclick={() => opAdd(spec, "ball")}>+ ball</button></li>
+    <li><button type="button" onclick={() => opAdd(spec, "hinge")}>+ hinge</button></li>
+  </menu>
   {#each spec.ops as o, idx (o)}
     <div class="op">
       <header>
@@ -528,16 +526,15 @@
   {/each}
 {/snippet}
 
-<main>
   <section>
-    <Scene bind:this={scene} />
-    <div class="hud">
-      <div class="row build">
-        <button type="button" class="go" onclick={replay}>▶ Assemble</button>
+    <Scene bind:this={scene} scene={lego} id="lego" />
+    <footer>
+      <div>
+        <button type="button" onclick={replay}>▶ Assemble</button>
         <input type="range" min="0" max="1" step="0.01" bind:value={progress}
           oninput={() => (manual = true)} />
       </div>
-      <div class="row knobs">
+      <div>
         <label><span>Spin</span>
           <input type="range" min="0" max="3" step="0.1" bind:value={spin} /></label>
         <label><span>Explode</span>
@@ -545,22 +542,22 @@
         <label><span>Base Y</span>
           <input type="range" min="-8" max="8" step="0.1" bind:value={model.baseY} /></label>
       </div>
-    </div>
+    </footer>
   </section>
 
   <aside>
     <fieldset>
       <legend>mode</legend>
-      <div class="tabs">
-        <button type="button" class:on={view === "assemble"} onclick={() => (view = "assemble")}>Assemble</button>
-        <button type="button" class:on={view === "inspect"} onclick={() => (view = "inspect")}>Brick Design</button>
+      <div class="square" role="group">
+        <label><input type="radio" name="lego-view" value="assemble" bind:group={view} />Assemble</label>
+        <label><input type="radio" name="lego-view" value="inspect" bind:group={view} />Brick Design</label>
       </div>
     </fieldset>
 
     {#if view === "assemble"}
       <fieldset>
         <legend>template</legend>
-        <select class="tpl" value={template} onchange={(e) => pickTemplate(e.currentTarget.value)}>
+        <select value={template} onchange={(e) => pickTemplate(e.currentTarget.value)}>
           {#each TEMPLATES as t}<option value={t.id}>{t.name}</option>{/each}
         </select>
       </fieldset>
@@ -575,23 +572,23 @@
             </button>
           {/each}
         </div>
-        <div class="tabs">
-          <button type="button" onclick={saveModel}>{saved ? "✓ saved" : "💾 save"}</button>
-          <button type="button" onclick={loadFromStore} disabled={!slots[slot].filled}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button>
-          <button type="button" onclick={clearSlot} disabled={!slots[slot].filled}>🗑 clear</button>
-        </div>
-        <div class="tabs">
-          <button type="button" onclick={() => (showCode = !showCode)}>{showCode ? "▲ hide code" : "▼ show code"}</button>
-          <button type="button" onclick={resetModel}>↺ reset</button>
-        </div>
+        <menu>
+          <li><button type="button" onclick={saveModel}>{saved ? "✓ saved" : "💾 save"}</button></li>
+          <li><button type="button" onclick={loadFromStore} disabled={!slots[slot].filled}>{loaded ? "✓ loaded" : noStore ? "✕ none" : "📂 load"}</button></li>
+          <li><button type="button" onclick={clearSlot} disabled={!slots[slot].filled}>🗑 clear</button></li>
+        </menu>
+        <menu>
+          <li><button type="button" onclick={() => (showCode = !showCode)}>{showCode ? "▲ hide code" : "▼ show code"}</button></li>
+          <li><button type="button" onclick={resetModel}>↺ reset</button></li>
+        </menu>
         {#if showCode}
-          <textarea class="code" readonly rows="6">{code}</textarea>
+          <textarea readonly rows="6">{code}</textarea>
         {/if}
       </fieldset>
 
       <fieldset>
-        <legend>assembly <button type="button" class="add" onclick={() => addChild(selNode ?? model.root)}>+ child</button></legend>
-        <label class="iso"><input type="checkbox" bind:checked={nodeIso} /> isolate selected</label>
+        <legend>assembly <button type="button" onclick={() => addChild(selNode ?? model.root)}>+ child</button></legend>
+        <label><input type="checkbox" bind:checked={nodeIso} /> isolate selected</label>
         <ul class="parts tree">
           {#each nodeList as { node, depth, parent } (node)}
             <li>
@@ -685,10 +682,10 @@
     {:else}
       <fieldset>
         <legend>parts
-          <button type="button" class="add" onclick={addPart}>+ part</button>
-          <button type="button" class="add" onclick={addStick}>+ stick</button>
+          <button type="button" onclick={addPart}>+ part</button>
+          <button type="button" onclick={addStick}>+ stick</button>
         </legend>
-        <label class="iso">
+        <label>
           <input type="checkbox" bind:checked={iso} />
           <span>isolate selected</span>
         </label>
@@ -755,36 +752,16 @@
       {/if}
     {/if}
   </aside>
-</main>
 
 <style>
-  section { position: relative; }
-  .hud {
-    position: absolute; left: 0; right: 0; bottom: 0;
-    display: flex; flex-direction: column; gap: 0.4rem;
-    padding: 0.6rem 0.8rem 0.7rem;
-    background: linear-gradient(to top, color-mix(in srgb, #000 55%, transparent), transparent);
-    font-size: 0.75rem; pointer-events: none;
-  }
-  .hud .row { display: flex; align-items: center; gap: 0.6rem; pointer-events: auto; }
-  .hud .build input[type="range"] { flex: 1; }
-  .hud .build output { min-width: 2.6rem; text-align: right; opacity: 0.85; }
-  .hud .go { white-space: nowrap; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 0.3rem; }
-  .hud .knobs { flex-wrap: wrap; }
-  .hud .knobs label { display: flex; align-items: center; gap: 0.35rem; flex: 1; min-width: 8rem; }
-  .hud .knobs label span { opacity: 0.8; }
-  .hud .knobs input[type="range"] { flex: 1; }
-  .tabs { display: flex; gap: 0.25rem; }
-  .tabs button { flex: 1; opacity: 0.55; }
-  .tabs button.on { opacity: 1; font-weight: 600; }
-  .tabs button:disabled { opacity: 0.3; cursor: not-allowed; }
+  /* layout, HUD footer, menu rows, fieldset controls come from playground.css */
+  footer label { flex: 1 1 8rem; }
+  menu button { flex: 1; }
   .slots { display: flex; gap: 0.25rem; margin-bottom: 0.25rem; }
   .slot { flex: 1; opacity: 0.5; padding: 0.2rem 0; border-radius: 0.3rem; }
   .slot.filled { opacity: 0.8; }
   .slot.on { opacity: 1; font-weight: 600; outline: 1px solid currentColor; }
   .slot em { font-style: normal; font-size: 0.55rem; vertical-align: super; opacity: 0.7; }
-  .add { font-size: 0.75rem; opacity: 0.7; margin-left: 0.5rem; }
-  .iso { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem; }
   .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
   .parts li { display: flex; align-items: center; gap: 0.25rem; }
   .pick { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
@@ -806,6 +783,5 @@
   .ctl button { padding: 0 0.35rem; opacity: 0.7; }
   .ctl button:disabled { opacity: 0.25; }
   .id { flex: 1; }
-  .code { width: 100%; font-family: monospace; font-size: 0.7rem; margin-top: 0.4rem; white-space: pre; overflow: auto; }
-  .tpl { width: 100%; }
+  textarea { font-family: monospace; font-size: 0.7rem; margin-top: 0.4rem; white-space: pre; overflow: auto; }
 </style>

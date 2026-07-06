@@ -1,6 +1,6 @@
 <script>
-  import Scene from "$lib/components/taiji.svelte";
-  import Return from "$icons/line-md/chevron-left.svg?raw";
+  import Scene from "$lib/components/playground-canvas.svelte";
+  import * as taiji from "$lib/playgrounds/taiji";
 
   let scene = $state(null);
   let taijiSpin = $state(1);
@@ -21,7 +21,7 @@
     });
   });
   $effect(() => {
-    scene?.colors(color1, color2);
+    scene?.apply({ color1, color2 });
   });
 </script>
 
@@ -29,11 +29,8 @@
   <title>Taiji</title>
 </svelte:head>
 
-<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
-
-<main>
   <section>
-    <Scene bind:this={scene} />
+    <Scene bind:this={scene} scene={taiji} id="taiji" />
   </section>
 
   <aside>
@@ -75,13 +72,10 @@
       <label>
         <span>Yang</span>
         <input type="color" bind:value={color1} />
-        <output></output>
       </label>
       <label>
         <span>Yin</span>
         <input type="color" bind:value={color2} />
-        <output></output>
       </label>
     </fieldset>
   </aside>
-</main>

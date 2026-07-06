@@ -4,7 +4,7 @@ let _id = 0;
 export const uid = () => ++_id;
 export const setUidFloor = (n) => { if (n > _id) _id = n; };
 
-export const DEFAULT_PATH = () => ({
+const DEFAULT_PATH = () => ({
   delay: 0.0,
   duration: 1.0,
   ctrl: null,
@@ -50,23 +50,9 @@ export function makePoint(x, y, pressure = 0.5) {
   return { id: uid(), x, y, pressure };
 }
 
-export function makeStroke(points = []) {
-  const pts = points.length >= 2
-    ? points
-    : [makePoint(-0.5, 0, 0.4), makePoint(0.5, 0, 0.8)];
-  const paths = new Array(Math.max(0, pts.length - 1)).fill(0).map(DEFAULT_PATH);
-  return { id: uid(), points: pts, paths };
-}
-
 export function makeStrokeRaw(points) {
   const paths = new Array(Math.max(0, points.length - 1)).fill(0).map(DEFAULT_PATH);
   return { id: uid(), points: [...points], paths };
-}
-
-export function addPoint(stroke, x, y, pressure = 0.5) {
-  stroke.points.push(makePoint(x, y, pressure));
-  if (stroke.points.length >= 2) stroke.paths.push(DEFAULT_PATH());
-  return stroke;
 }
 
 export function insertPointAfter(stroke, idx, x, y, pressure = 0.5) {
@@ -96,61 +82,9 @@ function cubic(p0, h1, h2, p1, t) {
   };
 }
 
-function samplePath(stroke, segIdx, sampleDensity) {
-  const pts = stroke.points;
-  const path = stroke.paths[segIdx];
-  const p1 = pts[segIdx];
-  const p2 = pts[segIdx + 1];
-  const c = resolveControl(stroke, segIdx);
-
-  const dense = 96;
-  const xs = new Array(dense + 1);
-  const cum = new Float32Array(dense + 1);
-  xs[0] = cubic(p1, c, c, p2, 0);
-  for (let i = 1; i <= dense; i++) {
-    const t = i / dense;
-    xs[i] = cubic(p1, c, c, p2, t);
-    cum[i] = cum[i - 1] + Math.hypot(xs[i].x - xs[i - 1].x, xs[i].y - xs[i - 1].y);
-  }
-  const total = cum[dense] || 1e-6;
-
-  // belly = arc fraction of curve point nearest control point
-  let bellyX = 0.5, bestD = Infinity;
-  for (let i = 0; i <= dense; i++) {
-    const dx = xs[i].x - c.x, dy = xs[i].y - c.y;
-    const d = dx * dx + dy * dy;
-    if (d < bestD) { bestD = d; bellyX = cum[i] / total; }
-  }
-
-  const samplesPerPath = Math.max(4, Math.ceil(total * sampleDensity));
-  const samples = new Array(samplesPerPath + 1);
-  let j = 0;
-  for (let k = 0; k <= samplesPerPath; k++) {
-    const s = k / samplesPerPath;
-    const targetArc = s * total;
-    while (j < dense && cum[j + 1] < targetArc) j++;
-    const a = cum[j], b = cum[j + 1];
-    const localT = b > a ? (targetArc - a) / (b - a) : 0;
-    const tCurve = (j + localT) / dense;
-    const pos = cubic(p1, c, c, p2, tCurve);
-    samples[k] = {
-      x: pos.x,
-      y: pos.y,
-      s,
-      arc: targetArc,
-      pressure: pressureAt(path.pctrl, p1.pressure, p2.pressure, s, bellyX),
-      time: s * path.duration,
-      duration: path.duration,
-    };
-  }
-  return { samples, totalArc: total };
-}
-
 function mirror(a, b) {
   return { x: 2 * b.x - a.x, y: 2 * b.y - a.y };
 }
-function lerp(a, b, t) { return a + (b - a) * t; }
-function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 function clampN(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
 export const DEFAULT_TIMING = () => ({ speed: 1.0 });
@@ -160,7 +94,7 @@ const THIN_GAIN = 2.0;
 const CORNER = 0.7;
 const THIN   = 0.6;
 
-function pathArc(stroke, segIdx) {
+export function pathArc(stroke, segIdx) {
   const pts = stroke.points;
   const c = resolveControl(stroke, segIdx);
   const p1 = pts[segIdx], p2 = pts[segIdx + 1];
@@ -172,6 +106,30 @@ function pathArc(stroke, segIdx) {
     prev = cur;
   }
   return total || 1e-6;
+}
+
+// belly arc fraction = nearest curve point to control
+export function bellyArc(stroke, segIdx) {
+  const pts = stroke.points;
+  const c = resolveControl(stroke, segIdx);
+  const p1 = pts[segIdx], p2 = pts[segIdx + 1];
+  const dense = 96;
+  const xs = new Array(dense + 1);
+  const cum = new Float64Array(dense + 1);
+  xs[0] = cubic(p1, c, c, p2, 0);
+  for (let i = 1; i <= dense; i++) {
+    const t = i / dense;
+    xs[i] = cubic(p1, c, c, p2, t);
+    cum[i] = cum[i - 1] + Math.hypot(xs[i].x - xs[i - 1].x, xs[i].y - xs[i - 1].y);
+  }
+  const total = cum[dense] || 1e-6;
+  let bellyX = 0.5, bestD = Infinity;
+  for (let i = 0; i <= dense; i++) {
+    const dx = xs[i].x - c.x, dy = xs[i].y - c.y;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; bellyX = cum[i] / total; }
+  }
+  return bellyX;
 }
 
 // pivot sharpness at interior point i: 0 = straight through, 1 = full reversal
@@ -186,41 +144,19 @@ function turnSharp(stroke, i) {
   return (1 - dot) / 2;
 }
 
-function pointSpeed(stroke, i, timing) {
+export function pointSpeed(stroke, i, speed) {
   const cf = 1 - CORNER * turnSharp(stroke, i);
   const tf = 1 + THIN * (1 - stroke.points[i].pressure) * THIN_GAIN;
-  return Math.max(MIN_SPEED, (timing.speed || 1) * cf * tf);
+  return Math.max(MIN_SPEED, (speed || 1) * cf * tf);
 }
 
 // time to travel arc a (0..L), speed linear sa->sb: ∫ ds/(sa+(sb-sa)·s/L); reduces to a/sa when constant.
-function travelTime(L, sa, sb, a) {
+export function travelTime(L, sa, sb, a) {
   if (L <= 0) return 0;
   const d = sb - sa;
   if (Math.abs(d) < 1e-6) return a / sa;
   const m = d / L;
   return Math.log((sa + m * a) / sa) / m;
-}
-
-const useAuto = (stroke, timing) => !!timing;
-
-// pressure value along path at progress s. quad bezier P(t)=(1-t)^2 P0 + 2(1-t)t C + t^2 P2 in (progress,value)
-// through endpoints (0,A),(1,B) and control (bellyX,k); solve bezier_x(t)=s for t, return bezier_y(t).
-export function pressureAt(pctrl, A, B, s, bellyX = 0.5) {
-  if (!pctrl) return A + (B - A) * s;
-  const cx = clamp01(bellyX);
-  const k = pctrl.k;
-  // bezier_x(t) = (1-2cx) t^2 + 2cx t  ; solve = s
-  const a = 1 - 2 * cx, b = 2 * cx, c = -s;
-  let t;
-  if (Math.abs(a) < 1e-6) {
-    t = b > 1e-6 ? -c / b : s;                  // cx≈0.5 -> linear in t
-  } else {
-    const disc = Math.max(0, b * b - 4 * a * c);
-    t = (-b + Math.sqrt(disc)) / (2 * a);
-  }
-  t = clamp01(t);
-  const u = 1 - t;
-  return u * u * A + 2 * u * t * k + t * t * B;
 }
 
 export const DEFAULT_CONNECT = () => ({ enabled: false, thread: 0.18 });
@@ -263,7 +199,7 @@ function connectorControl(A, u, B, v, g) {
   return { x: A.x + u.x * a, y: A.y + u.y * a };
 }
 
-export function connectorStroke(a, b, connect) {
+function connectorStroke(a, b, connect) {
   if (!a.points.length || !b.points.length) return null;
   const A = a.points[a.points.length - 1];
   const B = b.points[0];
@@ -279,7 +215,6 @@ export function connectorStroke(a, b, connect) {
   const duration = Math.max(0.05, g);
   return {
     id: `c:${a.id}>${b.id}`,
-    _connector: true,
     points: [
       { id: -1, x: A.x, y: A.y, pressure: pA },
       { id: -2, x: B.x, y: B.y, pressure: pB },
@@ -288,31 +223,33 @@ export function connectorStroke(a, b, connect) {
   };
 }
 
+// strokes + auto connectors between consecutive pairs, as entries
+// { stroke, si (source stroke index), connector (bool) }.
 export function expandStrokes(symbol, connect) {
   const strokes = symbol?.strokes || [];
-  if (!connect || !connect.enabled) return strokes;
   const out = [];
   for (let i = 0; i < strokes.length; i++) {
-    out.push(strokes[i]);
+    out.push({ stroke: strokes[i], si: i, connector: false });
+    if (!connect || !connect.enabled) continue;
     const b = strokes[i + 1];
     if (b) {
       const c = connectorStroke(strokes[i], b, connect);
-      if (c) out.push(c);
+      if (c) out.push({ stroke: c, si: i, connector: true });
     }
   }
   return out;
 }
 
-export function strokeDuration(stroke, timing) {
+function strokeDuration(stroke, timing) {
   if (!stroke || !stroke.paths) return 0;
   let t = 0;
-  const auto = useAuto(stroke, timing);
+  const auto = !!timing;
   for (let i = 0; i < stroke.paths.length; i++) {
     const p = stroke.paths[i];
     t += p.delay || 0;
     if (auto) {
       const L = pathArc(stroke, i);
-      t += travelTime(L, pointSpeed(stroke, i, timing), pointSpeed(stroke, i + 1, timing), L);
+      t += travelTime(L, pointSpeed(stroke, i, timing.speed), pointSpeed(stroke, i + 1, timing.speed), L);
     } else {
       t += p.duration || 0;
     }
@@ -322,7 +259,7 @@ export function strokeDuration(stroke, timing) {
 
 export function symbolDuration(symbol, connect, timing) {
   let t = 0;
-  for (const s of expandStrokes(symbol, connect)) t += strokeDuration(s, timing);
+  for (const e of expandStrokes(symbol, connect)) t += strokeDuration(e.stroke, timing);
   return t;
 }
 
@@ -342,44 +279,4 @@ export function step(state, dt) {
   else if (t >= state.duration) { t = state.duration; state.playing = false; }
   state.t = t;
   return state;
-}
-
-export function sampleStroke(stroke, sampleDensity = 80, timing) {
-  if (!stroke || stroke.points.length < 2) return [];
-  const auto = useAuto(stroke, timing);
-  let tOffset = 0;
-  const all = [];
-  for (let i = 0; i < stroke.paths.length; i++) {
-    const path = stroke.paths[i];
-    tOffset += path.delay || 0;
-    const { samples } = samplePath(stroke, i, sampleDensity);
-    let L = 0, sa = 0, sb = 0, dur = 0;
-    if (auto) {
-      L = pathArc(stroke, i);
-      sa = pointSpeed(stroke, i, timing);
-      sb = pointSpeed(stroke, i + 1, timing);
-      dur = travelTime(L, sa, sb, L);
-    }
-    const start = i === 0 ? 0 : 1;
-    for (let k = start; k < samples.length; k++) {
-      const s = samples[k];
-      const local = auto ? travelTime(L, sa, sb, s.s * L) : s.time;
-      all.push({
-        x: s.x,
-        y: s.y,
-        pressure: s.pressure,
-        gTime: tOffset + local,
-        arc: s.arc,
-      });
-    }
-    tOffset += auto ? dur : path.duration;
-  }
-  for (let i = 0; i < all.length; i++) {
-    const prev = all[Math.max(0, i - 1)];
-    const next = all[Math.min(all.length - 1, i + 1)];
-    const ds = Math.hypot(next.x - prev.x, next.y - prev.y);
-    const dt = Math.max(1e-4, next.gTime - prev.gTime);
-    all[i].speed = ds / dt;
-  }
-  return all;
 }

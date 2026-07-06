@@ -1,4 +1,4 @@
-import { createDevice, Camera, loadDragonMesh } from "$lib/engine/index.js";
+import { createPlayground, loadDragonMesh, F32, VEC3, MAT4 } from "$lib/engine/index.js";
 import { buildSpline } from "$lib/math/curve.js";
 import DRAGON_WGSL from "./shaders/dragon.wgsl?raw";
 import PATH_WGSL from "./shaders/path.wgsl?raw";
@@ -7,14 +7,9 @@ import FRAG from "./shaders/dragon.frag.glsl?raw";
 import PATH_VERT from "./shaders/path.vert.glsl?raw";
 import PATH_FRAG from "./shaders/path.frag.glsl?raw";
 
-const CANVAS_ID = "dragon";
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 const N_FRAMES = 384;
 const MAX_DRAGON = 8;
-
-const F32 = (name) => ({ name, type: "f32" });
-const VEC3 = (name) => ({ name, type: "vec3" });
-const MAT4 = (name) => ({ name, type: "mat4" });
 
 const BUF_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
 const BUF_NRM = { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] };
@@ -26,10 +21,9 @@ const config = {
   girthFactor: 0.0012,  // cross-section scale relative to path length
 };
 
-let canvas, device, prog, pathProg, camera, dragonPos, dragonNorm, dragonCount = 0;
+let device = null, prog, pathProg, dragonPos, dragonNorm, dragonCount = 0;
 let dragons = [];
-let time = 0, lastT = 0;
-let disposed = false;
+let time = 0;
 
 function setConfig(patch) {
   Object.assign(config, patch);
@@ -133,116 +127,90 @@ function regenerate() {
   for (let i = 0; i < count; i++) makeDragon();
 }
 
-async function init() {
-  canvas = document.getElementById(CANVAS_ID);
-  disposed = false;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  canvas.width = Math.max(1, Math.floor(w * dpr));
-  canvas.height = Math.max(1, Math.floor(h * dpr));
-  device = await createDevice(canvas);
-  if (disposed) { device.destroy(); device = null; return; }
-  device.resize(canvas.width, canvas.height);
+const { init, render, destroy } = createPlayground({
+  camera: { fov: 45, near: 1, far: 2000 },
+  async init(ctx) {
+    device = ctx.device;
+    prog = device.shader({
+      glsl: { vertex: VERT, fragment: FRAG }, wgsl: DRAGON_WGSL,
+      buffers: [BUF_POS, BUF_NRM],
+      uniforms: [
+        F32("uN"), F32("uPathLen"), F32("uBodyLen"), F32("uHeadOffset"), F32("uGirth"),
+        MAT4("uViewProj"), VEC3("uLightDir"), VEC3("uLightColor"), VEC3("uAmbient"), VEC3("uBaseColor"),
+      ],
+      textures: [{ name: "uFrames", binding: 1 }],
+      blend: "none", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
+    });
+    pathProg = device.shader({
+      glsl: { vertex: PATH_VERT, fragment: PATH_FRAG }, wgsl: PATH_WGSL,
+      buffers: [BUF_PATH],
+      uniforms: [MAT4("uViewProj"), VEC3("uColor")],
+      blend: "straight", depth: "none", topology: "line-strip", target: "screen", sampleCount: 4,
+    });
 
-  prog = device.shader({
-    glsl: { vertex: VERT, fragment: FRAG }, wgsl: DRAGON_WGSL,
-    buffers: [BUF_POS, BUF_NRM],
-    uniforms: [
-      F32("uN"), F32("uPathLen"), F32("uBodyLen"), F32("uHeadOffset"), F32("uGirth"),
-      MAT4("uViewProj"), VEC3("uLightDir"), VEC3("uLightColor"), VEC3("uAmbient"), VEC3("uBaseColor"),
-    ],
-    textures: [{ name: "uFrames", binding: 1 }],
-    blend: "none", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
-  });
-  pathProg = device.shader({
-    glsl: { vertex: PATH_VERT, fragment: PATH_FRAG }, wgsl: PATH_WGSL,
-    buffers: [BUF_PATH],
-    uniforms: [MAT4("uViewProj"), VEC3("uColor")],
-    blend: "straight", depth: "none", topology: "line-strip", target: "screen", sampleCount: 4,
-  });
+    ctx.camera.position.set(0, 20, 200);
+    ctx.camera.lookAt(0, 0, 0);
+    ctx.camera.update();
 
-  camera = new Camera(45, w / h, 1, 2000);
-  camera.position.set(0, 20, 200);
-  camera.lookAt(0, 0, 0);
-  camera.update();
+    const m = await loadDragonMesh(DRAGON_OBJ, 1.0); // x normalised to [0,1]
+    if (ctx.disposed()) return;
+    dragonPos = device.buffer({ kind: "vertex", data: m.positions });
+    dragonNorm = device.buffer({ kind: "vertex", data: m.normals });
+    dragonCount = m.vertexCount;
+    makeDragon();
+  },
+  frame(dt, { device, camera }) {
+    if (!dragonCount) return;
+    time += dt;
 
-  const m = await loadDragonMesh(DRAGON_OBJ, 1.0); // x normalised to [0,1]
-  if (disposed) { device.destroy(); device = null; return; }
-  dragonPos = device.buffer({ kind: "vertex", data: m.positions });
-  dragonNorm = device.buffer({ kind: "vertex", data: m.normals });
-  dragonCount = m.vertexCount;
-  makeDragon();
-  lastT = performance.now();
-}
+    camera.update(); // refresh viewProj after any aspect change
+    // copy shared scratch before reusing across draws
+    const vp = device.correctViewProj(camera.viewProjMatrix).slice();
 
-function syncSize() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  const cw = Math.max(1, Math.floor(w * dpr)), ch = Math.max(1, Math.floor(h * dpr));
-  if (canvas.width === cw && canvas.height === ch) return;
-  canvas.width = cw; canvas.height = ch;
-  device.resize(cw, ch);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  camera.update();
-}
-
-function render() {
-  if (!device || !dragonCount) return;
-  const now = performance.now();
-  const dt = Math.min((now - lastT) / 1000, 0.05);
-  lastT = now;
-  time += dt;
-
-  syncSize();
-  // copy shared scratch before reusing across draws
-  const vp = device.correctViewProj(camera.viewProjMatrix).slice();
-
-  let lightDir, lightColor, ambient;
-  if (config.showLights) {
-    lightDir = [Math.sin(time * 0.7) * 0.6 + 0.2, Math.cos(time * 0.5) * 0.8 + 0.6, Math.cos(time * 0.3) * 0.6 + 0.3];
-    lightColor = [(Math.sin(time * 0.3) + 1) * 0.5, (Math.sin(time * 0.7) + 1) * 0.5, (Math.sin(time * 0.2) + 1) * 0.5];
-    ambient = [(Math.sin(time * 0.1) + 1) * 0.25, (Math.sin(time * 0.07) + 1) * 0.25, (Math.sin(time * 0.03) + 1) * 0.3];
-  } else {
-    lightDir = [0.3, 1.0, 0.5];
-    lightColor = [1, 1, 1];
-    ambient = [0.25, 0.28, 0.35];
-  }
-
-  device.beginFrame();
-  device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
-    for (const d of dragons) {
-      // wrap by pathLen so offset stays bounded over long runs
-      d.headOffset = (d.headOffset + config.speed * d.pathLen) % d.pathLen;
-      p.draw(prog, {
-        buffers: [dragonPos, dragonNorm], count: dragonCount, textures: { uFrames: d.tex },
-        uniforms: {
-          uViewProj: vp, uN: N_FRAMES, uPathLen: d.pathLen, uBodyLen: d.bodyLen,
-          uHeadOffset: d.headOffset, uGirth: d.girth,
-          uLightDir: lightDir, uLightColor: lightColor, uAmbient: ambient, uBaseColor: d.color,
-        },
-      });
+    let lightDir, lightColor, ambient;
+    if (config.showLights) {
+      lightDir = [Math.sin(time * 0.7) * 0.6 + 0.2, Math.cos(time * 0.5) * 0.8 + 0.6, Math.cos(time * 0.3) * 0.6 + 0.3];
+      lightColor = [(Math.sin(time * 0.3) + 1) * 0.5, (Math.sin(time * 0.7) + 1) * 0.5, (Math.sin(time * 0.2) + 1) * 0.5];
+      ambient = [(Math.sin(time * 0.1) + 1) * 0.25, (Math.sin(time * 0.07) + 1) * 0.25, (Math.sin(time * 0.03) + 1) * 0.3];
+    } else {
+      lightDir = [0.3, 1.0, 0.5];
+      lightColor = [1, 1, 1];
+      ambient = [0.25, 0.28, 0.35];
     }
-    if (config.showPath) {
+
+    device.beginFrame();
+    device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
       for (const d of dragons) {
-        p.draw(pathProg, { buffers: [d.pathBuf], count: d.pathCount, uniforms: { uViewProj: vp, uColor: d.color } });
+        // wrap by pathLen so offset stays bounded over long runs
+        d.headOffset = (d.headOffset + config.speed * d.pathLen) % d.pathLen;
+        p.draw(prog, {
+          buffers: [dragonPos, dragonNorm], count: dragonCount, textures: { uFrames: d.tex },
+          uniforms: {
+            uViewProj: vp, uN: N_FRAMES, uPathLen: d.pathLen, uBodyLen: d.bodyLen,
+            uHeadOffset: d.headOffset, uGirth: d.girth,
+            uLightDir: lightDir, uLightColor: lightColor, uAmbient: ambient, uBaseColor: d.color,
+          },
+        });
       }
-    }
-  });
-  device.endFrame();
-}
-
-function destroy() {
-  disposed = true;
-  clearDragon();
-  dragonPos?.destroy(); dragonNorm?.destroy();
-  dragonPos = dragonNorm = null;
-  dragonCount = 0;
-  prog = pathProg = null;
-  if (device) { device.destroy(); device = null; }
-}
+      if (config.showPath) {
+        for (const d of dragons) {
+          p.draw(pathProg, { buffers: [d.pathBuf], count: d.pathCount, uniforms: { uViewProj: vp, uColor: d.color } });
+        }
+      }
+    });
+    device.endFrame();
+  },
+  destroy() {
+    clearDragon();
+    dragonPos?.destroy(); dragonNorm?.destroy();
+    dragonPos = dragonNorm = null;
+    dragonCount = 0;
+    prog = pathProg = null;
+    device = null;
+  },
+});
 
 export {
-  CANVAS_ID, init, render, destroy,
+  init, render, destroy,
   getCurrentDragonCount, clearDragon, makeDragon, regenerate, setConfig, config,
 };
