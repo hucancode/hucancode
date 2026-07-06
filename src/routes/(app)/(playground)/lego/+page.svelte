@@ -579,7 +579,7 @@
         </menu>
         <menu>
           <li><button type="button" onclick={() => (showCode = !showCode)}>{showCode ? "▲ hide code" : "▼ show code"}</button></li>
-          <li><button type="button" onclick={resetModel}>↺ reset</button></li>
+          <li><button type="button" onclick={resetModel}>reset</button></li>
         </menu>
         {#if showCode}
           <textarea readonly rows="6">{code}</textarea>

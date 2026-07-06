@@ -220,7 +220,7 @@
         </div>
       </fieldset>
       <fieldset>
-        <legend>params<button type="button" onclick={resetJointParams}>↺ reset</button></legend>
+        <legend>params<button type="button" onclick={resetJointParams}>reset</button></legend>
         {#each PART_CTL[selPart] as [key, label, min, max, step]}
           <label><span>{label}</span>
             <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selPart][key]}
@@ -239,7 +239,7 @@
       </fieldset>
     {:else if view === "dragon"}
       <fieldset>
-        <legend>rig<button type="button" onclick={resetDragon}>↺ reset</button></legend>
+        <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
         <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
         {#each DRAGON_CTL as [key, label, min, max, step]}
           <label><span>{label}</span>
@@ -258,7 +258,7 @@
         </div>
       </fieldset>
       <fieldset>
-        <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetParams}>↺ reset</button></legend>
+        <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetParams}>reset</button></legend>
         {#each PRIM_CTL[selPrim] as [key, label, min, max]}
           <label><span>{label}</span>
             <input type="range" {min} {max} step="0.01" value={pparams[selPrim][key]}
