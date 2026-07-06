@@ -1,6 +1,7 @@
 import { clamp } from "$lib/math/scalar.js";
 import { D3, BODY_LEN, SP3, D3_STYLE, D3_MECH_SCALE } from "./config.js";
-import { dragonModel, dragonPitch, assembleModel } from "$lib/mech/rig.js";
+import { dragonModel, dragonPitch } from "$lib/mech/rig.js";
+import { assembleModel } from "$lib/mech/assembly.js";
 
 // Fill N*16 column-major frame buffer by sampling sample(arc)->{p,tg} at N
 // equal-arc-length steps over [0, total). Each frame = 3D orthonormal basis from
@@ -61,6 +62,7 @@ export function createDragon3d({ timing }) {
   let _mechLen = 1;      // mech dragon spine length in main-world units
   let _pathTrans = null; // rig-space ride paths for the mech dragon
   let _pathLoop = null;
+  let _asmRefAt = null;  // memoized build-progress -> frozen dragon pose (world anchors)
   let _closePt = null;   // loop3 start (= branch point), closes the debug polyline
 
   // Build BOTH 3D frame buffers (arc-uniform; shader maps mesh.x linearly to
@@ -121,6 +123,14 @@ export function createDragon3d({ timing }) {
       (arc) => loop3.pos(((arc % loop3.total) + loop3.total) % loop3.total),
       loop3.total, _k,
     );
+    _asmRefAt = null;                                 // paths changed -> re-freeze
+  }
+
+  // ride path + rig-space head arc for a given headArc along the flight
+  function rideAt(headArc) {
+    if (headArc - _mechLen < _loopIn)
+      return { path: _pathTrans, s: (headArc - _transStart) * _k };
+    return { path: _pathLoop, s: ((((headArc - _loopIn) % loopLen) + loopLen) % loopLen) * _k };
   }
 
   // 3D head's curvePath arc as fn of t. Through crossfade follows EXACT same
@@ -162,23 +172,32 @@ export function createDragon3d({ timing }) {
     d.time = t;
     if (!(alpha > 0) || !_pathLoop) { d.items = null; d.meshes = null; return; }
     const headArc = headArcAt(t);
-    const tailInWindow = headArc - _mechLen < _loopIn;
-    let path, sHead;
-    if (tailInWindow) {
-      path = _pathTrans;
-      sHead = (headArc - _transStart) * _k;
-    } else {
-      path = _pathLoop;
-      const u = (((headArc - _loopIn) % loopLen) + loopLen) % loopLen;
-      sHead = u * _k;
-    }
+    const { path, s: sHead } = rideAt(headArc);
     // swim stroke phase rides the same clock as the flight (strokes per lap)
     const model = dragonModel(1, { offset: sHead / path.total, swim: headArc / loopLen }, path);
     const ik = 1 / _k;
-    // assembly intro: the rig's 4-stage build (rig space) spans the crossfade
-    // window; past it, items pass through untouched
+    // assembly intro: the rig's 4-phase build (rig space) spans the crossfade
+    // window; past it, items pass through untouched. Groups assemble in WORLD
+    // space anchored on the pose where the body was when they started
+    // forming; phase 3 converts each group to the live body's local frame.
     const u = (t - timing.d3Start) / Math.max(1e-6, timing.d3End - timing.d3Start);
-    const src = u < 1 ? assembleModel(model.items, u) : model.items;
+    let src = model.items;
+    if (u < 1) {
+      if (!_asmRefAt) {
+        const cache = new Map();                      // uStart values are per-group consts
+        _asmRefAt = (uu) => {
+          const key = Math.round(uu * 1e6);
+          if (!cache.has(key)) {
+            const ts = timing.d3Start + uu * (timing.d3End - timing.d3Start);
+            const arc = headArcAt(ts);
+            const r = rideAt(arc);
+            cache.set(key, dragonModel(1, { offset: r.s / r.path.total, swim: arc / loopLen }, r.path).items);
+          }
+          return cache.get(key);
+        };
+      }
+      src = assembleModel(model.items, u, _asmRefAt);
+    }
     d.items = src.map((it) => ({
       key: it.key,
       // rig -> main: rows permute to (x, -z, y), scaled back by 1/k

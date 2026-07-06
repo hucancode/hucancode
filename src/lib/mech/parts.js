@@ -334,9 +334,9 @@ export function pivotBlock(add, p = {}, pose = {}) {
 // fixed joint proportions the dragon parts are modeled around — shared with
 // chainSpec() below so the rig computes the same mounting numbers the
 // builders bake into the geometry.
-const SEG_JP = { ballR: 0.26, socketT: 0.09, shaftLen: 0.28, baseT: 0.12 };
-const SEG2_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.26, baseT: 0.12 };
-const TAIL_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.26, baseT: 0.12 };
+const SEG_JP = { ballR: 0.26, socketT: 0.09, shaftLen: 0.14, baseT: 0.12 };
+const SEG2_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.13, baseT: 0.12 };
+const TAIL_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.13, baseT: 0.12 };
 const ARM_JP = { tongueT: 0.09, armT: 0.055, armLen: 0.2, barrelR: 0.1, barrelLen: 0.16, pinR: 0.045, tongueLen: 0.2 };
 const LEG_JP = { tongueT: 0.11, armT: 0.065, armLen: 0.24, barrelR: 0.12, barrelLen: 0.18, pinR: 0.055, tongueLen: 0.22 };
 
