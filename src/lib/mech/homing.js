@@ -1,13 +1,19 @@
 import { m3MulV, m3AxisAngle, vAdd, vSub, vScale, vNorm, vLen, vCross } from "../math/mat3.js";
 
 // ---- HOMING FLIGHT -------------------------------------------------------
-// The assembly's group flight: a formed group is a rigid agent (position +
-// heading + speed) that CHASES its moving mount point in world space, like
-// a missile — turn-rate-clamped seek toward an approach gate on the mount
-// normal, then a capture blend that lands it exactly in the live seat.
+// The assembly's group flight, TWO PHASES over the travel window:
+//   A. APPROACH (tau 0..P.approach): the formed group is a rigid agent
+//      (position + heading + speed) that CHASES a gate hovering P.dock off
+//      the moving mount point along its normal, like a missile — turn-rate-
+//      clamped seek, whole flight compressed into the approach window so it
+//      reads fast. Over the last P.capture of the approach a blend settles
+//      it EXACTLY onto the live gate with the heading exactly on -n: it
+//      arrives parked and fully aligned, ready to land.
+//   B. SNAP-IN (tau P.approach..1): straight plug-in run down the LIVE
+//      mount normal, gate -> seat. No steering, orientation locked.
 //
 // Everything is deterministic: fixed integration steps anchored at k/steps
-// of the travel window, and all per-group variation hashed off the group
+// of the approach window, and all per-group variation hashed off the group
 // index — re-simulating from the start at any scrub position replays the
 // exact same trajectory. Times (`tau`) are fractions of the travel window.
 
@@ -42,6 +48,7 @@ export function lateralDir(n, az) {
 export function homingParams(gi, far, A) {
   return {
     steps: A.steps,
+    approach: A.approach,
     capture: A.capture,
     speed: far * (A.speed[0] + (A.speed[1] - A.speed[0]) * hash01(gi, 40)),
     turn: A.turn[0] + (A.turn[1] - A.turn[0]) * hash01(gi, 41),
@@ -51,12 +58,16 @@ export function homingParams(gi, far, A) {
   };
 }
 
-const SPEED_RAMP = 0.4;   // fraction of the flight spent throttling up
+const SPEED_RAMP = 0.4;   // fraction of the approach spent throttling up
 
-// fixed-step seek integrator. `aimAt(tau)` -> { seat, n } in world space
-// (the mount point and its normal at that moment of the flight). `onStep`
-// (optional) observes every completed step boundary — the viz tracer uses
-// it. Heading is kept separate from speed so it survives zero-speed steps.
+// fixed-step seek integrator over the APPROACH window. `tau` is still a
+// travel-window fraction; internally it is renormalised so the whole flight
+// (speed, turn, ramp totals unchanged) plays out inside tau 0..P.approach —
+// same trajectory as a full-window flight, compressed = faster. `aimAt(tau)`
+// -> { seat, n } in world space (the mount point and its normal at that
+// moment of the flight, travel-window fraction). `onStep` (optional)
+// observes every completed step boundary — the viz tracer uses it. Heading
+// is kept separate from speed so it survives zero-speed steps.
 function integrate(from, n0, tauEnd, P, aimAt, onStep) {
   const pos = [from[0], from[1], from[2]];
   // launch kick: hashed lateral/outward mix — groups pop out of their parked
@@ -65,17 +76,14 @@ function integrate(from, n0, tauEnd, P, aimAt, onStep) {
     vScale(lateralDir(n0, P.kickAz), P.kickMix),
     vScale(n0, 1 - P.kickMix),
   ));
-  const kEnd = Math.max(0, Math.min(1, tauEnd)) * P.steps;
+  const kEnd = Math.max(0, Math.min(1, tauEnd / P.approach)) * P.steps;
   for (let k = 0; k < kEnd; k++) {
     const h = Math.min(1, kEnd - k) / P.steps;       // tau-length (partial last step)
-    const tk = k / P.steps;
-    const { seat, n } = aimAt(tk);
-    // aim at the gate on the normal; inside the capture window the aim
-    // slides down to the seat so terminal steering already points down the
-    // plug axis before the blend takes over
-    let aim = [seat[0] + n[0] * P.dock, seat[1] + n[1] * P.dock, seat[2] + n[2] * P.dock];
-    const cw = (tk - (1 - P.capture)) / P.capture;
-    if (cw > 0) aim = lerp3(aim, seat, smooth(cw));
+    const tk = k / P.steps;                          // approach-window fraction
+    const { seat, n } = aimAt(tk * P.approach);
+    // aim at the gate on the normal — the snap-in phase owns the descent to
+    // the seat, so the approach never dives below the gate
+    const aim = [seat[0] + n[0] * P.dock, seat[1] + n[1] * P.dock, seat[2] + n[2] * P.dock];
     const to = vSub(aim, pos), d = vLen(to);
     if (d > 1e-6) {
       const want = vScale(to, 1 / d);
@@ -103,31 +111,50 @@ function integrate(from, n0, tauEnd, P, aimAt, onStep) {
   return { p: pos, dir: head };
 }
 
-// simulated flight state at tau (0..1 of the travel window) — re-runs the
-// fixed-step integration from launch every call (scrub-safe)
+// simulated approach state at tau (0..1 of the travel window; the flight
+// occupies 0..P.approach) — re-runs the fixed-step integration from launch
+// every call (scrub-safe)
 export function simulateHoming(from, n0, tau, P, aimAt) {
   return integrate(from, n0, tau, P, aimAt);
 }
 
-// Capture: over the last `capture` fraction of the flight, blend the
-// simulated state onto a plug-in run down the LIVE mount normal, ending
-// exactly in the seat with the heading exactly on -n (so the bank derived
-// from it unwinds to identity). Smoothstep weight -> C1 at both ends:
-// no kink leaving the sim, no snap into the seat.
-export function captureBlend(sim, seatLive, nLive, tau, P) {
-  const x = Math.max(0, Math.min(1, (tau - (1 - P.capture)) / P.capture));
+// Arrival: over the last `capture` fraction of the APPROACH, blend the
+// simulated state onto the LIVE gate (seat + n*dock) with the heading
+// exactly on -n (so the bank derived from it unwinds to identity) — the
+// group arrives parked and fully aligned, ready to land. Smoothstep weight
+// -> C1 at both ends: no kink leaving the sim, no jump onto the gate, and
+// position/heading are continuous into the snap-in run.
+export function approachBlend(sim, seatLive, nLive, tau, P) {
+  const tauA = Math.min(1, tau / P.approach);
+  const x = Math.max(0, Math.min(1, (tauA - (1 - P.capture)) / P.capture));
   if (x <= 0) return sim;
   const w = x * x * (3 - 2 * x);
-  const depth = P.dock * (1 - easeInOutCubic(x));
-  const ins = [
-    seatLive[0] + nLive[0] * depth,
-    seatLive[1] + nLive[1] * depth,
-    seatLive[2] + nLive[2] * depth,
+  const gate = [
+    seatLive[0] + nLive[0] * P.dock,
+    seatLive[1] + nLive[1] * P.dock,
+    seatLive[2] + nLive[2] * P.dock,
   ];
   const d = vAdd(vScale(sim.dir, 1 - w), vScale(nLive, -w));
   const l = vLen(d);
   return {
-    p: lerp3(sim.p, ins, w),
+    p: lerp3(sim.p, gate, w),
     dir: l > 1e-6 ? vScale(d, 1 / l) : vScale(nLive, -1),
+  };
+}
+
+// Snap-in: tau P.approach..1, the straight plug-in run down the LIVE mount
+// normal, gate -> seat. Tracks the live seat every call (the body keeps
+// moving under the landing), heading locked on -n. Ease-in-out: lingers at
+// the gate a beat, drives in, settles into the seat with zero end velocity.
+export function snapIn(seatLive, nLive, tau, P) {
+  const x = Math.max(0, Math.min(1, (tau - P.approach) / (1 - P.approach)));
+  const depth = P.dock * (1 - easeInOutCubic(x));
+  return {
+    p: [
+      seatLive[0] + nLive[0] * depth,
+      seatLive[1] + nLive[1] * depth,
+      seatLive[2] + nLive[2] * depth,
+    ],
+    dir: vScale(nLive, -1),
   };
 }

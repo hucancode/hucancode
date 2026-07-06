@@ -1,6 +1,6 @@
 import { m3Mul, m3MulV, m3Inv, m3AxisAngle, vScale } from "../math/mat3.js";
 import { qFromM3, qToM3, qSlerp } from "../math/quat.js";
-import { hash01, homingParams, simulateHoming, captureBlend } from "./homing.js";
+import { hash01, homingParams, simulateHoming, approachBlend, snapIn } from "./homing.js";
 
 // ---- ASSEMBLY ANIMATION --------------------------------------------------------
 // The dragon builds itself in FOUR phases, hierarchically: primitives belong
@@ -11,12 +11,14 @@ import { hash01, homingParams, simulateHoming, captureBlend } from "./homing.js"
 //      offset along the assembly normal from its final seat
 //   2. the primitive SNAPS into its seat — the group is formed
 //   3. the formed group launches and HOMES on its moving mount point like a
-//      missile (homing.js), entirely in WORLD space: turn-rate-clamped seek
-//      toward a gate on the mount normal, then a capture blend that lands it
-//      exactly in the live seat, plugging in along the normal. The group
-//      banks rigidly along its velocity (about its centroid) and levels out
-//      onto the mount axis as it docks
-//   4. (folded into 3: the plug-in is the capture tail, no snap)
+//      missile (homing.js), entirely in WORLD space: fast turn-rate-clamped
+//      seek toward a gate hovering off the mount normal, arriving ON the
+//      gate FULLY ALIGNED with the live seat (position settled, rotation
+//      matched, heading on the mount axis) — ready to land. The group banks
+//      rigidly along its velocity (about its centroid) and levels out onto
+//      the mount axis as it arrives
+//   4. the aligned group SNAPS IN: a straight plug-in run down the live
+//      mount normal, gate -> seat, orientation locked
 // Group flights are re-simulated with fixed steps from launch on every call
 // and all randomness is HASHED off group/item indices, so scrubbing the
 // clock replays the exact same build. Distances are RIG UNITS, phase times
@@ -27,18 +29,19 @@ export const ASSEMBLY = {
   pJit: 0.03,              // hashed extra primitive delay
   fly: 0.15,               // phase 1 duration (prim flight)
   snap2: 0.05,             // phase 2 duration (prim snap into group)
-  travel: 0.19,            // phase 3 duration (group homing flight into the dragon)
-  align: 0.8,              // rotation fully matches the live seat by this fraction of travel
+  travel: 0.19,            // phases 3+4 duration (group homing flight + snap-in)
+  approach: 0.72,          // fraction of travel spent flying to the gate (rest = snap-in)
+  align: 0.8,              // rotation fully matches the live seat by this fraction of the approach
   fadeIn: 0.15,            // fraction of the prim flight spent fading it in
   scatter: [12, 24],       // prim start distance from its target
   standoff: [0.5, 1.0],    // prim pre-snap standoff distance
   gOff: [3.6, 8.4],        // group assembling offset along the normal (far)
   revs: [0.75, 1.75],      // prim self-spin during flight, revolutions
-  dock: [1.2, 2.8],        // straight plug-in run along the mount normal
-  speed: [1.6, 2.2],       // homing speed, fraction of the parked distance per travel
-  turn: [8, 12],           // homing turn rate, radians per travel
+  dock: [1.2, 2.8],        // gate standoff = snap-in run length along the mount normal
+  speed: [1.6, 2.2],       // homing speed, fraction of the parked distance per approach
+  turn: [8, 12],           // homing turn rate, radians per approach
   kick: [0.35, 0.8],       // launch kick: lateral mix (rest goes outward)
-  capture: 0.18,           // fraction of travel spent blending onto the plug-in run
+  capture: 0.18,           // fraction of the approach spent settling onto the gate
   steps: 96,               // fixed integration steps per flight (determinism grid)
 };
 
@@ -133,12 +136,14 @@ export function assembleModel(items, u, ref = null) {
   }
 
   // ---- pass 3: flight state, all WORLD space. The parked centroid (anchor
-  // pose) is the launch pad; the homing integrator chases the mount point
-  // sampled along the ride; the capture blend targets the LIVE pose so the
-  // landing is exact no matter how the body moved. `gBank` = rigid velocity
-  // alignment: the minimal rotation taking the plug axis (-n) onto the
-  // current flight direction, eased in over the flight — the group noses
-  // along its trajectory and levels onto the mount axis as it docks.
+  // pose) is the launch pad; the homing integrator chases the gate off the
+  // mount point sampled along the ride; the arrival blend and the snap-in
+  // run target the LIVE pose so the landing is exact no matter how the body
+  // moved. `gBank` = rigid velocity alignment: the minimal rotation taking
+  // the plug axis (-n) onto the current flight direction, eased in over the
+  // approach — the group noses along its trajectory and levels onto the
+  // mount axis as it arrives at the gate; through the snap-in dir === -n so
+  // the bank is already identity.
   const gPos = [], gRot = [], gBank = [], gSeated = [], gCenA = [];
   for (let gi = 0; gi < nG; gi++) gCenA.push([0, 0, 0]);
   for (let i = 0; i < items.length; i++) {           // parked (anchor) centroids
@@ -171,9 +176,14 @@ export function assembleModel(items, u, ref = null) {
           return { seat: pose.cen[gi], n: pose.an[gi] ?? hashDir(gi) };
         }
       : () => ({ seat: gCen[gi], n: nLive });
-    const sim = simulateHoming(from, gAnW[gi], p3, P, aimAt);
-    const { p, dir } = captureBlend(sim, gCen[gi], nLive, p3, P);
-    const rot = easeInOutCubic(Math.min(1, p3 / A.align));
+    let p, dir;
+    if (p3 < P.approach) {                           // phase 3: fly to the gate
+      const sim = simulateHoming(from, gAnW[gi], p3, P, aimAt);
+      ({ p, dir } = approachBlend(sim, gCen[gi], nLive, p3, P));
+    } else {                                         // phase 4: snap in along the normal
+      ({ p, dir } = snapIn(gCen[gi], nLive, p3, P));
+    }
+    const rot = easeInOutCubic(Math.min(1, p3 / (A.align * A.approach)));
     gPos.push(p);
     gRot.push(rot);
     const cx = -nLive[1] * dir[2] + nLive[2] * dir[1];  // cross(-n, dir)
@@ -254,9 +264,10 @@ export function assembleModel(items, u, ref = null) {
     }
     // rotation during the flight: settle from the formed (anchor-pose)
     // orientation to the seat orientation, then bank the result along the
-    // velocity — the bank unwinds to identity as the capture levels the
-    // heading onto the mount axis, so the group arrives exactly in its
-    // seat pose. The settle slerps the PURE rotation delta base -> live on
+    // velocity — the bank unwinds to identity as the arrival levels the
+    // heading onto the mount axis, so the group reaches the gate exactly in
+    // its seat pose and the snap-in carries it straight down the normal.
+    // The settle slerps the PURE rotation delta base -> live on
     // the quaternion sphere (the item's local scale cancels through the
     // inverse) — a component-wise matrix lerp would shear the group.
     if (phase34 > 0) {
