@@ -52,19 +52,6 @@ export const FRAME_MAX_STEPS = 160;        // cap on arcs walked (safety)
 export const FRAME_SAMPLES = 96;           // dense samples per full (2π) revolution
 export const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolerance
 
-// one sumi-e flower at centre of every circle the 2D dragon's path built from
-// (descent chain + roam2 rosette). bud until head reaches circle rim, then opens
-// over FLOWER_BLOOM_DUR. bloom pure fn of scene time (enter time precomputed) ->
-// timeline scrubbing replays exactly.
-export const FLOWER_ENTER_BAND = 0.14;   // head within r*(1+band) of centre = "on/inside" circle
-export const FLOWER_BLOOM_DUR = 2.2;     // seconds a flower takes to open bud->full
-export const FLOWER_SAMPLE_DT = 1 / 120; // enter-time precompute sampling step (s)
-export const FLOWER_PETALS = 6;          // base petals per ring (varied +-1 per flower)
-export const FLOWER_LAYERS = 3;          // concentric petal rings at full bloom
-export const FLOWER_FILL = 0.13;         // flower radius as fraction of its circle radius
-export const FLOWER_SIZE_JITTER = [0.45, 2.8]; // per-flower [min,max] size multiplier (seed-driven)
-export const FLOWER_OPACITY_JITTER = [0.35, 1.0]; // ink opacity [biggest,smallest]; small opaque, big translucent
-
 // 3D orbit: built from CIRCLES like the 2D paths — a ring of equal
 // externally-tangent circles walked with alternating winding (C1 S-weave,
 // the descent-chain rule) -> closed loop of pure circular arcs with

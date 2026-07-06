@@ -16,11 +16,6 @@
 //   },
 //   splash: { alpha, grow, spread, amount, time },
 //   enso: { alpha, sweep, radius, lineWidth, angleStart, time },
-//   flowers: {
-//     items: { x, y, r, bloom, seed }[],  // world centre, radius, 0..1 bloom, hash
-//     count, alpha,
-//     viewProj: Float32Array,             // 16, shared orbit cam
-//   },
 //   inkDragon: {
 //     body: {x,y}[],                      // verlet chain, tail -> tip
 //     head: { pos:{x,y}, dir:{x,y}, size, alpha },

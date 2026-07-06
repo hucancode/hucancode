@@ -1,9 +1,8 @@
 import { loadDragonMesh } from "$lib/engine/index.js";
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./webgl/stroke-gl.js";
-import { FLOWER_PETALS, FLOWER_LAYERS, D3_STYLE } from "../config.js";
+import { D3_STYLE } from "../config.js";
 import { PROGRAMS } from "./programs.js";
 
-const FLOWER_Z = -0.005;
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 const STATIC_THROTTLE = 8;
 
@@ -53,7 +52,7 @@ export function makeSceneRenderer(device, canvas) {
   let tGlyph, tSplash, tEnso, tInk;
   let segTex;
   const framesTexCache = new Map();
-  let strokePos, strokeUV, strokeIdx, headBuf, flowerInst;
+  let strokePos, strokeUV, strokeIdx, headBuf;
   let dragonPos, dragonNorm, dragonCount = 0;
   const mechGroups = new Map(); // mesh key -> { pos, norm, inst, count, cap, data }
   const mechLists = new Map();  // per-frame grouping scratch (key -> items)
@@ -62,7 +61,6 @@ export function makeSceneRenderer(device, canvas) {
   let glyphCacheKey = NaN;
   let segRef = null, segRows = 0, segBuf = new Float32Array(0);
   const headData = new Float32Array(16);
-  let flowerData = new Float32Array(0);
   const lineBufs = [];
   let lineScratch = new Float32Array(0);
 
@@ -73,7 +71,6 @@ export function makeSceneRenderer(device, canvas) {
     strokeUV = device.buffer({ kind: "vertex", size: 0, dynamic: true });
     strokeIdx = device.buffer({ kind: "index", size: 0, dynamic: true });
     headBuf = device.buffer({ kind: "vertex", size: 64, dynamic: true });
-    flowerInst = device.buffer({ kind: "vertex", size: 0, dynamic: true });
     if (D3_STYLE === "obj") loadMesh().catch((e) => console.warn("[paint] dragon mesh load failed", e));
     resize(canvas.width || 1, canvas.height || 1);
   }
@@ -160,20 +157,6 @@ export function makeSceneRenderer(device, canvas) {
     }
     headBuf.write(headData);
     p.draw(sh.head, { buffers: [headBuf], count: 4, uniforms: { uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uOpacity: opacity, uBrushColor: getInk() } });
-  }
-
-  function drawFlowers(p, state, vp) {
-    const f = state.flowers;
-    if (!f || !f.items || f.count <= 0 || f.alpha <= 0) return;
-    const n = f.count, need = n * 8;
-    if (flowerData.length < need) flowerData = new Float32Array(need);
-    for (let i = 0; i < n; i++) {
-      const it = f.items[i], o = i * 8;
-      flowerData[o] = it.x; flowerData[o + 1] = it.y; flowerData[o + 2] = it.r; flowerData[o + 3] = FLOWER_Z;
-      flowerData[o + 4] = it.bloom; flowerData[o + 5] = it.seed; flowerData[o + 6] = f.alpha * (it.opacity ?? 1); flowerData[o + 7] = 0;
-    }
-    flowerInst.write(flowerData.subarray(0, need));
-    p.draw(sh.flower, { buffers: [flowerInst], count: 4, instances: n, uniforms: { uViewProj: vp, uPetals: FLOWER_PETALS, uLayers: FLOWER_LAYERS, uInkColor: getInkRGB() } });
   }
 
   // mech dragon: group instance items by unit-mesh key, ONE instanced draw per
@@ -298,7 +281,6 @@ export function makeSceneRenderer(device, canvas) {
     device.pass({ target: "screen", clear: paper, depth: true, depthClear: 1 }, (p) => {
       if (state.grid && state.grid.reveal > 0)
         p.draw(sh.grid, { count: 4, uniforms: { uViewProj: vp, uExt: state.grid.ext, uZ: state.grid.z, uStep: state.grid.step, uMinorDiv: state.grid.minorDiv, uOpacity: state.grid.opacity, uReveal: state.grid.reveal, uRevealMinor: state.grid.revealMinor, uInkColor: getInkRGB() } });
-      drawFlowers(p, state, vp);
       if (state.splash && state.splash.alpha > 0) compositeQuad(p, tSplash.color, state.splash.alpha, -0.006, vp, aspect, state.splash.stationY || 0);
       if (state.enso && state.enso.alpha > 0) compositeQuad(p, tEnso.color, state.enso.alpha, -0.004, vp, aspect, state.enso.stationY || 0);
       compositeQuad(p, tGlyph.color, state.opacity.glyph, -0.002, vp, aspect, state.glyph.stationY || 0);
@@ -324,7 +306,7 @@ export function makeSceneRenderer(device, canvas) {
     tGlyph?.destroy(); tSplash?.destroy(); tEnso?.destroy(); tInk?.destroy();
     segTex?.destroy();
     for (const t of framesTexCache.values()) t.destroy();
-    strokePos?.destroy(); strokeUV?.destroy(); strokeIdx?.destroy(); headBuf?.destroy(); flowerInst?.destroy();
+    strokePos?.destroy(); strokeUV?.destroy(); strokeIdx?.destroy(); headBuf?.destroy();
     dragonPos?.destroy(); dragonNorm?.destroy();
     for (const g of mechGroups.values()) { g.pos.destroy(); g.norm.destroy(); g.inst.destroy(); }
     mechGroups.clear(); mechLists.clear();

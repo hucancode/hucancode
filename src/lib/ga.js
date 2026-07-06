@@ -3,7 +3,7 @@ import { PUBLIC_GA_MEASUREMENT_ID as GA_MEASUREMENT_ID } from "$env/static/publi
 
 function gtag() {
   if (!browser || !GA_MEASUREMENT_ID) return;
-  window.dataLayer.push(arguments);
+  (window.dataLayer ||= []).push(arguments);
 }
 function initGA() {
   if (!browser || !GA_MEASUREMENT_ID) return;

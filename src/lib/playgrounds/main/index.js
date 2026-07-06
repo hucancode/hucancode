@@ -20,7 +20,6 @@ import { ensoPos, generateFramePath, buildDescent, generateOrbit3d } from "./fra
 import { createHeadPath } from "./head-path.js";
 import { createBodyController } from "./body.js";
 import { createDragon3d } from "./dragon3d.js";
-import { createFlowers } from "./flowers.js";
 import { sceneViewProj } from "./camera.js";
 import { createSplashBlock } from "./blocks/splash.js";
 import { createGlyphBlock } from "./blocks/glyph.js";
@@ -41,7 +40,6 @@ let conn3 = null;       // connector spur: 2D branch point -> ring entry
 let headPath = null;    // head phase sequence + samplers
 let bodyCtrl = null;    // 2D dragon body controller
 let dragon3d = null;    // 3D dragon frame buffers
-let flowers = null;     // bloom flowers seated in path circles
 let timeline = null;
 let cameraTrack = null; // corridor descent + pitch + yaw gate
 let ensoCenter = { x: 0, y: 0 }; // world station of glyph + enso
@@ -140,13 +138,6 @@ export function initScene() {
   headPath = createHeadPath({ timing, paths });
   bodyCtrl = createBodyController({ headPath, timing });
 
-  // bloom flowers: one per descent-chain circle (NOT roam2 rosette around enso,
-  // that stays clean). enter-times precomputed off headPath.
-  flowers = createFlowers({
-    headPath, timing,
-    circles: descent.pool,
-  });
-
   // loop3: closed 3D circle-weave orbit (generateOrbit3d — built from tangent
   // circles the way the 2D paths are) centred on the enso station. A PURE
   // closed loop — inserting the branch point into the loop (old design) dents
@@ -244,7 +235,6 @@ const _frame = {
   glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS, stationY: 0 },
   splash: { alpha: 0, grow: 0, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: 0, stationY: 0 },
   enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0, stationY: 0 },
-  flowers: { items: null, count: 0, alpha: 0, viewProj: null },
   inkDragon: {
     body: null,
     head: { pos: { x: 0, y: 0 }, dir: { x: 0, y: 1 }, size: HEAD_SIZE, alpha: 1 },
@@ -294,13 +284,6 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
   const en = _frame.enso;
   en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = 0; en.time = t;
   en.stationY = ensoCenter.y;
-
-  // bloom flowers: refresh each flower's bloom (pure fn of t) + share orbit cam
-  const fl = flowers.writeState(t);
-  _frame.flowers.items = fl.items;
-  _frame.flowers.count = fl.count;
-  _frame.flowers.alpha = 1;
-  _frame.flowers.viewProj = viewProj;
 
   const ink = _frame.inkDragon;
   ink.body = bodyCtrl.body;

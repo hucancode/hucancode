@@ -1,6 +1,6 @@
 import { clamp } from "$lib/math/scalar.js";
 import { D3, BODY_LEN, SP3, D3_STYLE, D3_MECH_SCALE } from "./config.js";
-import { dragonModel, dragonPitch, assembleModel } from "$lib/playgrounds/mech/rig.js";
+import { dragonModel, dragonPitch, assembleModel } from "$lib/mech/rig.js";
 
 // Fill N*16 column-major frame buffer by sampling sample(arc)->{p,tg} at N
 // equal-arc-length steps over [0, total). Each frame = 3D orthonormal basis from

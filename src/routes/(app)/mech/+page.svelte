@@ -4,8 +4,8 @@
   import {
     partModel, primitiveModel,
     PART_NAMES, PRIM_NAMES, PRIM_PARAMS, PART_PARAMS, JOINT_POSE,
-  } from "$lib/playgrounds/mech/parts.js";
-  import { dragonModel, DRAGON_POSE } from "$lib/playgrounds/mech/rig.js";
+  } from "$lib/mech/parts.js";
+  import { dragonModel, DRAGON_POSE } from "$lib/mech/rig.js";
 
   let scene = $state(null);
 
