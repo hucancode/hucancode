@@ -6,7 +6,7 @@
 // debug{show,buffer,path2d,path3d,pool}. Source of truth = buildState().
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./webgl/stroke-gl.js";
 import { createInstancedDrawer } from "$lib/mech/instancing.js";
-import { D3_STYLE } from "../config.js";
+import { D3_STYLE, INK_EXT } from "../config.js";
 import { PROGRAMS } from "./programs.js";
 
 const STATIC_THROTTLE = 8;
@@ -70,7 +70,9 @@ export function makeSceneRenderer(device, canvas) {
     tGlyph?.destroy(); tEnso?.destroy(); tInk?.destroy();
     tGlyph = device.target({ width: w, height: h });
     tEnso = device.target({ width: w, height: h });
-    tInk = device.target({ width: w, height: h });
+    // ink layer covers INK_EXT x the screen (dragon body may poke past one
+    // screen once the camera tilts); scale texture too so density holds
+    tInk = device.target({ width: Math.round(w * INK_EXT), height: Math.round(h * INK_EXT) });
     glyphCacheKey = NaN; // targets recreated -> force glyph re-render
   }
 
@@ -101,7 +103,7 @@ export function makeSceneRenderer(device, canvas) {
     p.draw(sh.stroke, {
       buffers: [strokePos, strokeUV], index: strokeIdx, count: r.indexCount,
       uniforms: {
-        uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uInkFlow: params.inkFlow, uStrands: params.strands,
+        uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uExt: INK_EXT, uInkFlow: params.inkFlow, uStrands: params.strands,
         uWaterFlow: params.waterFlow, uWobble: params.wobble, uOpacity: opacity,
         uWidthEnd: params.widthEnd, uWidthOffset: params.widthOffset, uWidthRange: params.widthRange,
         uWidthAnchor: params.widthAnchor ?? 0.5, uPerpClearance: PERP_CLEARANCE, uArcClearance: ARC_CLEARANCE,
@@ -121,7 +123,7 @@ export function makeSceneRenderer(device, canvas) {
       headData[i * 4 + 2] = c[2]; headData[i * 4 + 3] = c[3];
     }
     headBuf.write(headData);
-    p.draw(sh.head, { buffers: [headBuf], count: 4, uniforms: { uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uOpacity: opacity, uBrushColor: getInk() } });
+    p.draw(sh.head, { buffers: [headBuf], count: 4, uniforms: { uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uExt: INK_EXT, uOpacity: opacity, uBrushColor: getInk() } });
   }
 
   // mech dragon: shared instanced drawer (one draw per unit-mesh key, cached
@@ -132,8 +134,8 @@ export function makeSceneRenderer(device, canvas) {
     });
   }
 
-  function compositeQuad(p, color, opacity, z, vp, aspect, stationY) {
-    p.draw(sh.composite, { count: 4, textures: { uTex: color }, uniforms: { uViewProj: vp, uOpacity: opacity, uAspect: aspect, uZ: z, uStationY: stationY } });
+  function compositeQuad(p, color, opacity, z, vp, aspect, stationY, ext = 1) {
+    p.draw(sh.composite, { count: 4, textures: { uTex: color }, uniforms: { uViewProj: vp, uOpacity: opacity, uAspect: aspect, uZ: z, uStationY: stationY, uExt: ext } });
   }
 
   function drawDebug(p, state, aspect, vp) {
@@ -200,7 +202,7 @@ export function makeSceneRenderer(device, canvas) {
         p.draw(sh.grid, { count: 4, uniforms: { uViewProj: vp, uExt: state.grid.ext, uZ: state.grid.z, uStep: state.grid.step, uMinorDiv: state.grid.minorDiv, uOpacity: state.grid.opacity, uReveal: state.grid.reveal, uRevealMinor: state.grid.revealMinor, uInkColor: getInkRGB() } });
       if (state.enso && state.enso.alpha > 0) compositeQuad(p, tEnso.color, state.enso.alpha, -0.004, vp, aspect, state.enso.stationY || 0);
       compositeQuad(p, tGlyph.color, state.opacity.glyph, -0.002, vp, aspect, state.glyph.stationY || 0);
-      compositeQuad(p, tInk.color, state.opacity.inkDragon, 0.0, vp, aspect, camY);
+      compositeQuad(p, tInk.color, state.opacity.inkDragon, 0.0, vp, aspect, camY, INK_EXT);
       if (state.opacity.dragon3d > 0 && state.dragon3d.items) {
         // mech dragon transitions in by ASSEMBLING (per-instance alpha from the
         // flight animation), not by fading — draw at full opacity

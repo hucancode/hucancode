@@ -1,4 +1,6 @@
-import { m3Mul, m3AxisAngle } from "../math/mat3.js";
+import { m3Mul, m3MulV, m3Inv, m3AxisAngle, vScale } from "../math/mat3.js";
+import { qFromM3, qToM3, qSlerp } from "../math/quat.js";
+import { hash01, homingParams, simulateHoming, captureBlend } from "./homing.js";
 
 // ---- ASSEMBLY ANIMATION --------------------------------------------------------
 // The dragon builds itself in FOUR phases, hierarchically: primitives belong
@@ -8,12 +10,15 @@ import { m3Mul, m3AxisAngle } from "../math/mat3.js";
 //      seat in the group; the group is parked at its assembling spot, a far
 //      offset along the assembly normal from its final seat
 //   2. the primitive SNAPS into its seat — the group is formed
-//   3. the formed group flies down its approach line to a near-final offset
-//   4. the group SNAPS into its final seat (overshoot ease) — dragon grows
-// Everything rides the LIVE body: offsets are relative to the current frame's
-// item transforms, along the current assembly normal. Each group gets a time
-// offset (skeleton chain order, head first), each primitive within a group
-// another. All randomness is HASHED off group/item indices so scrubbing the
+//   3. the formed group launches and HOMES on its moving mount point like a
+//      missile (homing.js), entirely in WORLD space: turn-rate-clamped seek
+//      toward a gate on the mount normal, then a capture blend that lands it
+//      exactly in the live seat, plugging in along the normal. The group
+//      banks rigidly along its velocity (about its centroid) and levels out
+//      onto the mount axis as it docks
+//   4. (folded into 3: the plug-in is the capture tail, no snap)
+// Group flights are re-simulated with fixed steps from launch on every call
+// and all randomness is HASHED off group/item indices, so scrubbing the
 // clock replays the exact same build. Distances are RIG UNITS, phase times
 // are fractions of the whole build (u in 0..1).
 export const ASSEMBLY = {
@@ -22,24 +27,24 @@ export const ASSEMBLY = {
   pJit: 0.03,              // hashed extra primitive delay
   fly: 0.15,               // phase 1 duration (prim flight)
   snap2: 0.05,             // phase 2 duration (prim snap into group)
-  fly3: 0.12,              // phase 3 duration (group far -> near flight)
-  snap4: 0.07,             // phase 4 duration (group snap into the dragon)
+  travel: 0.19,            // phase 3 duration (group homing flight into the dragon)
+  align: 0.8,              // rotation fully matches the live seat by this fraction of travel
   fadeIn: 0.15,            // fraction of the prim flight spent fading it in
   scatter: [12, 24],       // prim start distance from its target
   standoff: [0.5, 1.0],    // prim pre-snap standoff distance
   gOff: [3.6, 8.4],        // group assembling offset along the normal (far)
-  gNear: [1.2, 2.8],       // group near-final offset before the snap
   revs: [0.75, 1.75],      // prim self-spin during flight, revolutions
+  dock: [1.2, 2.8],        // straight plug-in run along the mount normal
+  speed: [1.6, 2.2],       // homing speed, fraction of the parked distance per travel
+  turn: [8, 12],           // homing turn rate, radians per travel
+  kick: [0.35, 0.8],       // launch kick: lateral mix (rest goes outward)
+  capture: 0.18,           // fraction of travel spent blending onto the plug-in run
+  steps: 96,               // fixed integration steps per flight (determinism grid)
 };
 
-// deterministic per-index random in [0,1)
-function hash01(i, salt) {
-  let h = (Math.imul(i, 374761393) + Math.imul(salt, 668265263)) >>> 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
 const easeInOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const easeOutBack = (x) => 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
+const Q_ID = [0, 0, 0, 1];
 
 // hashed fallback direction for item lists without rig `an` tags
 function hashDir(gi) {
@@ -49,17 +54,44 @@ function hashDir(gi) {
   return [Math.cos(az) * s, y, Math.sin(az) * s];
 }
 
+// group seat centroids + assembly normals of a pose (same first-seen group
+// order as assembleModel's pass 1). Cached per item-array identity: callers
+// cache their ref poses, so each sampled pose is reduced exactly once.
+const poseCache = new WeakMap();
+function poseGroups(arr) {
+  let e = poseCache.get(arr);
+  if (e) return e;
+  const reg = new Map(), cen = [], an = [], cnt = [];
+  for (const it of arr) {
+    let gi = reg.get(it.group);
+    if (gi === undefined) {
+      gi = reg.size; reg.set(it.group, gi);
+      cen.push([0, 0, 0]); an.push(it.an ?? null); cnt.push(0);
+    }
+    const c = cen[gi];
+    c[0] += it.t[0]; c[1] += it.t[1]; c[2] += it.t[2]; cnt[gi]++;
+  }
+  for (let gi = 0; gi < cen.length; gi++) cen[gi] = vScale(cen[gi], 1 / cnt[gi]);
+  e = { cen, an };
+  poseCache.set(arr, e);
+  return e;
+}
+
+// quantize a ref-sample time to a 1/64 grid so a whole build touches at most
+// ~64 distinct poses — the callers' ref caches absorb the rest
+const quant64 = (uu) => Math.round(uu * 64) / 64;
+
 // Animate a dragonModel() item list at build progress u (0 = nothing placed,
 // 1 = fully assembled). Returns a NEW item list: items not yet spawned are
 // dropped, moving items get displaced m/t and an alpha `a`.
 //
-// `ref` (optional) = WORLD anchors for phases 1-2, so groups assemble at
-// fixed spots instead of chasing the moving body. Two forms:
-//   - function (uStart) -> same-order item list: the ride sampled at build
-//     progress uStart. Each group anchors on the pose at ITS OWN start —
-//     where the body was when the group began forming.
-//   - array: one frozen pose for the whole build.
-// Without ref the live items are their own base (everything tracks the body).
+// `ref` (optional) = the ride sampled over build progress, in WORLD space.
+// Phases 1-2 anchor on it (groups form at fixed spots instead of chasing the
+// moving body) and the homing flight aims at it (the mount point at each
+// moment of the flight). Two forms:
+//   - function (uStart) -> same-order item list: the pose at that progress
+//   - array: one frozen pose for the whole build
+// Without ref the live items are their own base (static body).
 export function assembleModel(items, u, ref = null) {
   if (u >= 1) return items;
   if (u <= 0) return [];
@@ -71,14 +103,16 @@ export function assembleModel(items, u, ref = null) {
   // build follows the chain, head first
   const reg = new Map();
   const gOf = new Int32Array(items.length), pOf = new Int32Array(items.length);
-  const counts = [], gDepth = [], gFirst = [];
+  const counts = [], gDepth = [], gFirst = [], gCen = [];
   items.forEach((it, i) => {
     let gi = reg.get(it.group);
     if (gi === undefined) {
       gi = reg.size; reg.set(it.group, gi); counts.push(0);
-      gDepth.push(it.depth ?? gi); gFirst.push(i);
+      gDepth.push(it.depth ?? gi); gFirst.push(i); gCen.push([0, 0, 0]);
     }
     gOf[i] = gi; pOf[i] = counts[gi]++;
+    const c = gCen[gi];
+    c[0] += it.t[0]; c[1] += it.t[1]; c[2] += it.t[2];
   });
   const nG = reg.size;
   const maxDepth = Math.max(1, ...gDepth);
@@ -87,19 +121,76 @@ export function assembleModel(items, u, ref = null) {
   // same-depth groups (a link's body + its joints, mirrored limbs) start
   // together, children start after their parent link. `anW` = the assembly
   // normal (rig tags it off the link's mating slot) in the anchor pose
-  const gd = [], gDone = [], gRef = [], gAnW = [];
+  const gd = [], gDone = [], gRef = [], gAnW = [], gFar = [];
   for (let gi = 0; gi < nG; gi++) {
     gd.push((gDepth[gi] / maxDepth) * A.gSpan);
     gDone.push(gd[gi] + A.pSpan + A.pJit + A.fly + A.snap2);  // group formed
     gRef.push(refFn ? refFn(gd[gi]) : null);
     const h = gRef[gi]?.[gFirst[gi]] ?? items[gFirst[gi]];
     gAnW.push(h.an ?? hashDir(gi));
+    gFar.push(A.gOff[0] + (A.gOff[1] - A.gOff[0]) * hash01(gi, 22));
+    gCen[gi] = vScale(gCen[gi], 1 / counts[gi]);      // live seat centroid
+  }
+
+  // ---- pass 3: flight state, all WORLD space. The parked centroid (anchor
+  // pose) is the launch pad; the homing integrator chases the mount point
+  // sampled along the ride; the capture blend targets the LIVE pose so the
+  // landing is exact no matter how the body moved. `gBank` = rigid velocity
+  // alignment: the minimal rotation taking the plug axis (-n) onto the
+  // current flight direction, eased in over the flight — the group noses
+  // along its trajectory and levels onto the mount axis as it docks.
+  const gPos = [], gRot = [], gBank = [], gSeated = [], gCenA = [];
+  for (let gi = 0; gi < nG; gi++) gCenA.push([0, 0, 0]);
+  for (let i = 0; i < items.length; i++) {           // parked (anchor) centroids
+    const gi = gOf[i];
+    if (u <= gDone[gi]) continue;
+    const a = gRef[gi]?.[i] ?? items[i];
+    const ca = gCenA[gi];
+    ca[0] += a.t[0]; ca[1] += a.t[1]; ca[2] += a.t[2];
+  }
+  for (let gi = 0; gi < nG; gi++) {
+    const p3 = (u - gDone[gi]) / A.travel;
+    if (p3 <= 0 || p3 >= 1) {                        // parked or seated: no sim
+      gPos.push(null); gRot.push(0); gBank.push(null); gSeated.push(p3 >= 1);
+      continue;
+    }
+    gSeated.push(false);
+    gCenA[gi] = vScale(gCenA[gi], 1 / counts[gi]);
+    const nLive = items[gFirst[gi]].an ?? hashDir(gi);
+    const [ax, ay, az] = gAnW[gi];
+    const from = [
+      gCenA[gi][0] + ax * gFar[gi],
+      gCenA[gi][1] + ay * gFar[gi],
+      gCenA[gi][2] + az * gFar[gi],
+    ];
+    const P = homingParams(gi, gFar[gi], A);
+    const t0 = gDone[gi], tw = A.travel;
+    const aimAt = refFn
+      ? (tk) => {
+          const pose = poseGroups(refFn(quant64(t0 + tk * tw)));
+          return { seat: pose.cen[gi], n: pose.an[gi] ?? hashDir(gi) };
+        }
+      : () => ({ seat: gCen[gi], n: nLive });
+    const sim = simulateHoming(from, gAnW[gi], p3, P, aimAt);
+    const { p, dir } = captureBlend(sim, gCen[gi], nLive, p3, P);
+    const rot = easeInOutCubic(Math.min(1, p3 / A.align));
+    gPos.push(p);
+    gRot.push(rot);
+    const cx = -nLive[1] * dir[2] + nLive[2] * dir[1];  // cross(-n, dir)
+    const cy = -nLive[2] * dir[0] + nLive[0] * dir[2];
+    const cz = -nLive[0] * dir[1] + nLive[1] * dir[0];
+    const sl = Math.hypot(cx, cy, cz);
+    const dt = -(nLive[0] * dir[0] + nLive[1] * dir[1] + nLive[2] * dir[2]);
+    gBank.push(sl > 1e-4
+      ? m3AxisAngle(cx / sl, cy / sl, cz / sl, Math.atan2(sl, dt) * rot)
+      : null);
   }
 
   const out = [];
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     const gi = gOf[i];
+    if (gSeated[gi]) { out.push({ ...it, a: 1 }); continue; }  // flight done
     const base = gRef[gi]?.[i] ?? it;                // WORLD transform source (phases 1-2)
     const cnt = counts[gi];
     const pFrac = cnt > 1 ? pOf[i] / (cnt - 1) : 0;
@@ -108,29 +199,28 @@ export function assembleModel(items, u, ref = null) {
 
     // ---- group position: parked FAR out on its approach line in WORLD
     // space (frozen anchor pose) while the prims assemble it (phases 1-2);
-    // then it converts to DRAGON LOCAL coordinates — flies to a near-final
-    // offset riding the live body (phase 3) and snaps into the seat with a
-    // slight overshoot (phase 4)
+    // once formed it homes on the live mount (position precomputed per
+    // group above): item offsets settle from the parked arrangement to the
+    // live seats and rotate with the group's bank about the centroid —
+    // rigid at both ends, no frame jump, no snap.
     const [wx, wy, wz] = gAnW[gi];
-    const far = A.gOff[0] + (A.gOff[1] - A.gOff[0]) * hash01(gi, 22);
-    const nearL = A.gNear[0] + (A.gNear[1] - A.gNear[0]) * hash01(gi, 25);
-    const tr = [base.t[0] + wx * far, base.t[1] + wy * far, base.t[2] + wz * far];
-    const p3 = (u - gDone[gi]) / A.fly3;
-    let phase34 = 0;                                 // rotation blend base -> live
-    if (p3 > 0) {
-      const [lx, ly, lz] = it.an ?? hashDir(gi);
-      const s4p = (u - gDone[gi] - A.fly3) / A.snap4;
-      if (s4p > 0) {                                 // phase 4: local snap, overshoot
-        const gl = nearL * (1 - easeOutBack(Math.min(1, s4p)));
-        tr[0] = it.t[0] + lx * gl; tr[1] = it.t[1] + ly * gl; tr[2] = it.t[2] + lz * gl;
-        phase34 = 1;
-      } else {                                       // phase 3: world -> local flight
-        const e3 = easeInOutCubic(p3);
-        tr[0] += (it.t[0] + lx * nearL - tr[0]) * e3;
-        tr[1] += (it.t[1] + ly * nearL - tr[1]) * e3;
-        tr[2] += (it.t[2] + lz * nearL - tr[2]) * e3;
-        phase34 = e3;
-      }
+    const far = gFar[gi];
+    const P3 = gPos[gi];
+    let tr, phase34 = 0;                             // rotation blend base -> live
+    if (P3) {
+      const C = gCen[gi], CA = gCenA[gi];
+      const oax = base.t[0] - CA[0], oay = base.t[1] - CA[1], oaz = base.t[2] - CA[2];
+      const k34 = gRot[gi];
+      const o = [                                    // parked -> live offset settle
+        oax + (it.t[0] - C[0] - oax) * k34,
+        oay + (it.t[1] - C[1] - oay) * k34,
+        oaz + (it.t[2] - C[2] - oaz) * k34,
+      ];
+      const ro = gBank[gi] ? m3MulV(gBank[gi], o) : o;
+      tr = [P3[0] + ro[0], P3[1] + ro[1], P3[2] + ro[2]];
+      phase34 = k34;
+    } else {
+      tr = [base.t[0] + wx * far, base.t[1] + wy * far, base.t[2] + wz * far];
     }
 
     // ---- primitive offset within the group (phases 1-2): scatter-fly to a
@@ -162,9 +252,23 @@ export function assembleModel(items, u, ref = null) {
       tr[1] += dy * dist;
       tr[2] += Math.sin(saz) * s * dist;
     }
-    // rotation follows the world -> local handoff (phases 3-4)
-    if (phase34 > 0 && m !== it.m)
-      m = phase34 >= 1 ? it.m : m.map((v, k) => v + (it.m[k] - v) * phase34);
+    // rotation during the flight: settle from the formed (anchor-pose)
+    // orientation to the seat orientation, then bank the result along the
+    // velocity — the bank unwinds to identity as the capture levels the
+    // heading onto the mount axis, so the group arrives exactly in its
+    // seat pose. The settle slerps the PURE rotation delta base -> live on
+    // the quaternion sphere (the item's local scale cancels through the
+    // inverse) — a component-wise matrix lerp would shear the group.
+    if (phase34 > 0) {
+      if (m !== it.m) {
+        if (phase34 >= 1) m = it.m;
+        else {
+          const dq = qFromM3(m3Mul(it.m, m3Inv(m)));
+          m = m3Mul(qToM3(qSlerp(Q_ID, dq, phase34)), m);
+        }
+      }
+      if (gBank[gi]) m = m3Mul(gBank[gi], m);
+    }
     out.push({ ...it, m, t: tr, a });
   }
   return out;

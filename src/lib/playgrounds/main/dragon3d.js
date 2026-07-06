@@ -209,7 +209,9 @@ export function createDragon3d({ timing }) {
     // assembly intro: the rig's 4-phase build (rig space) spans the crossfade
     // window; past it, items pass through untouched. Groups assemble in WORLD
     // space anchored on the pose where the body was when they started
-    // forming; phase 3 converts each group to the live body's local frame.
+    // forming; once formed each group HOMES on its moving mount point
+    // (missile-style, phase 3) and captures onto the live seat along its
+    // mount normal — the ref sampler below feeds the chase its targets.
     const u = (t - timing.d3Start) / Math.max(1e-6, timing.d3End - timing.d3Start);
     let src = model.items;
     if (u < 1) {

@@ -7,6 +7,7 @@ struct Uni {
   uAspect: f32,
   uZ: f32,
   uStationY: f32,
+  uExt: f32,
 };
 @group(0) @binding(0) var<uniform> u: Uni;
 @group(0) @binding(1) var tex: texture_2d<f32>;
@@ -26,7 +27,7 @@ fn vs(@builtin(vertex_index) vid: u32) -> VsOut {
   let c = C[vid];
   var o: VsOut;
   o.vUV = c;
-  let world = vec3((c.x * 2.0 - 1.0) * aspect, c.y * 2.0 - 1.0 + stationY, z);
+  let world = vec3((c.x * 2.0 - 1.0) * aspect * u.uExt, (c.y * 2.0 - 1.0) * u.uExt + stationY, z);
   o.pos = u.uViewProj * vec4(world, 1.0);
   return o;
 }

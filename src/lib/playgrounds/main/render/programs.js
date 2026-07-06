@@ -52,18 +52,18 @@ export const PROGRAMS = {
   stroke: {
     glsl: { vertex: STROKE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
     buffers: [BUF_STROKE_POS, BUF_STROKE_UV],
-    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uInkFlow"), F32("uStrands"), F32("uWaterFlow"), F32("uWobble"), F32("uOpacity"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"), F32("uPerpClearance"), F32("uArcClearance"), I32("uSimple"), VEC4("uBrushColor")],
+    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uExt"), F32("uInkFlow"), F32("uStrands"), F32("uWaterFlow"), F32("uWobble"), F32("uOpacity"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"), F32("uPerpClearance"), F32("uArcClearance"), I32("uSimple"), VEC4("uBrushColor")],
     blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
   },
   head: {
     glsl: { vertex: HEAD_VERT, fragment: HEAD_FRAG }, wgsl: HEAD_WGSL,
     buffers: [BUF_HEAD],
-    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uOpacity"), VEC4("uBrushColor")],
+    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uExt"), F32("uOpacity"), VEC4("uBrushColor")],
     blend: "accum", topology: "tri-strip", target: "rgba8", sampleCount: 1,
   },
   composite: {
     glsl: { vertex: COMPOSITE_VERT, fragment: COMPOSITE_FRAG }, wgsl: COMPOSITE_WGSL,
-    uniforms: [MAT4("uViewProj"), F32("uOpacity"), F32("uAspect"), F32("uZ"), F32("uStationY")],
+    uniforms: [MAT4("uViewProj"), F32("uOpacity"), F32("uAspect"), F32("uZ"), F32("uStationY"), F32("uExt")],
     textures: [{ name: "uTex", binding: 1 }], sampler: 2,
     blend: "premult", depth: "none", topology: "tri-strip", target: "screen", sampleCount: 4,
   },

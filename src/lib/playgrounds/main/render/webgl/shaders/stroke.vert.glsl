@@ -6,10 +6,11 @@ in vec2 aLineUV;
 uniform float uAspect;
 uniform float uCamY;
 uniform float uFlipY;
+uniform float uExt;
 out vec2 vUV01;
 out vec2 vWorld;
 void main() {
   vUV01 = aLineUV;
   vWorld = aPos;
-  gl_Position = vec4(aPos.x / uAspect, (aPos.y - uCamY) * uFlipY, 0.0, 1.0);
+  gl_Position = vec4(aPos.x / (uAspect * uExt), (aPos.y - uCamY) / uExt * uFlipY, 0.0, 1.0);
 }

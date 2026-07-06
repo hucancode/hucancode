@@ -6,6 +6,7 @@
     PART_NAMES, PRIM_NAMES, PRIM_PARAMS, PART_PARAMS, JOINT_POSE,
   } from "$lib/mech/parts.js";
   import { dragonModel, DRAGON_POSE } from "$lib/mech/rig.js";
+  import { assembleModel } from "$lib/mech/assembly.js";
 
   let scene = $state(null);
 
@@ -13,7 +14,7 @@
   const JOINTS = ["hinge1", "hinge2", "hinge3", "pivot1", "ball1"];
   const PARTS = PART_NAMES.filter((n) => !JOINTS.includes(n));
 
-  let view = $state("parts");             // "parts" | "primitives" | "dragon"
+  let view = $state("dragon");            // "parts" | "primitives" | "dragon"
   let selPart = $state(PARTS[0]);         // a part OR a joint name
   let selPrim = $state(PRIM_NAMES[0]);
   const isJoint = (n) => JOINTS.includes(n);
@@ -21,8 +22,12 @@
   let jparams = $state(structuredClone(PART_PARAMS));
   let jpose = $state(structuredClone(JOINT_POSE));   // runtime joint rotations, degrees
   let drig = $state(structuredClone(DRAGON_POSE));   // dragon rig pose
-  let autoplay = $state(false);                      // fly the loop automatically
+  let autoplay = $state(true);                       // fly the loop automatically
   const LAP_SECONDS = 4;
+  // assembly build scrub: 1 = fully assembled, <1 runs the 4-phase build
+  let asm = $state(0);
+  let asmPlay = $state(true);
+  const BUILD_SECONDS = 6;
   let seed = $state(1);                    // color shuffle seed
 
   // HUD
@@ -102,14 +107,39 @@
   }
   function resetDragon() { drig = structuredClone(DRAGON_POSE); }
   function shuffle() { seed = (seed + 1) | 0; }
+  function replayBuild() { asmCache.clear(); asm = 0; asmPlay = true; }
+
+  // frozen WORLD anchors for the build: groups form at the pose the body had
+  // when they started (build clock and ride clock advance together during
+  // autoplay), then convert to the local frame for the dock flight. Cached
+  // per anchor pose — anchors are per-group constants, so steady state is
+  // pure cache hits.
+  const asmCache = new Map();
+  function asmRefAt(pose, dOff, asmNow) {
+    const off0 = pose.offset - asmNow * dOff;          // ride offset at build start
+    return (uu) => {
+      const off = (((off0 + uu * dOff) % 1) + 1) % 1;
+      const key = [seed, off.toFixed(5), pose.jaw, pose.armSwing, pose.elbow, pose.legSwing, pose.knee].join("|");
+      if (!asmCache.has(key)) {
+        if (asmCache.size > 200) asmCache.clear();
+        asmCache.set(key, dragonModel(seed, { ...pose, offset: off }).items);
+      }
+      return asmCache.get(key);
+    };
+  }
 
   const model = $derived.by(() => {
     if (view === "primitives") return primitiveModel(selPrim, $state.snapshot(pparams)[selPrim], seed);
-    if (view === "dragon") return dragonModel(seed, $state.snapshot(drig));
+    if (view === "dragon") {
+      const pose = $state.snapshot(drig);
+      const m = dragonModel(seed, pose);
+      if (asm >= 1) return m;
+      const dOff = autoplay ? BUILD_SECONDS / LAP_SECONDS : 0;
+      return { ...m, items: assembleModel(m.items, asm, asmRefAt(pose, dOff, asm)) };
+    }
     if (isJoint(selPart)) return partModel(selPart, seed, $state.snapshot(jparams)[selPart], $state.snapshot(jpose)[selPart]);
     return partModel(selPart, seed, $state.snapshot(jparams)[selPart]);
   });
-
   $effect(() => { scene?.apply({ spin }); });
   $effect(() => { scene?.apply({ lightAngle: light }); });
   $effect(() => { scene?.apply({ model }); });
@@ -123,6 +153,20 @@
       const dt = Math.min((t - last) / 1000, 0.1);
       last = t;
       drig.offset = (drig.offset + dt / LAP_SECONDS) % 1;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  });
+  // replay build: sweep the assembly scrub 0 -> 1 once
+  $effect(() => {
+    if (!asmPlay || view !== "dragon") return;
+    let raf, last = performance.now();
+    const tick = (t) => {
+      const dt = Math.min((t - last) / 1000, 0.1);
+      last = t;
+      asm = Math.min(1, asm + dt / BUILD_SECONDS);
+      if (asm >= 1) { asmPlay = false; return; }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -142,7 +186,6 @@
         <label><span>Spin</span><input type="range" min="0" max="3" step="0.1" bind:value={spin} /></label>
         <label><span>Light</span><input type="range" min="0" max="6.28" step="0.05" bind:value={light} /></label>
         <button type="button" onclick={shuffle}>🎨 shuffle colors</button>
-        <button type="button" onclick={() => scene?.apply({ resetView: true })}>Reset view</button>
       </div>
     </div>
   </section>
@@ -200,6 +243,11 @@
               oninput={(e) => (drig[key] = +e.currentTarget.value)} />
             <output>{drig[key].toFixed(step < 1 ? 2 : 0)}</output></label>
         {/each}
+        <div class="grp">assembly</div>
+        <label><span>build</span>
+          <input type="range" min="0" max="1" step="0.001" bind:value={asm} />
+          <output>{asm.toFixed(2)}</output></label>
+        <button type="button" onclick={replayBuild}>▶ replay build</button>
       </fieldset>
     {:else}
       <fieldset>
