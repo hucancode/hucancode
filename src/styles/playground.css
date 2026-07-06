@@ -95,6 +95,11 @@ legend button {
   opacity: 0.75;
   margin-left: 0.4rem;
 }
+/* sub-group inside a panel: keep the legend, lose the box */
+fieldset fieldset {
+  border: 0;
+  padding: 0;
+}
 
 fieldset label {
   display: grid;

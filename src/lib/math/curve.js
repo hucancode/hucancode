@@ -1,13 +1,19 @@
 import { clamp, lerp } from "./scalar.js";
 
+// cubic Hermite progress g(0)=0, g(1)=1 with endpoint slopes m0, m1
+export function hermiteG(x, m0, m1) {
+  const t2 = x * x, t3 = t2 * x;
+  return (t3 - 2 * t2 + x) * m0 + (3 * t2 - 2 * t3) + (t3 - t2) * m1;
+}
+
 // Catmull-Rom basis through control values p0..p3 at fraction f. component-wise
-export function crComp(p0, p1, p2, p3, f) {
+function crComp(p0, p1, p2, p3, f) {
   const f2 = f * f, f3 = f2 * f;
   return 0.5 * (2 * p1 + (-p0 + p2) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f2 + (-p0 + 3 * p1 - 3 * p2 + p3) * f3);
 }
 
 // Catmull-Rom through pivots P (CLOSED). u in pivot-index space. component-wise
-export function catmullClosed(P, u) {
+function catmullClosed(P, u) {
   const K = P.length;
   const i = ((Math.floor(u) % K) + K) % K;
   const f = u - Math.floor(u);

@@ -25,7 +25,7 @@
   <meta name="twitter:description" content={excerpt} />
 </svelte:head>
 
-<article class="container">
+<article>
   {#if categories}
     <ul>
       {#each categories as category}
@@ -37,7 +37,7 @@
       {/each}
     </ul>
   {/if}
-  <h1 xl>{title}</h1>
+  <h1>{title}</h1>
   <hr />
   {#if cover}
     <img src={cover} alt="cover" />

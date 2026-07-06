@@ -3,8 +3,6 @@ if (typeof location !== "undefined") {
   enabled = new URLSearchParams(location.search).get("debug") === "true";
 }
 
-export const profilingEnabled = () => enabled;
-
 const now = () =>
   typeof performance !== "undefined" ? performance.now() : Date.now();
 

@@ -1,5 +1,6 @@
 import { m3MulV, m3AxisAngle, vAdd, vSub, vScale, vNorm, vLen, vCross } from "../math/mat3.js";
-import { clamp, smooth, easeInOutCubic } from "../math/scalar.js";
+import { clamp, smooth } from "../math/scalar.js";
+import { eases } from "../math/ease.js";
 
 // ---- HOMING FLIGHT -------------------------------------------------------
 // The assembly's group flight, TWO PHASES over the travel window:
@@ -139,7 +140,7 @@ export function approachBlend(sim, seatLive, nLive, tau, P) {
 // the gate a beat, drives in, settles into the seat with zero end velocity.
 export function snapIn(seatLive, nLive, tau, P) {
   const x = Math.max(0, Math.min(1, (tau - P.approach) / (1 - P.approach)));
-  const depth = P.dock * (1 - easeInOutCubic(x));
+  const depth = P.dock * (1 - eases.inOutCubic(x));
   return {
     p: [
       seatLive[0] + nLive[0] * depth,

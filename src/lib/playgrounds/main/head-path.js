@@ -6,14 +6,9 @@
 //   roam2   : SP3 (constant; == 3D loop speed)
 
 import { clamp, lerp } from "$lib/math/scalar.js";
+import { hermiteG } from "$lib/math/curve.js";
 import { BLOCK_DUR, ENSO_REVS, CRUISE_SP } from "./config.js";
 import { ensoPos, ensoHeadProgress } from "./frame-path.js";
-
-// cubic Hermite progress g(0)=0, g(1)=1 with endpoint slopes m0, m1
-function cubicG(x, m0, m1) {
-  const t2 = x * x, t3 = t2 * x;
-  return (t3 - 2 * t2 + x) * m0 + (3 * t2 - 2 * t3) + (t3 - t2) * m1;
-}
 
 export function createHeadPath({ timing, paths }) {
   const { flyinStart, roam1Start, ensoStart, ensoExit, loop3Start } = timing;
@@ -35,7 +30,7 @@ export function createHeadPath({ timing, paths }) {
   const cruise = (curve, t, t0, dur, s0, s1) => {
     const hs = curve.headStart || 0, he = curve.headEnd ?? curve.total, L = (he - hs) || 1e-6;
     const x = clamp((t - t0) / dur, 0, 1);
-    const g = clamp(cubicG(x, (s0 * dur) / L, (s1 * dur) / L), 0, 1);
+    const g = clamp(hermiteG(x, (s0 * dur) / L, (s1 * dur) / L), 0, 1);
     return curve.pos(hs + g * L);
   };
   const frac = (t, t0, dur) => clamp((t - t0) / dur, 0, 1);

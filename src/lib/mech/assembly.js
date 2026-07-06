@@ -1,6 +1,6 @@
 import { m3Mul, m3MulV, m3Inv, m3AxisAngle, vScale } from "../math/mat3.js";
 import { qFromM3, qToM3, qSlerp } from "../math/quat.js";
-import { easeInOutCubic } from "../math/scalar.js";
+import { eases } from "../math/ease.js";
 import { hash01, homingParams, simulateHoming, approachBlend, snapIn } from "./homing.js";
 
 // ---- ASSEMBLY ANIMATION --------------------------------------------------------
@@ -46,8 +46,31 @@ export const ASSEMBLY = {
   steps: 96,               // fixed integration steps per flight (determinism grid)
 };
 
-const easeOutBack = (x) => 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
 const Q_ID = [0, 0, 0, 1];
+
+// first-seen group registration + seat-centroid accumulation, shared by
+// poseGroups and assembleModel's pass 1 (both walk items in the same order,
+// so group indices always line up). Optional hooks let pass 1 fill its extra
+// per-group / per-item tables in the same sweep without extra allocations:
+// onNew(gi, item, i) fires when a group is first seen, onItem(gi, pi, i) on
+// every item (pi = the item's index within its group).
+function groupCentroids(arr, onNew = null, onItem = null) {
+  const reg = new Map(), cen = [], cnt = [];
+  for (let i = 0; i < arr.length; i++) {
+    const it = arr[i];
+    let gi = reg.get(it.group);
+    if (gi === undefined) {
+      gi = reg.size; reg.set(it.group, gi);
+      cen.push([0, 0, 0]); cnt.push(0);
+      if (onNew) onNew(gi, it, i);
+    }
+    if (onItem) onItem(gi, cnt[gi], i);
+    const c = cen[gi];
+    c[0] += it.t[0]; c[1] += it.t[1]; c[2] += it.t[2]; cnt[gi]++;
+  }
+  for (let gi = 0; gi < cen.length; gi++) cen[gi] = vScale(cen[gi], 1 / cnt[gi]);
+  return { reg, cen, cnt };
+}
 
 // group seat centroids + assembly normals of a pose (same first-seen group
 // order as assembleModel's pass 1). Cached per item-array identity: callers
@@ -56,17 +79,8 @@ const poseCache = new WeakMap();
 function poseGroups(arr) {
   let e = poseCache.get(arr);
   if (e) return e;
-  const reg = new Map(), cen = [], an = [], cnt = [];
-  for (const it of arr) {
-    let gi = reg.get(it.group);
-    if (gi === undefined) {
-      gi = reg.size; reg.set(it.group, gi);
-      cen.push([0, 0, 0]); an.push(it.an); cnt.push(0);
-    }
-    const c = cen[gi];
-    c[0] += it.t[0]; c[1] += it.t[1]; c[2] += it.t[2]; cnt[gi]++;
-  }
-  for (let gi = 0; gi < cen.length; gi++) cen[gi] = vScale(cen[gi], 1 / cnt[gi]);
+  const an = [];
+  const { cen } = groupCentroids(arr, (gi, it) => an.push(it.an));
   e = { cen, an };
   poseCache.set(arr, e);
   return e;
@@ -93,20 +107,14 @@ export function assembleModel(items, u, refFn = null) {
 
   // ---- pass 1: group the items (first-seen order, stable per build).
   // `depth` = skeleton chain depth (head/root = 0), pose-independent — the
-  // build follows the chain, head first
-  const reg = new Map();
+  // build follows the chain, head first. gCen = live seat centroids
   const gOf = new Int32Array(items.length), pOf = new Int32Array(items.length);
-  const counts = [], gDepth = [], gFirst = [], gCen = [];
-  items.forEach((it, i) => {
-    let gi = reg.get(it.group);
-    if (gi === undefined) {
-      gi = reg.size; reg.set(it.group, gi); counts.push(0);
-      gDepth.push(it.depth); gFirst.push(i); gCen.push([0, 0, 0]);
-    }
-    gOf[i] = gi; pOf[i] = counts[gi]++;
-    const c = gCen[gi];
-    c[0] += it.t[0]; c[1] += it.t[1]; c[2] += it.t[2];
-  });
+  const gDepth = [], gFirst = [];
+  const { reg, cen: gCen, cnt: counts } = groupCentroids(
+    items,
+    (gi, it, i) => { gDepth.push(it.depth); gFirst.push(i); },
+    (gi, pi, i) => { gOf[i] = gi; pOf[i] = pi; },
+  );
   const nG = reg.size;
   const maxDepth = Math.max(1, ...gDepth);
 
@@ -122,7 +130,6 @@ export function assembleModel(items, u, refFn = null) {
     const h = gRef[gi]?.[gFirst[gi]] ?? items[gFirst[gi]];
     gAnW.push(h.an);
     gFar.push(A.gOff[0] + (A.gOff[1] - A.gOff[0]) * hash01(gi, 22));
-    gCen[gi] = vScale(gCen[gi], 1 / counts[gi]);      // live seat centroid
   }
 
   // ---- pass 3: flight state, all WORLD space. The parked centroid (anchor
@@ -173,7 +180,7 @@ export function assembleModel(items, u, refFn = null) {
     } else {                                         // phase 4: snap in along the normal
       ({ p, dir } = snapIn(gCen[gi], nLive, p3, P));
     }
-    const rot = easeInOutCubic(Math.min(1, p3 / (A.align * A.approach)));
+    const rot = eases.inOutCubic(Math.min(1, p3 / (A.align * A.approach)));
     gPos.push(p);
     gRot.push(rot);
     const cx = -nLive[1] * dir[2] + nLive[2] * dir[1];  // cross(-n, dir)
@@ -227,7 +234,7 @@ export function assembleModel(items, u, refFn = null) {
     // standoff near its seat, then snap in
     let m = base.m, a = 1, dist = 0;
     if (pt < A.fly) {                                // phase 1: fly in
-      const fp = easeInOutCubic(pt / A.fly);
+      const fp = eases.inOutCubic(pt / A.fly);
       const r0 = A.scatter[0] + (A.scatter[1] - A.scatter[0]) * hash01(i, 4);
       const off = A.standoff[0] + (A.standoff[1] - A.standoff[0]) * hash01(i, 5);
       dist = off + (r0 - off) * (1 - fp);
@@ -241,7 +248,7 @@ export function assembleModel(items, u, refFn = null) {
       a = Math.min(1, pt / (A.fly * A.fadeIn));
     } else if (pt < A.fly + A.snap2) {               // phase 2: snap into the group
       const off = A.standoff[0] + (A.standoff[1] - A.standoff[0]) * hash01(i, 5);
-      dist = off * (1 - easeOutBack((pt - A.fly) / A.snap2));
+      dist = off * (1 - eases.outBack((pt - A.fly) / A.snap2));
     }
     if (dist !== 0) {
       // scatter direction: deterministic, mostly from above (rig is y-up)

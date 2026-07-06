@@ -158,7 +158,7 @@
 </svelte:head>
 <svelte:window onscroll={onScroll} onresize={placeHints} />
 
-<nav class="topbar" bind:this={linksEl}>
+<nav bind:this={linksEl}>
   <a
     href="https://github.com/hucancode"
     target="_blank"
@@ -169,9 +169,8 @@
     ><RoughIcon svg={Profile} /></a
   >
   <a href="/notes" aria-label="Notes"><RoughIcon svg={PersonRaiseHand} /></a>
-  <div class="controls" bind:this={controlsEl}>
+  <div bind:this={controlsEl}>
     <button
-      class="play"
       onclick={togglePlay}
       aria-label={atEnd ? "restart" : playing ? "pause" : "play"}
     >
@@ -179,14 +178,8 @@
     </button>
     <Timeline {progress} onseek={seek} />
     {#if showDebug}
-      <div class="debug">
-        <label
-          ><input type="checkbox" bind:checked={debugPath2d} /> path 2d</label
-        >
-        <label
-          ><input type="checkbox" bind:checked={debugPath3d} /> path 3d</label
-        >
-      </div>
+      <label><input type="checkbox" bind:checked={debugPath2d} /> path 2d</label>
+      <label><input type="checkbox" bind:checked={debugPath3d} /> path 3d</label>
     {/if}
   </div>
 
@@ -194,7 +187,6 @@
        each centered under its own icon so it never drifts or scales. -->
   {#each ICON_HINTS as h, i}
     <div
-      class="hints"
       popover="manual"
       bind:this={iconHintEls[i]}
       aria-hidden="true"
@@ -213,7 +205,6 @@
           <path d="M42 6 l -4 4 M42 6 l 4 4.5" />
         </g>
         <text
-          class="ink"
           x={h.lx}
           y={h.ly}
           text-anchor="middle"
@@ -224,7 +215,7 @@
   {/each}
 
   <!-- coach mark for the seek bar -->
-  <div class="hints" popover="manual" bind:this={hints2El} aria-hidden="true">
+  <div popover="manual" bind:this={hints2El} aria-hidden="true">
     <svg viewBox="0 0 120 60">
       <g
         fill="none"
@@ -237,7 +228,6 @@
         <path d="M60 7.5 l -6 5 M60 7.5 l 5 6.5" />
       </g>
       <text
-        class="ink"
         x="60"
         y="54"
         text-anchor="middle"
@@ -247,37 +237,34 @@
   </div>
 </nav>
 
-<div class="track" style:height={`calc(100vh + ${SCROLL_LEN}px)`}>
-  <div class="stage">
-    <Scene fill bind:t bind:playing {debug} />
+<main style:height={`calc(100vh + ${SCROLL_LEN}px)`}>
+  <div>
+    <Scene bind:t bind:playing {debug} />
   </div>
-</div>
+</main>
 
 <button
-  class="scroll-hint"
-  class:show={progress < 0.02}
+  inert={progress >= 0.02}
   onclick={() => (playing = true)}
   aria-label="play"
 >
   {@html ChevronDown}
 </button>
 
-<footer class:show={progress >= 1}>
+<footer inert={progress < 1}>
   <a href="/playgrounds">More like this...</a>
-  <p class="credit">All animations and models are procedurally generated</p>
+  <p>All animations and models are procedurally generated</p>
 </footer>
 
 <style>
   /* single <nav> top bar: full-width fixed, content clamped to 1100px and
      centered via side padding (overrides the global <nav> max-width/justify). */
-  .topbar {
+  nav {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 10;
-    display: flex;
-    align-items: center;
     justify-content: flex-start;
     gap: 1.6rem; /* room for the coach-mark labels under each icon */
     max-width: none;
@@ -289,7 +276,8 @@
     );
     backdrop-filter: blur(2px);
   }
-  .hints {
+  /* coach-mark popovers */
+  [popover] {
     margin: 0;
     border: none;
     background: none;
@@ -305,25 +293,25 @@
       overlay 0.4s allow-discrete,
       display 0.4s allow-discrete;
   }
-  .hints:popover-open {
+  [popover]:popover-open {
     opacity: 0.95;
   }
   @starting-style {
-    .hints:popover-open {
+    [popover]:popover-open {
       opacity: 0;
     }
   }
-  .hints svg {
+  [popover] svg {
     display: block;
     width: 100%;
     height: auto;
   }
-  .hints text {
+  [popover] text {
     font-family: "Virgil", cursive;
     font-size: 17px;
     fill: currentColor;
   }
-  .topbar > a {
+  nav > a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -331,19 +319,20 @@
     height: 2.2rem;
     color: var(--ink);
   }
-  .controls {
-    flex: 1 1 auto; /* fill all space left of the icons -> long seek bar */
+  nav > a :global(svg) {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+  }
+  /* playback controls: fill all space left of the icons -> long seek bar */
+  nav > div:not([popover]) {
+    flex: 1 1 auto;
     min-width: 0;
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
-  .topbar > a :global(svg) {
-    width: 100%;
-    height: 100%;
-    fill: currentColor;
-  }
-  .play {
+  nav button {
     flex: none;
     display: inline-flex;
     align-items: center;
@@ -356,25 +345,27 @@
     color: var(--ink);
     opacity: 0.9;
   }
-  .play:hover {
+  nav button:hover {
     opacity: 1;
   }
-  .play :global(svg) {
+  nav button :global(svg) {
     width: 2.2rem;
     height: 2.2rem;
   }
-  .debug {
+  /* ?debug=true toggles */
+  nav label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     font-variant-numeric: tabular-nums;
     font-size: 0.8rem;
     opacity: 0.85;
   }
-  .track {
+  /* tall scroll track; the stage inside stays stuck to the viewport */
+  main {
     position: relative;
   }
-  .stage {
+  main > div {
     position: sticky;
     top: 0;
     height: 100vh;
@@ -397,10 +388,10 @@
     opacity: 0; /* only visible once scrolled to the bottom */
     transition: opacity 0.4s ease;
   }
-  footer.show {
+  footer:not([inert]) {
     opacity: 1;
   }
-  footer.show a {
+  footer:not([inert]) a {
     pointer-events: auto; /* re-enable clicks once the footer is visible */
   }
   footer a {
@@ -411,7 +402,7 @@
     font-size: 1.5rem;
     margin-bottom: 3rem;
   }
-  footer .credit {
+  footer p {
     position: absolute;
     right: 0;
     left: 0;
@@ -421,7 +412,8 @@
     color: var(--ink);
     opacity: 0.5;
   }
-  .scroll-hint {
+  /* scroll hint: visible (not inert) only in the empty state */
+  main + button {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -433,19 +425,17 @@
     background: none;
     padding: 0.5rem;
     opacity: 0;
-    pointer-events: none;
     cursor: pointer;
     transition: opacity 0.4s ease;
   }
-  .scroll-hint.show {
+  main + button:not([inert]) {
     opacity: 0.85;
-    pointer-events: auto;
     animation: hint-bounce 1.4s ease-in-out infinite;
   }
-  .scroll-hint.show:hover {
+  main + button:hover {
     opacity: 1;
   }
-  .scroll-hint :global(svg) {
+  main + button :global(svg) {
     width: 2.5rem;
     height: 2.5rem;
   }
@@ -459,12 +449,12 @@
     }
   }
   @media (max-width: 600px) {
-    .topbar {
+    nav {
       gap: 1rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .scroll-hint.show {
+    main + button {
       animation: none;
     }
   }

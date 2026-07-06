@@ -4,34 +4,30 @@
 
 import * as mat4 from "../../math/mat4.js";
 
-async function makeWebGPUContext(canvas, opts = {}) {
+async function makeWebGPUContext(canvas) {
   if (typeof navigator === "undefined" || !navigator.gpu)
     throw new Error("WebGPU not available");
-  const adapter = await navigator.gpu.requestAdapter({
-    powerPreference: opts.powerPreference || "high-performance",
-  });
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
   if (!adapter) throw new Error("no WebGPU adapter");
   // Reject software adapters (CPU render slower than WebGL2 fallback).
-  if (!opts.allowSoftware) {
-    if (adapter.isFallbackAdapter) throw new Error("WebGPU adapter is software (fallback)");
-    const info = adapter.info || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : null);
-    const sig = info ? `${info.vendor || ""} ${info.architecture || ""} ${info.device || ""} ${info.description || ""}`.toLowerCase() : "";
-    if (/swiftshader|llvmpipe|lavapipe|softpipe|software|basic render|microsoft basic/.test(sig))
-      throw new Error("WebGPU adapter is software: " + sig.trim());
-  }
+  if (adapter.isFallbackAdapter) throw new Error("WebGPU adapter is software (fallback)");
+  const info = adapter.info || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : null);
+  const sig = info ? `${info.vendor || ""} ${info.architecture || ""} ${info.device || ""} ${info.description || ""}`.toLowerCase() : "";
+  if (/swiftshader|llvmpipe|lavapipe|softpipe|software|basic render|microsoft basic/.test(sig))
+    throw new Error("WebGPU adapter is software: " + sig.trim());
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
   if (!context) throw new Error("WebGPU canvas context unavailable");
   const format = navigator.gpu.getPreferredCanvasFormat();
-  const alphaMode = opts.alphaMode || "premultiplied";
-  context.configure({ device, format, alphaMode });
-  return { device, context, format, alphaMode };
+  context.configure({ device, format, alphaMode: "premultiplied" });
+  return { device, context, format };
 }
 
+const STRAIGHT_BLEND = { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } };
 const BLEND = {
   premult: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
-  accum: { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
-  straight: { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
+  accum: STRAIGHT_BLEND,
+  straight: STRAIGHT_BLEND,
 };
 const TOPO = { tri: "triangle-list", "tri-strip": "triangle-strip", "line-strip": "line-strip", point: "point-list" };
 const U_ALIGN = { f32: 4, i32: 4, vec2: 8, vec3: 16, vec4: 16, mat4: 16 };
@@ -72,7 +68,7 @@ function packUniforms(layout, values, view) {
 const Z_REMAP = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 1]);
 
 export async function createWebGPUDevice(canvas) {
-  const gpu = await makeWebGPUContext(canvas, { alphaMode: "premultiplied" });
+  const gpu = await makeWebGPUContext(canvas);
   const device = gpu.device, context = gpu.context, format = gpu.format, queue = device.queue;
   const sampler = device.createSampler({ magFilter: "linear", minFilter: "linear" });
   const shaders = [];

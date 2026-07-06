@@ -1,3 +1,4 @@
+import { m3InvT } from "../math/mat3.js";
 // SHARED INSTANCED RENDER PATH for procedural models ({ items, meshes } from
 // parts.js / rig.js). One place owns the instance layout, the shading program
 // and the buffer management, so every playground drawing mech parts renders
@@ -39,21 +40,9 @@ export const INSTANCED_PROGRAM = {
   ],
 };
 
-// inverse-transpose of a row-major 3x3 = cofactor matrix / det
-function invT3(m) {
-  const [a, b, c, d, e, f, g, h, i] = m;
-  const A = e * i - f * h, B = f * g - d * i, C = d * h - e * g;
-  const det = a * A + b * B + c * C || 1;
-  return [
-    A / det, B / det, C / det,
-    (c * h - b * i) / det, (a * i - c * g) / det, (b * g - a * h) / det,
-    (b * f - c * e) / det, (c * d - a * f) / det, (a * e - b * d) / det,
-  ];
-}
-
 // write one item's 28 floats at offset o
 function packInstance(data, o, it) {
-  const m = it.m, t = it.t, n = invT3(m), c = it.color;
+  const m = it.m, t = it.t, n = m3InvT(m), c = it.color;
   data[o] = m[0]; data[o + 1] = m[1]; data[o + 2] = m[2]; data[o + 3] = t[0];
   data[o + 4] = m[3]; data[o + 5] = m[4]; data[o + 6] = m[5]; data[o + 7] = t[1];
   data[o + 8] = m[6]; data[o + 9] = m[7]; data[o + 10] = m[8]; data[o + 11] = t[2];

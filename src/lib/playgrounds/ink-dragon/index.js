@@ -1,4 +1,5 @@
-import { createDevice, mat4, planeGeometry, F32, VEC4, MAT4 } from "$lib/engine/index.js";
+import { createPlayground, mat4, planeGeometry, F32, VEC4, MAT4 } from "$lib/engine/index.js";
+import { composeShader } from "$lib/brush/shaders/index.js";
 import { catmullOpen } from "$lib/math/curve.js";
 import { clamp, smooth } from "$lib/math/scalar.js";
 import BASIC_VERT from "./shaders/basic.vert.glsl?raw";
@@ -35,13 +36,13 @@ const BUF_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", l
 const BUF_UV = { stride: 8, step: "vertex", attributes: [{ name: "uv", location: 1, format: "float32x2", offset: 0 }] };
 const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };
 
-let canvas, device, disposed = false;
+let canvas = null, device = null;
 let pPaper, pBody, pBodyWire, pWhisker, pHead;
 let quadPosBuf, quadUVBuf, headPosBuf, headUVBuf;
-let bodyPosBuf, bodyUVBuf, bodyIdxBuf, bodyIdxCount = 0;
-let bodyStroke = null;
-// whiskers are ribbon strokes like the body (thin clean line: 1 strand, no
-// wobble/water), each with its own GPU buffers
+// body + whiskers share the same ribbon record shape:
+// { stroke, posBuf, uvBuf?, idxBuf, idxCount }. Whiskers are ribbon strokes
+// like the body (thin clean line: 1 strand, no wobble/water).
+let bodyRibbon = null;
 let whiskers = [null, null];
 let aspect = 1;
 let bodyWireframe = false;
@@ -88,18 +89,45 @@ function smoothChain(controlPoints, perSegment, maxPoints) {
   return pts;
 }
 
-// re-mesh a whisker ribbon and upload to its GPU buffers. The whisker vertex
-// shader is a pure passthrough, so bake the aspect divide into the positions.
-function writeWhisker(w, controlPoints, perSegment) {
-  const pts = smoothChain(controlPoints, perSegment, w.stroke.maxPoints);
-  updatePolylineStroke(w.stroke, pts);
-  if (w.stroke.n >= 2) {
-    const pos = w.stroke.positions;
-    for (let i = 0; i < pos.length; i += 3) pos[i] /= aspect;
-    w.posBuf.write(pos);
-    w.idxCount = w.stroke.geom.drawRange ? w.stroke.geom.drawRange.count : 0;
+// head/whisker positions bake in the current aspect, so refresh it from the
+// live canvas size before each use (physics step and frame).
+function syncAspect() {
+  if (!canvas) return;
+  const a = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
+  if (a !== aspect) {
+    aspect = a;
+    updateHeadTransform();
+  }
+}
+
+// ribbon record { stroke, posBuf, uvBuf?, idxBuf, idxCount } with its GPU
+// buffers; the (static) quad index table is uploaded once here.
+function makeRibbon(strokeOpts, { withUV = false } = {}) {
+  const stroke = makePolylineStroke(strokeOpts);
+  const r = {
+    stroke,
+    posBuf: device.buffer({ kind: "vertex", size: 0, dynamic: true }),
+    uvBuf: withUV ? device.buffer({ kind: "vertex", size: 0, dynamic: true }) : null,
+    idxBuf: device.buffer({ kind: "index", size: 0, dynamic: true }),
+    idxCount: 0,
+  };
+  r.idxBuf.write(stroke.geom.index.array);
+  return r;
+}
+
+// re-mesh a ribbon and upload to its GPU buffers. bakeAspect divides x by
+// aspect (the whisker vertex shader is a pure passthrough); the body shader
+// applies aspect itself but needs the line UVs.
+function uploadRibbon(r, points, { bakeAspect = false } = {}) {
+  updatePolylineStroke(r.stroke, points);
+  if (r.stroke.n >= 2) {
+    const pos = r.stroke.positions;
+    if (bakeAspect) for (let i = 0; i < pos.length; i += 3) pos[i] /= aspect;
+    r.posBuf.write(pos);
+    if (r.uvBuf) r.uvBuf.write(r.stroke.lineUVs);
+    r.idxCount = r.stroke.geom.drawRange ? r.stroke.geom.drawRange.count : 0;
   } else {
-    w.idxCount = 0;
+    r.idxCount = 0;
   }
 }
 
@@ -120,15 +148,9 @@ function quadBuffer(geom, name) {
   return device.buffer({ kind: "vertex", data: geom.attributes[name].array });
 }
 
-export async function init(canvasEl) {
-  canvas = canvasEl;
-  disposed = false;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-  canvas.height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
-  device = await createDevice(canvas);
-  if (disposed) { device.destroy(); device = null; return; }
-  device.resize(canvas.width, canvas.height);
+function setup(ctx) {
+  canvas = ctx.canvas;
+  device = ctx.device;
   aspect = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
 
   pPaper = device.shader({
@@ -142,14 +164,16 @@ export async function init(canvasEl) {
     F32("uWobble"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"),
     F32("uPerpClearance"), F32("uArcClearance"), VEC4("uBrushColor"),
   ];
+  const strokeGlsl = { vertex: POLYLINE_VERT, fragment: composeShader(STROKE_FRAG) };
+  const strokeWgsl = composeShader(STROKE_WGSL);
   pBody = device.shader({
-    glsl: { vertex: POLYLINE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
+    glsl: strokeGlsl, wgsl: strokeWgsl,
     buffers: [BUF_POS, BUF_STROKE_UV],
     uniforms: strokeUniforms,
     blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
   });
   pBodyWire = device.shader({
-    glsl: { vertex: POLYLINE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
+    glsl: strokeGlsl, wgsl: strokeWgsl,
     buffers: [BUF_POS, BUF_STROKE_UV],
     uniforms: strokeUniforms,
     blend: "straight", topology: "line-strip", target: "screen", sampleCount: 4,
@@ -174,7 +198,7 @@ export async function init(canvasEl) {
   headPosBuf = quadBuffer(headQuad, "position");
   headUVBuf = quadBuffer(headQuad, "uv");
 
-  bodyStroke = makePolylineStroke({
+  bodyRibbon = makeRibbon({
     maxPoints: BODY_MAX_POINTS,
     params: {
       lineWidth: 0.12,
@@ -184,14 +208,10 @@ export async function init(canvasEl) {
       widthAnchor: 0.5,
     },
     brushColor,
-  });
-  bodyPosBuf = device.buffer({ kind: "vertex", size: 0, dynamic: true });
-  bodyUVBuf = device.buffer({ kind: "vertex", size: 0, dynamic: true });
-  bodyIdxBuf = device.buffer({ kind: "index", size: 0, dynamic: true });
-  bodyIdxBuf.write(bodyStroke.geom.index.array);
+  }, { withUV: true });
 
   for (let i = 0; i < 2; i++) {
-    const stroke = makePolylineStroke({
+    whiskers[i] = makeRibbon({
       maxPoints: WHISKER_MAX_POINTS,
       params: { lineWidth: 0.01 },
       brushColor,
@@ -206,46 +226,28 @@ export async function init(canvasEl) {
       perpClearance: 0,
       arcClearance: 0,
     });
-    const w = {
-      stroke,
-      posBuf: device.buffer({ kind: "vertex", size: 0, dynamic: true }),
-      idxBuf: device.buffer({ kind: "index", size: 0, dynamic: true }),
-      idxCount: 0,
-    };
-    w.idxBuf.write(stroke.geom.index.array);
-    whiskers[i] = w;
   }
 
   updateHeadTransform();
 }
 
-export function resize(w, h) {
-  if (!device) return;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const cw = Math.max(1, Math.floor(w * dpr)), ch = Math.max(1, Math.floor(h * dpr));
-  canvas.width = cw; canvas.height = ch;
-  device.resize(cw, ch);
-  aspect = h > 0 ? w / h : 1;
-  updateHeadTransform();
-}
-
-export function render() {
-  if (!device) return;
+function frame() {
+  syncAspect();
 
   device.beginFrame();
   device.pass({ target: "screen", clear: [PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0] }, (p) => {
     p.draw(pPaper, { buffers: [quadPosBuf, quadUVBuf], count: 6, uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR } });
 
-    if (bodyStroke && bodyStroke.n >= 2 && bodyIdxCount > 0) {
-      const bp = bodyStroke.params;
+    if (bodyRibbon && bodyRibbon.stroke.n >= 2 && bodyRibbon.idxCount > 0) {
+      const bp = bodyRibbon.stroke.params;
       const prog = bodyWireframe ? pBodyWire : pBody;
       p.draw(prog, {
-        buffers: [bodyPosBuf, bodyUVBuf], index: bodyIdxBuf, count: bodyIdxCount,
+        buffers: [bodyRibbon.posBuf, bodyRibbon.uvBuf], index: bodyRibbon.idxBuf, count: bodyRibbon.idxCount,
         uniforms: {
           uAspect: aspect, uInkFlow: bp.uInkFlow, uStrands: bp.uStrands, uWaterFlow: bp.uWaterFlow,
           uOpacity: bp.uOpacity, uWobble: bp.uWobble, uWidthEnd: bp.uWidthEnd, uWidthOffset: bp.uWidthOffset,
           uWidthRange: bp.uWidthRange, uWidthAnchor: bp.uWidthAnchor, uPerpClearance: bp.uPerpClearance,
-          uArcClearance: bp.uArcClearance, uBrushColor: bodyStroke.brushColor,
+          uArcClearance: bp.uArcClearance, uBrushColor: bodyRibbon.stroke.brushColor,
         },
       });
     }
@@ -265,45 +267,37 @@ export function render() {
   device.endFrame();
 }
 
-export function setWidth(v) {
-  if (bodyStroke) setStrokeLineWidth(bodyStroke, v);
+const PARAM_APPLY = {
+  width:       (v) => { if (bodyRibbon && bodyRibbon.stroke.lineWidth !== v) setStrokeLineWidth(bodyRibbon.stroke, v); },
+  wireframe:   (v) => { bodyWireframe = !!v; },
+  inkFlow:     (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uInkFlow = v; },
+  strands:     (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uStrands = v; },
+  waterFlow:   (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWaterFlow = v; },
+  wobble:      (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWobble = v; },
+  widthEnd:    (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWidthEnd = v; },
+  widthOffset: (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWidthOffset = v; },
+  widthRange:  (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWidthRange = v; },
+  // re-meshed (and aspect-baked) on the next setWhisker
+  whiskerWidth: (v) => { for (const w of whiskers) if (w) w.stroke.lineWidth = v; },
+};
+
+export function setParams(patch) {
+  for (const k in patch) PARAM_APPLY[k]?.(patch[k]);
 }
-export function setWireframe(on) {
-  bodyWireframe = !!on;
-}
-export function setInkFlow(v)   { if (bodyStroke) bodyStroke.params.uInkFlow = v; }
-export function setStrands(v)   { if (bodyStroke) bodyStroke.params.uStrands = v; }
-export function setWaterFlow(v) { if (bodyStroke) bodyStroke.params.uWaterFlow = v; }
-export function setWobble(v)    { if (bodyStroke) bodyStroke.params.uWobble = v; }
-export function setWidthEnd(v)    { if (bodyStroke) bodyStroke.params.uWidthEnd = v; }
-export function setWidthOffset(v) { if (bodyStroke) bodyStroke.params.uWidthOffset = v; }
-export function setWidthRange(v)  { if (bodyStroke) bodyStroke.params.uWidthRange = v; }
 
 export function setControlPoints(points) {
-  if (!bodyStroke) return;
-  updatePolylineStroke(bodyStroke, points);
-  if (bodyStroke.n >= 2 && device) {
-    bodyPosBuf.write(bodyStroke.positions);
-    bodyUVBuf.write(bodyStroke.lineUVs);
-    bodyIdxCount = bodyStroke.geom.drawRange ? bodyStroke.geom.drawRange.count : 0;
-  } else {
-    bodyIdxCount = 0;
-  }
+  if (!bodyRibbon || !device) return;
+  uploadRibbon(bodyRibbon, points);
 }
 
 export function setWhisker(slot, points) {
   const w = whiskers[slot];
   if (!w || !device) return;
   // caller passes anchor -> free-tip. stroke convention: arc=0 = thick end.
-  // reverse so anchor (at dragon head) sits at arc=0 -> renders thick
-  writeWhisker(w, points.slice().reverse(), WHISKER_SAMPLES_PER_SEGMENT);
-}
-
-export function setWhiskerWidth(v) {
-  for (const w of whiskers) {
-    if (!w) continue;
-    w.stroke.lineWidth = v; // re-meshed (and aspect-baked) on the next setWhisker
-  }
+  // reverse so anchor (at dragon head) sits at arc=0 -> renders thick.
+  // whisker vertex shader is a pure passthrough, so bake the aspect divide in.
+  const pts = smoothChain(points.slice().reverse(), WHISKER_SAMPLES_PER_SEGMENT, w.stroke.maxPoints);
+  uploadRibbon(w, pts, { bakeAspect: true });
 }
 
 export function setHead(pos, dir, size, show) {
@@ -314,21 +308,21 @@ export function setHead(pos, dir, size, show) {
   updateHeadTransform();
 }
 
-export function destroy() {
-  disposed = true;
+function teardown() {
   quadPosBuf?.destroy(); quadUVBuf?.destroy(); headPosBuf?.destroy(); headUVBuf?.destroy();
-  bodyPosBuf?.destroy(); bodyUVBuf?.destroy(); bodyIdxBuf?.destroy();
-  for (const w of whiskers) {
-    if (!w) continue;
-    w.posBuf?.destroy(); w.idxBuf?.destroy();
+  for (const r of [bodyRibbon, ...whiskers]) {
+    if (!r) continue;
+    r.posBuf?.destroy(); r.uvBuf?.destroy(); r.idxBuf?.destroy();
   }
   quadPosBuf = quadUVBuf = headPosBuf = headUVBuf = null;
-  bodyPosBuf = bodyUVBuf = bodyIdxBuf = null;
   pPaper = pBody = pBodyWire = pWhisker = pHead = null;
-  bodyStroke = null;
+  bodyRibbon = null;
   whiskers = [null, null];
-  if (device) { device.destroy(); device = null; }
+  canvas = null;
+  device = null;
 }
+
+export const { init, render, destroy } = createPlayground({ init: setup, frame, destroy: teardown });
 
 function screenToWorld(x, y, w, h) {
   const a = w / h;
@@ -579,6 +573,7 @@ function stepWhisker(chain, side) {
 }
 
 export function step() {
+  syncAspect(); // whisker/head writes below bake in the aspect
   stepBody();
   stepWhisker(whiskerL, +1);
   stepWhisker(whiskerR, -1);

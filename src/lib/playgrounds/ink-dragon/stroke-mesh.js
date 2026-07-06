@@ -18,7 +18,6 @@ export function makePolylineStroke({ maxPoints, params, brushColor, widthAt, per
   writeQuadIndices(indices, ribbonCap - 1);
 
   const geom = new Geometry();
-  geom.dynamic = true;
   geom.setAttribute("position", positions, 3);
   geom.setAttribute("aLineUV", lineUVs, 2);
   geom.setIndex(indices);
@@ -72,8 +71,6 @@ export function updatePolylineStroke(stroke, points) {
     widthAt: stroke.widthAt ? (t) => stroke.widthAt(t, stroke) : null,
   });
 
-  geom.attributes.position.needsUpdate = true;
-  geom.attributes.aLineUV.needsUpdate  = true;
   geom.setDrawRange(0, built.indexCount);
   stroke.n = nPoly;
   stroke.lastPts = points;

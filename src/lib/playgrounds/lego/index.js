@@ -2,6 +2,7 @@ import {
   createPlayground, createOrbit, mat4, Vec3,
   animate, utils, eases, F32, VEC3, MAT4,
 } from "$lib/engine/index.js";
+import { hexToRGB } from "$lib/math/color.js";
 import { makeSolid } from "./solid.js";
 import { resolveAssembly } from "./assembly.js";
 import { MODEL, PALETTE, VIEW } from "./templates.js";
@@ -47,11 +48,6 @@ const _vp = mat4.create();
 const _pos = new Vec3();
 const _scale = new Vec3(1, 1, 1);
 const _rot = new Vec3();   // euler XYZ angles for mat4.compose/decompose
-
-function colorRGB(hex) {
-  if (typeof hex === "string") hex = parseInt(hex.replace("#", ""), 16);
-  return [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
-}
 
 // pieces share cached buffers; destroy each unique buffer once
 function disposePieces() {
@@ -99,7 +95,7 @@ function buildEagle(model = activeModel) {
     da += pick([-2, -1, 1, 2]) * Math.PI * 2;
     return {
       posBuf: geom.posBuf, normBuf: geom.normBuf, count: geom.count,
-      color: colorRGB(PALETTE[pl.color] ?? pl.color),
+      color: hexToRGB(PALETTE[pl.color] ?? pl.color),
       model: pl.model,           // world transform (column-major mat4)
       cx, cy, cz,
       _p: 0,
@@ -131,7 +127,7 @@ function buildInspect(spec) {
     posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
     normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
     count: g.attributes.position.count,
-    color: colorRGB(PALETTE[spec.color] ?? spec.color ?? "#cccccc"),
+    color: hexToRGB(PALETTE[spec.color] ?? spec.color ?? "#cccccc"),
   };
 }
 

@@ -1,15 +1,15 @@
 // Shared ribbon geometry builder for ink strokes (polyline -> triangle-strip-style quads).
-// Clearance margins MUST match the stroke fragment shaders
-// (main/render/webgl/shaders/stroke.frag.glsl, ink-dragon/shaders/stroke.frag.glsl + wgsl twins),
-// which receive them as uPerpClearance/uArcClearance uniforms — do not change these values.
+// The clearance margins below are consumed by the shared stroke fragment core
+// (src/lib/brush/shaders/ink-core.frag.glsl + ink-core.wgsl) via the
+// uPerpClearance/uArcClearance uniforms, so mesh and shader stay in sync.
 
-export const MITER_LIMIT = 4.0;
+const MITER_LIMIT = 4.0;
 export const PERP_CLEARANCE = 0.35; // fraction of mesh perp_t reserved per side
 export const ARC_CLEARANCE = 0.15; // fraction of mesh arc_t reserved per end
 // two extra ribbon points (one before tail, one after tip) carry arc clearance
 export const ARC_EXTRA_POINTS = 2;
 
-export function computeTotalArc(points, n = points.length) {
+function computeTotalArc(points, n = points.length) {
   let acc = 0;
   for (let i = 1; i < n; i++) {
     acc += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);

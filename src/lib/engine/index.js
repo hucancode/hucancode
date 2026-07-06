@@ -1,6 +1,4 @@
 export { Vec3 } from "../math/vec3.js";
-export { Color } from "../math/color.js";
-export { DEG2RAD } from "../math/scalar.js";
 export * as mat4 from "../math/mat4.js";
 export { Camera } from "./camera.js";
 export {

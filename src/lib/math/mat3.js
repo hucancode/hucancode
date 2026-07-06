@@ -8,6 +8,7 @@ export const vSub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 export const vScale = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
 export const vLen = (a) => Math.hypot(a[0], a[1], a[2]);
 export const vNorm = (a) => vScale(a, 1 / (vLen(a) || 1));
+export const vDot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 export const vCross = (a, b) => [
   a[1] * b[2] - a[2] * b[1],
   a[2] * b[0] - a[0] * b[2],
@@ -58,5 +59,17 @@ export function m3AxisAngle(ax, ay, az, t) {
     ax * ax * k + c, ax * ay * k - az * s, ax * az * k + ay * s,
     ay * ax * k + az * s, ay * ay * k + c, ay * az * k - ax * s,
     az * ax * k - ay * s, az * ay * k + ax * s, az * az * k + c,
+  ];
+}
+
+// inverse-transpose of a row-major 3x3 = cofactor matrix / det
+export function m3InvT(m) {
+  const [a, b, c, d, e, f, g, h, i] = m;
+  const A = e * i - f * h, B = f * g - d * i, C = d * h - e * g;
+  const det = a * A + b * B + c * C || 1;
+  return [
+    A / det, B / det, C / det,
+    (c * h - b * i) / det, (a * i - c * g) / det, (b * g - a * h) / det,
+    (b * f - c * e) / det, (c * d - a * f) / det, (a * e - b * d) / det,
   ];
 }

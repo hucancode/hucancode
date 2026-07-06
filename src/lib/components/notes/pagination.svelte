@@ -62,7 +62,7 @@
 <!-- For some reason, the pagination wasn't re-rendering properly during navigation without the #key block -->
 {#key page}
   {#if lastPage > 1}
-    <div role="group" class="square">
+    <div role="group">
       {#each pages as p}
         {#if p === '...'}
           <span>...</span>

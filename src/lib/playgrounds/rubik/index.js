@@ -1,4 +1,5 @@
 import { createPlayground, createOrbit, boxGeometry, mat4, animate, stagger, utils, eases, MAT4 } from "$lib/engine/index.js";
+import { hexToRGB } from "$lib/math/color.js";
 import RUBIK_WGSL from "./shaders/rubik.wgsl?raw";
 import VERT from "./shaders/rubik.vert.glsl?raw";
 import FRAG from "./shaders/rubik.frag.glsl?raw";
@@ -41,9 +42,6 @@ function setCubeSize(size) {
   cubeNum = size;
 }
 
-function colorRGB(hex) {
-  return [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
-}
 function isInFace(x, y, z, face, depth) {
   return (
     (face === FACE_TOP && y >= cubeNum - depth) ||
@@ -65,7 +63,7 @@ function makeCubeData(x, y, z) {
   const count = g.attributes.position.count;
   const color = new Float32Array(36 * 3);
   for (let face = 0; face < 6; face++) {
-    const c = colorRGB(faceColor(x, y, z, face));
+    const c = hexToRGB(faceColor(x, y, z, face));
     for (let v = 0; v < 6; v++) {
       const o = (face * 6 + v) * 3;
       color[o] = c[0]; color[o + 1] = c[1]; color[o + 2] = c[2];

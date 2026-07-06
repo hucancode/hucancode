@@ -1,5 +1,7 @@
-const LONG = {
-  symbol: {
+import { makeGlyph } from "./glyphs.js";
+
+export const long = makeGlyph(
+  {
     strokes: [
       {
         id: 106,
@@ -9,8 +11,8 @@ const LONG = {
           { id: 108, x: -0.3522507603368193, y: 0.3907171303112228, pressure: 0 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.4169186601234256, y: 0.46823759115807956 }, pctrl: { k: 0.2 } },
-          { delay: 0, duration: 1, ctrl: { x: -0.24239935364219423, y: 0.4319708420346351 }, pctrl: { k: 0.13 } }
+          { ctrl: { x: -0.4169186601234256, y: 0.46823759115807956 }, pctrl: { k: 0.2 } },
+          { ctrl: { x: -0.24239935364219423, y: 0.4319708420346351 }, pctrl: { k: 0.13 } }
         ],
       },
       {
@@ -28,15 +30,15 @@ const LONG = {
           { id: 153, x: -0.2713494581865605, y: 0.04004199694377353, pressure: 0.11 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.2119036490884988, y: 0.34860588530672965 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.48314167668332353, y: 0.10854305914944157 }, pctrl: { k: 0 } },
-          { delay: 0, duration: 1, ctrl: { x: -0.282524230969681, y: 0.2055991752119153 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.11716440844640097, y: 0.27180063456402526 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.43539152942633674, y: 0.09100091014621892 }, pctrl: { k: 0 } },
-          { delay: 0, duration: 1, ctrl: { x: -0.6721152641889019, y: -0.09102490851842823 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.14185812365008832, y: 0.17649800302621177 }, pctrl: { k: 0.42 } },
-          { delay: 0, duration: 1, ctrl: { x: -0.15318082206943465, y: 0.11968114569533184 }, pctrl: null }
+          { ctrl: { x: -0.2119036490884988, y: 0.34860588530672965 }, pctrl: null },
+          { ctrl: { x: -0.48314167668332353, y: 0.10854305914944157 }, pctrl: { k: 0 } },
+          { ctrl: { x: -0.282524230969681, y: 0.2055991752119153 }, pctrl: null },
+          { ctrl: { x: -0.11716440844640097, y: 0.27180063456402526 }, pctrl: null },
+          { ctrl: { x: -0.43539152942633674, y: 0.09100091014621892 }, pctrl: { k: 0 } },
+          { ctrl: { x: -0.6721152641889019, y: -0.09102490851842823 }, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: -0.14185812365008832, y: 0.17649800302621177 }, pctrl: { k: 0.42 } },
+          { ctrl: { x: -0.15318082206943465, y: 0.11968114569533184 }, pctrl: null }
         ],
       },
       {
@@ -47,8 +49,8 @@ const LONG = {
           { id: 155, x: -0.37520315698778295, y: -0.4676100442253831, pressure: 0.09 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.4590765569094419, y: -0.49923290033029993 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.36153529096877746, y: -0.5118207415344813 }, pctrl: { k: 0.05 } }
+          { ctrl: { x: -0.4590765569094419, y: -0.49923290033029993 }, pctrl: null },
+          { ctrl: { x: -0.36153529096877746, y: -0.5118207415344813 }, pctrl: { k: 0.05 } }
         ],
       },
       {
@@ -62,11 +64,11 @@ const LONG = {
           { id: 127, x: -0.2942001665761176, y: -0.4981804646412362, pressure: 0.06 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.3004300265675637, y: -0.0015952567145152141 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.2066155634083667, y: 0.010910690897929065 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.2602794005937329, y: -0.5370994691286388 }, pctrl: null }
+          { ctrl: { x: -0.3004300265675637, y: -0.0015952567145152141 }, pctrl: null },
+          { ctrl: { x: -0.2066155634083667, y: 0.010910690897929065 }, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: -0.2602794005937329, y: -0.5370994691286388 }, pctrl: null }
         ],
       },
       {
@@ -80,11 +82,11 @@ const LONG = {
           { id: 132, x: -0.18534822199209927, y: -0.15642039119919277, pressure: 0.39 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.30800332508520656, y: -0.10337959582207268 }, pctrl: { k: 0.26 } },
-          { delay: 0, duration: 1, ctrl: { x: -0.18247181580715338, y: -0.07011924608885015 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.4418765472727029, y: -0.34857198549026186 }, pctrl: { k: 0 } },
-          { delay: 0, duration: 1, ctrl: { x: -0.2291712717906808, y: -0.24979811976382035 }, pctrl: { k: 0.28 } }
+          { ctrl: { x: -0.30800332508520656, y: -0.10337959582207268 }, pctrl: { k: 0.26 } },
+          { ctrl: { x: -0.18247181580715338, y: -0.07011924608885015 }, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: -0.4418765472727029, y: -0.34857198549026186 }, pctrl: { k: 0 } },
+          { ctrl: { x: -0.2291712717906808, y: -0.24979811976382035 }, pctrl: { k: 0.28 } }
         ],
       },
       {
@@ -95,8 +97,8 @@ const LONG = {
           { id: 185, x: 0.1417006686113276, y: 0.5431913457592689, pressure: 0.07 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: 0.14694712813601565, y: 0.4658773673208979 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.19122948151161537, y: 0.5277672145546454 }, pctrl: { k: 0.18 } }
+          { ctrl: { x: 0.14694712813601565, y: 0.4658773673208979 }, pctrl: null },
+          { ctrl: { x: 0.19122948151161537, y: 0.5277672145546454 }, pctrl: { k: 0.18 } }
         ],
       },
       {
@@ -114,15 +116,15 @@ const LONG = {
           { id: 163, x: 0.3811253229843967, y: 0.20670847209079507, pressure: 0.13 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.04997520549697135, y: 0.6529378570549615 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.027903651787460668, y: 0.45610900409453875 }, pctrl: { k: 0.34 } },
-          { delay: 0, duration: 1, ctrl: { x: 0.016828632234325708, y: 0.20941308657782953 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.11709415412124588, y: 0.26253473317197523 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.18219963750345464, y: 0.21334473466185538 }, pctrl: { k: 0.12 } },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.31563470838903346, y: 0.2238168725920287 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.4345143877012527, y: 0.22537972514635138 }, pctrl: null }
+          { ctrl: { x: -0.04997520549697135, y: 0.6529378570549615 }, pctrl: null },
+          { ctrl: { x: 0.027903651787460668, y: 0.45610900409453875 }, pctrl: { k: 0.34 } },
+          { ctrl: { x: 0.016828632234325708, y: 0.20941308657782953 }, pctrl: null },
+          { ctrl: { x: 0.11709415412124588, y: 0.26253473317197523 }, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: 0.18219963750345464, y: 0.21334473466185538 }, pctrl: { k: 0.12 } },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: 0.31563470838903346, y: 0.2238168725920287 }, pctrl: null },
+          { ctrl: { x: 0.4345143877012527, y: 0.22537972514635138 }, pctrl: null }
         ],
       },
       {
@@ -137,12 +139,12 @@ const LONG = {
           { id: 143, x: 0.6530937325793009, y: -0.11303958067200925, pressure: 0.14 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.017155301189990917, y: -0.015675088218529917 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.003796259635872344, y: -0.13841582972567779 }, pctrl: { k: 0.84 } },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.34484001115950536, y: -0.626448197307619 }, pctrl: { k: 0.94 } },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.6711559932912925, y: -0.3252677938862877 }, pctrl: { k: 0.24 } }
+          { ctrl: { x: -0.017155301189990917, y: -0.015675088218529917 }, pctrl: null },
+          { ctrl: { x: 0.003796259635872344, y: -0.13841582972567779 }, pctrl: { k: 0.84 } },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: 0.34484001115950536, y: -0.626448197307619 }, pctrl: { k: 0.94 } },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: 0.6711559932912925, y: -0.3252677938862877 }, pctrl: { k: 0.24 } }
         ],
       },
       {
@@ -154,9 +156,9 @@ const LONG = {
           { id: 180, x: 0.3379485890444953, y: -0.02454940556318075, pressure: 0.14 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: 0.022128097767966287, y: -0.0938654312828856 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.1388142236663819, y: -0.07056769090210904 }, pctrl: { k: 0.54 } },
-          { delay: 0, duration: 1, ctrl: null, pctrl: { k: 0.58 } }
+          { ctrl: { x: 0.022128097767966287, y: -0.0938654312828856 }, pctrl: null },
+          { ctrl: { x: 0.1388142236663819, y: -0.07056769090210904 }, pctrl: { k: 0.54 } },
+          { ctrl: null, pctrl: { k: 0.58 } }
         ],
       },
       {
@@ -168,9 +170,9 @@ const LONG = {
           { id: 178, x: 0.3617117288717657, y: -0.17379869176793472, pressure: 0.17 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.1689342547966501, y: -0.21126004004004026 }, pctrl: { k: 0.44 } },
-          { delay: 0, duration: 1, ctrl: null, pctrl: { k: 0.38 } }
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: 0.1689342547966501, y: -0.21126004004004026 }, pctrl: { k: 0.44 } },
+          { ctrl: null, pctrl: { k: 0.38 } }
         ],
       },
       {
@@ -182,24 +184,11 @@ const LONG = {
           { id: 186, x: 0.3828558487402005, y: -0.29916133443668447, pressure: 0 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.1664722696433934, y: -0.33856487720479134 }, pctrl: { k: 0.5 } },
-          { delay: 0, duration: 1, ctrl: null, pctrl: { k: 0.49 } }
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: 0.1664722696433934, y: -0.33856487720479134 }, pctrl: { k: 0.5 } },
+          { ctrl: null, pctrl: { k: 0.49 } }
         ],
       },
     ],
   },
-};
-
-export function longSymbol() {
-  return JSON.parse(JSON.stringify(LONG.symbol));
-}
-
-export function longMaxId() {
-  let m = 0;
-  for (const s of LONG.symbol.strokes) {
-    if (s.id > m) m = s.id;
-    for (const p of s.points) if (p.id > m) m = p.id;
-  }
-  return m;
-}
+);

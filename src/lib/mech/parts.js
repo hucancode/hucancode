@@ -15,6 +15,7 @@ import {
   halfCylinderBox, boxCylinder, quarterCylinder, rotX, rotY, rotZ, translate, bake,
   meshOf,
 } from "./primitives.js";
+import { rad } from "../math/scalar.js";
 
 const HPI = Math.PI / 2;
 
@@ -66,14 +67,15 @@ export const PART_PARAMS = {
 // jointMounts, so a mount can never drift from the geometry it seats on.
 
 function hingeDims(p) {
+  const q = { ...JOINT_DEFAULTS.hinge, ...p };
   const clr = 0.03;
-  const bridgeT = Math.max(0.12, p.armT * 1.3);
-  const tip = Math.min(0.2, p.armH * 0.4);        // square arm reach past the pin
+  const bridgeT = Math.max(0.12, q.armT * 1.3);
+  const tip = Math.min(0.2, q.armH * 0.4);        // square arm reach past the pin
   return {
-    ...p, clr, bridgeT, tip,
-    gapW: p.gap + 2 * p.armT + 2 * clr,
-    knuckleR: p.depth / 2,
-    bridgeY: p.armH - tip + bridgeT,              // bridge outer face distance from the pin
+    ...q, clr, bridgeT, tip,
+    gapW: q.gap + 2 * q.armT + 2 * clr,
+    knuckleR: q.depth / 2,
+    bridgeY: q.armH - tip + bridgeT,              // bridge outer face distance from the pin
   };
 }
 
@@ -144,7 +146,6 @@ export const JOINT_POSE = {
   pivot1: { spinA: 0, spinB: 0 },
   ball1: { rx: 0, ry: 0, rz: 0 },
 };
-const rad = (d) => ((d || 0) * Math.PI) / 180;
 
 // MOUNT SLOTS — a joint declares where consumers attach to it: 2 slots,
 // each { pos, n, f } (origin + outward normal + forward tangent, f ⊥ n, so a
@@ -154,7 +155,7 @@ const rad = (d) => ((d || 0) * Math.PI) / 180;
 // these instead of re-deriving offsets, so a joint redesign moves every
 // consumer automatically. Only the joints parts actually chain through
 // declare mounts: "ball" and "hinge3".
-export function jointMounts(kind, p = {}) {
+function jointMounts(kind, p = {}) {
   if (kind === "ball") {
     const d = ballDims(p);
     return {
@@ -189,17 +190,16 @@ const jend = () => _jstack.pop();
 export const currentJointGroup = () => _jstack[_jstack.length - 1] ?? null;
 export const resetJointGroups = () => { _jseq = 0; };
 
-export function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
+function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
   jbegin();
-  const base = { ...JOINT_DEFAULTS.hinge, ...p };
-  const dF = hingeDims({ ...base, ...(sides.female || {}) });
-  const dM = hingeDims({ ...base, ...(sides.male || {}) });
+  const dF = hingeDims({ ...p, ...(sides.female || {}) });
+  const dM = hingeDims({ ...p, ...(sides.male || {}) });
   const mv = pose.swing ? (g) => moving(rotX(g, pose.swing)) : moving;
   roundedU(fixed, dF, dF.gapW, false);   // female U
   roundedU(mv, dM, dM.gap, true);        // male U, nested
   // pin = bare shaft (no end caps), poking a touch past the female outer faces
   const halfSpan = dF.gapW / 2 + dF.armT + 0.05;
-  fixed(translate(rotZ(cylinder(base.pinR, 2 * halfSpan, 20), -HPI), -halfSpan, 0, 0));
+  fixed(translate(rotZ(cylinder(dF.pinR, 2 * halfSpan, 20), -HPI), -halfSpan, 0, 0));
   jend();
 }
 
@@ -213,17 +213,16 @@ export function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
 // the PARENT, so twistF carries the whole male chain with it — and
 // pose.twistM spins ONLY the male boss disc about its own axis (a turntable
 // under the male bridge; the male U itself is rigid with the pin).
-export function hinge1Block(fixed, moving, p = {}, pose = {}) {
+function hinge1Block(fixed, moving, p = {}, pose = {}) {
   jbegin();
-  const base = { ...JOINT_DEFAULTS.hinge, ...p };
   const fx = pose.twistF ? (g) => fixed(rotY(g, pose.twistF)) : fixed;
   const mv = (g) => {
     const h = pose.swing ? rotX(g, pose.swing) : g;
     moving(pose.twistF ? rotY(h, pose.twistF) : h);
   };
   const mvBoss = (g) => mv(pose.twistM ? rotY(g, pose.twistM) : g);
-  hingeBlock(fx, mv, base);
-  const d = hingeDims(base);
+  hingeBlock(fx, mv, p);
+  const d = hingeDims(p);
   const bossR = (w, depth) => Math.min(w, depth) * 0.45;
   fx(translate(cylinder(bossR(d.gapW + 2 * d.armT, d.depth), HINGE1_BOSS_H, 24), 0, d.bridgeY, 0));                       // boss up from the female bridge top
   mvBoss(translate(cylinder(bossR(d.gap + 2 * d.armT, d.depth), HINGE1_BOSS_H, 24), 0, -d.bridgeY - HINGE1_BOSS_H, 0));   // boss down from the male bridge bottom
@@ -237,7 +236,7 @@ export function hinge1Block(fixed, moving, p = {}, pose = {}) {
 // through `moving` about the origin — any axis, that's the point of the ball.
 // RUNTIME pose (radians): pose.rx/ry/rz — one full xyz rotation of the male
 // half about the ball center.
-export function ballBlock(fixed, moving, p = {}, pose = {}) {
+function ballBlock(fixed, moving, p = {}, pose = {}) {
   jbegin();
   const q = ballDims(p);
   const mv = (g) => {
@@ -268,7 +267,7 @@ export function ballBlock(fixed, moving, p = {}, pose = {}) {
 // clevis is the PARENT (it holds the pin), so spinF carries the whole tongue
 // chain with it — and pose.spinM spins ONLY the mount-2 barrel stack about
 // its own axis (Z); the tongue eye stays rigid with the pin.
-export function hinge3Block(fixed, moving, p = {}, pose = {}) {
+function hinge3Block(fixed, moving, p = {}, pose = {}) {
   jbegin();
   const q = hinge3Dims(p);
   const fx = pose.spinF ? (g) => fixed(rotX(g, pose.spinF)) : fixed;
@@ -304,7 +303,7 @@ export function hinge3Block(fixed, moving, p = {}, pose = {}) {
 // RUNTIME pose (radians): pose.spinA / pose.spinB spin the top / bottom end
 // stacks about the Y axis — 2 rotations. (The stacks are bodies of
 // revolution, so the spin only shows once geometry hangs off an end.)
-export function pivotBlock(add, p = {}, pose = {}) {
+function pivotBlock(add, p = {}, pose = {}) {
   jbegin();
   const q = pivotDims(p);
   const hb = q.barrelLen / 2;
@@ -457,6 +456,25 @@ function head(add, p, pose = {}) {
   add(translate(rotX(boxCylinder(0.5, 0.16, 0.5, 1.75, "in", 20), -HPI), HEAD_NECK[0], HEAD_NECK[1], HEAD_NECK[2] + 0.1));
 }
 
+// chain-part ball joint seating, shared by the body segments and the tail:
+// female socket at the rear (ball center = part origin, opening -Z so the
+// previous segment's shaft exits backward), male ball sticking out past the
+// front face. female = false emits the male half only (the mating segment
+// supplies the socket).
+function chainBall(add, jp, cy, front, female = true) {
+  ballBlock(
+    female ? (g) => add(translate(rotX(g, -HPI), 0, cy, 0)) : () => {},  // female socket, rear
+    (g) => add(translate(rotX(g, -HPI), 0, cy, front)),                  // male ball, front
+    jp,
+  );
+}
+
+// spine fin: QUARTER disc standing on the back at height y — arc rising from
+// the front like a lego curved slope, vertical trailing edge at the rear
+function spineFin(add, finR, y, z) {
+  add(translate(rotZ(quarterCylinder(finR, 0.12, 14), HPI), 0.06, y - 0.05, z));
+}
+
 // DRAGON BODY SEGMENT — same construction as the Blender kit piece: solid
 // half-cylinder upper back, belly = stacked half-cylinder discs with small
 // gaps, D-plate spine fins, side planks. Segments CHAIN through the BALL
@@ -467,11 +485,7 @@ function head(add, p, pose = {}) {
 function bodySegment(add, p) {
   const R = p.bodyR, len = p.segLen;
   const { jp, cy, z0, front, plankT } = bodySegmentLayout(p);
-  ballBlock(
-    (g) => add(translate(rotX(g, -HPI), 0, cy, 0)),      // female socket, rear
-    (g) => add(translate(rotX(g, -HPI), 0, cy, front)),  // male ball, front
-    jp,
-  );
+  chainBall(add, jp, cy, front);
   // upper back: one solid half cylinder, dome up, spanning the segment
   add(translate(rotX(halfCylinder(R, len, 20), -HPI), 0, cy, z0 + len));
   // belly: stacked discs, dome down, small gaps between them
@@ -482,12 +496,8 @@ function bodySegment(add, p) {
   // side planks slapped on both flanks
   for (const s of [1, -1])
     add(translate(box(plankT, R * 0.95, len * 0.86), s * (R + plankT / 2), cy, z0 + len / 2));
-  // spine fins: QUARTER discs standing on the back — arc rising from the
-  // front like a lego curved slope, vertical trailing edge at the rear
-  for (const fz of [len * 0.3, len * 0.7]) {
-    const g = rotZ(quarterCylinder(p.finR, 0.12, 14), HPI);
-    add(translate(g, 0.06, cy + R - 0.05, z0 + fz));
-  }
+  // spine fins riding the back radius
+  for (const f of [0.3, 0.7]) spineFin(add, p.finR, cy + R, z0 + f * len);
 }
 
 // DRAGON BODY SEGMENT TYPE 2 — tapered variant: the core is a CUT CONE lying
@@ -497,20 +507,11 @@ function bodySegment(add, p) {
 function bodySegment2(add, p) {
   const len = p.segLen, R0 = p.rRear, R1 = p.rFront;
   const { jp, cy, z0, front } = bodySegment2Layout(p);
-  ballBlock(
-    (g) => add(translate(rotX(g, -HPI), 0, cy, 0)),      // female socket, rear
-    (g) => add(translate(rotX(g, -HPI), 0, cy, front)),  // male ball, front
-    jp,
-  );
+  chainBall(add, jp, cy, front);
   // core: cut cone along the spine — narrow base at the rear, wide top front
   add(translate(rotX(coneCut(R0, R1, len, 24), HPI), 0, cy, z0));
-  // spine fins: QUARTER discs riding the local cone radius — arc rising from
-  // the front, vertical trailing edge at the rear
-  for (const f of [0.3, 0.7]) {
-    const rl = R0 + (R1 - R0) * f;
-    const g = rotZ(quarterCylinder(p.finR, 0.12, 14), HPI);
-    add(translate(g, 0.06, cy + rl - 0.05, z0 + f * len));
-  }
+  // spine fins riding the local cone radius
+  for (const f of [0.3, 0.7]) spineFin(add, p.finR, cy + R0 + (R1 - R0) * f, z0 + f * len);
 }
 
 // DRAGON ARM — parts chained by joint blocks. At the top the hinge3 block as
@@ -603,7 +604,7 @@ function tail(add, p) {
   const R = p.bodyR, len = p.coreLen;
   const { jp, cy, front } = tailLayout(p);
   // male half only — the mating body segment supplies the socket
-  ballBlock(() => {}, (g) => add(translate(rotX(g, -HPI), 0, cy, front)), jp);
+  chainBall(add, jp, cy, front, false);
   // core: full discs on a straight center line, shrinking toward the tip end
   const n = Math.max(3, Math.round(len / 0.28));
   const pitch = len / n, t = pitch - 0.06;
@@ -616,26 +617,20 @@ function tail(add, p) {
 }
 
 // catalog views of the joint blocks — pose sliders (degrees) drive the
-// runtime rotations, the modeling params only shape the geometry
-function hinge2(add, p, pose = {}) {
-  hingeBlock(add, add, p, {}, { swing: rad(pose.swing) });
+// runtime rotations, the modeling params only shape the geometry. degPose
+// converts a slider pose to radians along the joint's JOINT_POSE axis set.
+function degPose(name, pose) {
+  const out = {};
+  for (const k of Object.keys(JOINT_POSE[name])) out[k] = rad(pose[k] || 0);
+  return out;
 }
 
-function hinge1(add, p, pose = {}) {
-  hinge1Block(add, add, p, { swing: rad(pose.swing), twistF: rad(pose.twistF), twistM: rad(pose.twistM) });
-}
-
-function ball1(add, p, pose = {}) {
-  ballBlock(add, add, p, { rx: rad(pose.rx), ry: rad(pose.ry), rz: rad(pose.rz) });
-}
-
-function hinge3(add, p, pose = {}) {
-  hinge3Block(add, add, p, { swing: rad(pose.swing), spinF: rad(pose.spinF), spinM: rad(pose.spinM) });
-}
-
-function pivot1(add, p, pose = {}) {
-  pivotBlock(add, p, { spinA: rad(pose.spinA), spinB: rad(pose.spinB) });
-}
+const hinge2 = (add, p, pose = {}) => hingeBlock(add, add, p, {}, degPose("hinge2", pose));
+const hinge1 = (add, p, pose = {}) => hinge1Block(add, add, p, degPose("hinge1", pose));
+const ball1 = (add, p, pose = {}) => ballBlock(add, add, p, degPose("ball1", pose));
+const hinge3 = (add, p, pose = {}) => hinge3Block(add, add, p, degPose("hinge3", pose));
+// pivot1: single-sink block, distinct call shape
+const pivot1 = (add, p, pose = {}) => pivotBlock(add, p, degPose("pivot1", pose));
 
 const PART_BUILDERS = { head, bodySegment, bodySegment2, arm, leg, tail, hinge1, hinge2, hinge3, pivot1, ball1 };
 export const PART_NAMES = Object.keys(PART_BUILDERS);

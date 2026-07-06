@@ -1,5 +1,7 @@
-const YONG = {
-  symbol: {
+import { makeGlyph } from "./glyphs.js";
+
+export const yong = makeGlyph(
+  {
     strokes: [
       {
         id: 46,
@@ -9,8 +11,8 @@ const YONG = {
           { id: 98, x: -0.1035699622162235, y: 0.4376297276762161, pressure: 0.08 }
         ],
         paths: [
-          { delay: 0, duration: 0.21, ctrl: { x: -0.030844336637881657, y: 0.5138570202810265 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: { k: 0.07 } }
+          { duration: 0.21, ctrl: { x: -0.030844336637881657, y: 0.5138570202810265 }, pctrl: null },
+          { ctrl: null, pctrl: { k: 0.07 } }
         ],
       },
       {
@@ -26,13 +28,13 @@ const YONG = {
           { id: 97, x: -0.15677535372543053, y: -0.37692131205851964, pressure: 0.15 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.3212001837621773, y: 0.22009620837586358 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.17006250831733274, y: 0.32466089000052156 }, pctrl: { k: 0.29 } },
-          { delay: 0, duration: 1, ctrl: { x: 0.027852167531549114, y: 0.3786843036272135 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: { k: 0.42 } },
-          { delay: 0, duration: 1, ctrl: { x: -0.0050740718885794005, y: -0.3953471464131918 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null }
+          { ctrl: { x: -0.3212001837621773, y: 0.22009620837586358 }, pctrl: null },
+          { ctrl: { x: -0.17006250831733274, y: 0.32466089000052156 }, pctrl: { k: 0.29 } },
+          { ctrl: { x: 0.027852167531549114, y: 0.3786843036272135 }, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: null, pctrl: { k: 0.42 } },
+          { ctrl: { x: -0.0050740718885794005, y: -0.3953471464131918 }, pctrl: null },
+          { ctrl: null, pctrl: null }
         ],
       },
       {
@@ -46,11 +48,11 @@ const YONG = {
           { id: 93, x: -0.4935300653564657, y: -0.38167219601166846, pressure: 0.06 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: -0.43345880312157403, y: -0.02105050767702996 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.2106468098124545, y: 0.06767376598657412 }, pctrl: { k: 0 } },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.19483920440760485, y: -0.184171064285382 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: -0.5514548337762397, y: -0.47559340416894114 }, pctrl: null }
+          { ctrl: { x: -0.43345880312157403, y: -0.02105050767702996 }, pctrl: null },
+          { ctrl: { x: -0.2106468098124545, y: 0.06767376598657412 }, pctrl: { k: 0 } },
+          { ctrl: null, pctrl: null },
+          { ctrl: { x: -0.19483920440760485, y: -0.184171064285382 }, pctrl: null },
+          { ctrl: { x: -0.5514548337762397, y: -0.47559340416894114 }, pctrl: null }
         ],
       },
       {
@@ -65,27 +67,14 @@ const YONG = {
           { id: 91, x: 0.6867196479466993, y: -0.5020523454173829, pressure: 0.06 }
         ],
         paths: [
-          { delay: 0, duration: 1, ctrl: { x: 0.38846866790424606, y: 0.3503049355337017 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: { x: 0.29042428657883745, y: 0.19204599368397962 }, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: null },
-          { delay: 0, duration: 1, ctrl: null, pctrl: { k: 0.75 } },
-          { delay: 0, duration: 1, ctrl: { x: 0.4336490474646991, y: -0.3624401587978253 }, pctrl: { k: 0.5 } }
+          { ctrl: { x: 0.38846866790424606, y: 0.3503049355337017 }, pctrl: null },
+          { ctrl: { x: 0.29042428657883745, y: 0.19204599368397962 }, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: null, pctrl: null },
+          { ctrl: null, pctrl: { k: 0.75 } },
+          { ctrl: { x: 0.4336490474646991, y: -0.3624401587978253 }, pctrl: { k: 0.5 } }
         ],
       },
     ],
   },
-};
-
-export function yongSymbol() {
-  return JSON.parse(JSON.stringify(YONG.symbol));
-}
-
-export function yongMaxId() {
-  let m = 0;
-  for (const s of YONG.symbol.strokes) {
-    if (s.id > m) m = s.id;
-    for (const p of s.points) if (p.id > m) m = p.id;
-  }
-  return m;
-}
+);

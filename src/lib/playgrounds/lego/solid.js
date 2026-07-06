@@ -54,7 +54,7 @@ import {
 } from "$lib/engine/index.js";
 import {
   vAdd as vadd, vSub as sub, vScale as vscale, vCross as cross, vNorm as norm,
-  m3AxisAngle,
+  vDot as dot, m3Rot, m3AxisAngle,
 } from "../../math/mat3.js";
 
 export const PLATE_H = 0.4;
@@ -79,8 +79,14 @@ const BALL_PIVOT = NECK_H + BALL_R;
 const EPS = 1e-6;
 
 const AXES = { x: 0, y: 1, z: 2 };
+// face string -> [axis index, outer side sign], e.g. "z-" -> [2, -1]
+const parseFace = (f = "y+") => [AXES[f[0]], f[1] === "+" ? 1 : -1];
+// in-plane axes [u, v] per face axis: x -> (z,y), y -> (x,z), z -> (x,y)
+const PAX = [[2, 1], [0, 2], [0, 1]];
 // per-axis world unit: Y measured in plates, X/Z in studs
 const unit = (ax) => (ax === 1 ? PLATE_H : 1);
+// row-major 3x3 from three column vectors
+export const matCols = (a, b, c) => [a[0], b[0], c[0], a[1], b[1], c[1], a[2], b[2], c[2]];
 
 // Footprint of a spec's integer box, size = [W(studs X), H(plates Y), D(studs Z)],
 // clamped/floored exactly like the mesher so seating and rendering always agree.
@@ -91,8 +97,6 @@ export function dims(spec) {
   const h = sy * PLATE_H;
   return { sx, sy, sz, h, hw: sx / 2, hd: sz / 2, hh: h / 2 };
 }
-
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
 // ---- convex polyhedron, stored as a list of CCW-outward polygon faces ------
 // world cube for one cell of size [W,H,D] at grid index (i,j,k)
@@ -190,8 +194,7 @@ const RUN_AXIS = { 0: 2, 1: 2, 2: 0 };
 // converges to the true quarter-cosine.
 function slopePlanes(op, W, H, D) {
   const size = [W, H, D];
-  const fa = AXES[op.face[0]];                 // face axis index
-  const fs = op.face[1] === "+" ? 1 : -1;      // outer side sign
+  const [fa, fs] = parseFace(op.face);         // face axis index + outer side sign
   const la = RUN_AXIS[fa];                     // run axis, deduced from face
   const ls = op.dir >= 0 ? 1 : -1;             // boundary the ramp descends to
   const Dp = Math.max(1, op.depth | 0);
@@ -247,11 +250,8 @@ function planeThrough(cA, sA, cB, sB, la, fa, fs) {
 
 function pushTest(op, W, H, D) {
   const size = [W, H, D];
-  const fa = AXES[op.face[0]];
-  const fs = op.face[1] === "+" ? 1 : -1;
-  // in-plane axes per face axis
-  const planeAxes = fa === 0 ? [2, 1] : fa === 1 ? [0, 2] : [0, 1]; // [width, height]
-  const [ua, va] = planeAxes;
+  const [fa, fs] = parseFace(op.face);
+  const [ua, va] = PAX[fa];                    // in-plane axes [width, height]
   const depth = Math.max(1, op.depth | 0);
   const wN = Math.max(1, op.width | 0);
   const hN = Math.max(1, op.height | 0);
@@ -296,31 +296,41 @@ function cornerPlanes(def, W, D) {
   return planes;
 }
 
-const studGeo = (r = STUD_R, h = STUD_H, radial = 20) => cylinderGeometry(r, r, h, radial);
+// engine primitives carry a uv attribute the lego shader never binds; strip it so
+// every lego geometry shares the same {position, normal} attribute set (which is
+// what mergeGeometries expects: it merges the attributes of the FIRST geo).
+const stripUV = (g) => { delete g.attributes.uv; return g; };
+const cyl = (...a) => stripUV(cylinderGeometry(...a));
+const box = (...a) => stripUV(boxGeometry(...a));
 
-function rotateGeo(g, axis, ang) {
-  const c = Math.cos(ang), s = Math.sin(ang);
+const studGeo = (r = STUD_R, h = STUD_H, radial = 20) => cyl(r, r, h, radial);
+
+// apply a row-major 3x3 to a geo's position+normal in place, translating position by t
+function applyMat3(g, m, t = [0, 0, 0]) {
   for (const key of ["position", "normal"]) {
     const a = g.attributes[key].array;
+    const [tx, ty, tz] = key === "position" ? t : [0, 0, 0];
     for (let i = 0; i < a.length; i += 3) {
       const x = a[i], y = a[i + 1], z = a[i + 2];
-      if (axis === "y") { a[i] = c * x + s * z; a[i + 2] = -s * x + c * z; }
-      else if (axis === "z") { a[i] = c * x - s * y; a[i + 1] = s * x + c * y; }
-      else { a[i + 1] = c * y - s * z; a[i + 2] = s * y + c * z; }
+      a[i] = m[0] * x + m[1] * y + m[2] * z + tx;
+      a[i + 1] = m[3] * x + m[4] * y + m[5] * z + ty;
+      a[i + 2] = m[6] * x + m[7] * y + m[8] * z + tz;
     }
   }
   return g;
 }
 
+const rotateGeo = (g, axis, ang) => applyMat3(g, m3Rot(axis, ang));
+
 // in-plane cell grid [U,V] of a face: y -> X*Z, x -> Z*Y, z -> X*Y. (u,v) match
 // faceIntact's pax order, so the same indices drive geometry and the mesher.
-const faceGrid = (fa, W, H, D) => (fa === 1 ? [W, D] : fa === 0 ? [D, H] : [W, H]);
+const faceGrid = (fa, ...size) => PAX[fa].map((a) => size[a]);
 
 // Which face cells (u,v) a studs-op covers. Top/bottom honour the full `at`
 // selector over the X*Z grid; side faces only ever populate the mid-height row
 // (vertical SNOT columns are out of scope), so `at.cell[0]` selects a column.
 function studHits(op, W, H, D) {
-  const fa = AXES[(op.face ?? "y+")[0]];
+  const [fa] = parseFace(op.face);
   if (fa === 1) {
     return (u, v) => {
       if (!op.at) return true;
@@ -344,9 +354,7 @@ function studHits(op, W, H, D) {
 // push are skipped automatically. (Female ops carve holes in the mesher instead.)
 function buildStuds(op, W, H, D, intact) {
   const out = [];
-  const face = op.face ?? "y+";          // default studs to the top face
-  const fa = AXES[face[0]];
-  const fs = face[1] === "+" ? 1 : -1;
+  const [fa, fs] = parseFace(op.face);   // default studs to the top face
   const hw = W / 2, hd = D / 2, hh = (H / 2) * PLATE_H;
   const hit = studHits(op, W, H, D);
 
@@ -388,7 +396,7 @@ function buildStuds(op, W, H, D, intact) {
 // face. Mating/validation ignores joint ops (only studs feed the connector map);
 // the actual articulation is applied at assembly time (assembly.js `jointRot`).
 
-// UV sphere centered at origin (position + outward normal + dummy uv).
+// UV sphere centered at origin (position + outward normal).
 function sphereGeometry(r = 0.5, seg = 16, rings = 10) {
   const vert = (i, j) => {
     const th = (i / rings) * Math.PI, ph = (j / seg) * 2 * Math.PI;
@@ -404,12 +412,11 @@ function sphereGeometry(r = 0.5, seg = 16, rings = 10) {
 
 // assemble a triangle-soup geometry from a push() callback
 function soup(emit) {
-  const pos = [], nor = [], uv = [];
-  emit((p, n) => { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); uv.push(0, 0); });
+  const pos = [], nor = [];
+  emit((p, n) => { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); });
   return new Geometry()
     .setAttribute("position", new Float32Array(pos), 3)
-    .setAttribute("normal", new Float32Array(nor), 3)
-    .setAttribute("uv", new Float32Array(uv), 2);
+    .setAttribute("normal", new Float32Array(nor), 3);
 }
 
 // Hollow hemisphere shell (dome): bulges +Y, open toward -Y. Outer + inner walls
@@ -432,7 +439,9 @@ function domeShell(R, t, seg = 16, rings = 6) {
 }
 
 // Extruded ring (straight-walled hollow tube) along +Y: outer + inner walls and
-// flat top/bottom rims. A female stud receiver collar — a male stud passes the hole.
+// flat top/bottom rims. A female stud receiver collar — a male stud passes the
+// hole. (Same shape as a full-sweep Y-axis knuckle, but NOT delegated to it:
+// knuckle smears wall normals across a segment where this keeps them exact.)
 function tubeRing(rOut, rIn, h, seg = 20) {
   const hh = h / 2;
   const P = (r, y, a) => [r * Math.cos(a), y, r * Math.sin(a)];
@@ -462,10 +471,11 @@ function faceCellFrame(fa, fs, u, v, W, H, D) {
   return { P: [u + 0.5 - hw, (v + 0.5 - H / 2) * PLATE_H, fs * hd], n: [0, 0, fs], e1: [1, 0, 0], e2: [0, 1, 0] };
 }
 
-// iterate the hit + intact face cells of a joint op (shared by ball/hinge)
-function eachJointCell(op, W, H, D, intact, cb) {
-  const fa = AXES[(op.face ?? "y+")[0]], fs = (op.face ?? "y+")[1] === "+" ? 1 : -1;
-  const hit = studHits(op, W, H, D);
+// iterate the hit + intact face cells of a joint op (shared by ball/hinge).
+// `hit(u,v)` defaults to the studs-op selector; buildHinge passes its own
+// full-grid selector instead (see the comment there).
+function eachJointCell(op, W, H, D, intact, cb, hit = studHits(op, W, H, D)) {
+  const [fa, fs] = parseFace(op.face);
   const [U, V] = faceGrid(fa, W, H, D);
   for (let u = 0; u < U; u++) for (let v = 0; v < V; v++) {
     if (!hit(u, v) || !intact(fa, fs, u, v)) continue;
@@ -473,41 +483,33 @@ function eachJointCell(op, W, H, D, intact, cb) {
   }
 }
 
+// male ball hardware: a transition neck + sphere standing off P along n
+function ballMale(P, n) {
+  const at = (g, d) => g.translate(P[0] + n[0] * d, P[1] + n[1] * d, P[2] + n[2] * d);
+  return [
+    at(alignToDir(cyl(NECK_R, NECK_R, NECK_H, 12), n), NECK_H / 2),
+    at(sphereGeometry(BALL_R, 16, 10), NECK_H + BALL_R),
+  ];
+}
+
 // male ball joint: a neck + sphere standing off the face. (Female balls are a
 // carved spherical socket, handled in the mesher's cell loop — see socketFaces.)
 function buildBalls(op, W, H, D, intact) {
   const out = [];
   if (op.kind === "female") return out;          // carved, not additive
-  eachJointCell(op, W, H, D, intact, ({ P, n }) => {
-    const neck = alignToDir(cylinderGeometry(NECK_R, NECK_R, NECK_H, 12), n);
-    neck.translate(P[0] + n[0] * NECK_H / 2, P[1] + n[1] * NECK_H / 2, P[2] + n[2] * NECK_H / 2);
-    const d = NECK_H + BALL_R;
-    const ball = sphereGeometry(BALL_R, 16, 10).translate(P[0] + n[0] * d, P[1] + n[1] * d, P[2] + n[2] * d);
-    out.push(neck, ball);
-  });
+  eachJointCell(op, W, H, D, intact, ({ P, n }) => out.push(...ballMale(P, n)));
   return out;
 }
 
 // remap a geo's local x/y/z onto orthonormal world axes ex/ey/ez and translate to c
-function transformGeo(g, ex, ey, ez, c) {
-  for (const key of ["position", "normal"]) {
-    const a = g.attributes[key].array, t = key === "position";
-    for (let i = 0; i < a.length; i += 3) {
-      const x = a[i], y = a[i + 1], z = a[i + 2];
-      a[i] = x * ex[0] + y * ey[0] + z * ez[0] + (t ? c[0] : 0);
-      a[i + 1] = x * ex[1] + y * ey[1] + z * ez[1] + (t ? c[1] : 0);
-      a[i + 2] = x * ex[2] + y * ey[2] + z * ez[2] + (t ? c[2] : 0);
-    }
-  }
-  return g;
-}
+const transformGeo = (g, ex, ey, ez, c) => applyMat3(g, matCols(ex, ey, ez), c);
 // axis-aligned box in the (ax,ay,az) frame, centered at `center`, half-extents h*
 const slab = (center, ax, ay, az, hx, hy, hz) =>
-  transformGeo(boxGeometry(2 * hx, 2 * hy, 2 * hz), ax, ay, az, center);
+  transformGeo(box(2 * hx, 2 * hy, 2 * hz), ax, ay, az, center);
 
 // transition neck (80% radius) standing off the surface/tip P along n, under the
 // hinge. Shared by male + female so both lift off the stick on the same stub.
-const hingeNeck = (P, n) => alignToDir(cylinderGeometry(HINGE_NECK_R, HINGE_NECK_R, HINGE_NECK_H, 14), n)
+const hingeNeck = (P, n) => alignToDir(cyl(HINGE_NECK_R, HINGE_NECK_R, HINGE_NECK_H, 14), n)
   .translate(P[0] + n[0] * HINGE_NECK_H / 2, P[1] + n[1] * HINGE_NECK_H / 2, P[2] + n[2] * HINGE_NECK_H / 2);
 
 // One knuckle: an annular ring (or C-arc) around `pin`, lying in the plane spanned
@@ -579,20 +581,17 @@ const AXIS_IDX = { x: 0, y: 1, z: 2 };
 function buildHinge(op, W, H, D, intact) {
   const out = [];
   const male = op.kind !== "female";
-  const face = op.face ?? "y+";
-  const fa = AXES[face[0]], fs = face[1] === "+" ? 1 : -1;
+  const [fa] = parseFace(op.face);
   const pinIdx = AXIS_IDX[op.pin ?? defaultPin(fa)];
   if (pinIdx === fa) return out;                 // pin out of surface -> invalid
   const pin = [0, 0, 0]; pin[pinIdx] = 1;
-  const [U, V] = faceGrid(fa, W, H, D);
+  // unlike studHits, `at.cell:[u,v]` selects over the FULL face grid (side faces
+  // included), and no selector means every intact cell — hence the custom hit fn
   const sel = op.at?.cell;                        // [u,v] or undefined = whole face
-  for (let u = 0; u < U; u++) for (let v = 0; v < V; v++) {
-    if (sel && (u !== sel[0] || v !== sel[1])) continue;
-    if (!intact(fa, fs, u, v)) continue;
-    const { P, n } = faceCellFrame(fa, fs, u, v, W, H, D);
+  eachJointCell(op, W, H, D, intact, ({ P, n }) => {
     const shape = op.shape ?? "O";
     out.push(...(male ? hingeMaleKnuckle(P, n, pin, shape) : hingeFemaleDouble(P, n, pin, shape, op.span ?? 1)));
-  }
+  }, (u, v) => !sel || (u === sel[0] && v === sel[1]));
   return out;
 }
 
@@ -607,8 +606,7 @@ export function jointFrame(def, op) {
     P = f.P; n = f.n; pin = f.e1;
   } else {
     const { W, H, D } = evalShape(def);
-    const face = op.face ?? "y+";
-    const fa = AXES[face[0]], fs = face[1] === "+" ? 1 : -1;
+    const [fa, fs] = parseFace(op.face);
     const cell = op.at?.cell ?? [0, 0];
     const fr = faceCellFrame(fa, fs, cell[0], cell[1], W, H, D);
     P = fr.P; n = fr.n;
@@ -652,19 +650,7 @@ function stickEnds(def) {
 }
 
 // Rodrigues rotation of a geometry's position+normal about an arbitrary axis.
-function rotateGeoAxis(g, axis, ang) {
-  const m = m3AxisAngle(...norm(axis), ang);
-  for (const key of ["position", "normal"]) {
-    const a = g.attributes[key].array;
-    for (let i = 0; i < a.length; i += 3) {
-      const px = a[i], py = a[i + 1], pz = a[i + 2];
-      a[i] = m[0] * px + m[1] * py + m[2] * pz;
-      a[i + 1] = m[3] * px + m[4] * py + m[5] * pz;
-      a[i + 2] = m[6] * px + m[7] * py + m[8] * pz;
-    }
-  }
-  return g;
-}
+const rotateGeoAxis = (g, axis, ang) => applyMat3(g, m3AxisAngle(...norm(axis), ang));
 
 // orient a +Y-aligned geo to an arbitrary unit dir (handles the antiparallel case)
 function alignToDir(g, dir) {
@@ -681,14 +667,10 @@ function endConnector(op, { P, n, e1, e2 }) {
   const male = op.kind !== "female";
   const at = (g, v) => g.translate(v[0], v[1], v[2]);
   if (op.op === "ball") {
-    if (male) {
-      const neck = at(alignToDir(cylinderGeometry(NECK_R, NECK_R, NECK_H, 12), n), vadd(P, vscale(n, NECK_H / 2)));
-      const ball = at(sphereGeometry(BALL_R, 16, 10), vadd(P, vscale(n, NECK_H + BALL_R)));
-      return [neck, ball];
-    }
+    if (male) return ballMale(P, n);
     // female: neck + a hollow hemisphere socket opening OUTWARD (+n) to cup a male
     // ball. Dome aligned to -n so its open side faces away from the stick.
-    const neck = at(alignToDir(cylinderGeometry(NECK_R, NECK_R, NECK_H, 12), n), vadd(P, vscale(n, NECK_H / 2)));
+    const neck = at(alignToDir(cyl(NECK_R, NECK_R, NECK_H, 12), n), vadd(P, vscale(n, NECK_H / 2)));
     const cup = at(alignToDir(domeShell(BALL_R + 0.06, 0.08), vscale(n, -1)), vadd(P, vscale(n, NECK_H + BALL_R)));
     return [neck, cup];
   }
@@ -697,9 +679,9 @@ function endConnector(op, { P, n, e1, e2 }) {
     return male ? hingeMaleKnuckle(P, n, e1, shape) : hingeFemaleDouble(P, n, e1, shape, op.span ?? 1);
   }
   // studs: a transition neck off the tip, then male = peg / female = extruded ring
-  const neck = at(alignToDir(cylinderGeometry(STUD_NECK_R, STUD_NECK_R, STUD_NECK_H, 14), n), vadd(P, vscale(n, STUD_NECK_H / 2)));
+  const neck = at(alignToDir(cyl(STUD_NECK_R, STUD_NECK_R, STUD_NECK_H, 14), n), vadd(P, vscale(n, STUD_NECK_H / 2)));
   const top = vadd(P, vscale(n, STUD_NECK_H + STUD_H / 2));
-  if (male) return [neck, at(alignToDir(cylinderGeometry(STUD_R, STUD_R, STUD_H, 16), n), top)];
+  if (male) return [neck, at(alignToDir(cyl(STUD_R, STUD_R, STUD_H, 16), n), top)];
   return [neck, at(alignToDir(tubeRing(STUD_R + 0.08, STUD_R - 0.12, STUD_H, 18), n), top)];
 }
 
@@ -724,7 +706,7 @@ function makeStick(def, opts = {}) {
   const geos = [];
   ends.forEach((f, i) => {
     const L = Math.hypot(f.P[0], f.P[1], f.P[2]);
-    const rod = alignToDir(cylinderGeometry(tipR[i], centerR, L, 12), f.n);
+    const rod = alignToDir(cyl(tipR[i], centerR, L, 12), f.n);
     geos.push(rod.translate(f.P[0] / 2, f.P[1] / 2, f.P[2] / 2));
     (def.ops ?? []).forEach((op, oi) => {
       if (oi === opts.skip) return;
@@ -788,14 +770,13 @@ function holeFaces(P, n, e1, e2, a, b, seg = 16) {
 }
 
 // Place a recess (anti-stud hole / ball socket builder) at solid cell (i,j,k) on
-// face (fa,fs): resolves the cell-center frame and in-plane half-extents, then
-// hands off to the `build(P, n, e1, e2, a, b)` face builder. y in plate units.
+// face (fa,fs): resolves the cell-center frame via faceCellFrame, adds the
+// in-plane half-extents, then hands off to the `build(P, n, e1, e2, a, b)` face
+// builder. The v half-extent is in plate units on side faces.
 function recessForCell(build, i, j, k, fa, fs, W, H, D) {
-  const hw = W / 2, hd = D / 2, hh = (H / 2) * PLATE_H;
-  const x = i + 0.5 - hw, z = k + 0.5 - hd, y = (j + 0.5 - H / 2) * PLATE_H;
-  if (fa === 1) return build([x, fs * hh, z], [0, fs, 0], [1, 0, 0], [0, 0, 1], 0.5, 0.5);
-  if (fa === 0) return build([fs * hw, y, z], [fs, 0, 0], [0, 0, 1], [0, 1, 0], 0.5, 0.5 * PLATE_H);
-  return build([x, y, fs * hd], [0, 0, fs], [1, 0, 0], [0, 1, 0], 0.5, 0.5 * PLATE_H);
+  const [pu, pv] = PAX[fa], idx = [i, j, k];
+  const { P, n, e1, e2 } = faceCellFrame(fa, fs, idx[pu], idx[pv], W, H, D);
+  return build(P, n, e1, e2, 0.5, fa === 1 ? 0.5 : 0.5 * PLATE_H);
 }
 
 // Spherical socket carved into one face cell (the female ball joint): drop the
@@ -832,11 +813,9 @@ function facesToGeometry(faceList) {
       for (const p of [f[0], f[i], f[i + 1]]) { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); }
     }
   }
-  const uv = new Float32Array((pos.length / 3) * 2);
   return new Geometry()
     .setAttribute("position", new Float32Array(pos), 3)
-    .setAttribute("normal", new Float32Array(nor), 3)
-    .setAttribute("uv", uv, 2);
+    .setAttribute("normal", new Float32Array(nor), 3);
 }
 
 // Evaluate a def into the shape data the mesher reads. CUTS FIRST: push + slope
@@ -861,13 +840,13 @@ function evalShape(def) {
   function faceIntact(fa, fs, u, v) {
     const idx = [0, 0, 0];
     idx[fa] = fs > 0 ? size[fa] - 1 : 0;
-    const pax = fa === 0 ? [2, 1] : fa === 1 ? [0, 2] : [0, 1];
+    const pax = PAX[fa];
     idx[pax[0]] = u; idx[pax[1]] = v;
     if (idx[pax[0]] < 0 || idx[pax[0]] >= size[pax[0]]) return false;
     if (idx[pax[1]] < 0 || idx[pax[1]] >= size[pax[1]]) return false;
     if (pushOps.some((t) => t(idx))) return false;            // carved away
-    const orig = cellFaces(idx[0], idx[1], idx[2], W, H, D)[OUTER_FACE[fa] + (fs > 0 ? 1 : 0)];
-    let faces = cellFaces(idx[0], idx[1], idx[2], W, H, D);
+    let faces = cellFaces(idx[0], idx[1], idx[2], W, H, D);   // clipSolid never mutates
+    const orig = faces[OUTER_FACE[fa] + (fs > 0 ? 1 : 0)];
     for (const planes of slopeOps) {
       for (const pl of planes) {
         faces = clipSolid(faces, pl.n, pl.d);
@@ -890,10 +869,7 @@ export function makeSolid(def, opts = {}) {
   if (opts.only != null) {                          // just the linked knuckle / joint
     const o = (def.ops ?? [])[opts.only];
     const g = o?.op === "ball" ? buildBalls(o, W, H, D, faceIntact) : buildHinge(o, W, H, D, faceIntact);
-    return g.length ? mergeGeometries(g) : new Geometry()
-      .setAttribute("position", new Float32Array(0), 3)
-      .setAttribute("normal", new Float32Array(0), 3)
-      .setAttribute("uv", new Float32Array(0), 2);
+    return g.length ? mergeGeometries(g) : soup(() => {});
   }
   // Carved female recesses: female studs -> a cylindrical anti-stud hole; female
   // balls -> a spherical socket. Each drops the flat outer cap on its boundary
@@ -902,8 +878,8 @@ export function makeSolid(def, opts = {}) {
   const femaleOps = (def.ops ?? [])
     .filter((o) => (o.op === "studs" || o.op === "ball") && o.kind === "female")
     .map((o) => {
-      const f = o.face ?? "y+";
-      return { fa: AXES[f[0]], fs: f[1] === "+" ? 1 : -1, hit: studHits(o, W, H, D),
+      const [fa, fs] = parseFace(o.face);
+      return { fa, fs, hit: studHits(o, W, H, D),
         build: o.op === "ball" ? socketFaces : holeFaces };
     });
 
@@ -930,7 +906,7 @@ export function makeSolid(def, opts = {}) {
         // cells, whose cap won't match) so no orphan hole is left floating.
         for (const fop of femaleOps) {
           if (idx[fop.fa] !== (fop.fs > 0 ? [W, H, D][fop.fa] - 1 : 0)) continue;
-          const pax = fop.fa === 0 ? [2, 1] : fop.fa === 1 ? [0, 2] : [0, 1];
+          const pax = PAX[fop.fa];
           const u = idx[pax[0]], v = idx[pax[1]];
           if (!fop.hit(u, v) || !faceIntact(fop.fa, fop.fs, u, v)) continue;
           const orig = cellFaces(i, j, k, W, H, D)[OUTER_FACE[fop.fa] + (fop.fs > 0 ? 1 : 0)];

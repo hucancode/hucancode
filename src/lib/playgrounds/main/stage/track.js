@@ -1,11 +1,12 @@
 import { clamp, lerp, smooth } from "$lib/math/scalar.js";
+import { eases } from "$lib/math/ease.js";
 
 // easing registry: name -> (x in [0,1]) -> eased x in [0,1]
 const EASES = {
-  linear: (x) => x,
+  linear: eases.linear,
   smooth, // smoothstep, zero slope at both ends
-  easeIn: (x) => x * x,
-  easeOut: (x) => 1 - (1 - x) * (1 - x),
+  easeIn: eases.inQuad,
+  easeOut: eases.outQuad,
 };
 const ease = (name) => (typeof name === "function" ? name : EASES[name] || EASES.linear);
 

@@ -1,28 +1,11 @@
 // Quaternion math for rigid rotations: [x, y, z, w] flat arrays, matching
-// the row-major mat3 convention in mat3.js (qToM3(qAxisAngle(...)) equals
-// m3AxisAngle(...)). Used wherever rotations must interpolate without the
-// shear a component-wise matrix lerp introduces.
-
-export const qIdentity = () => [0, 0, 0, 1];
+// the row-major mat3 convention in mat3.js. Used wherever rotations must
+// interpolate without the shear a component-wise matrix lerp introduces.
 
 export const qNormalize = (q) => {
   const l = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
   return [q[0] / l, q[1] / l, q[2] / l, q[3] / l];
 };
-
-export function qMul(a, b) {
-  return [
-    a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
-    a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
-    a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
-    a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
-  ];
-}
-
-export function qAxisAngle(ax, ay, az, t) {
-  const s = Math.sin(t / 2);
-  return [ax * s, ay * s, az * s, Math.cos(t / 2)];
-}
 
 // rotation matrix (row-major, PURE rotation) -> unit quaternion, Shepperd's
 // branch on the largest diagonal term for numeric stability

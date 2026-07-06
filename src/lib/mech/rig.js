@@ -28,6 +28,8 @@
 // re-emits items; only posed parts (head jaw, limbs) rebuild geometry.
 import { buildPart, partSlots, colorOf, currentJointGroup, resetJointGroups } from "./parts.js";
 import { bake, meshOf } from "./primitives.js";
+import { buildSpline } from "../math/curve.js";
+import { rad } from "../math/scalar.js";
 import {
   I3, vAdd, vSub, vScale, vLen, vNorm, vCross, m3Mul, m3MulV, m3T, m3Rot,
 } from "../math/mat3.js";
@@ -111,33 +113,16 @@ function setBall(sk, ids, M) {
 }
 
 // ---- closed Catmull-Rom loop ------------------------------------------------
-function catmull(p0, p1, p2, p3, t) {
-  const t2 = t * t, t3 = t2 * t, o = [0, 0, 0];
-  for (let i = 0; i < 3; i++)
-    o[i] = 0.5 * (2 * p1[i] + (p2[i] - p0[i]) * t +
-      (2 * p0[i] - 5 * p1[i] + 4 * p2[i] - p3[i]) * t2 +
-      (3 * p1[i] - p0[i] - 3 * p2[i] + p3[i]) * t3);
-  return o;
-}
-
-function makeLoop(pts, per = 48) {
-  const n = pts.length, samples = [], cum = [0];
-  for (let i = 0; i < n; i++)
-    for (let k = 0; k < per; k++)
-      samples.push(catmull(pts[(i - 1 + n) % n], pts[i], pts[(i + 1) % n], pts[(i + 2) % n], k / per));
-  for (let i = 1; i <= samples.length; i++)
-    cum.push(cum[i - 1] + vLen(vSub(samples[i % samples.length], samples[i - 1])));
-  const total = cum[samples.length];
-  const posAt = (s) => {
-    let u = ((s % total) + total) % total;
-    let lo = 0, hi = samples.length;               // cum[i] <= u < cum[i+1]
-    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= u) lo = m; else hi = m; }
-    const f = (u - cum[lo]) / (cum[lo + 1] - cum[lo] || 1);
-    const a = samples[lo], b = samples[(lo + 1) % samples.length];
-    return vAdd(a, vScale(vSub(b, a), f));
+// buildSpline (math/curve.js) speaks {x,y,z}; the rig speaks [x,y,z] arrays —
+// adapt, keeping the { total, posAt, tangentAt } contract (marchBack bisects
+// through posAt). curve.tan already returns a unit vector.
+function makeLoop(pts) {
+  const c = buildSpline(pts.map(([x, y, z]) => ({ x, y, z })));
+  return {
+    total: c.total,
+    posAt: (s) => { const p = c.pos(s); return [p.x, p.y, p.z]; },
+    tangentAt: (s) => { const t = c.tan(s); return [t.x, t.y, t.z]; },
   };
-  const tangentAt = (s) => vNorm(vSub(posAt(s + total / 500), posAt(s - total / 500)));
-  return { total, posAt, tangentAt };
 }
 
 // walk BACKWARD along the loop from s until the CHORD to the anchor equals
@@ -216,7 +201,6 @@ const LOOP_PTS = [
   [-7.8, 5.6, 0], [-5.5, 2.6, -5.5], [0, 5.0, -7.7], [5.5, 2.8, -5.5],
 ];
 
-const rad = (d) => ((d || 0) * Math.PI) / 180;
 const mirrorSlot = (s) => ({
   pos: [-s.pos[0], s.pos[1], s.pos[2]],
   n: [-s.n[0], s.n[1], s.n[2]],

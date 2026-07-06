@@ -432,14 +432,14 @@
     <li><button type="button" onclick={() => opAdd(spec, "hinge")}>+ hinge</button></li>
   </menu>
   {#each spec.ops as o, idx (o)}
-    <div class="op">
+    <article>
       <header>
         <strong>{idx + 1}. {o.op}</strong>
-        <span class="ctl">
-          <button type="button" onclick={() => opMove(spec, idx, -1)} disabled={idx === 0}>▲</button>
-          <button type="button" onclick={() => opMove(spec, idx, 1)} disabled={idx === spec.ops.length - 1}>▼</button>
-          <button type="button" onclick={() => opRemove(spec, idx)}>✕</button>
-        </span>
+        <menu>
+          <li><button type="button" onclick={() => opMove(spec, idx, -1)} disabled={idx === 0}>▲</button></li>
+          <li><button type="button" onclick={() => opMove(spec, idx, 1)} disabled={idx === spec.ops.length - 1}>▼</button></li>
+          <li><button type="button" onclick={() => opRemove(spec, idx)}>✕</button></li>
+        </menu>
       </header>
 
       {#if o.op === "slope"}
@@ -522,7 +522,7 @@
             <input type="range" min="0" max="7" step="1" bind:value={o.at.cell[1]} /><output>{o.at.cell[1]}</output></label>
         {/if}
       {/if}
-    </div>
+    </article>
   {/each}
 {/snippet}
 
@@ -548,7 +548,7 @@
   <aside>
     <fieldset>
       <legend>mode</legend>
-      <div class="square" role="group">
+      <div role="group">
         <label><input type="radio" name="lego-view" value="assemble" bind:group={view} />Assemble</label>
         <label><input type="radio" name="lego-view" value="inspect" bind:group={view} />Brick Design</label>
       </div>
@@ -564,12 +564,12 @@
 
       <fieldset>
         <legend>storage</legend>
-        <div class="slots">
+        <div role="group" aria-label="storage slots">
           {#each slots as s, i (i)}
-            <button type="button" class="slot" class:on={slot === i} class:filled={s.filled}
-              onclick={() => (slot = i)} title={slotLabel(s.at)}>
+            <label title={slotLabel(s.at)}>
+              <input type="radio" name="lego-slot" value={i} bind:group={slot} />
               {i + 1}{#if s.filled}<em>●</em>{/if}
-            </button>
+            </label>
           {/each}
         </div>
         <menu>
@@ -589,20 +589,18 @@
       <fieldset>
         <legend>assembly <button type="button" onclick={() => addChild(selNode ?? model.root)}>+ child</button></legend>
         <label><input type="checkbox" bind:checked={nodeIso} /> isolate selected</label>
-        <ul class="parts tree">
+        <ol>
           {#each nodeList as { node, depth, parent } (node)}
             <li>
-              <button type="button" class="pick" class:on={node === selNode}
+              <button type="button" aria-pressed={node === selNode}
                 style:padding-left={`${0.3 + depth * 0.85}rem`} onclick={() => (selNode = node)}>
-                <span class="sw" style:background={hexOf(model.parts[node.part]?.color)}></span>
+                <span style:background={hexOf(model.parts[node.part]?.color)}></span>
                 {node.part}{#if !parent}<em> root</em>{/if}
               </button>
-              <span class="ctl">
-                <button type="button" class="del" onclick={() => removeNode(node)} disabled={!parent}>✕</button>
-              </span>
+              <button type="button" onclick={() => removeNode(node)} disabled={!parent}>✕</button>
             </li>
           {/each}
-        </ul>
+        </ol>
       </fieldset>
 
       {#if selNode && nodeIndex(selNode) >= 0}
@@ -689,14 +687,14 @@
           <input type="checkbox" bind:checked={iso} />
           <span>isolate selected</span>
         </label>
-        <ul class="parts">
+        <ul>
           {#each partIds as id (id)}
             <li>
-              <button type="button" class="pick" class:on={id === sel} onclick={() => (sel = id)}>
-                <span class="sw" style:background={hexOf(model.parts[id].color)}></span>
+              <button type="button" aria-pressed={id === sel} onclick={() => (sel = id)}>
+                <span style:background={hexOf(model.parts[id].color)}></span>
                 {id}{#if id === rootPart}<em> root</em>{/if}
               </button>
-              <button type="button" class="del" onclick={() => removePart(id)}>✕</button>
+              <button type="button" onclick={() => removePart(id)}>✕</button>
             </li>
           {/each}
         </ul>
@@ -707,15 +705,15 @@
         <fieldset>
           <legend>{sel}</legend>
           <label><span>Name</span>
-            <input class="id" value={sel} onchange={(e) => renamePart(sel, e.currentTarget.value)} /></label>
+            <input type="text" value={sel} onchange={(e) => renamePart(sel, e.currentTarget.value)} /></label>
           <label><span>Color</span>
-            <span class="swatches">
+            <span>
               {#each COLORS as c}
-                <button type="button" class="chip" class:on={hexOf(spec.color) === hexOf(c)}
+                <button type="button" aria-pressed={hexOf(spec.color) === hexOf(c)}
                   style:background={PALETTE[c]} title={c}
                   aria-label={c} onclick={() => (spec.color = PALETTE[c])}></button>
               {/each}
-              <input class="picker" type="color" value={hexOf(spec.color)}
+              <input type="color" value={hexOf(spec.color)}
                 oninput={(e) => (spec.color = e.currentTarget.value)} title="custom color" />
             </span></label>
           {#if spec.stick}
@@ -757,31 +755,32 @@
   /* layout, HUD footer, menu rows, fieldset controls come from playground.css */
   footer label { flex: 1 1 8rem; }
   menu button { flex: 1; }
-  .slots { display: flex; gap: 0.25rem; margin-bottom: 0.25rem; }
-  .slot { flex: 1; opacity: 0.5; padding: 0.2rem 0; border-radius: 0.3rem; }
-  .slot.filled { opacity: 0.8; }
-  .slot.on { opacity: 1; font-weight: 600; outline: 1px solid currentColor; }
-  .slot em { font-style: normal; font-size: 0.55rem; vertical-align: super; opacity: 0.7; }
-  .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
-  .parts li { display: flex; align-items: center; gap: 0.25rem; }
-  .pick { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
-  .pick.on { opacity: 1; font-weight: 600; }
-  .pick em { opacity: 0.5; font-style: normal; font-size: 0.7rem; }
-  .tree .pick { border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
-  .sw { width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
-  .swatches { display: flex; gap: 0.3rem; }
-  .chip { width: 1.4rem; height: 1.4rem; border-radius: 0.3rem; border: 2px solid transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); cursor: pointer; padding: 0; }
-  .chip.on { border-color: currentColor; }
-  .picker { cursor: pointer; }
-  .del { opacity: 0.5; padding: 0 0.4rem; }
-  .op { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 0.4rem; padding: 0.4rem 0.5rem; margin-top: 0.4rem; }
-  .op header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
-  .op .ctl { display: flex; gap: 0.15rem; }
-  .op .ctl button { padding: 0 0.4rem; opacity: 0.7; }
-  .op .ctl button:disabled { opacity: 0.25; }
-  .ctl { display: flex; gap: 0.15rem; }
-  .ctl button { padding: 0 0.35rem; opacity: 0.7; }
-  .ctl button:disabled { opacity: 0.25; }
-  .id { flex: 1; }
+  /* storage slots: compact segmented radios, ● marks a filled slot */
+  [aria-label="storage slots"] label { flex: 1; justify-content: center; padding: 0.2rem 0; opacity: 0.5; }
+  [aria-label="storage slots"] label:has(em) { opacity: 0.8; }
+  [aria-label="storage slots"] label:has(:checked) { opacity: 1; font-weight: 600; }
+  label > em { font-style: normal; font-size: 0.55rem; vertical-align: super; opacity: 0.7; }
+  /* part/assembly lists: pick button (with color swatch) + delete button per row */
+  ul, ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
+  :is(ul, ol) li { display: flex; align-items: center; gap: 0.25rem; }
+  :is(ul, ol) li > button:first-child { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
+  :is(ul, ol) li > button[aria-pressed="true"] { opacity: 1; font-weight: 600; }
+  :is(ul, ol) li button em { opacity: 0.5; font-style: normal; font-size: 0.7rem; }
+  ol li > button:first-child { border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
+  :is(ul, ol) li > button span { flex: none; width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+  :is(ul, ol) li > button + button { opacity: 0.5; padding: 0 0.4rem; }
+  :is(ul, ol) li > button + button:disabled { opacity: 0.25; }
+  /* color swatch row inside the Color label */
+  label > span + span { display: flex; gap: 0.3rem; }
+  span + span button { width: 1.4rem; height: 1.4rem; border-radius: 0.3rem; border: 2px solid transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); cursor: pointer; padding: 0; }
+  span + span button[aria-pressed="true"] { border-color: currentColor; }
+  input[type="color"] { cursor: pointer; }
+  input[type="text"] { flex: 1; }
+  /* one operation card */
+  article { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 0.4rem; padding: 0.4rem 0.5rem; margin-top: 0.4rem; }
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+  header menu { gap: 0.15rem; }
+  header menu button { flex: none; padding: 0 0.4rem; opacity: 0.7; }
+  header menu button:disabled { opacity: 0.25; }
   textarea { font-family: monospace; font-size: 0.7rem; margin-top: 0.4rem; white-space: pre; overflow: auto; }
 </style>
