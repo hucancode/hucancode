@@ -107,7 +107,7 @@
   }
   function resetDragon() { drig = structuredClone(DRAGON_POSE); }
   function shuffle() { seed = (seed + 1) | 0; }
-  function replayBuild() { asmCache.clear(); asm = 0; asmPlay = true; }
+  function playAssemble() { asmCache.clear(); asm = 0; asmPlay = true; }
 
   // frozen WORLD anchors for the build: groups form at the pose the body had
   // when they started (build clock and ride clock advance together during
@@ -243,11 +243,10 @@
               oninput={(e) => (drig[key] = +e.currentTarget.value)} />
             <output>{drig[key].toFixed(step < 1 ? 2 : 0)}</output></label>
         {/each}
-        <div class="grp">assembly</div>
-        <label><span>build</span>
+        <label><span>build progress</span>
           <input type="range" min="0" max="1" step="0.001" bind:value={asm} />
           <output>{asm.toFixed(2)}</output></label>
-        <button type="button" onclick={replayBuild}>▶ replay build</button>
+        <button type="button" onclick={playAssemble}>▶ Assemble</button>
       </fieldset>
     {:else}
       <fieldset>
