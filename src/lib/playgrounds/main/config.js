@@ -73,7 +73,7 @@ export const CAM_PITCH_DUR = 4.0;   // camera pitch tilt duration (settles after
 export const D3_FADEIN_FRAC = 0.55;       // fraction of crossfade spent fading 3D dragon in
 
 export const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg elevation tilt
-export const CAM = { fov: (45 * Math.PI) / 180, dist: 3.2 };
+export const CAM = { fov: (45 * Math.PI) / 180, dist: 5.0 };
 
 export const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as 3D dragon takes over
 export const ENSO_FADE_TARGET = 0.85;  // enso circle eases to this opacity as 3D dragon takes over
