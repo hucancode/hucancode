@@ -1,3 +1,4 @@
+import { TAU } from "../math/scalar.js";
 // PRIMITIVE ENGINE. A primitive call returns a lightweight HANDLE { key, m, t }
 // a reference to a shared UNIT MESH in the registry plus an affine transform (3x3 linear, row-major,
 // + translation). rotX/rotY/rotZ/translate COMPOSE INTO THE MATRIX; vertices
@@ -29,7 +30,6 @@
 //                   fit "in"  -> cylinder inscribed in the box footprint
 //                   fit "out" -> cylinder circumscribes the box footprint
 
-const TAU = Math.PI * 2;
 const q4 = (v) => +(+v).toFixed(4);
 
 // ---- unit-mesh registry ------------------------------------------------------

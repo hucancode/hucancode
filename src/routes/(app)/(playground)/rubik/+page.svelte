@@ -28,7 +28,7 @@
       <label>
         <span>Cube size</span>
         <input type="range" min="2" max="6" step="1" bind:value={size} />
-        <output>{size}³</output>
+        <output>{size}</output>
       </label>
       <label>
         <span>Turn speed</span>

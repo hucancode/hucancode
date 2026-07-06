@@ -46,7 +46,7 @@
   {#each posts as post}
     <li>
       <a href="{base}/post/{post.slug}">
-        <span class="icons">
+        <span>
           {#each getIcons(post) as icon}
             {@html icon}
           {/each}
@@ -79,13 +79,13 @@
   li a:hover h3 {
     color: var(--link);
   }
-  .icons {
+  a span {
     display: inline-flex;
     flex-shrink: 0;
     gap: 0.2rem;
     opacity: 0.7;
   }
-  .icons :global(svg) {
+  a span :global(svg) {
     height: 1.3em;
     width: 1.3em;
   }

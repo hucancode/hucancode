@@ -3,22 +3,18 @@ export class Geometry {
     this.attributes = {};
     this.index = null;
     this.drawRange = null;
-    this.dynamic = false;
   }
   setAttribute(name, array, itemSize) {
-    this.attributes[name] = { array, itemSize, count: array.length / itemSize, needsUpdate: false };
+    this.attributes[name] = { array, itemSize, count: array.length / itemSize };
     return this;
   }
   setIndex(array) {
-    this.index = { array, needsUpdate: false };
+    this.index = { array };
     return this;
   }
   setDrawRange(start, count) {
     this.drawRange = { start, count };
     return this;
-  }
-  get vertexCount() {
-    return this.attributes.position.count;
   }
   translate(x, y, z) {
     const p = this.attributes.position.array;

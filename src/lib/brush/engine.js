@@ -243,16 +243,10 @@ export function expandStrokes(symbol, connect) {
 function strokeDuration(stroke, timing) {
   if (!stroke || !stroke.paths) return 0;
   let t = 0;
-  const auto = !!timing;
   for (let i = 0; i < stroke.paths.length; i++) {
-    const p = stroke.paths[i];
-    t += p.delay || 0;
-    if (auto) {
-      const L = pathArc(stroke, i);
-      t += travelTime(L, pointSpeed(stroke, i, timing.speed), pointSpeed(stroke, i + 1, timing.speed), L);
-    } else {
-      t += p.duration || 0;
-    }
+    t += stroke.paths[i].delay || 0;
+    const L = pathArc(stroke, i);
+    t += travelTime(L, pointSpeed(stroke, i, timing.speed), pointSpeed(stroke, i + 1, timing.speed), L);
   }
   return t;
 }

@@ -33,7 +33,7 @@
   <aside>
     <fieldset>
       <legend>flight path</legend>
-      <div class="square" role="group">
+      <div role="group">
         {#each PRESETS as p}
           <label>
             <input type="radio" name="preset" value={p.id} bind:group={preset}
@@ -86,8 +86,8 @@
     </fieldset>
 
     <menu>
-      <li><button onclick={() => scene?.newPath()}>↻ New path</button></li>
-      <li><button onclick={() => scene?.addDragon()}>＋ Add</button></li>
+      <li><button onclick={() => scene?.newPath()}>New path</button></li>
+      <li><button onclick={() => scene?.addDragon()}>+ Add</button></li>
       <li><button onclick={() => scene?.reset()}>Reset</button></li>
     </menu>
   </aside>

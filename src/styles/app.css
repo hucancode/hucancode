@@ -1,30 +1,30 @@
 :root,
 :host {
   --paper: #f2ecbc;
-  --ink: #16161D;
+  --ink: #16161d;
   --link: #624c83;
-  --color-neutral-50: rgb(236, 254, 252);
-  --color-neutral-100: rgb(240, 243, 254);
-  --color-neutral-200: rgb(214, 220, 245);
-  --color-neutral-300: rgb(147, 153, 178);
-  --color-neutral-400: rgb(127, 132, 156);
-  --color-neutral-500: rgb(108, 112, 134);
-  --color-neutral-600: rgb(88, 91, 112);
-  --color-neutral-700: rgb(69, 71, 90);
-  --color-neutral-800: rgb(49, 50, 68);
-  --color-neutral-900: rgb(30, 30, 46);
-  --color-neutral-950: rgb(24, 24, 37);
-  --color-primary-50: rgb(246 250 255);
-  --color-primary-100: rgb(227 237 254);
-  --color-primary-200: rgb(205 223 253);
-  --color-primary-300: rgb(181 208 252);
-  --color-primary-400: rgb(149 187 250);
-  --color-primary-500: rgb(122 161 224);
-  --color-primary-600: rgb(101 133 185);
-  --color-primary-700: rgb(83 109 151);
-  --color-primary-800: rgb(68 90 125);
-  --color-primary-900: rgb(49 64 89);
-  --color-primary-950: rgb(30 39 54);
+  --color-neutral-50: #ecfefc;
+  --color-neutral-100: #f0f3fe;
+  --color-neutral-200: #d6dcf5;
+  --color-neutral-300: #9399b2;
+  --color-neutral-400: #7f849c;
+  --color-neutral-500: #6c7086;
+  --color-neutral-600: #585b70;
+  --color-neutral-700: #45475a;
+  --color-neutral-800: #313244;
+  --color-neutral-900: #1e1e2e;
+  --color-neutral-950: #181825;
+  --color-primary-50: #f6faff;
+  --color-primary-100: #e3edfe;
+  --color-primary-200: #cddffd;
+  --color-primary-300: #b5d0fc;
+  --color-primary-400: #95bbfa;
+  --color-primary-500: #7aa1e0;
+  --color-primary-600: #6585b9;
+  --color-primary-700: #536d97;
+  --color-primary-800: #445a7d;
+  --color-primary-900: #314059;
+  --color-primary-950: #1e2736;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,28 +33,28 @@
     --paper: #16161d;
     --ink: #dcd7ba;
     --link: #7e9cd8;
-    --color-neutral-950: rgb(215, 224, 254);
-    --color-neutral-900: rgb(166, 173, 200);
-    --color-neutral-800: rgb(147, 153, 178);
-    --color-neutral-700: rgb(127, 132, 156);
-    --color-neutral-600: rgb(108, 112, 134);
-    --color-neutral-500: rgb(88, 91, 112);
-    --color-neutral-400: rgb(69, 71, 90);
-    --color-neutral-300: rgb(49, 50, 68);
-    --color-neutral-200: rgb(30, 30, 46);
-    --color-neutral-100: rgb(24, 24, 37);
-    --color-neutral-50: rgb(17, 17, 27);
-    --color-primary-950: rgb(248 249 255);
-    --color-primary-900: rgb(232 235 255);
-    --color-primary-800: rgb(215 220 254);
-    --color-primary-700: rgb(196 204 254);
-    --color-primary-600: rgb(173 182 244);
-    --color-primary-500: rgb(148 157 210);
-    --color-primary-400: rgb(123 129 173);
-    --color-primary-300: rgb(100 106 142);
-    --color-primary-200: rgb(83 87 117);
-    --color-primary-100: rgb(59 62 83);
-    --color-primary-50: rgb(36 38 51);
+    --color-neutral-950: #d7e0fe;
+    --color-neutral-900: #a6adc8;
+    --color-neutral-800: #9399b2;
+    --color-neutral-700: #7f849c;
+    --color-neutral-600: #6c7086;
+    --color-neutral-500: #585b70;
+    --color-neutral-400: #45475a;
+    --color-neutral-300: #313244;
+    --color-neutral-200: #1e1e2e;
+    --color-neutral-100: #181825;
+    --color-neutral-50: #11111b;
+    --color-primary-950: #f8f9ff;
+    --color-primary-900: #e8ebff;
+    --color-primary-800: #d7dcfe;
+    --color-primary-700: #c4ccfe;
+    --color-primary-600: #adb6f4;
+    --color-primary-500: #949dd2;
+    --color-primary-400: #7b81ad;
+    --color-primary-300: #646a8e;
+    --color-primary-200: #535775;
+    --color-primary-100: #3b3e53;
+    --color-primary-50: #242633;
   }
 }
 
@@ -69,7 +69,6 @@
 }
 
 * {
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   -webkit-tap-highlight-color: transparent;
   box-sizing: border-box;
 }
@@ -81,7 +80,6 @@ body {
   width: 100%;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
   gap: 1rem;
   background-color: var(--paper);
   color: var(--ink);
@@ -100,8 +98,7 @@ nav {
   max-width: 1024px;
   align-items: center;
   justify-content: space-between;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-inline: 1rem;
 }
 
 nav:has(> :only-child) {
@@ -112,14 +109,10 @@ video {
   max-width: 100%;
 }
 
-.container {
-  width: 100%;
-}
-
 hr {
   width: 90%;
   max-width: 640px;
-  border:none;
+  border: none;
   border-bottom: 1px solid var(--color-neutral-600);
 }
 
@@ -129,20 +122,17 @@ a {
 }
 
 a:hover {
-  color: var(--link);
   opacity: 0.8;
 }
 
 h1 {
   font-size: xx-large;
-  font-weight: bold;
   line-height: 1.3;
   min-height: 1.3em;
 }
 
 h2 {
   font-size: large;
-  font-weight: bold;
   line-height: 1.4;
   min-height: 1.4em;
 }
@@ -166,51 +156,36 @@ h1, h2, h3, p {
 input[type="radio"] {
   display: none;
 }
-div[role="group"].square {
+/* segmented control: any div[role=group] holding radios (in labels) or buttons */
+div[role="group"] {
   &:has(input[type="radio"], button, a[role="button"]) {
     display: flex;
   }
   & :is(label:has(input[type="radio"]), button, a[role="button"]) {
     padding: 0.5em 1em;
-    font-size: medium;
-    border-style: solid;
-    border-width: 0.075em;
-    border-color: color-mix(in srgb, var(--ink) 20%, transparent);
+    border: 0.075em solid color-mix(in srgb, var(--ink) 20%, transparent);
     display: flex;
     gap: 0.5em;
     align-items: center;
     cursor: pointer;
     font-size: small;
     font-weight: 500;
-    &[small] {
-      font-size: small;
-      padding: 0.25em 0.5em;
-    }
   }
-  & label:active:has(input[type="radio"]),
-  & :is(button, a[role="button"]):active {
+  & :is(label:has(input[type="radio"]), button, a[role="button"]):active {
     color: var(--link);
-  }
-  & :is(button, a[role="button"]) svg {
-    font-size: larger;
-  }
-  & label:has(input[type="radio"]:checked) {
-    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
-  }
-  & label:hover:has(input[type="radio"]),
-  & :is(button, a[role="button"]):hover {
-    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
-    border-color: color-mix(in srgb, var(--link) 40%, transparent);
-    color: var(--link);
-    opacity: 1;
   }
   & :is(button, a[role="button"]) {
     color: var(--link);
     background-color: var(--paper);
+    & svg { font-size: larger; }
   }
-  & :is(button, a[role="button"])[disabled="true"] {
-    pointer-events: none;
-    color: color-mix(in srgb, var(--ink) 50%, transparent);
-    background-color: color-mix(in srgb, var(--ink) 8%, var(--paper));
+  & label:has(input[type="radio"]:checked) {
+    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
+  }
+  & :is(label:has(input[type="radio"]), button, a[role="button"]):hover {
+    background-color: color-mix(in srgb, var(--link) 10%, var(--paper));
+    border-color: color-mix(in srgb, var(--link) 40%, transparent);
+    color: var(--link);
+    opacity: 1;
   }
 }

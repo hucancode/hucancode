@@ -38,13 +38,12 @@
 // resolveAssembly() returns render pieces. (Lattice mating/collision validation
 // was removed for simplicity — placement is purely geometric, never blocked.)
 
-import { dims, jointFrame } from "./solid.js";
+import { dims, jointFrame, matCols } from "./solid.js";
 import {
   I3, m3Rot, m3Mul, m3MulV, m3AxisAngle,
-  vAdd, vSub, vScale, vCross, vNorm,
+  vAdd, vSub, vScale, vCross, vNorm, vDot,
 } from "../../math/mat3.js";
-
-const D2R = Math.PI / 180;
+import { rad } from "../../math/scalar.js";
 
 function mat4(R, C) {
   const m = new Float32Array(16);          // column-major
@@ -65,9 +64,7 @@ const FACES = {
   left:   { n: [-1, 0, 0], u: [0, 0, 1], v: [0, 1, 0] },
 };
 
-const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-// row-major 3x3 from three column vectors / from three row vectors
-const matCols = (a, b, c) => [a[0], b[0], c[0], a[1], b[1], c[1], a[2], b[2], c[2]];
+// row-major 3x3 from three row vectors (matCols, its column twin, lives in solid.js)
 const matRows = (a, b, c) => [a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]];
 
 // Seating mode of a connection, derived from where B attaches:
@@ -98,18 +95,18 @@ function jointIdxOf(spec, idx, type) {
 function jointRot(conn, U, V, N) {
   if (!conn.joint || conn.joint === "none") return I3;
   if (conn.joint === "hinge") {
-    const pitch = (conn.jpitch ?? conn.jangle ?? 0) * D2R;
-    const yaw = (conn.jyaw ?? 0) * D2R;
+    const pitch = rad(conn.jpitch ?? conn.jangle ?? 0);
+    const yaw = rad(conn.jyaw ?? 0);
     return m3AxisAngle(...U, pitch + yaw);                // pin swing only — ring stays put
   }
   const [jx, jy, jz] = conn.jrot ?? [0, 0, 0];   // ball: compose U then V then N
-  return m3Mul(m3AxisAngle(...N, jz * D2R), m3Mul(m3AxisAngle(...V, jy * D2R), m3AxisAngle(...U, jx * D2R)));
+  return m3Mul(m3AxisAngle(...N, rad(jz)), m3Mul(m3AxisAngle(...V, rad(jy)), m3AxisAngle(...U, rad(jx))));
 }
 
 // half-extent of a box (half-sizes hw,hh,hd, rotation R) along a unit world dir w
 function halfAlong(d, R, w) {
   const ex = [R[0], R[3], R[6]], ey = [R[1], R[4], R[7]], ez = [R[2], R[5], R[8]];
-  return d.hw * Math.abs(dot3(w, ex)) + d.hh * Math.abs(dot3(w, ey)) + d.hd * Math.abs(dot3(w, ez));
+  return d.hw * Math.abs(vDot(w, ex)) + d.hh * Math.abs(vDot(w, ey)) + d.hd * Math.abs(vDot(w, ez));
 }
 
 // Stud-grid snap along an in-plane mount axis. Studs sit on a unit grid whose
@@ -162,7 +159,7 @@ function seatChild(A, conn, Bspec, bd) {
       // Two pieces: the KNUCKLE stays interlocked (swings about the pin only); the
       // BODY additionally yaws about the joint normal — "rotate the block, not the
       // hinge". Both pivot about the shared ring center.
-      const pitch = (conn.jpitch ?? conn.jangle ?? 0) * D2R, yaw = (conn.jyaw ?? 0) * D2R;
+      const pitch = rad(conn.jpitch ?? conn.jangle ?? 0), yaw = rad(conn.jyaw ?? 0);
       const Rring = pitch ? m3Mul(m3AxisAngle(...pinA, pitch), R0) : R0;
       // yaw the block first (about the normal), THEN fold the hinge (about the pin)
       const Ryaw = yaw ? m3Mul(m3AxisAngle(...nA, yaw), R0) : R0;
@@ -184,7 +181,7 @@ function seatChild(A, conn, Bspec, bd) {
     if (Rj !== I3) { Rb = m3Mul(Rj, Rb); Cb = vAdd(Pa, m3MulV(Rj, vSub(Cb, Pa))); }
   } else {
     const r = conn.rot ?? [0, conn.angle ?? 0, 0];       // legacy `angle` == rot Y
-    Rb = m3Mul(m3Rot("x", r[0] * D2R), m3Mul(m3Rot("y", r[1] * D2R), m3Rot("z", r[2] * D2R)));
+    Rb = m3Mul(m3Rot("x", rad(r[0])), m3Mul(m3Rot("y", rad(r[1])), m3Rot("z", rad(r[2]))));
     if (conn.local) Rb = m3Mul(A.R, Rb);
     const su = studSnap(U, A, Rb, bd), sv = studSnap(V, A, Rb, bd);  // parity-correct to A's stud grid
     const Pa = vAdd(vAdd(A.C, vScale(N, halfAlong(A.d, A.R, N))), vAdd(vScale(U, du + su), vScale(V, dv + sv)));

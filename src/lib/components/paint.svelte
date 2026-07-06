@@ -8,8 +8,7 @@
   // Controlled canvas. The parent owns the timeline:
   //   t        scene time, bindable (parent maps scroll / autoplay onto it)
   //   playing  when true the component auto-advances t each frame
-  //   fill     stretch to the parent's height instead of a 16/9 box
-  let { t = $bindable(0), playing = $bindable(false), debug = {}, fill = false } = $props();
+  let { t = $bindable(0), playing = $bindable(false), debug = {} } = $props();
 
   let canvasEl;
   let renderer = null;
@@ -124,7 +123,6 @@
 </script>
 
 <canvas
-  class:fill
   bind:this={canvasEl}
   onpointerdown={onPointerDown}
   onpointermove={onPointerMove}
@@ -135,14 +133,10 @@
 <style>
   canvas {
     width: 100%;
-    aspect-ratio: 16 / 9;
+    height: 100%;
     display: block;
     touch-action: pan-y;
     cursor: grab;
-  }
-  canvas.fill {
-    height: 100%;
-    aspect-ratio: auto;
   }
   canvas:active {
     cursor: grabbing;

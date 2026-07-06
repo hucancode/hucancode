@@ -1,4 +1,5 @@
-import { createPlayground, Color, animate, utils, eases, F32, VEC2, VEC3 } from "$lib/engine/index.js";
+import { createPlayground, animate, utils, eases, F32, VEC2, VEC3 } from "$lib/engine/index.js";
+import { hexToRGB } from "$lib/math/color.js";
 import CLOUD_FRAG from "./shaders/cloud.frag.glsl?raw";
 import BAGUA_FRAG from "./shaders/bagua.frag.glsl?raw";
 import TAIJI_FRAG from "./shaders/taiji.frag.glsl?raw";
@@ -8,16 +9,16 @@ import TAIJI_WGSL from "./shaders/taiji.wgsl?raw";
 import VERT from "./shaders/taiji.vert.glsl?raw";
 
 const config = { taijiSpin: 0.01, cloudSpeed: 4, bitCount: 3, stroke: 0.04, dot: 0.12 };
-const color1 = new Color("#ffffff");
-const color2 = new Color("#000000");
+let color1 = hexToRGB("#ffffff");
+let color2 = hexToRGB("#000000");
 
 let pCloud, pBagua, pTaiji;
 let time = 0, rot = 0;
 const cloudA = { v: 0 }, baguaA = { v: 0 }, taijiA = { v: 0 };
 
 function setConfig(patch) {
-  if (patch.color1) color1.setStyle(patch.color1);
-  if (patch.color2) color2.setStyle(patch.color2);
+  if (patch.color1) color1 = hexToRGB(patch.color1);
+  if (patch.color2) color2 = hexToRGB(patch.color2);
   Object.assign(config, patch);
 }
 
@@ -53,8 +54,6 @@ const { init, render, destroy } = createPlayground({
     rot += config.taijiSpin;
 
     const aspect = canvas.width / canvas.height;
-    const c1 = [color1.r, color1.g, color1.b];
-    const c2 = [color2.r, color2.g, color2.b];
 
     device.beginFrame();
     device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1] }, (p) => {
@@ -67,7 +66,7 @@ const { init, render, destroy } = createPlayground({
         count: 6,
         uniforms: {
           uScale: square(0.5, aspect), uRot: rot, alpha: taijiA.v,
-          uStroke: config.stroke, uDot: config.dot, color1: c1, color2: c2,
+          uStroke: config.stroke, uDot: config.dot, color1, color2,
         },
       });
     });

@@ -5,18 +5,8 @@
     init,
     destroy,
     render,
-    resize,
-    setWidth,
-    setInkFlow,
-    setStrands,
-    setWaterFlow,
-    setWobble,
-    setWidthEnd,
-    setWidthOffset,
-    setWidthRange,
-    setWireframe,
+    setParams,
     setHead,
-    setWhiskerWidth,
     setPhysicsParam,
     setTipTarget,
     resetBaseline,
@@ -88,37 +78,22 @@
 
   // shader params
   $effect(() => {
-    if (ready) setWidth(width);
-  });
-  $effect(() => {
-    if (ready) setInkFlow(inkFlow);
-  });
-  $effect(() => {
-    if (ready) setStrands(strands);
-  });
-  $effect(() => {
-    if (ready) setWaterFlow(waterFlow);
-  });
-  $effect(() => {
-    if (ready) setWobble(wobble);
-  });
-  $effect(() => {
-    if (ready) setWidthEnd(widthEnd);
-  });
-  $effect(() => {
-    if (ready) setWidthOffset(widthOffset);
-  });
-  $effect(() => {
-    if (ready) setWidthRange(widthRange);
-  });
-  $effect(() => {
-    if (ready) setWireframe(wireframe);
+    if (!ready) return;
+    setParams({
+      width,
+      inkFlow,
+      strands,
+      waterFlow,
+      wobble,
+      widthEnd,
+      widthOffset,
+      widthRange,
+      wireframe,
+      whiskerWidth,
+    });
   });
   $effect(() => {
     if (ready) setHead(null, null, headSize, showHead);
-  });
-  $effect(() => {
-    if (ready) setWhiskerWidth(whiskerWidth);
   });
 
   // physics params
@@ -328,12 +303,11 @@
     }
   }
 
+  // canvas backing store + engine aspect are synced by the playground itself;
+  // this only tracks the CSS size for the SVG debug overlays.
   function onResize() {
     if (!canvasEl) return;
-    const w = canvasEl.clientWidth,
-      h = canvasEl.clientHeight;
-    resize(w, h);
-    canvasSize = { w, h };
+    canvasSize = { w: canvasEl.clientWidth, h: canvasEl.clientHeight };
   }
 
   function onPointerDown(e) {
@@ -399,12 +373,12 @@
   ></canvas>
   {#if showPath && pathView.samples.length > 1}
     <svg
-      class="overlay path-overlay"
       viewBox={`0 0 ${canvasSize.w} ${canvasSize.h}`}
       preserveAspectRatio="none"
     >
       <polyline
-        class="path-curve"
+        stroke="rgba(80, 160, 255, 0.85)"
+        stroke-width="2"
         points={pathView.samples
           .map((p) => {
             const s = ws(p);
@@ -414,7 +388,9 @@
       />
       {#if pathView.ctrls.length >= 2}
         <polyline
-          class="path-ctrl-poly"
+          stroke="rgba(80, 160, 255, 0.35)"
+          stroke-width="1"
+          stroke-dasharray="3 4"
           points={pathView.ctrls
             .map((p) => {
               const s = ws(p);
@@ -425,21 +401,28 @@
       {/if}
       {#each pathView.ctrls as p}
         {@const s = ws(p)}
-        <circle class="path-ctrl" cx={s.x} cy={s.y} r="4" />
+        <circle fill="rgba(80, 160, 255, 0.9)" cx={s.x} cy={s.y} r="4" />
       {/each}
       {#if pathView.cursor}
         {@const s = ws(pathView.cursor)}
-        <circle class="path-cursor" cx={s.x} cy={s.y} r="6" />
+        <circle
+          fill="rgba(255, 220, 60, 0.95)"
+          style="stroke: rgba(40, 40, 40, 0.9)"
+          cx={s.x}
+          cy={s.y}
+          r="6"
+        />
       {/if}
     </svg>
   {/if}
   {#if showPoints && overlayView.body.length > 0}
     <svg
-      class="overlay"
       viewBox={`0 0 ${canvasSize.w} ${canvasSize.h}`}
       preserveAspectRatio="none"
     >
       <polyline
+        stroke="rgba(180, 60, 60, 0.45)"
+        stroke-dasharray="4 4"
         points={overlayView.body
           .map((p) => {
             const s = ws(p);
@@ -453,17 +436,18 @@
           cx={s.x}
           cy={s.y}
           r={i === overlayView.body.length - 1 ? 6 : 4}
-          class={i === 0
-            ? "first"
+          fill={i === 0
+            ? "rgba(50, 180, 80, 0.95)"
             : i === overlayView.body.length - 1
-              ? "last"
-              : "mid"}
+              ? "rgba(50, 100, 220, 0.95)"
+              : "rgba(220, 50, 50, 0.85)"}
         />
       {/each}
       {#each [overlayView.whiskerL, overlayView.whiskerR] as chain}
         {#if chain.length >= 2}
           <polyline
-            class="whisker"
+            stroke="rgba(200, 120, 50, 0.55)"
+            stroke-dasharray="2 3"
             points={chain
               .map((p) => {
                 const s = ws(p);
@@ -477,11 +461,11 @@
               cx={s.x}
               cy={s.y}
               r={i === 0 ? 5 : 3}
-              class={i === 0
-                ? "whisker-anchor"
+              fill={i === 0
+                ? "rgba(255, 180, 60, 0.95)"
                 : i === chain.length - 1
-                  ? "whisker-tip"
-                  : "whisker-mid"}
+                  ? "rgba(160, 80, 200, 0.95)"
+                  : "rgba(200, 120, 50, 0.85)"}
             />
           {/each}
         {/if}
@@ -614,7 +598,7 @@
 
   <fieldset>
     <legend>head</legend>
-    <label class="check">
+    <label>
       <input type="checkbox" bind:checked={showHead} />
       <span>show</span>
     </label>
@@ -665,7 +649,7 @@
 
   <fieldset>
     <legend>auto fly</legend>
-    <label class="check">
+    <label>
       <input type="checkbox" bind:checked={autoFly} />
       <span>enable</span>
     </label>
@@ -684,21 +668,18 @@
 
   <fieldset>
     <legend>debug</legend>
-    <label class="check">
+    <label>
       <input type="checkbox" bind:checked={showPoints} />
       <span>show control points</span>
     </label>
-    <label class="check">
+    <label>
       <input type="checkbox" bind:checked={showPath} />
       <span>show auto-fly path</span>
     </label>
-    <label class="check">
+    <label>
       <input type="checkbox" bind:checked={wireframe} />
       <span>wireframe body</span>
     </label>
-    <small>
-      drag on canvas: tip follows mouse, chain pulls along when stretched
-    </small>
   </fieldset>
 </aside>
 
@@ -718,63 +699,19 @@
   canvas:active {
     cursor: grabbing;
   }
-  .overlay {
+  /* debug overlays: per-node colors live inline on the SVG elements */
+  section > svg {
     position: absolute;
     inset: 0;
     pointer-events: none;
     width: 100%;
     height: 100%;
   }
-  .overlay circle {
-    fill: rgba(220, 50, 50, 0.85);
+  svg polyline {
+    fill: none;
+  }
+  svg circle {
     stroke: white;
-    stroke-width: 1.5;
-  }
-  .overlay circle.first {
-    fill: rgba(50, 180, 80, 0.95);
-  }
-  .overlay circle.last {
-    fill: rgba(50, 100, 220, 0.95);
-  }
-  .overlay circle.whisker-mid {
-    fill: rgba(200, 120, 50, 0.85);
-  }
-  .overlay circle.whisker-anchor {
-    fill: rgba(255, 180, 60, 0.95);
-  }
-  .overlay circle.whisker-tip {
-    fill: rgba(160, 80, 200, 0.95);
-  }
-  .overlay polyline.whisker {
-    stroke: rgba(200, 120, 50, 0.55);
-    stroke-dasharray: 2 3;
-  }
-  .overlay polyline {
-    fill: none;
-    stroke: rgba(180, 60, 60, 0.45);
-    stroke-width: 1;
-    stroke-dasharray: 4 4;
-  }
-  .path-overlay polyline.path-curve {
-    fill: none;
-    stroke: rgba(80, 160, 255, 0.85);
-    stroke-width: 2;
-    stroke-dasharray: none;
-  }
-  .path-overlay polyline.path-ctrl-poly {
-    fill: none;
-    stroke: rgba(80, 160, 255, 0.35);
-    stroke-width: 1;
-    stroke-dasharray: 3 4;
-  }
-  .path-overlay circle.path-ctrl {
-    fill: rgba(80, 160, 255, 0.9);
-    stroke: white;
-    stroke-width: 1.5;
-  }
-  .path-overlay circle.path-cursor {
-    fill: rgba(255, 220, 60, 0.95);
-    stroke: rgba(40, 40, 40, 0.9);
     stroke-width: 1.5;
   }
   button {

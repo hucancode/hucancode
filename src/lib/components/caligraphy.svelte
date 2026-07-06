@@ -15,9 +15,10 @@
     DEFAULT_CONNECT,
     DEFAULT_TIMING,
   } from "$lib/brush/engine";
-  import { yongSymbol, yongMaxId } from "$lib/brush/yong";
-  import { longSymbol, longMaxId } from "$lib/brush/long";
-  import { fuSymbol, fuMaxId } from "$lib/brush/fu";
+  import { yong } from "$lib/brush/yong";
+  import { long } from "$lib/brush/long";
+  import { fu } from "$lib/brush/fu";
+  import { maxSymbolId } from "$lib/brush/glyphs";
   import { bakeGLSL } from "$lib/brush/bake";
   import { makeRenderer } from "$lib/playgrounds/caligraphy";
 
@@ -45,9 +46,9 @@
 
   // seed samples: dropdown picks one to load fresh.
   const SAMPLES = {
-    yong: { label: "永 (yong)", make: yongSymbol, maxId: yongMaxId },
-    long: { label: "龍 (long)", make: longSymbol, maxId: longMaxId },
-    fu: { label: "福 (fu)", make: fuSymbol, maxId: fuMaxId },
+    yong: { label: "永 (yong)", ...yong },
+    long: { label: "龍 (long)", ...long },
+    fu: { label: "福 (fu)", ...fu },
   };
   let sampleKey = $state("yong");
 
@@ -58,7 +59,7 @@
 
   // initial: load yong as seed; uid floor bumped past stored ids.
   setUidFloor(SAMPLES[sampleKey].maxId());
-  let symbol = $state(SAMPLES[sampleKey].make());
+  let symbol = $state(SAMPLES[sampleKey].symbol());
 
   // selection
   let selKind = $state("path");
@@ -132,7 +133,7 @@
     if (!s) return;
     sampleKey = key;
     setUidFloor(s.maxId());
-    symbol = s.make();
+    symbol = s.symbol();
     selKind = "stroke";
     selStrokeId = symbol.strokes[0].id;
     selIdx = 0;
@@ -609,12 +610,7 @@
     if (!data) return;
     if (data.symbol && Array.isArray(data.symbol.strokes)) {
       // bump uid past highest stored id
-      let maxId = 0;
-      for (const s of data.symbol.strokes) {
-        if (s.id > maxId) maxId = s.id;
-        for (const p of s.points || []) if (p.id > maxId) maxId = p.id;
-      }
-      setUidFloor(maxId);
+      setUidFloor(maxSymbolId(data.symbol));
       symbol = data.symbol;
     }
     if (data.params) {
@@ -801,11 +797,10 @@
 >
   <canvas bind:this={canvasEl} style="width:{stageW}px;height:{stageH}px"
   ></canvas>
-  <div class="viewport-tools">
-    <button
+  <menu>
+    <li><button
       type="button"
-      class="vp-btn"
-      class:active={showGrid}
+      aria-pressed={showGrid}
       title={showGrid ? "hide 米 grid" : "show 米 grid"}
       onpointerdown={(e) => e.stopPropagation()}
       onclick={() => (showGrid = !showGrid)}
@@ -826,11 +821,10 @@
         <line x1="3" y1="3" x2="21" y2="21" />
         <line x1="21" y1="3" x2="3" y2="21" />
       </svg>
-    </button>
-    <button
+    </button></li>
+    <li><button
       type="button"
-      class="vp-btn"
-      class:active={showHandles && !anim}
+      aria-pressed={showHandles && !anim}
       title={anim
         ? "back to edit"
         : showHandles
@@ -858,11 +852,10 @@
         <path d="M14.5 4.5 19 9 8 20H3.5v-4.5z" />
         <line x1="13" y1="6" x2="18" y2="11" />
       </svg>
-    </button>
-    <button
+    </button></li>
+    <li><button
       type="button"
-      class="vp-btn"
-      class:active={frameMode && !anim}
+      aria-pressed={frameMode && !anim}
       title={frameMode
         ? "exit frame mode"
         : "frame mode (scale/move whole glyph)"}
@@ -886,13 +879,12 @@
         <path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5" />
         <rect x="8" y="8" width="8" height="8" rx="1" opacity="0.55" />
       </svg>
-    </button>
-  </div>
-  <div class="viewport-zoom" onpointerdown={(e) => e.stopPropagation()}>
-    <span class="zoom-pct">{Math.round(view.zoom * 100)}%</span>
-    <button
+    </button></li>
+  </menu>
+  <menu onpointerdown={(e) => e.stopPropagation()}>
+    <li><output>{Math.round(view.zoom * 100)}%</output></li>
+    <li><button
       type="button"
-      class="vp-btn"
       title="reset zoom"
       onclick={resetView}
       aria-label="reset zoom"
@@ -910,8 +902,8 @@
         <path d="M3 12a9 9 0 1 0 3-6.7" />
         <path d="M3 4v4h4" />
       </svg>
-    </button>
-  </div>
+    </button></li>
+  </menu>
   {#if frameMode && !anim && stageW > 0 && frameWorld}
     {@const fw = frameWorld}
     {@const cA = ws({ x: fw.minX, y: fw.minY })}
@@ -922,7 +914,7 @@
     {@const right = Math.max(cA.x, cB.x, cC.x, cD.x)}
     {@const top = Math.min(cA.y, cB.y, cC.y, cD.y)}
     {@const bot = Math.max(cA.y, cB.y, cC.y, cD.y)}
-    <svg class="overlay" width={stageW} height={stageH}>
+    <svg width={stageW} height={stageH}>
       <rect
         x={left}
         y={top}
@@ -952,7 +944,7 @@
     </svg>
   {/if}
   {#if showHandles && !anim && !frameMode && stageW > 0}
-    <svg class="overlay" width={stageW} height={stageH}>
+    <svg width={stageW} height={stageH}>
       <!-- pass 1: edges (preview + hit area) for every segment of every stroke -->
       {#each symbol.strokes as stroke (stroke.id)}
         {@const isActive = selKind !== "none" && stroke.id === selStrokeId}
@@ -1121,7 +1113,6 @@
     </menu>
     {#if showCode}
       <textarea
-        class="code-dump"
         readonly
         rows="12"
         onpointerdown={(e) => e.stopPropagation()}>{codeText}</textarea
@@ -1130,7 +1121,6 @@
     {#if bakeText}
       <small>baked: {bakeInfo}</small>
       <textarea
-        class="code-dump"
         readonly
         rows="14"
         onpointerdown={(e) => e.stopPropagation()}>{bakeText}</textarea
@@ -1146,34 +1136,33 @@
     {#if slots.length === 0}
       <small>no slots yet - "+ new slot" snapshots current work.</small>
     {:else}
-      <ol class="slot-list">
+      <ol>
         {#each slots as slot (slot.id)}
-          <li class:sel={activeSlotId === slot.id}>
+          <li aria-current={activeSlotId === slot.id || undefined}>
             <button
               type="button"
-              class="slot-pick"
               title="load this slot"
               onclick={() => loadSlot(slot.id)}
             >
-              <span class="name">{slot.name}</span>
+              <strong>{slot.name}</strong>
             </button>
-            <span class="slot-actions">
-              <button
+            <menu>
+              <li><button
                 type="button"
                 title="overwrite with current work"
                 onclick={() => saveToSlot(slot.id)}>save</button
-              >
-              <button
+              ></li>
+              <li><button
                 type="button"
                 title="rename"
                 onclick={() => renameSlot(slot.id)}>✎</button
-              >
-              <button
+              ></li>
+              <li><button
                 type="button"
                 title="delete"
                 onclick={() => deleteSlot(slot.id)}>✕</button
-              >
-            </span>
+              ></li>
+            </menu>
           </li>
         {/each}
       </ol>
@@ -1182,31 +1171,30 @@
 
   <fieldset>
     <legend>strokes</legend>
-    <ol class="stroke-list">
+    <ol>
       {#each symbol.strokes as stroke, i (stroke.id)}
-        <li class:sel={selKind !== "none" && selStrokeId === stroke.id}>
+        <li aria-current={(selKind !== "none" && selStrokeId === stroke.id) || undefined}>
           <button
             type="button"
-            class="stroke-pick"
             onclick={() => selectStroke(stroke.id)}
           >
-            <span class="name">stroke {i + 1}</span>
-            <span class="meta">{stroke.points.length} pts</span>
+            <strong>stroke {i + 1}</strong>
+            <small>{stroke.points.length} pts</small>
           </button>
-          <span class="reorder">
-            <button
+          <menu>
+            <li><button
               type="button"
               title="move earlier"
               disabled={i === 0}
               onclick={() => moveStroke(i, -1)}>▲</button
-            >
-            <button
+            ></li>
+            <li><button
               type="button"
               title="move later"
               disabled={i === symbol.strokes.length - 1}
               onclick={() => moveStroke(i, 1)}>▼</button
-            >
-          </span>
+            ></li>
+          </menu>
         </li>
       {/each}
     </ol>
@@ -1229,7 +1217,7 @@
         value={pb.t}
         oninput={(e) => seekTo(+e.target.value)}
       />
-      <output>{pb.t.toFixed(2)}/{totalDuration.toFixed(2)}s</output>
+      <output>{pb.t.toFixed(2)}</output>
     </label>
   </fieldset>
 
@@ -1250,7 +1238,7 @@
 
   <fieldset>
     <legend>brush</legend>
-    <label class="check">
+    <label>
       <input type="checkbox" bind:checked={connect.enabled} />
       <span>auto-thread strokes</span>
     </label>
@@ -1377,24 +1365,37 @@
     display: block;
     touch-action: none;
   }
-  .overlay {
+  /* edit overlays on the stage */
+  section > svg {
     position: absolute;
     inset: 0;
     pointer-events: none;
   }
-  .viewport-tools {
+  svg circle {
+    pointer-events: all;
+    cursor: grab;
+  }
+  svg circle:active {
+    cursor: grabbing;
+  }
+  /* viewport chrome: tool menu top-right, zoom menu bottom-left */
+  section > menu {
     position: absolute;
+    z-index: 2;
+    gap: 0.35rem;
+  }
+  section > menu:first-of-type {
     top: 0.5rem;
     right: 0.5rem;
-    display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    z-index: 2;
   }
-  .vp-btn {
-    width: 32px;
+  section > menu:last-of-type {
+    bottom: 0.5rem;
+    left: 0.5rem;
+    align-items: center;
+  }
+  section > menu :is(button, output) {
     height: 32px;
-    padding: 0;
     margin: 0;
     border: 1px solid rgba(0, 0, 0, 0.18);
     border-radius: 6px;
@@ -1403,46 +1404,31 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
-  .viewport-zoom {
-    position: absolute;
-    bottom: 0.5rem;
-    left: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    z-index: 2;
+  section > menu button {
+    width: 32px;
+    padding: 0;
+    cursor: pointer;
   }
-  .zoom-pct {
+  section > menu output {
     min-width: 3rem;
     padding: 0 0.5rem;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     font-size: 0.8rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: #333;
-    border: 1px solid rgba(0, 0, 0, 0.18);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
-  .vp-btn:hover {
-    background: rgba(255, 255, 255, 1);
+  section > menu button:hover {
+    background: white;
   }
-  .vp-btn.active {
+  section > menu button[aria-pressed="true"] {
     background: rgba(40, 80, 220, 0.92);
     color: white;
     border-color: rgba(40, 80, 220, 1);
   }
-  .code-dump {
+  textarea {
     width: 100%;
     margin-top: 0.35rem;
-    box-sizing: border-box;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.7rem;
     line-height: 1.35;
@@ -1454,14 +1440,8 @@
     background: #fbfbf5;
     color: #222;
   }
-  .overlay circle {
-    pointer-events: all;
-    cursor: grab;
-  }
-  .overlay circle:active {
-    cursor: grabbing;
-  }
-  .stroke-list {
+  /* save-slot / stroke lists: pick button + per-row action menu */
+  ol {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -1470,19 +1450,19 @@
     max-height: 12rem;
     overflow-y: auto;
   }
-  .stroke-list li {
+  ol > li {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     border: 1px solid rgba(128, 128, 128, 0.25);
     border-radius: 0.3rem;
-    padding: 0.1rem 0.1rem 0.1rem 0;
+    padding: 0.1rem 0.3rem 0.1rem 0;
   }
-  .stroke-list li.sel {
+  ol > li[aria-current] {
     border-color: rgba(40, 80, 220, 0.8);
     background: rgba(40, 80, 220, 0.08);
   }
-  .stroke-pick {
+  ol > li > button {
     flex: 1;
     display: flex;
     align-items: center;
@@ -1494,66 +1474,24 @@
     padding: 0.25rem 0.5rem;
     font-size: 0.85rem;
   }
-  .stroke-pick .name {
+  ol strong {
     font-weight: 600;
   }
-  .stroke-pick .meta {
+  ol small {
     opacity: 0.6;
   }
-  .slot-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.25rem;
-    max-height: 12rem;
-    overflow-y: auto;
-  }
-  .slot-list li {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    border: 1px solid rgba(128, 128, 128, 0.25);
-    border-radius: 0.3rem;
-    padding: 0.1rem 0.3rem 0.1rem 0;
-  }
-  .slot-list li.sel {
-    border-color: rgba(40, 80, 220, 0.8);
-    background: rgba(40, 80, 220, 0.08);
-  }
-  .slot-pick {
-    flex: 1;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-  .slot-actions {
-    display: inline-flex;
+  li > menu {
     gap: 0.15rem;
   }
-  .slot-actions button {
+  li > menu button {
     height: 1.6rem;
+    min-width: 1.6rem;
     padding: 0 0.4rem;
     line-height: 1;
     cursor: pointer;
     font-size: 0.8rem;
   }
-  .reorder {
-    display: inline-flex;
-    gap: 0.15rem;
-  }
-  .reorder button {
-    width: 1.6rem;
-    height: 1.6rem;
-    padding: 0;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .reorder button:disabled {
+  li > menu button:disabled {
     opacity: 0.3;
     cursor: default;
   }

@@ -145,32 +145,32 @@
   $effect(() => { scene?.apply({ model }); });
   // fixed per-view distance (no auto-fit): the dragon rides a big loop
   $effect(() => { selPart; selPrim; scene?.apply({ resetView: true, dist: view === "dragon" ? 24 : 6 }); });
-  // autoplay: advance the loop offset each frame while enabled
-  $effect(() => {
-    if (!autoplay || view !== "dragon") return;
+  // dt-clamped rAF driver; step returns false to stop
+  const driveRaf = (step) => {
     let raf, last = performance.now();
     const tick = (t) => {
       const dt = Math.min((t - last) / 1000, 0.1);
       last = t;
-      drig.offset = (drig.offset + dt / LAP_SECONDS) % 1;
+      if (step(dt) === false) return;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+  };
+  // autoplay: advance the loop offset each frame while enabled
+  $effect(() => {
+    if (!autoplay || view !== "dragon") return;
+    return driveRaf((dt) => {
+      drig.offset = (drig.offset + dt / LAP_SECONDS) % 1;
+    });
   });
   // replay build: sweep the assembly scrub 0 -> 1 once
   $effect(() => {
     if (!asmPlay || view !== "dragon") return;
-    let raf, last = performance.now();
-    const tick = (t) => {
-      const dt = Math.min((t - last) / 1000, 0.1);
-      last = t;
+    return driveRaf((dt) => {
       asm = Math.min(1, asm + dt / BUILD_SECONDS);
-      if (asm >= 1) { asmPlay = false; return; }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+      if (asm >= 1) { asmPlay = false; return false; }
+    });
   });
 </script>
 
@@ -189,7 +189,7 @@
       <div>
         <label><span>Spin</span><input type="range" min="0" max="3" step="0.1" bind:value={spin} /></label>
         <label><span>Light</span><input type="range" min="0" max="6.28" step="0.05" bind:value={light} /></label>
-        <button type="button" onclick={shuffle}>🎨 shuffle colors</button>
+        <button type="button" onclick={shuffle}>New Color</button>
       </div>
     </footer>
   </section>
@@ -197,7 +197,7 @@
   <aside>
     <fieldset>
       <legend>view</legend>
-      <div class="square" role="group">
+      <div role="group">
         <label><input type="radio" name="mech-view" value="parts" bind:group={view} />parts</label>
         <label><input type="radio" name="mech-view" value="primitives" bind:group={view} />blocks</label>
         <label><input type="radio" name="mech-view" value="dragon" bind:group={view} />dragon</label>
@@ -207,17 +207,17 @@
     {#if view === "parts"}
       <fieldset>
         <legend>parts</legend>
-        <div class="jlist" role="group">
+        <ul>
           {#each PARTS as pn}
-            <label><input type="radio" name="mech-part" value={pn} bind:group={selPart} />{PART_LABELS[pn] ?? pn}</label>
+            <li><label><input type="radio" name="mech-part" value={pn} bind:group={selPart} />{PART_LABELS[pn] ?? pn}</label></li>
           {/each}
-        </div>
+        </ul>
         <hr/>
-        <div class="jlist" role="group">
+        <ul>
           {#each JOINTS as jn}
-            <label><input type="radio" name="mech-part" value={jn} bind:group={selPart} />{PART_LABELS[jn] ?? jn}</label>
+            <li><label><input type="radio" name="mech-part" value={jn} bind:group={selPart} />{PART_LABELS[jn] ?? jn}</label></li>
           {/each}
-        </div>
+        </ul>
       </fieldset>
       <fieldset>
         <legend>params<button type="button" onclick={resetJointParams}>reset</button></legend>
@@ -228,13 +228,15 @@
             <output>{jparams[selPart][key].toFixed(step ? 0 : 2)}</output></label>
         {/each}
         {#if isJoint(selPart)}
-          <div class="grp">runtime pose — joint rotations</div>
-          {#each POSE_CTL[selPart] as [key, label, min, max]}
-            <label><span>{label}</span>
-              <input type="range" {min} {max} step="1" value={jpose[selPart][key]}
-                oninput={(e) => (jpose[selPart][key] = +e.currentTarget.value)} />
-              <output>{jpose[selPart][key].toFixed(0)}</output></label>
-          {/each}
+          <fieldset>
+            <legend>runtime pose — joint rotations</legend>
+            {#each POSE_CTL[selPart] as [key, label, min, max]}
+              <label><span>{label}</span>
+                <input type="range" {min} {max} step="1" value={jpose[selPart][key]}
+                  oninput={(e) => (jpose[selPart][key] = +e.currentTarget.value)} />
+                <output>{jpose[selPart][key].toFixed(0)}</output></label>
+            {/each}
+          </fieldset>
         {/if}
       </fieldset>
     {:else if view === "dragon"}
@@ -251,11 +253,11 @@
     {:else}
       <fieldset>
         <legend>primitives</legend>
-        <div class="jlist" role="group">
+        <ul>
           {#each PRIM_NAMES as pn}
-            <label><input type="radio" name="mech-prim" value={pn} bind:group={selPrim} />{PRIM_LABELS[pn] ?? pn}</label>
+            <li><label><input type="radio" name="mech-prim" value={pn} bind:group={selPrim} />{PRIM_LABELS[pn] ?? pn}</label></li>
           {/each}
-        </div>
+        </ul>
       </fieldset>
       <fieldset>
         <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetParams}>reset</button></legend>
@@ -266,11 +268,13 @@
             <output>{pparams[selPrim][key].toFixed(2)}</output></label>
         {/each}
         {#if selPrim === "boxCylinder"}
-          <div class="grp">cylinder fit</div>
-          <div class="square" role="group">
-            <label><input type="radio" name="mech-fit" value="in" bind:group={pparams.boxCylinder.fit} />internal</label>
-            <label><input type="radio" name="mech-fit" value="out" bind:group={pparams.boxCylinder.fit} />external</label>
-          </div>
+          <fieldset>
+            <legend>cylinder fit</legend>
+            <div role="group">
+              <label><input type="radio" name="mech-fit" value="in" bind:group={pparams.boxCylinder.fit} />internal</label>
+              <label><input type="radio" name="mech-fit" value="out" bind:group={pparams.boxCylinder.fit} />external</label>
+            </div>
+          </fieldset>
         {/if}
       </fieldset>
     {/if}
@@ -278,9 +282,8 @@
 
 <style>
   /* layout, HUD footer, fieldset controls come from playground.css */
-  .grp { margin: 0.5rem 0 0.1rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.5; }
-  .jlist { display: flex; flex-direction: column; gap: 0.2rem; }
-  .jlist label { display: block; padding: 0.15rem 0.4rem; cursor: pointer; border-radius: 0.25rem; }
-  .jlist label:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
-  .jlist label:has(:checked) { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; }
+  ul label { display: block; padding: 0.15rem 0.4rem; cursor: pointer; border-radius: 0.25rem; }
+  ul label:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+  ul label:has(:checked) { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
 </style>

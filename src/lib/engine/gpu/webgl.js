@@ -43,7 +43,7 @@ export function createWebGLDevice(canvas) {
     gl.bindBuffer(target, glb);
     gl.bufferData(target, data || size, usage);
     return {
-      _glb: glb, _target: target, kind,
+      _glb: glb, _target: target,
       write(d, offset = 0) {
         gl.bindBuffer(target, glb);
         if (offset === 0 && d.byteLength > cap) { gl.bufferData(target, d, usage); cap = d.byteLength; }
@@ -99,8 +99,7 @@ export function createWebGLDevice(canvas) {
     }));
     const uniforms = (desc.uniforms || []).map((u) => ({ name: u.name, type: u.type, loc: gl.getUniformLocation(prog, u.name) }));
     const samplers = (desc.textures || []).map((t) => ({ name: t.name, loc: gl.getUniformLocation(prog, t.name) }));
-    const vao = gl.createVertexArray();
-    return { _prog: prog, _layouts: layouts, _uniforms: uniforms, _samplers: samplers, _vao: vao, desc };
+    return { _prog: prog, _layouts: layouts, _uniforms: uniforms, _samplers: samplers, desc };
   }
 
   function setUniform(u, val) {
@@ -119,7 +118,6 @@ export function createWebGLDevice(canvas) {
     gl.useProgram(sh._prog);
     applyBlend(sh.desc.blend);
     applyDepth(sh.desc.depth);
-    gl.bindVertexArray(sh._vao);
 
     const buffers = args.buffers || [];
     for (let bi = 0; bi < sh._layouts.length; bi++) {

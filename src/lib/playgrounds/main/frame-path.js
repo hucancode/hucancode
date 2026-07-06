@@ -1,5 +1,5 @@
 import { TAU, clamp } from "$lib/math/scalar.js";
-import { arcLengthCurve } from "$lib/math/curve.js";
+import { arcLengthCurve, hermiteG } from "$lib/math/curve.js";
 import {
   ENSO_R, ENSO_HEAD_R, BODY_LEN, SP3, ENSO_DUR, ENSO_REVS,
   FRAME_SMALL_R, FRAME_MEDIUM_N, FRAME_MEDIUM_R, FRAME_INNER_AXIS,
@@ -14,15 +14,12 @@ const angDiff = (target, cur) => Math.atan2(Math.sin(target - cur), Math.cos(tar
 
 // Eased enso head progress (0..1 over trace). Decelerates so end head speed ==
 // 3D loop speed SP3 -> exit into roam2 / handoff deterministic (no jump).
-// quadratic g with g(0)=0, g(1)=1, g'(1)=k where k = end-slope making
-// d(arc)/dt == SP3 at exit.
+// Hermite g with g(0)=0, g(1)=1, g'(1)=k where k = end-slope making
+// d(arc)/dt == SP3 at exit (slopes 2-k, k make the cubic term vanish).
 const ENSO_CIRC = TAU * ENSO_R;
 const ENSO_END_K = clamp((SP3 * ENSO_DUR) / (ENSO_REVS * ENSO_CIRC), 0.15, 1.85);
-export function ensoHeadProgress(tau) {
-  tau = clamp(tau, 0, 1);
-  const a = ENSO_END_K - 1, b = 2 - ENSO_END_K; // a+b=1, 2a+b=k
-  return clamp(a * tau * tau + b * tau, 0, 1);
-}
+export const ensoHeadProgress = (tau) =>
+  clamp(hermiteG(clamp(tau, 0, 1), 2 - ENSO_END_K, ENSO_END_K), 0, 1);
 
 // enso start angle: top of circle; head sweeps counter-clockwise
 const ensoA0 = Math.PI / 2;
