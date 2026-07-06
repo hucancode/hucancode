@@ -57,9 +57,9 @@ export const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolera
 // the descent-chain rule) -> closed loop of pure circular arcs with
 // meaningful turns; per-tangency heights (cosine-eased along each arc) give
 // the height variation.
-export const R3D = 0.95;            // outer reach of the weave (x/y); rings the rosette
+export const R3D = 1.25;            // outer reach of the weave (x/y); rings the rosette
 export const Z3D = 0.4;             // 3D orbit out-of-plane amplitude
-export const LOOP3_CIRCLES = 8;     // tangent circles in the orbit ring (EVEN)
+export const LOOP3_CIRCLES = 12;    // tangent circles in the orbit ring (EVEN)
 export const LOOP3_WAVES = 2;       // z undulations per orbit (full periods)
 export const SP3 = 1.5;             // 3D dragon speed
 export const ENSO_REVS = 1.5;       // enso trace covers 1.5 revolutions (exit at bottom-most point)
