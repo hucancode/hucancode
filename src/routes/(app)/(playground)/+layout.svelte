@@ -1,6 +1,6 @@
 <script>
+  import { base } from "$app/paths";
   import "$styles/playground.css";
-  import Return from "$icons/line-md/chevron-left.svg?raw";
 
   /**
    * @typedef {Object} Props
@@ -11,7 +11,7 @@
   let { children } = $props();
 </script>
 
+<nav><a href="/playgrounds">Playgrounds</a></nav>
 <main>
-  <nav><a href="/playgrounds">{@html Return} Playgrounds</a></nav>
   {@render children?.()}
 </main>

@@ -58,10 +58,6 @@
 {/if}
 
 <style>
-  .math-inline {
-    display: inline;
-  }
-  
   .math-block {
     display: block;
     text-align: center;

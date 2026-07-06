@@ -71,7 +71,7 @@ export function createHeadPath({ timing, paths }) {
   }
 
   // debug: full 2D head motion line across every phase, world coords
-  function samplePath2d(n = 600) {
+  function samplePath2d(n = 200) {
     const out = [];
     for (let i = 0; i <= n; i++) {
       const tt = lerp(flyinStart, loop3Start, i / n);

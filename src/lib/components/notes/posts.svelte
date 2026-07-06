@@ -59,8 +59,6 @@
 
 <style>
   ul {
-    max-width: 768px;
-    flex-grow: 1;
     padding-left: 0;
     list-style: none;
     margin: 0 auto;

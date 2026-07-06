@@ -1,7 +1,8 @@
 <script>
-  import Scene from "$lib/components/dragon.svelte";
+  import Scene from "$lib/components/playground-canvas.svelte";
+  import * as dragon from "$lib/playgrounds/dragon";
 
-  let scene = $state(null);
+  const MAX_DRAGON = 8;
   const PRESETS = [
     { id: "circle", label: "Circle" },
     { id: "figure8", label: "Fig8" },
@@ -17,8 +18,23 @@
   let bodyFraction = $state(0.25);
   let girthFactor = $state(0.0012);
 
+  // change a knob that reshapes the curve -> rebuild onto a new path
+  function reshape(patch) {
+    dragon.setConfig(patch);
+    dragon.regenerate();
+  }
+  function addDragon() {
+    if (dragon.getCurrentDragonCount() >= MAX_DRAGON) return;
+    dragon.makeDragon();
+  }
+  function reset() {
+    dragon.clearDragon();
+    dragon.makeDragon();
+  }
+
+  // knobs that only affect the live render (speed, lights)
   $effect(() => {
-    scene?.apply({ speed: speed / 1000, showLights, showPath });
+    dragon.setConfig({ speed: speed / 1000, showLights, showPath });
   });
 </script>
 
@@ -27,7 +43,7 @@
 </svelte:head>
 
   <section>
-    <Scene bind:this={scene} />
+    <Scene scene={dragon} id="dragon" />
   </section>
 
   <aside>
@@ -37,7 +53,7 @@
         {#each PRESETS as p}
           <label>
             <input type="radio" name="preset" value={p.id} bind:group={preset}
-              onchange={() => scene?.reshape({ preset: p.id })} />
+              onchange={() => reshape({ preset: p.id })} />
             {p.label}
           </label>
         {/each}
@@ -54,25 +70,25 @@
       <label>
         <span>Path detail</span>
         <input type="range" min="4" max="40" step="1" bind:value={points}
-          onchange={() => scene?.reshape({ points })} />
+          onchange={() => reshape({ points })} />
         <output>{points}</output>
       </label>
       <label>
         <span>Path size</span>
         <input type="range" min="0.4" max="1.6" step="0.05" bind:value={spread}
-          onchange={() => scene?.reshape({ spread })} />
+          onchange={() => reshape({ spread })} />
         <output>{spread.toFixed(2)}</output>
       </label>
       <label>
         <span>Body length</span>
         <input type="range" min="0.05" max="0.6" step="0.01" bind:value={bodyFraction}
-          onchange={() => scene?.reshape({ bodyFraction })} />
+          onchange={() => reshape({ bodyFraction })} />
         <output>{bodyFraction.toFixed(2)}</output>
       </label>
       <label>
         <span>Girth</span>
         <input type="range" min="0.0004" max="0.004" step="0.0002" bind:value={girthFactor}
-          onchange={() => scene?.reshape({ girthFactor })} />
+          onchange={() => reshape({ girthFactor })} />
         <output>{girthFactor.toFixed(4)}</output>
       </label>
       <label>
@@ -86,8 +102,8 @@
     </fieldset>
 
     <menu>
-      <li><button onclick={() => scene?.newPath()}>New path</button></li>
-      <li><button onclick={() => scene?.addDragon()}>+ Add</button></li>
-      <li><button onclick={() => scene?.reset()}>Reset</button></li>
+      <li><button onclick={() => dragon.regenerate()}>New path</button></li>
+      <li><button onclick={() => addDragon()}>+ Add</button></li>
+      <li><button onclick={() => reset()}>Reset</button></li>
     </menu>
   </aside>

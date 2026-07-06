@@ -58,10 +58,10 @@ export const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolera
 // meaningful turns; per-tangency heights (cosine-eased along each arc) give
 // the height variation.
 export const R3D = 1.25;            // outer reach of the weave (x/y); rings the rosette
-export const Z3D = 0.4;             // 3D orbit out-of-plane amplitude
+export const Z3D = 1.0;             // 3D orbit out-of-plane amplitude
 export const LOOP3_CIRCLES = 12;    // tangent circles in the orbit ring (EVEN)
 export const LOOP3_WAVES = 2;       // z undulations per orbit (full periods)
-export const SP3 = 1.2;             // 3D dragon speed
+export const SP3 = 1.8;             // 3D dragon speed
 export const ENSO_REVS = 1.5;       // enso trace covers 1.5 revolutions (exit at bottom-most point)
 export const ENSO_DUR = BLOCK_DUR.enso; // enso trace spans B4 block
 // 2D cruise speed: enso head enters at this, decelerates to SP3 over 1.5-rev
