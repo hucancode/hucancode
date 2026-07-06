@@ -236,7 +236,7 @@
     {:else if view === "dragon"}
       <fieldset>
         <legend>rig<button type="button" class="add" onclick={resetDragon}>↺ reset</button></legend>
-        <label class="chk"><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
+        <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
         {#each DRAGON_CTL as [key, label, min, max, step]}
           <label><span>{label}</span>
             <input type="range" {min} {max} {step} value={drig[key]}
@@ -280,9 +280,6 @@
 </main>
 
 <style>
-  main { display: grid; grid-template-columns: 1fr 20rem; height: 100dvh; }
-  section { position: relative; }
-  section :global(canvas) { width: 100%; height: 100%; display: block; }
   .hud {
     position: absolute; left: 0; right: 0; bottom: 0;
     display: flex; flex-direction: column; gap: 0.4rem;
@@ -294,22 +291,7 @@
   .hud .knobs { flex-wrap: wrap; }
   .hud .knobs label { display: flex; align-items: center; gap: 0.35rem; }
   .hud .knobs label span { opacity: 0.8; }
-  nav { position: absolute; z-index: 2; padding: 0.6rem 0.9rem; }
-  .back { display: inline-flex; align-items: center; gap: 0.3rem; opacity: 0.85; }
-
-  aside { overflow-y: auto; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.7rem;
-    background: color-mix(in srgb, var(--paper, #14171c) 92%, #000); }
-  fieldset { border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 0.5rem; padding: 0.6rem; }
-  legend { padding: 0 0.3rem; font-weight: 600; opacity: 0.85; }
-  label { display: flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; margin: 0.2rem 0; }
-  label > span:first-child { min-width: 5.5rem; opacity: 0.8; }
-  label input[type="range"] { flex: 1; }
-  output { min-width: 2.6rem; text-align: right; opacity: 0.8; font-variant-numeric: tabular-nums; }
   .grp { margin: 0.5rem 0 0.1rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.5; }
-  .hint { margin: 0 0 0.4rem; font-size: 0.7rem; opacity: 0.55; }
-  .chk { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0 0.5rem; }
-  .chk input { flex: 0 0 auto; }
-  .chk span { min-width: 0; }
   .tabs { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
   .tabs button { flex: 1; }
   .tabs button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }

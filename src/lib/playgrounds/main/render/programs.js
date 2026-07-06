@@ -44,10 +44,12 @@ export const PROGRAMS = {
     textures: [{ name: "uSegTex", binding: 1 }],
     blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
   },
+  // drawn straight onto the screen quad (composite-style vertex stage); no
+  // offscreen target, so the wash can never be cut at a texture border
   enso: {
-    glsl: { vertex: FS_TRI_VERT, fragment: ENSO_FRAG }, wgsl: ENSO_WGSL,
-    uniforms: [VEC2("uResolution"), F32("uRadius"), F32("uSweep"), F32("uAngleStart"), F32("uLineWidth"), VEC3("uInkColor")],
-    blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
+    glsl: { vertex: COMPOSITE_VERT, fragment: ENSO_FRAG }, wgsl: ENSO_WGSL,
+    uniforms: [MAT4("uViewProj"), F32("uOpacity"), F32("uAspect"), F32("uZ"), F32("uStationY"), F32("uExt"), VEC2("uResolution"), F32("uRadius"), F32("uSweep"), F32("uAngleStart"), F32("uLineWidth"), VEC3("uInkColor")],
+    blend: "straight", depth: "none", topology: "tri-strip", target: "screen", sampleCount: 4,
   },
   stroke: {
     glsl: { vertex: STROKE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,

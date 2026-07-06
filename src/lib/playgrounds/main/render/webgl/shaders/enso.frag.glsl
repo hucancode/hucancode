@@ -1,14 +1,17 @@
 #version 300 es
 precision highp float;
 
+in vec2 vUV;
 out vec4 fragColor;
 
-uniform vec2  uResolution;
-uniform float uRadius;     // ring radius (world units; world quad spans y[-1,1])
+uniform vec2  uResolution; // canvas pixels (bristle noise frequency only)
+uniform float uRadius;     // ring radius (world units)
 uniform float uSweep;      // 0..1 fraction of the stroke drawn (head leads this)
 uniform float uAngleStart; // ring start angle (polar atan2(x,y) convention)
 uniform float uLineWidth;
-uniform float uClock;
+uniform float uOpacity;
+uniform float uAspect;
+uniform float uExt;        // world half-height the quad spans
 
 const float PI2 = 6.28318531;
 // CLOCKWISE flips `a` so phase grows with decreasing atan2(x,y), keeping the head at the stroke front.
@@ -169,8 +172,8 @@ float layerAlpha(vec2 uv, float r, float phase, float lineLength, float strokeLe
 }
 
 void main() {
-    // world coords: x in [-aspect,aspect], y in [-1,1] (matches the composite quad)
-    vec2 uv = (2.0 * gl_FragCoord.xy - uResolution) / uResolution.y;
+    // quad-local UV -> world offset from ring centre (x scaled by aspect, both by ext)
+    vec2 uv = vec2((vUV.x * 2.0 - 1.0) * uAspect, vUV.y * 2.0 - 1.0) * uExt;
 
     float r = length(uv);
     float a = atan(uv.x, uv.y) - uAngleStart;
@@ -209,5 +212,5 @@ void main() {
     float alpha = aBleed;
     alpha = alpha + aWet * (1.0 - alpha);
     alpha = alpha + aDry * (1.0 - alpha);
-    fragColor = vec4(uInkColor, alpha);
+    fragColor = vec4(uInkColor, alpha * uOpacity);
 }

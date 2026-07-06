@@ -73,7 +73,7 @@ export const CAM_PITCH_DUR = 4.0;   // camera pitch tilt duration (settles after
 export const D3_FADEIN_FRAC = 0.55;       // fraction of crossfade spent fading 3D dragon in
 
 export const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg elevation tilt
-export const CAM = { fov: (45 * Math.PI) / 180, dist: 2.6 };
+export const CAM = { fov: (45 * Math.PI) / 180, dist: 3.2 };
 
 export const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as 3D dragon takes over
 export const ENSO_FADE_TARGET = 0.85;  // enso circle eases to this opacity as 3D dragon takes over
@@ -89,6 +89,11 @@ export const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
 // reach ~1.13 from station) gets cut at the texture border, visible once the
 // camera pitch reveals ground beyond the quad. 1.35 > reach + margin.
 export const INK_EXT = 1.35;
+
+// enso quad extent: world half-height of the quad the enso shader draws on
+// (drawn directly to screen, no offscreen texture). Must exceed the ring +
+// bleed-wash reach so the wash never cuts at the quad edge.
+export const ENSO_EXT = 1.4;
 
 export const BODY_N = 20;
 export const BODY_LEN = 0.8;
