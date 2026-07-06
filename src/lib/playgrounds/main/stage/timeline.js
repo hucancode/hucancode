@@ -1,32 +1,6 @@
 export function makeTimeline(blocks) {
-  const byName = new Map(blocks.map((b) => [b.name, b]));
-  const startCache = new Map();
-  const resolving = new Set();
-
-  function branchLocal(parent, branch) {
-    const bp = parent.branches && parent.branches[branch];
-    return typeof bp === "function" ? bp() : bp;
-  }
-
-  function startOf(b) {
-    if (startCache.has(b.name)) return startCache.get(b.name);
-    if (resolving.has(b.name)) throw new Error(`timeline: cycle through ${b.name}`);
-    resolving.add(b.name);
-    let s;
-    if (b.after) {
-      const parent = byName.get(b.after.block);
-      if (!parent) throw new Error(`block ${b.name}: unknown parent ${b.after.block}`);
-      const bp = branchLocal(parent, b.after.branch);
-      if (bp == null) throw new Error(`block ${b.name}: parent ${parent.name} has no branch ${b.after.branch}`);
-      s = startOf(parent) + bp + (b.after.offset || 0);
-    } else {
-      s = b.at || 0;
-    }
-    resolving.delete(b.name);
-    startCache.set(b.name, s);
-    return s;
-  }
-  for (const b of blocks) startOf(b);
+  // every block declares an absolute start time
+  const startCache = new Map(blocks.map((b) => [b.name, b.at || 0]));
 
   function createCtx(extra) {
     const ctx = {};

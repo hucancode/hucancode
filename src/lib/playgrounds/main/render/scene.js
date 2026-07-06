@@ -1,10 +1,14 @@
-import { loadDragonMesh } from "$lib/engine/index.js";
+// Scene renderer for /main (paint). Consumes the FrameState built by
+// index.js buildState() — plain data, no GPU handles: aspect, camY,
+// opacity.{glyph,inkDragon,dragon3d}, grid, glyph{segs,playhead,...},
+// splash, enso, inkDragon{body,head,widthScale},
+// dragon3d{items,meshes,eye,viewProj + legacy frames/pathLen/... for "obj"},
+// debug{show,buffer,path2d,path3d,pool}. Source of truth = buildState().
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./webgl/stroke-gl.js";
-import { FLOWER_PETALS, FLOWER_LAYERS, D3_STYLE } from "../config.js";
+import { createInstancedDrawer } from "$lib/mech/instancing.js";
+import { D3_STYLE } from "../config.js";
 import { PROGRAMS } from "./programs.js";
 
-const FLOWER_Z = -0.005;
-const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 const STATIC_THROTTLE = 8;
 
 // Kanagawa palette (light/dark)
@@ -29,19 +33,6 @@ const getDragon3d = () => (isDark() ? DRAGON3D_DARK : DRAGON3D_LIGHT);
 
 // mech dragon: fixed light high above the ground plane (world is z-up)
 const MECH_LIGHT = [3.0, -4.0, 6.0];
-const MECH_INST_FLOATS = 28; // 3 model rows + 3 normal rows + color, vec4 each
-
-// inverse-transpose of a row-major 3x3 = cofactor matrix / det
-function invT3(m) {
-  const [a, b, c, d, e, f, g, h, i] = m;
-  const A = e * i - f * h, B = f * g - d * i, C = d * h - e * g;
-  const det = a * A + b * B + c * C || 1;
-  return [
-    A / det, B / det, C / det,
-    (c * h - b * i) / det, (a * i - c * g) / det, (b * g - a * h) / det,
-    (b * f - c * e) / det, (c * d - a * f) / det, (a * e - b * d) / det,
-  ];
-}
 
 const HEAD_CORNERS = [[-1.2, -0.8, 0, 0], [1.2, -0.8, 1, 0], [-1.2, 0.8, 0, 1], [1.2, 0.8, 1, 1]];
 const BODY_PARAMS = { inkFlow: 1.0, strands: 3.0, waterFlow: 0.8, wobble: 0.3, widthEnd: 0.2, widthOffset: 0.5, widthRange: 1.0, widthAnchor: 0.5 };
@@ -52,17 +43,14 @@ export function makeSceneRenderer(device, canvas) {
   const sh = {};
   let tGlyph, tSplash, tEnso, tInk;
   let segTex;
-  const framesTexCache = new Map();
-  let strokePos, strokeUV, strokeIdx, headBuf, flowerInst;
-  let dragonPos, dragonNorm, dragonCount = 0;
-  const mechGroups = new Map(); // mesh key -> { pos, norm, inst, count, cap, data }
-  const mechLists = new Map();  // per-frame grouping scratch (key -> items)
+  let strokePos, strokeUV, strokeIdx, headBuf;
+  let mechDrawer;
+  let objDragon = null; // legacy obj-mesh dragon, lazy-loaded only for D3_STYLE "obj"
   let w = 1, h = 1, frameCount = 0;
 
   let glyphCacheKey = NaN;
   let segRef = null, segRows = 0, segBuf = new Float32Array(0);
   const headData = new Float32Array(16);
-  let flowerData = new Float32Array(0);
   const lineBufs = [];
   let lineScratch = new Float32Array(0);
 
@@ -73,16 +61,13 @@ export function makeSceneRenderer(device, canvas) {
     strokeUV = device.buffer({ kind: "vertex", size: 0, dynamic: true });
     strokeIdx = device.buffer({ kind: "index", size: 0, dynamic: true });
     headBuf = device.buffer({ kind: "vertex", size: 64, dynamic: true });
-    flowerInst = device.buffer({ kind: "vertex", size: 0, dynamic: true });
-    if (D3_STYLE === "obj") loadMesh().catch((e) => console.warn("[paint] dragon mesh load failed", e));
+    mechDrawer = createInstancedDrawer(device);
+    if (D3_STYLE === "obj")
+      import("./obj-dragon.js")
+        .then((m) => m.createObjDragon(device))
+        .then((o) => { objDragon = o; })
+        .catch((e) => console.warn("[paint] obj dragon load failed", e));
     resize(canvas.width || 1, canvas.height || 1);
-  }
-
-  async function loadMesh() {
-    const mesh = await loadDragonMesh(DRAGON_OBJ, 1.0);
-    dragonPos = device.buffer({ kind: "vertex", data: mesh.positions });
-    dragonNorm = device.buffer({ kind: "vertex", data: mesh.normals });
-    dragonCount = mesh.vertexCount; // gates draw, publish last
   }
 
   function resize(nw, nh) {
@@ -116,22 +101,6 @@ export function makeSceneRenderer(device, canvas) {
     return n;
   }
 
-  // cache one texture per frames-array identity so each is uploaded once, then just rebind
-  function getFramesTex(d3) {
-    if (!d3.frames) return null;
-    let t = framesTexCache.get(d3.frames);
-    if (!t) {
-      t = device.texture({ width: 4, height: d3.frameCount, format: "rgba32f", filter: "nearest" });
-      t.write(d3.frames, 4, d3.frameCount);
-      framesTexCache.set(d3.frames, t);
-      if (framesTexCache.size > 4) {
-        const k = framesTexCache.keys().next().value;
-        framesTexCache.get(k).destroy(); framesTexCache.delete(k);
-      }
-    }
-    return t;
-  }
-
   function drawStroke(p, points, lineWidth, aspect, opacity, params, simple, camY) {
     const r = buildRibbon(points, lineWidth);
     if (!r) return;
@@ -162,65 +131,12 @@ export function makeSceneRenderer(device, canvas) {
     p.draw(sh.head, { buffers: [headBuf], count: 4, uniforms: { uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uOpacity: opacity, uBrushColor: getInk() } });
   }
 
-  function drawFlowers(p, state, vp) {
-    const f = state.flowers;
-    if (!f || !f.items || f.count <= 0 || f.alpha <= 0) return;
-    const n = f.count, need = n * 8;
-    if (flowerData.length < need) flowerData = new Float32Array(need);
-    for (let i = 0; i < n; i++) {
-      const it = f.items[i], o = i * 8;
-      flowerData[o] = it.x; flowerData[o + 1] = it.y; flowerData[o + 2] = it.r; flowerData[o + 3] = FLOWER_Z;
-      flowerData[o + 4] = it.bloom; flowerData[o + 5] = it.seed; flowerData[o + 6] = f.alpha * (it.opacity ?? 1); flowerData[o + 7] = 0;
-    }
-    flowerInst.write(flowerData.subarray(0, need));
-    p.draw(sh.flower, { buffers: [flowerInst], count: 4, instances: n, uniforms: { uViewProj: vp, uPetals: FLOWER_PETALS, uLayers: FLOWER_LAYERS, uInkColor: getInkRGB() } });
-  }
-
-  // mech dragon: group instance items by unit-mesh key, ONE instanced draw per
-  // key. Vertex buffers are created once per key (unit meshes are immutable);
-  // the per-instance buffer (matrix rows + color) is rewritten every frame.
+  // mech dragon: shared instanced drawer (one draw per unit-mesh key, cached
+  // vertex buffers, capacity-grown instance buffer rewritten every frame)
   function drawMechDragon(p, d3, opacity, vp) {
-    for (const list of mechLists.values()) list.length = 0;
-    for (const it of d3.items) {
-      let list = mechLists.get(it.key);
-      if (!list) mechLists.set(it.key, (list = []));
-      list.push(it);
-    }
-    for (const [key, list] of mechLists) {
-      if (list.length === 0) continue;
-      let g = mechGroups.get(key);
-      if (!g) {
-        const mesh = d3.meshes?.[key];
-        if (!mesh) continue;
-        g = {
-          pos: device.buffer({ kind: "vertex", data: mesh.positions }),
-          norm: device.buffer({ kind: "vertex", data: mesh.normals }),
-          inst: device.buffer({ kind: "vertex", size: 0, dynamic: true }),
-          count: mesh.positions.length / 3,
-          cap: 0, data: null,
-        };
-        mechGroups.set(key, g);
-      }
-      if (g.cap < list.length) { g.cap = list.length; g.data = new Float32Array(g.cap * MECH_INST_FLOATS); }
-      const data = g.data;
-      for (let i = 0; i < list.length; i++) {
-        const it = list[i], m = it.m, t = it.t, n = invT3(m), c = it.color, o = i * MECH_INST_FLOATS;
-        data[o] = m[0]; data[o + 1] = m[1]; data[o + 2] = m[2]; data[o + 3] = t[0];
-        data[o + 4] = m[3]; data[o + 5] = m[4]; data[o + 6] = m[5]; data[o + 7] = t[1];
-        data[o + 8] = m[6]; data[o + 9] = m[7]; data[o + 10] = m[8]; data[o + 11] = t[2];
-        data[o + 12] = n[0]; data[o + 13] = n[1]; data[o + 14] = n[2]; data[o + 15] = 0;
-        data[o + 16] = n[3]; data[o + 17] = n[4]; data[o + 18] = n[5]; data[o + 19] = 0;
-        data[o + 20] = n[6]; data[o + 21] = n[7]; data[o + 22] = n[8]; data[o + 23] = 0;
-        data[o + 24] = c[0]; data[o + 25] = c[1]; data[o + 26] = c[2]; data[o + 27] = it.a ?? 1;
-      }
-      g.inst.write(data.subarray(0, list.length * MECH_INST_FLOATS));
-      p.draw(sh.mechDragon, {
-        buffers: [g.pos, g.norm, g.inst],
-        count: g.count,
-        instances: list.length,
-        uniforms: { uViewProj: vp, uLightPos: MECH_LIGHT, uViewPos: d3.eye, uOpacity: opacity },
-      });
-    }
+    mechDrawer.draw(p, sh.mechDragon, d3.items, d3.meshes, {
+      uViewProj: vp, uLightPos: MECH_LIGHT, uViewPos: d3.eye, uOpacity: opacity,
+    });
   }
 
   function compositeQuad(p, color, opacity, z, vp, aspect, stationY) {
@@ -258,7 +174,6 @@ export function makeSceneRenderer(device, canvas) {
     const aspect = state.aspect;
     const camY = state.camY || 0;
     const nSeg = uploadSegs(state.glyph.segs);
-    const framesT = getFramesTex(state.dragon3d);
     // WebGPU remaps clip z to [0,1], so route every viewProj through the camera seam
     const vp = device.correctViewProj(state.dragon3d.viewProj);
 
@@ -298,7 +213,6 @@ export function makeSceneRenderer(device, canvas) {
     device.pass({ target: "screen", clear: paper, depth: true, depthClear: 1 }, (p) => {
       if (state.grid && state.grid.reveal > 0)
         p.draw(sh.grid, { count: 4, uniforms: { uViewProj: vp, uExt: state.grid.ext, uZ: state.grid.z, uStep: state.grid.step, uMinorDiv: state.grid.minorDiv, uOpacity: state.grid.opacity, uReveal: state.grid.reveal, uRevealMinor: state.grid.revealMinor, uInkColor: getInkRGB() } });
-      drawFlowers(p, state, vp);
       if (state.splash && state.splash.alpha > 0) compositeQuad(p, tSplash.color, state.splash.alpha, -0.006, vp, aspect, state.splash.stationY || 0);
       if (state.enso && state.enso.alpha > 0) compositeQuad(p, tEnso.color, state.enso.alpha, -0.004, vp, aspect, state.enso.stationY || 0);
       compositeQuad(p, tGlyph.color, state.opacity.glyph, -0.002, vp, aspect, state.glyph.stationY || 0);
@@ -307,12 +221,8 @@ export function makeSceneRenderer(device, canvas) {
         // mech dragon transitions in by ASSEMBLING (per-instance alpha from the
         // flight animation), not by fading — draw at full opacity
         drawMechDragon(p, state.dragon3d, 1, vp);
-      } else if (state.opacity.dragon3d > 0 && dragonCount > 0 && framesT) {
-        const d3 = state.dragon3d;
-        p.draw(sh.dragon3d, {
-          buffers: [dragonPos, dragonNorm], count: dragonCount, textures: { uFrames: framesT },
-          uniforms: { uViewProj: vp, uN: d3.frameCount, uPathLen: d3.pathLen, uBodyLen: d3.bodyLen, uHeadOffset: d3.headOffset, uGirth: d3.girth, uOpacity: state.opacity.dragon3d, uLightBoost: 1, uAlbedo: getDragon3d() },
-        });
+      } else if (state.opacity.dragon3d > 0 && objDragon) {
+        objDragon.draw(p, state.dragon3d, state.opacity.dragon3d, vp, getDragon3d());
       }
       if (state.debug) drawDebug(p, state, aspect, vp);
     });
@@ -323,11 +233,9 @@ export function makeSceneRenderer(device, canvas) {
   function destroy() {
     tGlyph?.destroy(); tSplash?.destroy(); tEnso?.destroy(); tInk?.destroy();
     segTex?.destroy();
-    for (const t of framesTexCache.values()) t.destroy();
-    strokePos?.destroy(); strokeUV?.destroy(); strokeIdx?.destroy(); headBuf?.destroy(); flowerInst?.destroy();
-    dragonPos?.destroy(); dragonNorm?.destroy();
-    for (const g of mechGroups.values()) { g.pos.destroy(); g.norm.destroy(); g.inst.destroy(); }
-    mechGroups.clear(); mechLists.clear();
+    strokePos?.destroy(); strokeUV?.destroy(); strokeIdx?.destroy(); headBuf?.destroy();
+    objDragon?.destroy(); objDragon = null;
+    mechDrawer?.destroy();
     for (const b of lineBufs) b.destroy();
     device.destroy();
   }

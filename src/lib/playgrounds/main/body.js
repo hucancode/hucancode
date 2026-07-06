@@ -1,111 +1,53 @@
 import { lerp } from "$lib/math/scalar.js";
-import { BODY_N, BODY_LEN, PROP_SPEED, MAX_BEND } from "./config.js";
+import { BODY_N, BODY_LEN } from "./config.js";
 
 export function createBodyController({ headPath, timing }) {
   const { posAt } = headPath;
-  let body = [];
-  let _next = null;
+  // persistent chain (tail -> tip) + scratch trail buffers, mutated in place:
+  // reseed runs every frame, so it allocates nothing
+  const body = Array.from({ length: BODY_N }, () => ({ x: 0, y: 0 }));
+  const _tx = [], _ty = [], _arc = [];
 
   // Fit body along motion line: head at path point for t, rest trailing back by
   // arc length. Walk backward in SCENE-TIME through global sampler (posAt), NOT
-  // current phase's own param -> trail flows across phase seams. Used on seek (no
-  // teleport) and every frame when physics disabled.
+  // current phase's own param -> trail flows across phase seams.
   function reseed(t, len = BODY_LEN) {
     const dt = 0.004;             // scene-time step walking backward from head
     const t0 = timing.flyinStart; // dragon does not exist before this -> floor
-    const tHead = Math.min(Math.max(t, t0), timing.branch); // head holds at branch in loop3
+    const tHead = Math.min(Math.max(t, t0), timing.loop3Start); // head holds at the 2D handoff
     const head = posAt(tHead);
-    const pts = [{ x: head.x, y: head.y }];
-    const arcs = [0];
-    let prev = pts[0], acc = 0, tt = tHead;
+    _tx.length = _ty.length = _arc.length = 0;
+    _tx.push(head.x); _ty.push(head.y); _arc.push(0);
+    let px = head.x, py = head.y, acc = 0, tt = tHead;
     while (acc < len && tt > t0) {
       tt = Math.max(t0, tt - dt);
       const q = posAt(tt);
-      acc += Math.hypot(q.x - prev.x, q.y - prev.y);
-      pts.push({ x: q.x, y: q.y }); arcs.push(acc); prev = pts[pts.length - 1];
+      acc += Math.hypot(q.x - px, q.y - py);
+      _tx.push(q.x); _ty.push(q.y); _arc.push(acc);
+      px = q.x; py = q.y;
     }
-    body = new Array(BODY_N);
     // degenerate: head at timeline start (no trail yet) -> collapse whole body
     // onto head point
-    if (pts.length < 2) {
-      for (let i = 0; i < BODY_N; i++) body[i] = { x: pts[0].x, y: pts[0].y };
+    if (_tx.length < 2) {
+      for (const b of body) { b.x = head.x; b.y = head.y; }
       return;
     }
     for (let i = 0; i < BODY_N; i++) {
       const back = (1 - i / (BODY_N - 1)) * len; // i=N-1 head .. i=0 tail
-      let lo = 0, hi = arcs.length - 1;
-      while (lo < hi) { const mid = (lo + hi) >> 1; if (arcs[mid] < back) lo = mid + 1; else hi = mid; }
-      const j = Math.min(Math.max(1, lo), pts.length - 1);
-      const seg = arcs[j] - arcs[j - 1] || 1e-6;
-      const k = (back - arcs[j - 1]) / seg;
-      body[i] = { x: lerp(pts[j - 1].x, pts[j].x, k), y: lerp(pts[j - 1].y, pts[j].y, k) };
+      let lo = 0, hi = _arc.length - 1;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (_arc[mid] < back) lo = mid + 1; else hi = mid; }
+      const j = Math.min(Math.max(1, lo), _tx.length - 1);
+      const seg = _arc[j] - _arc[j - 1] || 1e-6;
+      const k = (back - _arc[j - 1]) / seg;
+      body[i].x = lerp(_tx[j - 1], _tx[j], k);
+      body[i].y = lerp(_ty[j - 1], _ty[j], k);
     }
-  }
-
-  function ensureNext(n) {
-    if (_next && _next.length === n) return;
-    _next = new Array(n);
-    for (let i = 0; i < n; i++) _next[i] = { x: 0, y: 0 };
-  }
-
-  // Verlet chain trailing tip target: distance constraint back from tip,
-  // max-bend clamp, forward re-constraint.
-  function step(tip, len = BODY_LEN) {
-    const N = body.length;
-    if (N < 2) return;
-    const linkLen = len / (N - 1);
-    const speed = PROP_SPEED;
-    ensureNext(N);
-    const next = _next;
-    for (let i = 0; i < N; i++) { next[i].x = body[i].x; next[i].y = body[i].y; }
-    next[N - 1].x = tip.x; next[N - 1].y = tip.y;
-
-    for (let i = N - 2; i >= 0; i--) {
-      const dx = next[i + 1].x - next[i].x, dy = next[i + 1].y - next[i].y;
-      const d = Math.hypot(dx, dy);
-      if (d > linkLen && d > 1e-6) {
-        const inv = ((d - linkLen) * speed) / d;
-        next[i].x += dx * inv; next[i].y += dy * inv;
-      }
-    }
-
-    if (MAX_BEND < Math.PI - 1e-3 && N >= 3) {
-      const minCos = -Math.cos(MAX_BEND);
-      for (let i = N - 2; i >= 1; i--) {
-        const tipP = next[i + 1], mid = next[i], head = next[i - 1];
-        const ax = tipP.x - mid.x, ay = tipP.y - mid.y;
-        const bx = head.x - mid.x, by = head.y - mid.y;
-        const aLen = Math.hypot(ax, ay), bLen = Math.hypot(bx, by);
-        if (aLen < 1e-6 || bLen < 1e-6) continue;
-        const adx = ax / aLen, ady = ay / aLen, bdx = bx / bLen, bdy = by / bLen;
-        const cosAng = adx * bdx + ady * bdy;
-        if (cosAng > minCos) {
-          const curAng = Math.atan2(adx * bdy - ady * bdx, adx * bdx + ady * bdy);
-          const sgn = curAng >= 0 ? 1 : -1;
-          const targetAng = (Math.PI - MAX_BEND) * sgn;
-          const newAng = curAng + (targetAng - curAng) * speed;
-          const c = Math.cos(newAng), s = Math.sin(newAng);
-          next[i - 1].x = mid.x + (adx * c - ady * s) * bLen;
-          next[i - 1].y = mid.y + (adx * s + ady * c) * bLen;
-        }
-      }
-      for (let i = N - 2; i >= 0; i--) {
-        const dx = next[i + 1].x - next[i].x, dy = next[i + 1].y - next[i].y;
-        const d = Math.hypot(dx, dy);
-        if (d > linkLen && d > 1e-6) {
-          const inv = ((d - linkLen) * speed) / d;
-          next[i].x += dx * inv; next[i].y += dy * inv;
-        }
-      }
-    }
-    _next = body;
-    body = next;
   }
 
   // Write head pose (neck-offset position + heading) into `head` in place. Head
-  // aligns with true PATH tangent at tip when given; verlet chain lags on curves
-  // so its last-segment heading drifts off edge tangent. fall back to that heading
-  // only if tangent degenerate.
+  // aligns with true PATH tangent at tip when given; the fitted chain lags on
+  // curves so its last-segment heading drifts off edge tangent. fall back to
+  // that heading only if tangent degenerate.
   function writeHead(head, tangent) {
     const n = body.length;
     const tip = body[n - 1], prev = body[n - 2];
@@ -121,8 +63,5 @@ export function createBodyController({ headPath, timing }) {
     head.dir.y = dy;
   }
 
-  return {
-    get body() { return body; },
-    reseed, step, writeHead,
-  };
+  return { body, reseed, writeHead };
 }

@@ -20,7 +20,6 @@ import { ensoPos, generateFramePath, buildDescent, generateOrbit3d } from "./fra
 import { createHeadPath } from "./head-path.js";
 import { createBodyController } from "./body.js";
 import { createDragon3d } from "./dragon3d.js";
-import { createFlowers } from "./flowers.js";
 import { sceneViewProj } from "./camera.js";
 import { createSplashBlock } from "./blocks/splash.js";
 import { createGlyphBlock } from "./blocks/glyph.js";
@@ -29,19 +28,14 @@ import { createEnsoBlock } from "./blocks/enso.js";
 import { createDragon3dBlock } from "./blocks/dragon3d.js";
 import { createGridBlock } from "./blocks/grid.js";
 
-// placeholder until initScene runs. +page.svelte imports this (live binding ->
-// reassign in initScene observed).
-export let TIMELINE_END = computeTiming().timelineEnd;
+// the schedule is a pure function of BLOCK_DUR, so the end time is a constant
+export const TIMELINE_END = computeTiming().timelineEnd;
 
 let timing = null;
 let glyph = null;
-let curvePath = null;   // 2D roam2 path 3D dragon transitions off of
-let loop3 = null;       // 3D orbit 3D dragon flies
-let conn3 = null;       // connector spur: 2D branch point -> ring entry
 let headPath = null;    // head phase sequence + samplers
 let bodyCtrl = null;    // 2D dragon body controller
 let dragon3d = null;    // 3D dragon frame buffers
-let flowers = null;     // bloom flowers seated in path circles
 let timeline = null;
 let cameraTrack = null; // corridor descent + pitch + yaw gate
 let ensoCenter = { x: 0, y: 0 }; // world station of glyph + enso
@@ -77,7 +71,6 @@ export function initScene() {
   const rng = mulberry32((Math.random() * 4294967296) >>> 0);
 
   timing = computeTiming();
-  TIMELINE_END = timing.timelineEnd;
 
   // corridor camera: descends through B1-B3, holds during B4, tilts from B5
   cameraTrack = createCameraTrack({
@@ -90,7 +83,6 @@ export function initScene() {
   // stations: world-Y where each object sits centred when camera looks at it
   const topY = camY(timing.flyinStart) + FLYIN_TOP_Y;      // dragon spawn (top-middle)
   const flyinEndY = camY(timing.roam1Start);               // mid-screen at t=roam1Start
-  const roam1EndY = camY(timing.approachStart);            // mid-screen at t=approachStart
   ensoCenter = { x: 0, y: camY(timing.ensoStart) };        // glyph + enso station
 
   // enso entry (top) + exit (bottom after 1.5 revs), with circle tangents
@@ -112,7 +104,6 @@ export function initScene() {
   // top. Traversed at one continuous (cubic-eased) speed in head-path -> no crawl,
   // no kink, no speed bump leaving fly-in, between circles, or entering enso.
   // glyph reveals independently underneath; dragon does NOT trace it.
-  void roam1EndY;
   // length target: make weave long enough that descentAvg (= len/descentDur)
   // approaches CRUISE_SP -> head enters descent at healthy speed (no start crawl)
   // instead of crawling up from near-zero
@@ -132,20 +123,13 @@ export function initScene() {
   const roamDur = timing.loop3Start - timing.ensoExit;
   const branchArc = (roam2.curve.headStart || 0) + SP3 * roamDur;
   roam2.curve.headEnd = branchArc; // head ends here at loop3Start (3D loop start)
-  curvePath = roam2.curve;
+  const curvePath = roam2.curve;   // 2D roam2 path the 3D dragon transitions off of
   pool = [...descent.pool, ...roam2.pool];
   _poolF32 = null;
 
   const paths = { flyin, descent, roam2, ensoCenter };
   headPath = createHeadPath({ timing, paths });
   bodyCtrl = createBodyController({ headPath, timing });
-
-  // bloom flowers: one per descent-chain circle (NOT roam2 rosette around enso,
-  // that stays clean). enter-times precomputed off headPath.
-  flowers = createFlowers({
-    headPath, timing,
-    circles: descent.pool,
-  });
 
   // loop3: closed 3D circle-weave orbit (generateOrbit3d — built from tangent
   // circles the way the 2D paths are) centred on the enso station. A PURE
@@ -208,8 +192,8 @@ export function initScene() {
     }
   }
   const bs = best.spline, bs0 = best.s0;
-  loop3 = { total: bs.total, pos: (s) => bs.pos(s + bs0), tan: (s) => bs.tan(s + bs0) };
-  conn3 = arcLengthCurve(best.hp, false);
+  const loop3 = { total: bs.total, pos: (s) => bs.pos(s + bs0), tan: (s) => bs.tan(s + bs0) }; // 3D orbit
+  const conn3 = arcLengthCurve(best.hp, false);   // connector spur: 2D branch point -> ring entry
 
   dragon3d = createDragon3d({ timing });
   dragon3d.build(loop3, curvePath, conn3);
@@ -244,7 +228,6 @@ const _frame = {
   glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS, stationY: 0 },
   splash: { alpha: 0, grow: 0, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: 0, stationY: 0 },
   enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0, stationY: 0 },
-  flowers: { items: null, count: 0, alpha: 0, viewProj: null },
   inkDragon: {
     body: null,
     head: { pos: { x: 0, y: 0 }, dir: { x: 0, y: 1 }, size: HEAD_SIZE, alpha: 1 },
@@ -295,13 +278,6 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
   en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = 0; en.time = t;
   en.stationY = ensoCenter.y;
 
-  // bloom flowers: refresh each flower's bloom (pure fn of t) + share orbit cam
-  const fl = flowers.writeState(t);
-  _frame.flowers.items = fl.items;
-  _frame.flowers.count = fl.count;
-  _frame.flowers.alpha = 1;
-  _frame.flowers.viewProj = viewProj;
-
   const ink = _frame.inkDragon;
   ink.body = bodyCtrl.body;
   ink.head.size = _ctx.headSize;
@@ -333,11 +309,6 @@ function buildDebugState(t, debug, debugBuffer) {
   d.path2d = debug.path2d ? headPath.samplePath2d() : EMPTY_F32;
   d.path3d = debug.path3d ? dragon3d.samplePath3d() : EMPTY_F32;
   d.pool = poolPoints();
-}
-
-// test/debug access to the built ride paths (headless continuity probes)
-export function debugPaths() {
-  return { loop3, curvePath, conn3, timing };
 }
 
 // Circle centres as xyz triples (static; built once from roam pool).

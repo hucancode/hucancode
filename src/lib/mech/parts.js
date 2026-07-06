@@ -25,7 +25,7 @@ function hashStr(s) {
 }
 
 // curated mech palette
-const PALETTE = [
+export const PALETTE = [
   "#c0392b", "#e67e22", "#f1c40f", "#7dcb2f", "#27ae60", "#1abc9c",
   "#3498db", "#2c5aa0", "#8e44ad", "#d354a4", "#c8a165", "#8d6e63",
   "#95a5a6", "#5d6d7e", "#e8e4d8", "#37474f",
@@ -334,9 +334,9 @@ export function pivotBlock(add, p = {}, pose = {}) {
 // fixed joint proportions the dragon parts are modeled around — shared with
 // chainSpec() below so the rig computes the same mounting numbers the
 // builders bake into the geometry.
-const SEG_JP = { ballR: 0.26, socketT: 0.09, shaftLen: 0.28, baseT: 0.12 };
-const SEG2_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.26, baseT: 0.12 };
-const TAIL_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.26, baseT: 0.12 };
+const SEG_JP = { ballR: 0.26, socketT: 0.09, shaftLen: 0.14, baseT: 0.12 };
+const SEG2_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.13, baseT: 0.12 };
+const TAIL_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.13, baseT: 0.12 };
 const ARM_JP = { tongueT: 0.09, armT: 0.055, armLen: 0.2, barrelR: 0.1, barrelLen: 0.16, pinR: 0.045, tongueLen: 0.2 };
 const LEG_JP = { tongueT: 0.11, armT: 0.065, armLen: 0.24, barrelR: 0.12, barrelLen: 0.18, pinR: 0.055, tongueLen: 0.22 };
 

@@ -1,12 +1,8 @@
 import { ramp } from "$lib/math/scalar.js";
-import { BODY_LEN, HEAD_SIZE, ENABLE_PHYSICS } from "../config.js";
+import { BODY_LEN, HEAD_SIZE } from "../config.js";
 
-export function createInkBlock({ timing, bodyCtrl, headPath, grow }) {
-  let lastInkPhase = -1;
-  const refit = (ctx) => {
-    bodyCtrl.reseed(ctx.t, BODY_LEN * grow.len(ctx.t));
-    lastInkPhase = headPath.phaseOf(ctx.t);
-  };
+export function createInkBlock({ timing, bodyCtrl, grow }) {
+  const refit = (ctx) => bodyCtrl.reseed(ctx.t, BODY_LEN * grow.len(ctx.t));
   return {
     name: "inkDragon",
     at: 0,
@@ -24,16 +20,8 @@ export function createInkBlock({ timing, bodyCtrl, headPath, grow }) {
       const sizeFrac = grow.size(t);
       ctx.inkWidthScale = sizeFrac;
       ctx.headSize = HEAD_SIZE * sizeFrac;
-      const growLen = BODY_LEN * grow.len(t);
-      // Refit when crossing into non-continuous phase (those don't share arc
-      // param, so stepping would snap body straight); else step chain.
-      const ph = headPath.phaseOf(t);
-      if (!ENABLE_PHYSICS || bodyCtrl.body.length < 2 || (ph !== lastInkPhase && !headPath.PHASES[ph].continuous)) {
-        bodyCtrl.reseed(t, growLen);
-      } else {
-        bodyCtrl.step(headPath.tipAt(t), growLen);
-      }
-      lastInkPhase = ph;
+      // body rigidly refits to the motion line every frame (no physics)
+      bodyCtrl.reseed(t, BODY_LEN * grow.len(t));
     },
   };
 }
