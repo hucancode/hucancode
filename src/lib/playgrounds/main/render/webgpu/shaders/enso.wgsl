@@ -1,8 +1,16 @@
 // Enso circle brush stroke (polar). WGSL port of webgl/shaders/enso.frag.glsl.
 // Stroke laid out in polar coords about the origin, swept by uSweep; 3 stacked
-// brush passes (bleed/wet/dry) over-composited. Straight-alpha output.
+// brush passes (bleed/wet/dry) over-composited. Drawn directly on the world
+// quad (composite-style vertex stage) — no offscreen texture, so the wash is
+// never cut at a texture border.
 
 struct Uni {
+  uViewProj: mat4x4<f32>,
+  uOpacity: f32,
+  uAspect: f32,
+  uZ: f32,
+  uStationY: f32,
+  uExt: f32,
   uResolution: vec2<f32>,
   uRadius: f32,
   uSweep: f32,
@@ -28,10 +36,20 @@ struct Brush {
   fadeEnds: f32, bleed: f32, taper: f32, stepOffset: f32,
 };
 
+struct VsOut {
+  @builtin(position) pos: vec4<f32>,
+  @location(0) vUV: vec2<f32>,
+};
+
 @vertex
-fn vs(@builtin(vertex_index) vid: u32) -> @builtin(position) vec4<f32> {
-  var P = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
-  return vec4(P[vid], 0.0, 1.0);
+fn vs(@builtin(vertex_index) vid: u32) -> VsOut {
+  var C = array<vec2<f32>, 4>(vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0));
+  let c = C[vid];
+  var o: VsOut;
+  o.vUV = c;
+  let world = vec3((c.x * 2.0 - 1.0) * u.uAspect * u.uExt, (c.y * 2.0 - 1.0) * u.uExt + u.uStationY, u.uZ);
+  o.pos = u.uViewProj * vec4(world, 1.0);
+  return o;
 }
 
 fn fmod(x: f32, y: f32) -> f32 { return x - y * floor(x / y); }
@@ -158,7 +176,7 @@ fn layerAlpha(uv: vec2<f32>, r: f32, phase: f32, lineLength: f32, strokeLen: f32
 }
 
 @fragment
-fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
+fn fs(in: VsOut) -> @location(0) vec4<f32> {
   let res = u.uResolution;
   let radius = u.uRadius;
   let sweep = u.uSweep;
@@ -166,7 +184,8 @@ fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
   let lineWidthU = u.uLineWidth;
   let inkColor = u.uInkColor;
 
-  let uv = (2.0 * fc.xy - res) / res.y;
+  // quad-local UV -> world offset from ring centre (x scaled by aspect, both by ext)
+  let uv = vec2((in.vUV.x * 2.0 - 1.0) * u.uAspect, in.vUV.y * 2.0 - 1.0) * u.uExt;
   let r = length(uv);
   var a = atan2(uv.x, uv.y) - angleStart;
   if (CLOCKWISE) { a = -a; }
@@ -186,5 +205,5 @@ fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
   var alpha = aBleed;
   alpha = alpha + aWet * (1.0 - alpha);
   alpha = alpha + aDry * (1.0 - alpha);
-  return vec4(inkColor, alpha);
+  return vec4(inkColor, alpha * u.uOpacity);
 }

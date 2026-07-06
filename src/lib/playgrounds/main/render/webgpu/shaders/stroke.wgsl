@@ -5,6 +5,7 @@ struct Uni {
   uAspect: f32,
   uCamY: f32,
   uFlipY: f32,
+  uExt: f32,
   uInkFlow: f32,
   uStrands: f32,
   uWaterFlow: f32,
@@ -32,7 +33,7 @@ fn vs(@location(0) aPos: vec2<f32>, @location(1) aLineUV: vec2<f32>) -> VsOut {
   var o: VsOut;
   o.vUV01 = aLineUV;
   o.vWorld = aPos;
-  o.pos = vec4(aPos.x / u.uAspect, (aPos.y - u.uCamY) * u.uFlipY, 0.0, 1.0);
+  o.pos = vec4(aPos.x / (u.uAspect * u.uExt), (aPos.y - u.uCamY) / u.uExt * u.uFlipY, 0.0, 1.0);
   return o;
 }
 

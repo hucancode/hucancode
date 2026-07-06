@@ -30,6 +30,21 @@ export const m3MulV = (m, v) => [
 
 export const m3T = (m) => [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
 
+// general 3x3 inverse (adjugate / determinant) — works on rotation*scale
+// composites, not just pure rotations
+export function m3Inv(m) {
+  const a = m[4] * m[8] - m[5] * m[7];
+  const b = m[5] * m[6] - m[3] * m[8];
+  const c = m[3] * m[7] - m[4] * m[6];
+  const det = m[0] * a + m[1] * b + m[2] * c;
+  const k = 1 / (det || 1);
+  return [
+    a * k, (m[2] * m[7] - m[1] * m[8]) * k, (m[1] * m[5] - m[2] * m[4]) * k,
+    b * k, (m[0] * m[8] - m[2] * m[6]) * k, (m[2] * m[3] - m[0] * m[5]) * k,
+    c * k, (m[1] * m[6] - m[0] * m[7]) * k, (m[0] * m[4] - m[1] * m[3]) * k,
+  ];
+}
+
 export function m3Rot(axis, t) {
   const c = Math.cos(t), s = Math.sin(t);
   if (axis === "x") return [1, 0, 0, 0, c, -s, 0, s, c];

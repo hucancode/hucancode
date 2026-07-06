@@ -44,26 +44,28 @@ export const PROGRAMS = {
     textures: [{ name: "uSegTex", binding: 1 }],
     blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
   },
+  // drawn straight onto the screen quad (composite-style vertex stage); no
+  // offscreen target, so the wash can never be cut at a texture border
   enso: {
-    glsl: { vertex: FS_TRI_VERT, fragment: ENSO_FRAG }, wgsl: ENSO_WGSL,
-    uniforms: [VEC2("uResolution"), F32("uRadius"), F32("uSweep"), F32("uAngleStart"), F32("uLineWidth"), VEC3("uInkColor")],
-    blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
+    glsl: { vertex: COMPOSITE_VERT, fragment: ENSO_FRAG }, wgsl: ENSO_WGSL,
+    uniforms: [MAT4("uViewProj"), F32("uOpacity"), F32("uAspect"), F32("uZ"), F32("uStationY"), F32("uExt"), VEC2("uResolution"), F32("uRadius"), F32("uSweep"), F32("uAngleStart"), F32("uLineWidth"), VEC3("uInkColor")],
+    blend: "straight", depth: "none", topology: "tri-strip", target: "screen", sampleCount: 4,
   },
   stroke: {
     glsl: { vertex: STROKE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
     buffers: [BUF_STROKE_POS, BUF_STROKE_UV],
-    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uInkFlow"), F32("uStrands"), F32("uWaterFlow"), F32("uWobble"), F32("uOpacity"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"), F32("uPerpClearance"), F32("uArcClearance"), I32("uSimple"), VEC4("uBrushColor")],
+    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uExt"), F32("uInkFlow"), F32("uStrands"), F32("uWaterFlow"), F32("uWobble"), F32("uOpacity"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"), F32("uPerpClearance"), F32("uArcClearance"), I32("uSimple"), VEC4("uBrushColor")],
     blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
   },
   head: {
     glsl: { vertex: HEAD_VERT, fragment: HEAD_FRAG }, wgsl: HEAD_WGSL,
     buffers: [BUF_HEAD],
-    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uOpacity"), VEC4("uBrushColor")],
+    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uExt"), F32("uOpacity"), VEC4("uBrushColor")],
     blend: "accum", topology: "tri-strip", target: "rgba8", sampleCount: 1,
   },
   composite: {
     glsl: { vertex: COMPOSITE_VERT, fragment: COMPOSITE_FRAG }, wgsl: COMPOSITE_WGSL,
-    uniforms: [MAT4("uViewProj"), F32("uOpacity"), F32("uAspect"), F32("uZ"), F32("uStationY")],
+    uniforms: [MAT4("uViewProj"), F32("uOpacity"), F32("uAspect"), F32("uZ"), F32("uStationY"), F32("uExt")],
     textures: [{ name: "uTex", binding: 1 }], sampler: 2,
     blend: "premult", depth: "none", topology: "tri-strip", target: "screen", sampleCount: 4,
   },

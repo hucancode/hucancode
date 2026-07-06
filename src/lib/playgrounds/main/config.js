@@ -57,11 +57,11 @@ export const FRAME_TAN_EPS = 1e-4;         // tangency / coincident-point tolera
 // the descent-chain rule) -> closed loop of pure circular arcs with
 // meaningful turns; per-tangency heights (cosine-eased along each arc) give
 // the height variation.
-export const R3D = 0.95;            // outer reach of the weave (x/y); rings the rosette
+export const R3D = 1.25;            // outer reach of the weave (x/y); rings the rosette
 export const Z3D = 0.4;             // 3D orbit out-of-plane amplitude
-export const LOOP3_CIRCLES = 8;     // tangent circles in the orbit ring (EVEN)
+export const LOOP3_CIRCLES = 12;    // tangent circles in the orbit ring (EVEN)
 export const LOOP3_WAVES = 2;       // z undulations per orbit (full periods)
-export const SP3 = 1.5;             // 3D dragon speed
+export const SP3 = 1.2;             // 3D dragon speed
 export const ENSO_REVS = 1.5;       // enso trace covers 1.5 revolutions (exit at bottom-most point)
 export const ENSO_DUR = BLOCK_DUR.enso; // enso trace spans B4 block
 // 2D cruise speed: enso head enters at this, decelerates to SP3 over 1.5-rev
@@ -73,7 +73,7 @@ export const CAM_PITCH_DUR = 4.0;   // camera pitch tilt duration (settles after
 export const D3_FADEIN_FRAC = 0.55;       // fraction of crossfade spent fading 3D dragon in
 
 export const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg elevation tilt
-export const CAM = { fov: (45 * Math.PI) / 180, dist: 2.6 };
+export const CAM = { fov: (45 * Math.PI) / 180, dist: 5.0 };
 
 export const GLYPH_FADE_TARGET = 0.75; // glyph ink eases to this opacity as 3D dragon takes over
 export const ENSO_FADE_TARGET = 0.85;  // enso circle eases to this opacity as 3D dragon takes over
@@ -82,6 +82,18 @@ export const GRID_MAX_OPACITY = 0.85;
 export const GRID_MINOR_DIV = 5;  // minor cells per major cell
 export const GRID_MINOR_LAG = 1.5; // seconds minor grid wipe-in trails major reveal
 export const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
+
+// ink layer extent: the 2D dragon offscreen texture + its composite quad span
+// this multiple of the flat screen (world units: y +-INK_EXT, x +-aspect*INK_EXT).
+// 1.0 = exactly one screen -> body poking past the top edge (roam2 flower
+// reach ~1.13 from station) gets cut at the texture border, visible once the
+// camera pitch reveals ground beyond the quad. 1.35 > reach + margin.
+export const INK_EXT = 1.35;
+
+// enso quad extent: world half-height of the quad the enso shader draws on
+// (drawn directly to screen, no offscreen texture). Must exceed the ring +
+// bleed-wash reach so the wash never cuts at the quad edge.
+export const ENSO_EXT = 1.4;
 
 export const BODY_N = 20;
 export const BODY_LEN = 0.8;
@@ -92,7 +104,7 @@ export const D3_GIRTH = 0.006; // cross-section scale for 3D mesh
 // which 3D dragon rides the loop: "mech" = procedural mech rig (instanced part
 // kit from the /mech playground), "obj" = legacy skinned dragon-low.obj mesh
 export const D3_STYLE = "mech";
-export const D3_MECH_SCALE = 0.5; // mech dragon size vs the obj ribbon's bodyArc
+export const D3_MECH_SCALE = 1.0; // mech dragon size vs the obj ribbon's bodyArc
 
 export const GLYPH_SCALE = 0.36;
 export const GLYPH_RADIUS = 0.06 * GLYPH_SCALE;

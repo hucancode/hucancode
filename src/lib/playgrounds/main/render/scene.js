@@ -6,10 +6,8 @@
 // debug{show,buffer,path2d,path3d,pool}. Source of truth = buildState().
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./webgl/stroke-gl.js";
 import { createInstancedDrawer } from "$lib/mech/instancing.js";
-import { D3_STYLE } from "../config.js";
+import { D3_STYLE, INK_EXT, ENSO_EXT } from "../config.js";
 import { PROGRAMS } from "./programs.js";
-
-const STATIC_THROTTLE = 8;
 
 // Kanagawa palette (light/dark)
 const PAPER_LIGHT = [0.949, 0.925, 0.737, 1.0];
@@ -35,12 +33,12 @@ export function makeSceneRenderer(device, canvas) {
   // render-to-texture is V-flipped on WebGPU vs WebGL; flip clip Y on WebGPU to compensate
   const FLIP_Y = device.backend === "webgpu" ? -1 : 1;
   const sh = {};
-  let tGlyph, tEnso, tInk;
+  let tGlyph, tInk;
   let segTex;
   let strokePos, strokeUV, strokeIdx, headBuf;
   let mechDrawer;
   let objDragon = null; // legacy obj-mesh dragon, lazy-loaded only for D3_STYLE "obj"
-  let w = 1, h = 1, frameCount = 0;
+  let w = 1, h = 1;
 
   let glyphCacheKey = NaN;
   let segRef = null, segRows = 0, segBuf = new Float32Array(0);
@@ -67,10 +65,11 @@ export function makeSceneRenderer(device, canvas) {
   function resize(nw, nh) {
     w = Math.max(1, nw | 0); h = Math.max(1, nh | 0);
     device.resize(w, h);
-    tGlyph?.destroy(); tEnso?.destroy(); tInk?.destroy();
+    tGlyph?.destroy(); tInk?.destroy();
     tGlyph = device.target({ width: w, height: h });
-    tEnso = device.target({ width: w, height: h });
-    tInk = device.target({ width: w, height: h });
+    // ink layer covers INK_EXT x the screen (dragon body may poke past one
+    // screen once the camera tilts); scale texture too so density holds
+    tInk = device.target({ width: Math.round(w * INK_EXT), height: Math.round(h * INK_EXT) });
     glyphCacheKey = NaN; // targets recreated -> force glyph re-render
   }
 
@@ -101,7 +100,7 @@ export function makeSceneRenderer(device, canvas) {
     p.draw(sh.stroke, {
       buffers: [strokePos, strokeUV], index: strokeIdx, count: r.indexCount,
       uniforms: {
-        uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uInkFlow: params.inkFlow, uStrands: params.strands,
+        uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uExt: INK_EXT, uInkFlow: params.inkFlow, uStrands: params.strands,
         uWaterFlow: params.waterFlow, uWobble: params.wobble, uOpacity: opacity,
         uWidthEnd: params.widthEnd, uWidthOffset: params.widthOffset, uWidthRange: params.widthRange,
         uWidthAnchor: params.widthAnchor ?? 0.5, uPerpClearance: PERP_CLEARANCE, uArcClearance: ARC_CLEARANCE,
@@ -121,7 +120,7 @@ export function makeSceneRenderer(device, canvas) {
       headData[i * 4 + 2] = c[2]; headData[i * 4 + 3] = c[3];
     }
     headBuf.write(headData);
-    p.draw(sh.head, { buffers: [headBuf], count: 4, uniforms: { uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uOpacity: opacity, uBrushColor: getInk() } });
+    p.draw(sh.head, { buffers: [headBuf], count: 4, uniforms: { uAspect: aspect, uCamY: camY, uFlipY: FLIP_Y, uExt: INK_EXT, uOpacity: opacity, uBrushColor: getInk() } });
   }
 
   // mech dragon: shared instanced drawer (one draw per unit-mesh key, cached
@@ -132,8 +131,8 @@ export function makeSceneRenderer(device, canvas) {
     });
   }
 
-  function compositeQuad(p, color, opacity, z, vp, aspect, stationY) {
-    p.draw(sh.composite, { count: 4, textures: { uTex: color }, uniforms: { uViewProj: vp, uOpacity: opacity, uAspect: aspect, uZ: z, uStationY: stationY } });
+  function compositeQuad(p, color, opacity, z, vp, aspect, stationY, ext = 1) {
+    p.draw(sh.composite, { count: 4, textures: { uTex: color }, uniforms: { uViewProj: vp, uOpacity: opacity, uAspect: aspect, uZ: z, uStationY: stationY, uExt: ext } });
   }
 
   function drawDebug(p, state, aspect, vp) {
@@ -156,14 +155,13 @@ export function makeSceneRenderer(device, canvas) {
       if (state.debug.pool?.length) line(state.debug.pool, true, true, [0.2, 0.5, 1.0, 1.0]);
     }
     if (state.debug.buffer && state.debug.buffer !== "none") {
-      const map = { glyph: tGlyph, enso: tEnso, ink: tInk };
+      const map = { glyph: tGlyph, ink: tInk };
       const t = map[state.debug.buffer];
       if (t) p.draw(sh.blit, { count: 3, textures: { uTex: t.color } });
     }
   }
 
   function frame(state) {
-    frameCount++;
     const aspect = state.aspect;
     const camY = state.camY || 0;
     const nSeg = uploadSegs(state.glyph.segs);
@@ -178,14 +176,6 @@ export function makeSceneRenderer(device, canvas) {
       device.pass({ target: tGlyph, clear: [0, 0, 0, 0] }, (p) =>
         p.draw(sh.glyph, { count: 3, textures: { uSegTex: segTex }, uniforms: { uResolution: [w, h], uBaseRadius: state.glyph.baseRadius, uTime: state.glyph.playhead, uNSeg: nSeg, uInkColor: getInkRGB() } }));
     }
-    const ensoAnim = !state.enso || state.enso.alpha <= 0 || state.enso.sweep < 1;
-    if (ensoAnim || frameCount % STATIC_THROTTLE === 0) {
-      const t = tEnso;
-      device.pass({ target: t, clear: [0, 0, 0, 0] }, (p) => {
-        if (state.enso && state.enso.alpha > 0 && state.enso.sweep > 0)
-          p.draw(sh.enso, { count: 3, uniforms: { uResolution: [t.width, t.height], uRadius: state.enso.radius, uSweep: state.enso.sweep, uAngleStart: state.enso.angleStart, uLineWidth: state.enso.lineWidth, uInkColor: getInkRGB() } });
-      });
-    }
     device.pass({ target: tInk, clear: [0, 0, 0, 0] }, (p) => {
       if (state.opacity.inkDragon <= 0) return;
       const d = state.inkDragon, ws = d.widthScale ?? 1;
@@ -198,9 +188,13 @@ export function makeSceneRenderer(device, canvas) {
     device.pass({ target: "screen", clear: paper, depth: true, depthClear: 1 }, (p) => {
       if (state.grid && state.grid.reveal > 0)
         p.draw(sh.grid, { count: 4, uniforms: { uViewProj: vp, uExt: state.grid.ext, uZ: state.grid.z, uStep: state.grid.step, uMinorDiv: state.grid.minorDiv, uOpacity: state.grid.opacity, uReveal: state.grid.reveal, uRevealMinor: state.grid.revealMinor, uInkColor: getInkRGB() } });
-      if (state.enso && state.enso.alpha > 0) compositeQuad(p, tEnso.color, state.enso.alpha, -0.004, vp, aspect, state.enso.stationY || 0);
+      if (state.enso && state.enso.alpha > 0 && state.enso.sweep > 0)
+        p.draw(sh.enso, { count: 4, uniforms: {
+          uViewProj: vp, uOpacity: state.enso.alpha, uAspect: aspect, uZ: -0.004, uStationY: state.enso.stationY || 0, uExt: ENSO_EXT,
+          uResolution: [w, h], uRadius: state.enso.radius, uSweep: state.enso.sweep, uAngleStart: state.enso.angleStart, uLineWidth: state.enso.lineWidth, uInkColor: getInkRGB(),
+        } });
       compositeQuad(p, tGlyph.color, state.opacity.glyph, -0.002, vp, aspect, state.glyph.stationY || 0);
-      compositeQuad(p, tInk.color, state.opacity.inkDragon, 0.0, vp, aspect, camY);
+      compositeQuad(p, tInk.color, state.opacity.inkDragon, 0.0, vp, aspect, camY, INK_EXT);
       if (state.opacity.dragon3d > 0 && state.dragon3d.items) {
         // mech dragon transitions in by ASSEMBLING (per-instance alpha from the
         // flight animation), not by fading — draw at full opacity
@@ -215,7 +209,7 @@ export function makeSceneRenderer(device, canvas) {
   }
 
   function destroy() {
-    tGlyph?.destroy(); tEnso?.destroy(); tInk?.destroy();
+    tGlyph?.destroy(); tInk?.destroy();
     segTex?.destroy();
     strokePos?.destroy(); strokeUV?.destroy(); strokeIdx?.destroy(); headBuf?.destroy();
     objDragon?.destroy(); objDragon = null;
