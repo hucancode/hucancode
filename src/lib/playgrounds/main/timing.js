@@ -33,7 +33,6 @@ export function computeTiming() {
     crossfadeStart, loop3Start, descentEnd, pitchAnchor,
     d3Start, d3Mid, d3End,
     camPitchDur: CAM_PITCH_DUR,
-    splashGrowDur: ensoStart,      // ink wash keeps spreading across descent, then holds
     timelineEnd: loop3Start + CORRIDOR_TAIL,
   };
 }

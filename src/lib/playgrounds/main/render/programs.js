@@ -2,7 +2,6 @@
 
 import { INSTANCED_PROGRAM } from "$lib/mech/instancing.js";
 import GLYPH_FRAG from "./webgl/shaders/glyph.frag.glsl?raw";
-import SPLASH_FRAG from "./webgl/shaders/splash.frag.glsl?raw";
 import ENSO_FRAG from "./webgl/shaders/enso.frag.glsl?raw";
 import STROKE_FRAG from "./webgl/shaders/stroke.frag.glsl?raw";
 import HEAD_FRAG from "./webgl/shaders/head.frag.glsl?raw";
@@ -18,7 +17,6 @@ import LINE_VERT from "./webgl/shaders/line.vert.glsl?raw";
 import LINE_FRAG from "./webgl/shaders/line.frag.glsl?raw";
 
 import GLYPH_WGSL from "./webgpu/shaders/glyph.wgsl?raw";
-import SPLASH_WGSL from "./webgpu/shaders/splash.wgsl?raw";
 import ENSO_WGSL from "./webgpu/shaders/enso.wgsl?raw";
 import STROKE_WGSL from "./webgpu/shaders/stroke.wgsl?raw";
 import HEAD_WGSL from "./webgpu/shaders/head.wgsl?raw";
@@ -44,11 +42,6 @@ export const PROGRAMS = {
     glsl: { vertex: FS_TRI_VERT, fragment: GLYPH_FRAG }, wgsl: GLYPH_WGSL,
     uniforms: [VEC2("uResolution"), F32("uBaseRadius"), F32("uTime"), I32("uNSeg"), VEC3("uInkColor")],
     textures: [{ name: "uSegTex", binding: 1 }],
-    blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
-  },
-  splash: {
-    glsl: { vertex: FS_TRI_VERT, fragment: SPLASH_FRAG }, wgsl: SPLASH_WGSL,
-    uniforms: [VEC2("uResolution"), F32("uGrow"), F32("uSpread"), F32("uAmount"), F32("uClock"), VEC3("uInkDark"), VEC3("uInkLight")],
     blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
   },
   enso: {

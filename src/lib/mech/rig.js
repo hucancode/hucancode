@@ -217,7 +217,6 @@ const LOOP_PTS = [
   [-7.8, 5.6, 0], [-5.5, 2.6, -5.5], [0, 5.0, -7.7], [5.5, 2.8, -5.5],
 ];
 
-const deg = (r) => (r * 180) / Math.PI;
 const rad = (d) => ((d || 0) * Math.PI) / 180;
 const mirrorSlot = (s) => ({
   pos: [-s.pos[0], s.pos[1], s.pos[2]],
@@ -275,7 +274,9 @@ export function createDragonRig(seed = 1) {
     depthOf[d.name] = par ? depthOf[d.parent] + 1 : 0;
   });
   const rootBone = sk.bones[byName.head.ids[0]];
-  const jawB = sk.add("jaw", boneOf.head, [0, -0.53, 0.88], "x");
+  // jaw pin position comes off the head's jaw slot, relative to its pivot slot
+  const jawB = sk.add("jaw", boneOf.head,
+    vSub(byName.head.slots.jaw.pos, byName.head.slots.slot0.pos), "x");
 
   // --- static geometry templates: pose-less parts (spine segments, tail)
   // emit the same primitives every frame, so capture them once. Posed parts
@@ -383,13 +384,13 @@ export function createDragonRig(seed = 1) {
         continue;
       }
       let ppose = null;                                // posed part: rebuild through the sink
-      if (d.name === "head") ppose = { jaw: deg(sk.bones[jawB].angle) };
+      if (d.name === "head") ppose = { jaw: sk.bones[jawB].angle };
       else if (d.pose)                                 // limb: bones feed the pose channel
         ppose = {
-          spinF: deg(sk.bones[d.ids[0]].angle),
-          swing: deg(sk.bones[d.ids[1]].angle),
-          spinM: deg(sk.bones[d.ids[2]].angle),
-          [d.part === "arm" ? "elbow" : "knee"]: deg(sk.bones[d.bendBone].angle),
+          spinF: sk.bones[d.ids[0]].angle,
+          swing: sk.bones[d.ids[1]].angle,
+          spinM: sk.bones[d.ids[2]].angle,
+          [d.part === "arm" ? "elbow" : "knee"]: sk.bones[d.bendBone].angle,
         };
       for (const e of capture(d, ppose, []))
         items.push({

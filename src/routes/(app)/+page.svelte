@@ -264,6 +264,7 @@
 
 <footer class:show={progress >= 1}>
   <a href="/playgrounds">More like this...</a>
+  <p class="credit">All animations and models are procedurally generated</p>
 </footer>
 
 <style>
@@ -381,7 +382,7 @@
   }
   footer {
     position: fixed;
-    bottom: 0;
+    bottom: 1rem;
     left: 0;
     right: 0;
     z-index: 10;
@@ -405,9 +406,20 @@
   footer a {
     font-family: "Virgil";
     text-decoration: underline wavy;
-    text-underline-offset: 4px;
+    text-underline-offset: 0.2em;
     color: var(--link);
     font-size: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  footer .credit {
+    position: absolute;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    font-family: "Virgil";
+    font-size: 0.85rem;
+    color: var(--ink);
+    opacity: 0.5;
   }
   .scroll-hint {
     position: fixed;

@@ -7,7 +7,7 @@ import { mulberry32 } from "$lib/math/random.js";
 import { buildOpenSpline, arcLengthCurve } from "$lib/math/curve.js";
 import { makeTimeline, createCameraTrack } from "./stage/index.js";
 import {
-  GLYPH_RADIUS, GRID, GRID_MINOR_DIV, SPLASH_SPREAD, SPLASH_AMOUNT,
+  GLYPH_RADIUS, GRID, GRID_MINOR_DIV,
   ENSO_R, ENSO_HEAD_R, ENSO_WIDTH, BODY_LEN, HEAD_SIZE, D3, D3_GIRTH, SP3,
   GROW_DUR, ENTRY_GROW_MIN, ENTRY_SIZE_MIN,
   LOOP3_CIRCLES, R3D, Z3D, LOOP3_WAVES,
@@ -21,7 +21,6 @@ import { createHeadPath } from "./head-path.js";
 import { createBodyController } from "./body.js";
 import { createDragon3d } from "./dragon3d.js";
 import { sceneViewProj } from "./camera.js";
-import { createSplashBlock } from "./blocks/splash.js";
 import { createGlyphBlock } from "./blocks/glyph.js";
 import { createInkBlock } from "./blocks/ink.js";
 import { createEnsoBlock } from "./blocks/enso.js";
@@ -203,7 +202,6 @@ export function initScene() {
   // (cameraTrack), not a block.
   const deps = { timing, glyph, bodyCtrl, headPath, grow: makeGrow(timing) };
   const blocks = [
-    createSplashBlock(deps),
     createGridBlock(deps),
     createInkBlock(deps),
     createGlyphBlock(deps),
@@ -226,7 +224,6 @@ const _frame = {
   opacity: { glyph: 1, inkDragon: 0, dragon3d: 0 },
   grid: { opacity: 0, reveal: 0, revealMinor: 0, viewProj: null, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
   glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS, stationY: 0 },
-  splash: { alpha: 0, grow: 0, spread: SPLASH_SPREAD, amount: SPLASH_AMOUNT, time: 0, stationY: 0 },
   enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0, stationY: 0 },
   inkDragon: {
     body: null,
@@ -269,10 +266,6 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
   _frame.glyph.segs = glyph.segs;
   _frame.glyph.playhead = _ctx.playhead;
   _frame.glyph.stationY = ensoCenter.y; // glyph parked at enso station
-
-  const sp = _frame.splash;
-  sp.alpha = _ctx.splashAlpha; sp.grow = _ctx.splashGrow; sp.time = t;
-  sp.stationY = ensoCenter.y; // ink wash parked at glyph/enso station (corridor bottom)
 
   const en = _frame.enso;
   en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = 0; en.time = t;

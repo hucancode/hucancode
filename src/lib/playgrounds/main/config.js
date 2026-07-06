@@ -94,9 +94,5 @@ export const D3_GIRTH = 0.006; // cross-section scale for 3D mesh
 export const D3_STYLE = "mech";
 export const D3_MECH_SCALE = 0.5; // mech dragon size vs the obj ribbon's bodyArc
 
-export const SPLASH_SPREAD = 1.2; // max blob radius (world units)
-export const SPLASH_AMOUNT = 0.05; // 0..1 amount of ink blobs
-export const SPLASH_FADE_IN = 5.0; // seconds for wash to fade in at start
-
 export const GLYPH_SCALE = 0.36;
 export const GLYPH_RADIUS = 0.06 * GLYPH_SCALE;

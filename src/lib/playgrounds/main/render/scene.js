@@ -1,7 +1,7 @@
 // Scene renderer for /main (paint). Consumes the FrameState built by
 // index.js buildState() — plain data, no GPU handles: aspect, camY,
 // opacity.{glyph,inkDragon,dragon3d}, grid, glyph{segs,playhead,...},
-// splash, enso, inkDragon{body,head,widthScale},
+// enso, inkDragon{body,head,widthScale},
 // dragon3d{items,meshes,eye,viewProj + legacy frames/pathLen/... for "obj"},
 // debug{show,buffer,path2d,path3d,pool}. Source of truth = buildState().
 import { buildRibbon, PERP_CLEARANCE, ARC_CLEARANCE } from "./webgl/stroke-gl.js";
@@ -16,10 +16,6 @@ const PAPER_LIGHT = [0.949, 0.925, 0.737, 1.0];
 const INK_LIGHT = [0.086, 0.086, 0.114, 0.95];
 const PAPER_DARK = [0.086, 0.086, 0.114, 1.0];
 const INK_DARK = [0.863, 0.843, 0.729, 0.95];
-const SPLASH_LOW_LIGHT = [0.32, 0.31, 0.30];
-const SPLASH_HIGH_LIGHT = [0.06, 0.06, 0.07];
-const SPLASH_LOW_DARK = [0.47, 0.46, 0.40];
-const SPLASH_HIGH_DARK = [0.863, 0.843, 0.729];
 const DRAGON3D_LIGHT = [0.06, 0.07, 0.10];
 const DRAGON3D_DARK = [0.70, 0.68, 0.59];
 const _darkMQ = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
@@ -27,8 +23,6 @@ const isDark = () => !!_darkMQ?.matches;
 const getPaper = () => (isDark() ? PAPER_DARK : PAPER_LIGHT);
 const getInk = () => (isDark() ? INK_DARK : INK_LIGHT);
 const getInkRGB = () => { const c = getInk(); return [c[0], c[1], c[2]]; };
-const getSplashLow = () => (isDark() ? SPLASH_LOW_DARK : SPLASH_LOW_LIGHT);
-const getSplashHigh = () => (isDark() ? SPLASH_HIGH_DARK : SPLASH_HIGH_LIGHT);
 const getDragon3d = () => (isDark() ? DRAGON3D_DARK : DRAGON3D_LIGHT);
 
 // mech dragon: fixed light high above the ground plane (world is z-up)
@@ -41,7 +35,7 @@ export function makeSceneRenderer(device, canvas) {
   // render-to-texture is V-flipped on WebGPU vs WebGL; flip clip Y on WebGPU to compensate
   const FLIP_Y = device.backend === "webgpu" ? -1 : 1;
   const sh = {};
-  let tGlyph, tSplash, tEnso, tInk;
+  let tGlyph, tEnso, tInk;
   let segTex;
   let strokePos, strokeUV, strokeIdx, headBuf;
   let mechDrawer;
@@ -73,9 +67,8 @@ export function makeSceneRenderer(device, canvas) {
   function resize(nw, nh) {
     w = Math.max(1, nw | 0); h = Math.max(1, nh | 0);
     device.resize(w, h);
-    tGlyph?.destroy(); tSplash?.destroy(); tEnso?.destroy(); tInk?.destroy();
+    tGlyph?.destroy(); tEnso?.destroy(); tInk?.destroy();
     tGlyph = device.target({ width: w, height: h });
-    tSplash = device.target({ width: Math.ceil(w / 2), height: Math.ceil(h / 2) });   // soft wash -> half-res
     tEnso = device.target({ width: w, height: h });
     tInk = device.target({ width: w, height: h });
     glyphCacheKey = NaN; // targets recreated -> force glyph re-render
@@ -163,7 +156,7 @@ export function makeSceneRenderer(device, canvas) {
       if (state.debug.pool?.length) line(state.debug.pool, true, true, [0.2, 0.5, 1.0, 1.0]);
     }
     if (state.debug.buffer && state.debug.buffer !== "none") {
-      const map = { glyph: tGlyph, splash: tSplash, enso: tEnso, ink: tInk };
+      const map = { glyph: tGlyph, enso: tEnso, ink: tInk };
       const t = map[state.debug.buffer];
       if (t) p.draw(sh.blit, { count: 3, textures: { uTex: t.color } });
     }
@@ -185,14 +178,6 @@ export function makeSceneRenderer(device, canvas) {
       device.pass({ target: tGlyph, clear: [0, 0, 0, 0] }, (p) =>
         p.draw(sh.glyph, { count: 3, textures: { uSegTex: segTex }, uniforms: { uResolution: [w, h], uBaseRadius: state.glyph.baseRadius, uTime: state.glyph.playhead, uNSeg: nSeg, uInkColor: getInkRGB() } }));
     }
-    const splashAnim = !state.splash || state.splash.alpha <= 0 || state.splash.grow < 1;
-    if (splashAnim || frameCount % STATIC_THROTTLE === 0) {
-      const t = tSplash;
-      device.pass({ target: t, clear: [0, 0, 0, 0] }, (p) => {
-        if (state.splash && state.splash.alpha > 0)
-          p.draw(sh.splash, { count: 3, uniforms: { uResolution: [t.width, t.height], uGrow: state.splash.grow, uSpread: state.splash.spread, uAmount: state.splash.amount, uClock: state.splash.time, uInkDark: getSplashHigh(), uInkLight: getSplashLow() } });
-      });
-    }
     const ensoAnim = !state.enso || state.enso.alpha <= 0 || state.enso.sweep < 1;
     if (ensoAnim || frameCount % STATIC_THROTTLE === 0) {
       const t = tEnso;
@@ -213,7 +198,6 @@ export function makeSceneRenderer(device, canvas) {
     device.pass({ target: "screen", clear: paper, depth: true, depthClear: 1 }, (p) => {
       if (state.grid && state.grid.reveal > 0)
         p.draw(sh.grid, { count: 4, uniforms: { uViewProj: vp, uExt: state.grid.ext, uZ: state.grid.z, uStep: state.grid.step, uMinorDiv: state.grid.minorDiv, uOpacity: state.grid.opacity, uReveal: state.grid.reveal, uRevealMinor: state.grid.revealMinor, uInkColor: getInkRGB() } });
-      if (state.splash && state.splash.alpha > 0) compositeQuad(p, tSplash.color, state.splash.alpha, -0.006, vp, aspect, state.splash.stationY || 0);
       if (state.enso && state.enso.alpha > 0) compositeQuad(p, tEnso.color, state.enso.alpha, -0.004, vp, aspect, state.enso.stationY || 0);
       compositeQuad(p, tGlyph.color, state.opacity.glyph, -0.002, vp, aspect, state.glyph.stationY || 0);
       compositeQuad(p, tInk.color, state.opacity.inkDragon, 0.0, vp, aspect, camY);
@@ -231,7 +215,7 @@ export function makeSceneRenderer(device, canvas) {
   }
 
   function destroy() {
-    tGlyph?.destroy(); tSplash?.destroy(); tEnso?.destroy(); tInk?.destroy();
+    tGlyph?.destroy(); tEnso?.destroy(); tInk?.destroy();
     segTex?.destroy();
     strokePos?.destroy(); strokeUV?.destroy(); strokeIdx?.destroy(); headBuf?.destroy();
     objDragon?.destroy(); objDragon = null;
