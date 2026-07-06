@@ -49,32 +49,24 @@ export function createHeadPath({ timing, paths }) {
   };
   const roam2Dur = loop3Start - ensoExit; // SP3 by construction (headEnd = hs + SP3*roam2Dur)
 
+  // flyin/descent read t directly via cubic speed law; others map t to arc/frac.
+  // descent ends at enso top with circle tangent + speed CRUISE_SP, so body
+  // keeps trailing onto enso (which decelerates to SP3).
   const PHASES = [
-    { name: "flyin", end: roam1Start, continuous: false,
-      path: (t) => ({ fn: () => flyinHead(t), a: 0 }) },
-    { name: "descent", end: ensoStart, continuous: false,
-      path: (t) => ({ fn: () => descentHead(t), a: 0 }) },
-    // continuous: descent ends at enso top with circle tangent + speed CRUISE_SP,
-    // so body keeps trailing onto enso (which decelerates to SP3)
-    { name: "enso", end: ensoExit, continuous: true,
-      path: (t) => ({ fn: ensoHead, a: ensoHeadProgress(frac(t, ensoStart, BLOCK_DUR.enso)) }) },
-    { name: "roam2", end: loop3Start, continuous: true,
-      path: (t) => ({ fn: roam2Head, a: frac(t, ensoExit, roam2Dur) }) },
-    { name: "loop3", end: Infinity, continuous: true,
-      path: () => ({ fn: roam2Head, a: 1 }) },
+    { end: roam1Start, pos: (t) => flyinHead(t) },                                          // flyin
+    { end: ensoStart, pos: (t) => descentHead(t) },                                         // descent
+    { end: ensoExit, pos: (t) => ensoHead(ensoHeadProgress(frac(t, ensoStart, BLOCK_DUR.enso))) }, // enso
+    { end: loop3Start, pos: (t) => roam2Head(frac(t, ensoExit, roam2Dur)) },                // roam2
+    { end: Infinity, pos: () => roam2Head(1) },                                             // loop3
   ];
 
   function phaseOf(t) {
     for (let i = 0; i < PHASES.length; i++) if (t < PHASES[i].end) return i;
     return PHASES.length - 1;
   }
-  // sample phase at its own time t (flyin/descent samplers ignore `a`, read t
-  // directly via cubic speed law; others use arc/frac `a`)
-  const pathAt = (t) => PHASES[phaseOf(t)].path(t);
 
   function posAt(t) {
-    const { fn, a } = pathAt(t);
-    return fn(a);
+    return PHASES[phaseOf(t)].pos(t);
   }
   function tipAt(t) {
     const p = posAt(t), p2 = posAt(t + 1e-3);

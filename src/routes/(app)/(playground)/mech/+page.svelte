@@ -1,6 +1,6 @@
 <script>
-  import Scene from "$lib/components/mech.svelte";
-  import Return from "$icons/line-md/chevron-left.svg?raw";
+  import Scene from "$lib/components/playground-canvas.svelte";
+  import * as mech from "$lib/playgrounds/mech";
   import {
     partModel, primitiveModel,
     PART_NAMES, PRIM_NAMES, PRIM_PARAMS, PART_PARAMS, JOINT_POSE,
@@ -176,47 +176,51 @@
 
 <svelte:head><title>Mech</title></svelte:head>
 
-<nav><a class="back" href="/playgrounds">{@html Return} Playgrounds</a></nav>
-
-<main>
   <section>
-    <Scene bind:this={scene} />
-    <div class="hud">
-      <div class="row knobs">
+    <Scene bind:this={scene} scene={mech} id="mech" />
+    <footer>
+      {#if view === "dragon"}
+        <div>
+          <button type="button" onclick={playAssemble}>▶ Assemble</button>
+          <input type="range" min="0" max="1" step="0.001" bind:value={asm} />
+          <output>{asm.toFixed(2)}</output>
+        </div>
+      {/if}
+      <div>
         <label><span>Spin</span><input type="range" min="0" max="3" step="0.1" bind:value={spin} /></label>
         <label><span>Light</span><input type="range" min="0" max="6.28" step="0.05" bind:value={light} /></label>
         <button type="button" onclick={shuffle}>🎨 shuffle colors</button>
       </div>
-    </div>
+    </footer>
   </section>
 
   <aside>
     <fieldset>
       <legend>view</legend>
-      <div class="tabs">
-        <button type="button" class:on={view === "parts"} onclick={() => (view = "parts")}>parts</button>
-        <button type="button" class:on={view === "primitives"} onclick={() => (view = "primitives")}>blocks</button>
-        <button type="button" class:on={view === "dragon"} onclick={() => (view = "dragon")}>dragon</button>
+      <div class="square" role="group">
+        <label><input type="radio" name="mech-view" value="parts" bind:group={view} />parts</label>
+        <label><input type="radio" name="mech-view" value="primitives" bind:group={view} />blocks</label>
+        <label><input type="radio" name="mech-view" value="dragon" bind:group={view} />dragon</label>
       </div>
     </fieldset>
 
     {#if view === "parts"}
       <fieldset>
         <legend>parts</legend>
-        <ul class="jlist">
+        <div class="jlist" role="group">
           {#each PARTS as pn}
-            <li><button type="button" class:on={selPart === pn} onclick={() => (selPart = pn)}>{PART_LABELS[pn] ?? pn}</button></li>
+            <label><input type="radio" name="mech-part" value={pn} bind:group={selPart} />{PART_LABELS[pn] ?? pn}</label>
           {/each}
-        </ul>
+        </div>
         <hr/>
-        <ul class="jlist">
+        <div class="jlist" role="group">
           {#each JOINTS as jn}
-            <li><button type="button" class:on={selPart === jn} onclick={() => (selPart = jn)}>{PART_LABELS[jn] ?? jn}</button></li>
+            <label><input type="radio" name="mech-part" value={jn} bind:group={selPart} />{PART_LABELS[jn] ?? jn}</label>
           {/each}
-        </ul>
+        </div>
       </fieldset>
       <fieldset>
-        <legend>params<button type="button" class="add" onclick={resetJointParams}>↺ reset</button></legend>
+        <legend>params<button type="button" onclick={resetJointParams}>reset</button></legend>
         {#each PART_CTL[selPart] as [key, label, min, max, step]}
           <label><span>{label}</span>
             <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selPart][key]}
@@ -235,7 +239,7 @@
       </fieldset>
     {:else if view === "dragon"}
       <fieldset>
-        <legend>rig<button type="button" class="add" onclick={resetDragon}>↺ reset</button></legend>
+        <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
         <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
         {#each DRAGON_CTL as [key, label, min, max, step]}
           <label><span>{label}</span>
@@ -243,22 +247,18 @@
               oninput={(e) => (drig[key] = +e.currentTarget.value)} />
             <output>{drig[key].toFixed(step < 1 ? 2 : 0)}</output></label>
         {/each}
-        <label><span>build progress</span>
-          <input type="range" min="0" max="1" step="0.001" bind:value={asm} />
-          <output>{asm.toFixed(2)}</output></label>
-        <button type="button" onclick={playAssemble}>▶ Assemble</button>
       </fieldset>
     {:else}
       <fieldset>
         <legend>primitives</legend>
-        <ul class="jlist">
+        <div class="jlist" role="group">
           {#each PRIM_NAMES as pn}
-            <li><button type="button" class:on={selPrim === pn} onclick={() => (selPrim = pn)}>{PRIM_LABELS[pn] ?? pn}</button></li>
+            <label><input type="radio" name="mech-prim" value={pn} bind:group={selPrim} />{PRIM_LABELS[pn] ?? pn}</label>
           {/each}
-        </ul>
+        </div>
       </fieldset>
       <fieldset>
-        <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" class="add" onclick={resetParams}>↺ reset</button></legend>
+        <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetParams}>reset</button></legend>
         {#each PRIM_CTL[selPrim] as [key, label, min, max]}
           <label><span>{label}</span>
             <input type="range" {min} {max} step="0.01" value={pparams[selPrim][key]}
@@ -267,36 +267,20 @@
         {/each}
         {#if selPrim === "boxCylinder"}
           <div class="grp">cylinder fit</div>
-          <div class="tabs">
-            <button type="button" class:on={pparams.boxCylinder.fit === "in"}
-              onclick={() => (pparams.boxCylinder.fit = "in")}>internal</button>
-            <button type="button" class:on={pparams.boxCylinder.fit === "out"}
-              onclick={() => (pparams.boxCylinder.fit = "out")}>external</button>
+          <div class="square" role="group">
+            <label><input type="radio" name="mech-fit" value="in" bind:group={pparams.boxCylinder.fit} />internal</label>
+            <label><input type="radio" name="mech-fit" value="out" bind:group={pparams.boxCylinder.fit} />external</label>
           </div>
         {/if}
       </fieldset>
     {/if}
   </aside>
-</main>
 
 <style>
-  .hud {
-    position: absolute; left: 0; right: 0; bottom: 0;
-    display: flex; flex-direction: column; gap: 0.4rem;
-    padding: 0.6rem 0.8rem 0.7rem;
-    background: linear-gradient(to top, color-mix(in srgb, #000 60%, transparent), transparent);
-    font-size: 0.75rem; pointer-events: none;
-  }
-  .hud .row { display: flex; align-items: center; gap: 0.6rem; pointer-events: auto; }
-  .hud .knobs { flex-wrap: wrap; }
-  .hud .knobs label { display: flex; align-items: center; gap: 0.35rem; }
-  .hud .knobs label span { opacity: 0.8; }
+  /* layout, HUD footer, fieldset controls come from playground.css */
   .grp { margin: 0.5rem 0 0.1rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.5; }
-  .tabs { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
-  .tabs button { flex: 1; }
-  .tabs button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
-  .jlist { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
-  .jlist button { width: 100%; text-align: left; }
-  .jlist button.on { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
-  .add { font-size: 0.75rem; opacity: 0.75; margin-left: 0.4rem; }
+  .jlist { display: flex; flex-direction: column; gap: 0.2rem; }
+  .jlist label { display: block; padding: 0.15rem 0.4rem; cursor: pointer; border-radius: 0.25rem; }
+  .jlist label:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+  .jlist label:has(:checked) { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
 </style>

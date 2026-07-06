@@ -1,4 +1,5 @@
 import { m3MulV, m3AxisAngle, vAdd, vSub, vScale, vNorm, vLen, vCross } from "../math/mat3.js";
+import { clamp, smooth, easeInOutCubic } from "../math/scalar.js";
 
 // ---- HOMING FLIGHT -------------------------------------------------------
 // The assembly's group flight, TWO PHASES over the travel window:
@@ -24,8 +25,6 @@ export function hash01(i, salt) {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-const smooth = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
-const easeInOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const lerp3 = (a, b, w) => [
   a[0] + (b[0] - a[0]) * w,
   a[1] + (b[1] - a[1]) * w,
@@ -34,7 +33,7 @@ const lerp3 = (a, b, w) => [
 
 // unit vector perpendicular to n, rotated az radians around n — a stable
 // basis for hashed kick directions
-export function lateralDir(n, az) {
+function lateralDir(n, az) {
   const ref = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
   const u = vNorm(vCross(ref, n));
   const v = vCross(n, u);
@@ -60,15 +59,15 @@ export function homingParams(gi, far, A) {
 
 const SPEED_RAMP = 0.4;   // fraction of the approach spent throttling up
 
-// fixed-step seek integrator over the APPROACH window. `tau` is still a
+// simulated approach state at tau (0..1 of the travel window): a fixed-step
+// seek integration re-run from launch every call (scrub-safe). `tau` is a
 // travel-window fraction; internally it is renormalised so the whole flight
 // (speed, turn, ramp totals unchanged) plays out inside tau 0..P.approach —
 // same trajectory as a full-window flight, compressed = faster. `aimAt(tau)`
 // -> { seat, n } in world space (the mount point and its normal at that
-// moment of the flight, travel-window fraction). `onStep` (optional)
-// observes every completed step boundary — the viz tracer uses it. Heading
-// is kept separate from speed so it survives zero-speed steps.
-function integrate(from, n0, tauEnd, P, aimAt, onStep) {
+// moment of the flight, travel-window fraction). Heading is kept separate
+// from speed so it survives zero-speed steps.
+export function simulateHoming(from, n0, tauEnd, P, aimAt) {
   const pos = [from[0], from[1], from[2]];
   // launch kick: hashed lateral/outward mix — groups pop out of their parked
   // spot instead of diving straight at the seat
@@ -102,20 +101,12 @@ function integrate(from, n0, tauEnd, P, aimAt, onStep) {
     // arrival damping: throttle down near the aim so the group settles onto
     // the gate instead of orbiting it (turn radius shrinks with speed)
     const arr = 0.35 + 0.65 * Math.min(1, d / (2 * P.dock));
-    const sp = P.speed * smooth(tk / SPEED_RAMP) * arr;
+    const sp = P.speed * smooth(clamp(tk / SPEED_RAMP, 0, 1)) * arr;
     pos[0] += head[0] * sp * h;
     pos[1] += head[1] * sp * h;
     pos[2] += head[2] * sp * h;
-    if (onStep) onStep(Math.min((k + 1) / P.steps, 1), pos, head);
   }
   return { p: pos, dir: head };
-}
-
-// simulated approach state at tau (0..1 of the travel window; the flight
-// occupies 0..P.approach) — re-runs the fixed-step integration from launch
-// every call (scrub-safe)
-export function simulateHoming(from, n0, tau, P, aimAt) {
-  return integrate(from, n0, tau, P, aimAt);
 }
 
 // Arrival: over the last `capture` fraction of the APPROACH, blend the
@@ -126,9 +117,9 @@ export function simulateHoming(from, n0, tau, P, aimAt) {
 // position/heading are continuous into the snap-in run.
 export function approachBlend(sim, seatLive, nLive, tau, P) {
   const tauA = Math.min(1, tau / P.approach);
-  const x = Math.max(0, Math.min(1, (tauA - (1 - P.capture)) / P.capture));
+  const x = clamp((tauA - (1 - P.capture)) / P.capture, 0, 1);
   if (x <= 0) return sim;
-  const w = x * x * (3 - 2 * x);
+  const w = smooth(x);
   const gate = [
     seatLive[0] + nLive[0] * P.dock,
     seatLive[1] + nLive[1] * P.dock,

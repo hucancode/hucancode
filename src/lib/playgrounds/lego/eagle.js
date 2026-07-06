@@ -14,7 +14,6 @@ export const PALETTE = {
 // studs Z) plus an ordered `ops` list (slope / push / studs). studs y+ male up,
 // y- female down makes a stackable piece; cuts shape the silhouette.
 export const MODEL = {
-  validate: true,
   parts: {
     base: { size: [2, 3, 3], ops: [{ op: "slope", face: "y+", dir: 1, length: 1, depth: 3, round: true }, { op: "studs", face: "y+", kind: "male" }], color: "YE" },
     body: { size: [2, 3, 3], ops: [{ op: "slope", face: "y+", dir: 1, length: 2, depth: 2, round: false }, { op: "studs", face: "y+", kind: "female" }, { op: "studs", face: "y-", kind: "male" }], color: "BR" },

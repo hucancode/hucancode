@@ -1,6 +1,6 @@
 const OPTION_KEYS = new Set([
   "duration", "delay", "ease", "round", "loop", "alternate", "reversed",
-  "iterations", "onBegin", "onUpdate", "onComplete", "autoplay", "alternateLoop",
+  "onBegin", "onUpdate", "onComplete",
 ]);
 
 const hasRAF = typeof requestAnimationFrame !== "undefined";
@@ -31,8 +31,7 @@ class Animation {
     this.duration = params.duration ?? 1000;
     this.defaultEase = resolveEase(params.ease) || eases.outQuad;
     this.round = params.round ?? 0;
-    const inf = params.loop === true || params.iterations === true;
-    this.count = inf ? Infinity : typeof params.loop === "number" ? params.loop + 1 : 1;
+    this.count = params.loop === true ? Infinity : typeof params.loop === "number" ? params.loop + 1 : 1;
     this.alternate = !!params.alternate;
     this.reversed = !!params.reversed;
     this.delaySpec = params.delay ?? 0;

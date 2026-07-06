@@ -6,7 +6,13 @@ import { createWebGLDevice } from "./webgl.js";
 import { createWebGPUDevice } from "./webgpu.js";
 import { trackBackend } from "$lib/ga.js";
 
-export { Camera } from "../camera.js";
+// uniform-declaration shorthands for device.shader({ uniforms: [...] })
+export const F32 = (name) => ({ name, type: "f32" });
+export const I32 = (name) => ({ name, type: "i32" });
+export const VEC2 = (name) => ({ name, type: "vec2" });
+export const VEC3 = (name) => ({ name, type: "vec3" });
+export const VEC4 = (name) => ({ name, type: "vec4" });
+export const MAT4 = (name) => ({ name, type: "mat4" });
 
 const ORDER = (prefer) => [...new Set([prefer, "webgpu", "webgl"])];
 

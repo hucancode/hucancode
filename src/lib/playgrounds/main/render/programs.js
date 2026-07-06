@@ -1,5 +1,6 @@
 // `uniforms` order is load-bearing: WebGPU packs into a buffer whose WGSL struct must declare the same fields in the same order.
 
+import { F32, I32, VEC2, VEC3, VEC4, MAT4 } from "$lib/engine/index.js";
 import { INSTANCED_PROGRAM } from "$lib/mech/instancing.js";
 import GLYPH_FRAG from "./webgl/shaders/glyph.frag.glsl?raw";
 import ENSO_FRAG from "./webgl/shaders/enso.frag.glsl?raw";
@@ -24,13 +25,6 @@ import COMPOSITE_WGSL from "./webgpu/shaders/composite.wgsl?raw";
 import GRID_WGSL from "./webgpu/shaders/grid.wgsl?raw";
 import LINE_WGSL from "./webgpu/shaders/line.wgsl?raw";
 import BLIT_WGSL from "./webgpu/shaders/blit.wgsl?raw";
-
-const VEC2 = (name) => ({ name, type: "vec2" });
-const F32 = (name) => ({ name, type: "f32" });
-const I32 = (name) => ({ name, type: "i32" });
-const VEC3 = (name) => ({ name, type: "vec3" });
-const VEC4 = (name) => ({ name, type: "vec4" });
-const MAT4 = (name) => ({ name, type: "mat4" });
 
 const BUF_STROKE_POS = { stride: 8, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x2", offset: 0 }] };
 const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };

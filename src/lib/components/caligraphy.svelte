@@ -546,11 +546,16 @@
     s.paths[selIdx].pctrl = null;
   }
 
+  // backing store in device pixels (capped at 2x), CSS size stays stageW/stageH.
+  // All pointer/overlay math stays in CSS px; only the canvas resolution scales.
   function syncCanvasSize() {
     if (!canvasEl || stageW <= 0 || stageH <= 0) return;
-    if (canvasEl.width !== stageW || canvasEl.height !== stageH) {
-      canvasEl.width = stageW;
-      canvasEl.height = stageH;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.floor(stageW * dpr));
+    const h = Math.max(1, Math.floor(stageH * dpr));
+    if (canvasEl.width !== w || canvasEl.height !== h) {
+      canvasEl.width = w;
+      canvasEl.height = h;
     }
   }
 
@@ -1064,56 +1069,56 @@
         {/each}
       </select>
     </label>
-    <div class="buttons">
-      <button type="button" onclick={spawnPoint} disabled={!showHandles}
+    <menu>
+      <li><button type="button" onclick={spawnPoint} disabled={!showHandles}
         >+ point</button
-      >
-      <button
+      ></li>
+      <li><button
         type="button"
         onclick={despawnPoint}
         disabled={!showHandles || selKind !== "point"}>− point</button
-      >
-      <button
+      ></li>
+      <li><button
         type="button"
         onclick={splitStroke}
         disabled={!showHandles || !canSplit}
         title="cut this stroke at the selected point; the gap auto-connects with a silk thread"
         >split</button
-      >
-    </div>
-    <div class="buttons">
-      <button type="button" onclick={() => (showCode = !showCode)}>
+      ></li>
+    </menu>
+    <menu>
+      <li><button type="button" onclick={() => (showCode = !showCode)}>
         {showCode ? "hide code" : "show code"}
-      </button>
+      </button></li>
       {#if showCode}
-        <button
+        <li><button
           type="button"
           title="copy to clipboard"
           onclick={() => navigator.clipboard?.writeText(codeText)}>copy</button
-        >
+        ></li>
       {/if}
-      <button
+      <li><button
         type="button"
         onclick={bake}
         title="generate the shadertoy GLSL Seg[] table for this glyph"
         >bake glsl</button
-      >
+      ></li>
       {#if bakeText}
-        <button
+        <li><button
           type="button"
           title="copy to clipboard"
           onclick={() => navigator.clipboard?.writeText(bakeText)}>copy</button
-        >
-        <button
+        ></li>
+        <li><button
           type="button"
           title="clear baked output"
           onclick={() => {
             bakeText = "";
             bakeInfo = "";
           }}>clear</button
-        >
+        ></li>
       {/if}
-    </div>
+    </menu>
     {#if showCode}
       <textarea
         class="code-dump"
@@ -1123,7 +1128,7 @@
       >
     {/if}
     {#if bakeText}
-      <p class="hint">baked: {bakeInfo}</p>
+      <small>baked: {bakeInfo}</small>
       <textarea
         class="code-dump"
         readonly
@@ -1135,11 +1140,11 @@
 
   <fieldset>
     <legend>save slots</legend>
-    <div class="buttons">
-      <button type="button" onclick={newSlot}>+ new slot</button>
-    </div>
+    <menu>
+      <li><button type="button" onclick={newSlot}>+ new slot</button></li>
+    </menu>
     {#if slots.length === 0}
-      <p class="hint">no slots yet - "+ new slot" snapshots current work.</p>
+      <small>no slots yet - "+ new slot" snapshots current work.</small>
     {:else}
       <ol class="slot-list">
         {#each slots as slot (slot.id)}
@@ -1209,11 +1214,11 @@
 
   <fieldset>
     <legend>playback</legend>
-    <div class="buttons">
-      <button type="button" onclick={togglePlay} disabled={totalDuration <= 0}>
+    <menu>
+      <li><button type="button" onclick={togglePlay} disabled={totalDuration <= 0}>
         {pb.playing ? "⏸ pause" : "▶ play"}
-      </button>
-    </div>
+      </button></li>
+    </menu>
     <label>
       <span>seek</span>
       <input
@@ -1338,18 +1343,18 @@
           ).toFixed(2)}</output
         >
       </label>
-      <div class="buttons">
-        <button type="button" onclick={resetControl} disabled={!selPath.ctrl}
+      <menu>
+        <li><button type="button" onclick={resetControl} disabled={!selPath.ctrl}
           >reset curve</button
-        >
-        <button type="button" onclick={resetPressure} disabled={!selPath.pctrl}
+        ></li>
+        <li><button type="button" onclick={resetPressure} disabled={!selPath.pctrl}
           >reset pressure</button
-        >
-      </div>
-      <p class="hint">
+        ></li>
+      </menu>
+      <small>
         drag the blue square to bend the segment - it also sets where the belly
         sits. belly thin sets how thin the stroke gets there.
-      </p>
+      </small>
     </fieldset>
   {/if}
 </aside>
@@ -1551,10 +1556,5 @@
   .reorder button:disabled {
     opacity: 0.3;
     cursor: default;
-  }
-  .hint {
-    font-size: 0.8rem;
-    opacity: 0.7;
-    margin: 0.25rem 0 0;
   }
 </style>

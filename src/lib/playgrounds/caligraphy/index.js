@@ -1,14 +1,10 @@
-import { createDevice } from "$lib/engine/index.js";
+import { createDevice, F32, I32, VEC2 } from "$lib/engine/index.js";
 import FRAG from "./shaders/caligraphy-playground.frag.glsl?raw";
 import WGSL from "./shaders/caligraphy-playground.wgsl?raw";
 import VERT from "./shaders/caligraphy-playground.vert.glsl?raw";
 import { bakeSegs } from "$lib/brush/bake";
 
 const TEXELS_PER_SEG = 5;
-
-const F32 = (name) => ({ name, type: "f32" });
-const I32 = (name) => ({ name, type: "i32" });
-const VEC2 = (name) => ({ name, type: "vec2" });
 
 export async function makeRenderer(canvas) {
   const device = await createDevice(canvas);
@@ -28,6 +24,10 @@ export async function makeRenderer(canvas) {
   let buf = new Float32Array(0);
   let nSeg = 0;
   let bakeKey = "";
+  // device W/H are cached at creation; track the canvas backing-store size
+  // (device pixels, set by the component) and resize the device to match so
+  // viewport / MSAA targets stay in sync with uResolution below.
+  let curW = canvas.width, curH = canvas.height;
 
   // pack baked segs into RGBA32F texture (width=5, height=NSEG); texel 0 = header (center.xy, hullRadius, t0)
   function packSegs(segs) {
@@ -56,6 +56,10 @@ export async function makeRenderer(canvas) {
   function render(symbol, params) {
     const w = canvas.width, h = canvas.height;
     if (w <= 0 || h <= 0) return;
+    if (w !== curW || h !== curH) {
+      device.resize(w, h);
+      curW = w; curH = h;
+    }
 
     // re-bake + re-upload only when symbol or bake-affecting params change
     const key = JSON.stringify([symbol, params.connect, params.timing]);

@@ -1,4 +1,3 @@
-// Uniform struct fields MUST match the `uniforms` list in index.js, in order.
 struct Uni {
   uResolution: vec2<f32>,
   uClockwise: f32,

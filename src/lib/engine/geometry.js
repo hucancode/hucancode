@@ -9,9 +9,6 @@ export class Geometry {
     this.attributes[name] = { array, itemSize, count: array.length / itemSize, needsUpdate: false };
     return this;
   }
-  getAttribute(name) {
-    return this.attributes[name];
-  }
   setIndex(array) {
     this.index = { array, needsUpdate: false };
     return this;
@@ -32,7 +29,6 @@ export class Geometry {
     }
     return this;
   }
-  dispose() {}
 }
 
 export function boxGeometry(w = 1, h = 1, d = 1) {

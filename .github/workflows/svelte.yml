@@ -37,38 +37,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          target: wasm32-unknown-unknown
-          toolchain: stable
-      - name: Install wasm-bindgen
-        run: |
-          VERSION=$(grep -A1 'name = "wasm-bindgen"$' flying-dragon/Cargo.lock | grep version | sed 's/.*"\(.*\)".*/\1/')
-          cargo install wasm-bindgen-cli --version "$VERSION"
-      - name: Build Flying Dragon WASM
-        run: RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo build --release --target wasm32-unknown-unknown
-        working-directory: ${{ env.BUILD_PATH }}/flying-dragon
-      - name: Make Flying Dragon loader script
-        run: wasm-bindgen $WASM_OUTPUT --out-dir $WEB_OUTPUT --target web --no-typescript
-        working-directory: ${{ env.BUILD_PATH }}
-        env:
-          WASM_OUTPUT: flying-dragon/target/wasm32-unknown-unknown/release/flying-dragon.wasm
-          WEB_OUTPUT: src/lib/wasm/dragon
-      - name: Build Rubik WASM
-        run: RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo build --release --target wasm32-unknown-unknown
-        working-directory: ${{ env.BUILD_PATH }}/rubik
-      - name: Make Rubik loader script
-        run: wasm-bindgen $WASM_OUTPUT --out-dir $WEB_OUTPUT --target web --no-typescript
-        env:
-          WASM_OUTPUT: rubik/target/wasm32-unknown-unknown/release/rubik.wasm
-          WEB_OUTPUT: src/lib/wasm/rubik
       - name: Setup Typst
         uses: typst-community/setup-typst@v4
         with:

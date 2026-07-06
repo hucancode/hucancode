@@ -1,75 +1,40 @@
 <script>
-  import { browser } from "$app/environment";
-  import { onMount, onDestroy } from "svelte";
-  import {
-    CANVAS_ID,
-    init,
-    render,
-    destroy,
-    getCurrentDragonCount,
-    clearDragon,
-    makeDragon,
-    regenerate,
-    setConfig,
-  } from "$lib/playgrounds/dragon";
-
-  let canvas = $state();
-  let frameID = 0;
-  let cancelled = false;
-
-  function loop() {
-    frameID = requestAnimationFrame(loop);
-    render();
-  }
-
-  onMount(() => {
-    init().then(() => {
-      if (cancelled) return;
-      loop();
-    });
-    return () => { cancelled = true; };
-  });
-
-  onDestroy(() => {
-    if (browser) {
-      cancelAnimationFrame(frameID);
-      destroy();
-    }
-  });
+  import PlaygroundCanvas from "$lib/components/playground-canvas.svelte";
+  import * as dragon from "$lib/playgrounds/dragon";
 
   const MAX_DRAGON = 8;
 
   export function performMagic() {
-    if (getCurrentDragonCount() > MAX_DRAGON) {
-      clearDragon();
+    if (dragon.getCurrentDragonCount() > MAX_DRAGON) {
+      dragon.clearDragon();
     }
-    makeDragon();
+    dragon.makeDragon();
   }
 
   // Playground API ---------------------------------------------------------
   // change a knob that only affects the live render (speed, lights)
   export function apply(patch) {
-    setConfig(patch);
+    dragon.setConfig(patch);
   }
   // change a knob that reshapes the curve -> rebuild onto a new path
   export function reshape(patch) {
-    setConfig(patch);
-    regenerate();
+    dragon.setConfig(patch);
+    dragon.regenerate();
   }
   export function newPath() {
-    regenerate();
+    dragon.regenerate();
   }
   export function addDragon() {
-    if (getCurrentDragonCount() >= MAX_DRAGON) return;
-    makeDragon();
+    if (dragon.getCurrentDragonCount() >= MAX_DRAGON) return;
+    dragon.makeDragon();
   }
   export function reset() {
-    clearDragon();
-    makeDragon();
+    dragon.clearDragon();
+    dragon.makeDragon();
   }
   export function count() {
-    return getCurrentDragonCount();
+    return dragon.getCurrentDragonCount();
   }
 </script>
 
-<canvas class="scene-canvas" id={CANVAS_ID} bind:this={canvas}></canvas>
+<PlaygroundCanvas scene={dragon} id="dragon" />

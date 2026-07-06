@@ -10,7 +10,7 @@ import INSTANCED_WGSL from "./shaders/instanced.wgsl?raw";
 import INSTANCED_VERT from "./shaders/instanced.vert.glsl?raw";
 import INSTANCED_FRAG from "./shaders/instanced.frag.glsl?raw";
 
-export const INST_FLOATS = 28; // 3 model rows + 3 normal rows + color, vec4 each
+const INST_FLOATS = 28; // 3 model rows + 3 normal rows + color, vec4 each
 
 // shader descriptor shared by every consumer; spread and add pipeline state
 // (depth/blend/topology/target/sampleCount). blend "straight" honors the
@@ -40,7 +40,7 @@ export const INSTANCED_PROGRAM = {
 };
 
 // inverse-transpose of a row-major 3x3 = cofactor matrix / det
-export function invT3(m) {
+function invT3(m) {
   const [a, b, c, d, e, f, g, h, i] = m;
   const A = e * i - f * h, B = f * g - d * i, C = d * h - e * g;
   const det = a * A + b * B + c * C || 1;
@@ -52,7 +52,7 @@ export function invT3(m) {
 }
 
 // write one item's 28 floats at offset o
-export function packInstance(data, o, it) {
+function packInstance(data, o, it) {
   const m = it.m, t = it.t, n = invT3(m), c = it.color;
   data[o] = m[0]; data[o + 1] = m[1]; data[o + 2] = m[2]; data[o + 3] = t[0];
   data[o + 4] = m[3]; data[o + 5] = m[4]; data[o + 6] = m[5]; data[o + 7] = t[1];

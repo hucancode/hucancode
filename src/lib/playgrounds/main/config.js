@@ -96,7 +96,7 @@ export const INK_EXT = 1.35;
 export const ENSO_EXT = 1.4;
 
 export const BODY_N = 20;
-export const BODY_LEN = 0.8;
+export const BODY_LEN = 1.2;
 export const HEAD_SIZE = 0.1;
 
 export const D3 = { N: 512, bodyFactor: 1.2 };

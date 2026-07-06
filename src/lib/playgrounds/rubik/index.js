@@ -1,4 +1,4 @@
-import { createDevice, Camera, boxGeometry, mat4, animate, stagger, utils, eases } from "$lib/engine/index.js";
+import { createPlayground, createOrbit, boxGeometry, mat4, animate, stagger, utils, eases, MAT4 } from "$lib/engine/index.js";
 import RUBIK_WGSL from "./shaders/rubik.wgsl?raw";
 import VERT from "./shaders/rubik.vert.glsl?raw";
 import FRAG from "./shaders/rubik.frag.glsl?raw";
@@ -21,16 +21,13 @@ const RANDOM_EASES = [
 const config = { speed: 1, autoplay: true, randomEase: true };
 let cubeNum = CUBE_NUM_DEFAULT;
 
-let canvas, device, shader, camera, disposed = false;
+let device = null, shader, orbit;
 let cubes = [];
 let move = null;
 let busy = false;
 let running = false;
 
 const CAM_PITCH = Math.PI / 4;
-let yaw = Math.PI / 4;
-let dragging = false;
-let lastX = 0;
 const _rot = mat4.create();
 const _model = mat4.create();
 const _t = mat4.create();
@@ -202,111 +199,61 @@ function entrance() {
   });
 }
 
-function onDown(e) {
-  dragging = true;
-  lastX = e.touches ? e.touches[0].clientX : e.clientX;
-}
-function onMove(e) {
-  if (!dragging) return;
-  const x = e.touches ? e.touches[0].clientX : e.clientX;
-  yaw += (x - lastX) * 0.01;
-  lastX = x;
-}
-function onUp() {
-  dragging = false;
-}
+const { init, render, destroy } = createPlayground({
+  camera: { fov: 45, near: 1, far: 2000 },
+  init(ctx) {
+    device = ctx.device;
+    shader = device.shader({
+      glsl: { vertex: VERT, fragment: FRAG }, wgsl: RUBIK_WGSL,
+      buffers: [
+        { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
+        { stride: 12, step: "vertex", attributes: [{ name: "color", location: 1, format: "float32x3", offset: 0 }] },
+      ],
+      uniforms: [MAT4("uViewProj"), MAT4("uModel")],
+      depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+    });
+    // orbit yaw = PI/2 - old yaw convention; PI/4 is its own mirror, drag sign matches
+    orbit = createOrbit(ctx.canvas, { yaw: Math.PI / 4, pitch: CAM_PITCH, lockPitch: true });
+    buildCubes();
+    entrance();
+  },
+  frame(_dt, { device, camera }) {
+    orbit.dist = cubeNum * CELL * 2.2 + RUBIK_SIZE * 2;
+    orbit.placeCamera(camera);
+    mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
 
-async function init(canvasEl) {
-  canvas = canvasEl;
-  disposed = false;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  canvas.width = Math.max(1, Math.floor(w * dpr));
-  canvas.height = Math.max(1, Math.floor(h * dpr));
-  device = await createDevice(canvas);
-  if (disposed) { device.destroy(); device = null; return; }
-  device.resize(canvas.width, canvas.height);
-  shader = device.shader({
-    glsl: { vertex: VERT, fragment: FRAG }, wgsl: RUBIK_WGSL,
-    buffers: [
-      { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
-      { stride: 12, step: "vertex", attributes: [{ name: "color", location: 1, format: "float32x3", offset: 0 }] },
-    ],
-    uniforms: [
-      { name: "uViewProj", type: "mat4" },
-      { name: "uModel", type: "mat4" },
-    ],
-    depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
-  });
-  camera = new Camera(45, w / h, 1, 2000);
-  camera.up.set(0, 1, 0);
-  buildCubes();
-  entrance();
-  canvas.addEventListener("pointerdown", onDown);
-  window.addEventListener("pointermove", onMove);
-  window.addEventListener("pointerup", onUp);
-}
-
-function placeCamera() {
-  const r = (cubeNum * CELL) * 2.2 + RUBIK_SIZE * 2, cp = Math.cos(CAM_PITCH);
-  camera.position.set(r * cp * Math.cos(yaw), r * Math.sin(CAM_PITCH), r * cp * Math.sin(yaw));
-  camera.lookAt(0, 0, 0);
-}
-
-function syncSize() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  const tw = Math.max(1, Math.floor(w * dpr)), th = Math.max(1, Math.floor(h * dpr));
-  if (canvas.width === tw && canvas.height === th) return;
-  canvas.width = tw; canvas.height = th;
-  device.resize(tw, th);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-
-function render() {
-  if (!device || !shader) return;
-  syncSize();
-  placeCamera();
-  camera.update();
-  mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
-
-  device.beginFrame();
-  device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
-    for (let i = 0; i < cubes.length; i++) {
-      const cube = cubes[i];
-      let model = cube.base;
-      if (move && move.idx.includes(i)) {
-        mat4.multiply(_model, rotationFor(move.axis, move.angle.v), cube.base);
-        model = _model;
+    device.beginFrame();
+    device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
+      for (let i = 0; i < cubes.length; i++) {
+        const cube = cubes[i];
+        let model = cube.base;
+        if (move && move.idx.includes(i)) {
+          mat4.multiply(_model, rotationFor(move.axis, move.angle.v), cube.base);
+          model = _model;
+        }
+        mat4.translation(_t, cube.intro.x, cube.intro.y, 0);
+        mat4.multiply(_t, _t, model);
+        p.draw(shader, {
+          buffers: [cube.posBuf, cube.colorBuf],
+          count: cube.count,
+          uniforms: { uViewProj: _vp, uModel: _t },
+        });
       }
-      mat4.translation(_t, cube.intro.x, cube.intro.y, 0);
-      mat4.multiply(_t, _t, model);
-      p.draw(shader, {
-        buffers: [cube.posBuf, cube.colorBuf],
-        count: cube.count,
-        uniforms: { uViewProj: _vp, uModel: _t },
-      });
-    }
-  });
-  device.endFrame();
-}
-
-function destroy() {
-  disposed = true;
-  running = false;
-  busy = false;
-  if (move) utils.remove(move.angle);
-  utils.remove(cubes.map((c) => c.intro));
-  move = null;
-  if (canvas) {
-    canvas.removeEventListener("pointerdown", onDown);
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", onUp);
-  }
-  disposeCubes();
-  shader = null;
-  if (device) { device.destroy(); device = null; }
-}
+    });
+    device.endFrame();
+  },
+  destroy() {
+    running = false;
+    busy = false;
+    if (move) utils.remove(move.angle);
+    utils.remove(cubes.map((c) => c.intro));
+    move = null;
+    orbit?.detach();
+    orbit = null;
+    disposeCubes();
+    shader = null;
+    device = null;
+  },
+});
 
 export { init, render, destroy, setConfig, setCubeSize, step, resume, config };

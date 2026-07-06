@@ -4,12 +4,10 @@
 // one merged palette resolves colors for any template.
 
 import * as head from "./dragon.js";
-import * as body from "./dragon_body.js";
 import * as eagle from "./eagle.js";
 
 export const TEMPLATES = [
   { id: "dragon-head", name: "Dragon Head", ...head },
-  { id: "dragon-body", name: "Dragon Body", ...body },
   { id: "eagle", name: "Eagle", ...eagle },
 ];
 

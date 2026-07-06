@@ -1,13 +1,16 @@
-import { createDevice, mat4, planeGeometry } from "$lib/engine/index.js";
+import { createDevice, mat4, planeGeometry, F32, VEC4, MAT4 } from "$lib/engine/index.js";
+import { catmullOpen } from "$lib/math/curve.js";
+import { clamp, smooth } from "$lib/math/scalar.js";
 import BASIC_VERT from "./shaders/basic.vert.glsl?raw";
 import POLYLINE_VERT from "./shaders/stroke-polyline.vert.glsl?raw";
 import STROKE_FRAG from "./shaders/stroke.frag.glsl?raw";
 import PAPER_FRAG from "./shaders/paper-background.frag.glsl?raw";
-import WATERDROP_FRAGMENT_SHADER from "./shaders/waterdrop.frag.glsl?raw";
 import DRAGON_HEAD_FRAGMENT_SHADER from "./shaders/dragon-head.frag.glsl?raw";
+import WHISKER_VERT from "./shaders/whisker.vert.glsl?raw";
+import WHISKER_FRAG from "./shaders/whisker.frag.glsl?raw";
 import PAPER_WGSL from "./shaders/paper.wgsl?raw";
 import STROKE_WGSL from "./shaders/stroke.wgsl?raw";
-import WATERDROP_WGSL from "./shaders/waterdrop.wgsl?raw";
+import WHISKER_WGSL from "./shaders/whisker.wgsl?raw";
 import HEAD_WGSL from "./shaders/dragon-head.wgsl?raw";
 import {
   makePolylineStroke,
@@ -20,19 +23,16 @@ const PAPER_COLOR = [1.0, 1.0, 0.875, 1.0];
 const BODY_MAX_POINTS = 64;
 const WHISKER_MAX_POINTS = 80;
 const WHISKER_SAMPLES_PER_SEGMENT = 4;
+// mesh-side taper: end = tip width fraction, offset/range = smoothstep centre/softness
+const WHISKER_TAPER = { end: 0.0, offset: 0.4, range: 0.8 };
 
 const HEAD_PLANE_W = 2.4;
 const HEAD_PLANE_H = 1.6;
 
 const brushColor = [0.05, 0.05, 0.05, 0.95];
 
-const F32 = (name) => ({ name, type: "f32" });
-const VEC4 = (name) => ({ name, type: "vec4" });
-const MAT4 = (name) => ({ name, type: "mat4" });
-
 const BUF_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
 const BUF_UV = { stride: 8, step: "vertex", attributes: [{ name: "uv", location: 1, format: "float32x2", offset: 0 }] };
-const BUF_STROKE_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
 const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };
 
 let canvas, device, disposed = false;
@@ -40,7 +40,9 @@ let pPaper, pBody, pBodyWire, pWhisker, pHead;
 let quadPosBuf, quadUVBuf, headPosBuf, headUVBuf;
 let bodyPosBuf, bodyUVBuf, bodyIdxBuf, bodyIdxCount = 0;
 let bodyStroke = null;
-let whiskerStrokes = [null, null];
+// whiskers are ribbon strokes like the body (thin clean line: 1 strand, no
+// wobble/water), each with its own GPU buffers
+let whiskers = [null, null];
 let aspect = 1;
 let bodyWireframe = false;
 
@@ -58,116 +60,47 @@ const headState = {
 };
 let headVisible = true;
 
-function makeWhiskerStroke({ maxPoints, params }) {
-  const data = new Float32Array(maxPoints * 4);
-  const tex = device.texture({ width: maxPoints, height: 1, format: "rgba32f", filter: "nearest", data });
-  return {
-    tex, data, maxPoints,
-    lastPts: null,
-    bgColor: params.bgColor,
-    params: {
-      curveLen: 0,
-      curveTotalLen: 1,
-      curveTexWidth: maxPoints,
-      uOffset: 0.0,
-      uArcLength: 1.0,
-      uLineWidth: params.width,
-      uInkFlow: params.inkFlow,
-      uOpacity: params.opacity,
-      uWidthEnd: params.widthEnd,
-      uWidthOffset: params.widthOffset,
-      uWidthRange: params.widthRange,
-    },
-  };
-}
-
-// cubic-bezier control points per segment from neighbor tangents
-function buildBezierSegments(pts) {
-  const n = pts.length;
-  const segs = [];
-  for (let i = 0; i < n - 1; i++) {
-    const p0 = pts[i];
-    const p1 = pts[i + 1];
-    const prev = i > 0     ? pts[i - 1] : p0;
-    const next = i < n - 2 ? pts[i + 2] : p1;
-    const c1 = {
-      x: p0.x + (p1.x - prev.x) / 6,
-      y: p0.y + (p1.y - prev.y) / 6,
-    };
-    const c2 = {
-      x: p1.x - (next.x - p0.x) / 6,
-      y: p1.y - (next.y - p0.y) / 6,
-    };
-    segs.push({ p0, c1, c2, p1 });
-  }
-  return segs;
-}
-
-function sampleBezier(seg, t) {
-  const omt = 1 - t;
-  const a = omt * omt * omt;
-  const b = 3 * omt * omt * t;
-  const c = 3 * omt * t * t;
-  const d = t * t * t;
-  return {
-    x: a * seg.p0.x + b * seg.c1.x + c * seg.c2.x + d * seg.p1.x,
-    y: a * seg.p0.y + b * seg.c1.y + c * seg.c2.y + d * seg.p1.y,
-  };
-}
-
+// smooth control polyline with an open Catmull-Rom spline (endpoints clamped);
+// identical curve to the old per-segment cubic-bezier (handles p+(next-prev)/6
+// ARE the Catmull-Rom -> Bezier conversion). Sample distribution preserved:
+// perSeg samples per control segment at t = k/perSeg, final endpoint appended.
 function smoothChain(controlPoints, perSegment, maxPoints) {
   if (controlPoints.length < 2) return [];
   if (perSegment <= 1) {
     return controlPoints.slice(0, Math.min(controlPoints.length, maxPoints));
   }
-  const segs = buildBezierSegments(controlPoints);
-  const perSeg = Math.max(1, Math.min(perSegment, Math.floor((maxPoints - 1) / segs.length)));
-  const totalSamples = Math.min(segs.length * perSeg + 1, maxPoints);
+  const nSeg = controlPoints.length - 1;
+  const perSeg = Math.max(1, Math.min(perSegment, Math.floor((maxPoints - 1) / nSeg)));
+  const totalSamples = Math.min(nSeg * perSeg + 1, maxPoints);
   const pts = new Array(totalSamples);
   let idx = 0;
-  for (let s = 0; s < segs.length && idx < totalSamples; s++) {
+  for (let s = 0; s < nSeg && idx < totalSamples; s++) {
     for (let k = 0; k < perSeg && idx < totalSamples; k++) {
-      pts[idx++] = sampleBezier(segs[s], k / perSeg);
+      const p = catmullOpen(controlPoints, s + k / perSeg);
+      pts[idx++] = { x: p.x, y: p.y };
     }
   }
   if (idx < totalSamples) {
-    const last = segs[segs.length - 1];
-    pts[idx++] = { x: last.p1.x, y: last.p1.y };
+    const last = controlPoints[controlPoints.length - 1];
+    pts[idx++] = { x: last.x, y: last.y };
   }
   pts.length = idx;
   return pts;
 }
 
-function writeWhisker(stroke, controlPoints, perSegment) {
-  const { data, tex, params, maxPoints } = stroke;
-  const pts = smoothChain(controlPoints, perSegment, maxPoints);
-  if (pts.length < 2) {
-    params.curveLen = 0;
-    params.curveTotalLen = 1;
-    stroke.lastPts = null;
-    return;
+// re-mesh a whisker ribbon and upload to its GPU buffers. The whisker vertex
+// shader is a pure passthrough, so bake the aspect divide into the positions.
+function writeWhisker(w, controlPoints, perSegment) {
+  const pts = smoothChain(controlPoints, perSegment, w.stroke.maxPoints);
+  updatePolylineStroke(w.stroke, pts);
+  if (w.stroke.n >= 2) {
+    const pos = w.stroke.positions;
+    for (let i = 0; i < pos.length; i += 3) pos[i] /= aspect;
+    w.posBuf.write(pos);
+    w.idxCount = w.stroke.geom.drawRange ? w.stroke.geom.drawRange.count : 0;
+  } else {
+    w.idxCount = 0;
   }
-  let acc = 0;
-  for (let i = 0; i < pts.length; i++) {
-    if (i > 0) {
-      const dx = pts[i].x - pts[i - 1].x;
-      const dy = pts[i].y - pts[i - 1].y;
-      acc += Math.hypot(dx, dy);
-    }
-    const o = i * 4;
-    data[o + 0] = pts[i].x;
-    data[o + 1] = pts[i].y;
-    data[o + 2] = acc;
-    data[o + 3] = 0;
-  }
-  for (let i = pts.length; i < maxPoints; i++) {
-    const o = i * 4;
-    data[o + 0] = data[o + 1] = data[o + 2] = data[o + 3] = 0;
-  }
-  tex.write(data, maxPoints, 1);
-  params.curveLen = pts.length;
-  params.curveTotalLen = Math.max(acc, 1e-6);
-  stroke.lastPts = pts;
 }
 
 function updateHeadTransform() {
@@ -211,25 +144,20 @@ export async function init(canvasEl) {
   ];
   pBody = device.shader({
     glsl: { vertex: POLYLINE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
-    buffers: [BUF_STROKE_POS, BUF_STROKE_UV],
+    buffers: [BUF_POS, BUF_STROKE_UV],
     uniforms: strokeUniforms,
     blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
   });
   pBodyWire = device.shader({
     glsl: { vertex: POLYLINE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
-    buffers: [BUF_STROKE_POS, BUF_STROKE_UV],
+    buffers: [BUF_POS, BUF_STROKE_UV],
     uniforms: strokeUniforms,
     blend: "straight", topology: "line-strip", target: "screen", sampleCount: 4,
   });
   pWhisker = device.shader({
-    glsl: { vertex: BASIC_VERT, fragment: WATERDROP_FRAGMENT_SHADER }, wgsl: WATERDROP_WGSL,
-    buffers: [BUF_POS, BUF_UV],
-    uniforms: [
-      MAT4("uModel"), F32("uAspect"), F32("curveLen"), F32("curveTotalLen"), F32("curveTexWidth"),
-      F32("uOffset"), F32("uArcLength"), F32("uLineWidth"), F32("uInkFlow"), F32("uOpacity"),
-      F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), VEC4("uBrushColor"), VEC4("uBgColor"),
-    ],
-    textures: [{ name: "curveTex", binding: 1 }],
+    glsl: { vertex: WHISKER_VERT, fragment: WHISKER_FRAG }, wgsl: WHISKER_WGSL,
+    buffers: [BUF_POS],
+    uniforms: [VEC4("uBrushColor")],
     blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
   });
   pHead = device.shader({
@@ -263,16 +191,29 @@ export async function init(canvasEl) {
   bodyIdxBuf.write(bodyStroke.geom.index.array);
 
   for (let i = 0; i < 2; i++) {
-    whiskerStrokes[i] = makeWhiskerStroke({
+    const stroke = makePolylineStroke({
       maxPoints: WHISKER_MAX_POINTS,
-      params: {
-        width: 0.01,
-        widthEnd: 0.0, widthOffset: 0.4, widthRange: 0.8,
-        inkFlow: 0.6,
-        opacity: 1.0,
-        bgColor: [0, 0, 0, 0],
+      params: { lineWidth: 0.01 },
+      brushColor,
+      // taper baked into the mesh: full width at the anchor (arcT = 1, points
+      // reversed in setWhisker), tapering to zero at the free tip (arcT = 0)
+      widthAt: (t, s) => {
+        const relArc = 1 - t;
+        const curve = smooth(clamp((relArc - WHISKER_TAPER.offset + WHISKER_TAPER.range * 0.5) / WHISKER_TAPER.range, 0, 1));
+        return s.lineWidth * (1 - curve * (1 - WHISKER_TAPER.end));
       },
+      // exact-width mesh, no bleed margins: fragment shader is a flat fill
+      perpClearance: 0,
+      arcClearance: 0,
     });
+    const w = {
+      stroke,
+      posBuf: device.buffer({ kind: "vertex", size: 0, dynamic: true }),
+      idxBuf: device.buffer({ kind: "index", size: 0, dynamic: true }),
+      idxCount: 0,
+    };
+    w.idxBuf.write(stroke.geom.index.array);
+    whiskers[i] = w;
   }
 
   updateHeadTransform();
@@ -309,17 +250,11 @@ export function render() {
       });
     }
 
-    for (const s of whiskerStrokes) {
-      if (!s || s.params.curveLen < 2) continue;
-      const wp = s.params;
+    for (const w of whiskers) {
+      if (!w || w.stroke.n < 2 || w.idxCount <= 0) continue;
       p.draw(pWhisker, {
-        buffers: [quadPosBuf, quadUVBuf], count: 6, textures: { curveTex: s.tex },
-        uniforms: {
-          uModel: IDENTITY, uAspect: aspect, curveLen: wp.curveLen, curveTotalLen: wp.curveTotalLen,
-          curveTexWidth: wp.curveTexWidth, uOffset: wp.uOffset, uArcLength: wp.uArcLength,
-          uLineWidth: wp.uLineWidth, uInkFlow: wp.uInkFlow, uOpacity: wp.uOpacity, uWidthEnd: wp.uWidthEnd,
-          uWidthOffset: wp.uWidthOffset, uWidthRange: wp.uWidthRange, uBrushColor: brushColor, uBgColor: s.bgColor,
-        },
+        buffers: [w.posBuf], index: w.idxBuf, count: w.idxCount,
+        uniforms: { uBrushColor: w.stroke.brushColor },
       });
     }
 
@@ -357,17 +292,17 @@ export function setControlPoints(points) {
 }
 
 export function setWhisker(slot, points) {
-  const s = whiskerStrokes[slot];
-  if (!s) return;
+  const w = whiskers[slot];
+  if (!w || !device) return;
   // caller passes anchor -> free-tip. stroke convention: arc=0 = thick end.
   // reverse so anchor (at dragon head) sits at arc=0 -> renders thick
-  writeWhisker(s, points.slice().reverse(), WHISKER_SAMPLES_PER_SEGMENT);
+  writeWhisker(w, points.slice().reverse(), WHISKER_SAMPLES_PER_SEGMENT);
 }
 
 export function setWhiskerWidth(v) {
-  for (const s of whiskerStrokes) {
-    if (!s) continue;
-    s.params.uLineWidth = v;
+  for (const w of whiskers) {
+    if (!w) continue;
+    w.stroke.lineWidth = v; // re-meshed (and aspect-baked) on the next setWhisker
   }
 }
 
@@ -383,16 +318,19 @@ export function destroy() {
   disposed = true;
   quadPosBuf?.destroy(); quadUVBuf?.destroy(); headPosBuf?.destroy(); headUVBuf?.destroy();
   bodyPosBuf?.destroy(); bodyUVBuf?.destroy(); bodyIdxBuf?.destroy();
-  for (const s of whiskerStrokes) s?.tex?.destroy();
+  for (const w of whiskers) {
+    if (!w) continue;
+    w.posBuf?.destroy(); w.idxBuf?.destroy();
+  }
   quadPosBuf = quadUVBuf = headPosBuf = headUVBuf = null;
   bodyPosBuf = bodyUVBuf = bodyIdxBuf = null;
   pPaper = pBody = pBodyWire = pWhisker = pHead = null;
   bodyStroke = null;
-  whiskerStrokes = [null, null];
+  whiskers = [null, null];
   if (device) { device.destroy(); device = null; }
 }
 
-export function screenToWorld(x, y, w, h) {
+function screenToWorld(x, y, w, h) {
   const a = w / h;
   const u = x / w;
   const v = 1.0 - y / h;
