@@ -1,46 +1,28 @@
 <script>
-  import "$styles/playground.css";
-  import { onMount } from "svelte";
-  import rough from "roughjs";
-  import Dragon from "$icons/game-icons/dragon.svg?raw";
-  import Cube from "$icons/mdi/cube.svg?raw";
-  import Planet from "$icons/ph/planet.svg?raw";
-  import Return from "$icons/line-md/chevron-left.svg?raw";
-
   const playgrounds = [
-    { href: "/dragon", name: "Dragon", icon: Dragon, thumb: "/assets/thumb/dragon.png" },
-    { href: "/rubik", name: "Rubik", icon: Cube, thumb: "/assets/thumb/rubik.png" },
-    { href: "/taiji", name: "Taiji", icon: Planet, thumb: "/assets/thumb/taiji.png" },
-    { href: "/enso", name: "Ensō", icon: Planet, thumb: "/assets/thumb/enso.png" },
-    { href: "/ink-dragon", name: "Ink Dragon", icon: Dragon, thumb: "/assets/thumb/ink-dragon.png" },
-    { href: "/caligraphy", name: "Caligraphy", icon: Planet, thumb: "/assets/thumb/caligraphy.png" },
-    { href: "/lego", name: "Lego", icon: Cube, thumb: "/assets/thumb/lego.png" },
-    { href: "/mech", name: "Mech", icon: Cube, thumb: "/assets/thumb/mech.png" },
+    { href: "/dragon", name: "Dragon", thumb: "/assets/thumb/dragon.png" },
+    { href: "/rubik", name: "Rubik", thumb: "/assets/thumb/rubik.png" },
+    { href: "/taiji", name: "Taiji", thumb: "/assets/thumb/taiji.png" },
+    { href: "/enso", name: "Ensō", thumb: "/assets/thumb/enso.png" },
+    { href: "/ink-dragon", name: "Ink Dragon", thumb: "/assets/thumb/ink-dragon.png" },
+    { href: "/caligraphy", name: "Caligraphy", thumb: "/assets/thumb/caligraphy.png" },
+    { href: "/lego", name: "Lego", thumb: "/assets/thumb/lego.png" },
+    { href: "/mech", name: "Mech", thumb: "/assets/thumb/mech.png" },
   ];
-
 </script>
 
 <svelte:head>
   <title>Playgrounds</title>
 </svelte:head>
 
+<nav><a href="/">Home</a></nav>
 <main>
-  <nav><a href="/">{@html Return} Home</a></nav>
   <ul>
-    {#each playgrounds as p, i}
+    {#each playgrounds as p}
       <li>
         <a href={p.href}>
           <figure>
-            <img
-              src={p.thumb}
-              alt={p.name}
-              loading="lazy"
-              onerror={(e) => {
-                e.currentTarget.style.display = "none";
-                e.currentTarget.nextElementSibling.style.display = "grid";
-              }}
-            />
-            <span style="display:none">{@html p.icon}</span>
+            <img src={p.thumb} alt={p.name} loading="lazy" />
           </figure>
           <span>{p.name}</span>
         </a>
@@ -50,12 +32,13 @@
 </main>
 
 <style>
+  nav {
+    max-width: 1280px;
+    padding: 4rem 1.5rem 0;
+  }
   main {
-    position: relative;
-    flex-direction: column;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 4rem 1.5rem;
+    max-width: 1280px;
+    padding: 1rem 1.5rem 4rem;
   }
   ul {
     list-style: none;
@@ -69,23 +52,12 @@
     border: 1px dashed var(--color-neutral-500);
   }
   li > a {
-    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     padding: 0.75rem;
     color: var(--ink);
     background: color-mix(in srgb, var(--paper) 70%, transparent);
-    transition: transform 0.15s ease;
-  }
-  li > a > svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    overflow: visible;
-    opacity: 0.15;
   }
   figure {
     margin: 0;
@@ -99,11 +71,5 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-  }
-  figure span :global(svg) {
-    width: 3rem;
-    height: 3rem;
-    fill: var(--ink);
-    opacity: 0.45;
   }
 </style>

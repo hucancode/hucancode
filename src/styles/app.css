@@ -105,6 +105,30 @@ nav:has(> :only-child) {
   justify-content: center;
 }
 
+nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--link);
+  text-decoration: none;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+nav a:hover {
+  opacity: 0.7;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1024px;
+  margin-inline: auto;
+  padding: 1rem;
+  gap: 1rem;
+}
+
 video {
   max-width: 100%;
 }

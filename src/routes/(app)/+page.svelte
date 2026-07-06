@@ -361,9 +361,11 @@
     font-size: 0.8rem;
     opacity: 0.85;
   }
-  /* tall scroll track; the stage inside stays stuck to the viewport */
+  /* tall scroll track; the stage inside stays stuck to the viewport
+     (overrides the global <main> width clamp and padding) */
   main {
-    position: relative;
+    max-width: none;
+    padding: 0;
   }
   main > div {
     position: sticky;

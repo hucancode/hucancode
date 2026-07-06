@@ -121,8 +121,4 @@
     font-size: 0.875em;
   }
 
-  :global(.dark) .inline-code {
-    background: var(--color-neutral-800);
-    color: var(--color-neutral-50);
-  }
 </style>

@@ -1,14 +1,20 @@
 <script>
-  import Scene from "$lib/components/rubik.svelte";
+  import Scene from "$lib/components/playground-canvas.svelte";
+  import * as rubik from "$lib/playgrounds/rubik";
 
-  let scene = $state(null);
   let size = $state(3);
   let speed = $state(1);
   let autoplay = $state(true);
   let randomEase = $state(true);
 
+  // cube size must be set before the canvas host mounts (re-keyed below)
+  function sized(s) {
+    rubik.setCubeSize(s);
+    return rubik;
+  }
+
   $effect(() => {
-    scene?.apply({ speed, autoplay, randomEase });
+    rubik.setConfig({ speed, autoplay, randomEase });
   });
 </script>
 
@@ -18,7 +24,7 @@
 
   <section>
     {#key size}
-      <Scene bind:this={scene} {size} />
+      <Scene scene={sized(size)} id="rubik" />
     {/key}
   </section>
 
@@ -47,7 +53,7 @@
 
     {#if !autoplay}
       <menu>
-        <li><button onclick={() => scene?.stepOnce()}>▶ One move</button></li>
+        <li><button onclick={() => rubik.step()}>▶ One move</button></li>
       </menu>
     {/if}
   </aside>

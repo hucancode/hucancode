@@ -761,7 +761,7 @@
   [aria-label="storage slots"] label:has(:checked) { opacity: 1; font-weight: 600; }
   label > em { font-style: normal; font-size: 0.55rem; vertical-align: super; opacity: 0.7; }
   /* part/assembly lists: pick button (with color swatch) + delete button per row */
-  ul, ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
+  ul, ol { display: grid; gap: 0.15rem; }
   :is(ul, ol) li { display: flex; align-items: center; gap: 0.25rem; }
   :is(ul, ol) li > button:first-child { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
   :is(ul, ol) li > button[aria-pressed="true"] { opacity: 1; font-weight: 600; }

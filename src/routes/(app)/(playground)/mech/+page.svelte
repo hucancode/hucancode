@@ -282,7 +282,7 @@
 
 <style>
   /* layout, HUD footer, fieldset controls come from playground.css */
-  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; }
+  ul { display: grid; gap: 0.2rem; }
   ul label { display: block; padding: 0.15rem 0.4rem; cursor: pointer; border-radius: 0.25rem; }
   ul label:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
   ul label:has(:checked) { outline: 1px solid color-mix(in srgb, currentColor 40%, transparent); font-weight: 600; }
