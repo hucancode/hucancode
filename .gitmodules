@@ -1,8 +1,0 @@
-[submodule "flying-dragon"]
-	path = flying-dragon
-	branch = master
-	url = https://github.com/hucancode/flying-dragon.git
-[submodule "rubik"]
-	path = rubik
-	branch = master
-	url = https://github.com/hucancode/rubik.git

@@ -2,7 +2,6 @@
   import Scene from "$lib/components/rubik.svelte";
   import Return from "$icons/line-md/chevron-left.svg?raw";
 
-  let version = $state("webgl");
   let scene = $state(null);
   let size = $state(3);
   let speed = $state(1);
@@ -11,33 +10,6 @@
 
   $effect(() => {
     scene?.apply({ speed, autoplay, randomEase });
-  });
-
-  const whiteList = ["This isn't actually an error!"];
-  let error = $state(false);
-  let rustCanvas = $state();
-  let rustStarted = false;
-
-  async function startRust() {
-    if (rustStarted) return;
-    rustStarted = true;
-    error = false;
-    try {
-      const { default: init } = await import("$lib/wasm/rubik/rubik.js");
-      await init();
-    } catch (e) {
-      const msg = e?.message ?? String(e);
-      if (whiteList.every((token) => msg.indexOf(token) < 0)) {
-        error = true;
-        throw e;
-      }
-    } finally {
-      if (rustCanvas) rustCanvas.style = undefined;
-    }
-  }
-
-  $effect(() => {
-    if (version === "rust") startRust();
   });
 </script>
 
@@ -49,64 +21,38 @@
 
 <main>
   <section>
-    {#if version === "webgl"}
-      {#key size}
-        <Scene bind:this={scene} {size} />
-      {/key}
-    {:else}
-      <div class="rust">
-        {#if error}
-          <p>Live render failed — here is a recording instead.</p>
-          <video autoplay loop muted playsinline>
-            <source src="/assets/video/rubik-rust.webm" type="video/webm" />
-          </video>
-        {/if}
-        <canvas bind:this={rustCanvas}></canvas>
-      </div>
-    {/if}
+    {#key size}
+      <Scene bind:this={scene} {size} />
+    {/key}
   </section>
 
   <aside>
     <fieldset>
-      <legend>renderer</legend>
+      <legend>parameters</legend>
       <label>
-        <span>Version</span>
-        <select bind:value={version}>
-          <option value="webgl">WebGL</option>
-          <option value="rust">WebGPU · Rust/WASM</option>
-        </select>
-        <output></output>
+        <span>Cube size</span>
+        <input type="range" min="2" max="6" step="1" bind:value={size} />
+        <output>{size}³</output>
+      </label>
+      <label>
+        <span>Turn speed</span>
+        <input type="range" min="0.25" max="3" step="0.25" bind:value={speed} />
+        <output>{speed.toFixed(2)}</output>
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={autoplay} />
+        <span>Auto-shuffle</span>
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={randomEase} />
+        <span>Random easing</span>
       </label>
     </fieldset>
 
-    {#if version === "webgl"}
-      <fieldset>
-        <legend>parameters</legend>
-        <label>
-          <span>Cube size</span>
-          <input type="range" min="2" max="6" step="1" bind:value={size} />
-          <output>{size}³</output>
-        </label>
-        <label>
-          <span>Turn speed</span>
-          <input type="range" min="0.25" max="3" step="0.25" bind:value={speed} />
-          <output>{speed.toFixed(2)}</output>
-        </label>
-        <label>
-          <input type="checkbox" bind:checked={autoplay} />
-          <span>Auto-shuffle</span>
-        </label>
-        <label>
-          <input type="checkbox" bind:checked={randomEase} />
-          <span>Random easing</span>
-        </label>
-      </fieldset>
-
-      {#if !autoplay}
-        <div class="buttons">
-          <button onclick={() => scene?.stepOnce()}>▶ One move</button>
-        </div>
-      {/if}
+    {#if !autoplay}
+      <div class="buttons">
+        <button onclick={() => scene?.stepOnce()}>▶ One move</button>
+      </div>
     {/if}
   </aside>
 </main>
