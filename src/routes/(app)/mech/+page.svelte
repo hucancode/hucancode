@@ -39,8 +39,8 @@
     hinge1: "hinge 1",
     hinge2: "hinge 2",
     hinge3: "hinge 3",
-    pivot1: "pivot 1 · double pivot",
-    ball1: "ball 1 · ball + socket",
+    pivot1: "pivot 1",
+    ball1: "ball 1",
   };
   const PRIM_LABELS = {
     cylinder: "cylinder", cone: "cone", coneCut: "cut cone",
@@ -165,7 +165,7 @@
             <li><button type="button" class:on={selPart === pn} onclick={() => (selPart = pn)}>{PART_LABELS[pn] ?? pn}</button></li>
           {/each}
         </ul>
-        <div class="grp">joints — mechanism blocks</div>
+        <hr/>
         <ul class="jlist">
           {#each JOINTS as jn}
             <li><button type="button" class:on={selPart === jn} onclick={() => (selPart = jn)}>{PART_LABELS[jn] ?? jn}</button></li>
@@ -173,7 +173,7 @@
         </ul>
       </fieldset>
       <fieldset>
-        <legend>{PART_LABELS[selPart] ?? selPart} params <button type="button" class="add" onclick={resetJointParams}>↺ reset</button></legend>
+        <legend>params<button type="button" class="add" onclick={resetJointParams}>↺ reset</button></legend>
         {#each PART_CTL[selPart] as [key, label, min, max, step]}
           <label><span>{label}</span>
             <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selPart][key]}
@@ -192,7 +192,7 @@
       </fieldset>
     {:else if view === "dragon"}
       <fieldset>
-        <legend>dragon rig <button type="button" class="add" onclick={resetDragon}>↺ reset</button></legend>
+        <legend>rig<button type="button" class="add" onclick={resetDragon}>↺ reset</button></legend>
         <label class="chk"><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
         {#each DRAGON_CTL as [key, label, min, max, step]}
           <label><span>{label}</span>

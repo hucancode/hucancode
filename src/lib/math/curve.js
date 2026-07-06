@@ -1,4 +1,4 @@
-import { TAU, clamp, lerp } from "./scalar.js";
+import { clamp, lerp } from "./scalar.js";
 
 // Catmull-Rom basis through control values p0..p3 at fraction f. component-wise
 export function crComp(p0, p1, p2, p3, f) {
@@ -90,68 +90,3 @@ export function buildOpenSpline(pivots) {
   return { ...curve, arcAtU };
 }
 
-// Even pivots around ring; z = zAmp*sin(waves*turn) closes at seam, lobes dip
-// radius inward up to lobeDepth*radius, lobes times per revolution.
-export function orbitPivots(count, radius, zAmp, waves, phase, lobes = 0, lobeDepth = 0) {
-  const pts = new Array(count);
-  for (let k = 0; k < count; k++) {
-    const f = k / count;
-    const a = phase + f * TAU;
-    // lobe dip phased so pivot 0 (the ring ENTRY) sits on a lobe OUTER
-    // (g=0, full radius) — entry tangent stays circular, connector stays tame
-    const g = lobes > 0 ? 0.5 - 0.5 * Math.cos(lobes * f * TAU) : 0;
-    const r = radius * (1 - lobeDepth * g);
-    pts[k] = { x: r * Math.cos(a), y: r * Math.sin(a), z: zAmp * Math.sin(waves * f * TAU) };
-  }
-  return pts;
-}
-
-// Rotate first pivot about split point so head's peel-off bearing stays within
-// maxTurn of split heading -> no sharp exit turn.
-export function clampExitPivot(pivots, split, maxTurn) {
-  const p = pivots[0];
-  const vx = p.x - split.x, vy = p.y - split.y;
-  const r = Math.hypot(vx, vy) || 1e-6;
-  const heading = Math.atan2(split.dir.y, split.dir.x);
-  let diff = Math.atan2(vy, vx) - heading;
-  while (diff > Math.PI) diff -= TAU;
-  while (diff < -Math.PI) diff += TAU;
-  const nb = heading + clamp(diff, -maxTurn, maxTurn);
-  pivots[0] = { x: split.x + r * Math.cos(nb), y: split.y + r * Math.sin(nb), z: p.z };
-}
-
-// Turn angle at pivot i on closed ring (angle between incoming/outgoing legs)
-export function turnAngle(P, i) {
-  const K = P.length;
-  const a = P[(i - 1 + K) % K], b = P[i], c = P[(i + 1) % K];
-  const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z;
-  const vx = c.x - b.x, vy = c.y - b.y, vz = c.z - b.z;
-  const ul = Math.hypot(ux, uy, uz) || 1e-6;
-  const vl = Math.hypot(vx, vy, vz) || 1e-6;
-  return Math.acos(clamp((ux * vx + uy * vy + uz * vz) / (ul * vl), -1, 1));
-}
-
-// Shape closed pivot ring's turn angles: push too-straight pivots away from
-// neighbour midpoint (more bend), pull Nth-consecutive sharp pivots toward it.
-export function relaxTurns(P, minTurn, maxTurn, maxRun, movable, iters) {
-  const K = P.length;
-  for (let it = 0; it < iters; it++) {
-    let sharpRun = 0;
-    for (let i = 0; i < K; i++) {
-      const ang = turnAngle(P, i);
-      const sharp = ang > maxTurn;
-      sharpRun = sharp ? sharpRun + 1 : 0;
-      if (!movable(i)) continue;
-      let w = 0;
-      if (sharp) {
-        if (sharpRun < maxRun) continue;
-        w = 0.5; sharpRun = 0;
-      } else if (ang < minTurn) {
-        w = -clamp((minTurn - ang) * 0.6, 0, 0.3);
-      } else continue;
-      const a = P[(i - 1 + K) % K], b = P[i], c = P[(i + 1) % K];
-      const mx = (a.x + c.x) * 0.5, my = (a.y + c.y) * 0.5, mz = (a.z + c.z) * 0.5;
-      P[i] = { x: lerp(b.x, mx, w), y: lerp(b.y, my, w), z: lerp(b.z, mz, w) };
-    }
-  }
-}

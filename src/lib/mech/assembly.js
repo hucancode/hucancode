@@ -1,4 +1,4 @@
-import { m3Mul } from "./rig.js";
+import { m3Mul, m3AxisAngle } from "../math/mat3.js";
 
 // ---- ASSEMBLY ANIMATION --------------------------------------------------------
 // The dragon builds itself in FOUR phases, hierarchically: primitives belong
@@ -40,15 +40,6 @@ function hash01(i, salt) {
 }
 const easeInOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const easeOutBack = (x) => 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
-
-function m3AxisAngle(ax, ay, az, t) {
-  const c = Math.cos(t), s = Math.sin(t), k = 1 - c;
-  return [
-    ax * ax * k + c, ax * ay * k - az * s, ax * az * k + ay * s,
-    ay * ax * k + az * s, ay * ay * k + c, ay * az * k - ax * s,
-    az * ax * k - ay * s, az * ay * k + ax * s, az * az * k + c,
-  ];
-}
 
 // hashed fallback direction for item lists without rig `an` tags
 function hashDir(gi) {

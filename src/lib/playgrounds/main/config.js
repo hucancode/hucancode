@@ -70,11 +70,6 @@ export const ENSO_DUR = BLOCK_DUR.enso; // enso trace spans B4 block
 export const CRUISE_SP = (2 * ENSO_REVS * 2 * Math.PI * ENSO_R) / ENSO_DUR - SP3;
 export const CROSSFADE = BLOCK_DUR.crossfade; // 2D->3D crossfade duration (== B6)
 export const CAM_PITCH_DUR = 4.0;   // camera pitch tilt duration (settles after crossfade)
-export const MAX_EXIT_TURN = Math.PI / 4; // cap on peel-off turn at branch onto loop3
-export const MIN_TURN = Math.PI / 9;      // floor on turn angle at a pivot
-export const MAX_TURN = Math.PI / 2;      // angle above which a pivot counts "sharp"
-export const MAX_SHARP_RUN = 2;           // sharp turn fine, but not N in a row
-export const RELAX_ITERS = 5;             // relaxation passes
 export const D3_FADEIN_FRAC = 0.55;       // fraction of crossfade spent fading 3D dragon in
 
 export const CAM_PITCH_ANGLE = -Math.PI * 0.35; // straight-down (0) -> 45deg elevation tilt
@@ -90,12 +85,9 @@ export const GRID = { z: -0.01, ext: 12.0, step: 0.6 };
 
 export const BODY_N = 20;
 export const BODY_LEN = 0.8;
-export const PROP_SPEED = 0.2; // chain relaxation per step (verlet lag)
-export const ENABLE_PHYSICS = false; // false -> body rigidly matches line of motion
-export const MAX_BEND = (60 * Math.PI) / 180;
 export const HEAD_SIZE = 0.1;
 
-export const D3 = { N: 512, bodyFactor: 1.2, depth: 10 };
+export const D3 = { N: 512, bodyFactor: 1.2 };
 export const D3_GIRTH = 0.006; // cross-section scale for 3D mesh
 // which 3D dragon rides the loop: "mech" = procedural mech rig (instanced part
 // kit from the /mech playground), "obj" = legacy skinned dragon-low.obj mesh

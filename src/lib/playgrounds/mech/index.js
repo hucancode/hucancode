@@ -1,13 +1,10 @@
 // RENDER ENGINE — draws procedurally generated MESHES (triangle soup), no SDF.
 // INSTANCED: the model is { items: [{ key, m, t, color }], meshes: {key: soup} }
 // (parts.js/rig.js emit instance handles — a unit-mesh key + affine transform).
-// Items are grouped by key and each group is ONE instanced draw; per-instance
-// data = model matrix rows, normal matrix rows (inverse-transpose, handles
-// non-uniform scale + mirroring) and color.
+// The shared drawer (lib/mech/instancing.js) groups items by key and issues
+// ONE instanced draw per key, reusing GPU buffers across model patches.
 import { createDevice, Camera, mat4 } from "$lib/engine/index.js";
-import MECH_WGSL from "./shaders/mech.wgsl?raw";
-import VERT from "./shaders/mech.vert.glsl?raw";
-import FRAG from "./shaders/mech.frag.glsl?raw";
+import { INSTANCED_PROGRAM, createInstancedDrawer } from "$lib/mech/instancing.js";
 import GRID_WGSL from "./shaders/grid.wgsl?raw";
 import GRID_VERT from "./shaders/grid.vert.glsl?raw";
 import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
@@ -17,9 +14,8 @@ const LIGHT_R = 30, LIGHT_Y = 40;
 // grid on the XZ plane through y=0 -> marks every part's local origin
 const GROUND = { ext: 7, y: 0, step: 0.5, minorDiv: 5, opacity: 0.55, color: [0.45, 0.5, 0.58] };
 
-let canvas, device, shader, gridShader, camera, disposed = false;
-let items = [];                    // [{ posBuf, normBuf, count, color }]
-let pending = null;                // model waiting for device init
+let canvas, device, shader, gridShader, camera, drawer, disposed = false;
+let model = null;                  // current { items, meshes }
 
 // FIXED camera: orbit around the origin with constant defaults — no auto-fit,
 // the user frames the subject with drag + wheel
@@ -34,68 +30,12 @@ const config = {
   lightAngle: 0.6,  // light orbit position
 };
 
-function disposeItems() {
-  for (const it of items) { it.posBuf?.destroy(); it.normBuf?.destroy(); it.instBuf?.destroy(); }
-  items = [];
-}
-
-// inverse-transpose of a row-major 3x3 = cofactor matrix / det
-function invT3(m) {
-  const [a, b, c, d, e, f, g, h, i] = m;
-  const A = e * i - f * h, B = f * g - d * i, C = d * h - e * g;
-  const det = a * A + b * B + c * C || 1;
-  return [
-    A / det, B / det, C / det,
-    (c * h - b * i) / det, (a * i - c * g) / det, (b * g - a * h) / det,
-    (b * f - c * e) / det, (c * d - a * f) / det, (a * e - b * d) / det,
-  ];
-}
-
-const INST_FLOATS = 28;   // 3 vec4 model rows + 3 vec4 normal rows + color
-
-function rebuild(model) {
-  if (!device) { pending = model; return; }
-  disposeItems();
-  const groups = new Map();                    // mesh key -> [items]
-  for (const it of model.items) {
-    if (!groups.has(it.key)) groups.set(it.key, []);
-    groups.get(it.key).push(it);
-  }
-  for (const [key, list] of groups) {
-    const mesh = model.meshes?.[key];
-    if (!mesh) continue;
-    const data = new Float32Array(list.length * INST_FLOATS);
-    list.forEach((it, i) => {
-      const m = it.m, t = it.t, n = invT3(m), c = it.color;
-      data.set([
-        m[0], m[1], m[2], t[0],
-        m[3], m[4], m[5], t[1],
-        m[6], m[7], m[8], t[2],
-        n[0], n[1], n[2], 0,
-        n[3], n[4], n[5], 0,
-        n[6], n[7], n[8], 0,
-        c[0], c[1], c[2], 1,
-      ], i * INST_FLOATS);
-    });
-    items.push({
-      posBuf: device.buffer({ kind: "vertex", data: mesh.positions }),
-      normBuf: device.buffer({ kind: "vertex", data: mesh.normals }),
-      instBuf: device.buffer({ kind: "vertex", data }),
-      count: mesh.positions.length / 3,
-      instances: list.length,
-    });
-  }
-}
-
 function setConfig(patch) {
   if ("spin" in patch) config.spin = patch.spin;
   if ("lightAngle" in patch) config.lightAngle = patch.lightAngle;
   if ("dist" in patch) dist = patch.dist;                     // page-chosen framing, still not auto
   if (patch.resetView) { yaw = VIEW0.yaw; pitch = VIEW0.pitch; dist = patch.dist ?? VIEW0.dist; }
-  if (patch.model) {
-    try { rebuild(patch.model); }
-    catch (e) { console.warn("[mech] invalid model", e); }
-  }
+  if (patch.model) model = patch.model;
 }
 
 function onDown(e) {
@@ -128,26 +68,8 @@ async function init(canvasEl) {
   if (disposed) { device.destroy(); device = null; return; }
   device.resize(canvas.width, canvas.height);
   shader = device.shader({
-    glsl: { vertex: VERT, fragment: FRAG }, wgsl: MECH_WGSL,
-    buffers: [
-      { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
-      { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
-      { stride: INST_FLOATS * 4, step: "instance", attributes: [
-        { name: "iM0", location: 2, format: "float32x4", offset: 0 },
-        { name: "iM1", location: 3, format: "float32x4", offset: 16 },
-        { name: "iM2", location: 4, format: "float32x4", offset: 32 },
-        { name: "iN0", location: 5, format: "float32x4", offset: 48 },
-        { name: "iN1", location: 6, format: "float32x4", offset: 64 },
-        { name: "iN2", location: 7, format: "float32x4", offset: 80 },
-        { name: "iColor", location: 8, format: "float32x4", offset: 96 },
-      ] },
-    ],
-    uniforms: [
-      { name: "uViewProj", type: "mat4" },
-      { name: "uLightPos", type: "vec3" },
-      { name: "uViewPos", type: "vec3" },
-    ],
-    depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+    ...INSTANCED_PROGRAM,
+    depth: "test", blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
   });
   gridShader = device.shader({
     glsl: { vertex: GRID_VERT, fragment: GRID_FRAG }, wgsl: GRID_WGSL,
@@ -162,8 +84,8 @@ async function init(canvasEl) {
     ],
     depth: "none", blend: "premult", topology: "tri-strip", target: "screen", sampleCount: 4,
   });
+  drawer = createInstancedDrawer(device);
   camera = new Camera(45, w / h, 0.05, 500);
-  if (pending) { rebuild(pending); pending = null; }
   lastT = performance.now();
   canvas.addEventListener("pointerdown", onDown);
   canvas.addEventListener("wheel", onWheel, { passive: false });
@@ -212,14 +134,10 @@ function render() {
         },
       });
     }
-    for (const it of items) {
-      p.draw(shader, {
-        buffers: [it.posBuf, it.normBuf, it.instBuf],
-        count: it.count,
-        instances: it.instances,
-        uniforms: { uViewProj: _vp, uLightPos: light, uViewPos: eye },
+    if (model)
+      drawer.draw(p, shader, model.items, model.meshes, {
+        uViewProj: _vp, uLightPos: light, uViewPos: eye, uOpacity: 1,
       });
-    }
   });
   device.endFrame();
 }
@@ -232,7 +150,9 @@ function destroy() {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
   }
-  disposeItems();
+  drawer?.destroy();
+  drawer = null;
+  model = null;
   shader = null;
   gridShader = null;
   if (device) { device.destroy(); device = null; }
