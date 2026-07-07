@@ -592,11 +592,11 @@
         <ol>
           {#each nodeList as { node, depth, parent } (node)}
             <li>
-              <button type="button" aria-pressed={node === selNode}
-                style:padding-left={`${0.3 + depth * 0.85}rem`} onclick={() => (selNode = node)}>
+              <label style:padding-left={`${0.3 + depth * 0.85}rem`}>
+                <input type="radio" name="lego-node" value={node} bind:group={selNode} />
                 <span style:background={hexOf(model.parts[node.part]?.color)}></span>
                 {node.part}{#if !parent}<em> root</em>{/if}
-              </button>
+              </label>
               <button type="button" onclick={() => removeNode(node)} disabled={!parent}>✕</button>
             </li>
           {/each}
@@ -687,17 +687,18 @@
           <input type="checkbox" bind:checked={iso} />
           <span>isolate selected</span>
         </label>
-        <ul>
+        <ol>
           {#each partIds as id (id)}
             <li>
-              <button type="button" aria-pressed={id === sel} onclick={() => (sel = id)}>
+              <label>
+                <input type="radio" name="lego-part" value={id} bind:group={sel} />
                 <span style:background={hexOf(model.parts[id].color)}></span>
                 {id}{#if id === rootPart}<em> root</em>{/if}
-              </button>
+              </label>
               <button type="button" onclick={() => removePart(id)}>✕</button>
             </li>
           {/each}
-        </ul>
+        </ol>
       </fieldset>
 
       {#if model.parts[sel]}
@@ -752,16 +753,9 @@
   </aside>
 
 <style>
-  /* layout, HUD footer, menu rows, fieldset controls come from playground.css */
   footer label { flex: 1 1 8rem; }
   menu button { flex: 1; }
-  /* storage slots: compact segmented radios, ● marks a filled slot */
-  [aria-label="storage slots"] label { flex: 1; justify-content: center; padding: 0.2rem 0; opacity: 0.5; }
-  [aria-label="storage slots"] label:has(em) { opacity: 0.8; }
-  [aria-label="storage slots"] label:has(:checked) { opacity: 1; font-weight: 600; }
-  label > em { font-style: normal; font-size: 0.55rem; vertical-align: super; opacity: 0.7; }
   /* part/assembly lists: pick button (with color swatch) + delete button per row */
-  ul, ol { display: grid; gap: 0.15rem; }
   :is(ul, ol) li { display: flex; align-items: center; gap: 0.25rem; }
   :is(ul, ol) li > button:first-child { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
   :is(ul, ol) li > button[aria-pressed="true"] { opacity: 1; font-weight: 600; }

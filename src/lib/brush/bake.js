@@ -1,7 +1,6 @@
 import {
   resolveControl,
-  pathArc,
-  bellyArc,
+  sampleSeg,
   pointSpeed,
   travelTime,
   expandStrokes,
@@ -18,15 +17,14 @@ export function bakeSegs(symbol, opts = {}) {
     const stroke = e.stroke;
     for (let i = 0; i < stroke.paths.length; i++) {
       const path = stroke.paths[i];
-      cursor += path.delay || 0;
       const p1 = stroke.points[i], p2 = stroke.points[i + 1];
       const c = resolveControl(stroke, i);
       const v0 = pointSpeed(stroke, i, speed), v1 = pointSpeed(stroke, i + 1, speed);
-      const L = pathArc(stroke, i);
+      const { arc: L, bellyX } = sampleSeg(stroke, i);
       const dur = travelTime(L, v0, v1, L);
       const hasBelly = path.pctrl ? 1 : 0;
       const k = path.pctrl ? path.pctrl.k : 0;
-      const belly = hasBelly ? bellyArc(stroke, i) : 0.5;
+      const belly = hasBelly ? bellyX : 0.5;
       segs.push({
         p1: { x: p1.x, y: p1.y }, p2: { x: p2.x, y: p2.y }, ctrl: c,
         pr1: p1.pressure, pr2: p2.pressure, k, hasBelly, belly,

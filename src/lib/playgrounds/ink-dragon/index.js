@@ -36,7 +36,7 @@ const BUF_UV = { stride: 8, step: "vertex", attributes: [{ name: "uv", location:
 const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };
 
 let canvas = null, device = null;
-let pPaper, pBody, pBodyWire, pWhisker, pHead;
+let pPaper, pBody, pWhisker, pHead;
 let quadPosBuf, quadUVBuf, headPosBuf, headUVBuf;
 // body + whiskers share the same ribbon record shape:
 // { stroke, posBuf, uvBuf?, idxBuf, idxCount }. Whiskers are ribbon strokes
@@ -44,12 +44,23 @@ let quadPosBuf, quadUVBuf, headPosBuf, headUVBuf;
 let bodyRibbon = null;
 let whiskers = [null, null];
 let aspect = 1;
-let bodyWireframe = false;
 
 const IDENTITY = mat4.identity(mat4.create());
 const headMatrix = mat4.identity(mat4.create());
 const headTRS = mat4.create();
 const headAspectInv = mat4.create();
+const camMatrix = mat4.create();
+
+// camera: world -> view is (w - pan) * zoom, applied CPU-side (meshes re-upload
+// every step, head via its matrix), so shaders stay camera-free.
+const view = { zoom: 1, panX: 0, panY: 0 };
+
+export function setView(v) {
+  if (typeof v.zoom === "number") view.zoom = v.zoom;
+  if (typeof v.panX === "number") view.panX = v.panX;
+  if (typeof v.panY === "number") view.panY = v.panY;
+  updateHeadTransform();
+}
 const headPos = { x: 0, y: 0, z: 0 };
 const headEuler = { x: 0, y: 0, z: 0 };
 const headScale = { x: 1, y: 1, z: 1 };
@@ -120,8 +131,13 @@ function makeRibbon(strokeOpts, { withUV = false } = {}) {
 function uploadRibbon(r, points, { bakeAspect = false } = {}) {
   updatePolylineStroke(r.stroke, points);
   if (r.stroke.n >= 2) {
+    // camera applied post-meshing so stroke width scales with zoom
     const pos = r.stroke.positions;
-    if (bakeAspect) for (let i = 0; i < pos.length; i += 3) pos[i] /= aspect;
+    for (let i = 0; i < pos.length; i += 3) {
+      pos[i] = (pos[i] - view.panX) * view.zoom;
+      pos[i + 1] = (pos[i + 1] - view.panY) * view.zoom;
+      if (bakeAspect) pos[i] /= aspect;
+    }
     r.posBuf.write(pos);
     if (r.uvBuf) r.uvBuf.write(r.stroke.lineUVs);
     r.idxCount = r.stroke.geom.drawRange ? r.stroke.geom.drawRange.count : 0;
@@ -138,9 +154,15 @@ function updateHeadTransform() {
   headScale.x = headState.size;
   headScale.y = headState.size;
   mat4.compose(headTRS, headPos, headEuler, headScale);
+  mat4.identity(camMatrix);
+  camMatrix[0] = view.zoom;
+  camMatrix[5] = view.zoom;
+  camMatrix[12] = -view.panX * view.zoom;
+  camMatrix[13] = -view.panY * view.zoom;
   mat4.identity(headAspectInv);
   headAspectInv[0] = 1 / aspect;
-  mat4.multiply(headMatrix, headAspectInv, headTRS);
+  mat4.multiply(headMatrix, camMatrix, headTRS);
+  mat4.multiply(headMatrix, headAspectInv, headMatrix);
 }
 
 function quadBuffer(geom, name) {
@@ -166,12 +188,6 @@ function setup(ctx) {
     buffers: [BUF_POS, BUF_STROKE_UV],
     uniforms: strokeUniforms,
     blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
-  });
-  pBodyWire = device.shader({
-    glsl: strokeGlsl, wgsl: strokeWgsl,
-    buffers: [BUF_POS, BUF_STROKE_UV],
-    uniforms: strokeUniforms,
-    blend: "straight", topology: "line-strip", target: "screen", sampleCount: 4,
   });
   pWhisker = device.shader({
     glsl: { vertex: WHISKER_VERT, fragment: WHISKER_FRAG }, wgsl: WHISKER_WGSL,
@@ -229,8 +245,7 @@ function frame() {
     p.draw(pPaper, { buffers: [quadPosBuf, quadUVBuf], count: 6, uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR } });
 
     if (bodyRibbon && bodyRibbon.stroke.n >= 2 && bodyRibbon.idxCount > 0) {
-      const prog = bodyWireframe ? pBodyWire : pBody;
-      p.draw(prog, {
+      p.draw(pBody, {
         buffers: [bodyRibbon.posBuf, bodyRibbon.uvBuf], index: bodyRibbon.idxBuf, count: bodyRibbon.idxCount,
         uniforms: { uAspect: aspect, uBrushColor: bodyRibbon.stroke.brushColor },
       });
@@ -254,7 +269,6 @@ function frame() {
 const PARAM_APPLY = {
   width:     (v) => { if (bodyRibbon && bodyRibbon.stroke.lineWidth !== v) setStrokeLineWidth(bodyRibbon.stroke, v); },
   widthEnd:  (v) => { if (bodyRibbon && bodyRibbon.stroke.widthEnd !== v) { bodyRibbon.stroke.widthEnd = v; setStrokeLineWidth(bodyRibbon.stroke, bodyRibbon.stroke.lineWidth); } },
-  wireframe: (v) => { bodyWireframe = !!v; },
   // re-meshed (and aspect-baked) on the next setWhisker
   whiskerWidth: (v) => { for (const w of whiskers) if (w) w.stroke.lineWidth = v; },
 };
@@ -293,7 +307,7 @@ function teardown() {
     r.posBuf?.destroy(); r.uvBuf?.destroy(); r.idxBuf?.destroy();
   }
   quadPosBuf = quadUVBuf = headPosBuf = headUVBuf = null;
-  pPaper = pBody = pBodyWire = pWhisker = pHead = null;
+  pPaper = pBody = pWhisker = pHead = null;
   bodyRibbon = null;
   whiskers = [null, null];
   canvas = null;
@@ -306,7 +320,10 @@ function screenToWorld(x, y, w, h) {
   const a = w / h;
   const u = x / w;
   const v = 1.0 - y / h;
-  return { x: (u * 2 - 1) * a, y: v * 2 - 1 };
+  return {
+    x: ((u * 2 - 1) * a) / view.zoom + view.panX,
+    y: (v * 2 - 1) / view.zoom + view.panY,
+  };
 }
 
 export function eventToWorld(canvasEl, e) {
@@ -320,8 +337,10 @@ export function eventToWorld(canvasEl, e) {
 
 export function worldToScreen(p, w, h) {
   const a = w / h;
-  const u = (p.x / a + 1) * 0.5;
-  const v = (p.y + 1) * 0.5;
+  const vx = (p.x - view.panX) * view.zoom;
+  const vy = (p.y - view.panY) * view.zoom;
+  const u = (vx / a + 1) * 0.5;
+  const v = (vy + 1) * 0.5;
   return { x: u * w, y: (1 - v) * h };
 }
 

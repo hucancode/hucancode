@@ -1,15 +1,11 @@
-// quad bezier through ctrl: B(t) = (1-t)^2 p1 + 2(1-t)t ctrl + t^2 p2
+// degenerate-cubic bezier through ctrl (both handles = ctrl), same curve as
+// the shaders' bez(): B(t) = u^3 p1 + 3ut ctrl + t^3 p2, u = 1-t
 
 let _id = 0;
 export const uid = () => ++_id;
 export const setUidFloor = (n) => { if (n > _id) _id = n; };
 
-const DEFAULT_PATH = () => ({
-  delay: 0.0,
-  duration: 1.0,
-  ctrl: null,
-  pctrl: null,
-});
+const DEFAULT_PATH = () => ({ ctrl: null, pctrl: null });
 
 const AUTO_TENSION = 0.5;
 
@@ -24,7 +20,7 @@ export function resolveControl(stroke, segIdx) {
   return autoControl(p0, p1, p2, p3);
 }
 
-// auto quad control at intersection of Catmull-rom endpoint tangent lines (tangent at p1 ∝ p2-p0, at p2 ∝ p3-p1);
+// auto quad control at intersection of Catmull-rom endpoint tangent lines
 // degenerate/overshoot -> averaged Catmull handles.
 function autoControl(p0, p1, p2, p3) {
   const t1x = p2.x - p0.x, t1y = p2.y - p0.y;
@@ -70,15 +66,14 @@ export function removePoint(stroke, idx) {
   return stroke;
 }
 
-function cubic(p0, h1, h2, p1, t) {
+function bez(p1, c, p2, t) {
   const u = 1 - t;
   const b0 = u * u * u;
-  const b1 = 3 * u * u * t;
-  const b2 = 3 * u * t * t;
+  const b1 = 3 * u * t;
   const b3 = t * t * t;
   return {
-    x: b0 * p0.x + b1 * h1.x + b2 * h2.x + b3 * p1.x,
-    y: b0 * p0.y + b1 * h1.y + b2 * h2.y + b3 * p1.y,
+    x: b0 * p1.x + b1 * c.x + b3 * p2.x,
+    y: b0 * p1.y + b1 * c.y + b3 * p2.y,
   };
 }
 
@@ -94,42 +89,25 @@ const THIN_GAIN = 2.0;
 const CORNER = 0.7;
 const THIN   = 0.6;
 
-export function pathArc(stroke, segIdx) {
-  const pts = stroke.points;
-  const c = resolveControl(stroke, segIdx);
-  const p1 = pts[segIdx], p2 = pts[segIdx + 1];
-  const dense = 64;
-  let prev = cubic(p1, c, c, p2, 0), total = 0;
-  for (let i = 1; i <= dense; i++) {
-    const cur = cubic(p1, c, c, p2, i / dense);
-    total += Math.hypot(cur.x - prev.x, cur.y - prev.y);
-    prev = cur;
-  }
-  return total || 1e-6;
-}
-
-// belly arc fraction = nearest curve point to control
-export function bellyArc(stroke, segIdx) {
+// dense-sample seg once: arc = curve length, bellyX = arc fraction of the
+// curve point nearest the control ("belly" of the bow)
+export function sampleSeg(stroke, segIdx) {
   const pts = stroke.points;
   const c = resolveControl(stroke, segIdx);
   const p1 = pts[segIdx], p2 = pts[segIdx + 1];
   const dense = 96;
-  const xs = new Array(dense + 1);
   const cum = new Float64Array(dense + 1);
-  xs[0] = cubic(p1, c, c, p2, 0);
-  for (let i = 1; i <= dense; i++) {
-    const t = i / dense;
-    xs[i] = cubic(p1, c, c, p2, t);
-    cum[i] = cum[i - 1] + Math.hypot(xs[i].x - xs[i - 1].x, xs[i].y - xs[i - 1].y);
-  }
-  const total = cum[dense] || 1e-6;
-  let bellyX = 0.5, bestD = Infinity;
+  let prev = p1, bellyI = 0, bestD = Infinity;
   for (let i = 0; i <= dense; i++) {
-    const dx = xs[i].x - c.x, dy = xs[i].y - c.y;
+    const cur = i === 0 ? p1 : bez(p1, c, p2, i / dense);
+    if (i > 0) cum[i] = cum[i - 1] + Math.hypot(cur.x - prev.x, cur.y - prev.y);
+    const dx = cur.x - c.x, dy = cur.y - c.y;
     const d = dx * dx + dy * dy;
-    if (d < bestD) { bestD = d; bellyX = cum[i] / total; }
+    if (d < bestD) { bestD = d; bellyI = i; }
+    prev = cur;
   }
-  return bellyX;
+  const arc = cum[dense] || 1e-6;
+  return { arc, bellyX: cum[bellyI] / arc };
 }
 
 // pivot sharpness at interior point i: 0 = straight through, 1 = full reversal
@@ -212,14 +190,13 @@ function connectorStroke(a, b, connect) {
   const pA = A.pressure;
   const pB = B.pressure;
   const k = Math.min(connect.thread, pA, pB);
-  const duration = Math.max(0.05, g);
   return {
     id: `c:${a.id}>${b.id}`,
     points: [
       { id: -1, x: A.x, y: A.y, pressure: pA },
       { id: -2, x: B.x, y: B.y, pressure: pB },
     ],
-    paths: [{ delay: 0, duration, ctrl, pctrl: { k } }],
+    paths: [{ ctrl, pctrl: { k } }],
   };
 }
 
@@ -244,8 +221,7 @@ function strokeDuration(stroke, timing) {
   if (!stroke || !stroke.paths) return 0;
   let t = 0;
   for (let i = 0; i < stroke.paths.length; i++) {
-    t += stroke.paths[i].delay || 0;
-    const L = pathArc(stroke, i);
+    const L = sampleSeg(stroke, i).arc;
     t += travelTime(L, pointSpeed(stroke, i, timing.speed), pointSpeed(stroke, i + 1, timing.speed), L);
   }
   return t;
@@ -257,20 +233,10 @@ export function symbolDuration(symbol, connect, timing) {
   return t;
 }
 
-export function makePlayback(symbol, connect, timing) {
-  return { t: 0, playing: false, duration: symbolDuration(symbol, connect, timing) };
-}
-
-export function syncPlayback(state, symbol, connect, timing) {
-  state.duration = symbolDuration(symbol, connect, timing);
-  if (state.t > state.duration) state.t = state.duration;
-  return state;
-}
-
-export function step(state, dt) {
+export function step(state, dt, duration) {
   let t = state.t + dt;
   if (t <= 0) { t = 0; }
-  else if (t >= state.duration) { t = state.duration; state.playing = false; }
+  else if (t >= duration) { t = duration; state.playing = false; }
   state.t = t;
   return state;
 }

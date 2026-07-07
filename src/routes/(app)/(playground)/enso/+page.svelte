@@ -219,7 +219,6 @@
 </aside>
 
 <style>
-  /* layout + fieldset/label styling come from shared playground.css */
   section {
     max-width: 640px;
     aspect-ratio: 1 / 1;
