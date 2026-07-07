@@ -61,12 +61,13 @@ export async function makeRenderer(canvas) {
       curW = w; curH = h;
     }
 
-    // re-bake + re-upload only when symbol or bake-affecting params change
-    const key = JSON.stringify([symbol, params.connect, params.timing]);
-    if (key !== bakeKey) {
+    // re-bake + re-upload only when bake inputs change. Caller supplies
+    // params.bakeKey (a cached derived of symbol+connect+timing) so playback
+    // frames don't re-stringify the whole symbol here.
+    if (params.bakeKey !== bakeKey) {
       const { segs } = bakeSegs(symbol, { connect: params.connect, timing: params.timing });
       nSeg = packSegs(segs);
-      bakeKey = key;
+      bakeKey = params.bakeKey;
     }
 
     const view = params.view || { zoom: 1, panX: 0, panY: 0 };

@@ -11,7 +11,7 @@ export const yong = makeGlyph(
           { id: 98, x: -0.1035699622162235, y: 0.4376297276762161, pressure: 0.08 }
         ],
         paths: [
-          { duration: 0.21, ctrl: { x: -0.030844336637881657, y: 0.5138570202810265 }, pctrl: null },
+          { ctrl: { x: -0.030844336637881657, y: 0.5138570202810265 }, pctrl: null },
           { ctrl: null, pctrl: { k: 0.07 } }
         ],
       },

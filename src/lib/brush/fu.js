@@ -11,7 +11,7 @@ export const fu = makeGlyph(
           { id: 98, x: -0.26112971934818396, y: 0.2623916655760415, pressure: 0.08 }
         ],
         paths: [
-          { duration: 0.21, ctrl: { x: -0.2261398020804417, y: 0.3261431847617704 }, pctrl: null },
+          { ctrl: { x: -0.2261398020804417, y: 0.3261431847617704 }, pctrl: null },
           { ctrl: null, pctrl: { k: 0.07 } }
         ],
       },

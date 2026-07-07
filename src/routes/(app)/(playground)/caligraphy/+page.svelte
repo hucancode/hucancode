@@ -8,8 +8,6 @@
     resolveControl,
     setUidFloor,
     uid,
-    makePlayback,
-    syncPlayback,
     step,
     symbolDuration,
     DEFAULT_CONNECT,
@@ -38,11 +36,16 @@
   }
 
   const LS_KEY = "brush:state:v1";
-  const LS_SLOTS_KEY = "brush:slots:v1";
+  const SLOT_COUNT = 5;
+  const slotKey = (i) => `brush:slot:${i}`;
 
-  // named save slots: explicit user snapshots, [{ id, name, data }].
-  let slots = $state([]);
-  let activeSlotId = $state(null);
+  // fixed save slots (as in /lego): slot i persisted as { data, at }.
+  let slot = $state(0);
+  let slots = $state(
+    Array.from({ length: SLOT_COUNT }, () => ({ filled: false, at: null })),
+  );
+  let saved = $state(false);
+  let loaded = $state(false);
 
   // seed samples: dropdown picks one to load fresh.
   const SAMPLES = {
@@ -68,11 +71,9 @@
 
   // brush params
   let baseRadius = $state(0.07);
-  let sampleDensity = $state(80); // samples per world unit
   let showHandles = $state(true);
   let showGrid = $state(true);
   let view = $state({ zoom: 1, panX: 0, panY: 0 });
-  const color = "#111111";
 
   // frame mode: edit the whole glyph at once (translate + uniform scale)
   // instead of individual points.
@@ -104,9 +105,15 @@
   // configurable; timing is always auto-computed.
   let timing = $state(DEFAULT_TIMING());
 
+  // bake-input fingerprint: deep-tracks symbol + connect + timing; the
+  // renderer rebakes only when this changes.
+  const bakeKey = $derived(
+    JSON.stringify([symbol, connect.enabled, connect.thread, timing.speed]),
+  );
+
   // playback: anim=true renders partially up to pb.t; false = full edit view.
   let anim = $state(false);
-  let pb = $state(makePlayback(symbol, connect, timing));
+  let pb = $state({ t: 0, playing: false });
   let rafId = null;
   let lastTs = null;
 
@@ -182,9 +189,8 @@
           ny = p.y;
         }
       }
-      const q = insertPointAfter(s, selIdx, nx, ny, randPressure());
+      insertPointAfter(s, selIdx, nx, ny, randPressure());
       selectPoint(s.id, selIdx + 1);
-      void q;
     } else {
       const s = makeStrokeRaw([
         makePoint(
@@ -270,16 +276,14 @@
     if (lastTs == null) lastTs = ts;
     const dt = (ts - lastTs) / 1000;
     lastTs = ts;
-    syncPlayback(pb, symbol, connect, timing);
-    step(pb, dt);
+    step(pb, dt, totalDuration);
     render();
     if (pb.playing) rafId = requestAnimationFrame(tick);
     else stopRaf();
   }
   function play() {
-    syncPlayback(pb, symbol, connect, timing);
-    if (pb.duration <= 0) return;
-    if (pb.t >= pb.duration) pb.t = 0; // replay from start
+    if (totalDuration <= 0) return;
+    if (pb.t >= totalDuration) pb.t = 0; // replay from start
     anim = true;
     pb.playing = true;
     lastTs = null;
@@ -296,8 +300,7 @@
   function seekTo(v) {
     pause();
     anim = true;
-    syncPlayback(pb, symbol, connect, timing);
-    pb.t = Math.max(0, Math.min(pb.duration, v));
+    pb.t = Math.max(0, Math.min(totalDuration, v));
     render();
   }
   function exitAnim() {
@@ -524,7 +527,7 @@
     s.paths[selIdx].ctrl = null;
   }
 
-  // pressure curve control {x,k}: belly thins/swells to k at progress x.
+  // pressure curve control {k}: stroke belly thins/swells toward k.
   // materialize from a straight line (k = lerp(A,B,0.5)) on first edit.
   function ensurePctrl() {
     const s = findStroke(selStrokeId);
@@ -565,6 +568,7 @@
     syncCanvasSize();
     if (!glRenderer) return; // device renderer is created async in onMount
     glRenderer.render(symbol, {
+      bakeKey,
       baseRadius,
       view,
       showGrid,
@@ -575,16 +579,10 @@
     });
   }
 
-  // deep-track symbol via JSON.stringify; cheap for small models
   $effect(() => {
-    // deep read all state
-    void JSON.stringify(symbol);
+    void bakeKey; // deep-tracks symbol + connect + timing
     void baseRadius;
-    void sampleDensity;
     void showGrid;
-    void connect.enabled;
-    void connect.thread;
-    void timing.speed;
     void view.zoom;
     void view.panX;
     void view.panY;
@@ -597,7 +595,7 @@
   function serializeState() {
     return {
       symbol,
-      params: { baseRadius, sampleDensity, showHandles, showGrid },
+      params: { baseRadius, showHandles, showGrid },
       connect: { enabled: connect.enabled, thread: connect.thread },
       timing: { speed: timing.speed },
       view: { zoom: view.zoom, panX: view.panX, panY: view.panY },
@@ -616,7 +614,6 @@
     if (data.params) {
       const p = data.params;
       if (typeof p.baseRadius === "number") baseRadius = p.baseRadius;
-      if (typeof p.sampleDensity === "number") sampleDensity = p.sampleDensity;
       if (typeof p.showHandles === "boolean") showHandles = p.showHandles;
       if (typeof p.showGrid === "boolean") showGrid = p.showGrid;
     }
@@ -671,77 +668,55 @@
     }
   }
 
-  // --- named save slots -------------------------------------------------------
-  // scratch autosave (LS_KEY) is the live working copy; slots are explicit,
-  // user-named snapshots persisted under LS_SLOTS_KEY as [{ id, name, data }].
-  function loadSlots() {
-    if (typeof localStorage === "undefined") return;
+  // --- fixed save slots ---------------------------------------------------
+  // scratch autosave (LS_KEY) is the live working copy; slots are explicit
+  // snapshots, one localStorage key per slot.
+  function readEntry(i) {
     try {
-      const raw = localStorage.getItem(LS_SLOTS_KEY);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) slots = arr;
+      const e = JSON.parse(localStorage.getItem(slotKey(i)));
+      if (e && e.data) return e;
     } catch (e) {
-      /* ignore corrupt slot store */
+      /* corrupt slot -> empty */
     }
+    return null;
   }
-  function persistSlots() {
-    if (typeof localStorage === "undefined") return;
+  function slotMeta() {
+    return Array.from({ length: SLOT_COUNT }, (_, i) => {
+      const e = readEntry(i);
+      return { filled: !!e, at: e?.at ?? null };
+    });
+  }
+  function saveSlot() {
     try {
-      localStorage.setItem(LS_SLOTS_KEY, JSON.stringify(slots));
+      localStorage.setItem(
+        slotKey(slot),
+        JSON.stringify({ data: serializeState(), at: new Date().toISOString() }),
+      );
     } catch (e) {
       /* quota/private mode */
     }
+    slots = slotMeta();
+    saved = true;
+    setTimeout(() => (saved = false), 1200);
   }
-  function newSlot() {
-    const name =
-      typeof prompt === "function"
-        ? prompt("Save slot name", `slot ${slots.length + 1}`)
-        : `slot ${slots.length + 1}`;
-    if (name == null) return; // cancelled
-    const slot = {
-      id: uid(),
-      name: name.trim() || `slot ${slots.length + 1}`,
-      data: JSON.parse(JSON.stringify(serializeState())),
-    };
-    slots.push(slot);
-    activeSlotId = slot.id;
-    persistSlots();
-  }
-  function saveToSlot(id) {
-    const slot = slots.find((s) => s.id === id);
-    if (!slot) return;
-    slot.data = JSON.parse(JSON.stringify(serializeState()));
-    activeSlotId = id;
-    persistSlots();
-  }
-  function loadSlot(id) {
-    const slot = slots.find((s) => s.id === id);
-    if (!slot) return;
-    applyState(JSON.parse(JSON.stringify(slot.data)));
-    activeSlotId = id;
+  function loadSlot() {
+    const e = readEntry(slot);
+    if (!e) return;
+    applyState(JSON.parse(JSON.stringify(e.data)));
     pause();
     anim = false;
+    loaded = true;
+    setTimeout(() => (loaded = false), 1200);
   }
-  function renameSlot(id) {
-    const slot = slots.find((s) => s.id === id);
-    if (!slot || typeof prompt !== "function") return;
-    const name = prompt("Rename slot", slot.name);
-    if (name == null) return;
-    slot.name = name.trim() || slot.name;
-    persistSlots();
+  function clearSlot() {
+    localStorage.removeItem(slotKey(slot));
+    slots = slotMeta();
   }
-  function deleteSlot(id) {
-    const i = slots.findIndex((s) => s.id === id);
-    if (i < 0) return;
-    slots.splice(i, 1);
-    if (activeSlotId === id) activeSlotId = null;
-    persistSlots();
-  }
+  const slotLabel = (at) => (at ? new Date(at).toLocaleString() : "empty");
 
   onMount(() => {
     loadState();
-    loadSlots();
+    slots = slotMeta();
     let cancelled = false;
     syncCanvasSize();
     makeRenderer(canvasEl).then((r) => {
@@ -759,13 +734,9 @@
   // persist on every change (after mount/load done)
   let _saveReady = false;
   $effect(() => {
-    void JSON.stringify(symbol);
+    void bakeKey; // deep-tracks symbol + connect + timing
     void baseRadius;
-    void sampleDensity;
     void showHandles;
-    void connect.enabled;
-    void connect.thread;
-    void timing.speed;
     void selKind;
     void selStrokeId;
     void selIdx;
@@ -783,7 +754,7 @@
   );
   // recomputed live during frame drags, so the frame tracks the glyph.
   const frameWorld = $derived(
-    frameMode ? (void JSON.stringify(symbol), glyphBBox()) : null,
+    frameMode ? (void bakeKey, glyphBBox()) : null,
   );
 </script>
 <svelte:head>
@@ -1134,71 +1105,47 @@
 
   <fieldset>
     <legend>save slots</legend>
+    <div role="group" aria-label="save slots">
+      {#each slots as s, i (i)}
+        <label title={slotLabel(s.at)}>
+          <input type="radio" name="brush-slot" value={i} bind:group={slot} />
+          {i + 1}{#if s.filled}<em>●</em>{/if}
+        </label>
+      {/each}
+    </div>
     <menu>
-      <li><button type="button" onclick={newSlot}>+ new slot</button></li>
+      <li><button type="button" onclick={saveSlot}>{saved ? "✓ saved" : "💾 save"}</button></li>
+      <li><button type="button" onclick={loadSlot} disabled={!slots[slot].filled}>{loaded ? "✓ loaded" : "📂 load"}</button></li>
+      <li><button type="button" onclick={clearSlot} disabled={!slots[slot].filled}>🗑 clear</button></li>
     </menu>
-    {#if slots.length === 0}
-      <small>no slots yet - "+ new slot" snapshots current work.</small>
-    {:else}
-      <ol>
-        {#each slots as slot (slot.id)}
-          <li aria-current={activeSlotId === slot.id || undefined}>
-            <button
-              type="button"
-              title="load this slot"
-              onclick={() => loadSlot(slot.id)}
-            >
-              <strong>{slot.name}</strong>
-            </button>
-            <menu>
-              <li><button
-                type="button"
-                title="overwrite with current work"
-                onclick={() => saveToSlot(slot.id)}>save</button
-              ></li>
-              <li><button
-                type="button"
-                title="rename"
-                onclick={() => renameSlot(slot.id)}>✎</button
-              ></li>
-              <li><button
-                type="button"
-                title="delete"
-                onclick={() => deleteSlot(slot.id)}>✕</button
-              ></li>
-            </menu>
-          </li>
-        {/each}
-      </ol>
-    {/if}
   </fieldset>
 
   <fieldset>
     <legend>strokes</legend>
     <ol>
       {#each symbol.strokes as stroke, i (stroke.id)}
-        <li aria-current={(selKind !== "none" && selStrokeId === stroke.id) || undefined}>
+        <li>
+          <label>
+            <input
+              type="radio"
+              name="brush-stroke"
+              checked={selKind !== "none" && selStrokeId === stroke.id}
+              onclick={() => selectStroke(stroke.id)}
+            />
+            stroke {i + 1}
+          </label>
           <button
             type="button"
-            onclick={() => selectStroke(stroke.id)}
+            title="move earlier"
+            disabled={i === 0}
+            onclick={() => moveStroke(i, -1)}>▲</button
           >
-            <strong>stroke {i + 1}</strong>
-            <small>{stroke.points.length} pts</small>
-          </button>
-          <menu>
-            <li><button
-              type="button"
-              title="move earlier"
-              disabled={i === 0}
-              onclick={() => moveStroke(i, -1)}>▲</button
-            ></li>
-            <li><button
-              type="button"
-              title="move later"
-              disabled={i === symbol.strokes.length - 1}
-              onclick={() => moveStroke(i, 1)}>▼</button
-            ></li>
-          </menu>
+          <button
+            type="button"
+            title="move later"
+            disabled={i === symbol.strokes.length - 1}
+            onclick={() => moveStroke(i, 1)}>▼</button
+          >
         </li>
       {/each}
     </ol>
@@ -1223,12 +1170,8 @@
       />
       <output>{pb.t.toFixed(2)}</output>
     </label>
-  </fieldset>
-
-  <fieldset>
-    <legend>auto timing</legend>
     <label>
-      <span>base speed</span>
+      <span>speed</span>
       <input
         type="range"
         min="0.2"
@@ -1364,24 +1307,12 @@
     border-radius: 0.25rem;
     touch-action: none;
   }
-  /* edit overlays on the stage */
-  section > svg {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
   svg circle {
     pointer-events: all;
     cursor: grab;
   }
   svg circle:active {
     cursor: grabbing;
-  }
-  /* viewport chrome: tool menu top-right, zoom menu bottom-left */
-  section > menu {
-    position: absolute;
-    z-index: 2;
-    gap: 0.35rem;
   }
   section > menu:first-of-type {
     top: 0.5rem;
@@ -1392,38 +1323,6 @@
     bottom: 0.5rem;
     left: 0.5rem;
     align-items: center;
-  }
-  section > menu :is(button, output) {
-    height: 32px;
-    margin: 0;
-    border: 1px solid rgba(0, 0, 0, 0.18);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.85);
-    color: #333;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-  }
-  section > menu button {
-    width: 32px;
-    padding: 0;
-    cursor: pointer;
-  }
-  section > menu output {
-    min-width: 3rem;
-    padding: 0 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-  section > menu button:hover {
-    background: white;
-  }
-  section > menu button[aria-pressed="true"] {
-    background: rgba(40, 80, 220, 0.92);
-    color: white;
-    border-color: rgba(40, 80, 220, 1);
   }
   textarea {
     width: 100%;
@@ -1439,56 +1338,8 @@
     background: #fbfbf5;
     color: #222;
   }
-  /* save-slot / stroke lists: pick button + per-row action menu */
   ol {
-    display: grid;
-    gap: 0.25rem;
     max-height: 12rem;
     overflow-y: auto;
-  }
-  ol > li {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    border: 1px solid rgba(128, 128, 128, 0.25);
-    border-radius: 0.3rem;
-    padding: 0.1rem 0.3rem 0.1rem 0;
-  }
-  ol > li[aria-current] {
-    border-color: rgba(40, 80, 220, 0.8);
-    background: rgba(40, 80, 220, 0.08);
-  }
-  ol > li > button {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.85rem;
-  }
-  ol strong {
-    font-weight: 600;
-  }
-  ol small {
-    opacity: 0.6;
-  }
-  li > menu {
-    gap: 0.15rem;
-  }
-  li > menu button {
-    height: 1.6rem;
-    min-width: 1.6rem;
-    padding: 0 0.4rem;
-    line-height: 1;
-    cursor: pointer;
-    font-size: 0.8rem;
-  }
-  li > menu button:disabled {
-    opacity: 0.3;
-    cursor: default;
   }
 </style>

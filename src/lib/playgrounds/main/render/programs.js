@@ -2,7 +2,6 @@
 
 import { F32, I32, VEC2, VEC3, VEC4, MAT4 } from "$lib/engine/index.js";
 import { INSTANCED_PROGRAM } from "$lib/mech/instancing.js";
-import { composeShader } from "$lib/brush/shaders/index.js";
 import GLYPH_FRAG from "./webgl/shaders/glyph.frag.glsl?raw";
 import ENSO_FRAG from "./webgl/shaders/enso.frag.glsl?raw";
 import STROKE_FRAG from "./webgl/shaders/stroke.frag.glsl?raw";
@@ -46,17 +45,19 @@ export const PROGRAMS = {
     uniforms: [MAT4("uViewProj"), F32("uOpacity"), F32("uAspect"), F32("uZ"), F32("uStationY"), F32("uExt"), VEC2("uResolution"), F32("uRadius"), F32("uSweep"), F32("uAngleStart"), F32("uLineWidth"), VEC3("uInkColor")],
     blend: "straight", depth: "none", topology: "tri-strip", target: "screen", sampleCount: 4,
   },
+  // flat ink ribbon + head, drawn straight to screen in world space (no
+  // offscreen target, so the body can never be cut at a texture border)
   stroke: {
-    glsl: { vertex: STROKE_VERT, fragment: composeShader(STROKE_FRAG) }, wgsl: composeShader(STROKE_WGSL),
+    glsl: { vertex: STROKE_VERT, fragment: STROKE_FRAG }, wgsl: STROKE_WGSL,
     buffers: [BUF_STROKE_POS, BUF_STROKE_UV],
-    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uExt"), F32("uInkFlow"), F32("uStrands"), F32("uWaterFlow"), F32("uWobble"), F32("uOpacity"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"), F32("uPerpClearance"), F32("uArcClearance"), I32("uSimple"), VEC4("uBrushColor")],
-    blend: "accum", topology: "tri", target: "rgba8", sampleCount: 1,
+    uniforms: [MAT4("uViewProj"), F32("uOpacity"), VEC4("uBrushColor")],
+    blend: "straight", depth: "none", topology: "tri", target: "screen", sampleCount: 4,
   },
   head: {
     glsl: { vertex: HEAD_VERT, fragment: HEAD_FRAG }, wgsl: HEAD_WGSL,
     buffers: [BUF_HEAD],
-    uniforms: [F32("uAspect"), F32("uCamY"), F32("uFlipY"), F32("uExt"), F32("uOpacity"), VEC4("uBrushColor")],
-    blend: "accum", topology: "tri-strip", target: "rgba8", sampleCount: 1,
+    uniforms: [MAT4("uViewProj"), F32("uOpacity"), VEC4("uBrushColor")],
+    blend: "straight", depth: "none", topology: "tri-strip", target: "screen", sampleCount: 4,
   },
   composite: {
     glsl: { vertex: COMPOSITE_VERT, fragment: COMPOSITE_FRAG }, wgsl: COMPOSITE_WGSL,

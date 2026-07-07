@@ -24,11 +24,14 @@ main {
     height: 100%;
   }
 
-  /* control-panel lists (pick lists, slot rows) are never bulleted */
+  /* control-panel lists (pick lists, slot rows): unbulleted stacked rows */
   :is(section, aside) :is(ul, ol) {
     list-style: none;
     margin: 0;
     padding: 0;
+    display: grid;
+    gap: 0.2rem;
+    padding: 1px;
   }
 
   > aside {
@@ -101,6 +104,112 @@ main {
   aside small {
     font-size: 0.8rem;
     opacity: 0.7;
+  }
+
+  /* ---- pick lists: radio-label rows, optional per-row action buttons ----- */
+  :is(ul, ol) li:has(> label) {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  :is(ul, ol) li > label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0.4rem;
+    cursor: pointer;
+    border-radius: 0.25rem;
+  }
+  :is(ul, ol) li > label:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  :is(ul, ol) li > label:has(:checked) {
+    outline: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+    font-weight: 600;
+  }
+  :is(ul, ol) li > label > span:empty {
+    /* color swatch */
+    flex: none;
+    width: 0.75em;
+    height: 0.75em;
+    border-radius: 0.2em;
+  }
+  :is(ul, ol) li > label ~ button { opacity: 0.6; }
+  :is(ul, ol) li > label ~ button:disabled { opacity: 0.25; }
+  li > label em {
+    font-style: normal;
+    font-size: 0.7rem;
+    opacity: 0.5;
+  }
+
+  /* ---- segmented radio group: numbered save slots, ● marks filled -------- */
+  [role="group"]:has(input[type="radio"]) { display: flex; }
+  [role="group"] label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.2rem 0;
+    opacity: 0.5;
+    cursor: pointer;
+  }
+  [role="group"] label:has(em) { opacity: 0.8; }
+  [role="group"] label:has(:checked) { opacity: 1; font-weight: 600; }
+  [role="group"] em {
+    font-style: normal;
+    font-size: 0.55rem;
+    vertical-align: super;
+    opacity: 0.7;
+  }
+
+  /* edit/debug SVG overlays stacked on the stage canvas */
+  > section > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* viewport chrome: floating pill menus over the stage; pages position them */
+  > section > menu {
+    position: absolute;
+    z-index: 2;
+    gap: 0.35rem;
+  }
+  > section > menu :is(button, output) {
+    height: 32px;
+    margin: 0;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.85);
+    color: #333;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+  > section > menu button {
+    width: 32px;
+    padding: 0;
+    cursor: pointer;
+  }
+  > section > menu output {
+    min-width: 3rem;
+    padding: 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  > section > menu button:hover {
+    background: white;
+  }
+  > section > menu button[aria-pressed="true"] {
+    background: rgba(40, 80, 220, 0.92);
+    color: white;
+    border-color: rgba(40, 80, 220, 1);
   }
 
   /* ---- stage overlay HUD ------------------------------------------------- */

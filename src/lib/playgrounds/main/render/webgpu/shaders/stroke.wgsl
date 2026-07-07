@@ -1,25 +1,11 @@
-// Ink ribbon stroke. WGSL twin of webgl/shaders/stroke.frag.glsl (+ inline vert).
-// Body drawn camera-relative (subtract camY). uSimple = 1 takes a cheap flat path.
-// The shared ink core (src/lib/brush/shaders/ink-core.wgsl) is spliced in at
-// the marker below by composeShader().
+// Flat ink ribbon. WGSL twin of webgl/shaders/stroke.{vert,frag}.glsl.
+// Drawn straight to screen in world space — no offscreen texture, so the
+// body can never be cut at a texture border. The mesh shapes the taper;
+// the fragment only fades opacity along the arc so the tail dissolves.
 
 struct Uni {
-  uAspect: f32,
-  uCamY: f32,
-  uFlipY: f32,
-  uExt: f32,
-  uInkFlow: f32,
-  uStrands: f32,
-  uWaterFlow: f32,
-  uWobble: f32,
+  uViewProj: mat4x4<f32>,
   uOpacity: f32,
-  uWidthEnd: f32,
-  uWidthOffset: f32,
-  uWidthRange: f32,
-  uWidthAnchor: f32,
-  uPerpClearance: f32,
-  uArcClearance: f32,
-  uSimple: i32,
   uBrushColor: vec4<f32>,
 };
 @group(0) @binding(0) var<uniform> u: Uni;
@@ -27,31 +13,21 @@ struct Uni {
 struct VsOut {
   @builtin(position) pos: vec4<f32>,
   @location(0) vUV01: vec2<f32>,
-  @location(1) vWorld: vec2<f32>,
 };
 
 @vertex
 fn vs(@location(0) aPos: vec2<f32>, @location(1) aLineUV: vec2<f32>) -> VsOut {
   var o: VsOut;
   o.vUV01 = aLineUV;
-  o.vWorld = aPos;
-  o.pos = vec4(aPos.x / (u.uAspect * u.uExt), (aPos.y - u.uCamY) / u.uExt * u.uFlipY, 0.0, 1.0);
+  o.pos = u.uViewProj * vec4(aPos, 0.0, 1.0);
   return o;
 }
 
-//#include ink-core.wgsl
+const TAIL_FADE: f32 = 0.35; // arc span over which the tail fades in
 
 @fragment
 fn fs(in: VsOut) -> @location(0) vec4<f32> {
-  let f = strokeField(in.vUV01);
-
-  if (u.uSimple == 1) {
-    // cheap flat ink for whiskers: soft edge, slight tail taper, no bristles
-    let aa = fwidth(f.perpOff) + 1e-4;
-    let av = (1.0 - smoothstep(-aa, aa, f.d)) * u.uBrushColor.a * u.uOpacity;
-    if (av <= 0.0) { discard; }
-    return vec4(u.uBrushColor.rgb, av);
-  }
-
-  return inkStrokeColor(f, in.vWorld);
+  let alpha = u.uBrushColor.a * u.uOpacity * smoothstep(0.0, TAIL_FADE, in.vUV01.y);
+  if (alpha <= 0.0) { discard; }
+  return vec4(u.uBrushColor.rgb, alpha);
 }

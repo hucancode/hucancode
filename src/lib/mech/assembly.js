@@ -23,14 +23,15 @@ import { hash01, homingParams, simulateHoming, approachBlend, snapIn } from "./h
 // Group flights are re-simulated with fixed steps from launch on every call
 // and all randomness is HASHED off group/item indices, so scrubbing the
 // clock replays the exact same build. Distances are RIG UNITS, phase times
-// are fractions of the whole build (u in 0..1).
+// are relative durations — the build clock is normalized so the last group
+// seats exactly at u = 1, whatever they sum to.
 export const ASSEMBLY = {
-  gSpan: 0.45,             // group start stagger (chain-ordered, head first)
+  gSpan: 0.7,              // group start stagger (chain-ordered, head first)
   pSpan: 0.08,             // primitive stagger within its group
   pJit: 0.03,              // hashed extra primitive delay
   fly: 0.15,               // phase 1 duration (prim flight)
-  snap2: 0.05,             // phase 2 duration (prim snap into group)
-  travel: 0.19,            // phases 3+4 duration (group homing flight + snap-in)
+  snap2: 0.1,              // phase 2 duration (prim snap into group)
+  travel: 0.4,             // phases 3+4 duration (group homing flight + snap-in)
   approach: 0.72,          // fraction of travel spent flying to the gate (rest = snap-in)
   align: 0.8,              // rotation fully matches the live seat by this fraction of the approach
   fadeIn: 0.15,            // fraction of the prim flight spent fading it in
@@ -38,7 +39,7 @@ export const ASSEMBLY = {
   standoff: [0.5, 1.0],    // prim pre-snap standoff distance
   gOff: [3.6, 8.4],        // group assembling offset along the normal (far)
   revs: [0.75, 1.75],      // prim self-spin during flight, revolutions
-  dock: [1.2, 2.8],        // gate standoff = snap-in run length along the mount normal
+  dock: [2.4, 5.6],        // gate standoff = snap-in run length along the mount normal
   speed: [1.6, 2.2],       // homing speed, fraction of the parked distance per approach
   turn: [8, 12],           // homing turn rate, radians per approach
   kick: [0.35, 0.8],       // launch kick: lateral mix (rest goes outward)
@@ -105,6 +106,12 @@ export function assembleModel(items, u, refFn = null) {
   if (u <= 0) return [];
   const A = ASSEMBLY;
 
+  // authored phase times are durations, not fractions of the build — scale
+  // the clock so the deepest group's snap-in lands exactly at u = 1 (refFn
+  // still speaks build progress 0..1, so its args divide back by T)
+  const T = A.gSpan + A.pSpan + A.pJit + A.fly + A.snap2 + A.travel;
+  const uu = u * T;
+
   // ---- pass 1: group the items (first-seen order, stable per build).
   // `depth` = skeleton chain depth (head/root = 0), pose-independent — the
   // build follows the chain, head first. gCen = live seat centroids
@@ -126,7 +133,7 @@ export function assembleModel(items, u, refFn = null) {
   for (let gi = 0; gi < nG; gi++) {
     gd.push((gDepth[gi] / maxDepth) * A.gSpan);
     gDone.push(gd[gi] + A.pSpan + A.pJit + A.fly + A.snap2);  // group formed
-    gRef.push(refFn ? refFn(gd[gi]) : null);
+    gRef.push(refFn ? refFn(gd[gi] / T) : null);
     const h = gRef[gi]?.[gFirst[gi]] ?? items[gFirst[gi]];
     gAnW.push(h.an);
     gFar.push(A.gOff[0] + (A.gOff[1] - A.gOff[0]) * hash01(gi, 22));
@@ -145,13 +152,13 @@ export function assembleModel(items, u, refFn = null) {
   for (let gi = 0; gi < nG; gi++) gCenA.push([0, 0, 0]);
   for (let i = 0; i < items.length; i++) {           // parked (anchor) centroids
     const gi = gOf[i];
-    if (u <= gDone[gi]) continue;
+    if (uu <= gDone[gi]) continue;
     const a = gRef[gi]?.[i] ?? items[i];
     const ca = gCenA[gi];
     ca[0] += a.t[0]; ca[1] += a.t[1]; ca[2] += a.t[2];
   }
   for (let gi = 0; gi < nG; gi++) {
-    const p3 = (u - gDone[gi]) / A.travel;
+    const p3 = (uu - gDone[gi]) / A.travel;
     if (p3 <= 0 || p3 >= 1) {                        // parked or seated: no sim
       gPos.push(null); gRot.push(0); gBank.push(null); gSeated.push(p3 >= 1);
       continue;
@@ -169,7 +176,7 @@ export function assembleModel(items, u, refFn = null) {
     const t0 = gDone[gi], tw = A.travel;
     const aimAt = refFn
       ? (tk) => {
-          const pose = poseGroups(refFn(quant64(t0 + tk * tw)));
+          const pose = poseGroups(refFn(quant64((t0 + tk * tw) / T)));
           return { seat: pose.cen[gi], n: pose.an[gi] };
         }
       : () => ({ seat: gCen[gi], n: nLive });
@@ -201,7 +208,7 @@ export function assembleModel(items, u, refFn = null) {
     const base = gRef[gi]?.[i] ?? it;                // WORLD transform source (phases 1-2)
     const cnt = counts[gi];
     const pFrac = cnt > 1 ? pOf[i] / (cnt - 1) : 0;
-    const pt = u - gd[gi] - pFrac * A.pSpan - hash01(i, 1) * A.pJit;
+    const pt = uu - gd[gi] - pFrac * A.pSpan - hash01(i, 1) * A.pJit;
     if (pt <= 0) continue;                           // not spawned yet
 
     // ---- group position: parked FAR out on its approach line in WORLD
