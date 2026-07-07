@@ -755,15 +755,6 @@
 <style>
   footer label { flex: 1 1 8rem; }
   menu button { flex: 1; }
-  /* part/assembly lists: pick button (with color swatch) + delete button per row */
-  :is(ul, ol) li { display: flex; align-items: center; gap: 0.25rem; }
-  :is(ul, ol) li > button:first-child { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
-  :is(ul, ol) li > button[aria-pressed="true"] { opacity: 1; font-weight: 600; }
-  :is(ul, ol) li button em { opacity: 0.5; font-style: normal; font-size: 0.7rem; }
-  ol li > button:first-child { border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
-  :is(ul, ol) li > button span { flex: none; width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
-  :is(ul, ol) li > button + button { opacity: 0.5; padding: 0 0.4rem; }
-  :is(ul, ol) li > button + button:disabled { opacity: 0.25; }
   /* color swatch row inside the Color label */
   label > span + span { display: flex; gap: 0.3rem; }
   span + span button { width: 1.4rem; height: 1.4rem; border-radius: 0.3rem; border: 2px solid transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); cursor: pointer; padding: 0; }

@@ -131,9 +131,10 @@ main {
   :is(ul, ol) li > label > span:empty {
     /* color swatch */
     flex: none;
-    width: 0.75em;
-    height: 0.75em;
-    border-radius: 0.2em;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 0.2rem;
+    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
   }
   :is(ul, ol) li > label ~ button { opacity: 0.6; }
   :is(ul, ol) li > label ~ button:disabled { opacity: 0.25; }
