@@ -10,11 +10,8 @@ in vec2 aLineUV;
 uniform float uAspect;
 
 out vec2 vUV01;
-out vec2 vWorld;
 
 void main() {
-    vUV01  = aLineUV;
-    vWorld = position.xy;
-    vec2 clip = vec2(position.x / uAspect, position.y);
-    gl_Position = vec4(clip, 0.0, 1.0);
+    vUV01 = aLineUV;
+    gl_Position = vec4(position.x / uAspect, position.y, 0.0, 1.0);
 }

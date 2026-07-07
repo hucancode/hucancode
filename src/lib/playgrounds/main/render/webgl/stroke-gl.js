@@ -1,9 +1,8 @@
-// Ribbon geometry for ink strokes — thin adapter over the shared builder.
-// clearance margins MUST match the stroke fragment shader so ink can bleed past the nominal edge.
+// Ribbon geometry for the flat ink stroke — thin adapter over the shared builder.
+// Exact-width mesh (no bleed margins): the fragment shader is a flat fill, so
+// the taper lives in the MESH via widthAt.
 
-import { buildRibbonGeometry, ARC_EXTRA_POINTS } from "$lib/brush/ribbon.js";
-
-export { PERP_CLEARANCE, ARC_CLEARANCE } from "$lib/brush/ribbon.js";
+import { buildRibbonGeometry } from "$lib/brush/ribbon.js";
 
 // persistent scratch reused across frames; caller uploads synchronously before the next buildRibbon, so sharing is safe
 let _capacity = 0;
@@ -17,11 +16,10 @@ function ensureScratch(nRibbon) {
   _indices = new Uint16Array((nRibbon - 1) * 6);
 }
 
-export function buildRibbon(points, lineWidth) {
+export function buildRibbon(points, lineWidth, widthAt = null) {
   const nPoly = points.length;
   if (nPoly < 2) return null;
-  const nRibbon = nPoly + ARC_EXTRA_POINTS;
-  ensureScratch(nRibbon);
+  ensureScratch(nPoly);
 
   const built = buildRibbonGeometry(points, nPoly, lineWidth, {
     positions: _positions,
@@ -29,6 +27,7 @@ export function buildRibbon(points, lineWidth) {
     indices: _indices,
     arcs: _arcs,
     stride: 2,
+    widthAt,
   });
 
   return { positions: _positions, uvs: _uvs, indices: _indices, indexCount: built.indexCount };

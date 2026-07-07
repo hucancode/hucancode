@@ -1,17 +1,18 @@
 #version 300 es
 precision highp float;
 
-// Ink ribbon stroke (full textured path). The shared ink core
-// (src/lib/brush/shaders/ink-core.frag.glsl) is spliced in at the marker below
-// by composeShader().
+// Flat ink fill. The mesh shapes the tapered body (widthAt in the ribbon
+// builder); here only opacity fades along the arc so the tail dissolves.
+uniform vec4 uBrushColor;
 
-in vec2 vUV01;   // (perp_t, arc_t), both in 0..1; stroke band sits in the central
-in vec2 vWorld;  // sub-rectangle [c, 1-c] × [c, 1-c] (per-axis clearances differ)
+in vec2 vUV01; // x: 0..1 across width, y: 0 tail .. 1 head along arc
 
 out vec4 fragColor;
 
-//#include ink-core.frag.glsl
+const float TAIL_FADE = 0.35; // arc span over which the tail fades in
 
 void main() {
-    fragColor = inkStrokeColor(strokeField(vUV01), vWorld);
+    float alpha = uBrushColor.a * smoothstep(0.0, TAIL_FADE, vUV01.y);
+    if (alpha <= 0.0) discard;
+    fragColor = vec4(uBrushColor.rgb, alpha);
 }

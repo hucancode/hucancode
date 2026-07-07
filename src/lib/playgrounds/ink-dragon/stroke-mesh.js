@@ -1,16 +1,10 @@
 import { Geometry } from "$lib/engine/index.js";
-import {
-  buildRibbonGeometry,
-  writeQuadIndices,
-  ARC_EXTRA_POINTS,
-  PERP_CLEARANCE,
-  ARC_CLEARANCE,
-} from "$lib/brush/ribbon.js";
+import { buildRibbonGeometry, writeQuadIndices } from "$lib/brush/ribbon.js";
 
-export { PERP_CLEARANCE, ARC_CLEARANCE };
-
-export function makePolylineStroke({ maxPoints, params, brushColor, widthAt, perpClearance, arcClearance }) {
-  const ribbonCap = maxPoints + ARC_EXTRA_POINTS;
+// Exact-width ribbon record (no bleed margins): the fragment shaders are flat
+// fills, so all width shaping lives in the MESH via widthAt.
+export function makePolylineStroke({ maxPoints, lineWidth, brushColor, widthAt }) {
+  const ribbonCap = maxPoints;
   const maxVerts  = ribbonCap * 2;
   const positions = new Float32Array(maxVerts * 3);
   const lineUVs   = new Float32Array(maxVerts * 2);
@@ -26,24 +20,10 @@ export function makePolylineStroke({ maxPoints, params, brushColor, widthAt, per
   return {
     geom, positions, lineUVs,
     maxPoints, ribbonCap, n: 0,
-    lineWidth: params.lineWidth,
+    lineWidth,
     lastPts: null,
     brushColor,
-    widthAt: widthAt ?? null,           // (arcT, stroke) => absolute width; taper in mesh
-    perpClearance, arcClearance,        // undefined = shared defaults
-    params: {
-      uInkFlow:       params.inkFlow,
-      uStrands:       params.strands,
-      uWaterFlow:     params.waterFlow,
-      uOpacity:       params.opacity,
-      uWobble:        params.wobble,
-      uWidthEnd:      params.widthEnd,
-      uWidthOffset:   params.widthOffset,
-      uWidthRange:    params.widthRange,
-      uWidthAnchor:   params.widthAnchor ?? 0.5,
-      uPerpClearance: PERP_CLEARANCE,
-      uArcClearance:  ARC_CLEARANCE,
-    },
+    widthAt: widthAt ?? null, // (arcT, stroke) => absolute width; taper in mesh
   };
 }
 
@@ -66,8 +46,6 @@ export function updatePolylineStroke(stroke, points) {
     positions,
     uvs: lineUVs,
     stride: 3,
-    perpClearance: stroke.perpClearance,
-    arcClearance: stroke.arcClearance,
     widthAt: stroke.widthAt ? (t) => stroke.widthAt(t, stroke) : null,
   });
 

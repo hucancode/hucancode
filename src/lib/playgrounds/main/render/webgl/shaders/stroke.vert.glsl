@@ -1,16 +1,12 @@
 #version 300 es
-// uFlipY = +1 WebGL, -1 WebGPU (offscreen render-to-texture V axis differs per API).
+// Flat ink ribbon, drawn straight to screen in world space (no offscreen
+// texture, so the body can never be cut at a texture border).
 precision highp float;
 in vec2 aPos;
 in vec2 aLineUV;
-uniform float uAspect;
-uniform float uCamY;
-uniform float uFlipY;
-uniform float uExt;
+uniform mat4 uViewProj;
 out vec2 vUV01;
-out vec2 vWorld;
 void main() {
   vUV01 = aLineUV;
-  vWorld = aPos;
-  gl_Position = vec4(aPos.x / (uAspect * uExt), (aPos.y - uCamY) / uExt * uFlipY, 0.0, 1.0);
+  gl_Position = uViewProj * vec4(aPos, 0.0, 1.0);
 }

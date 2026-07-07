@@ -1,5 +1,4 @@
 import { createPlayground, mat4, planeGeometry, F32, VEC4, MAT4 } from "$lib/engine/index.js";
-import { composeShader } from "$lib/brush/shaders/index.js";
 import { catmullOpen } from "$lib/math/curve.js";
 import { clamp, smooth } from "$lib/math/scalar.js";
 import BASIC_VERT from "./shaders/basic.vert.glsl?raw";
@@ -22,9 +21,9 @@ import {
 const PAPER_COLOR = [1.0, 1.0, 0.875, 1.0];
 
 const BODY_MAX_POINTS = 64;
+const BODY_TAPER_SPAN = 0.7;
 const WHISKER_MAX_POINTS = 80;
 const WHISKER_SAMPLES_PER_SEGMENT = 4;
-// mesh-side taper: end = tip width fraction, offset/range = smoothstep centre/softness
 const WHISKER_TAPER = { end: 0.0, offset: 0.4, range: 0.8 };
 
 const HEAD_PLANE_W = 2.4;
@@ -159,13 +158,9 @@ function setup(ctx) {
     uniforms: [MAT4("uModel"), F32("uAspect"), VEC4("uBgColor")],
     blend: "none", topology: "tri", target: "screen", sampleCount: 4,
   });
-  const strokeUniforms = [
-    F32("uAspect"), F32("uInkFlow"), F32("uStrands"), F32("uWaterFlow"), F32("uOpacity"),
-    F32("uWobble"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"), F32("uWidthAnchor"),
-    F32("uPerpClearance"), F32("uArcClearance"), VEC4("uBrushColor"),
-  ];
-  const strokeGlsl = { vertex: POLYLINE_VERT, fragment: composeShader(STROKE_FRAG) };
-  const strokeWgsl = composeShader(STROKE_WGSL);
+  const strokeUniforms = [F32("uAspect"), VEC4("uBrushColor")];
+  const strokeGlsl = { vertex: POLYLINE_VERT, fragment: STROKE_FRAG };
+  const strokeWgsl = STROKE_WGSL;
   pBody = device.shader({
     glsl: strokeGlsl, wgsl: strokeWgsl,
     buffers: [BUF_POS, BUF_STROKE_UV],
@@ -200,20 +195,18 @@ function setup(ctx) {
 
   bodyRibbon = makeRibbon({
     maxPoints: BODY_MAX_POINTS,
-    params: {
-      lineWidth: 0.12,
-      widthEnd: 0.1, widthOffset: 0.5, widthRange: 1.0,
-      inkFlow: 1.0, strands: 1.0, waterFlow: 0.5, wobble: 0.3,
-      opacity: 1.0,
-      widthAnchor: 0.5,
-    },
+    lineWidth: 0.12,
     brushColor,
+    // taper in the mesh: widthEnd fraction at the tail (arcT = 0), growing to
+    // full width over BODY_TAPER_SPAN of the arc toward the head
+    widthAt: (t, s) => s.lineWidth * (s.widthEnd + (1 - s.widthEnd) * smooth(clamp(t / BODY_TAPER_SPAN, 0, 1))),
   }, { withUV: true });
+  bodyRibbon.stroke.widthEnd = 0.1;
 
   for (let i = 0; i < 2; i++) {
     whiskers[i] = makeRibbon({
       maxPoints: WHISKER_MAX_POINTS,
-      params: { lineWidth: 0.01 },
+      lineWidth: 0.01,
       brushColor,
       // taper baked into the mesh: full width at the anchor (arcT = 1, points
       // reversed in setWhisker), tapering to zero at the free tip (arcT = 0)
@@ -222,9 +215,6 @@ function setup(ctx) {
         const curve = smooth(clamp((relArc - WHISKER_TAPER.offset + WHISKER_TAPER.range * 0.5) / WHISKER_TAPER.range, 0, 1));
         return s.lineWidth * (1 - curve * (1 - WHISKER_TAPER.end));
       },
-      // exact-width mesh, no bleed margins: fragment shader is a flat fill
-      perpClearance: 0,
-      arcClearance: 0,
     });
   }
 
@@ -239,16 +229,10 @@ function frame() {
     p.draw(pPaper, { buffers: [quadPosBuf, quadUVBuf], count: 6, uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR } });
 
     if (bodyRibbon && bodyRibbon.stroke.n >= 2 && bodyRibbon.idxCount > 0) {
-      const bp = bodyRibbon.stroke.params;
       const prog = bodyWireframe ? pBodyWire : pBody;
       p.draw(prog, {
         buffers: [bodyRibbon.posBuf, bodyRibbon.uvBuf], index: bodyRibbon.idxBuf, count: bodyRibbon.idxCount,
-        uniforms: {
-          uAspect: aspect, uInkFlow: bp.uInkFlow, uStrands: bp.uStrands, uWaterFlow: bp.uWaterFlow,
-          uOpacity: bp.uOpacity, uWobble: bp.uWobble, uWidthEnd: bp.uWidthEnd, uWidthOffset: bp.uWidthOffset,
-          uWidthRange: bp.uWidthRange, uWidthAnchor: bp.uWidthAnchor, uPerpClearance: bp.uPerpClearance,
-          uArcClearance: bp.uArcClearance, uBrushColor: bodyRibbon.stroke.brushColor,
-        },
+        uniforms: { uAspect: aspect, uBrushColor: bodyRibbon.stroke.brushColor },
       });
     }
 
@@ -268,15 +252,9 @@ function frame() {
 }
 
 const PARAM_APPLY = {
-  width:       (v) => { if (bodyRibbon && bodyRibbon.stroke.lineWidth !== v) setStrokeLineWidth(bodyRibbon.stroke, v); },
-  wireframe:   (v) => { bodyWireframe = !!v; },
-  inkFlow:     (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uInkFlow = v; },
-  strands:     (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uStrands = v; },
-  waterFlow:   (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWaterFlow = v; },
-  wobble:      (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWobble = v; },
-  widthEnd:    (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWidthEnd = v; },
-  widthOffset: (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWidthOffset = v; },
-  widthRange:  (v) => { if (bodyRibbon) bodyRibbon.stroke.params.uWidthRange = v; },
+  width:     (v) => { if (bodyRibbon && bodyRibbon.stroke.lineWidth !== v) setStrokeLineWidth(bodyRibbon.stroke, v); },
+  widthEnd:  (v) => { if (bodyRibbon && bodyRibbon.stroke.widthEnd !== v) { bodyRibbon.stroke.widthEnd = v; setStrokeLineWidth(bodyRibbon.stroke, bodyRibbon.stroke.lineWidth); } },
+  wireframe: (v) => { bodyWireframe = !!v; },
   // re-meshed (and aspect-baked) on the next setWhisker
   whiskerWidth: (v) => { for (const w of whiskers) if (w) w.stroke.lineWidth = v; },
 };

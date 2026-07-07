@@ -23,10 +23,7 @@
   let observer;
 
   let width = $state(0.05);
-  let inkFlow = $state(1.0);
-  let strands = $state(3.0);
-  let waterFlow = $state(0.8);
-  let wobble = $state(0.9);
+  let widthEnd = $state(0.1);
   let showPoints = $state(true);
   let showHead = $state(true);
   let showPath = $state(false);
@@ -36,28 +33,6 @@
   let whiskerSegs = $state(5);
   let whiskerLen = $state(1.2);
   let whiskerDamping = $state(0.88);
-
-  let widthPreset = $state("custom");
-  let widthEnd = $state(0.1);
-  let widthOffset = $state(0.2);
-  let widthRange = $state(0.6);
-
-  const widthPresets = {
-    uniform: { end: 1.0, offset: 0.5, range: 1.0 },
-    linear: { end: 0.0, offset: 0.5, range: 1.0 },
-    easeOut: { end: 0.0, offset: 0.75, range: 0.5 },
-    easeIn: { end: 0.0, offset: 0.25, range: 0.5 },
-    custom: null,
-  };
-
-  $effect(() => {
-    if (widthPreset === "custom") return;
-    const p = widthPresets[widthPreset];
-    if (!p) return;
-    widthEnd = p.end;
-    widthOffset = p.offset;
-    widthRange = p.range;
-  });
 
   let vertexCount = $state(16);
   let bodyLen = $state(1.2);
@@ -76,21 +51,10 @@
   let autoTip = { x: 0, y: 0 };
   let autoLastTime = 0;
 
-  // shader params
+  // brush params
   $effect(() => {
     if (!ready) return;
-    setParams({
-      width,
-      inkFlow,
-      strands,
-      waterFlow,
-      wobble,
-      widthEnd,
-      widthOffset,
-      widthRange,
-      wireframe,
-      whiskerWidth,
-    });
+    setParams({ width, widthEnd, wireframe, whiskerWidth });
   });
   $effect(() => {
     if (ready) setHead(null, null, headSize, showHead);
@@ -493,71 +457,9 @@
       <output>{width.toFixed(3)}</output>
     </label>
     <label>
-      <span>ink flow</span>
-      <input type="range" min="0.2" max="3" step="0.01" bind:value={inkFlow} />
-      <output>{inkFlow.toFixed(2)}</output>
-    </label>
-    <label>
-      <span>water flow</span>
-      <input type="range" min="0" max="1" step="0.01" bind:value={waterFlow} />
-      <output>{waterFlow.toFixed(2)}</output>
-    </label>
-    <label>
-      <span>strands</span>
-      <input type="range" min="0.1" max="4" step="0.01" bind:value={strands} />
-      <output>{strands.toFixed(2)}</output>
-    </label>
-    <label>
-      <span>wobble</span>
-      <input type="range" min="0" max="1" step="0.01" bind:value={wobble} />
-      <output>{wobble.toFixed(2)}</output>
-    </label>
-    <label>
-      <span>width shape</span>
-      <select bind:value={widthPreset}>
-        <option value="uniform">Uniform</option>
-        <option value="linear">Linear</option>
-        <option value="easeOut">Ease-out</option>
-        <option value="easeIn">Ease-in</option>
-        <option value="custom">Custom</option>
-      </select>
-      <output></output>
-    </label>
-    <label>
       <span>tail width</span>
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        bind:value={widthEnd}
-        oninput={() => (widthPreset = "custom")}
-      />
+      <input type="range" min="0" max="1" step="0.01" bind:value={widthEnd} />
       <output>{widthEnd.toFixed(2)}</output>
-    </label>
-    <label>
-      <span>step offset</span>
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        bind:value={widthOffset}
-        oninput={() => (widthPreset = "custom")}
-      />
-      <output>{widthOffset.toFixed(2)}</output>
-    </label>
-    <label>
-      <span>step range</span>
-      <input
-        type="range"
-        min="0"
-        max="1.5"
-        step="0.01"
-        bind:value={widthRange}
-        oninput={() => (widthPreset = "custom")}
-      />
-      <output>{widthRange.toFixed(2)}</output>
     </label>
   </fieldset>
 

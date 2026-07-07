@@ -1,10 +1,7 @@
 // Dragon head silhouette. WGSL port of webgl/shaders/head.frag.glsl (+ inline vert).
 
 struct Uni {
-  uAspect: f32,
-  uCamY: f32,
-  uFlipY: f32,
-  uExt: f32,
+  uViewProj: mat4x4<f32>,
   uOpacity: f32,
   uBrushColor: vec4<f32>,
 };
@@ -23,7 +20,7 @@ struct VsOut {
 fn vs(@location(0) aPos: vec2<f32>, @location(1) aUV: vec2<f32>) -> VsOut {
   var o: VsOut;
   o.vUV = aUV;
-  o.pos = vec4(aPos.x / (u.uAspect * u.uExt), (aPos.y - u.uCamY) / u.uExt * u.uFlipY, 0.0, 1.0);
+  o.pos = u.uViewProj * vec4(aPos, 0.0, 1.0);
   return o;
 }
 
