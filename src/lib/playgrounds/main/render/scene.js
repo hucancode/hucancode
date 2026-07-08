@@ -48,7 +48,7 @@ export function makeSceneRenderer(device, canvas) {
 
   async function init() {
     for (const name in PROGRAMS) sh[name] = device.shader(PROGRAMS[name]);
-    segTex = device.texture({ width: 4, height: 1, format: "rgba32f", filter: "nearest" });
+    segTex = device.texture({ width: 5, height: 1, format: "rgba32f", filter: "nearest" });
     strokePos = device.buffer({ kind: "vertex", size: 0, dynamic: true });
     strokeUV = device.buffer({ kind: "vertex", size: 0, dynamic: true });
     strokeIdx = device.buffer({ kind: "index", size: 0, dynamic: true });
@@ -70,22 +70,27 @@ export function makeSceneRenderer(device, canvas) {
     glyphCacheKey = NaN; // target recreated -> force glyph re-render
   }
 
-  // pack baked glyph segs into rgba32f data texture (4 texels/seg); upload only when array identity changes
+  // pack baked glyph segs into rgba32f data texture (5 texels/seg; texel 0 =
+  // header cen.xy/hullR/t0 so the shader can cull on one fetch); upload only
+  // when array identity changes
   function uploadSegs(segs) {
     const n = segs ? segs.length : 0;
     if (n === 0) return 0;
     if (segs === segRef && n === segRows) return n;
     segRef = segs;
-    const need = n * 16;
+    const need = n * 20;
     if (segBuf.length < need) segBuf = new Float32Array(need);
     for (let i = 0; i < n; i++) {
-      const s = segs[i]; let o = i * 16;
+      const s = segs[i]; let o = i * 20;
+      const cx = (s.p1.x + s.p2.x) * 0.5, cy = (s.p1.y + s.p2.y) * 0.5;
+      const hullR = Math.max(Math.hypot(s.p1.x - cx, s.p1.y - cy), Math.hypot(s.ctrl.x - cx, s.ctrl.y - cy));
+      segBuf[o++] = cx; segBuf[o++] = cy; segBuf[o++] = hullR; segBuf[o++] = s.t0;
       segBuf[o++] = s.p1.x; segBuf[o++] = s.p1.y; segBuf[o++] = s.p2.x; segBuf[o++] = s.p2.y;
       segBuf[o++] = s.ctrl.x; segBuf[o++] = s.ctrl.y; segBuf[o++] = s.pr1; segBuf[o++] = s.pr2;
-      segBuf[o++] = s.k; segBuf[o++] = s.belly; segBuf[o++] = s.hasBelly; segBuf[o++] = s.t0;
-      segBuf[o++] = s.dur; segBuf[o++] = s.v0; segBuf[o++] = s.v1; segBuf[o++] = 0;
+      segBuf[o++] = s.k; segBuf[o++] = s.belly; segBuf[o++] = s.hasBelly; segBuf[o++] = s.dur;
+      segBuf[o++] = s.v0; segBuf[o++] = s.v1; segBuf[o++] = 0; segBuf[o++] = 0;
     }
-    segTex.write(segBuf.subarray(0, need), 4, n);
+    segTex.write(segBuf.subarray(0, need), 5, n);
     segRows = n;
     return n;
   }

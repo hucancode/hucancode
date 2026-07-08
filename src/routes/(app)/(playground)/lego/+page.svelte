@@ -642,13 +642,13 @@
                 <select bind:value={node.on}>{#each MOUNTS as f}<option value={f}>{f}</option>{/each}</select></label>
             {/if}
             {#if connMode(node) === "grid"}
-              <label><span>Rot Xdeg</span>
+              <label><span>Rot X</span>
                 <input type="range" min="0" max="270" step="90" value={connRot(node)[0]}
                   oninput={(e) => setConnRot(node, 0, e.currentTarget.value)} /><output>{connRot(node)[0]}</output></label>
-              <label><span>Rot Ydeg</span>
+              <label><span>Rot Y</span>
                 <input type="range" min="0" max="270" step="90" value={connRot(node)[1]}
                   oninput={(e) => setConnRot(node, 1, e.currentTarget.value)} /><output>{connRot(node)[1]}</output></label>
-              <label><span>Rot Zdeg</span>
+              <label><span>Rot Z</span>
                 <input type="range" min="0" max="270" step="90" value={connRot(node)[2]}
                   oninput={(e) => setConnRot(node, 2, e.currentTarget.value)} /><output>{connRot(node)[2]}</output></label>
             {:else}
@@ -656,20 +656,20 @@
                 <select value={node.joint ?? "hinge"} onchange={(e) => setJoint(node, e.currentTarget.value)}>
                   {#each FREE_JOINTS as j}<option value={j}>{j}</option>{/each}</select></label>
               {#if node.joint === "ball"}
-                <label><span>Spin Udeg</span>
+                <label><span>Spin U</span>
                   <input type="range" min="-180" max="180" step="5" value={jrotOf(node)[0]}
                     oninput={(e) => setJrot(node, 0, e.currentTarget.value)} /><output>{jrotOf(node)[0]}</output></label>
-                <label><span>Spin Vdeg</span>
+                <label><span>Spin V</span>
                   <input type="range" min="-180" max="180" step="5" value={jrotOf(node)[1]}
                     oninput={(e) => setJrot(node, 1, e.currentTarget.value)} /><output>{jrotOf(node)[1]}</output></label>
-                <label><span>Spin Ndeg</span>
+                <label><span>Spin N</span>
                   <input type="range" min="-180" max="180" step="5" value={jrotOf(node)[2]}
                     oninput={(e) => setJrot(node, 2, e.currentTarget.value)} /><output>{jrotOf(node)[2]}</output></label>
               {:else if node.joint === "hinge"}
-                <label><span>Pitch Xdeg</span>
+                <label><span>Pitch X</span>
                   <input type="range" min="-180" max="180" step="5" value={node.jpitch ?? 0}
                     oninput={(e) => (node.jpitch = +e.currentTarget.value)} /><output>{node.jpitch ?? 0}</output></label>
-                <label><span>Yaw Ydeg</span>
+                <label><span>Yaw Y</span>
                   <input type="range" min="-180" max="180" step="5" value={node.jyaw ?? 0}
                     oninput={(e) => (node.jyaw = +e.currentTarget.value)} /><output>{node.jyaw ?? 0}</output></label>
               {/if}

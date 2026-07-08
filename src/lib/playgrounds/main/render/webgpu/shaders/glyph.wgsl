@@ -1,7 +1,8 @@
 // Glyph SDF reveal, ink only. WGSL port of webgl/shaders/glyph.frag.glsl.
-// Fullscreen triangle; samples the seg DATA TEXTURE (rgba32float, 4 texels/seg)
-// via textureLoad. No y-flip: WebGPU's top-left frag origin + top-down texture
-// storage cancel against the composite quad's sampling (see render/scene.js).
+// Fullscreen triangle; samples the seg DATA TEXTURE (rgba32float, 5 texels/seg,
+// texel 0 = header: cen.xy, hullR, t0) via textureLoad. No y-flip: WebGPU's
+// top-left frag origin + top-down texture storage cancel against the composite
+// quad's sampling (see render/scene.js).
 
 struct Uni {
   uResolution: vec2<f32>,
@@ -20,25 +21,6 @@ const MIN_PRESS: f32 = 0.0;
 fn vs(@builtin(vertex_index) vid: u32) -> @builtin(position) vec4<f32> {
   var P = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
   return vec4(P[vid], 0.0, 1.0);
-}
-
-struct Seg {
-  p1: vec2<f32>, p2: vec2<f32>, ctrl: vec2<f32>,
-  pr1: f32, pr2: f32, k: f32, belly: f32, hasBelly: i32,
-  t0: f32, dur: f32, v0: f32, v1: f32,
-};
-
-fn getSeg(i: i32) -> Seg {
-  let a = textureLoad(segTex, vec2<i32>(0, i), 0);
-  let b = textureLoad(segTex, vec2<i32>(1, i), 0);
-  let c = textureLoad(segTex, vec2<i32>(2, i), 0);
-  let d = textureLoad(segTex, vec2<i32>(3, i), 0);
-  var s: Seg;
-  s.p1 = a.xy; s.p2 = a.zw;
-  s.ctrl = b.xy; s.pr1 = b.z; s.pr2 = b.w;
-  s.k = c.x; s.belly = c.y; s.hasBelly = i32(c.z + 0.5); s.t0 = c.w;
-  s.dur = d.x; s.v0 = d.y; s.v1 = d.z;
-  return s;
 }
 
 fn bez(p1: vec2<f32>, c: vec2<f32>, p2: vec2<f32>, t: f32) -> vec2<f32> {
@@ -105,32 +87,38 @@ fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
 
   var dmin = 1e9;
   for (var i = 0; i < nSeg; i = i + 1) {
-    let s = getSeg(i);
-    let p1 = s.p1;
-    let p2 = s.p2;
-    let c = s.ctrl;
-    let pa = s.pr1;
-    let pb = s.pr2;
+    if (dmin < -aa) { break; } // fragment already fully inside ink
 
-    let tp = clamp((time - s.t0) / s.dur, 0.0, 1.0);
-    if (tp <= 0.0) { continue; }
-    let r = revealArc(tp, s.v0, s.v1);
+    // header texel: cull on time + hull with 1 load before loading the rest
+    let hdr = textureLoad(segTex, vec2<i32>(0, i), 0); // cen.xy, hullR, t0
+    if (time <= hdr.w) { continue; }
+    if (length(w - hdr.xy) - hdr.z - baseRadius > aa) { continue; }
 
-    let cen = (p1 + p2) * 0.5;
-    let hullR = max(length(p1 - cen), length(c - cen));
-    if (length(w - cen) - hullR - baseRadius > aa) { continue; }
+    let a = textureLoad(segTex, vec2<i32>(1, i), 0); // p1.xy, p2.xy
+    let b = textureLoad(segTex, vec2<i32>(2, i), 0); // ctrl.xy, pr1, pr2
+    let c = textureLoad(segTex, vec2<i32>(3, i), 0); // k, belly, hasBelly, dur
+    let d = textureLoad(segTex, vec2<i32>(4, i), 0); // v0, v1
+    let p1 = a.xy;
+    let p2 = a.zw;
+    let ctrl = b.xy;
+    let pa = b.z;
+    let pb = b.w;
+    let hasBelly = c.z > 0.5;
 
-    var prevPos = bez(p1, c, p2, 0.0);
+    let tp = clamp((time - hdr.w) / c.w, 0.0, 1.0);
+    let r = revealArc(tp, d.x, d.y);
+
+    var prevPos = bez(p1, ctrl, p2, 0.0);
     var prevRad = baseRadius * max(MIN_PRESS, pa);
     for (var kk = 1; kk <= SAMPLES; kk = kk + 1) {
       let t = (f32(kk) / f32(SAMPLES)) * r;
       var pr: f32;
-      if (s.hasBelly == 1) {
-        pr = pressureAt(pa, pb, s.k, t, s.belly);
+      if (hasBelly) {
+        pr = pressureAt(pa, pb, c.x, t, c.y);
       } else {
         pr = mix(pa, pb, t);
       }
-      let pos = bez(p1, c, p2, t);
+      let pos = bez(p1, ctrl, p2, t);
       let rad = baseRadius * max(MIN_PRESS, pr);
       dmin = min(dmin, sdRoundedCone(w, prevPos, pos, prevRad, rad));
       prevPos = pos;

@@ -60,8 +60,8 @@ float dtoa(float d, float amount) { return clamp(1.0 / (clamp(d, 1.0 / amount, 1
 float smoothf(float x) { return x * x * x * (x * (x * 6.0 - 15.0) + 10.0); }
 
 // Coverage (alpha) of the brush stroke at a point in line-space.
-float strokeAlpha(vec2 uvLine, vec2 paperUV, vec2 lineSize, float sdGeometry, Brush b) {
-    float posInLineY = (uvLine.y / max(lineSize.y, 1e-6)) * b.taper;
+float strokeAlpha(vec2 uvLine, float strokeLen, float sdGeometry, float edgeAmt, Brush b) {
+    float posInLineY = (uvLine.y / max(strokeLen, 1e-6)) * b.taper;
     float inkFlow = max(b.inkFlow, 0.05);
     float taperEq = mix(1.5, 14.0, smoothstep(0.2, 3.0, inkFlow));
     if (posInLineY > 0.0) posInLineY = pow(posInLineY, taperEq);
@@ -84,9 +84,7 @@ float strokeAlpha(vec2 uvLine, vec2 paperUV, vec2 lineSize, float sdGeometry, Br
     strokeAlpha = 1.09 * max(0.0, strokeAlpha - pow(max(0.0, posInLineY), 0.5));
     strokeAlpha = smoothf(strokeAlpha);
 
-    float paperBleedAmt = 60.0 + (rand(paperUV.yy) * 30.0) + (rand(paperUV.xx) * 30.0);
-    float edge = (b.bleed > 0.5) ? dtoa(sdGeometry, paperBleedAmt) : dtoa(sdGeometry, 300.0);
-    return clamp(strokeAlpha * edge, 0.0, 1.0);
+    return clamp(strokeAlpha * dtoa(sdGeometry, edgeAmt), 0.0, 1.0);
 }
 
 vec3 deformLine(vec2 uvLine, float lineLength) {
@@ -102,11 +100,11 @@ vec3 deformLine(vec2 uvLine, float lineLength) {
     return vec3(h, centerOff);
 }
 
-float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float strokeLen, Brush b) {
+// hu (deformed line + center offset), tailVar/headVar (bristle taper noise) and
+// paperBleedAmt are layer-independent — computed once in main(), shared by all 3 passes.
+float drawStroke(float along, float perp, vec3 hu, float tailVar, float headVar,
+                 float paperBleedAmt, float lineLength, float strokeLen, Brush b) {
     float lineWidth = b.lineWidth;
-    float along = uv.x;
-    float perp  = uv.y;
-    vec2 uvLine = vec2(perp, along);
 
     float tAlong = clamp(along / max(strokeLen, 1e-6), 0.0, 1.0);
     float halfRange = max(uWidthRange, 1e-3) * 0.5;
@@ -115,7 +113,6 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float s
     float widthCurve = smoothstep(wOff - halfRange, wOff + halfRange, tAlong);
     float lineWidth1 = lineWidth * mix(1.0, clamp(uWidthEnd, 0.0, 1.0), widthCurve);
 
-    vec3 hu = deformLine(uvLine, lineLength);
     vec2 huUV = hu.xy;
     float centerOff = hu.z;
 
@@ -124,7 +121,8 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float s
     float bodyCenter = centerOff + anchorS * 0.5 * (lineWidth - lineWidth1);
     float d_body = abs(perp - bodyCenter) - bodyHalfW;
 
-    float base = strokeAlpha(huUV, paperUV, vec2(lineWidth1, max(strokeLen, 1e-6)), d_body, b);
+    float edgeAmt = (b.bleed > 0.5) ? paperBleedAmt : 300.0;
+    float base = strokeAlpha(huUV, max(strokeLen, 1e-6), d_body, edgeAmt, b);
     float alongClamped = clamp(along, 0.0, lineLength);
 
     if (b.fadeEnds > 0.5) {
@@ -145,30 +143,12 @@ float drawStroke(vec2 uv, vec2 paperUV, float radius_, float lineLength, float s
 
     // Cap fadeLen so start/end fade zones never overlap (prevents crushing at small sweep).
     float fadeLen = min(lineWidth * 5.0, strokeLen * 0.45);
-    // Per-group bristle taper: lower frequency -> bigger clumps of strands that
-    // taper together, smoother and bolder. Head (start) uses coarser noise so
-    // bristles are visibly large rather than fine fringe.
-    float bristleT = perp / max(uLineWidth, 1e-4);
-    float tn1 = noise01(vec2(bristleT * 5.5, 1.71));
-    float tn2 = noise01(vec2(bristleT * 13.0, 5.19));
-    float tailVar = tn1 * 0.65 + tn2 * 0.35;
     // min ratio 0.40 (was 0.15) -> each bristle has ample fade room, no fine clipping
     float tailLen = max(fadeLen * mix(0.40, 1.0, tailVar), 1e-5);
     float startFade = smoothstep(0.0, tailLen, alongClamped);
-    float hn1 = noise01(vec2(bristleT * 11.0, 8.33));
-    float hn2 = noise01(vec2(bristleT * 27.3, 13.7));
-    float headVar = hn1 * 0.65 + hn2 * 0.35;
     float headLen = fadeLen * mix(0.15, 1.0, headVar);
     float endFade  = smoothstep(strokeLen, max(strokeLen - headLen, 0.0), alongClamped);
     return base * startFade * endFade;
-}
-
-// Coverage of one brush at this fragment (single lap).
-float layerAlpha(vec2 uv, float r, float phase, float lineLength, float strokeLen, Brush b) {
-    float along = phase * uRadius;
-    if (along > lineLength) return 0.0;
-    vec2 suv = vec2(along, r - uRadius);
-    return drawStroke(suv, uv, uRadius, lineLength, strokeLen, b);
 }
 
 void main() {
@@ -176,6 +156,16 @@ void main() {
     vec2 uv = vec2((vUV.x * 2.0 - 1.0) * uAspect, vUV.y * 2.0 - 1.0) * uExt;
 
     float r = length(uv);
+    float perp = r - uRadius;
+    // radial cull: the dtoa bleed halo decays ~1/d and is <~4% alpha past this
+    // window; fade it to 0 so the skip is seamless. Culls most of the quad
+    // before any noise is evaluated.
+    float washIn  = uLineWidth + 0.2;
+    float washOut = uLineWidth + 0.45;
+    float aperp = abs(perp);
+    if (aperp >= washOut) { fragColor = vec4(uInkColor, 0.0); return; }
+    float washWin = 1.0 - smoothstep(washIn, washOut, aperp);
+
     float a = atan(uv.x, uv.y) - uAngleStart;
     if (CLOCKWISE) a = -a;
     float phase = mod(a, PI2);
@@ -184,6 +174,23 @@ void main() {
     // fraction (the head leads the front).
     float lineLength = uRadius * PI2;
     float strokeLen = lineLength * clamp(uSweep, 0.0, 1.0);
+    float along = phase * uRadius;
+    // beyond the leading edge every layer is exactly 0 (bleed tail factor,
+    // wet/dry endFade) — cull the unswept arc before any noise.
+    if (along >= strokeLen) { fragColor = vec4(uInkColor, 0.0); return; }
+
+    // layer-independent work, hoisted out of the 3 brush passes
+    vec2 uvLine = vec2(perp, along);
+    vec3 hu = deformLine(uvLine, lineLength);
+    // Per-group bristle taper: lower frequency -> bigger clumps of strands that
+    // taper together, smoother and bolder. Head (start) uses coarser noise so
+    // bristles are visibly large rather than fine fringe.
+    float bristleT = perp / max(uLineWidth, 1e-4);
+    float tailVar = noise01(vec2(bristleT * 5.5, 1.71)) * 0.65
+                  + noise01(vec2(bristleT * 13.0, 5.19)) * 0.35;
+    float headVar = noise01(vec2(bristleT * 11.0, 8.33)) * 0.65
+                  + noise01(vec2(bristleT * 27.3, 13.7)) * 0.35;
+    float paperBleedAmt = 60.0 + (rand(uv.yy) * 30.0) + (rand(uv.xx) * 30.0);
 
     // 3 stacked passes, wide-light to narrow-dark.
     Brush bleed = Brush(uInkFlow * 0.4,
@@ -203,14 +210,14 @@ void main() {
                       0.0, 0.0, 1.0, 0.0);
 
     // bleed wash fades in across the early sweep
-    float aBleed = layerAlpha(uv, r, phase, lineLength, strokeLen, bleed)
+    float aBleed = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, bleed)
                  * smoothstep(0.1, 0.5, uSweep);
-    float aWet = layerAlpha(uv, r, phase, lineLength, strokeLen, wet);
-    float aDry = layerAlpha(uv, r, phase, lineLength, strokeLen, dry);
+    float aWet = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, wet);
+    float aDry = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, dry);
 
     // over-composite (same ink colour): bleed under, wet, dry on top
     float alpha = aBleed;
     alpha = alpha + aWet * (1.0 - alpha);
     alpha = alpha + aDry * (1.0 - alpha);
-    fragColor = vec4(uInkColor, alpha * uOpacity);
+    fragColor = vec4(uInkColor, alpha * uOpacity * washWin);
 }
