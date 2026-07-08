@@ -1,4 +1,4 @@
-// Ground-plane grid. WGSL port of webgl/shaders/grid.{vert,frag}.glsl.
+// Ground-plane grid.
 // Procedural major/minor lines with fog + camera-depth falloff + radial wipe.
 // Premultiplied output.
 

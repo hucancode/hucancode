@@ -1,4 +1,4 @@
-// Enso circle brush stroke (polar). WGSL port of webgl/shaders/enso.frag.glsl.
+// Enso circle brush stroke (polar).
 // Stroke laid out in polar coords about the origin, swept by uSweep; 3 stacked
 // brush passes (bleed/wet/dry) over-composited.
 

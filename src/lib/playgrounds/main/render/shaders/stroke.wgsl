@@ -1,4 +1,4 @@
-// Flat ink ribbon. WGSL twin of webgl/shaders/stroke.{vert,frag}.glsl.
+// Flat ink ribbon.
 
 struct Uni {
   uViewProj: mat4x4<f32>,

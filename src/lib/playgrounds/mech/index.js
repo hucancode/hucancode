@@ -5,9 +5,7 @@
 // ONE instanced draw per key, reusing GPU buffers across model patches.
 import { createPlayground, createOrbit, mat4, F32, VEC3, MAT4 } from "$lib/engine/index.js";
 import { INSTANCED_PROGRAM, createInstancedDrawer } from "$lib/mech/instancing.js";
-import GRID_WGSL from "./shaders/grid.wgsl?raw";
-import GRID_VERT from "./shaders/grid.vert.glsl?raw";
-import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
+import GRID from "./shaders/grid.wgsl?shader";
 
 const BG = [0.07, 0.09, 0.13, 1];
 const LIGHT_R = 30, LIGHT_Y = 40;
@@ -47,15 +45,15 @@ const { init, render, destroy } = createPlayground({
   init({ device, canvas }) {
     shader = device.shader({
       ...INSTANCED_PROGRAM,
-      depth: "test", blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+      depth: "test", blend: "straight", topology: "tri",
     });
     gridShader = device.shader({
-      glsl: { vertex: GRID_VERT, fragment: GRID_FRAG }, wgsl: GRID_WGSL,
+      ...GRID,
       uniforms: [
         MAT4("uViewProj"), F32("uExt"), F32("uY"), F32("uStep"),
         F32("uMinorDiv"), F32("uOpacity"), VEC3("uColor"),
       ],
-      depth: "none", blend: "premult", topology: "tri-strip", target: "screen", sampleCount: 4,
+      depth: "none", blend: "premult", topology: "tri-strip",
     });
     drawer = createInstancedDrawer(device);
     orbit = createOrbit(canvas, { ...view, wheel: true });
@@ -69,7 +67,7 @@ const { init, render, destroy } = createPlayground({
     const light = [Math.cos(la) * LIGHT_R, LIGHT_Y, Math.sin(la) * LIGHT_R];
 
     device.beginFrame();
-    device.pass({ target: "screen", clear: BG, depth: true, depthClear: 1 }, (p) => {
+    device.pass({ clear: BG, depth: true, depthClear: 1 }, (p) => {
       p.draw(gridShader, {
         count: 4,
         uniforms: {

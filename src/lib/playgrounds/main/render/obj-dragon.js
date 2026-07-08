@@ -3,15 +3,13 @@
 // when the style is active, so the default mech style pays neither bundle nor
 // runtime cost for it.
 import { loadDragonMesh } from "$lib/engine/index.js";
-import DRAGON3D_FRAG from "./webgl/shaders/dragon3d.frag.glsl?raw";
-import DRAGON3D_VERT from "./webgl/shaders/dragon3d.vert.glsl?raw";
-import DRAGON3D_WGSL from "./webgpu/shaders/dragon3d.wgsl?raw";
+import DRAGON3D from "./shaders/dragon3d.wgsl?shader";
 
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 
 export async function createObjDragon(device) {
   const shader = device.shader({
-    glsl: { vertex: DRAGON3D_VERT, fragment: DRAGON3D_FRAG }, wgsl: DRAGON3D_WGSL,
+    ...DRAGON3D,
     buffers: [
       { stride: 12, step: "vertex", attributes: [{ name: "aPos", location: 0, format: "float32x3", offset: 0 }] },
       { stride: 12, step: "vertex", attributes: [{ name: "aNormal", location: 1, format: "float32x3", offset: 0 }] },
@@ -24,7 +22,7 @@ export async function createObjDragon(device) {
       { name: "uAlbedo", type: "vec3" },
     ],
     textures: [{ name: "uFrames", binding: 1 }],
-    blend: "straight", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
+    blend: "straight", depth: "test", topology: "tri",
   });
   const mesh = await loadDragonMesh(DRAGON_OBJ, 1.0);
   const pos = device.buffer({ kind: "vertex", data: mesh.positions });

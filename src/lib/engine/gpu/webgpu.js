@@ -1,8 +1,10 @@
-// Screen pass is 4x MSAA + resolve. Per-shader uniform-buffer RING: one frame =
-// single submit, so every draw sharing a shader needs its own uniform buffer
-// (GPU reads them all at submit time); ring hands out a fresh slot per draw.
+// Screen pass is 4x MSAA + resolve (unless the device opted out). Per-shader
+// uniform-buffer RING: one frame = single submit, so every draw sharing a
+// shader needs its own uniform buffer (GPU reads them all at submit time);
+// ring hands out a fresh slot per draw.
 
 import * as mat4 from "../../math/mat4.js";
+import { uniformLayout, packUniforms } from "./std140.js";
 
 async function makeWebGPUContext(canvas) {
   if (typeof navigator === "undefined" || !navigator.gpu)
@@ -23,54 +25,21 @@ async function makeWebGPUContext(canvas) {
   return { device, context, format };
 }
 
-const STRAIGHT_BLEND = { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } };
 const BLEND = {
   premult: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
-  accum: STRAIGHT_BLEND,
-  straight: STRAIGHT_BLEND,
+  straight: { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
 };
 const TOPO = { tri: "triangle-list", "tri-strip": "triangle-strip", "line-strip": "line-strip", point: "point-list" };
-const U_ALIGN = { f32: 4, i32: 4, vec2: 8, vec3: 16, vec4: 16, mat4: 16 };
-const U_SIZE = { f32: 4, i32: 4, vec2: 8, vec3: 12, vec4: 16, mat4: 64 };
 const align = (n, a) => Math.ceil(n / a) * a;
-
-// std140-ish layout: vec3/vec4/mat4 align to 16. WGSL uniform struct MUST
-// declare the same fields in this order.
-function uniformLayout(uniforms) {
-  let off = 0;
-  const fields = uniforms.map((u) => {
-    off = align(off, U_ALIGN[u.type]);
-    const f = { name: u.name, type: u.type, offset: off };
-    off += U_SIZE[u.type];
-    return f;
-  });
-  return { fields, size: Math.max(16, align(off, 16)) };
-}
-function packUniforms(layout, values, view) {
-  for (const f of layout.fields) {
-    const v = values[f.name];
-    if (v == null) continue;
-    const o = f.offset;
-    switch (f.type) {
-      case "f32": view.setFloat32(o, v, true); break;
-      case "i32": view.setInt32(o, v | 0, true); break;
-      case "vec2": view.setFloat32(o, v[0], true); view.setFloat32(o + 4, v[1], true); break;
-      case "vec3": view.setFloat32(o, v[0], true); view.setFloat32(o + 4, v[1], true); view.setFloat32(o + 8, v[2], true); break;
-      case "vec4": for (let i = 0; i < 4; i++) view.setFloat32(o + i * 4, v[i], true); break;
-      case "mat4": for (let i = 0; i < 16; i++) view.setFloat32(o + i * 4, v[i], true); break;
-    }
-  }
-}
 
 // clip-space z remap: camera projection is GL convention (z in [-1, 1]); WebGPU
 // clips to [0, 1], so uncorrected geometry gets near-plane clipped. R * viewProj
 // maps z' = 0.5 z + 0.5 w. column-major
 const Z_REMAP = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 1]);
 
-export async function createWebGPUDevice(canvas) {
+export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
   const gpu = await makeWebGPUContext(canvas);
   const device = gpu.device, context = gpu.context, format = gpu.format, queue = device.queue;
-  const sampler = device.createSampler({ magFilter: "linear", minFilter: "linear" });
   const shaders = [];
   let encoder = null;
   let texCounter = 0; // stable id per live GPUTexture, for bind-group cache keys
@@ -80,9 +49,13 @@ export async function createWebGPUDevice(canvas) {
 
   function makeMSAA() {
     msaaTex?.destroy?.(); depthTex?.destroy?.();
-    msaaTex = device.createTexture({ size: [W, H], sampleCount: 4, format, usage: GPUTextureUsage.RENDER_ATTACHMENT });
-    msaaView = msaaTex.createView();
-    depthTex = device.createTexture({ size: [W, H], sampleCount: 4, format: "depth24plus", usage: GPUTextureUsage.RENDER_ATTACHMENT });
+    if (msaa) {
+      msaaTex = device.createTexture({ size: [W, H], sampleCount: 4, format, usage: GPUTextureUsage.RENDER_ATTACHMENT });
+      msaaView = msaaTex.createView();
+    } else {
+      msaaTex = null; msaaView = null;
+    }
+    depthTex = device.createTexture({ size: [W, H], sampleCount: msaa ? 4 : 1, format: "depth24plus", usage: GPUTextureUsage.RENDER_ATTACHMENT });
     depthView = depthTex.createView();
   }
   makeMSAA();
@@ -122,24 +95,18 @@ export async function createWebGPUDevice(canvas) {
     };
   }
 
-  function target({ width, height, format: fmt = "rgba8", filter = "linear" }) {
-    const color = texture({ width, height, format: fmt, filter });
-    return { color, get _view() { return color._view; }, width, height, destroy() { color.destroy(); } };
-  }
-
   function shader(desc) {
     const mod = device.createShaderModule({ code: desc.wgsl });
     const vbuffers = (desc.buffers || []).map((b) => ({
       arrayStride: b.stride, stepMode: b.step === "instance" ? "instance" : "vertex",
       attributes: b.attributes.map((a) => ({ shaderLocation: a.location, offset: a.offset || 0, format: a.format })),
     }));
-    const targetFormat = desc.target === "screen" ? format : "rgba8unorm";
     const pdesc = {
       layout: "auto",
       vertex: { module: mod, entryPoint: "vs", buffers: vbuffers },
-      fragment: { module: mod, entryPoint: "fs", targets: [{ format: targetFormat, blend: desc.blend ? BLEND[desc.blend] : undefined }] },
+      fragment: { module: mod, entryPoint: "fs", targets: [{ format, blend: desc.blend ? BLEND[desc.blend] : undefined }] },
       primitive: { topology: TOPO[desc.topology || "tri"], cullMode: "none" },
-      multisample: { count: desc.sampleCount || 1 },
+      multisample: { count: msaa ? 4 : 1 },
     };
     if (desc.depth) pdesc.depthStencil = { format: "depth24plus", depthWriteEnabled: desc.depth === "test", depthCompare: desc.depth === "test" ? "less-equal" : "always" };
     const pipeline = device.createRenderPipeline(pdesc);
@@ -149,8 +116,6 @@ export async function createWebGPUDevice(canvas) {
       _pipeline: pipeline, desc,
       _bgl: pipeline.getBindGroupLayout(0), // resolved ONCE at load, not per draw
       _ulayout: ulayout,
-      _uniformBinding: desc.uniformBinding ?? 0,
-      _samplerBinding: desc.sampler ?? null,
       _scratch: ulayout ? new ArrayBuffer(ulayout.size) : null,
       _ubos: [], _ring: 0,
     };
@@ -187,9 +152,8 @@ export async function createWebGPUDevice(canvas) {
     let bg = holder.bgCache.get(sig);
     if (!bg) {
       const entries = [];
-      if (ubo) entries.push({ binding: sh._uniformBinding, resource: { buffer: ubo } });
+      if (ubo) entries.push({ binding: 0, resource: { buffer: ubo } });
       for (const t of texList) { const tex = args.textures && args.textures[t.name]; if (tex) entries.push({ binding: t.binding, resource: tex._view }); }
-      if (sh._samplerBinding != null) entries.push({ binding: sh._samplerBinding, resource: sampler });
       bg = device.createBindGroup({ layout: sh._bgl, entries });
       holder.bgCache.set(sig, bg);
       if (holder.bgCache.size > 8) { const k = holder.bgCache.keys().next().value; holder.bgCache.delete(k); } // bound size (texture reallocs change ids)
@@ -203,17 +167,16 @@ export async function createWebGPUDevice(canvas) {
   }
 
   function pass(opts, fn) {
-    const toScreen = !opts.target || opts.target === "screen";
     const clear = opts.clear;
-    const clearValue = clear ? { r: clear[0], g: clear[1], b: clear[2], a: clear[3] } : undefined;
-    let color, depth;
-    if (toScreen) {
-      const view = context.getCurrentTexture().createView();
-      color = { view: msaaView, resolveTarget: view, clearValue: clearValue || { r: 0, g: 0, b: 0, a: 1 }, loadOp: clear ? "clear" : "load", storeOp: "discard" };
-      if (opts.depth) depth = { view: depthView, depthClearValue: opts.depthClear ?? 1, depthLoadOp: "clear", depthStoreOp: "discard" };
-    } else {
-      color = { view: opts.target._view, clearValue: clearValue || { r: 0, g: 0, b: 0, a: 0 }, loadOp: clear ? "clear" : "load", storeOp: "store" };
-    }
+    const cv = clear ? { r: clear[0], g: clear[1], b: clear[2], a: clear[3] } : { r: 0, g: 0, b: 0, a: 1 };
+    const loadOp = clear ? "clear" : "load";
+    const view = context.getCurrentTexture().createView();
+    const color = msaa
+      ? { view: msaaView, resolveTarget: view, clearValue: cv, loadOp, storeOp: "discard" }
+      : { view, clearValue: cv, loadOp, storeOp: "store" };
+    const depth = opts.depth
+      ? { view: depthView, depthClearValue: opts.depthClear ?? 1, depthLoadOp: "clear", depthStoreOp: "discard" }
+      : undefined;
     const rp = encoder.beginRenderPass({ colorAttachments: [color], depthStencilAttachment: depth });
     fn({ draw: (sh, args) => drawImpl(rp, sh, args) });
     rp.end();
@@ -223,10 +186,15 @@ export async function createWebGPUDevice(canvas) {
 
   return {
     backend: "webgpu", device,
-    buffer, texture, target, shader, pass, correctViewProj,
+    buffer, texture, shader, pass, correctViewProj,
     beginFrame() { encoder = device.createCommandEncoder(); for (const s of shaders) s._ring = 0; },
     endFrame() { if (encoder) { queue.submit([encoder.finish()]); encoder = null; } },
-    resize(w, h) { W = Math.max(1, w | 0); H = Math.max(1, h | 0); makeMSAA(); },
+    resize(w, h) {
+      // no-op on same size: callers may resize every frame; realloc only on change
+      const nw = Math.max(1, w | 0), nh = Math.max(1, h | 0);
+      if (nw === W && nh === H) return;
+      W = nw; H = nh; makeMSAA();
+    },
     destroy() { msaaTex?.destroy?.(); depthTex?.destroy?.(); device.destroy?.(); },
   };
 }

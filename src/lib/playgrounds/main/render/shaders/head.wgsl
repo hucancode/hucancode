@@ -1,4 +1,4 @@
-// Dragon head silhouette. WGSL port of webgl/shaders/head.frag.glsl (+ inline vert).
+// Dragon head silhouette.
 
 struct Uni {
   uViewProj: mat4x4<f32>,

@@ -1,5 +1,6 @@
 import { sveltekit } from "@sveltejs/kit/vite";
 import { markdocPlugin } from "./src/lib/markdoc/vite-plugin.js";
+import { wgslPlugin } from "./src/lib/engine/gpu/vite-plugin-wgsl.js";
 import path from "path";
 
 /** @type {import('vite').UserConfig} */
@@ -10,7 +11,7 @@ const config = {
       $styles: path.resolve(__dirname, "./src/styles"),
     },
   },
-  plugins: [markdocPlugin(), sveltekit()],
+  plugins: [wgslPlugin(), markdocPlugin(), sveltekit()],
 };
 
 export default config;

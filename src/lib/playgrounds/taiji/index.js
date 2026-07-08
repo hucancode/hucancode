@@ -1,12 +1,8 @@
 import { createPlayground, animate, utils, eases, F32, VEC2, VEC3 } from "$lib/engine/index.js";
 import { hexToRGB } from "$lib/math/color.js";
-import CLOUD_FRAG from "./shaders/cloud.frag.glsl?raw";
-import BAGUA_FRAG from "./shaders/bagua.frag.glsl?raw";
-import TAIJI_FRAG from "./shaders/taiji.frag.glsl?raw";
-import CLOUD_WGSL from "./shaders/cloud.wgsl?raw";
-import BAGUA_WGSL from "./shaders/bagua.wgsl?raw";
-import TAIJI_WGSL from "./shaders/taiji.wgsl?raw";
-import VERT from "./shaders/taiji.vert.glsl?raw";
+import CLOUD from "./shaders/cloud.wgsl?shader";
+import BAGUA from "./shaders/bagua.wgsl?shader";
+import TAIJI from "./shaders/taiji.wgsl?shader";
 
 const config = { taijiSpin: 0.01, cloudSpeed: 4, bitCount: 3, stroke: 0.04, dot: 0.12 };
 let color1 = hexToRGB("#ffffff");
@@ -30,19 +26,19 @@ function square(s, aspect) {
 const { init, render, destroy } = createPlayground({
   init({ device }) {
     pCloud = device.shader({
-      glsl: { vertex: VERT, fragment: CLOUD_FRAG }, wgsl: CLOUD_WGSL,
+      ...CLOUD,
       uniforms: [VEC2("uScale"), F32("uRot"), F32("time"), F32("alpha")],
-      blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+      blend: "straight", topology: "tri",
     });
     pBagua = device.shader({
-      glsl: { vertex: VERT, fragment: BAGUA_FRAG }, wgsl: BAGUA_WGSL,
+      ...BAGUA,
       uniforms: [VEC2("uScale"), F32("uRot"), F32("time"), F32("alpha"), F32("uBitCount")],
-      blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+      blend: "straight", topology: "tri",
     });
     pTaiji = device.shader({
-      glsl: { vertex: VERT, fragment: TAIJI_FRAG }, wgsl: TAIJI_WGSL,
+      ...TAIJI,
       uniforms: [VEC2("uScale"), F32("uRot"), F32("alpha"), F32("uStroke"), F32("uDot"), VEC3("color1"), VEC3("color2")],
-      blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+      blend: "straight", topology: "tri",
     });
 
     animate(cloudA, { v: { from: 0.1, to: 1 }, duration: 1000, ease: eases.linear });
@@ -56,7 +52,7 @@ const { init, render, destroy } = createPlayground({
     const aspect = canvas.width / canvas.height;
 
     device.beginFrame();
-    device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1] }, (p) => {
+    device.pass({ clear: [0.09, 0.09, 0.11, 1] }, (p) => {
       p.draw(pCloud, { count: 6, uniforms: { uScale: [1, 1], uRot: 0, time, alpha: cloudA.v } });
       p.draw(pBagua, {
         count: 6,

@@ -7,18 +7,15 @@ import { m3InvT } from "../math/mat3.js";
 // Per-instance data = 3 model matrix rows (vec4: linear row + translation in
 // w), 3 normal matrix rows (inverse-transpose, handles non-uniform scale +
 // mirroring) and color (alpha = per-item `a`, assembly fade).
-import INSTANCED_WGSL from "./shaders/instanced.wgsl?raw";
-import INSTANCED_VERT from "./shaders/instanced.vert.glsl?raw";
-import INSTANCED_FRAG from "./shaders/instanced.frag.glsl?raw";
+import INSTANCED from "./shaders/instanced.wgsl?shader";
 
 const INST_FLOATS = 28; // 3 model rows + 3 normal rows + color, vec4 each
 
 // shader descriptor shared by every consumer; spread and add pipeline state
-// (depth/blend/topology/target/sampleCount). blend "straight" honors the
+// (depth/blend/topology/target). blend "straight" honors the
 // instance alpha (assembly fade-ins).
 export const INSTANCED_PROGRAM = {
-  glsl: { vertex: INSTANCED_VERT, fragment: INSTANCED_FRAG },
-  wgsl: INSTANCED_WGSL,
+  ...INSTANCED,
   buffers: [
     { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
     { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },

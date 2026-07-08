@@ -1,17 +1,10 @@
 import { createPlayground, mat4, planeGeometry, F32, VEC4, MAT4 } from "$lib/engine/index.js";
 import { catmullOpen } from "$lib/math/curve.js";
 import { clamp, smooth } from "$lib/math/scalar.js";
-import BASIC_VERT from "./shaders/basic.vert.glsl?raw";
-import POLYLINE_VERT from "./shaders/stroke-polyline.vert.glsl?raw";
-import STROKE_FRAG from "./shaders/stroke.frag.glsl?raw";
-import PAPER_FRAG from "./shaders/paper-background.frag.glsl?raw";
-import DRAGON_HEAD_FRAGMENT_SHADER from "./shaders/dragon-head.frag.glsl?raw";
-import WHISKER_VERT from "./shaders/whisker.vert.glsl?raw";
-import WHISKER_FRAG from "./shaders/whisker.frag.glsl?raw";
-import PAPER_WGSL from "./shaders/paper.wgsl?raw";
-import STROKE_WGSL from "./shaders/stroke.wgsl?raw";
-import WHISKER_WGSL from "./shaders/whisker.wgsl?raw";
-import HEAD_WGSL from "./shaders/dragon-head.wgsl?raw";
+import PAPER from "./shaders/paper.wgsl?shader";
+import STROKE from "./shaders/stroke.wgsl?shader";
+import WHISKER from "./shaders/whisker.wgsl?shader";
+import HEAD from "./shaders/dragon-head.wgsl?shader";
 import {
   makePolylineStroke,
   updatePolylineStroke,
@@ -175,31 +168,28 @@ function setup(ctx) {
   aspect = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
 
   pPaper = device.shader({
-    glsl: { vertex: BASIC_VERT, fragment: PAPER_FRAG }, wgsl: PAPER_WGSL,
+    ...PAPER,
     buffers: [BUF_POS, BUF_UV],
     uniforms: [MAT4("uModel"), F32("uAspect"), VEC4("uBgColor")],
-    blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+    blend: "none", topology: "tri",
   });
-  const strokeUniforms = [F32("uAspect"), VEC4("uBrushColor")];
-  const strokeGlsl = { vertex: POLYLINE_VERT, fragment: STROKE_FRAG };
-  const strokeWgsl = STROKE_WGSL;
   pBody = device.shader({
-    glsl: strokeGlsl, wgsl: strokeWgsl,
+    ...STROKE,
     buffers: [BUF_POS, BUF_STROKE_UV],
-    uniforms: strokeUniforms,
-    blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+    uniforms: [F32("uAspect"), VEC4("uBrushColor")],
+    blend: "straight", topology: "tri",
   });
   pWhisker = device.shader({
-    glsl: { vertex: WHISKER_VERT, fragment: WHISKER_FRAG }, wgsl: WHISKER_WGSL,
+    ...WHISKER,
     buffers: [BUF_POS],
     uniforms: [VEC4("uBrushColor")],
-    blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+    blend: "straight", topology: "tri",
   });
   pHead = device.shader({
-    glsl: { vertex: BASIC_VERT, fragment: DRAGON_HEAD_FRAGMENT_SHADER }, wgsl: HEAD_WGSL,
+    ...HEAD,
     buffers: [BUF_POS, BUF_UV],
     uniforms: [MAT4("uModel"), VEC4("uBrushColor")],
-    blend: "straight", topology: "tri", target: "screen", sampleCount: 4,
+    blend: "straight", topology: "tri",
   });
 
   const paperQuad = planeGeometry(2, 2);
@@ -241,7 +231,7 @@ function frame() {
   syncAspect();
 
   device.beginFrame();
-  device.pass({ target: "screen", clear: [PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0] }, (p) => {
+  device.pass({ clear: [PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0] }, (p) => {
     p.draw(pPaper, { buffers: [quadPosBuf, quadUVBuf], count: 6, uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR } });
 
     if (bodyRibbon && bodyRibbon.stroke.n >= 2 && bodyRibbon.idxCount > 0) {

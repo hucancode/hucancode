@@ -1,7 +1,5 @@
 import { createPlayground, F32, VEC2, VEC4 } from "$lib/engine/index.js";
-import ENSO_FRAG from "./shaders/enso.frag.glsl?raw";
-import ENSO_WGSL from "./shaders/enso.wgsl?raw";
-import VERT from "./shaders/enso.vert.glsl?raw";
+import ENSO from "./shaders/enso.wgsl?shader";
 
 const config = {
   radius: 0.55,
@@ -33,7 +31,7 @@ function setBgColor(rgba) { bgColor = rgba.slice(0, 4); }
 const { init, render, destroy } = createPlayground({
   init({ device }) {
     shader = device.shader({
-      glsl: { vertex: VERT, fragment: ENSO_FRAG }, wgsl: ENSO_WGSL,
+      ...ENSO,
       uniforms: [
         VEC2("uResolution"), F32("uClockwise"), F32("uRadius"), F32("uAngleStart"),
         F32("uLineWidth"), F32("uWobble"), F32("uStrands"), F32("uInkFlow"),
@@ -41,12 +39,12 @@ const { init, render, destroy } = createPlayground({
         F32("uWidthAnchor"), F32("uSweepAmt"), F32("uOpacityBleed"), F32("uOpacityWet"),
         F32("uOpacityDry"), VEC4("uBrushColor"), VEC4("uBgColor"),
       ],
-      blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+      blend: "none", topology: "tri",
     });
   },
   frame(dt, { device, canvas }) {
     device.beginFrame();
-    device.pass({ target: "screen", clear: [bgColor[0], bgColor[1], bgColor[2], 1.0] }, (p) => {
+    device.pass({ clear: [bgColor[0], bgColor[1], bgColor[2], 1.0] }, (p) => {
       p.draw(shader, {
         count: 3,
         uniforms: {

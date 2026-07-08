@@ -1,6 +1,6 @@
 // Scene renderer for /main (paint). One screen pass; consumes the plain-data
 // FrameState from index.js buildState() — no GPU handles cross that boundary.
-import { buildRibbon } from "./webgl/stroke-gl.js";
+import { buildRibbon } from "./stroke-gl.js";
 import { createInstancedDrawer } from "$lib/mech/instancing.js";
 import { D3_STYLE } from "../config.js";
 import { PROGRAMS } from "./programs.js";
@@ -77,7 +77,7 @@ export function makeSceneRenderer(device, canvas) {
       segBuf[o++] = cx; segBuf[o++] = cy; segBuf[o++] = hullR; segBuf[o++] = s.t0;
       segBuf[o++] = s.p1.x; segBuf[o++] = s.p1.y; segBuf[o++] = s.p2.x; segBuf[o++] = s.p2.y;
       segBuf[o++] = s.ctrl.x; segBuf[o++] = s.ctrl.y; segBuf[o++] = s.pr1; segBuf[o++] = s.pr2;
-      segBuf[o++] = s.k; segBuf[o++] = s.belly; segBuf[o++] = s.hasBelly; segBuf[o++] = s.dur;
+      segBuf[o++] = s.k; segBuf[o++] = s.belly; segBuf[o++] = s.dur; segBuf[o++] = 0;
       segBuf[o++] = s.v0; segBuf[o++] = s.v1; segBuf[o++] = 0; segBuf[o++] = 0;
     }
     segTex.write(segBuf.subarray(0, need), 5, n);
@@ -147,7 +147,7 @@ export function makeSceneRenderer(device, canvas) {
 
     device.beginFrame();
     const paper = getPaper();
-    device.pass({ target: "screen", clear: paper, depth: true, depthClear: 1 }, (p) => {
+    device.pass({ clear: paper, depth: true, depthClear: 1 }, (p) => {
       if (state.grid && state.grid.reveal > 0)
         p.draw(sh.grid, { count: 4, uniforms: { uViewProj: vp, uExt: state.grid.ext, uZ: state.grid.z, uStep: state.grid.step, uMinorDiv: state.grid.minorDiv, uOpacity: state.grid.opacity, uReveal: state.grid.reveal, uRevealMinor: state.grid.revealMinor, uInkColor: getInkRGB() } });
       if (state.enso && state.enso.alpha > 0 && state.enso.sweep > 0) {

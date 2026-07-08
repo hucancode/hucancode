@@ -9,7 +9,6 @@
     setUidFloor,
     uid,
     step,
-    symbolDuration,
     DEFAULT_CONNECT,
     DEFAULT_TIMING,
   } from "$lib/brush/engine";
@@ -17,7 +16,8 @@
   import { long } from "$lib/brush/long";
   import { fu } from "$lib/brush/fu";
   import { maxSymbolId } from "$lib/brush/glyphs";
-  import { bakeGLSL } from "$lib/brush/bake";
+  import { bakeGLSL, bakeSegs } from "$lib/brush/bake";
+  import { makeSlots, slotLabel } from "$lib/save-slots.js";
   import { makeRenderer } from "$lib/playgrounds/caligraphy";
 
   // World coords: x in [-aspect,+aspect], y in [-1,+1], origin centred.
@@ -37,7 +37,7 @@
 
   const LS_KEY = "brush:state:v1";
   const SLOT_COUNT = 5;
-  const slotKey = (i) => `brush:slot:${i}`;
+  const slotStore = makeSlots({ prefix: "brush:slot:", count: SLOT_COUNT });
 
   // fixed save slots (as in /lego): slot i persisted as { data, at }.
   let slot = $state(0);
@@ -107,11 +107,10 @@
   // configurable; timing is always auto-computed.
   let timing = $state(DEFAULT_TIMING());
 
-  // bake-input fingerprint: deep-tracks symbol + connect + timing; the
-  // renderer rebakes only when this changes.
-  const bakeKey = $derived(
-    JSON.stringify([symbol, connect.enabled, connect.thread, timing.speed]),
-  );
+  // single bake shared by renderer + timeline: recomputes only when
+  // symbol/connect/timing deep-change (bakeSegs reads them all), and its
+  // identity doubles as the renderer's re-pack key.
+  const baked = $derived(bakeSegs(symbol, { connect, timing }));
 
   // playback: anim=true renders partially up to pb.t; false = full edit view.
   let anim = $state(false);
@@ -278,8 +277,7 @@
     if (lastTs == null) lastTs = ts;
     const dt = (ts - lastTs) / 1000;
     lastTs = ts;
-    step(pb, dt, totalDuration);
-    render();
+    step(pb, dt, totalDuration); // pb.t mutation triggers the render effect
     if (pb.playing) rafId = requestAnimationFrame(tick);
     else stopRaf();
   }
@@ -303,12 +301,10 @@
     pause();
     anim = true;
     pb.t = Math.max(0, Math.min(totalDuration, v));
-    render();
   }
   function exitAnim() {
     pause();
     anim = false;
-    render();
   }
 
   function ws(p) {
@@ -569,20 +565,17 @@
     if (!canvasEl || stageW <= 0 || stageH <= 0) return;
     syncCanvasSize();
     if (!glRenderer) return; // device renderer is created async in onMount
-    glRenderer.render(symbol, {
-      bakeKey,
+    glRenderer.render(baked.segs, {
       baseRadius,
       view,
       showGrid,
       gridSize: 1.6,
-      connect,
-      timing,
       playhead: anim ? pb.t : undefined,
     });
   }
 
   $effect(() => {
-    void bakeKey; // deep-tracks symbol + connect + timing
+    void baked; // deep-tracks symbol + connect + timing via bakeSegs
     void baseRadius;
     void showGrid;
     void view.zoom;
@@ -590,6 +583,8 @@
     void view.panY;
     void stageW;
     void stageH;
+    void anim; // single render path: playback ticks/seeks mutate pb.t and
+    void pb.t; // land here; nothing calls render() directly per frame.
     render();
   });
 
@@ -672,53 +667,28 @@
 
   // --- fixed save slots ---------------------------------------------------
   // scratch autosave (LS_KEY) is the live working copy; slots are explicit
-  // snapshots, one localStorage key per slot.
-  function readEntry(i) {
-    try {
-      const e = JSON.parse(localStorage.getItem(slotKey(i)));
-      if (e && e.data) return e;
-    } catch (e) {
-      /* corrupt slot -> empty */
-    }
-    return null;
-  }
-  function slotMeta() {
-    return Array.from({ length: SLOT_COUNT }, (_, i) => {
-      const e = readEntry(i);
-      return { filled: !!e, at: e?.at ?? null };
-    });
-  }
+  // snapshots via the shared slot store.
   function saveSlot() {
-    try {
-      localStorage.setItem(
-        slotKey(slot),
-        JSON.stringify({ data: serializeState(), at: new Date().toISOString() }),
-      );
-    } catch (e) {
-      /* quota/private mode */
-    }
-    slots = slotMeta();
+    slots = slotStore.save(slot, serializeState());
     saved = true;
     setTimeout(() => (saved = false), 1200);
   }
   function loadSlot() {
-    const e = readEntry(slot);
+    const e = slotStore.read(slot);
     if (!e) return;
-    applyState(JSON.parse(JSON.stringify(e.data)));
+    applyState(e.payload);
     pause();
     anim = false;
     loaded = true;
     setTimeout(() => (loaded = false), 1200);
   }
   function clearSlot() {
-    localStorage.removeItem(slotKey(slot));
-    slots = slotMeta();
+    slots = slotStore.clear(slot);
   }
-  const slotLabel = (at) => (at ? new Date(at).toLocaleString() : "empty");
 
   onMount(() => {
     loadState();
-    slots = slotMeta();
+    slots = slotStore.meta();
     let cancelled = false;
     syncCanvasSize();
     makeRenderer(canvasEl).then((r) => {
@@ -728,25 +698,31 @@
     });
     return () => {
       cancelled = true;
+      clearTimeout(_saveTimer);
+      if (_saveReady) saveState(); // flush a pending debounced autosave
       glRenderer?.dispose();
       glRenderer = null;
     };
   });
 
-  // persist on every change (after mount/load done)
+  // persist on change (after mount/load done), debounced: an un-debounced
+  // save is a synchronous stringify + localStorage write per pointermove.
   let _saveReady = false;
+  let _saveTimer = null;
   $effect(() => {
-    void bakeKey; // deep-tracks symbol + connect + timing
+    void baked; // deep-tracks symbol + connect + timing via bakeSegs
     void baseRadius;
     void showHandles;
     void selKind;
     void selStrokeId;
     void selIdx;
-    if (_saveReady) saveState();
-    else _saveReady = true;
+    if (_saveReady) {
+      clearTimeout(_saveTimer);
+      _saveTimer = setTimeout(saveState, 300);
+    } else _saveReady = true;
   });
 
-  const totalDuration = $derived(symbolDuration(symbol, connect, timing));
+  const totalDuration = $derived(baked.total);
   const selStroke = $derived(findStroke(selStrokeId));
   const selPoint = $derived(
     selKind === "point" && selStroke ? selStroke.points[selIdx] : null,
@@ -754,10 +730,18 @@
   const selPath = $derived(
     selKind === "path" && selStroke ? selStroke.paths[selIdx] : null,
   );
-  // recomputed live during frame drags, so the frame tracks the glyph.
-  const frameWorld = $derived(
-    frameMode ? (void bakeKey, glyphBBox()) : null,
+  // belly slider value: explicit pctrl.k, else the straight-line default
+  const selPathK = $derived(
+    selPath
+      ? (selPath.pctrl?.k ??
+          (selStroke.points[selIdx].pressure +
+            selStroke.points[selIdx + 1].pressure) /
+            2)
+      : 0,
   );
+  // recomputed live during frame drags: glyphBBox reads every point, so the
+  // derived deep-tracks the glyph by itself.
+  const frameWorld = $derived(frameMode ? glyphBBox() : null);
 </script>
 <svelte:head>
   <title>Caligraphy</title>
@@ -1265,20 +1249,10 @@
           min="0"
           max="1"
           step="0.01"
-          value={selPath.pctrl?.k ??
-            (selStroke.points[selIdx].pressure +
-              selStroke.points[selIdx + 1].pressure) /
-              2}
+          value={selPathK}
           oninput={(e) => setPctrlK(+e.target.value)}
         />
-        <output
-          >{(
-            selPath.pctrl?.k ??
-            (selStroke.points[selIdx].pressure +
-              selStroke.points[selIdx + 1].pressure) /
-              2
-          ).toFixed(2)}</output
-        >
+        <output>{selPathK.toFixed(2)}</output>
       </label>
       <menu>
         <li><button type="button" onclick={resetControl} disabled={!selPath.ctrl}

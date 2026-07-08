@@ -45,6 +45,11 @@ jobs:
         uses: typst-community/setup-typst@v4
         with:
           typst-version: 'latest'
+      # naga-cli transpiles WGSL -> GLSL at build time (vite wgsl plugin)
+      - name: Setup naga-cli
+        uses: taiki-e/cache-cargo-install-action@v3
+        with:
+          tool: naga-cli
       - name: Install dependencies
         run: bun install --production
       - name: Build SvelteKit app

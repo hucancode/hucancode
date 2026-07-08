@@ -1,4 +1,4 @@
-// 3D dragon path-deform + dim Phong. WGSL port of webgl/shaders/dragon3d.{vert,frag}.glsl.
+// 3D dragon path-deform + dim Phong.
 // The straight mesh aligned along +X is bent onto the path by sampling two
 // adjacent precomputed frame matrices (from the frames DATA TEXTURE) and lerping.
 

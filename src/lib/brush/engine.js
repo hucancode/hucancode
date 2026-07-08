@@ -96,18 +96,17 @@ export function sampleSeg(stroke, segIdx) {
   const c = resolveControl(stroke, segIdx);
   const p1 = pts[segIdx], p2 = pts[segIdx + 1];
   const dense = 96;
-  const cum = new Float64Array(dense + 1);
-  let prev = p1, bellyI = 0, bestD = Infinity;
+  let prev = p1, arc = 0, bellyArc = 0, bestD = Infinity;
   for (let i = 0; i <= dense; i++) {
     const cur = i === 0 ? p1 : bez(p1, c, p2, i / dense);
-    if (i > 0) cum[i] = cum[i - 1] + Math.hypot(cur.x - prev.x, cur.y - prev.y);
+    if (i > 0) arc += Math.hypot(cur.x - prev.x, cur.y - prev.y);
     const dx = cur.x - c.x, dy = cur.y - c.y;
     const d = dx * dx + dy * dy;
-    if (d < bestD) { bestD = d; bellyI = i; }
+    if (d < bestD) { bestD = d; bellyArc = arc; }
     prev = cur;
   }
-  const arc = cum[dense] || 1e-6;
-  return { arc, bellyX: cum[bellyI] / arc };
+  arc = arc || 1e-6;
+  return { arc, bellyX: bellyArc / arc };
 }
 
 // pivot sharpness at interior point i: 0 = straight through, 1 = full reversal
@@ -128,13 +127,14 @@ export function pointSpeed(stroke, i, speed) {
   return Math.max(MIN_SPEED, (speed || 1) * cf * tf);
 }
 
-// time to travel arc a (0..L), speed linear sa->sb: ∫ ds/(sa+(sb-sa)·s/L); reduces to a/sa when constant.
-export function travelTime(L, sa, sb, a) {
+// time to travel full arc L, speed linear sa->sb: ∫₀ᴸ ds/(sa+(sb-sa)·s/L)
+// = L·ln(sb/sa)/(sb-sa); reduces to L/sa when constant. Shader revealArc()
+// is the exact inverse of this.
+export function travelTime(L, sa, sb) {
   if (L <= 0) return 0;
   const d = sb - sa;
-  if (Math.abs(d) < 1e-6) return a / sa;
-  const m = d / L;
-  return Math.log((sa + m * a) / sa) / m;
+  if (Math.abs(d) < 1e-6) return L / sa;
+  return (L * Math.log(sb / sa)) / d;
 }
 
 export const DEFAULT_CONNECT = () => ({ enabled: false, thread: 0.18 });
@@ -215,22 +215,6 @@ export function expandStrokes(symbol, connect) {
     }
   }
   return out;
-}
-
-function strokeDuration(stroke, timing) {
-  if (!stroke || !stroke.paths) return 0;
-  let t = 0;
-  for (let i = 0; i < stroke.paths.length; i++) {
-    const L = sampleSeg(stroke, i).arc;
-    t += travelTime(L, pointSpeed(stroke, i, timing.speed), pointSpeed(stroke, i + 1, timing.speed), L);
-  }
-  return t;
-}
-
-export function symbolDuration(symbol, connect, timing) {
-  let t = 0;
-  for (const e of expandStrokes(symbol, connect)) t += strokeDuration(e.stroke, timing);
-  return t;
 }
 
 export function step(state, dt, duration) {

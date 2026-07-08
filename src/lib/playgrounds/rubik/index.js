@@ -1,8 +1,7 @@
 import { createPlayground, createOrbit, boxGeometry, mat4, animate, stagger, utils, eases, MAT4 } from "$lib/engine/index.js";
 import { hexToRGB } from "$lib/math/color.js";
-import RUBIK_WGSL from "./shaders/rubik.wgsl?raw";
-import VERT from "./shaders/rubik.vert.glsl?raw";
-import FRAG from "./shaders/rubik.frag.glsl?raw";
+import RUBIK from "./shaders/rubik.wgsl?shader";
+import { solve, extractState, toPlaygroundMoves } from "./solver.js";
 
 const FACE_RIGHT = 0, FACE_LEFT = 1, FACE_TOP = 2, FACE_BOTTOM = 3, FACE_FRONT = 4, FACE_BACK = 5;
 const FACE_TO_COLOR = [0x40a02b, 0x89b4fa, 0xf9e2af, 0xf8fafc, 0xef4444, 0xfe640b];
@@ -27,6 +26,8 @@ let cubes = [];
 let move = null;
 let busy = false;
 let running = false;
+let queue = [];
+let pendingSolve = false;
 
 const CAM_PITCH = Math.PI / 4;
 const _rot = mat4.create();
@@ -158,7 +159,13 @@ function startMove(face, depth, magnitude) {
       }
       move = null;
       busy = false;
-      if (config.autoplay && running) startMoveRandom();
+      if (queue.length) {
+        const q = queue.shift();
+        startMove(q.face, q.depth, q.magnitude);
+      } else if (pendingSolve) {
+        pendingSolve = false;
+        runSolve();
+      } else if (config.autoplay && running) startMoveRandom();
     },
   });
 }
@@ -202,13 +209,13 @@ const { init, render, destroy } = createPlayground({
   init(ctx) {
     device = ctx.device;
     shader = device.shader({
-      glsl: { vertex: VERT, fragment: FRAG }, wgsl: RUBIK_WGSL,
+      ...RUBIK,
       buffers: [
         { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
         { stride: 12, step: "vertex", attributes: [{ name: "color", location: 1, format: "float32x3", offset: 0 }] },
       ],
       uniforms: [MAT4("uViewProj"), MAT4("uModel")],
-      depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+      depth: "test", blend: "none", topology: "tri",
     });
     // orbit yaw = PI/2 - old yaw convention; PI/4 is its own mirror, drag sign matches
     orbit = createOrbit(ctx.canvas, { yaw: Math.PI / 4, pitch: CAM_PITCH, lockPitch: true });
@@ -221,7 +228,7 @@ const { init, render, destroy } = createPlayground({
     mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
 
     device.beginFrame();
-    device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
+    device.pass({ clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
       for (let i = 0; i < cubes.length; i++) {
         const cube = cubes[i];
         let model = cube.base;
@@ -243,6 +250,8 @@ const { init, render, destroy } = createPlayground({
   destroy() {
     running = false;
     busy = false;
+    queue = [];
+    pendingSolve = false;
     if (move) utils.remove(move.angle);
     utils.remove(cubes.map((c) => c.intro));
     move = null;

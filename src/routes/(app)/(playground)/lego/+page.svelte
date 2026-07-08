@@ -5,6 +5,7 @@
   import { PALETTE, MODEL, TEMPLATES, DEFAULT } from "$lib/playgrounds/lego/templates.js";
   import { connMode } from "$lib/playgrounds/lego/assembly.js";
   import { STICK_ENDS, STICK_LEN, stickSize } from "$lib/playgrounds/lego/solid.js";
+  import { makeSlots, slotLabel } from "$lib/save-slots.js";
 
   const range = (n) => Array.from({ length: n }, (_, i) => i);
   const endCount = (spec) => (spec.stick ? STICK_ENDS : 0);
@@ -30,7 +31,6 @@
   // { part, children?:[...node], + how it attaches to its parent (on/off/rot/…) }.
   const SLOT_COUNT = 5;
   const LEGACY_KEY = "lego-eagle-model";       // old single-slot store
-  const slotKey = (i) => `lego-eagle-slot-${i}`;
   // op-model = every part has size[] + ops[]; reject stale/legacy stores
   function isOpModel(m) {
     return m && m.parts && Object.values(m.parts).every(
@@ -61,25 +61,15 @@
     const clean = (n) => { if (!n.children?.length) delete n.children; else n.children.forEach(clean); return n; };
     return { parts: m.parts, baseY: m.baseY ?? 0, root: clean(rootNode) };
   }
-  // slot entry = { model, at }; returns entry or null
-  function readEntry(i) {
-    if (!browser) return null;
-    try {
-      const e = JSON.parse(localStorage.getItem(slotKey(i)));
-      if (e && isOpModel(e.model)) return { ...e, model: asTree(e.model) };
-    } catch { /* corrupt slot -> empty */ }
-    return null;
-  }
-  function slotMeta() {
-    return Array.from({ length: SLOT_COUNT }, (_, i) => {
-      const e = readEntry(i);
-      return { filled: !!e, at: e?.at ?? null };
-    });
-  }
+  // shared slot store; revive rejects stale/legacy payloads, migrates to tree
+  const slotStore = makeSlots({
+    prefix: "lego-eagle-slot-", count: SLOT_COUNT, field: "model",
+    revive: (m) => (isOpModel(m) ? asTree(m) : null),
+  });
   // initial: slot 0, else migrate legacy single store, else default
   function loadModel() {
-    const e = readEntry(0);
-    if (e) return e.model;
+    const e = slotStore.read(0);
+    if (e) return e.payload;
     if (browser) {
       try {
         const m = JSON.parse(localStorage.getItem(LEGACY_KEY));
@@ -90,7 +80,7 @@
   }
   let model = $state(loadModel());
   let slot = $state(0);             // active save slot index
-  let slots = $state(slotMeta());   // per-slot { filled, at }
+  let slots = $state(slotStore.meta());   // per-slot { filled, at }
   let sel = $state(Object.keys(loadModel().parts)[0] ?? "");  // selected brick (design tab)
   let selNode = $state(null);       // selected tree node (defaulted on mount below)
   let iso = $state(true);           // isolate: show only the selected brick (design tab)
@@ -387,26 +377,20 @@
   });
   // explicit save / load per slot (no autosave)
   function saveModel() {
-    if (!browser) return;
-    const entry = { model: $state.snapshot(model), at: new Date().toISOString() };
-    localStorage.setItem(slotKey(slot), JSON.stringify(entry));
-    slots = slotMeta();
+    slots = slotStore.save(slot, $state.snapshot(model));
     saved = true; setTimeout(() => (saved = false), 1200);
   }
   function loadFromStore() {
-    const e = readEntry(slot);
+    const e = slotStore.read(slot);
     if (!e) { noStore = true; setTimeout(() => (noStore = false), 1200); return; }
-    model = e.model;
-    sel = Object.keys(e.model.parts)[0] ?? "";
-    selNode = e.model.root?.children?.[0] ?? e.model.root ?? null;
+    model = e.payload;
+    sel = Object.keys(e.payload.parts)[0] ?? "";
+    selNode = e.payload.root?.children?.[0] ?? e.payload.root ?? null;
     loaded = true; setTimeout(() => (loaded = false), 1200);
   }
   function clearSlot() {
-    if (!browser) return;
-    localStorage.removeItem(slotKey(slot));
-    slots = slotMeta();
+    slots = slotStore.clear(slot);
   }
-  const slotLabel = (at) => at ? new Date(at).toLocaleString() : "empty";
 
   function replay() {
     manual = false;

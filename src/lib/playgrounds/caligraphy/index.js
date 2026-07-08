@@ -1,33 +1,28 @@
 import { createDevice, F32, I32, VEC2 } from "$lib/engine/index.js";
-import FRAG from "./shaders/caligraphy-playground.frag.glsl?raw";
-import WGSL from "./shaders/caligraphy-playground.wgsl?raw";
-import VERT from "./shaders/caligraphy-playground.vert.glsl?raw";
-import { bakeSegs } from "$lib/brush/bake";
+import CALI from "./shaders/caligraphy-playground.wgsl?shader";
 
 const TEXELS_PER_SEG = 5;
 
 export async function makeRenderer(canvas) {
-  const device = await createDevice(canvas);
+  // no MSAA: one fullscreen tri, every edge is analytic AA in the fragment
+  // shader; multisampling would only burn a hidden 4x target + resolve.
+  const device = await createDevice(canvas, { msaa: false });
 
   const shader = device.shader({
-    glsl: { vertex: VERT, fragment: FRAG }, wgsl: WGSL,
+    ...CALI,
     uniforms: [
       VEC2("uResolution"), F32("uBaseRadius"), F32("uZoom"), VEC2("uPan"),
-      F32("uGridSize"), I32("uShowGrid"), I32("uMode"), F32("uTime"), I32("uNSeg"),
+      F32("uGridSize"), I32("uShowGrid"), F32("uTime"), I32("uNSeg"),
     ],
     textures: [{ name: "uSegTex", binding: 1 }],
-    blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+    blend: "none", topology: "tri",
   });
 
   const segTex = device.texture({ width: TEXELS_PER_SEG, height: 1, format: "rgba32f", filter: "nearest" });
 
   let buf = new Float32Array(0);
   let nSeg = 0;
-  let bakeKey = "";
-  // device W/H are cached at creation; track the canvas backing-store size
-  // (device pixels, set by the component) and resize the device to match so
-  // viewport / MSAA targets stay in sync with uResolution below.
-  let curW = canvas.width, curH = canvas.height;
+  let segRef = null; // re-pack only on segs identity change (page bakes in a $derived)
 
   // pack baked segs into RGBA32F texture (width=5, height=NSEG); texel 0 = header (center.xy, hullRadius, t0)
   function packSegs(segs) {
@@ -46,33 +41,26 @@ export async function makeRenderer(canvas) {
       buf[o++] = cx; buf[o++] = cy; buf[o++] = hullR; buf[o++] = s.t0;
       buf[o++] = s.p1.x; buf[o++] = s.p1.y; buf[o++] = s.p2.x; buf[o++] = s.p2.y;
       buf[o++] = s.ctrl.x; buf[o++] = s.ctrl.y; buf[o++] = s.pr1; buf[o++] = s.pr2;
-      buf[o++] = s.k; buf[o++] = s.belly; buf[o++] = s.hasBelly; buf[o++] = s.dur;
+      buf[o++] = s.k; buf[o++] = s.belly; buf[o++] = s.dur; buf[o++] = 0;
       buf[o++] = s.v0; buf[o++] = s.v1; buf[o++] = 0; buf[o++] = 0;
     }
     segTex.write(buf.subarray(0, need), TEXELS_PER_SEG, n);
     return n;
   }
 
-  function render(symbol, params) {
+  function render(segs, params) {
     const w = canvas.width, h = canvas.height;
     if (w <= 0 || h <= 0) return;
-    if (w !== curW || h !== curH) {
-      device.resize(w, h);
-      curW = w; curH = h;
-    }
+    device.resize(w, h); // no-op unless the backing-store size changed
 
-    // re-bake + re-upload only when bake inputs change. Caller supplies
-    // params.bakeKey (a cached derived of symbol+connect+timing) so playback
-    // frames don't re-stringify the whole symbol here.
-    if (params.bakeKey !== bakeKey) {
-      const { segs } = bakeSegs(symbol, { connect: params.connect, timing: params.timing });
+    if (segs !== segRef) {
       nSeg = packSegs(segs);
-      bakeKey = params.bakeKey;
+      segRef = segs;
     }
 
     const view = params.view || { zoom: 1, panX: 0, panY: 0 };
     device.beginFrame();
-    device.pass({ target: "screen", clear: [1.0, 0.988, 0.878, 1.0] }, (p) => {
+    device.pass({ clear: [1.0, 0.988, 0.878, 1.0] }, (p) => {
       if (nSeg <= 0) return;
       p.draw(shader, {
         count: 3,
@@ -84,8 +72,8 @@ export async function makeRenderer(canvas) {
           uPan: [view.panX ?? 0, view.panY ?? 0],
           uGridSize: params.gridSize ?? 1.6,
           uShowGrid: params.showGrid ? 1 : 0,
-          uMode: params.playhead === undefined ? 0 : 1,
-          uTime: params.playhead ?? 0,
+          // no playhead = edit view; +inf time reveals every seg exactly
+          uTime: params.playhead ?? 1e9,
           uNSeg: nSeg,
         },
       });
