@@ -202,3 +202,33 @@ export function toPlaygroundMoves(moves) {
     return { face: SOLVER_TO_PG_FACE[f], depth: 1, magnitude: t === 2 ? 2 : t === 1 ? cw : -cw };
   });
 }
+
+// ---------------------------------------------------------------------------
+// SiGN-style notation (R U' Fw2 3Uw ...) <-> playground moves
+
+const FACE_LETTER = ["R", "L", "U", "D", "F", "B"]; // playground face order
+const PG_POSITIVE = [true, false, true, false, true, false];
+
+export function moveToNotation({ face, depth, magnitude }) {
+  // clockwise quarter turns looking at the face
+  const cw = (((PG_POSITIVE[face] ? -magnitude : magnitude) % 4) + 4) % 4;
+  const suffix = cw === 2 ? "2" : cw === 3 ? "'" : "";
+  return (depth > 2 ? depth : "") + FACE_LETTER[face] + (depth > 1 ? "w" : "") + suffix;
+}
+
+// -> playground move list, or null on any bad token
+export function parseNotation(text, maxDepth = 3) {
+  const moves = [];
+  for (const tok of text.trim().split(/\s+/)) {
+    if (!tok) continue;
+    const m = /^(\d*)([UDFBLR])(w?)(2|')?$/i.exec(tok);
+    if (!m) return null;
+    const face = FACE_LETTER.indexOf(m[2].toUpperCase());
+    const wide = !!m[3] || m[2] !== m[2].toUpperCase(); // lowercase face = wide
+    const depth = Math.min(maxDepth, m[1] ? +m[1] : wide ? 2 : 1);
+    const turns = m[4] === "2" ? 2 : m[4] === "'" ? 3 : 1;
+    const magnitude = turns === 2 ? 2 : (PG_POSITIVE[face] ? -1 : 1) * (turns === 1 ? 1 : -1);
+    moves.push({ face, depth, magnitude, quick: true });
+  }
+  return moves.length ? moves : null;
+}

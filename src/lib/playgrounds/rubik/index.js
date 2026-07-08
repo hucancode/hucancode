@@ -1,7 +1,7 @@
 import { createPlayground, createOrbit, boxGeometry, mat4, animate, stagger, utils, eases, MAT4 } from "$lib/engine/index.js";
 import { hexToRGB } from "$lib/math/color.js";
 import RUBIK from "./shaders/rubik.wgsl?shader";
-import { solve, extractState, toPlaygroundMoves } from "./solver.js";
+import { solve, extractState, toPlaygroundMoves, moveToNotation, parseNotation } from "./solver.js";
 
 const FACE_RIGHT = 0, FACE_LEFT = 1, FACE_TOP = 2, FACE_BOTTOM = 3, FACE_FRONT = 4, FACE_BACK = 5;
 const FACE_TO_COLOR = [0x40a02b, 0x89b4fa, 0xf9e2af, 0xf8fafc, 0xef4444, 0xfe640b];
@@ -18,7 +18,7 @@ const RANDOM_EASES = [
   eases.outInCubic, eases.outInBack, eases.outInBounce,
 ];
 
-const config = { speed: 1, autoplay: true, randomEase: true };
+const config = { speed: 1, autoplay: true, randomEase: true, onSolution: null };
 let cubeNum = CUBE_NUM_DEFAULT;
 
 let device = null, shader, orbit;
@@ -28,6 +28,11 @@ let busy = false;
 let running = false;
 let queue = [];
 let pendingSolve = false;
+// current solution being played back / scrubbed
+let solution = null;
+let solutionPos = 0;
+let solutionPlaying = false;
+let inSolutionMove = false;
 
 const CAM_PITCH = Math.PI / 4;
 const _rot = mat4.create();
@@ -75,25 +80,36 @@ function makeCubeData(x, y, z) {
 
 function buildCubes() {
   cubes = [];
-  const half = (cubeNum - 1) / 2;
   for (let y = 0; y < cubeNum; y++) {
     for (let x = 0; x < cubeNum; x++) {
       for (let z = 0; z < cubeNum; z++) {
-        const base = mat4.create();
-        mat4.compose(
-          base,
-          { x: (x - half) * CELL, y: (y - half) * CELL, z: (z - half) * CELL },
-          { x: 0, y: 0, z: 0 },
-          { x: RUBIK_SIZE, y: RUBIK_SIZE, z: RUBIK_SIZE },
-        );
         const d = makeCubeData(x, y, z);
         cubes.push({
           posBuf: device.buffer({ kind: "vertex", data: d.position }),
           colorBuf: device.buffer({ kind: "vertex", data: d.color }),
           count: d.count,
-          base,
+          base: mat4.create(),
           intro: { x: 0, y: 0 },
         });
+      }
+    }
+  }
+  resetTransforms();
+}
+
+// place every cubelet back at its solved home transform (same order as buildCubes)
+function resetTransforms() {
+  const half = (cubeNum - 1) / 2;
+  let i = 0;
+  for (let y = 0; y < cubeNum; y++) {
+    for (let x = 0; x < cubeNum; x++) {
+      for (let z = 0; z < cubeNum; z++) {
+        mat4.compose(
+          cubes[i++].base,
+          { x: (x - half) * CELL, y: (y - half) * CELL, z: (z - half) * CELL },
+          { x: 0, y: 0, z: 0 },
+          { x: RUBIK_SIZE, y: RUBIK_SIZE, z: RUBIK_SIZE },
+        );
       }
     }
   }
@@ -123,24 +139,59 @@ function rotationFor(axis, angle) {
   return mat4.rotationZ(_rot, angle);
 }
 
-function startMoveRandom() {
-  if (busy || !running) return;
-  const face = Math.floor(Math.random() * 6);
-  const depth = Math.floor(Math.random() * (cubeNum - 1)) + 1;
-  const magnitude = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1);
-  startMove(face, depth, magnitude);
+const axisForFace = (face) =>
+  face === FACE_LEFT || face === FACE_RIGHT ? 0
+  : face === FACE_TOP || face === FACE_BOTTOM ? 1 : 2;
+
+function randomMove() {
+  return {
+    face: Math.floor(Math.random() * 6),
+    depth: Math.floor(Math.random() * (cubeNum - 1)) + 1,
+    magnitude: (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1),
+    quick: true,
+  };
 }
 
-function startMove(face, depth, magnitude) {
-  const axis = face === FACE_LEFT || face === FACE_RIGHT ? 0
-    : face === FACE_TOP || face === FACE_BOTTOM ? 1 : 2;
+function startMoveRandom() {
+  if (busy || !running) return;
+  clearSolution();
+  const m = randomMove();
+  startMove(m.face, m.depth, m.magnitude);
+}
+
+// run the next pending thing: queued moves, then a deferred solve, then
+// solution playback, then autoplay
+function advance() {
+  if (busy || !running) return;
+  if (queue.length) {
+    const q = queue.shift();
+    startMove(q.face, q.depth, q.magnitude, q.quick);
+    return;
+  }
+  if (pendingSolve) {
+    pendingSolve = false;
+    runSolve();
+    return;
+  }
+  if (solution && solutionPlaying && solutionPos < solution.length) {
+    inSolutionMove = true;
+    const m = solution[solutionPos];
+    startMove(m.face, m.depth, m.magnitude);
+    return;
+  }
+  if (config.autoplay) startMoveRandom();
+}
+
+function startMove(face, depth, magnitude, quick = false) {
+  const axis = axisForFace(face);
   const idx = [];
   for (let i = 0; i < cubes.length; i++) {
     const g = gridOf(cubes[i].base);
     if (isInFace(g.x, g.y, g.z, face, depth)) idx.push(i);
   }
   const target = (Math.PI / 2) * magnitude;
-  const ease = config.randomEase
+  const ease = quick ? eases.outCubic
+    : config.randomEase
     ? RANDOM_EASES[Math.floor(Math.random() * RANDOM_EASES.length)]
     : eases.inOutCubic;
   const spd = config.speed || 1;
@@ -148,8 +199,8 @@ function startMove(face, depth, magnitude) {
   move = { idx, axis, angle: { v: 0 }, target };
   animate(move.angle, {
     v: target,
-    duration: (600 * Math.abs(magnitude)) / spd,
-    delay: 200 / spd,
+    duration: quick ? 120 : (600 * Math.abs(magnitude)) / spd,
+    delay: quick ? 30 : 200 / spd,
     ease,
     onComplete: () => {
       const R = rotationFor(axis, target);
@@ -159,15 +210,37 @@ function startMove(face, depth, magnitude) {
       }
       move = null;
       busy = false;
-      if (queue.length) {
-        const q = queue.shift();
-        startMove(q.face, q.depth, q.magnitude);
-      } else if (pendingSolve) {
-        pendingSolve = false;
-        runSolve();
-      } else if (config.autoplay && running) startMoveRandom();
+      if (inSolutionMove) {
+        inSolutionMove = false;
+        solutionPos++;
+        if (solutionPos >= solution.length) solutionPlaying = false;
+        notifySolution();
+      }
+      advance();
     },
   });
+}
+
+// apply a move to the bases with no animation (solution scrubbing)
+function applyInstant(face, depth, magnitude) {
+  const R = rotationFor(axisForFace(face), (Math.PI / 2) * magnitude);
+  for (const c of cubes) {
+    const g = gridOf(c.base);
+    if (isInFace(g.x, g.y, g.z, face, depth)) {
+      mat4.multiply(c.base, R, c.base);
+      snap(c.base);
+    }
+  }
+}
+
+// cancel an in-flight animated move; bases are only mutated on completion,
+// so dropping the tween leaves logical state untouched
+function cancelMove() {
+  if (!move) return;
+  utils.remove(move.angle);
+  move = null;
+  busy = false;
+  inSolutionMove = false;
 }
 
 // re-quantize translation to exact grid centres; kills accumulated float drift
@@ -183,6 +256,113 @@ function resume() {
 }
 function step() {
   if (!busy) startMoveRandom();
+}
+
+// ---------------------------------------------------------------------------
+// solving
+
+function notifySolution() {
+  config.onSolution?.(
+    solution
+      ? { pos: solutionPos, total: solution.length, playing: solutionPlaying }
+      : { pos: 0, total: 0, playing: false },
+  );
+}
+
+function clearSolution() {
+  if (!solution) return;
+  solution = null;
+  solutionPos = 0;
+  solutionPlaying = false;
+  inSolutionMove = false;
+  notifySolution();
+}
+
+// cubelet transforms in solver form: unit grid pos + integer rotation matrix
+function cubeletsForSolver() {
+  return cubes.map((c) => {
+    const b = c.base;
+    return {
+      p: [Math.round(b[12] / CELL), Math.round(b[13] / CELL), Math.round(b[14] / CELL)],
+      r: [b[0], b[1], b[2], b[4], b[5], b[6], b[8], b[9], b[10]].map((v) => Math.round(v / RUBIK_SIZE)),
+    };
+  });
+}
+
+function runSolve() {
+  solution = toPlaygroundMoves(solve(extractState(cubeletsForSolver())));
+  solutionPos = 0;
+  solutionPlaying = solution.length > 0;
+  notifySolution();
+  advance();
+}
+
+function solveCube() {
+  if (cubeNum !== 3 || !running) return;
+  config.autoplay = false;
+  queue = [];
+  clearSolution();
+  if (busy) pendingSolve = true;
+  else runSolve();
+}
+
+// jump to an arbitrary point of the current solution, pausing playback
+function seekSolution(pos) {
+  if (!solution) return;
+  pos = Math.max(0, Math.min(solution.length, Math.round(pos)));
+  if (inSolutionMove) cancelMove();
+  if (busy) return;
+  solutionPlaying = false;
+  while (solutionPos < pos) {
+    const m = solution[solutionPos++];
+    applyInstant(m.face, m.depth, m.magnitude);
+  }
+  while (solutionPos > pos) {
+    const m = solution[--solutionPos];
+    applyInstant(m.face, m.depth, -m.magnitude);
+  }
+  notifySolution();
+}
+
+function playSolution() {
+  if (!solution) return;
+  solutionPlaying = solutionPos < solution.length;
+  notifySolution();
+  advance();
+}
+
+function pauseSolution() {
+  solutionPlaying = false;
+  notifySolution();
+}
+
+// ---------------------------------------------------------------------------
+// scramble + notation
+
+// queue a random scramble, return it as notation
+function scramble() {
+  if (!running) return "";
+  clearSolution();
+  pendingSolve = false;
+  const moves = [];
+  for (let i = 0; i < cubeNum * 7; i++) moves.push(randomMove());
+  queue.push(...moves);
+  advance();
+  return moves.map(moveToNotation).join(" ");
+}
+
+// reset to solved, then play `text` as a scramble; false on parse error
+function applyScramble(text) {
+  if (!running) return false;
+  const moves = parseNotation(text, cubeNum);
+  if (!moves) return false;
+  clearSolution();
+  pendingSolve = false;
+  cancelMove();
+  queue = moves;
+  resetTransforms();
+  advance();
+  return true;
 }
 
 function entrance() {
@@ -252,6 +432,10 @@ const { init, render, destroy } = createPlayground({
     busy = false;
     queue = [];
     pendingSolve = false;
+    solution = null;
+    solutionPos = 0;
+    solutionPlaying = false;
+    inSolutionMove = false;
     if (move) utils.remove(move.angle);
     utils.remove(cubes.map((c) => c.intro));
     move = null;
@@ -263,4 +447,7 @@ const { init, render, destroy } = createPlayground({
   },
 });
 
-export { init, render, destroy, setConfig, setCubeSize, step, resume, config };
+export {
+  init, render, destroy, setConfig, setCubeSize, step, resume, config,
+  solveCube, seekSolution, playSolution, pauseSolution, scramble, applyScramble,
+};
