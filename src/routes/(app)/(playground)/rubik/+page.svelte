@@ -7,6 +7,14 @@
   let autoplay = $state(true);
   let randomEase = $state(true);
 
+  let scrambleText = $state("");
+  let badScramble = $state(false);
+
+  // solution playback state, pushed by the playground
+  let solvePos = $state(0);
+  let solveTotal = $state(0);
+  let solvePlaying = $state(false);
+
   // cube size must be set before the canvas host mounts (re-keyed below)
   function sized(s) {
     rubik.setCubeSize(s);
@@ -14,8 +22,23 @@
   }
 
   $effect(() => {
-    rubik.setConfig({ speed, autoplay, randomEase });
+    rubik.setConfig({
+      speed, autoplay, randomEase,
+      onSolution: (s) => {
+        solvePos = s.pos;
+        solveTotal = s.total;
+        solvePlaying = s.playing;
+      },
+    });
   });
+
+  function randomScramble() {
+    scrambleText = rubik.scramble();
+    badScramble = false;
+  }
+  function applyScramble() {
+    badScramble = !rubik.applyScramble(scrambleText);
+  }
 </script>
 
 <svelte:head>
@@ -51,9 +74,58 @@
       </label>
     </fieldset>
 
-    {#if !autoplay}
+    <fieldset>
+      <legend>scramble</legend>
+      <textarea rows="3" bind:value={scrambleText} placeholder="R U' Fw2 ..."></textarea>
+      {#if badScramble}
+        <small>invalid notation</small>
+      {/if}
       <menu>
-        <li><button onclick={() => rubik.step()}>▶ One move</button></li>
+        <li><button onclick={randomScramble}>random</button></li>
+        <li><button onclick={applyScramble} disabled={!scrambleText.trim()}>apply</button></li>
       </menu>
+    </fieldset>
+
+    <menu>
+      {#if !autoplay}
+        <li><button onclick={() => rubik.step()}>One move</button></li>
+      {/if}
+      {#if size === 3}
+        <li>
+          <button
+            onclick={() => {
+              autoplay = false;
+              rubik.solveCube();
+            }}>Solve</button
+          >
+        </li>
+      {/if}
+    </menu>
+
+    {#if solveTotal}
+      <fieldset>
+        <legend>solution</legend>
+        <label>
+          <span>move {solvePos}/{solveTotal}</span>
+          <input
+            type="range"
+            min="0"
+            max={solveTotal}
+            step="1"
+            value={solvePos}
+            oninput={(e) => rubik.seekSolution(+e.currentTarget.value)}
+          />
+        </label>
+        <menu>
+          <li>
+            <button
+              onclick={() => (solvePlaying ? rubik.pauseSolution() : rubik.playSolution())}
+              disabled={!solvePlaying && solvePos >= solveTotal}
+            >
+              {solvePlaying ? "pause" : "play"}
+            </button>
+          </li>
+        </menu>
+      </fieldset>
     {/if}
   </aside>

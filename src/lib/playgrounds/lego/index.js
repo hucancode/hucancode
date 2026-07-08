@@ -6,12 +6,8 @@ import { hexToRGB } from "$lib/math/color.js";
 import { makeSolid } from "./solid.js";
 import { resolveAssembly } from "./assembly.js";
 import { MODEL, PALETTE, VIEW } from "./templates.js";
-import LEGO_WGSL from "./shaders/lego.wgsl?raw";
-import VERT from "./shaders/lego.vert.glsl?raw";
-import FRAG from "./shaders/lego.frag.glsl?raw";
-import GRID_WGSL from "./shaders/grid.wgsl?raw";
-import GRID_VERT from "./shaders/grid.vert.glsl?raw";
-import GRID_FRAG from "./shaders/grid.frag.glsl?raw";
+import LEGO from "./shaders/lego.wgsl?shader";
+import GRID from "./shaders/grid.wgsl?shader";
 
 const GROUND = { ext: 40, y: 0, step: 4, minorDiv: 4, opacity: 0.5, color: [0.45, 0.5, 0.58] };
 const DUR = 2000;         // ms per piece (flight + snap)
@@ -194,7 +190,7 @@ const { init, render, destroy } = createPlayground({
   init(ctx) {
     device = ctx.device;
     shader = device.shader({
-      glsl: { vertex: VERT, fragment: FRAG }, wgsl: LEGO_WGSL,
+      ...LEGO,
       buffers: [
         { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
         { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
@@ -202,15 +198,15 @@ const { init, render, destroy } = createPlayground({
       uniforms: [
         MAT4("uViewProj"), MAT4("uModel"), VEC3("uColor"), VEC3("uLightPos"), VEC3("uViewPos"),
       ],
-      depth: "test", blend: "none", topology: "tri", target: "screen", sampleCount: 4,
+      depth: "test", blend: "none", topology: "tri",
     });
     gridShader = device.shader({
-      glsl: { vertex: GRID_VERT, fragment: GRID_FRAG }, wgsl: GRID_WGSL,
+      ...GRID,
       uniforms: [
         MAT4("uViewProj"), F32("uExt"), F32("uY"), F32("uStep"),
         F32("uMinorDiv"), F32("uOpacity"), VEC3("uColor"),
       ],
-      depth: "none", blend: "premult", topology: "tri-strip", target: "screen", sampleCount: 4,
+      depth: "none", blend: "premult", topology: "tri-strip",
     });
     orbit = createOrbit(ctx.canvas, { yaw: 0.6, pitch: 0.35, pitchClamp: 1.2 });
     buildEagle();
@@ -228,7 +224,7 @@ const { init, render, destroy } = createPlayground({
     const eye = [camera.position.x, camera.position.y, camera.position.z];
 
     device.beginFrame();
-    device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
+    device.pass({ clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
       if (inspecting) {
         _pos.set(0, 0, 0);
         _rot.set(0, 0, 0);

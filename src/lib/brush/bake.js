@@ -21,13 +21,14 @@ export function bakeSegs(symbol, opts = {}) {
       const c = resolveControl(stroke, i);
       const v0 = pointSpeed(stroke, i, speed), v1 = pointSpeed(stroke, i + 1, speed);
       const { arc: L, bellyX } = sampleSeg(stroke, i);
-      const dur = travelTime(L, v0, v1, L);
-      const hasBelly = path.pctrl ? 1 : 0;
-      const k = path.pctrl ? path.pctrl.k : 0;
-      const belly = hasBelly ? bellyX : 0.5;
+      const dur = travelTime(L, v0, v1);
+      // no pctrl -> belly 0.5 with k = mid-pressure: the pressure quad then
+      // degenerates to exactly mix(pr1, pr2, s), so shaders never branch.
+      const k = path.pctrl ? path.pctrl.k : (p1.pressure + p2.pressure) / 2;
+      const belly = path.pctrl ? bellyX : 0.5;
       segs.push({
         p1: { x: p1.x, y: p1.y }, p2: { x: p2.x, y: p2.y }, ctrl: c,
-        pr1: p1.pressure, pr2: p2.pressure, k, hasBelly, belly,
+        pr1: p1.pressure, pr2: p2.pressure, k, belly,
         t0: cursor, dur, v0, v1, connector: e.connector ? 1 : 0, stroke: e.si,
       });
       cursor += dur;
@@ -53,12 +54,11 @@ export function bakeGLSL(symbol, opts = {}) {
   out += `//   p1,p2   segment endpoints (world)\n`;
   out += `//   ctrl    resolved bezier control (auto Catmull-rom already applied)\n`;
   out += `//   pr1,pr2 endpoint pressures (0..1)\n`;
-  out += `//   k       belly pressure value (only if hasBelly)\n`;
-  out += `//   belly   parametric belly position; hasBelly 1 = use belly curve\n`;
+  out += `//   k,belly pressure quad through (belly,k); linear segs baked as belly=0.5, k=mid\n`;
   out += `//   t0,dur  reveal timeline (seconds); v0,v1 endpoint speeds (reveal shape)\n`;
   out += `struct Seg {\n`;
   out += `    vec2 p1; vec2 p2; vec2 ctrl;\n`;
-  out += `    float pr1; float pr2; float k; float belly; int hasBelly;\n`;
+  out += `    float pr1; float pr2; float k; float belly;\n`;
   out += `    float t0; float dur; float v0; float v1;\n`;
   out += `};\n`;
   out += `const int NSEG = ${N};\n`;
@@ -66,7 +66,7 @@ export function bakeGLSL(symbol, opts = {}) {
   out += `const Seg SEGS[NSEG] = Seg[NSEG](\n`;
   out += segs.map(s =>
     `    Seg(${v2(s.p1)}, ${v2(s.p2)}, ${v2(s.ctrl)}, ` +
-    `${f(s.pr1)}, ${f(s.pr2)}, ${f(s.k)}, ${f(s.belly)}, ${s.hasBelly}, ` +
+    `${f(s.pr1)}, ${f(s.pr2)}, ${f(s.k)}, ${f(s.belly)}, ` +
     `${f(s.t0)}, ${f(s.dur)}, ${f(s.v0)}, ${f(s.v1)})`
   ).join(",\n");
   out += `\n);\n`;

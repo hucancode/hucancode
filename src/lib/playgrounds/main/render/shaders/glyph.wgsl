@@ -1,4 +1,4 @@
-// Glyph SDF reveal, ink only. WGSL port of webgl/shaders/glyph.frag.glsl.
+// Glyph SDF reveal, ink only.
 // Samples the seg DATA TEXTURE (rgba32float, 5 texels/seg, texel 0 = header:
 // cen.xy, hullR, t0) via textureLoad. Glyph-space coords come from the quad
 // UV, so both backends map identically (no y-flip juggling).
@@ -92,16 +92,15 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
 
     let a = textureLoad(segTex, vec2<i32>(1, i), 0); // p1.xy, p2.xy
     let b = textureLoad(segTex, vec2<i32>(2, i), 0); // ctrl.xy, pr1, pr2
-    let c = textureLoad(segTex, vec2<i32>(3, i), 0); // k, belly, hasBelly, dur
+    let c = textureLoad(segTex, vec2<i32>(3, i), 0); // k, belly, dur
     let d = textureLoad(segTex, vec2<i32>(4, i), 0); // v0, v1
     let p1 = a.xy;
     let p2 = a.zw;
     let ctrl = b.xy;
     let pa = b.z;
     let pb = b.w;
-    let hasBelly = c.z > 0.5;
 
-    let tp = clamp((time - hdr.w) / c.w, 0.0, 1.0);
+    let tp = clamp((time - hdr.w) / c.z, 0.0, 1.0);
     let r = revealArc(tp, d.x, d.y);
 
     // Horner coeffs of the cubic bezier (both inner controls at ctrl)
@@ -113,12 +112,8 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
     var prevRad = baseRadius * max(MIN_PRESS, pa);
     for (var kk = 1; kk <= SAMPLES; kk = kk + 1) {
       let t = (f32(kk) / f32(SAMPLES)) * r;
-      var pr: f32;
-      if (hasBelly) {
-        pr = pressureAt(pa, pb, c.x, t, c.y);
-      } else {
-        pr = mix(pa, pb, t);
-      }
+      // linear segs bake belly=0.5, k=(A+B)/2 -> pressureAt degenerates to mix
+      let pr = pressureAt(pa, pb, c.x, t, c.y);
       let pos = ((b3 * t + b2) * t + b1) * t + p1;
       let rad = baseRadius * max(MIN_PRESS, pr);
       dmin = min(dmin, sdCone(w, prevPos, pos, prevRad, rad));

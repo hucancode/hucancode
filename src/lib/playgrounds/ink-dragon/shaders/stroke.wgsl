@@ -1,4 +1,4 @@
-// Flat ink ribbon. WGSL twin of stroke-polyline.vert.glsl + stroke.frag.glsl.
+// Flat ink ribbon.
 // position carries world coords (x in [-aspect,+aspect], y in [-1,+1]); the
 // mesh shapes the taper, the fragment only fades opacity along the arc.
 struct Uni {

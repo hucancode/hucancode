@@ -22,12 +22,12 @@ function available(name) {
   return false;
 }
 
-export async function createDevice(canvas, { prefer = "webgpu" } = {}) {
+export async function createDevice(canvas, { prefer = "webgpu", msaa = true } = {}) {
   let lastErr = null;
   for (const name of ORDER(prefer)) {
     if (!available(name)) continue;
     try {
-      const device = name === "webgpu" ? await createWebGPUDevice(canvas) : createWebGLDevice(canvas);
+      const device = name === "webgpu" ? await createWebGPUDevice(canvas, { msaa }) : createWebGLDevice(canvas, { msaa });
       trackBackend(device.backend);
       return device;
     } catch (e) {

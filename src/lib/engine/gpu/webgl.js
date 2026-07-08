@@ -1,3 +1,9 @@
+// Consumes naga-generated GLSL ES 3.00 (built from the same WGSL as the WebGPU
+// backend): uniforms arrive as one std140 block (all blocks bound to point 0),
+// vertex attributes bind by explicit layout(location), and combined samplers
+// follow naga's `_group_0_binding_<N>_{vs,fs}` naming.
+import { uniformLayout, packUniforms } from "./std140.js";
+
 const TEX = {
   rgba8: { internal: "RGBA8", format: "RGBA", type: "UNSIGNED_BYTE" },
   rgba32f: { internal: "RGBA32F", format: "RGBA", type: "FLOAT" },
@@ -10,8 +16,8 @@ const FMT = { // vertex attribute format -> component count (all f32)
   float32: 1, float32x2: 2, float32x3: 3, float32x4: 4,
 };
 
-export function createWebGLDevice(canvas) {
-  const gl = canvas.getContext("webgl2", { alpha: false, antialias: true, premultipliedAlpha: false });
+export function createWebGLDevice(canvas, { msaa = true } = {}) {
+  const gl = canvas.getContext("webgl2", { alpha: false, antialias: msaa, premultipliedAlpha: false });
   if (!gl) throw new Error("WebGL2 not available");
   let W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
 
@@ -27,7 +33,7 @@ export function createWebGLDevice(canvas) {
     if (!blend || blend === "none") { gl.disable(gl.BLEND); return; }
     gl.enable(gl.BLEND);
     if (blend === "premult") gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    else if (blend === "accum" || blend === "straight")
+    else if (blend === "straight")
       gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
   function applyDepth(depth) {
@@ -75,15 +81,6 @@ export function createWebGLDevice(canvas) {
     };
   }
 
-  function target({ width, height, format = "rgba8", filter = "linear" }) {
-    const color = texture({ width, height, format, filter });
-    const fb = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, color._tex, 0);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    return { color, _fb: fb, width, height, destroy() { color.destroy(); gl.deleteFramebuffer(fb); } };
-  }
-
   function shader(desc) {
     const prog = gl.createProgram();
     const v = compile(gl.VERTEX_SHADER, desc.glsl.vertex);
@@ -95,23 +92,28 @@ export function createWebGLDevice(canvas) {
 
     const layouts = (desc.buffers || []).map((b) => ({
       stride: b.stride, instanced: b.step === "instance",
-      attrs: b.attributes.map((a) => ({ loc: gl.getAttribLocation(prog, a.name), comps: FMT[a.format], offset: a.offset || 0 })),
+      attrs: b.attributes.map((a) => ({ loc: a.location, comps: FMT[a.format], offset: a.offset || 0 })),
     }));
-    const uniforms = (desc.uniforms || []).map((u) => ({ name: u.name, type: u.type, loc: gl.getUniformLocation(prog, u.name) }));
-    const samplers = (desc.textures || []).map((t) => ({ name: t.name, loc: gl.getUniformLocation(prog, t.name) }));
-    return { _prog: prog, _layouts: layouts, _uniforms: uniforms, _samplers: samplers, desc };
-  }
 
-  function setUniform(u, val) {
-    if (u.loc === null || val == null) return;
-    switch (u.type) {
-      case "f32": gl.uniform1f(u.loc, val); break;
-      case "i32": gl.uniform1i(u.loc, val | 0); break;
-      case "vec2": gl.uniform2fv(u.loc, val); break;
-      case "vec3": gl.uniform3fv(u.loc, val); break;
-      case "vec4": gl.uniform4fv(u.loc, val); break;
-      case "mat4": gl.uniformMatrix4fv(u.loc, false, val); break;
+    // naga emits one uniform block per stage referencing the same struct; bind all to point 0
+    const nBlocks = gl.getProgramParameter(prog, gl.ACTIVE_UNIFORM_BLOCKS);
+    for (let i = 0; i < nBlocks; i++) gl.uniformBlockBinding(prog, i, 0);
+    const ulayout = desc.uniforms && desc.uniforms.length ? uniformLayout(desc.uniforms) : null;
+    let ubo = null, view = null, bytes = null;
+    if (ulayout) {
+      ubo = gl.createBuffer();
+      gl.bindBuffer(gl.UNIFORM_BUFFER, ubo);
+      gl.bufferData(gl.UNIFORM_BUFFER, ulayout.size, gl.STREAM_DRAW);
+      const scratch = new ArrayBuffer(ulayout.size);
+      view = new DataView(scratch); bytes = new Uint8Array(scratch);
     }
+
+    // a texture read in both stages gets one combined sampler per stage
+    const samplers = (desc.textures || []).flatMap((t) =>
+      ["vs", "fs"].map((st) => ({ name: t.name, loc: gl.getUniformLocation(prog, `_group_0_binding_${t.binding}_${st}`) }))
+        .filter((s) => s.loc !== null));
+
+    return { _prog: prog, _layouts: layouts, _samplers: samplers, _ulayout: ulayout, _ubo: ubo, _view: view, _bytes: bytes, desc };
   }
 
   function drawImpl(sh, args) {
@@ -126,18 +128,24 @@ export function createWebGLDevice(canvas) {
       if (!buf) continue;
       gl.bindBuffer(gl.ARRAY_BUFFER, buf._glb);
       for (const a of L.attrs) {
-        if (a.loc < 0) continue;
         gl.enableVertexAttribArray(a.loc);
         gl.vertexAttribPointer(a.loc, a.comps, gl.FLOAT, false, L.stride, a.offset);
         gl.vertexAttribDivisor(a.loc, L.instanced ? 1 : 0);
       }
     }
 
-    if (args.uniforms) for (const u of sh._uniforms) setUniform(u, args.uniforms[u.name]);
+    if (sh._ulayout) {
+      sh._bytes.fill(0);
+      packUniforms(sh._ulayout, args.uniforms || {}, sh._view);
+      gl.bindBuffer(gl.UNIFORM_BUFFER, sh._ubo);
+      gl.bufferData(gl.UNIFORM_BUFFER, sh._bytes, gl.STREAM_DRAW);
+      gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, sh._ubo);
+    }
+
     let unit = 0;
-    if (args.textures) for (const s of sh._samplers) {
-      const t = args.textures[s.name];
-      if (!t || s.loc === null) continue;
+    for (const s of sh._samplers) {
+      const t = args.textures && args.textures[s.name];
+      if (!t) continue;
       gl.activeTexture(gl.TEXTURE0 + unit);
       gl.bindTexture(gl.TEXTURE_2D, t._tex);
       gl.uniform1i(s.loc, unit); unit++;
@@ -156,10 +164,8 @@ export function createWebGLDevice(canvas) {
   }
 
   function pass(opts, fn) {
-    const toScreen = !opts.target || opts.target === "screen";
-    gl.bindFramebuffer(gl.FRAMEBUFFER, toScreen ? null : opts.target._fb);
-    const w = toScreen ? W : opts.target.width, h = toScreen ? H : opts.target.height;
-    gl.viewport(0, 0, w, h);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, W, H);
     if (opts.clear) {
       const c = opts.clear;
       gl.clearColor(c[0], c[1], c[2], c[3]);
@@ -175,7 +181,7 @@ export function createWebGLDevice(canvas) {
 
   return {
     backend: "webgl", gl,
-    buffer, texture, target, shader, pass, correctViewProj,
+    buffer, texture, shader, pass, correctViewProj,
     beginFrame() {}, endFrame() {},
     resize(w, h) { W = w; H = h; },
     destroy() {},

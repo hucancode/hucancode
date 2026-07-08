@@ -1,11 +1,7 @@
 import { createPlayground, loadDragonMesh, F32, VEC3, MAT4 } from "$lib/engine/index.js";
 import { buildSpline } from "$lib/math/curve.js";
-import DRAGON_WGSL from "./shaders/dragon.wgsl?raw";
-import PATH_WGSL from "./shaders/path.wgsl?raw";
-import VERT from "./shaders/dragon.vert.glsl?raw";
-import FRAG from "./shaders/dragon.frag.glsl?raw";
-import PATH_VERT from "./shaders/path.vert.glsl?raw";
-import PATH_FRAG from "./shaders/path.frag.glsl?raw";
+import DRAGON from "./shaders/dragon.wgsl?shader";
+import PATH from "./shaders/path.wgsl?shader";
 
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 const N_FRAMES = 384;
@@ -132,20 +128,20 @@ const { init, render, destroy } = createPlayground({
   async init(ctx) {
     device = ctx.device;
     prog = device.shader({
-      glsl: { vertex: VERT, fragment: FRAG }, wgsl: DRAGON_WGSL,
+      ...DRAGON,
       buffers: [BUF_POS, BUF_NRM],
       uniforms: [
         F32("uN"), F32("uPathLen"), F32("uBodyLen"), F32("uHeadOffset"), F32("uGirth"),
         MAT4("uViewProj"), VEC3("uLightDir"), VEC3("uLightColor"), VEC3("uAmbient"), VEC3("uBaseColor"),
       ],
       textures: [{ name: "uFrames", binding: 1 }],
-      blend: "none", depth: "test", topology: "tri", target: "screen", sampleCount: 4,
+      blend: "none", depth: "test", topology: "tri",
     });
     pathProg = device.shader({
-      glsl: { vertex: PATH_VERT, fragment: PATH_FRAG }, wgsl: PATH_WGSL,
+      ...PATH,
       buffers: [BUF_PATH],
       uniforms: [MAT4("uViewProj"), VEC3("uColor")],
-      blend: "straight", depth: "none", topology: "line-strip", target: "screen", sampleCount: 4,
+      blend: "straight", depth: "none", topology: "line-strip",
     });
 
     ctx.camera.position.set(0, 20, 200);
@@ -179,7 +175,7 @@ const { init, render, destroy } = createPlayground({
     }
 
     device.beginFrame();
-    device.pass({ target: "screen", clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
+    device.pass({ clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
       for (const d of dragons) {
         // wrap by pathLen so offset stays bounded over long runs
         d.headOffset = (d.headOffset + config.speed * d.pathLen) % d.pathLen;
