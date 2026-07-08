@@ -5,23 +5,27 @@
     partModel, primitiveModel,
     PART_NAMES, PRIM_NAMES, PRIM_PARAMS, PART_PARAMS, JOINT_POSE,
   } from "$lib/mech/parts.js";
-  import { dragonModel, DRAGON_POSE } from "$lib/mech/rig.js";
+  import { dragonModel, DRAGON_POSE, atlasModel, ATLAS_POSE } from "$lib/mech/rig.js";
   import { assembleModel } from "$lib/mech/assembly.js";
 
   let scene = $state(null);
 
-  // joints live in the parts tab (a joint is a catalog part in its own right)
-  const JOINTS = ["hinge1", "hinge2", "hinge3", "pivot1", "ball1"];
-  const PARTS = PART_NAMES.filter((n) => !JOINTS.includes(n));
+  // the part registry is scoped per rig kit — a name only has to be unique
+  // inside its own kit (dragon and atlas both have a "head")
+  const JOINTS = PART_NAMES.joints;
+  const DRAGON_PARTS = PART_NAMES.dragon;
+  const ATLAS_PARTS = PART_NAMES.atlas;
 
-  let view = $state("dragon");            // "parts" | "primitives" | "dragon"
-  let selPart = $state(PARTS[0]);         // a part OR a joint name
+  let view = $state("dragon");            // "parts" | "primitives" | "dragon" | "atlas"
+  let selPart = $state(JOINTS[0]);        // joints tab selection
+  let dsel = $state("rig");               // dragon tab: "rig" = whole dragon, else a part
+  let asel = $state("rig");               // atlas tab: same scheme
   let selPrim = $state(PRIM_NAMES[0]);
-  const isJoint = (n) => JOINTS.includes(n);
   let pparams = $state(structuredClone(PRIM_PARAMS));
-  let jparams = $state(structuredClone(PART_PARAMS));
+  let jparams = $state(structuredClone(PART_PARAMS));   // { kit: { part: params } }
   let jpose = $state(structuredClone(JOINT_POSE));   // runtime joint rotations, degrees
   let drig = $state(structuredClone(DRAGON_POSE));   // dragon rig pose
+  let arig = $state(structuredClone(ATLAS_POSE));  // atlas rig pose
   let autoplay = $state(true);                       // fly the loop automatically
   const LAP_SECONDS = 4;
   // assembly build scrub: 1 = fully assembled, <1 runs the 4-phase build
@@ -34,13 +38,11 @@
   let spin = $state(0.3);
   let light = $state(0.6);
 
+  // parts whose display name differs from the key; the rest fall back to the key
   const PART_LABELS = {
-    head: "dragon head",
     bodySegment: "body segment",
     bodySegment2: "body segment 2",
-    arm: "dragon arm",
-    leg: "dragon leg",
-    tail: "dragon tail",
+    upperArm: "upper arm",
     hinge1: "hinge 1",
     hinge2: "hinge 2",
     hinge3: "hinge 3",
@@ -53,37 +55,72 @@
     cutHemisphere: "cut hemisphere",
     halfCylinder: "half cylinder", halfCylinderBox: "arch box",
     boxCylinder: "stamper", quarterCylinder: "quarter disc",
+    gear: "gear",
   };
-  // [key, label, min, max] sliders per joint part
+  // [key, label, min, max] sliders per part, scoped like the registry
   const PART_CTL = {
-    head: [["headW", "head width", 0.7, 2.0], ["snoutLen", "snout length", 0.5, 2.0], ["jawOpen", "jaw open deg", 0, 45], ["eyeR", "eye radius", 0.08, 0.3], ["hornLen", "horn length", 0.1, 1.2]],
-    bodySegment: [["bodyR", "body radius", 0.3, 0.9], ["segLen", "segment length", 0.8, 3.0], ["discs", "belly discs", 2, 7, 1], ["finR", "fin radius", 0.15, 0.8]],
-    bodySegment2: [["rFront", "front radius", 0.25, 0.9], ["rRear", "rear radius", 0.15, 0.8], ["segLen", "segment length", 0.8, 3.0], ["finR", "fin radius", 0.15, 0.8]],
-    arm: [["upperLen", "upper arm", 0.25, 1.2], ["foreLen", "forearm", 0.2, 1.2], ["elbowBend", "elbow bend deg", 0, 70], ["clawR", "claw radius", 0.15, 0.5]],
-    leg: [["thighLen", "thigh", 0.25, 1.2], ["shinLen", "shin", 0.2, 1.2], ["kneeBend", "knee bend deg", 0, 60], ["footLen", "foot length", 0.15, 0.9], ["clawR", "claw radius", 0.15, 0.5]],
-    tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
-    hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-    hinge3: [["tongueT", "tongue thickness", 0.1, 0.5], ["armT", "arm thickness", 0.06, 0.3], ["armLen", "arm length", 0.2, 1.0], ["barrelR", "barrel radius", 0.15, 0.6], ["barrelLen", "barrel length", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-    pivot1: [["barrelR", "barrel radius", 0.12, 0.6], ["barrelLen", "barrel length", 0.3, 1.8], ["flangeR", "flange radius", 0.2, 0.9], ["neckR", "neck radius", 0.08, 0.4], ["neckLen", "neck length", 0.05, 0.5], ["capR", "cap radius", 0.12, 0.6]],
-    hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-    ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6]],
+    dragon: {
+      head: [["headW", "head width", 0.7, 2.0], ["snoutLen", "snout length", 0.5, 2.0], ["jawOpen", "jaw open", 0, 45], ["eyeR", "eye radius", 0.08, 0.3], ["hornLen", "horn length", 0.1, 1.2]],
+      bodySegment: [["bodyR", "body radius", 0.3, 0.9], ["segLen", "segment length", 0.8, 3.0], ["discs", "belly discs", 2, 7, 1], ["finR", "fin radius", 0.15, 0.8]],
+      bodySegment2: [["rFront", "front radius", 0.25, 0.9], ["rRear", "rear radius", 0.15, 0.8], ["segLen", "segment length", 0.8, 3.0], ["finR", "fin radius", 0.15, 0.8]],
+      arm: [["upperLen", "upper arm", 0.25, 1.2], ["foreLen", "forearm", 0.2, 1.2], ["elbowBend", "elbow bend", 0, 70], ["clawR", "claw radius", 0.15, 0.5]],
+      leg: [["thighLen", "thigh", 0.25, 1.2], ["shinLen", "shin", 0.2, 1.2], ["kneeBend", "knee bend", 0, 60], ["footLen", "foot length", 0.15, 0.9], ["clawR", "claw radius", 0.15, 0.5]],
+      tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
+    },
+    atlas: {
+      head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["visorW", "visor width", 0.2, 0.6]],
+      torso: [["chestW", "chest width", 0.7, 1.6], ["chestH", "chest height", 0.5, 1.4]],
+      pelvis: [["hipW", "disc width", 0.5, 1.3], ["hipH", "dome radius", 0.15, 0.5]],
+      upperArm: [["len", "length", 0.2, 0.9], ["w", "width", 0.15, 0.5]],
+      forearm: [["len", "length", 0.2, 0.9], ["w", "width", 0.12, 0.45]],
+      wrist: [],
+      palm: [["cube", "cube size", 0.25, 0.7]],
+      finger: [["digitLen", "digit length", 0.1, 0.35], ["w", "width", 0.05, 0.16], ["curl", "curl", 0, 60, 1]],
+      thigh: [["len", "length", 0.3, 1.1], ["w", "width", 0.2, 0.6]],
+      shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
+      foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5]],
+      heel: [["w", "width", 0.15, 0.5], ["h", "height", 0.08, 0.35]],
+    },
+    joints: {
+      hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+      hinge3: [["tongueT", "tongue thickness", 0.1, 0.5], ["armT", "arm thickness", 0.06, 0.3], ["armLen", "arm length", 0.2, 1.0], ["barrelR", "barrel radius", 0.15, 0.6], ["barrelLen", "barrel length", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+      hinge4: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+      pivot1: [["barrelR", "barrel radius", 0.12, 0.6], ["barrelLen", "barrel length", 0.3, 1.8], ["flangeR", "flange radius", 0.2, 0.9], ["neckR", "neck radius", 0.08, 0.4], ["neckLen", "neck length", 0.05, 0.5], ["capR", "cap radius", 0.12, 0.6]],
+      hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+      ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6]],
+    },
   };
   // [key, label, min, max] runtime rotation sliders per joint (degrees)
   const POSE_CTL = {
-    hinge1: [["swing", "swing deg", -90, 90], ["twistF", "twist female deg", -180, 180], ["twistM", "twist male deg", -180, 180]],
-    hinge2: [["swing", "swing deg", -90, 90]],
-    hinge3: [["swing", "swing deg", -90, 90], ["spinF", "spin mount 1 deg", -180, 180], ["spinM", "spin mount 2 deg", -180, 180]],
-    pivot1: [["spinA", "spin top deg", -180, 180], ["spinB", "spin bottom deg", -180, 180]],
-    ball1: [["rx", "rotate x deg", -50, 50], ["ry", "rotate y deg", -180, 180], ["rz", "rotate z deg", -50, 50]],
+    hinge1: [["swing", "swing", -90, 90], ["twistF", "twist female", -180, 180], ["twistM", "twist male", -180, 180]],
+    hinge2: [["swing", "swing", -90, 90]],
+    hinge3: [["swing", "swing", -90, 90], ["spinF", "spin mount 1", -180, 180], ["spinM", "spin mount 2", -180, 180]],
+    hinge4: [["rx", "rotate x", -90, 90], ["rz", "rotate z", -90, 90]],
+    pivot1: [["spinA", "spin top", -180, 180], ["spinB", "spin bottom", -180, 180]],
+    ball1: [["rx", "rotate x", -50, 50], ["ry", "rotate y", -180, 180], ["rz", "rotate z", -50, 50]],
   };
   // dragon rig runtime controls — offset slides the body along the loop curve
   const DRAGON_CTL = [
     ["offset", "loop offset", 0, 1, 0.002],
-    ["jaw", "jaw open deg", 0, 45, 1],
-    ["armSwing", "arm swing deg", -60, 60, 1],
-    ["elbow", "elbow bend deg", 0, 70, 1],
-    ["legSwing", "leg swing deg", -60, 60, 1],
-    ["knee", "knee bend deg", 0, 60, 1],
+    ["jaw", "jaw open", 0, 45, 1],
+    ["armSwing", "arm swing", -60, 60, 1],
+    ["elbow", "elbow bend", 0, 70, 1],
+    ["legSwing", "leg swing", -60, 60, 1],
+    ["knee", "knee bend", 0, 60, 1],
+  ];
+  // atlas rig runtime controls (all degrees, straight onto the bones)
+  const ATLAS_CTL = [
+    ["headYaw", "head yaw", -60, 60, 1],
+    ["headPitch", "head pitch", -30, 30, 1],
+    ["twist", "waist twist", -40, 40, 1],
+    ["shoulder", "arm swing", -60, 60, 1],
+    ["armOut", "arm raise", -10, 60, 1],
+    ["elbow", "elbow bend", 0, 90, 1],
+    ["wristBend", "wrist bend", -60, 60, 1],
+    ["wristTilt", "wrist tilt", -60, 60, 1],
+    ["curl", "finger curl", 0, 60, 1],
+    ["hip", "leg swing", -45, 45, 1],
+    ["knee", "knee bend", 0, 60, 1],
   ];
   // [key, label, min, max] sliders per primitive; `fit` gets its own toggle
   const PRIM_CTL = {
@@ -98,14 +135,17 @@
     halfCylinderBox: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5], ["depth", "box depth", 0.05, 1.5]],
     boxCylinder: [["w", "box width", 0.2, 2.2], ["d", "box depth", 0.2, 2.2], ["boxH", "box height", 0.1, 1.5], ["cylH", "cylinder h %", 0.1, 3]],
     quarterCylinder: [["r", "radius", 0.1, 1.2], ["h", "thickness", 0.05, 1.5]],
+    // teeth counts are integers; a side under 3 teeth is flat (0 = plain ring)
+    gear: [["r", "radius", 0.1, 1.2], ["h", "thickness", 0.05, 1.5], ["teethOut", "outer teeth", 0, 32, 1], ["teethIn", "inner teeth", 0, 32, 1]],
   };
 
   function resetParams() { pparams[selPrim] = structuredClone(PRIM_PARAMS[selPrim]); }
-  function resetJointParams() {
-    jparams[selPart] = structuredClone(PART_PARAMS[selPart]);
-    if (isJoint(selPart)) jpose[selPart] = structuredClone(JOINT_POSE[selPart]);
+  function resetPart(kit, pn) {
+    jparams[kit][pn] = structuredClone(PART_PARAMS[kit][pn]);
+    if (kit === "joints") jpose[pn] = structuredClone(JOINT_POSE[pn]);
   }
   function resetDragon() { drig = structuredClone(DRAGON_POSE); }
+  function resetAtlas() { arig = structuredClone(ATLAS_POSE); }
   function shuffle() { seed = (seed + 1) | 0; }
   function playAssemble() { asmCache.clear(); asmOff0 = drig.offset; asm = 0; asmPlay = true; }
   // scrub start: freeze the ride offset the current build clock implies, so
@@ -138,23 +178,45 @@
     };
   }
 
+  // rig tabs show the whole rig, or a single part picked from their own list
+  const rigShown = $derived(
+    (view === "dragon" && dsel === "rig") || (view === "atlas" && asel === "rig"));
+
   const model = $derived.by(() => {
     if (view === "primitives") return primitiveModel(selPrim, $state.snapshot(pparams)[selPrim], seed);
     if (view === "dragon") {
+      if (dsel !== "rig") return partModel("dragon", dsel, seed, $state.snapshot(jparams).dragon[dsel]);
       const pose = $state.snapshot(drig);
       const m = dragonModel(seed, pose);
       if (asm >= 1) return m;
       const dOff = autoplay ? BUILD_SECONDS / LAP_SECONDS : 0;
       return { ...m, items: assembleModel(m.items, asm, asmRefAt(pose, dOff)) };
     }
-    if (isJoint(selPart)) return partModel(selPart, seed, $state.snapshot(jparams)[selPart], $state.snapshot(jpose)[selPart]);
-    return partModel(selPart, seed, $state.snapshot(jparams)[selPart]);
+    if (view === "atlas") {
+      if (asel !== "rig") return partModel("atlas", asel, seed, $state.snapshot(jparams).atlas[asel]);
+      const m = atlasModel(seed, $state.snapshot(arig));
+      if (asm >= 1) return m;
+      // static body: no ride curve, the live items are their own anchors
+      return { ...m, items: assembleModel(m.items, asm) };
+    }
+    return partModel("joints", selPart, seed, $state.snapshot(jparams).joints[selPart], $state.snapshot(jpose)[selPart]);
   });
   $effect(() => { scene?.apply({ spin }); });
   $effect(() => { scene?.apply({ lightAngle: light }); });
   $effect(() => { scene?.apply({ model }); });
-  // fixed per-view distance (no auto-fit): the dragon rides a big loop
-  $effect(() => { selPart; selPrim; scene?.apply({ resetView: true, dist: view === "dragon" ? 24 : 6 }); });
+  // fixed per-view distance (no auto-fit): the dragon rides a big loop;
+  // single-part previews inside the rig tabs use a per-part catalog distance
+  // (the atlas kit has much smaller pieces than the dragon kit)
+  const ATLAS_DIST = {
+    finger: 2.5, heel: 2.5, wrist: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
+    head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,
+  };
+  $effect(() => {
+    selPart; selPrim;
+    const dist = view === "dragon" ? (dsel === "rig" ? 24 : 6)
+      : view === "atlas" ? (asel === "rig" ? 12 : ATLAS_DIST[asel] ?? 6) : 6;
+    scene?.apply({ resetView: true, dist });
+  });
   // dt-clamped rAF driver; step returns false to stop
   const driveRaf = (step) => {
     let raf, last = performance.now();
@@ -169,14 +231,14 @@
   };
   // autoplay: advance the loop offset each frame while enabled
   $effect(() => {
-    if (!autoplay || view !== "dragon") return;
+    if (!autoplay || view !== "dragon" || dsel !== "rig") return;
     return driveRaf((dt) => {
       drig.offset = (drig.offset + dt / LAP_SECONDS) % 1;
     });
   });
   // replay build: sweep the assembly scrub 0 -> 1 once
   $effect(() => {
-    if (!asmPlay || view !== "dragon") return;
+    if (!asmPlay || !rigShown) return;
     return driveRaf((dt) => {
       asm = Math.min(1, asm + dt / BUILD_SECONDS);
       if (asm >= 1) { asmPlay = false; return false; }
@@ -189,7 +251,7 @@
   <section>
     <Scene bind:this={scene} scene={mech} id="mech" />
     <footer>
-      {#if view === "dragon"}
+      {#if rigShown}
         <div>
           <button type="button" onclick={playAssemble}>▶ Assemble</button>
           <input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={grabAsm} />
@@ -208,58 +270,91 @@
     <fieldset>
       <legend>view</legend>
       <div role="group">
-        <label><input type="radio" name="mech-view" value="parts" bind:group={view} />parts</label>
+        <label><input type="radio" name="mech-view" value="parts" bind:group={view} />joints</label>
         <label><input type="radio" name="mech-view" value="primitives" bind:group={view} />blocks</label>
         <label><input type="radio" name="mech-view" value="dragon" bind:group={view} />dragon</label>
+        <label><input type="radio" name="mech-view" value="atlas" bind:group={view} />atlas</label>
       </div>
     </fieldset>
 
+    {#snippet partParams(kit, pn)}
+      <fieldset>
+        <legend>params<button type="button" onclick={() => resetPart(kit, pn)}>reset</button></legend>
+        {#each PART_CTL[kit][pn] as [key, label, min, max, step]}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step={step ?? 0.01} value={jparams[kit][pn][key]}
+              oninput={(e) => (jparams[kit][pn][key] = +e.currentTarget.value)} />
+            <output>{jparams[kit][pn][key].toFixed(step ? 0 : 2)}</output></label>
+        {/each}
+        {#if kit === "joints"}
+            <hr/>
+            {#each POSE_CTL[pn] as [key, label, min, max]}
+              <label><span>{label}</span>
+                <input type="range" {min} {max} step="1" value={jpose[pn][key]}
+                  oninput={(e) => (jpose[pn][key] = +e.currentTarget.value)} />
+                <output>{jpose[pn][key].toFixed(0)}</output></label>
+            {/each}
+        {/if}
+      </fieldset>
+    {/snippet}
+
     {#if view === "parts"}
       <fieldset>
-        <legend>parts</legend>
-        <ul>
-          {#each PARTS as pn}
-            <li><label><input type="radio" name="mech-part" value={pn} bind:group={selPart} />{PART_LABELS[pn] ?? pn}</label></li>
-          {/each}
-        </ul>
-        <hr/>
+        <legend>joints</legend>
         <ul>
           {#each JOINTS as jn}
             <li><label><input type="radio" name="mech-part" value={jn} bind:group={selPart} />{PART_LABELS[jn] ?? jn}</label></li>
           {/each}
         </ul>
       </fieldset>
-      <fieldset>
-        <legend>params<button type="button" onclick={resetJointParams}>reset</button></legend>
-        {#each PART_CTL[selPart] as [key, label, min, max, step]}
-          <label><span>{label}</span>
-            <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selPart][key]}
-              oninput={(e) => (jparams[selPart][key] = +e.currentTarget.value)} />
-            <output>{jparams[selPart][key].toFixed(step ? 0 : 2)}</output></label>
-        {/each}
-        {#if isJoint(selPart)}
-          <fieldset>
-            <legend>runtime pose — joint rotations</legend>
-            {#each POSE_CTL[selPart] as [key, label, min, max]}
-              <label><span>{label}</span>
-                <input type="range" {min} {max} step="1" value={jpose[selPart][key]}
-                  oninput={(e) => (jpose[selPart][key] = +e.currentTarget.value)} />
-                <output>{jpose[selPart][key].toFixed(0)}</output></label>
-            {/each}
-          </fieldset>
-        {/if}
-      </fieldset>
+      {@render partParams("joints", selPart)}
     {:else if view === "dragon"}
       <fieldset>
-        <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
-        <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
-        {#each DRAGON_CTL as [key, label, min, max, step]}
-          <label><span>{label}</span>
-            <input type="range" {min} {max} {step} value={drig[key]}
-              oninput={(e) => (drig[key] = +e.currentTarget.value)} />
-            <output>{drig[key].toFixed(step < 1 ? 2 : 0)}</output></label>
-        {/each}
+        <legend>parts</legend>
+        <ul>
+          <li><label><input type="radio" name="dragon-part" value="rig" bind:group={dsel} />dragon</label></li>
+          {#each DRAGON_PARTS as pn}
+            <li><label><input type="radio" name="dragon-part" value={pn} bind:group={dsel} />{PART_LABELS[pn] ?? pn}</label></li>
+          {/each}
+        </ul>
       </fieldset>
+      {#if dsel === "rig"}
+        <fieldset>
+          <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
+          <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
+          {#each DRAGON_CTL as [key, label, min, max, step]}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} {step} value={drig[key]}
+                oninput={(e) => (drig[key] = +e.currentTarget.value)} />
+              <output>{drig[key].toFixed(step < 1 ? 2 : 0)}</output></label>
+          {/each}
+        </fieldset>
+      {:else}
+        {@render partParams("dragon", dsel)}
+      {/if}
+    {:else if view === "atlas"}
+      <fieldset>
+        <legend>parts</legend>
+        <ul>
+          <li><label><input type="radio" name="atlas-part" value="rig" bind:group={asel} />atlas</label></li>
+          {#each ATLAS_PARTS as pn}
+            <li><label><input type="radio" name="atlas-part" value={pn} bind:group={asel} />{PART_LABELS[pn] ?? pn}</label></li>
+          {/each}
+        </ul>
+      </fieldset>
+      {#if asel === "rig"}
+        <fieldset>
+          <legend>rig<button type="button" onclick={resetAtlas}>reset</button></legend>
+          {#each ATLAS_CTL as [key, label, min, max, step]}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} {step} value={arig[key]}
+                oninput={(e) => (arig[key] = +e.currentTarget.value)} />
+              <output>{arig[key].toFixed(0)}</output></label>
+          {/each}
+        </fieldset>
+      {:else}
+        {@render partParams("atlas", asel)}
+      {/if}
     {:else}
       <fieldset>
         <legend>primitives</legend>
@@ -271,11 +366,11 @@
       </fieldset>
       <fieldset>
         <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetParams}>reset</button></legend>
-        {#each PRIM_CTL[selPrim] as [key, label, min, max]}
+        {#each PRIM_CTL[selPrim] as [key, label, min, max, step]}
           <label><span>{label}</span>
-            <input type="range" {min} {max} step="0.01" value={pparams[selPrim][key]}
+            <input type="range" {min} {max} step={step ?? 0.01} value={pparams[selPrim][key]}
               oninput={(e) => (pparams[selPrim][key] = +e.currentTarget.value)} />
-            <output>{pparams[selPrim][key].toFixed(2)}</output></label>
+            <output>{pparams[selPrim][key].toFixed(step ? 0 : 2)}</output></label>
         {/each}
         {#if selPrim === "boxCylinder"}
           <fieldset>

@@ -1,9 +1,15 @@
 // Glyph SDF reveal, ink only. WGSL port of webgl/shaders/glyph.frag.glsl.
-// Fullscreen triangle; samples the seg DATA TEXTURE (rgba32float, 4 texels/seg)
-// via textureLoad. No y-flip: WebGPU's top-left frag origin + top-down texture
-// storage cancel against the composite quad's sampling (see render/scene.js).
+// Samples the seg DATA TEXTURE (rgba32float, 5 texels/seg, texel 0 = header:
+// cen.xy, hullR, t0) via textureLoad. Glyph-space coords come from the quad
+// UV, so both backends map identically (no y-flip juggling).
 
 struct Uni {
+  uViewProj: mat4x4<f32>,
+  uOpacity: f32,
+  uAspect: f32,
+  uZ: f32,
+  uStationY: f32,
+  uExt: f32,
   uResolution: vec2<f32>,
   uBaseRadius: f32,
   uTime: f32,
@@ -16,34 +22,27 @@ struct Uni {
 const SAMPLES: i32 = 10;
 const MIN_PRESS: f32 = 0.0;
 
-@vertex
-fn vs(@builtin(vertex_index) vid: u32) -> @builtin(position) vec4<f32> {
-  var P = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
-  return vec4(P[vid], 0.0, 1.0);
-}
-
-struct Seg {
-  p1: vec2<f32>, p2: vec2<f32>, ctrl: vec2<f32>,
-  pr1: f32, pr2: f32, k: f32, belly: f32, hasBelly: i32,
-  t0: f32, dur: f32, v0: f32, v1: f32,
+struct VsOut {
+  @builtin(position) pos: vec4<f32>,
+  @location(0) vUV: vec2<f32>,
 };
 
-fn getSeg(i: i32) -> Seg {
-  let a = textureLoad(segTex, vec2<i32>(0, i), 0);
-  let b = textureLoad(segTex, vec2<i32>(1, i), 0);
-  let c = textureLoad(segTex, vec2<i32>(2, i), 0);
-  let d = textureLoad(segTex, vec2<i32>(3, i), 0);
-  var s: Seg;
-  s.p1 = a.xy; s.p2 = a.zw;
-  s.ctrl = b.xy; s.pr1 = b.z; s.pr2 = b.w;
-  s.k = c.x; s.belly = c.y; s.hasBelly = i32(c.z + 0.5); s.t0 = c.w;
-  s.dur = d.x; s.v0 = d.y; s.v1 = d.z;
-  return s;
+@vertex
+fn vs(@builtin(vertex_index) vid: u32) -> VsOut {
+  var C = array<vec2<f32>, 4>(vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0));
+  let c = C[vid];
+  var o: VsOut;
+  o.vUV = c;
+  let world = vec3((c.x * 2.0 - 1.0) * u.uAspect * u.uExt, (c.y * 2.0 - 1.0) * u.uExt + u.uStationY, u.uZ);
+  o.pos = u.uViewProj * vec4(world, 1.0);
+  return o;
 }
 
-fn bez(p1: vec2<f32>, c: vec2<f32>, p2: vec2<f32>, t: f32) -> vec2<f32> {
-  let uu = 1.0 - t;
-  return uu * uu * uu * p1 + (3.0 * uu * uu * t + 3.0 * uu * t * t) * c + t * t * t * p2;
+fn sdCone(p: vec2<f32>, a: vec2<f32>, b: vec2<f32>, r1: f32, r2: f32) -> f32 {
+  let pa = p - a;
+  let ba = b - a;
+  let h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-12), 0.0, 1.0);
+  return length(pa - ba * h) - mix(r1, r2, h);
 }
 
 fn pressureAt(A: f32, B: f32, k: f32, s: f32, bellyX: f32) -> f32 {
@@ -70,74 +69,64 @@ fn revealArc(tp: f32, v0: f32, v1: f32) -> f32 {
   return clamp(v0 * (pow(ratio, tp) - 1.0) / dv, 0.0, 1.0);
 }
 
-fn sdRoundedCone(p: vec2<f32>, a: vec2<f32>, b: vec2<f32>, r1: f32, r2: f32) -> f32 {
-  let ba = b - a;
-  let l2 = dot(ba, ba);
-  if (l2 < 1e-12) { return length(p - a) - r1; }
-  let rr = r1 - r2;
-  let a2 = l2 - rr * rr;
-  let il2 = 1.0 / l2;
-  let pa = p - a;
-  let y = dot(pa, ba);
-  let z = y - l2;
-  let xv = pa * l2 - ba * y;
-  let x2 = dot(xv, xv);
-  let y2 = y * y * l2;
-  let z2 = z * z * l2;
-  let k = sign(rr) * rr * rr * x2;
-  if (sign(z) * a2 * z2 > k) { return sqrt(x2 + z2) * il2 - r2; }
-  if (sign(y) * a2 * y2 < k) { return sqrt(x2 + y2) * il2 - r1; }
-  return (sqrt(x2 * a2 * il2) + y * rr) * il2 - r1;
-}
-
 @fragment
-fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
+fn fs(in: VsOut) -> @location(0) vec4<f32> {
   let res = u.uResolution;
   let baseRadius = u.uBaseRadius;
   let time = u.uTime;
   let nSeg = u.uNSeg;
   let inkColor = u.uInkColor;
 
-  let frag = fc.xy;
-  let w = (2.0 * frag - res) / res.y;
+  // quad-local UV -> glyph-space coords (x in [-aspect,aspect], y in [-1,1], both * ext)
+  let w = vec2((in.vUV.x * 2.0 - 1.0) * u.uAspect, in.vUV.y * 2.0 - 1.0) * u.uExt;
   let px = 2.0 / res.y;
   let aa = 1.5 * px;
 
   var dmin = 1e9;
   for (var i = 0; i < nSeg; i = i + 1) {
-    let s = getSeg(i);
-    let p1 = s.p1;
-    let p2 = s.p2;
-    let c = s.ctrl;
-    let pa = s.pr1;
-    let pb = s.pr2;
+    if (dmin < -aa) { break; } // fragment already fully inside ink
 
-    let tp = clamp((time - s.t0) / s.dur, 0.0, 1.0);
-    if (tp <= 0.0) { continue; }
-    let r = revealArc(tp, s.v0, s.v1);
+    let hdr = textureLoad(segTex, vec2<i32>(0, i), 0); // cen.xy, hullR, t0
+    if (time <= hdr.w) { continue; }
+    if (length(w - hdr.xy) - hdr.z - baseRadius > aa) { continue; }
 
-    let cen = (p1 + p2) * 0.5;
-    let hullR = max(length(p1 - cen), length(c - cen));
-    if (length(w - cen) - hullR - baseRadius > aa) { continue; }
+    let a = textureLoad(segTex, vec2<i32>(1, i), 0); // p1.xy, p2.xy
+    let b = textureLoad(segTex, vec2<i32>(2, i), 0); // ctrl.xy, pr1, pr2
+    let c = textureLoad(segTex, vec2<i32>(3, i), 0); // k, belly, hasBelly, dur
+    let d = textureLoad(segTex, vec2<i32>(4, i), 0); // v0, v1
+    let p1 = a.xy;
+    let p2 = a.zw;
+    let ctrl = b.xy;
+    let pa = b.z;
+    let pb = b.w;
+    let hasBelly = c.z > 0.5;
 
-    var prevPos = bez(p1, c, p2, 0.0);
+    let tp = clamp((time - hdr.w) / c.w, 0.0, 1.0);
+    let r = revealArc(tp, d.x, d.y);
+
+    // Horner coeffs of the cubic bezier (both inner controls at ctrl)
+    let b1 = 3.0 * (ctrl - p1);
+    let b2 = 3.0 * (p1 - ctrl);
+    let b3 = p2 - p1;
+
+    var prevPos = p1;
     var prevRad = baseRadius * max(MIN_PRESS, pa);
     for (var kk = 1; kk <= SAMPLES; kk = kk + 1) {
       let t = (f32(kk) / f32(SAMPLES)) * r;
       var pr: f32;
-      if (s.hasBelly == 1) {
-        pr = pressureAt(pa, pb, s.k, t, s.belly);
+      if (hasBelly) {
+        pr = pressureAt(pa, pb, c.x, t, c.y);
       } else {
         pr = mix(pa, pb, t);
       }
-      let pos = bez(p1, c, p2, t);
+      let pos = ((b3 * t + b2) * t + b1) * t + p1;
       let rad = baseRadius * max(MIN_PRESS, pr);
-      dmin = min(dmin, sdRoundedCone(w, prevPos, pos, prevRad, rad));
+      dmin = min(dmin, sdCone(w, prevPos, pos, prevRad, rad));
       prevPos = pos;
       prevRad = rad;
     }
   }
 
   let ink = smoothstep(aa, -aa, dmin);
-  return vec4(inkColor, ink);
+  return vec4(inkColor, ink * u.uOpacity);
 }

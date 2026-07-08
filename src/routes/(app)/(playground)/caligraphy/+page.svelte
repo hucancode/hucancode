@@ -53,7 +53,8 @@
     long: { label: "龍 (long)", ...long },
     fu: { label: "福 (fu)", ...fu },
   };
-  let sampleKey = $state("yong");
+  const INITIAL_SAMPLE = "yong";
+  let sampleKey = $state(INITIAL_SAMPLE);
 
   let canvasEl;
   let glRenderer = null;
@@ -61,12 +62,13 @@
     stageH = $state(600);
 
   // initial: load yong as seed; uid floor bumped past stored ids.
-  setUidFloor(SAMPLES[sampleKey].maxId());
-  let symbol = $state(SAMPLES[sampleKey].symbol());
+  setUidFloor(SAMPLES[INITIAL_SAMPLE].maxId());
+  const seedSymbol = SAMPLES[INITIAL_SAMPLE].symbol();
+  let symbol = $state(seedSymbol);
 
   // selection
   let selKind = $state("path");
-  let selStrokeId = $state(symbol.strokes[0].id);
+  let selStrokeId = $state(seedSymbol.strokes[0].id);
   let selIdx = $state(0);
 
   // brush params

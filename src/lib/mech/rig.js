@@ -1,3 +1,6 @@
+// RIGS — skeletons drive the part kit: the DRAGON rig (curve-ridden spine)
+// and the ATLAS rig (standing humanoid) at the bottom of the file.
+//
 // DRAGON RIG — a SKELETON drives the existing part kit. The layering stays
 // strict: primitives build joints (parts.js blocks), joints + primitives
 // build parts, parts model the dragon, and THIS FILE only instantiates parts
@@ -218,8 +221,8 @@ export function createDragonRig(seed = 1) {
   const defs = DRAGON_DEF.map((d) => ({
     ...d,
     slots: d.mirror
-      ? Object.fromEntries(Object.entries(partSlots(d.part, d.params)).map(([k, s]) => [k, mirrorSlot(s)]))
-      : partSlots(d.part, d.params),
+      ? Object.fromEntries(Object.entries(partSlots("dragon", d.part, d.params)).map(([k, s]) => [k, mirrorSlot(s)]))
+      : partSlots("dragon", d.part, d.params),
   }));
   const byName = Object.fromEntries(defs.map((d) => [d.name, d]));
   const spine = defs.filter((d) => d.spine);
@@ -271,7 +274,7 @@ export function createDragonRig(seed = 1) {
     return c;
   };
   const capture = (d, ppose, out) => {
-    buildPart(d.part, (g) => {
+    buildPart("dragon", d.part, (g) => {
       const b = bake(g);
       if (d.mirror) {                                // X-flip = negate the output x row
         for (let c = 0; c < 3; c++) b.m[c] = -b.m[c];
@@ -392,4 +395,143 @@ function getRig(seed) {
 
 export function dragonModel(seed = 1, pose = {}, path = null) {
   return getRig(seed).model(pose, path);
+}
+
+// ---- ATLAS RIG --------------------------------------------------------------
+// Second rig on the same machinery: a standing humanoid composed from the
+// atlas part kit (parts.js) — head, torso, upper arm, forearm, palm,
+// 3 fingers (identical, 3 digits each), pelvis, thigh, shin, foot, heel.
+// Same rules as the dragon: parts connect by mount-slot matching, one bone
+// per joint DOF, no curve — the pose sliders drive the bones directly. Every
+// articulated link plugs its part's MOVING joint half onto the FIXED half its
+// parent part emits, so the bone rotation happens inside a real mechanism.
+
+// runtime rig controls (degrees)
+export const ATLAS_POSE = {
+  headYaw: 0, headPitch: 0, twist: 0,
+  shoulder: 0, armOut: 8, elbow: 12,
+  wristBend: 0, wristTilt: 0, curl: 18,
+  hip: 0, knee: 0,
+};
+
+// `angles` maps a bone axis of the link's 3-DOF joint to [pose key, sign];
+// `curl` marks the finger links whose part rebuilds with the internal-digit
+// pose channel fed from the knuckle bone.
+const atlasSide = (S, sgn) => [
+  // the right arm seats with a rotY(pi) rest (the hinge3 shoulder disc must
+  // face the chest), which flips the LOCAL x/z senses — hence per-side signs
+  { name: `arm${S}`, part: "upperArm", parent: "torso", at: `shoulder${S}`, slot: "mount",
+    angles: { x: ["shoulder", -sgn], z: ["armOut", -1] } },
+  { name: `fore${S}`, part: "forearm", parent: `arm${S}`, at: "elbow", slot: "mount",
+    angles: { x: ["elbow", -sgn] } },
+  // hinge4 wrist: bend rides the wrist link's X pin, tilt the palm's Z pin
+  { name: `wrist${S}`, part: "wrist", parent: `fore${S}`, at: "wrist", slot: "mount",
+    angles: { x: ["wristBend", -sgn] } },
+  { name: `palm${S}`, part: "palm", parent: `wrist${S}`, at: "out", slot: "mount",
+    angles: { z: ["wristTilt", 1] } },
+  ...[0, 1, 2].map((i) => ({
+    name: `finger${S}${i}`, part: "finger", parent: `palm${S}`, at: `f${i}`, slot: "mount",
+    angles: { x: ["curl", -1] }, curl: true,
+  })),
+  { name: `leg${S}`, part: "thigh", parent: "pelvis", at: `hip${S}`, slot: "mount",
+    angles: { x: ["hip", -1] } },
+  { name: `shin${S}`, part: "shin", parent: `leg${S}`, at: "knee", slot: "mount",
+    angles: { x: ["knee", 1] } },
+  { name: `foot${S}`, part: "foot", parent: `shin${S}`, at: "ankle", slot: "mount" },
+  { name: `heel${S}`, part: "heel", parent: `foot${S}`, at: "heel", slot: "mount" },
+];
+
+const ATLAS_DEF = [
+  { name: "pelvis", part: "pelvis", pivot: "waist" },   // root
+  { name: "torso", part: "torso", parent: "pelvis", at: "waist", slot: "mount",
+    angles: { y: ["twist", 1] } },
+  { name: "head", part: "head", parent: "torso", at: "neck", slot: "mount",
+    angles: { x: ["headPitch", 1], y: ["headYaw", 1] } },
+  ...atlasSide("L", 1),
+  ...atlasSide("R", -1),
+];
+
+const ATLAS_ROOT = [0, 0.75, 0];   // lift so the figure centers on the origin
+
+export function createAtlasRig(seed = 1) {
+  const defs = ATLAS_DEF.map((d) => ({ ...d, slots: partSlots("atlas", d.part, d.params ?? null) }));
+  const byName = Object.fromEntries(defs.map((d) => [d.name, d]));
+  for (const d of defs) d.slots.slot0 = d.slots[d.parent ? d.slot : d.pivot];
+
+  // skeleton: every link = 3 chained bones at the slot-match point (unused
+  // axes just stay at angle 0)
+  const sk = createSkeleton();
+  const boneOf = {}, depthOf = {};
+  for (const d of defs) {
+    const par = d.parent ? byName[d.parent] : null;
+    const offset = par ? vSub(par.slots[d.at].pos, par.slots.slot0.pos) : [...ATLAS_ROOT];
+    const rest = par ? matchRot(par.slots[d.at], d.slots[d.slot]) : null;
+    d.ids = addBall(sk, d.name, par ? boneOf[d.parent] : -1, offset, rest);
+    boneOf[d.name] = d.ids[2];
+    depthOf[d.name] = par ? depthOf[d.parent] + 1 : 0;
+  }
+
+  const colorMemo = new Map();
+  const colorFor = (id) => {
+    let c = colorMemo.get(id);
+    if (!c) colorMemo.set(id, (c = colorOf(id, seed)));
+    return c;
+  };
+  const capture = (d, ppose, out) => {
+    buildPart("atlas", d.part, (g) => {
+      const b = bake(g);
+      out.push({
+        key: b.key, m: b.m, t: b.t,
+        color: colorFor(b.id),
+        group: `${d.name}:${currentJointGroup() ?? "body"}`,
+      });
+    }, d.params ?? null, ppose);
+    return out;
+  };
+  // static templates for every part without a live pose channel (all but the
+  // fingers, whose internal digit joints follow the curl bone)
+  resetJointGroups();
+  for (const d of defs) if (!d.curl) d.tpl = capture(d, null, []);
+
+  const meshes = {};
+  const ensureMeshes = (items) => {
+    for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
+  };
+
+  function model(pose = {}) {
+    const o = { ...ATLAS_POSE, ...pose };
+    const AX = { x: 0, y: 1, z: 2 };
+    for (const d of defs) {
+      if (!d.angles) continue;
+      for (const [axis, [key, sign]] of Object.entries(d.angles))
+        sk.bones[d.ids[AX[axis]]].angle = sign * rad(o[key]);
+    }
+    const W = sk.resolve();
+
+    const items = [];
+    resetJointGroups();
+    for (const d of defs) {
+      const t = xfCompose(W[boneOf[d.name]], xfT(vScale(d.slots.slot0.pos, -1)));
+      const an = vNorm(vScale(m3MulV(t.r, d.slots.slot0.n), -1));
+      const depth = depthOf[d.name];
+      const ppose = d.curl ? { curl: sk.bones[d.ids[0]].angle } : null;
+      for (const e of d.tpl ?? capture(d, ppose, []))
+        items.push({
+          key: e.key,
+          m: m3Mul(t.r, e.m),
+          t: vAdd(m3MulV(t.r, e.t), t.t),
+          color: e.color, group: e.group, an, depth,
+        });
+    }
+    ensureMeshes(items);
+    return { items, meshes };
+  }
+
+  return { model };
+}
+
+let _arig = null, _arigSeed = null;
+export function atlasModel(seed = 1, pose = {}) {
+  if (!_arig || _arigSeed !== seed) { _arig = createAtlasRig(seed); _arigSeed = seed; }
+  return _arig.model(pose);
 }

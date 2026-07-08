@@ -1,41 +1,27 @@
 #version 300 es
 precision highp float;
 
+in vec2 vUV;
 out vec4 fragColor;
 
 uniform vec2  uResolution;
 uniform float uBaseRadius;
 uniform float uTime;       // reveal playhead (s)
 uniform int   uNSeg;
-uniform sampler2D uSegTex; // RGBA32F, 4 texels per seg, height = NSEG
+uniform float uOpacity;
+uniform float uAspect;
+uniform float uExt;
+uniform sampler2D uSegTex; // RGBA32F, 5 texels per seg, height = NSEG; texel 0 = header (cen.xy, hullR, t0)
 
 #define SAMPLES   10
 #define MIN_PRESS 0.0
 
 uniform vec3 uInkColor;
 
-struct Seg {
-    vec2 p1; vec2 p2; vec2 ctrl;
-    float pr1; float pr2; float k; float belly; int hasBelly;
-    float t0; float dur; float v0; float v1;
-};
-
-Seg getSeg(int i) {
-    vec4 a = texelFetch(uSegTex, ivec2(0, i), 0);
-    vec4 b = texelFetch(uSegTex, ivec2(1, i), 0);
-    vec4 c = texelFetch(uSegTex, ivec2(2, i), 0);
-    vec4 d = texelFetch(uSegTex, ivec2(3, i), 0);
-    Seg s;
-    s.p1 = a.xy; s.p2 = a.zw;
-    s.ctrl = b.xy; s.pr1 = b.z; s.pr2 = b.w;
-    s.k = c.x; s.belly = c.y; s.hasBelly = int(c.z + 0.5); s.t0 = c.w;
-    s.dur = d.x; s.v0 = d.y; s.v1 = d.z;
-    return s;
-}
-
-vec2 bez(vec2 p1, vec2 c, vec2 p2, float t) {
-    float u = 1.0 - t;
-    return u * u * u * p1 + (3.0 * u * u * t + 3.0 * u * t * t) * c + t * t * t * p2;
+float sdCone(vec2 p, vec2 a, vec2 b, float r1, float r2) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-12), 0.0, 1.0);
+    return length(pa - ba * h) - mix(r1, r2, h);
 }
 
 float pressureAt(float A, float B, float k, float s, float bellyX) {
@@ -60,61 +46,51 @@ float revealArc(float tp, float v0, float v1) {
     return clamp(v0 * (pow(ratio, tp) - 1.0) / dv, 0.0, 1.0);
 }
 
-float sdRoundedCone(vec2 p, vec2 a, vec2 b, float r1, float r2) {
-    vec2 ba = b - a;
-    float l2 = dot(ba, ba);
-    if (l2 < 1e-12) return length(p - a) - r1;
-    float rr = r1 - r2;
-    float a2 = l2 - rr * rr;
-    float il2 = 1.0 / l2;
-    vec2 pa = p - a;
-    float y = dot(pa, ba);
-    float z = y - l2;
-    vec2 xv = pa * l2 - ba * y;
-    float x2 = dot(xv, xv);
-    float y2 = y * y * l2;
-    float z2 = z * z * l2;
-    float k = sign(rr) * rr * rr * x2;
-    if (sign(z) * a2 * z2 > k) return sqrt(x2 + z2) * il2 - r2;
-    if (sign(y) * a2 * y2 < k) return sqrt(x2 + y2) * il2 - r1;
-    return (sqrt(x2 * a2 * il2) + y * rr) * il2 - r1;
-}
-
 void main() {
-    vec2 frag = gl_FragCoord.xy;
-    vec2 w = (2.0 * frag - uResolution) / uResolution.y; // x in [-aspect,aspect], y in [-1,1]
+    // quad-local UV -> glyph-space coords (x in [-aspect,aspect], y in [-1,1], both * ext)
+    vec2 w = vec2((vUV.x * 2.0 - 1.0) * uAspect, vUV.y * 2.0 - 1.0) * uExt;
     float px = 2.0 / uResolution.y;
     float aa = 1.5 * px;
 
     float dmin = 1e9;
     for (int i = 0; i < uNSeg; i++) {
-        Seg s = getSeg(i);
-        vec2 p1 = s.p1, p2 = s.p2, c = s.ctrl;
-        float pa = s.pr1, pb = s.pr2;
+        if (dmin < -aa) break; // fragment already fully inside ink
 
-        float tp = clamp((uTime - s.t0) / s.dur, 0.0, 1.0);
-        if (tp <= 0.0) continue;
-        float r = revealArc(tp, s.v0, s.v1);
+        vec4 hdr = texelFetch(uSegTex, ivec2(0, i), 0); // cen.xy, hullR, t0
+        if (uTime <= hdr.w) continue;
+        if (length(w - hdr.xy) - hdr.z - uBaseRadius > aa) continue;
 
-        vec2 cen = (p1 + p2) * 0.5;
-        float hullR = max(length(p1 - cen), length(c - cen));
-        if (length(w - cen) - hullR - uBaseRadius > aa) continue;
+        vec4 a = texelFetch(uSegTex, ivec2(1, i), 0); // p1.xy, p2.xy
+        vec4 b = texelFetch(uSegTex, ivec2(2, i), 0); // ctrl.xy, pr1, pr2
+        vec4 c = texelFetch(uSegTex, ivec2(3, i), 0); // k, belly, hasBelly, dur
+        vec4 d = texelFetch(uSegTex, ivec2(4, i), 0); // v0, v1
+        vec2 p1 = a.xy, p2 = a.zw, ctrl = b.xy;
+        float pa = b.z, pb = b.w;
+        bool hasBelly = c.z > 0.5;
 
-        vec2 prevPos = bez(p1, c, p2, 0.0);
+        float tp = clamp((uTime - hdr.w) / c.w, 0.0, 1.0);
+        float r = revealArc(tp, d.x, d.y);
+
+        // Horner coeffs of the cubic bezier (both inner controls at ctrl)
+        vec2 b1 = 3.0 * (ctrl - p1);
+        vec2 b2 = 3.0 * (p1 - ctrl);
+        vec2 b3 = p2 - p1;
+
+        vec2 prevPos = p1;
         float prevRad = uBaseRadius * max(MIN_PRESS, pa);
         for (int k = 1; k <= SAMPLES; k++) {
             float t = (float(k) / float(SAMPLES)) * r;
-            float pr = (s.hasBelly == 1)
-                ? pressureAt(pa, pb, s.k, t, s.belly)
+            float pr = hasBelly
+                ? pressureAt(pa, pb, c.x, t, c.y)
                 : mix(pa, pb, t);
-            vec2 pos = bez(p1, c, p2, t);
+            vec2 pos = ((b3 * t + b2) * t + b1) * t + p1;
             float rad = uBaseRadius * max(MIN_PRESS, pr);
-            dmin = min(dmin, sdRoundedCone(w, prevPos, pos, prevRad, rad));
+            dmin = min(dmin, sdCone(w, prevPos, pos, prevRad, rad));
             prevPos = pos;
             prevRad = rad;
         }
     }
 
     float ink = smoothstep(aa, -aa, dmin);
-    fragColor = vec4(uInkColor, ink);
+    fragColor = vec4(uInkColor, ink * uOpacity);
 }

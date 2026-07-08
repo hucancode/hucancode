@@ -1,7 +1,4 @@
 // Flat ink ribbon. WGSL twin of webgl/shaders/stroke.{vert,frag}.glsl.
-// Drawn straight to screen in world space — no offscreen texture, so the
-// body can never be cut at a texture border. The mesh shapes the taper;
-// the fragment only fades opacity along the arc so the tail dissolves.
 
 struct Uni {
   uViewProj: mat4x4<f32>,

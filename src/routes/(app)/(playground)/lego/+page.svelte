@@ -642,13 +642,13 @@
                 <select bind:value={node.on}>{#each MOUNTS as f}<option value={f}>{f}</option>{/each}</select></label>
             {/if}
             {#if connMode(node) === "grid"}
-              <label><span>Rot Xdeg</span>
+              <label><span>Rot X</span>
                 <input type="range" min="0" max="270" step="90" value={connRot(node)[0]}
                   oninput={(e) => setConnRot(node, 0, e.currentTarget.value)} /><output>{connRot(node)[0]}</output></label>
-              <label><span>Rot Ydeg</span>
+              <label><span>Rot Y</span>
                 <input type="range" min="0" max="270" step="90" value={connRot(node)[1]}
                   oninput={(e) => setConnRot(node, 1, e.currentTarget.value)} /><output>{connRot(node)[1]}</output></label>
-              <label><span>Rot Zdeg</span>
+              <label><span>Rot Z</span>
                 <input type="range" min="0" max="270" step="90" value={connRot(node)[2]}
                   oninput={(e) => setConnRot(node, 2, e.currentTarget.value)} /><output>{connRot(node)[2]}</output></label>
             {:else}
@@ -656,20 +656,20 @@
                 <select value={node.joint ?? "hinge"} onchange={(e) => setJoint(node, e.currentTarget.value)}>
                   {#each FREE_JOINTS as j}<option value={j}>{j}</option>{/each}</select></label>
               {#if node.joint === "ball"}
-                <label><span>Spin Udeg</span>
+                <label><span>Spin U</span>
                   <input type="range" min="-180" max="180" step="5" value={jrotOf(node)[0]}
                     oninput={(e) => setJrot(node, 0, e.currentTarget.value)} /><output>{jrotOf(node)[0]}</output></label>
-                <label><span>Spin Vdeg</span>
+                <label><span>Spin V</span>
                   <input type="range" min="-180" max="180" step="5" value={jrotOf(node)[1]}
                     oninput={(e) => setJrot(node, 1, e.currentTarget.value)} /><output>{jrotOf(node)[1]}</output></label>
-                <label><span>Spin Ndeg</span>
+                <label><span>Spin N</span>
                   <input type="range" min="-180" max="180" step="5" value={jrotOf(node)[2]}
                     oninput={(e) => setJrot(node, 2, e.currentTarget.value)} /><output>{jrotOf(node)[2]}</output></label>
               {:else if node.joint === "hinge"}
-                <label><span>Pitch Xdeg</span>
+                <label><span>Pitch X</span>
                   <input type="range" min="-180" max="180" step="5" value={node.jpitch ?? 0}
                     oninput={(e) => (node.jpitch = +e.currentTarget.value)} /><output>{node.jpitch ?? 0}</output></label>
-                <label><span>Yaw Ydeg</span>
+                <label><span>Yaw Y</span>
                   <input type="range" min="-180" max="180" step="5" value={node.jyaw ?? 0}
                     oninput={(e) => (node.jyaw = +e.currentTarget.value)} /><output>{node.jyaw ?? 0}</output></label>
               {/if}
@@ -755,15 +755,6 @@
 <style>
   footer label { flex: 1 1 8rem; }
   menu button { flex: 1; }
-  /* part/assembly lists: pick button (with color swatch) + delete button per row */
-  :is(ul, ol) li { display: flex; align-items: center; gap: 0.25rem; }
-  :is(ul, ol) li > button:first-child { flex: 1; display: flex; align-items: center; gap: 0.4rem; text-align: left; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 0.3rem; }
-  :is(ul, ol) li > button[aria-pressed="true"] { opacity: 1; font-weight: 600; }
-  :is(ul, ol) li button em { opacity: 0.5; font-style: normal; font-size: 0.7rem; }
-  ol li > button:first-child { border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
-  :is(ul, ol) li > button span { flex: none; width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
-  :is(ul, ol) li > button + button { opacity: 0.5; padding: 0 0.4rem; }
-  :is(ul, ol) li > button + button:disabled { opacity: 0.25; }
   /* color swatch row inside the Color label */
   label > span + span { display: flex; gap: 0.3rem; }
   span + span button { width: 1.4rem; height: 1.4rem; border-radius: 0.3rem; border: 2px solid transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); cursor: pointer; padding: 0; }
