@@ -235,13 +235,13 @@ const _frame = {
     items: null, meshes: null, eye: [0, 0, CAM.dist], // mech rig instances + camera pos (specular)
     viewProj: null, time: 0,
   },
-  debug: { show: false, buffer: "none", path2d: EMPTY_F32, path3d: EMPTY_F32, pool: EMPTY_F32 },
+  debug: { show: false, path2d: EMPTY_F32, path3d: EMPTY_F32, pool: EMPTY_F32 },
 };
 
 // Build FrameState for scene time t. debug adds path polylines; yaw = user orbit
 // heading (pitch scripted by camera block). Runs timeline (each block restores
 // defaults then updates), then assembles _frame in place.
-export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none") {
+export function buildState(t, aspect, debug = {}, yaw = 0) {
   _ctx.t = t;
   timeline.frame(_ctx, t);
 
@@ -284,15 +284,14 @@ export function buildState(t, aspect, debug = {}, yaw = 0, debugBuffer = "none")
   eye[1] = vy * Math.cos(userYaw) + camY;
   eye[2] = vz;
   dragon3d.writeState(_frame.dragon3d, t, viewProj, _ctx.d3Alpha);
-  buildDebugState(t, debug, debugBuffer);
+  buildDebugState(t, debug);
   return _frame;
 }
 
 // Debug overlay state: sampled 2D/3D path polylines + rosette circle centres.
 // debug-only path arrays still allocate (off in production).
-function buildDebugState(t, debug, debugBuffer) {
+function buildDebugState(t, debug) {
   const d = _frame.debug;
-  d.buffer = debugBuffer;
   if (!debug.path2d && !debug.path3d) {
     d.show = false;
     d.path2d = EMPTY_F32; d.path3d = EMPTY_F32; d.pool = EMPTY_F32;

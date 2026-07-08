@@ -1,10 +1,15 @@
 // Glyph SDF reveal, ink only. WGSL port of webgl/shaders/glyph.frag.glsl.
-// Fullscreen triangle; samples the seg DATA TEXTURE (rgba32float, 5 texels/seg,
-// texel 0 = header: cen.xy, hullR, t0) via textureLoad. No y-flip: WebGPU's
-// top-left frag origin + top-down texture storage cancel against the composite
-// quad's sampling (see render/scene.js).
+// Samples the seg DATA TEXTURE (rgba32float, 5 texels/seg, texel 0 = header:
+// cen.xy, hullR, t0) via textureLoad. Glyph-space coords come from the quad
+// UV, so both backends map identically (no y-flip juggling).
 
 struct Uni {
+  uViewProj: mat4x4<f32>,
+  uOpacity: f32,
+  uAspect: f32,
+  uZ: f32,
+  uStationY: f32,
+  uExt: f32,
   uResolution: vec2<f32>,
   uBaseRadius: f32,
   uTime: f32,
@@ -17,10 +22,20 @@ struct Uni {
 const SAMPLES: i32 = 10;
 const MIN_PRESS: f32 = 0.0;
 
+struct VsOut {
+  @builtin(position) pos: vec4<f32>,
+  @location(0) vUV: vec2<f32>,
+};
+
 @vertex
-fn vs(@builtin(vertex_index) vid: u32) -> @builtin(position) vec4<f32> {
-  var P = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
-  return vec4(P[vid], 0.0, 1.0);
+fn vs(@builtin(vertex_index) vid: u32) -> VsOut {
+  var C = array<vec2<f32>, 4>(vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0));
+  let c = C[vid];
+  var o: VsOut;
+  o.vUV = c;
+  let world = vec3((c.x * 2.0 - 1.0) * u.uAspect * u.uExt, (c.y * 2.0 - 1.0) * u.uExt + u.uStationY, u.uZ);
+  o.pos = u.uViewProj * vec4(world, 1.0);
+  return o;
 }
 
 fn sdCone(p: vec2<f32>, a: vec2<f32>, b: vec2<f32>, r1: f32, r2: f32) -> f32 {
@@ -55,15 +70,15 @@ fn revealArc(tp: f32, v0: f32, v1: f32) -> f32 {
 }
 
 @fragment
-fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
+fn fs(in: VsOut) -> @location(0) vec4<f32> {
   let res = u.uResolution;
   let baseRadius = u.uBaseRadius;
   let time = u.uTime;
   let nSeg = u.uNSeg;
   let inkColor = u.uInkColor;
 
-  let frag = fc.xy;
-  let w = (2.0 * frag - res) / res.y;
+  // quad-local UV -> glyph-space coords (x in [-aspect,aspect], y in [-1,1], both * ext)
+  let w = vec2((in.vUV.x * 2.0 - 1.0) * u.uAspect, in.vUV.y * 2.0 - 1.0) * u.uExt;
   let px = 2.0 / res.y;
   let aa = 1.5 * px;
 
@@ -71,7 +86,6 @@ fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
   for (var i = 0; i < nSeg; i = i + 1) {
     if (dmin < -aa) { break; } // fragment already fully inside ink
 
-    // header texel: cull on time + hull with 1 load before loading the rest
     let hdr = textureLoad(segTex, vec2<i32>(0, i), 0); // cen.xy, hullR, t0
     if (time <= hdr.w) { continue; }
     if (length(w - hdr.xy) - hdr.z - baseRadius > aa) { continue; }
@@ -90,8 +104,7 @@ fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
     let tp = clamp((time - hdr.w) / c.w, 0.0, 1.0);
     let r = revealArc(tp, d.x, d.y);
 
-    // bezier as a Horner polynomial: coeffs once per seg, 3 fma per sample
-    // (curve is a cubic with both inner controls at ctrl)
+    // Horner coeffs of the cubic bezier (both inner controls at ctrl)
     let b1 = 3.0 * (ctrl - p1);
     let b2 = 3.0 * (p1 - ctrl);
     let b3 = p2 - p1;
@@ -115,5 +128,5 @@ fn fs(@builtin(position) fc: vec4<f32>) -> @location(0) vec4<f32> {
   }
 
   let ink = smoothstep(aa, -aa, dmin);
-  return vec4(inkColor, ink);
+  return vec4(inkColor, ink * u.uOpacity);
 }

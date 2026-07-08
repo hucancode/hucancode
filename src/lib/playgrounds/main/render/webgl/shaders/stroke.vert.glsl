@@ -1,6 +1,4 @@
 #version 300 es
-// Flat ink ribbon, drawn straight to screen in world space (no offscreen
-// texture, so the body can never be cut at a texture border).
 precision highp float;
 in vec2 aPos;
 in vec2 aLineUV;

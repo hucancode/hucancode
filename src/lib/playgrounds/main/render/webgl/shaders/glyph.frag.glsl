@@ -1,12 +1,16 @@
 #version 300 es
 precision highp float;
 
+in vec2 vUV;
 out vec4 fragColor;
 
 uniform vec2  uResolution;
 uniform float uBaseRadius;
 uniform float uTime;       // reveal playhead (s)
 uniform int   uNSeg;
+uniform float uOpacity;
+uniform float uAspect;
+uniform float uExt;
 uniform sampler2D uSegTex; // RGBA32F, 5 texels per seg, height = NSEG; texel 0 = header (cen.xy, hullR, t0)
 
 #define SAMPLES   10
@@ -43,8 +47,8 @@ float revealArc(float tp, float v0, float v1) {
 }
 
 void main() {
-    vec2 frag = gl_FragCoord.xy;
-    vec2 w = (2.0 * frag - uResolution) / uResolution.y; // x in [-aspect,aspect], y in [-1,1]
+    // quad-local UV -> glyph-space coords (x in [-aspect,aspect], y in [-1,1], both * ext)
+    vec2 w = vec2((vUV.x * 2.0 - 1.0) * uAspect, vUV.y * 2.0 - 1.0) * uExt;
     float px = 2.0 / uResolution.y;
     float aa = 1.5 * px;
 
@@ -52,7 +56,6 @@ void main() {
     for (int i = 0; i < uNSeg; i++) {
         if (dmin < -aa) break; // fragment already fully inside ink
 
-        // header texel: cull on time + hull with 1 fetch before loading the rest
         vec4 hdr = texelFetch(uSegTex, ivec2(0, i), 0); // cen.xy, hullR, t0
         if (uTime <= hdr.w) continue;
         if (length(w - hdr.xy) - hdr.z - uBaseRadius > aa) continue;
@@ -68,8 +71,7 @@ void main() {
         float tp = clamp((uTime - hdr.w) / c.w, 0.0, 1.0);
         float r = revealArc(tp, d.x, d.y);
 
-        // bezier as a Horner polynomial: coeffs once per seg, 3 fma per sample
-        // (curve is a cubic with both inner controls at ctrl)
+        // Horner coeffs of the cubic bezier (both inner controls at ctrl)
         vec2 b1 = 3.0 * (ctrl - p1);
         vec2 b2 = 3.0 * (p1 - ctrl);
         vec2 b3 = p2 - p1;
@@ -90,5 +92,5 @@ void main() {
     }
 
     float ink = smoothstep(aa, -aa, dmin);
-    fragColor = vec4(uInkColor, ink);
+    fragColor = vec4(uInkColor, ink * uOpacity);
 }

@@ -1,8 +1,6 @@
 // Enso circle brush stroke (polar). WGSL port of webgl/shaders/enso.frag.glsl.
 // Stroke laid out in polar coords about the origin, swept by uSweep; 3 stacked
-// brush passes (bleed/wet/dry) over-composited. Drawn directly on the world
-// quad (composite-style vertex stage) — no offscreen texture, so the wash is
-// never cut at a texture border.
+// brush passes (bleed/wet/dry) over-composited.
 
 struct Uni {
   uViewProj: mat4x4<f32>,
@@ -118,8 +116,7 @@ fn deformLine(uvLine: vec2<f32>, lineLength: f32) -> vec3<f32> {
   return vec3(h, centerOff);
 }
 
-// hu (deformed line + center offset), tailVar/headVar (bristle taper noise) and
-// paperBleedAmt are layer-independent — computed once in fs(), shared by all 3 passes.
+// hu, tailVar/headVar, paperBleedAmt are layer-independent — computed once in fs()
 fn drawStroke(along: f32, perp: f32, hu: vec3<f32>, tailVar: f32, headVar: f32,
               paperBleedAmt: f32, lineLength: f32, strokeLen: f32, b: Brush, res: vec2<f32>) -> f32 {
   let lineWidth = b.lineWidth;
@@ -174,9 +171,7 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
   let uv = vec2((in.vUV.x * 2.0 - 1.0) * u.uAspect, in.vUV.y * 2.0 - 1.0) * u.uExt;
   let r = length(uv);
   let perp = r - radius;
-  // radial cull: the dtoa bleed halo decays ~1/d and is <~4% alpha past this
-  // window; fade it to 0 so the skip is seamless. Culls most of the quad
-  // before any noise is evaluated.
+  // radial cull: bleed halo is <~4% alpha past washOut; fade so the cut is seamless
   let washIn = lineWidthU + 0.2;
   let washOut = lineWidthU + 0.45;
   let aperp = abs(perp);
@@ -190,11 +185,9 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
   let lineLength = radius * PI2;
   let strokeLen = lineLength * clamp(sweep, 0.0, 1.0);
   let along = phase * radius;
-  // beyond the leading edge every layer is exactly 0 (bleed tail factor,
-  // wet/dry endFade) — cull the unswept arc before any noise.
+  // past the leading edge every layer is exactly 0 — cull the unswept arc
   if (along >= strokeLen) { return vec4(inkColor, 0.0); }
 
-  // layer-independent work, hoisted out of the brush passes
   let uvLine = vec2(perp, along);
   let hu = deformLine(uvLine, lineLength);
   let paperBleedAmt = 60.0 + (rand(uv.yy) * 30.0) + (rand(uv.xx) * 30.0);

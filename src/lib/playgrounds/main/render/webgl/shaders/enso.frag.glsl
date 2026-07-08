@@ -38,8 +38,7 @@ struct Brush {
     float stepOffset; // added to uWidthOffset (per-layer width-step shift)
 };
 
-// sinless hash (Hoskins hash22): the sin-based one cost 2 sin per call, 6 per
-// noise eval — dominant ALU at ~15 noise evals/px
+// sinless hash (Hoskins hash22)
 vec2 hash(vec2 p) {
     vec3 q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
     q += dot(q, q.yzx + 33.33);
@@ -103,8 +102,7 @@ vec3 deformLine(vec2 uvLine, float lineLength) {
     return vec3(h, centerOff);
 }
 
-// hu (deformed line + center offset), tailVar/headVar (bristle taper noise) and
-// paperBleedAmt are layer-independent — computed once in main(), shared by all 3 passes.
+// hu, tailVar/headVar, paperBleedAmt are layer-independent — computed once in main()
 float drawStroke(float along, float perp, vec3 hu, float tailVar, float headVar,
                  float paperBleedAmt, float lineLength, float strokeLen, Brush b) {
     float lineWidth = b.lineWidth;
@@ -146,7 +144,6 @@ float drawStroke(float along, float perp, vec3 hu, float tailVar, float headVar,
 
     // Cap fadeLen so start/end fade zones never overlap (prevents crushing at small sweep).
     float fadeLen = min(lineWidth * 5.0, strokeLen * 0.45);
-    // min ratio 0.40 (was 0.15) -> each bristle has ample fade room, no fine clipping
     float tailLen = max(fadeLen * mix(0.40, 1.0, tailVar), 1e-5);
     float startFade = smoothstep(0.0, tailLen, alongClamped);
     float headLen = fadeLen * mix(0.15, 1.0, headVar);
@@ -160,9 +157,7 @@ void main() {
 
     float r = length(uv);
     float perp = r - uRadius;
-    // radial cull: the dtoa bleed halo decays ~1/d and is <~4% alpha past this
-    // window; fade it to 0 so the skip is seamless. Culls most of the quad
-    // before any noise is evaluated.
+    // radial cull: bleed halo is <~4% alpha past washOut; fade so the cut is seamless
     float washIn  = uLineWidth + 0.2;
     float washOut = uLineWidth + 0.45;
     float aperp = abs(perp);
@@ -173,16 +168,12 @@ void main() {
     if (CLOCKWISE) a = -a;
     float phase = mod(a, PI2);
 
-    // single-lap enso: the stroke spans one revolution; uSweep grows the drawn
-    // fraction (the head leads the front).
     float lineLength = uRadius * PI2;
     float strokeLen = lineLength * clamp(uSweep, 0.0, 1.0);
     float along = phase * uRadius;
-    // beyond the leading edge every layer is exactly 0 (bleed tail factor,
-    // wet/dry endFade) — cull the unswept arc before any noise.
+    // past the leading edge every layer is exactly 0 — cull the unswept arc
     if (along >= strokeLen) { fragColor = vec4(uInkColor, 0.0); return; }
 
-    // layer-independent work, hoisted out of the brush passes
     vec2 uvLine = vec2(perp, along);
     vec3 hu = deformLine(uvLine, lineLength);
     float paperBleedAmt = 60.0 + (rand(uv.yy) * 30.0) + (rand(uv.xx) * 30.0);
@@ -193,8 +184,7 @@ void main() {
                         uStrands * 1.6,
                         uLineWidth * 1.0,
                         1.0, 1.0, 1.0, 0.35);
-    // bleed wash fades in across the early sweep (tail/head vars unused on the
-    // fadeEnds path — pass 0)
+    // bleed fades in across the early sweep; tail/head vars unused on the fadeEnds path
     float aBleed = drawStroke(along, perp, hu, 0.0, 0.0, paperBleedAmt, lineLength, strokeLen, bleed)
                  * smoothstep(0.1, 0.5, uSweep);
     float alpha = aBleed;

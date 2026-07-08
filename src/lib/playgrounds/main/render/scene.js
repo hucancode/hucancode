@@ -1,12 +1,8 @@
-// Scene renderer for /main (paint). Consumes the FrameState built by
-// index.js buildState() — plain data, no GPU handles: aspect, camY,
-// opacity.{glyph,inkDragon,dragon3d}, grid, glyph{segs,playhead,...},
-// enso, inkDragon{body,head,widthScale},
-// dragon3d{items,meshes,eye,viewProj + legacy frames/pathLen/... for "obj"},
-// debug{show,buffer,path2d,path3d,pool}. Source of truth = buildState().
+// Scene renderer for /main (paint). One screen pass; consumes the plain-data
+// FrameState from index.js buildState() — no GPU handles cross that boundary.
 import { buildRibbon } from "./webgl/stroke-gl.js";
 import { createInstancedDrawer } from "$lib/mech/instancing.js";
-import { D3_STYLE, ENSO_EXT } from "../config.js";
+import { D3_STYLE } from "../config.js";
 import { PROGRAMS } from "./programs.js";
 
 // Kanagawa palette (light/dark)
@@ -33,14 +29,12 @@ const smooth01 = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
 export function makeSceneRenderer(device, canvas) {
   const sh = {};
-  let tGlyph;
   let segTex;
   let strokePos, strokeUV, strokeIdx, headBuf;
   let mechDrawer;
   let objDragon = null; // legacy obj-mesh dragon, lazy-loaded only for D3_STYLE "obj"
   let w = 1, h = 1;
 
-  let glyphCacheKey = NaN;
   let segRef = null, segRows = 0, segBuf = new Float32Array(0);
   const headData = new Float32Array(16);
   const lineBufs = [];
@@ -65,14 +59,10 @@ export function makeSceneRenderer(device, canvas) {
   function resize(nw, nh) {
     w = Math.max(1, nw | 0); h = Math.max(1, nh | 0);
     device.resize(w, h);
-    tGlyph?.destroy();
-    tGlyph = device.target({ width: w, height: h });
-    glyphCacheKey = NaN; // target recreated -> force glyph re-render
   }
 
-  // pack baked glyph segs into rgba32f data texture (5 texels/seg; texel 0 =
-  // header cen.xy/hullR/t0 so the shader can cull on one fetch); upload only
-  // when array identity changes
+  // 5 texels/seg; texel 0 = cull header (cen.xy, hullR, t0). Re-upload only on
+  // array identity change.
   function uploadSegs(segs) {
     const n = segs ? segs.length : 0;
     if (n === 0) return 0;
@@ -95,8 +85,6 @@ export function makeSceneRenderer(device, canvas) {
     return n;
   }
 
-  // flat ink body drawn straight to screen: mesh carries the taper (thin tail
-  // at arcT 0 -> full width at the head end), fragment fades the tail out
   let _strokeW = 0;
   const bodyWidthAt = (t) => _strokeW * (BODY_TAIL_W + (1 - BODY_TAIL_W) * smooth01(t / BODY_TAPER_SPAN));
   function drawStroke(p, points, lineWidth, opacity, vp) {
@@ -124,16 +112,10 @@ export function makeSceneRenderer(device, canvas) {
     p.draw(sh.head, { buffers: [headBuf], count: 4, uniforms: { uViewProj: vp, uOpacity: opacity, uBrushColor: getInk() } });
   }
 
-  // mech dragon: shared instanced drawer (one draw per unit-mesh key, cached
-  // vertex buffers, capacity-grown instance buffer rewritten every frame)
   function drawMechDragon(p, d3, opacity, vp) {
     mechDrawer.draw(p, sh.mechDragon, d3.items, d3.meshes, {
       uViewProj: vp, uLightPos: MECH_LIGHT, uViewPos: d3.eye, uOpacity: opacity,
     });
-  }
-
-  function compositeQuad(p, color, opacity, z, vp, aspect, stationY, ext = 1) {
-    p.draw(sh.composite, { count: 4, textures: { uTex: color }, uniforms: { uViewProj: vp, uOpacity: opacity, uAspect: aspect, uZ: z, uStationY: stationY, uExt: ext } });
   }
 
   function drawDebug(p, state, aspect, vp) {
@@ -155,11 +137,6 @@ export function makeSceneRenderer(device, canvas) {
       if (state.debug.path3d && state.debug.path3d.length) line(state.debug.path3d, true, false, [0.0, 0.7, 1.0, 0.9]);
       if (state.debug.pool?.length) line(state.debug.pool, true, true, [0.2, 0.5, 1.0, 1.0]);
     }
-    if (state.debug.buffer && state.debug.buffer !== "none") {
-      const map = { glyph: tGlyph };
-      const t = map[state.debug.buffer];
-      if (t) p.draw(sh.blit, { count: 3, textures: { uTex: t.color } });
-    }
   }
 
   function frame(state) {
@@ -169,25 +146,25 @@ export function makeSceneRenderer(device, canvas) {
     const vp = device.correctViewProj(state.dragon3d.viewProj);
 
     device.beginFrame();
-
-    // Pass A: offscreen glyph layer (cached; re-rendered only when playhead moves)
-    if (nSeg > 0 && state.glyph.playhead !== glyphCacheKey) {
-      glyphCacheKey = state.glyph.playhead;
-      device.pass({ target: tGlyph, clear: [0, 0, 0, 0] }, (p) =>
-        p.draw(sh.glyph, { count: 3, textures: { uSegTex: segTex }, uniforms: { uResolution: [w, h], uBaseRadius: state.glyph.baseRadius, uTime: state.glyph.playhead, uNSeg: nSeg, uInkColor: getInkRGB() } }));
-    }
-
-    // Pass B: composite to screen + ink dragon + 3D dragon
     const paper = getPaper();
     device.pass({ target: "screen", clear: paper, depth: true, depthClear: 1 }, (p) => {
       if (state.grid && state.grid.reveal > 0)
         p.draw(sh.grid, { count: 4, uniforms: { uViewProj: vp, uExt: state.grid.ext, uZ: state.grid.z, uStep: state.grid.step, uMinorDiv: state.grid.minorDiv, uOpacity: state.grid.opacity, uReveal: state.grid.reveal, uRevealMinor: state.grid.revealMinor, uInkColor: getInkRGB() } });
-      if (state.enso && state.enso.alpha > 0 && state.enso.sweep > 0)
+      if (state.enso && state.enso.alpha > 0 && state.enso.sweep > 0) {
+        // quad half-extent = wash reach (shader zeroes past radius + lineWidth
+        // + 0.45); uAspect is the quad's world half-width, clamped >=1 so
+        // portrait screens never slice the ring
+        const ensoExt = state.enso.radius + state.enso.lineWidth + 0.5;
         p.draw(sh.enso, { count: 4, uniforms: {
-          uViewProj: vp, uOpacity: state.enso.alpha, uAspect: aspect, uZ: -0.004, uStationY: state.enso.stationY || 0, uExt: ENSO_EXT,
+          uViewProj: vp, uOpacity: state.enso.alpha, uAspect: Math.max(aspect, 1), uZ: -0.004, uStationY: state.enso.stationY || 0, uExt: ensoExt,
           uResolution: [w, h], uRadius: state.enso.radius, uSweep: state.enso.sweep, uAngleStart: state.enso.angleStart, uLineWidth: state.enso.lineWidth, uInkColor: getInkRGB(),
         } });
-      compositeQuad(p, tGlyph.color, state.opacity.glyph, -0.002, vp, aspect, state.glyph.stationY || 0);
+      }
+      if (nSeg > 0 && state.opacity.glyph > 0)
+        p.draw(sh.glyph, { count: 4, textures: { uSegTex: segTex }, uniforms: {
+          uViewProj: vp, uOpacity: state.opacity.glyph, uAspect: aspect, uZ: -0.002, uStationY: state.glyph.stationY || 0, uExt: 1,
+          uResolution: [w, h], uBaseRadius: state.glyph.baseRadius, uTime: state.glyph.playhead, uNSeg: nSeg, uInkColor: getInkRGB(),
+        } });
       if (state.opacity.inkDragon > 0) {
         const d = state.inkDragon, ws = d.widthScale ?? 1;
         drawStroke(p, d.body, 0.03 * ws, state.opacity.inkDragon, vp);
@@ -207,7 +184,6 @@ export function makeSceneRenderer(device, canvas) {
   }
 
   function destroy() {
-    tGlyph?.destroy();
     segTex?.destroy();
     strokePos?.destroy(); strokeUV?.destroy(); strokeIdx?.destroy(); headBuf?.destroy();
     objDragon?.destroy(); objDragon = null;
