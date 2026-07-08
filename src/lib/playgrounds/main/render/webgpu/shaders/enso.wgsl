@@ -54,9 +54,11 @@ fn vs(@builtin(vertex_index) vid: u32) -> VsOut {
 
 fn fmod(x: f32, y: f32) -> f32 { return x - y * floor(x / y); }
 
+// sinless hash (Hoskins hash22)
 fn hash2(p: vec2<f32>) -> vec2<f32> {
-  let q = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
-  return -1.0 + 2.0 * fract(sin(q) * 43758.5453123);
+  var q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+  q = q + dot(q, q.yzx + 33.33);
+  return -1.0 + 2.0 * fract((q.xx + q.yz) * q.zy);
 }
 fn noise(p: vec2<f32>) -> f32 {
   let K1 = 0.366025404;
@@ -192,29 +194,32 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
   // wet/dry endFade) — cull the unswept arc before any noise.
   if (along >= strokeLen) { return vec4(inkColor, 0.0); }
 
-  // layer-independent work, hoisted out of the 3 brush passes
+  // layer-independent work, hoisted out of the brush passes
   let uvLine = vec2(perp, along);
   let hu = deformLine(uvLine, lineLength);
-  // Per-group bristle taper: lower frequency -> bigger clumps of strands that
-  // taper together, smoother and bolder. Head (start) uses coarser noise so
-  // bristles are visibly large rather than fine fringe.
-  let bristleT = perp / max(lineWidthU, 1e-4);
-  let tailVar = noise01(vec2(bristleT * 5.5, 1.71)) * 0.65
-              + noise01(vec2(bristleT * 13.0, 5.19)) * 0.35;
-  let headVar = noise01(vec2(bristleT * 11.0, 8.33)) * 0.65
-              + noise01(vec2(bristleT * 27.3, 13.7)) * 0.35;
   let paperBleedAmt = 60.0 + (rand(uv.yy) * 30.0) + (rand(uv.xx) * 30.0);
 
   let bleed = Brush(uInkFlow * 0.4, clamp(uWaterFlow * 1.3 + 0.2, 0.0, 1.0), uStrands * 1.6, lineWidthU * 1.0, 1.0, 1.0, 1.0, 0.35);
-  let wet = Brush(uInkFlow * 0.7, uWaterFlow * 0.7, uStrands * 0.7, lineWidthU * 0.8, 0.0, 0.0, 1.0, 0.2);
-  let dry = Brush(uInkFlow * 2.8, uWaterFlow * 0.2, uStrands * 0.5, lineWidthU * 0.4, 0.0, 0.0, 1.0, 0.0);
 
-  let aBleed = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, bleed, res) * smoothstep(0.1, 0.5, sweep);
-  let aWet = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, wet, res);
-  let aDry = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, dry, res);
-
+  let aBleed = drawStroke(along, perp, hu, 0.0, 0.0, paperBleedAmt, lineLength, strokeLen, bleed, res) * smoothstep(0.1, 0.5, sweep);
   var alpha = aBleed;
-  alpha = alpha + aWet * (1.0 - alpha);
-  alpha = alpha + aDry * (1.0 - alpha);
+
+  let coreDist = abs(perp - hu.z);
+  let coreOut = lineWidthU * 0.8 + 0.15;
+  if (coreDist < coreOut) {
+    let coreWin = 1.0 - smoothstep(coreOut - 0.08, coreOut, coreDist);
+    let bristleT = perp / max(lineWidthU, 1e-4);
+    let tailVar = noise01(vec2(bristleT * 5.5, 1.71)) * 0.65
+                + noise01(vec2(bristleT * 13.0, 5.19)) * 0.35;
+    let headVar = noise01(vec2(bristleT * 11.0, 8.33)) * 0.65
+                + noise01(vec2(bristleT * 27.3, 13.7)) * 0.35;
+    let wet = Brush(uInkFlow * 0.7, uWaterFlow * 0.7, uStrands * 0.7, lineWidthU * 0.8, 0.0, 0.0, 1.0, 0.2);
+    let dry = Brush(uInkFlow * 2.8, uWaterFlow * 0.2, uStrands * 0.5, lineWidthU * 0.4, 0.0, 0.0, 1.0, 0.0);
+    let aWet = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, wet, res) * coreWin;
+    let aDry = drawStroke(along, perp, hu, tailVar, headVar, paperBleedAmt, lineLength, strokeLen, dry, res) * coreWin;
+    // over-composite (same ink colour): bleed under, wet, dry on top
+    alpha = alpha + aWet * (1.0 - alpha);
+    alpha = alpha + aDry * (1.0 - alpha);
+  }
   return vec4(inkColor, alpha * u.uOpacity * washWin);
 }
