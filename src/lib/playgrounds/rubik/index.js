@@ -339,14 +339,16 @@ function pauseSolution() {
 // ---------------------------------------------------------------------------
 // scramble + notation
 
-// queue a random scramble, return it as notation
+// reset to solved, queue a random scramble, return it as notation
 function scramble() {
   if (!running) return "";
   clearSolution();
   pendingSolve = false;
+  cancelMove();
+  resetTransforms();
   const moves = [];
   for (let i = 0; i < cubeNum * 7; i++) moves.push(randomMove());
-  queue.push(...moves);
+  queue = moves.slice();
   advance();
   return moves.map(moveToNotation).join(" ");
 }
