@@ -19,7 +19,7 @@
   let view = $state("atlas");            // "parts" | "primitives" | "dragon" | "atlas"
   let selPart = $state(JOINTS[0]);        // joints tab selection
   let dsel = $state("rig");               // dragon tab: "rig" = whole dragon, else a part
-  let asel = $state("upperArm");               // atlas tab: same scheme
+  let asel = $state("rig");               // atlas tab: same scheme
   let selPrim = $state(PRIM_NAMES[0]);
   let pparams = $state(structuredClone(PRIM_PARAMS));
   let jparams = $state(structuredClone(PART_PARAMS));   // { kit: { part: params } }
@@ -29,8 +29,8 @@
   let autoplay = $state(true);                       // fly the loop automatically
   const LAP_SECONDS = 4;
   // assembly build scrub: 1 = fully assembled, <1 runs the 4-phase build
-  let asm = $state(0);
-  let asmPlay = $state(true);
+  let asm = $state(1);
+  let asmPlay = $state(false);
   const BUILD_SECONDS = 6;
   let seed = $state(1);                    // color shuffle seed
 
@@ -111,7 +111,7 @@
     ["headPitch", "head pitch", -30, 30, 1],
     ["twist", "waist twist", -40, 40, 1],
     ["shoulder", "arm swing", -60, 60, 1],
-    ["armOut", "arm raise", -10, 60, 1],
+    ["armOut", "arm raise", -10, 180, 1],
     ["elbow", "elbow bend", 0, 90, 1],
     ["wristBend", "wrist bend", -60, 60, 1],
     ["wristTilt", "wrist tilt", -60, 60, 1],
