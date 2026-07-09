@@ -458,13 +458,30 @@ function head(add, p, pose = {}) {
     add(translate(sphere(p.eyeR, 16, 10), s * (W * 0.21 + p.eyeR * 0.55), 0.55, 0.3));
   // brow: slope box over the window, dropping toward the snout
   add(translate(box(W, 0.26, 0.5, 0.62), 0, 1.03, 0.15));
+  // per-eye brow ridges: small slope blocks jutting past the brow's front
+  // edge, hooding each eye window
+  for (const s of [1, -1])
+    add(translate(box(W * 0.3, 0.13, 0.3, 0.55), s * W * 0.32, 0.95, 0.48));
   // snout: slope-top box, nose end lower
   add(translate(box(W * 0.65, 0.5, p.snoutLen, 0.44), 0, 0.62, 0.5 + p.snoutLen / 2));
+  // nasal crest: thin slope ridge riding the snout centerline
+  add(translate(box(0.12, 0.16, p.snoutLen * 0.65, 0.5), 0, 0.86, 0.5 + p.snoutLen * 0.38));
   // nose tip: small steep slope block
   add(translate(box(W * 0.45, 0.24, 0.18, 0.5), 0, 0.49, 0.5 + p.snoutLen + 0.09));
-  // upper fangs: hang from the snout underside near the tip
-  for (const x of [-W * 0.22, W * 0.22])
-    add(translate(box(0.08, 0.16, 0.08), x, 0.31, 0.5 + p.snoutLen - 0.1));
+  // nostrils: short bosses buried in the nose tip, barely proud of its face
+  for (const s of [1, -1])
+    add(translate(rotX(cylinder(0.06, 0.08, 10), HPI), s * W * 0.12, 0.5, 0.5 + p.snoutLen + 0.12));
+  // upper fangs: two per side hanging from the snout underside, the rear one
+  // shorter
+  for (const s of [1, -1])
+    for (const [i, h] of [0.18, 0.12].entries())
+      add(translate(box(0.08, h, 0.08), s * W * 0.22, 0.37 - h / 2, 0.5 + p.snoutLen - 0.1 - i * 0.35));
+  // cheek armor: slope plate on each skull flank with three vent slats
+  for (const s of [1, -1]) {
+    add(translate(box(0.12, 0.52, 0.78, 0.55), s * (W / 2 + 0.06), 0.5, -0.38));
+    for (const y of [0.36, 0.5])
+      add(translate(box(0.05, 0.07, 0.44), s * (W / 2 + 0.13), y, -0.42));
+  }
 
   // JAW HINGE — a real hinge2-style joint drives the jaw. Pin axis = X through
   // HEAD_JAW_PIN (below the skull so the knuckles read); every jaw-side piece
@@ -489,16 +506,26 @@ function head(add, p, pose = {}) {
   add(jawAt(translate(box(jw, 0.18, jawLen), 0, -0.21, jawLen / 2 - 0.15)));
   for (const x of [-W * 0.18, 0, W * 0.18])
     add(jawAt(translate(box(0.07, 0.14, 0.07), x, -0.05, jawLen - 0.4)));
+  // mandible plates: thin slope walls along the jaw plate sides
+  for (const s of [1, -1])
+    add(jawAt(translate(box(0.08, 0.2, jawLen * 0.6, 0.5), s * (jw / 2 + 0.04), -0.18, jawLen * 0.4)));
 
-  // antlers: three axis-aligned segments per side, extending BACK along -Z:
-  // a base mount seated flat on the roof, a long box flush against its rear
-  // face, and a full-wedge pointy tip (exact 180deg turn so the point aims -Z).
+  // antlers: a root block seated flat on the roof, then a stepped run of
+  // axis-aligned boxes hanging off its outer side face, extending BACK along
+  // -Z and up (full-wedge tip turned 180deg so the point aims -Z).
   for (const s of [1, -1]) {
     const L = p.hornLen;
     const x = s * W * 0.32;
-    add(translate(box(0.3, 0.3, 0.36), x, 1.05, -0.64));                     // base mount on the roof
-    add(translate(box(0.2, 0.24, L), x, 1.1, -0.82 - L / 2));                // long shaft along -Z
-    add(translate(rotY(box(0.2, 0.24, 0.55, 0.96), Math.PI), x, 1.1, -0.82 - L - 0.275)); // pointy tip
+    add(translate(box(0.3, 0.3, 0.36), x, 1.05, -0.64));                     // root block on the roof
+    // stepped antler bolted onto the root block's OUTER SIDE face: the whole
+    // axis-aligned run lives on that side plane, every joint a flush overlap
+    const ax = x + s * 0.21;                                                  // side plane, 0.04 into the root
+    const L1 = L * 0.6, L2 = L * 0.45;
+    add(translate(box(0.2, 0.24, L1), ax, 1.05, -0.55 - L1 / 2));            // lower shaft, front end inside the root
+    const kz = -0.55 - L1;                                                    // step point
+    add(translate(box(0.24, 0.36, 0.28), ax, 1.17, kz + 0.05));               // riser, straddles the shaft end
+    add(translate(box(0.18, 0.2, L2), ax, 1.25, kz + 0.05 - L2 / 2));        // upper shaft, rear end inside the riser
+    add(translate(rotY(box(0.18, 0.2, 0.5, 0.96), Math.PI), ax, 1.25, kz - L2 - 0.13)); // wedge tip, base overlapping the shaft
   }
   // crest fin: D-plate on the skull roof, round side up, body sunk into the box
   {
