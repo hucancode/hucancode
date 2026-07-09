@@ -5,8 +5,11 @@
     partModel, primitiveModel,
     PART_NAMES, PRIM_NAMES, PRIM_PARAMS, PART_PARAMS, JOINT_POSE,
   } from "$lib/mech/parts.js";
-  import { dragonModel, DRAGON_POSE, atlasModel, ATLAS_POSE } from "$lib/mech/rig.js";
+  import {
+    dragonModel, DRAGON_POSE, atlasModel, ATLAS_POSE, ATLAS_POSE_DEPTH, ATLAS_MONTAGES,
+  } from "$lib/mech/rig.js";
   import { assembleModel } from "$lib/mech/assembly.js";
+  import { createChoreographer, CHOREO_TIMING } from "$lib/mech/choreo.js";
 
   let scene = $state(null);
 
@@ -27,6 +30,9 @@
   let drig = $state(structuredClone(DRAGON_POSE));   // dragon rig pose
   let arig = $state(structuredClone(ATLAS_POSE));  // atlas rig pose
   let autoplay = $state(true);                       // fly the loop automatically
+  let choreo = $state(true);                         // atlas: procedural beats
+  let ctiming = $state(structuredClone(CHOREO_TIMING));   // beat timing
+  let live = $state(null);   // the running choreographer, null while it is off
   const LAP_SECONDS = 4;
   // assembly build scrub: 1 = fully assembled, <1 runs the 4-phase build
   let asm = $state(1);
@@ -48,6 +54,8 @@
     pivot1: "pivot 1",
     prismatic1: "prismatic 1",
     ball1: "ball 1",
+    armWave: "arm wave",
+    frontWave: "front wave",
   };
   const PRIM_LABELS = {
     cylinder: "cylinder", cone: "cone", coneCut: "cut cone",
@@ -100,26 +108,50 @@
   const DRAGON_CTL = [
     ["offset", "loop offset", 0, 1, 0.002],
     ["jaw", "jaw open", 0, 45, 1],
-    ["armSwing", "arm swing", -60, 60, 1],
+    ["armSwing", "arm swing", -180, 180, 1],
     ["elbow", "elbow bend", 0, 70, 1],
     ["legSwing", "leg swing", -60, 60, 1],
     ["knee", "knee bend", 0, 60, 1],
   ];
   // atlas rig runtime controls (all degrees, straight onto the bones)
   const ATLAS_CTL = [
-    ["headYaw", "head yaw", -60, 60, 1],
+    ["headYaw", "head yaw", -180, 180, 1],
     ["headPitch", "head pitch", -30, 30, 1],
-    ["twist", "waist twist", -40, 40, 1],
-    ["shoulder", "arm swing", -60, 60, 1],
+    ["twist", "waist twist", -180, 180, 1],
+    ["waistBend", "waist bend", -45, 45, 1],
+    ["waistTilt", "waist tilt", -45, 45, 1],
+    ["shoulder", "arm swing", -180, 180, 1],
     ["armOut", "arm raise", -10, 180, 1],
     ["elbow", "elbow bend", 0, 90, 1],
-    ["wristBend", "wrist bend", -60, 60, 1],
-    ["wristTilt", "wrist tilt", -60, 60, 1],
-    ["wristTwist", "wrist twist", -90, 90, 1],
+    ["wristBend", "wrist bend", -100, 100, 1],
+    ["wristTilt", "wrist tilt", -100, 100, 1],
+    ["wristTwist", "wrist twist", -180, 180, 1],
     ["curl", "finger curl", 0, 60, 1],
     ["hip", "leg swing", -45, 45, 1],
     ["knee", "knee bend", 0, 60, 1],
   ];
+  // choreographer slider kit: the bone depth of a channel says how much mass it
+  // moves, so the shallow ones (waist, shoulder, neck) are the big beats and
+  // everything below them (elbow, wrist, fingers) is small detail. The legs sit
+  // it out — the figure has to keep standing.
+  const BIG_DEPTH = 2;
+  const CHOREO_SKIP = new Set(["hip", "knee"]);
+  const CHOREO_SLIDERS = ATLAS_CTL
+    .filter(([key]) => !CHOREO_SKIP.has(key))
+    .map(([key, , min, max]) => ({ key, min, max, big: ATLAS_POSE_DEPTH[key] <= BIG_DEPTH }));
+  // the waist ball's three channels share one joint: let each swing freely and
+  // the torso folds through the pelvis, so cap what they may spend between them
+  const CHOREO_BUDGETS = [{ keys: ["twist", "waistBend", "waistTilt"], limit: 180 }];
+  // beat timing knobs — the anticipation and rest slices bracket the main move,
+  // so neither may eat the whole period
+  const CHOREO_CTL = [
+    ["period", "beat", 0.3, 6, 0.1],
+    ["anticRatio", "anticipation", 0, 0.4, 0.01],
+    ["restRatio", "rest", 0, 0.4, 0.01],
+    ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
+    ["bouncePower", "bounce power", 0, 1, 0.01],
+  ];
+
   // [key, label, min, max] sliders per primitive; `fit` gets its own toggle
   const PRIM_CTL = {
     cylinder: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
@@ -144,6 +176,7 @@
   }
   function resetDragon() { drig = structuredClone(DRAGON_POSE); }
   function resetAtlas() { arig = structuredClone(ATLAS_POSE); }
+  function resetChoreo() { ctiming = structuredClone(CHOREO_TIMING); }
   function shuffle() { seed = (seed + 1) | 0; }
   function playAssemble() { asmCache.clear(); asmOff0 = drig.offset; asm = 0; asmPlay = true; }
   // scrub start: freeze the ride offset the current build clock implies, so
@@ -233,6 +266,20 @@
     return driveRaf((dt) => {
       drig.offset = (drig.offset + dt / LAP_SECONDS) % 1;
     });
+  });
+  // choreographer: rewrite the atlas pose in place every frame, so the rig
+  // sliders visibly ride the beat
+  $effect(() => {
+    if (!choreo || view !== "atlas" || asel !== "rig") return;
+    // a timing edit restarts the beat — the tracks it planned are cut to the
+    // old period, so there is nothing to carry over
+    const cho = createChoreographer(CHOREO_SLIDERS, {
+      home: ATLAS_POSE, montages: ATLAS_MONTAGES, budgets: CHOREO_BUDGETS, seed,
+      ...$state.snapshot(ctiming),
+    });
+    const stop = driveRaf((dt) => cho.step(dt, arig));
+    live = cho;
+    return () => { live = null; stop(); };
   });
   // replay build: sweep the assembly scrub 0 -> 1 once
   $effect(() => {
@@ -324,9 +371,12 @@
         </ul>
       </fieldset>
       {#if dsel === "rig"}
+          <fieldset>
+            <legend>choreo</legend>
+            <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
+          </fieldset>
         <fieldset>
           <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
-          <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
           {#each DRAGON_CTL as [key, label, min, max, step]}
             <label><span>{label}</span>
               <input type="range" {min} {max} {step} value={drig[key]}
@@ -348,6 +398,22 @@
         </ul>
       </fieldset>
       {#if asel === "rig"}
+        <fieldset>
+          <legend>choreo<button type="button" onclick={resetChoreo}>reset</button></legend>
+          <label><input type="checkbox" bind:checked={choreo} /><span>autoplay</span></label>
+          {#each CHOREO_CTL as [key, label, min, max, step]}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} {step} value={ctiming[key]}
+                oninput={(e) => (ctiming[key] = +e.currentTarget.value)} />
+              <output>{ctiming[key].toFixed(2)}</output></label>
+          {/each}
+          <ul>
+            {#each Object.keys(ATLAS_MONTAGES) as name}
+              <li><button type="button" disabled={!live} onclick={() => live.play(name)}>
+                ▶ {PART_LABELS[name] ?? name}</button></li>
+            {/each}
+          </ul>
+        </fieldset>
         <fieldset>
           <legend>rig<button type="button" onclick={resetAtlas}>reset</button></legend>
           {#each ATLAS_CTL as [key, label, min, max, step]}

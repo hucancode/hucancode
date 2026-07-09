@@ -70,7 +70,7 @@ export const PART_PARAMS = {
     tail: { coreLen: 1.4, bodyR: 0.4, tipLen: 1.2 },
   },
   atlas: {
-    head: { headR: 0.28, headD: 0.56, innerR: 0.17 },
+    head: { headR: 0.28, headD: 0.56, innerR: 0.24 },
     torso: { chestW: 1.15, chestH: 0.95, chestD: 0.68 },
     pelvis: { hipW: 0.72, hipH: 0.25 },
     upperArm: { len: 0.3, w: 0.3 },
@@ -744,9 +744,10 @@ function tail(add, p) {
 const ATLAS_JP = {
   // short neck: disc bases on BOTH halves (no box plate under the torso socket)
   neck: { ballR: 0.12, socketT: 0.06, shaftLen: 0.04, baseW: 0.34, baseT: 0.05, base: "disc" },
-  // waist = pivot (Y spin only): the pelvis holds the barrel, the torso
-  // brings the flange-disc/neck/cap top stack and twists on it
-  waist: { barrelR: 0.2, barrelLen: 0.28, flangeR: 0.28, neckR: 0.11, neckLen: 0.1, capR: 0.22 },
+  // waist = ball (3 DOF, like the neck but heavier): the pelvis holds the
+  // socket, the torso brings the male ball and pivots on it — twist about Y,
+  // and bend/tilt about X/Z, which a plain Y pivot could never give it
+  waist: { ballR: 0.17, socketT: 0.07, shaftLen: 0.05, baseW: 0.44, baseT: 0.06, base: "disc" },
   // every atlas hinge runs pinOut 0: the pin stops at the female arms instead
   // of poking out of the clevis (hingeDims still leaves it a hair proud)
   // shoulder / hip = hinge1 block (solid male + disc bases, like the
@@ -811,8 +812,7 @@ function hingeShroud(add, jp, pinY, top, t = 0.035) {
 // ---- atlas per-part layouts (builder + partSlots single source) ----------
 
 function torsoLayout(p) {
-  const q = pivotDims(ATLAS_JP.waist);
-  const y0 = q.flangeT + q.neckLen + q.capT;          // waist pivot top-stack height
+  const y0 = ballTop(ATLAS_JP.waist);                 // ball center -> male plate top face
   const taperH = 0.13;                                // waist block: short, no belly
   const chestY = y0 + taperH - 0.04;                  // chest slab base
   const top = chestY + p.chestH;
@@ -832,9 +832,8 @@ function torsoLayout(p) {
 }
 
 function pelvisLayout(p) {
-  const q = pivotDims(ATLAS_JP.waist);
   const discT = 0.14, domeW = p.hipW * 0.6;
-  const discY = -q.barrelLen - discT;                 // disc bottom plane
+  const discY = -ballSeat(ATLAS_JP.waist) - discT;    // disc bottom plane, under the socket
   return {
     discT, domeW, discY,
     discR: p.hipW / 2,
@@ -940,16 +939,13 @@ function helmet(add, p) {
 // waist box below it — NO belly section, the torso sits
 // directly on the pelvis. Joints offered: neck socket (up), 2 shoulder
 // shoulder female U + pins on the flanks (disc base against the chest side,
-// pin -> Z after the seat rotation), and the waist PIVOT's top stack below
-// (flange disc / neck / cap — the pelvis holds the barrel; the torso twists
-// about Y on it).
+// pin -> Z after the seat rotation), and the waist BALL's male half below
+// (the pelvis holds the socket; the torso twists AND bends on it). Ball
+// center = the local origin.
 function torso(add, p) {
   const L = torsoLayout(p);
-  const q = pivotDims(ATLAS_JP.waist);
-  add(translate(cylinder(q.flangeR, q.flangeT, 28), 0, 0, 0));                // waist pivot top stack
-  add(translate(cylinder(q.neckR, q.neckLen, 20), 0, q.flangeT, 0));
-  add(translate(cylinder(q.capR, q.capT, 24), 0, q.flangeT + q.neckLen, 0));
-  // waist block: a plain box bridging the pivot cap up to the chest slab
+  maleBall(add, ATLAS_JP.waist, +1);                                          // waist ball, shaft up
+  // waist block: a plain box bridging the ball's male plate up to the chest slab
   add(translate(box(p.chestW * 0.55, L.taperH + 0.06, p.chestD * 0.75), 0, L.y0 + L.taperH / 2, 0));
   // chest slab: core box + rounded vertical flanks, depth = flank diameter
   const cw = p.chestW - 2 * L.r;
@@ -969,14 +965,13 @@ function torso(add, p) {
       s * (p.chestW / 2 - L.coneLen), L.sy, 0));
 }
 
-// ATLAS PELVIS — waist PIVOT barrel on top (Y spin only; the torso brings
-// the flange/neck/cap stack), a flat DISC under it and a HALF-CYLINDER shell
+// ATLAS PELVIS — waist BALL socket on top (3 DOF; the torso brings the male
+// ball), a flat DISC under it and a HALF-CYLINDER shell
 // (axis X, dome down) as the body, hip shoulder female Us + pins on the dome's
-// flat end faces. Rig root: the pivot's barrel-top face is the local origin.
+// flat end faces. Rig root: the waist ball center is the local origin.
 function pelvis(add, p) {
   const L = pelvisLayout(p);
-  const q = pivotDims(ATLAS_JP.waist);
-  add(translate(cylinder(q.barrelR, q.barrelLen, 24), 0, -q.barrelLen, 0));   // pivot barrel
+  socketAt(add, ATLAS_JP.waist, [0, 0, 0]);                                   // waist socket, opening up
   add(translate(cylinder(L.discR, L.discT, 28), 0, L.discY, 0));              // top disc
   add(translate(rotY(rotX(halfCylinder(p.hipH, L.domeW, 20), HPI), HPI), -L.domeW / 2, L.discY, 0)); // dome shell, flat up
   // hips: hinge1 female U + pin per side, same seat scheme as the shoulders

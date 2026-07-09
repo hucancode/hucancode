@@ -406,10 +406,42 @@ export function dragonModel(seed = 1, pose = {}, path = null) {
 
 // runtime rig controls (degrees)
 export const ATLAS_POSE = {
-  headYaw: 0, headPitch: 0, twist: 0,
+  headYaw: 0, headPitch: 0, twist: 0, waistBend: 0, waistTilt: 0,
   shoulder: 0, armOut: 30, elbow: 60,
   wristBend: 0, wristTilt: 30, wristTwist: 0, curl: 30,
   hip: 0, knee: 0,
+};
+
+// Rehearsed routines for the choreographer: a setup pose the rig strikes, then
+// a sequence of partial poses walked keyframe by keyframe.
+//
+// Every pose channel drives BOTH sides, so the atlas always waves with two
+// arms: `armOut` swings them out to the sides, `shoulder` swings them forward.
+const REST = {
+  armOut: 0, shoulder: 0, elbow: 0, wristBend: 0, wristTilt: 0,
+  wristTwist: 0, curl: 0, twist: 0, waistBend: 0, waistTilt: 0,
+  headPitch: 0, headYaw: 0,
+};
+// A wave: strike the setup, then run a ripple out of it `loops` times. The lead
+// joint swings away and settles back to whatever the setup put it at, and each
+// joint down the chain picks the motion up as the one before it lets go.
+const wave = (setup, lead) => ({
+  setup: { ...REST, ...setup },
+  sequence: [
+    lead,
+    { ...Object.fromEntries(Object.keys(lead).map((k) => [k, setup[k]])), elbow: 45 },
+    { elbow: 0, wristBend: 45 },
+    { wristBend: 0, curl: 60 },
+    { curl: 0 },
+  ],
+  stepRatio: 0.3, loops: 4,
+});
+
+export const ATLAS_MONTAGES = {
+  // arms out level with the shoulders, ripple running down each one
+  armWave: wave({ armOut: 90 }, { armOut: 115 }),
+  // arms held out front, the ripple travelling away from the chest
+  frontWave: wave({ shoulder: 90 }, { shoulder: 115 }),
 };
 
 // `angles` maps a bone axis of the link's 3-DOF joint to [pose key, sign];
@@ -449,8 +481,9 @@ const atlasSide = (S, sgn) => [
 
 const ATLAS_DEF = [
   { name: "pelvis", part: "pelvis", pivot: "waist" },   // root
+  // the waist is a ball: all three bones of the link carry a channel
   { name: "torso", part: "torso", parent: "pelvis", at: "waist", slot: "mount",
-    angles: { y: ["twist", 1] } },
+    angles: { x: ["waistBend", 1], y: ["twist", 1], z: ["waistTilt", 1] } },
   { name: "head", part: "head", parent: "torso", at: "neck", slot: "mount",
     angles: { x: ["headPitch", 1], y: ["headYaw", 1] } },
   ...atlasSide("L", 1),
@@ -458,6 +491,22 @@ const ATLAS_DEF = [
 ];
 
 const ATLAS_ROOT = [0, 0.75, 0];   // lift so the figure centers on the origin
+
+// bone depth of every pose channel (pelvis = 0). A channel drives the link it
+// sits on, so its depth IS that link's depth: `twist` turns the torso near the
+// root, `curl` turns a finger out at a leaf. The choreographer reads this to
+// tell a big root move from a small leaf one.
+export const ATLAS_POSE_DEPTH = (() => {
+  const depth = {}, out = {};
+  const note = (key, d) => { out[key] = key in out ? Math.min(out[key], d) : d; };
+  for (const d of ATLAS_DEF) {
+    const dep = d.parent ? depth[d.parent] + 1 : 0;
+    depth[d.name] = dep;
+    for (const [key] of Object.values(d.angles ?? {})) note(key, dep);
+    if (d.pinBone) note(d.pinBone.angle[0], dep);
+  }
+  return out;
+})();
 
 export function createAtlasRig(seed = 1) {
   const defs = ATLAS_DEF.map((d) => ({ ...d, slots: partSlots("atlas", d.part, d.params ?? null) }));
