@@ -1,0 +1,3 @@
+[submodule "src/lib/poker-solver"]
+	path = src/lib/poker-solver
+	url = https://github.com/hucancode/poker-solver.git
