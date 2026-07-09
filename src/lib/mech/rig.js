@@ -400,7 +400,7 @@ export function dragonModel(seed = 1, pose = {}, path = null) {
 // ---- ATLAS RIG --------------------------------------------------------------
 // Second rig on the same machinery: a standing humanoid composed from the
 // atlas part kit (parts.js) — head, torso, upper arm, forearm, palm,
-// 3 fingers (identical, 3 digits each), pelvis, thigh, shin, foot, heel.
+// 3 fingers (identical, 3 digits each), pelvis, thigh, shin, foot.
 // Same rules as the dragon: parts connect by mount-slot matching, one bone
 // per joint DOF, no curve — the pose sliders drive the bones directly. Every
 // articulated link plugs its part's MOVING joint half onto the FIXED half its
@@ -440,7 +440,6 @@ const atlasSide = (S, sgn) => [
   { name: `shin${S}`, part: "shin", parent: `leg${S}`, at: "knee", slot: "mount",
     angles: { x: ["knee", 1] } },
   { name: `foot${S}`, part: "foot", parent: `shin${S}`, at: "ankle", slot: "mount" },
-  { name: `heel${S}`, part: "heel", parent: `foot${S}`, at: "heel", slot: "mount" },
 ];
 
 const ATLAS_DEF = [

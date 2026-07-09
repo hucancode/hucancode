@@ -72,16 +72,15 @@ export const PART_PARAMS = {
   atlas: {
     head: { headR: 0.28, headD: 0.56, innerR: 0.17 },
     torso: { chestW: 1.15, chestH: 0.95, chestD: 0.68 },
-    pelvis: { hipW: 0.85, hipH: 0.3 },
+    pelvis: { hipW: 0.72, hipH: 0.25 },
     upperArm: { len: 0.3, w: 0.3 },
     forearm: { len: 0.24, w: 0.26 },
     wrist: {},
     palm: { w: 0.26, h: 0.26, d: 0.24 },
     finger: { digitLen: 0.16, w: 0.12, curl: 18 },
-    thigh: { len: 0.68, w: 0.38 },
-    shin: { len: 0.75, w: 0.32 },
-    foot: { len: 0.62, w: 0.32 },
-    heel: { w: 0.28, h: 0.2, d: 0.14, capD: 0.14 },
+    thigh: { len: 0.56, w: 0.38 },
+    shin: { len: 0.6, w: 0.32 },
+    foot: { len: 0.62, w: 0.32, heelD: 0.14, heelCapD: 0.14 },
   },
   joints: {
     hinge1: { ...JOINT_DEFAULTS.hinge, baseH: 0.16, solid: 0, discF: 0, discM: 0 },
@@ -763,8 +762,8 @@ const ATLAS_JP = {
   // elbow gap is sized so the solid tongue — and the forearm box that
   // continues it — is exactly the forearm's width (parts.atlas.forearm.w)
   elbow: { gap: 0.14, armT: 0.06, armH: 0.26, depth: 0.24, pinR: 0.05, clr: 0.008, solid: 1, pinOut: 0 },
-  knee: { gap: 0.15, armT: 0.07, armH: 0.3, depth: 0.3, pinR: 0.06, solid: 1, pinOut: 0 },
-  ankle: { gap: 0.14, armT: 0.065, armH: 0.26, depth: 0.26, pinR: 0.055, solid: 1, pinOut: 0 },
+  knee: { gap: 0.15, armT: 0.07, armH: 0.3, depth: 0.3, pinR: 0.06, solid: 1, pinOut: 0, disc: 1 },
+  ankle: { gap: 0.14, armT: 0.065, armH: 0.26, depth: 0.26, pinR: 0.055, solid: 1, pinOut: 0, disc: 1 },
 };
 
 // ball stack extents off ballDims — the single numbers layouts stack with:
@@ -814,16 +813,21 @@ function hingeShroud(add, jp, pinY, top, t = 0.035) {
 function torsoLayout(p) {
   const q = pivotDims(ATLAS_JP.waist);
   const y0 = q.flangeT + q.neckLen + q.capT;          // waist pivot top-stack height
-  const taperH = 0.24;
+  const taperH = 0.13;                                // waist block: short, no belly
   const chestY = y0 + taperH - 0.04;                  // chest slab base
   const top = chestY + p.chestH;
+  const d = hingeDims(ATLAS_JP.shoulder);
   return {
     y0, taperH, chestY, top,
     r: p.chestD / 2,                                  // flank half-cylinder radius = half the chest depth
     neckY: top + ballSeat(ATLAS_JP.neck),             // neck ball center
     // shoulder pins: the female disc base lands on the chest flank
     sx: p.chestW / 2 + jointMounts("hinge1", ATLAS_JP.shoulder).a.pos[0],
-    sy: top - 0.16,
+    sy: top - 0.3,
+    // shoulder shroud: a cut cone flaring out of the chest flank into the
+    // hinge's disc base, so the joint grows out of the torso, not off it
+    discR: Math.hypot(d.gapW + 2 * d.armT, d.depth) / 2,   // hinge1 female disc base radius
+    coneLen: 0.14,
   };
 }
 
@@ -895,8 +899,8 @@ function shinLayout(p) {
 // ankle pin, so the joint always stands on level ground. Everything else
 // hangs off its two faces — forward, a slope box tapering into a flat toe box
 // (the toe's height is what the slope leaves behind, so they meet flush on
-// one sole plane); rearward, the heel part, bolted to the base's back face.
-// p.len spans the ankle pin to the toe tip.
+// one sole plane); rearward, the heel: a base box continuing the sole and a
+// slope box tapering down behind it. p.len spans the ankle pin to the toe tip.
 const FOOT_SLOPE = 0.55, FOOT_H = 0.2, TOE_D = 0.2, ANKLE_D = 0.24;
 
 function footLayout(p) {
@@ -905,10 +909,12 @@ function footLayout(p) {
   const footD = p.len - z0 - TOE_D;                   // slope run, ankle base -> toe
   return {
     soleY, footD,
+    midY: soleY - FOOT_H / 2,                         // sole slab center height
     toeH: FOOT_H * (1 - FOOT_SLOPE),
     footZ: z0 + footD / 2,
     toeZ: z0 + footD + TOE_D / 2,
-    heel: [0, soleY - FOOT_H / 2, -z0],               // heel slot: ankle base rear face
+    heelZ: -z0 - p.heelD / 2,                         // heel base, off the ankle base rear face
+    heelCapZ: -z0 - p.heelD - p.heelCapD / 2,
   };
 }
 
@@ -958,6 +964,10 @@ function torso(add, p) {
   // Z and drops the tongue exit downward; the right side mirrors with rotY(pi)
   // so both disc plates face the chest
   for (const s of [1, -1]) {
+    // cut cone from inside the flank out to the hinge's disc base (rotZ turns
+    // the cone's +Y axis onto the outward X)
+    add(translate(rotZ(coneCut(L.discR + 0.07, L.discR, L.coneLen, 24), -s * HPI),
+      s * (p.chestW / 2 - L.coneLen), L.sy, 0));
     const seat = (g) => {
       let h = rotX(g, HPI);
       if (s > 0) h = rotY(h, Math.PI);
@@ -1003,13 +1013,16 @@ function upperArm(add, p) {
 // ATLAS FOREARM — a box running all the way up into the elbow clevis, where
 // it meets the solid male tongue (whose base plate it replaces), and down to
 // the hinge2 wrist's STAGE-A clevis + pin (pin = X, the bend axis); the
-// wrist link brings the male tongue. A 4-plank shroud skirts the box down to
-// the wrist pin, boxing the clevis arms in without fouling the swing.
+// wrist link brings the male tongue. A 4-plank shroud sleeves the box down to
+// the wrist pin, boxing the clevis arms in without fouling the swing; it
+// starts SHROUD_DROP below the box top, leaving the elbow end bare.
+const SHROUD_DROP = 0.1;
+
 function forearm(add, p) {
   const L = forearmLayout(p);
   hingeMale(add, ATLAS_JP.elbow, { male: { noBase: 1 } });   // the box IS the tongue's base
   add(translate(box(p.w, L.boxTop - L.boxBot, p.w * 0.9), 0, (L.boxTop + L.boxBot) / 2, 0));
-  hingeShroud(add, ATLAS_JP.wrist, L.wristY, L.y0 - p.len + 0.02);
+  hingeShroud(add, ATLAS_JP.wrist, L.wristY, L.boxTop - SHROUD_DROP);
   hingeFixedAt(add, ATLAS_JP.wrist, L.wristY);
 }
 
@@ -1071,34 +1084,28 @@ function thigh(add, p) {
   hingeFixedAt(add, ATLAS_JP.knee, L.kneeY);
 }
 
-// ATLAS SHIN — male knee U on top, shin box + calf plate, ankle clevis +
-// pin at the bottom.
+// ATLAS SHIN — male knee U on top, shin barrel, ankle clevis + pin at the
+// bottom.
 function shin(add, p) {
   const L = shinLayout(p);
+  const h = p.len + 0.06;
   hingeMale(add, ATLAS_JP.knee);
-  add(translate(box(p.w, p.len + 0.06, p.w), 0, L.y0 - (p.len + 0.06) / 2 + 0.04, 0));
-  add(translate(box(p.w * 0.75, p.len * 0.55, 0.1), 0, L.y0 - p.len * 0.4, -(p.w / 2 + 0.05))); // calf plate
+  add(translate(cylinder(p.w / 2, h, 20), 0, L.y0 + 0.04 - h, 0));               // shin barrel
   hingeFixedAt(add, ATLAS_JP.ankle, L.ankleY);
 }
 
-// ATLAS FOOT — solid male ankle tongue standing on the ANKLE BASE box, with
-// the foot proper (a slope box) and the toes (a flat box) running forward off
-// it. The heel part glues onto the base's rear face slot.
+// ATLAS FOOT — solid male ankle tongue standing on the ANKLE BASE box. The
+// foot proper (a slope box) and the toes (a flat box) run forward off it; the
+// heel (a base box, then a slope box tapering down) runs back off it. Every
+// piece shares FOOT_H, so the sole stays one plane from the toe to the heel.
 function foot(add, p) {
   const L = footLayout(p);
   hingeMale(add, ATLAS_JP.ankle);
-  add(translate(box(p.w, FOOT_H, ANKLE_D), 0, L.soleY - FOOT_H / 2, 0));       // ankle base
-  add(translate(box(p.w, FOOT_H, L.footD, FOOT_SLOPE), 0, L.soleY - FOOT_H / 2, L.footZ));
+  add(translate(box(p.w, FOOT_H, ANKLE_D), 0, L.midY, 0));                     // ankle base
+  add(translate(box(p.w, FOOT_H, L.footD, FOOT_SLOPE), 0, L.midY, L.footZ));
   add(translate(box(p.w * 0.92, L.toeH, TOE_D), 0, L.soleY - FOOT_H + L.toeH / 2, L.toeZ));
-}
-
-// ATLAS HEEL — TWO boxes running BACK off the foot's rear face (the ankle
-// base): a base box continuing the sole, then a slope box tapering down to
-// the ground behind it. Both share the foot's height, so the sole stays one
-// plane from the toe to the heel taper.
-function heel(add, p) {
-  add(translate(box(p.w, p.h, p.d), 0, 0, -p.d / 2));                              // heel base
-  add(translate(rotY(box(p.w, p.h, p.capD, 0.7), Math.PI), 0, 0, -p.d - p.capD / 2)); // taper, drops rearward
+  add(translate(box(p.w, FOOT_H, p.heelD), 0, L.midY, L.heelZ));               // heel base
+  add(translate(rotY(box(p.w, FOOT_H, p.heelCapD, 0.7), Math.PI), 0, L.midY, L.heelCapZ)); // heel taper
 }
 
 // catalog views of the joint blocks — pose sliders (degrees) drive the
@@ -1124,7 +1131,7 @@ const prismatic1 = (add, p, pose = {}) => prismaticBlock(add, add, p, pose);
 // (the atlas "head" is the helmet builder, distinct from the dragon head)
 const PART_BUILDERS = {
   dragon: { head, bodySegment, bodySegment2, arm, leg, tail },
-  atlas: { head: helmet, torso, pelvis, upperArm, forearm, wrist, palm, finger, thigh, shin, foot, heel },
+  atlas: { head: helmet, torso, pelvis, upperArm, forearm, wrist, palm, finger, thigh, shin, foot },
   joints: { hinge1, hinge2, pivot1, prismatic1, ball1 },
 };
 export const PART_NAMES = Object.fromEntries(
@@ -1312,15 +1319,8 @@ export function partSlots(kit, name, params = null) {
         ankle: { pos: [0, L.ankleY, 0], n: [0, -1, 0], f: [1, 0, 0] },
       };
     }
-    case "foot": {
-      const L = footLayout(p);
-      return {
-        mount: { pos: [0, 0, 0], n: [0, 1, 0], f: [1, 0, 0] },
-        heel: { pos: L.heel, n: [0, 0, -1], f: [0, 1, 0] },
-      };
-    }
-    case "heel":
-      return { mount: { pos: [0, 0, 0], n: [0, 0, 1], f: [0, 1, 0] } };
+    case "foot":
+      return { mount: { pos: [0, 0, 0], n: [0, 1, 0], f: [1, 0, 0] } };
   }
   return {};
 }

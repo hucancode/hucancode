@@ -78,8 +78,7 @@
       finger: [["digitLen", "digit length", 0.1, 0.4], ["w", "width", 0.05, 0.2], ["curl", "curl", 0, 60, 1]],
       thigh: [["len", "length", 0.3, 1.1], ["w", "width", 0.2, 0.6]],
       shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
-      foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5]],
-      heel: [["w", "width", 0.15, 0.5], ["h", "height", 0.08, 0.35], ["d", "base depth", 0.08, 0.4], ["capD", "taper depth", 0.06, 0.35]],
+      foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
     },
     joints: {
       hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["pinOut", "pin overhang", 0, 0.2], ["baseH", "base height", 0.08, 0.5], ["clr", "arm clearance", 0.004, 0.08], ["solid", "solid male", 0, 1, 1], ["discF", "female disc base", 0, 1, 1], ["discM", "male disc base", 0, 1, 1]],
@@ -207,7 +206,7 @@
   // single-part previews inside the rig tabs use a per-part catalog distance
   // (the atlas kit has much smaller pieces than the dragon kit)
   const ATLAS_DIST = {
-    finger: 2.5, heel: 2.5, wrist: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
+    finger: 2.5, wrist: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
     head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,
   };
   $effect(() => {
