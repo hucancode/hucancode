@@ -8,6 +8,7 @@
     { href: "/caligraphy", name: "Caligraphy", thumb: "/assets/thumb/caligraphy.png" },
     { href: "/lego", name: "Lego", thumb: "/assets/thumb/lego.png" },
     { href: "/mech", name: "Mech", thumb: "/assets/thumb/mech.png" },
+    { href: "/poker", name: "Poker", thumb: "/assets/thumb/poker.png" },
   ];
 </script>
 
