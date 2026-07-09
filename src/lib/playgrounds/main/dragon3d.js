@@ -49,7 +49,6 @@ function fillFrames(frames, N, total, sample) {
   }
 }
 
-// ---- mech rig adapter ------------------------------------------------------
 // main world is z-up, the mech rig is y-up. Proper rotation R = rotX(-90deg):
 // rig (x,y,z) = main (x, z, -y); inverse: main = rig (x, -z, y). The path is
 // also scaled by k so the rig-space dragon (rig.pitch long) spans exactly

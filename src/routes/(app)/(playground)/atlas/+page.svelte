@@ -4,7 +4,7 @@
   import Sliders from "$lib/components/mech-sliders.svelte";
   import * as mech from "$lib/playgrounds/mech";
   import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
-  import { atlasModel, ATLAS_POSE, ATLAS_POSE_DEPTH, ATLAS_MONTAGES } from "$lib/mech/atlas/rig.js";
+  import { atlasModel, atlasHeight, ATLAS_POSE, ATLAS_POSE_DEPTH, ATLAS_MONTAGES } from "$lib/mech/atlas/rig.js";
   import { assembleModel } from "$lib/mech/assembly.js";
   import { createChoreographer, CHOREO_TIMING } from "$lib/mech/choreo.js";
 
@@ -110,10 +110,13 @@
     finger: 2.5, wrist: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
     head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,
   };
+  // the atlas stands ON the grid, so the whole rig sits above y=0: the camera
+  // has to look at its waist, not at the origin. Parts sit on their own origin.
+  const rigView = $derived(view === "atlas" && asel === "rig");
   $effect(() => {
     csel;
-    const dist = view !== "atlas" ? 6 : asel === "rig" ? 12 : PART_DIST[asel] ?? 6;
-    scene?.apply({ resetView: true, dist });
+    const dist = view !== "atlas" ? 6 : rigView ? 12 : PART_DIST[asel] ?? 6;
+    scene?.apply({ resetView: true, dist, lookY: rigView ? atlasHeight(seed) / 2 : 0 });
   });
   // dt-clamped rAF driver; step returns false to stop
   const driveRaf = (step) => {

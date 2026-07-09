@@ -32,7 +32,6 @@ export const xf = (r, t) => ({ r, t });
 export const xfCompose = (a, b) => ({ r: m3Mul(a.r, b.r), t: vAdd(a.t, m3MulV(a.r, b.t)) });
 export const xfT = (t) => ({ r: I3, t });
 
-// ---- mount-slot frames -------------------------------------------------------
 // a slot { pos, n, f } forms a full coordinate system: columns [f, n×f, n]
 export const slotFrame = (s) => {
   const f = vNorm(s.f), n = vNorm(s.n), b = vCross(n, f);
@@ -47,7 +46,6 @@ export const matchRot = (parentSlot, childSlot) => {
   return m3Mul(target, m3T(slotFrame(childSlot)));
 };
 
-// ---- skeleton --------------------------------------------------------------
 // bone = one rotation about one axis, seated at `offset` in the parent frame,
 // with an optional fixed REST rotation (the slot-match orientation).
 // world(bone) = world(parent) ∘ T(offset) ∘ REST ∘ R(axis, angle)

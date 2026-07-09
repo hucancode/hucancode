@@ -1,6 +1,5 @@
-// Backend-agnostic scene for /paint: builds paths + schedule, constructs blocks,
-// wires timeline. Everything on ONE ground plane (x/y); camera looks straight
-// DOWN during glyph trace, then tilts to 45deg as 2D hands off to 3D.
+// Everything on ONE ground plane (x/y); camera looks straight DOWN during glyph
+// trace, then tilts to 45deg as 2D hands off to 3D.
 
 import { clamp, lerp, smooth } from "$lib/math/scalar.js";
 import { mulberry32 } from "$lib/math/random.js";
@@ -33,8 +32,8 @@ export const TIMELINE_END = computeTiming().timelineEnd;
 let timing = null;
 let glyph = null;
 let headPath = null;    // head phase sequence + samplers
-let bodyCtrl = null;    // 2D dragon body controller
-let dragon3d = null;    // 3D dragon frame buffers
+let bodyCtrl = null;
+let dragon3d = null;
 let timeline = null;
 let cameraTrack = null; // corridor descent + pitch + yaw gate
 let ensoCenter = { x: 0, y: 0 }; // world station of glyph + enso
@@ -191,7 +190,7 @@ export function initScene() {
     }
   }
   const bs = best.spline, bs0 = best.s0;
-  const loop3 = { total: bs.total, pos: (s) => bs.pos(s + bs0), tan: (s) => bs.tan(s + bs0) }; // 3D orbit
+  const loop3 = { total: bs.total, pos: (s) => bs.pos(s + bs0), tan: (s) => bs.tan(s + bs0) };
   const conn3 = arcLengthCurve(best.hp, false);   // connector spur: 2D branch point -> ring entry
 
   dragon3d = createDragon3d({ timing });

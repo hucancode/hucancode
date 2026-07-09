@@ -22,8 +22,6 @@ export const DRAGON_PARAMS = {
   tail: { coreLen: 1.4, bodyR: 0.4, tipLen: 1.2 },
 };
 
-// ---- the parts ----------------------------------------------------------------
-
 // fixed joint proportions the dragon parts are modeled around — shared with
 // chainSpec() below so the rig computes the same mounting numbers the
 // builders bake into the geometry.
@@ -38,7 +36,6 @@ const LEG_JP = { gap: 0.12, armT: 0.065, armH: 0.38, depth: 0.26, pinR: 0.055 };
 const HEAD_NECK = [0, 0.55, -1.0];      // where the mating neck ball CENTER sits, behind the skull
 const HEAD_JAW_PIN = [0, 0.02, -0.12];  // jaw hinge pin (X axis) below the skull
 
-// ---- per-part layout ---------------------------------------------------------
 // The numbers a part builder bakes into its geometry, computed ONCE per part
 // kind and consumed by BOTH the builder and partSlots — slots can never drift
 // from the meshes. Chain parts seat a ball joint: z0 = where the body starts
@@ -282,7 +279,7 @@ function arm(add, p, pose = {}) {
     seat(h);
   };
   hinge1Block(seat, seat, jp, { swing: sw, spinF: sf, spinM: sm });
-  limb(translate(box(0.38, p.upperLen, 0.42), 0, -sdrop - p.upperLen / 2, 0));  // upper arm
+  limb(translate(box(0.38, p.upperLen, 0.42), 0, -sdrop - p.upperLen / 2, 0));
   // upper-arm armor: slope plate riding the front face
   limb(translate(box(0.32, p.upperLen * 0.6, 0.08, 0.5), 0, -sdrop - p.upperLen * 0.4, 0.24));
   // elbow: female + pin fixed to the upper arm, male swings with the forearm
@@ -295,7 +292,7 @@ function arm(add, p, pose = {}) {
   // forearm armor: slope plate on the front face
   swing(translate(box(0.24, p.foreLen * 0.65, 0.08, 0.5), 0, -(0.3 + p.foreLen * 0.45), 0.19));
   const wy = -(0.35 + p.foreLen);
-  swing(translate(rotZ(cylinder(0.12, 0.36, 18), -HPI), -0.18, wy, 0));   // wrist barrel
+  swing(translate(rotZ(cylinder(0.12, 0.36, 18), -HPI), -0.18, wy, 0));
   // palm: block hanging under the wrist barrel, its top burying the barrel
   const py = wy - 0.17;                                                    // palm center
   swing(translate(box(0.34, 0.24, 0.3), 0, py, 0.02));
@@ -339,15 +336,15 @@ function leg(add, p, pose = {}) {
     seat(h);
   };
   hinge1Block(seat, seat, jp, { swing: sw, spinF: sf, spinM: sm });
-  limb(translate(box(0.46, p.thighLen, 0.54), 0, -hdrop - p.thighLen / 2, 0));  // thigh
+  limb(translate(box(0.46, p.thighLen, 0.54), 0, -hdrop - p.thighLen / 2, 0));
   const rky = ky - hy;                                             // knee, hip-relative
   const at = (g) => limb(translate(g, 0, rky, 0));
   const swing = (g) => limb(translate(rotX(g, bend), 0, rky, 0));  // knee bends back
   hingeBlock(at, swing, { gap: 0.16, armT: 0.075, armH: 0.32, depth: 0.3, pinR: 0.07 });
-  swing(translate(box(0.34, p.shinLen, 0.4), 0, -(0.3 + p.shinLen / 2), 0));  // shin
+  swing(translate(box(0.34, p.shinLen, 0.4), 0, -(0.3 + p.shinLen / 2), 0));
   const ay = -(0.35 + p.shinLen);
-  swing(translate(rotZ(cylinder(0.13, 0.4, 18), -HPI), -0.2, ay, 0));     // ankle barrel
-  swing(translate(box(0.46, 0.2, p.footLen), 0, ay - 0.05, p.footLen / 2 - 0.12)); // foot
+  swing(translate(rotZ(cylinder(0.13, 0.4, 18), -HPI), -0.2, ay, 0));
+  swing(translate(box(0.46, 0.2, p.footLen), 0, ay - 0.05, p.footLen / 2 - 0.12));
   // toe nails: quarter discs the right way up — flat base on the ground,
   // vertical rear edge against the foot, arc curving over the top to a
   // forward tip at ground level

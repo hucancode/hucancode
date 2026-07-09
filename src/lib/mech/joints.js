@@ -1,26 +1,17 @@
-// JOINT ENGINE — mech joints assembled from the primitive engine
-// (primitives.js). Joints are building blocks with the same standing as the
-// primitives: parts compose these instead of hand-rolling arms and pins, so
-// any improvement to a mechanism here upgrades every part that uses it. Both
-// rigs (dragon, atlas) chain through the SAME blocks — only their part kits
-// and rig data differ.
+// JOINT ENGINE — mech joints assembled from primitives.js. Both rigs (dragon,
+// atlas) chain through the SAME blocks — only their part kits and rig data differ.
 //
 // The joints mirror the pieces designed in Blender (robot_dragon.blend):
 //   hinge1  two U pieces (narrow nested in wide), arms interleaved with rounded
-//           knuckles (half-cylinder ends), one shared pin through all four
-//           arms, a base plate closing each U. `solid` swaps the male U for an
-//           I-shaped tongue, discF/discM swap either base box -> disc, baseH
-//           sizes both. hinge1Block seats it as the generic mount-to-mount
-//           joint: solid male + disc bases, L-oriented (female disc -> parent
-//           flank, male disc -> child) — dragon/atlas shoulder + hip seats
-//   hinge2  TWO hinge1 stages in series sharing one middle base, pins X then
-//           Z: a 2-axis universal joint (the atlas wrist). Same settings as
-//           hinge1, with three disc flags — one per base
+//           knuckles, one shared pin, a base plate closing each U. `solid` swaps
+//           the male U for an I-shaped tongue, discF/discM swap either base box
+//           -> disc, baseH sizes both
+//   hinge2  TWO hinge1 stages in series sharing one middle base, pins X then Z:
+//           a 2-axis universal joint (the atlas wrist), three disc flags (one per base)
 //   pivot1  double pivot: center barrel, flange disc + neck + cap on both ends
 //   prismatic1  the LINEAR joint: a cover sleeve with a square mounting shaft
 //           sliding out of each end (pose = travel distance, not degrees)
-//   pivot2  turntable pivot: box base with an inscribed cylinder seat, disc,
-//           ball hub — shows the box+cylinder primitive both ways
+//   pivot2  turntable pivot: box base with an inscribed cylinder seat, disc, ball hub
 import {
   box, cylinder, sphere, cutHemisphere, halfCylinderBox,
   rotX, rotY, rotZ, translate,
@@ -39,7 +30,6 @@ const JOINT_DEFAULTS = {
   prismatic: { coverW: 0.5, coverLen: 0.7, coverD: 0.5, shaftW: 0.3, shaftLen: 0.7 },
 };
 
-// editable per-joint modeling parameters (the catalog kit's defaults)
 export const JOINT_PARAMS = {
   hinge1: { ...JOINT_DEFAULTS.hinge, baseH: 0.16, solid: 0, discF: 0, discM: 0 },
   hinge2: { ...JOINT_DEFAULTS.hinge, baseH: 0.16, solid: 0, discF: 0, discMid: 0, discM: 0 },
@@ -48,7 +38,6 @@ export const JOINT_PARAMS = {
   ball1: { ...JOINT_DEFAULTS.ball, disc: 0 },
 };
 
-// ---- derived joint dimensions ------------------------------------------------
 // ONE dims function per joint kind, consumed by BOTH the block builder and
 // jointMounts, so a mount can never drift from the geometry it seats on.
 
@@ -132,8 +121,6 @@ function roundedU(add, d, gap, up, solid = false) {
   else add(translate(box(w, d.bridgeT, d.depth), 0, yc, 0));
 }
 
-// ---- JOINT BLOCKS ------------------------------------------------------------
-
 // RUNTIME joint rotations (degrees in the UI) — a separate axis set per joint,
 // distinct from the modeling params above. deg -> rad happens in the catalog
 // builders; the blocks themselves take radians. prismatic1 is the one joint
@@ -179,7 +166,6 @@ export function jointMounts(kind, p = {}) {
 // RUNTIME pose (radians, separate from the modeling params): pose.swing
 // rotates the male half about the pin. A consumer with extra geometry riding
 // the male half can instead keep articulating the whole `moving` channel.
-// ---- joint sub-assembly tagging ---------------------------------------------
 // Every joint block brackets its primitive emissions so a consumer (e.g. an
 // assembly animation) can group primitives by their owning joint. Nested
 // blocks stack (hinge2Block/hinge1Block call hingeBlock); primitives emitted outside any

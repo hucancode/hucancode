@@ -114,7 +114,6 @@ export function solve(state) {
   return solution;
 }
 
-// ---------------------------------------------------------------------------
 // State extraction from cubelet transforms (position + rotation), so any
 // reachable configuration works -- including wide moves that rotate centers.
 // Input: 27 x { p: [x,y,z] in {-1,0,1}, r: 9 ints, column-major rotation
@@ -203,7 +202,6 @@ export function toPlaygroundMoves(moves) {
   });
 }
 
-// ---------------------------------------------------------------------------
 // SiGN-style notation (R U' Fw2 3Uw ...) <-> playground moves
 
 const FACE_LETTER = ["R", "L", "U", "D", "F", "B"]; // playground face order

@@ -24,7 +24,6 @@ import { buildSpline } from "../../math/curve.js";
 import { rad } from "../../math/scalar.js";
 import { vAdd, vSub, vScale, vLen, vNorm, m3Mul, m3MulV, m3T } from "../../math/mat3.js";
 
-// ---- closed Catmull-Rom loop ------------------------------------------------
 // buildSpline (math/curve.js) speaks {x,y,z}; the rig speaks [x,y,z] arrays —
 // adapt, keeping the { total, posAt, tangentAt } contract (marchBack bisects
 // through posAt). curve.tan already returns a unit vector.
@@ -60,8 +59,6 @@ function marchBack(loop, s, dist) {
   }
   return s - (lo + hi) / 2;
 }
-
-// ---- the dragon ---------------------------------------------------------------
 
 // runtime rig controls (degrees except offset = 0..1 along the loop)
 export const DRAGON_POSE = {
