@@ -410,7 +410,7 @@ export function dragonModel(seed = 1, pose = {}, path = null) {
 export const ATLAS_POSE = {
   headYaw: 0, headPitch: 0, twist: 0,
   shoulder: 0, armOut: 8, elbow: 12,
-  wristBend: 0, wristTilt: 0, curl: 18,
+  wristBend: 0, wristTilt: 0, wristTwist: 0, curl: 18,
   hip: 0, knee: 0,
 };
 
@@ -424,11 +424,13 @@ const atlasSide = (S, sgn) => [
     angles: { x: ["shoulder", -sgn], z: ["armOut", -1] } },
   { name: `fore${S}`, part: "forearm", parent: `arm${S}`, at: "elbow", slot: "mount",
     angles: { x: ["elbow", -sgn] } },
-  // hinge2 wrist: bend rides the wrist link's X pin, tilt the palm's Z pin
+  // hinge2 wrist: bend rides the wrist link's X pin, tilt the palm's Z pin.
+  // The palm also TWISTS about its own normal (Y) on the disc bases the two
+  // halves meet at — a third wrist DOF the discs turn on.
   { name: `wrist${S}`, part: "wrist", parent: `fore${S}`, at: "wrist", slot: "mount",
     angles: { x: ["wristBend", -sgn] } },
   { name: `palm${S}`, part: "palm", parent: `wrist${S}`, at: "out", slot: "mount",
-    angles: { z: ["wristTilt", 1] } },
+    angles: { z: ["wristTilt", 1], y: ["wristTwist", sgn] } },
   ...[0, 1, 2].map((i) => ({
     name: `finger${S}${i}`, part: "finger", parent: `palm${S}`, at: `f${i}`, slot: "mount",
     angles: { x: ["curl", -1] }, curl: true,

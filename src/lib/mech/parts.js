@@ -49,7 +49,9 @@ export function colorOf(id, seed = 1) {
 }
 
 const JOINT_DEFAULTS = {
-  hinge: { gap: 0.24, armT: 0.12, armH: 0.6, depth: 0.55, pinR: 0.14 },
+  // pinOut = how far the pin shaft pokes past the female arms' outer faces;
+  // 0 keeps it inside the clevis (clamped to PIN_OUT_MIN, not truly flush)
+  hinge: { gap: 0.24, armT: 0.12, armH: 0.6, depth: 0.55, pinR: 0.14, clr: 0.03, pinOut: 0.05 },
   pivot: { barrelR: 0.3, barrelLen: 0.8, flangeR: 0.44, neckR: 0.17, neckLen: 0.16, capR: 0.32 },
   ball: { ballR: 0.3, socketT: 0.1, cut: 0.75, shaftR: 0.11, shaftLen: 0.3, baseW: 0.95, baseT: 0.14 },
   prismatic: { coverW: 0.5, coverLen: 0.7, coverD: 0.5, shaftW: 0.3, shaftLen: 0.7 },
@@ -68,18 +70,18 @@ export const PART_PARAMS = {
     tail: { coreLen: 1.4, bodyR: 0.4, tipLen: 1.2 },
   },
   atlas: {
-    head: { headR: 0.28, headD: 0.56, visorW: 0.4 },
-    torso: { chestW: 1.15, chestH: 0.95 },
+    head: { headR: 0.28, headD: 0.56, innerR: 0.17 },
+    torso: { chestW: 1.15, chestH: 0.95, chestD: 0.68 },
     pelvis: { hipW: 0.85, hipH: 0.3 },
     upperArm: { len: 0.3, w: 0.3 },
-    forearm: { len: 0.34, w: 0.26 },
+    forearm: { len: 0.24, w: 0.26 },
     wrist: {},
-    palm: { cube: 0.46 },
-    finger: { digitLen: 0.16, w: 0.08, curl: 18 },
-    thigh: { len: 0.85, w: 0.38 },
+    palm: { w: 0.26, h: 0.26, d: 0.24 },
+    finger: { digitLen: 0.16, w: 0.12, curl: 18 },
+    thigh: { len: 0.68, w: 0.38 },
     shin: { len: 0.75, w: 0.32 },
     foot: { len: 0.62, w: 0.32 },
-    heel: { w: 0.28, h: 0.16 },
+    heel: { w: 0.28, h: 0.2, d: 0.14, capD: 0.14 },
   },
   joints: {
     hinge1: { ...JOINT_DEFAULTS.hinge, baseH: 0.16, solid: 0, discF: 0, discM: 0 },
@@ -94,17 +96,23 @@ export const PART_PARAMS = {
 // ONE dims function per joint kind, consumed by BOTH the block builder and
 // jointMounts, so a mount can never drift from the geometry it seats on.
 
+const PIN_OUT_MIN = 0.005;   // smallest pin overhang past the female arm faces
+
 function hingeDims(p) {
   const q = { ...JOINT_DEFAULTS.hinge, ...p };
-  const clr = 0.03;
+  const clr = q.clr;                              // female-arm to male-arm slack, per side
   const bridgeT = q.baseH || Math.max(0.12, q.armT * 1.3);   // p.baseH overrides the derived bridge height
   const tip = Math.min(0.2, q.armH * 0.4);        // square arm reach past the pin
   const bodyLen = Math.max(0.05, q.armH - tip);   // pin -> arm end (where the base seats)
+  const gapW = q.gap + 2 * q.armT + 2 * clr;
   return {
-    ...q, clr, bridgeT, tip, bodyLen,
-    gapW: q.gap + 2 * q.armT + 2 * clr,
+    ...q, clr, bridgeT, tip, bodyLen, gapW,
     knuckleR: q.depth / 2,
     bridgeY: bodyLen + bridgeT,                   // bridge outer face distance from the pin
+    // pin half-length: the female arms' outer face, plus the pinOut overhang.
+    // clamped to PIN_OUT_MIN so the pin's end cap never lands coplanar with
+    // the arm face (z-fighting) even when the joint asks for a flush pin.
+    pinHalf: gapW / 2 + q.armT + Math.max(PIN_OUT_MIN, q.pinOut ?? 0),
   };
 }
 
@@ -236,8 +244,9 @@ function hingeBlock(fixed, moving, p = {}, sides = {}, pose = {}) {
   const mv = pose.swing ? (g) => moving(rotX(g, pose.swing)) : moving;
   roundedU(fixed, dF, dF.gapW, false);          // female U
   roundedU(mv, dM, dM.gap, true, !!dM.solid);   // male: nested U, or solid I tongue
-  // pin = bare shaft (no end caps), poking a touch past the female outer faces
-  const halfSpan = dF.gapW / 2 + dF.armT + 0.05;
+  // pin = bare shaft (no end caps); pinOut sets how far it pokes past the
+  // female outer faces (0 = as near flush as PIN_OUT_MIN allows)
+  const halfSpan = dF.pinHalf;
   fixed(translate(rotZ(cylinder(dF.pinR, 2 * halfSpan, 20), -HPI), -halfSpan, 0, 0));
   jend();
 }
@@ -734,23 +743,28 @@ function tail(add, p) {
 // bodies grow +Y out of their mount ball.
 
 const ATLAS_JP = {
-  neck: { ballR: 0.13, socketT: 0.07, shaftLen: 0.1, baseW: 0.34, baseT: 0.08 },
+  // short neck: disc bases on BOTH halves (no box plate under the torso socket)
+  neck: { ballR: 0.12, socketT: 0.06, shaftLen: 0.04, baseW: 0.34, baseT: 0.05, base: "disc" },
   // waist = pivot (Y spin only): the pelvis holds the barrel, the torso
   // brings the flange-disc/neck/cap top stack and twists on it
   waist: { barrelR: 0.2, barrelLen: 0.28, flangeR: 0.28, neckR: 0.11, neckLen: 0.1, capR: 0.22 },
+  // every atlas hinge runs pinOut 0: the pin stops at the female arms instead
+  // of poking out of the clevis (hingeDims still leaves it a hair proud)
   // shoulder / hip = hinge1 block (solid male + disc bases, like the
   // dragon limbs): the body part holds the female U + pin, the limb hangs
   // off the male tongue's disc base
-  shoulder: { gap: 0.1, armT: 0.06, armH: 0.32, depth: 0.22, pinR: 0.05 },
-  hip: { gap: 0.09, armT: 0.055, armH: 0.28, depth: 0.2, pinR: 0.045 },
+  shoulder: { gap: 0.1, armT: 0.06, armH: 0.32, depth: 0.22, pinR: 0.05, pinOut: 0 },
+  hip: { gap: 0.09, armT: 0.055, armH: 0.28, depth: 0.2, pinR: 0.045, pinOut: 0 },
+  // arm joints run a SOLID male tongue on a tight clearance — the forearm
+  // shroud covers them, so the mechanism should read as machined, not loose.
   // wrist = hinge2 (two hinge1 stages in series, pins X then Z); the same
   // params size BOTH stages across forearm / wrist / palm
-  wrist: { gap: 0.1, armT: 0.05, armH: 0.18, depth: 0.2, pinR: 0.04 },
-  elbow: { gap: 0.12, armT: 0.06, armH: 0.26, depth: 0.24, pinR: 0.05 },
-  knee: { gap: 0.15, armT: 0.07, armH: 0.3, depth: 0.3, pinR: 0.06 },
-  ankle: { gap: 0.14, armT: 0.065, armH: 0.26, depth: 0.26, pinR: 0.055 },
-  knuckle: { gap: 0.03, armT: 0.022, armH: 0.11, depth: 0.09, pinR: 0.018 },
-  digit: { gap: 0.026, armT: 0.02, armH: 0.1, depth: 0.08, pinR: 0.016 },
+  wrist: { gap: 0.1, armT: 0.05, armH: 0.18, depth: 0.2, pinR: 0.04, clr: 0.008, solid: 1, pinOut: 0 },
+  // elbow gap is sized so the solid tongue — and the forearm box that
+  // continues it — is exactly the forearm's width (parts.atlas.forearm.w)
+  elbow: { gap: 0.14, armT: 0.06, armH: 0.26, depth: 0.24, pinR: 0.05, clr: 0.008, solid: 1, pinOut: 0 },
+  knee: { gap: 0.15, armT: 0.07, armH: 0.3, depth: 0.3, pinR: 0.06, solid: 1, pinOut: 0 },
+  ankle: { gap: 0.14, armT: 0.065, armH: 0.26, depth: 0.26, pinR: 0.055, solid: 1, pinOut: 0 },
 };
 
 // ball stack extents off ballDims — the single numbers layouts stack with:
@@ -778,6 +792,23 @@ const hingeFixedAt = (add, jp, y, sides = {}) =>
   hingeBlock((g) => add(translate(g, 0, y, 0)), () => {}, jp, sides);
 const hingeMale = (add, jp, sides = {}) => hingeBlock(() => {}, add, jp, sides);
 
+// HINGE SHROUD — a hollow box (4 planks, open top and bottom) housing a
+// clevis: two planks outside the female arms on the pin axis, two clearing
+// the arms' depth. It runs from `top` down to the PIN PLANE and no further:
+// the male half hangs below its pin and only its knuckle disc (radius
+// knuckleR, a body of revolution) reaches above it, so the hinge keeps its
+// full swing however far the joint bends.
+function hingeShroud(add, jp, pinY, top, t = 0.035) {
+  const d = hingeDims(jp);
+  const x = d.gapW / 2 + d.armT + d.clr + t / 2;   // outside the female arms
+  const z = d.knuckleR + d.clr + t / 2;            // outside the knuckle sweep
+  const h = top - pinY, cy = pinY + h / 2;
+  for (const s of [1, -1]) {
+    add(translate(box(t, h, 2 * z + t), s * x, cy, 0));       // pin-axis end planks
+    add(translate(box(2 * x + t, h, t), 0, cy, s * z));       // front / back planks
+  }
+}
+
 // ---- atlas per-part layouts (builder + partSlots single source) ----------
 
 function torsoLayout(p) {
@@ -788,7 +819,7 @@ function torsoLayout(p) {
   const top = chestY + p.chestH;
   return {
     y0, taperH, chestY, top,
-    r: p.chestW * 0.22,                               // flank half-cylinder radius
+    r: p.chestD / 2,                                  // flank half-cylinder radius = half the chest depth
     neckY: top + ballSeat(ATLAS_JP.neck),             // neck ball center
     // shoulder pins: the female disc base lands on the chest flank
     sx: p.chestW / 2 + jointMounts("hinge1", ATLAS_JP.shoulder).a.pos[0],
@@ -815,8 +846,18 @@ function upperArmLayout(p) {
 }
 
 function forearmLayout(p) {
-  const y0 = -hingeReach(ATLAS_JP.elbow);             // elbow male bridge face
-  return { y0, wristY: y0 - p.len - hingeReach(ATLAS_JP.wrist) };  // hinge2 stage-A pin
+  const d = hingeDims(ATLAS_JP.elbow);
+  const y0 = -d.bridgeY;                              // elbow male bridge face
+  return {
+    y0,
+    // the forearm box RUNS UP INTO the elbow clevis and takes the place of
+    // the tongue's base plate: it is narrower than the female arm gap, so it
+    // swings with the tongue, and it stops a clearance short of the pin,
+    // leaving only the tongue's knuckle disc proud of it
+    boxTop: -(d.pinR + 2 * d.clr),
+    boxBot: y0 - p.len - 0.02,
+    wristY: y0 - p.len - hingeReach(ATLAS_JP.wrist),  // hinge2 stage-A pin
+  };
 }
 
 // hinge2 wrist stacking: stage-B pin sits two arm reaches + the ONE shared
@@ -827,14 +868,15 @@ const wristMidY = () => {
 };
 
 function palmLayout(p) {
+  const fw = PART_PARAMS.atlas.finger.w;              // fingers hang off the side faces
   const y0 = -hingeReach(ATLAS_JP.wrist);             // stage-B male bridge face
-  const cubeY = y0 - p.cube / 2 + 0.02;
-  const yb = cubeY - p.cube / 2;                      // cube underside
+  const blockY = y0 - p.h / 2 + 0.02;
+  const yb = blockY - p.h / 2;                        // block underside
   return {
-    cubeY, yb,
-    knuckleY: yb - 0.04,                              // prong pins, clevis sunk into the cube
-    fx: 0.15,                                         // front finger pair spread
-    fz: p.cube / 2 - 0.1,                             // prong rows off the front/back faces
+    blockY, yb,
+    knuckleY: yb + 0.06,                              // knuckle pins, near the lower edge
+    fx: p.w * 0.27,                                   // front finger pair spread
+    fz: p.d / 2 + fw / 2,                             // pins proud of the front/back faces
   };
 }
 
@@ -849,33 +891,47 @@ function shinLayout(p) {
   return { y0, ankleY: y0 - p.len - hingeReach(ATLAS_JP.ankle) };
 }
 
+// the foot is built around the ANKLE BASE: a flat box centered under the
+// ankle pin, so the joint always stands on level ground. Everything else
+// hangs off its two faces — forward, a slope box tapering into a flat toe box
+// (the toe's height is what the slope leaves behind, so they meet flush on
+// one sole plane); rearward, the heel part, bolted to the base's back face.
+// p.len spans the ankle pin to the toe tip.
+const FOOT_SLOPE = 0.55, FOOT_H = 0.2, TOE_D = 0.2, ANKLE_D = 0.24;
+
 function footLayout(p) {
-  const soleY = -hingeReach(ATLAS_JP.ankle) - 0.02;   // sole top plane
-  return { soleY, heel: [0, soleY - 0.07, -0.18] };  // heel slot on the rear face
+  const soleY = -hingeReach(ATLAS_JP.ankle) - 0.02;   // foot top plane, at the ankle
+  const z0 = ANKLE_D / 2;                             // ankle base front face
+  const footD = p.len - z0 - TOE_D;                   // slope run, ankle base -> toe
+  return {
+    soleY, footD,
+    toeH: FOOT_H * (1 - FOOT_SLOPE),
+    footZ: z0 + footD / 2,
+    toeZ: z0 + footD + TOE_D / 2,
+    heel: [0, soleY - FOOT_H / 2, -z0],               // heel slot: ankle base rear face
+  };
 }
 
 // ATLAS HELMET — a FRONT-FACING CYLINDER drum: axis = +Z, the flat disc is
-// the face, with a proud face rim ring, a visor slit riding the rim, chin
-// guard under it, ear pods on the drum sides, crest fin on the crown. Male
-// neck ball below (the torso supplies the socket); ball center = origin.
+// the face, wearing two concentric proud rings (outer rim + a smaller inner
+// one), ear pods on the drum sides. Male neck ball below (the torso supplies
+// the socket); ball center = origin.
 function helmet(add, p) {
   const y0 = ballTop(ATLAS_JP.neck), R = p.headR;
   maleBall(add, ATLAS_JP.neck, +1);                   // shaft up into the helmet
-  add(translate(cylinder(0.14, 0.1, 14), 0, y0, 0)); // neck collar
-  const cy = y0 + R + 0.06;                          // drum center height
-  add(translate(rotX(cylinder(R, p.headD, 24), HPI), 0, cy, -p.headD / 2)); // drum, face forward
-  add(translate(rotX(cylinder(R + 0.03, 0.06, 24), HPI), 0, cy, p.headD / 2)); // face rim ring
-  add(translate(box(p.visorW, 0.07, 0.06), 0, cy + R * 0.25, p.headD / 2 + 0.06)); // visor slit
-  add(translate(box(p.visorW * 0.6, 0.1, 0.1), 0, cy - R * 0.55, p.headD / 2 + 0.04)); // chin guard
+  add(translate(cylinder(0.14, 0.05, 14), 0, y0, 0)); // neck collar
+  const cy = y0 + R + 0.04;                          // drum center height
+  const fz = p.headD / 2;                            // face plane
+  add(translate(rotX(cylinder(R, p.headD, 24), HPI), 0, cy, -fz));      // drum, face forward
+  add(translate(rotX(cylinder(R + 0.03, 0.06, 24), HPI), 0, cy, fz));   // face rim ring
+  add(translate(rotX(cylinder(p.innerR, 0.05, 20), HPI), 0, cy, fz + 0.06)); // inner face ring
   for (const s of [1, -1])                           // ear pods on the drum sides
     add(translate(rotZ(cylinder(0.09, 0.06, 14), s * HPI), s * (R + 0.06), cy, 0));
-  // crest: thin slope box on the crown, dropping toward the face
-  add(translate(box(0.1, 0.1, R * 2, 0.7), 0, cy + R + 0.04, -0.05));
 }
 
 // ATLAS TORSO — modeled on the (electric) Atlas robot: a rounded SLAB chest
-// (core box + vertical half-cylinder flanks), thin front panel, and a slope
-// box tapering down into the waist — NO belly section, the torso sits
+// (core box + vertical half-cylinder flanks), thin front panel, and a plain
+// waist box below it — NO belly section, the torso sits
 // directly on the pelvis. Joints offered: neck socket (up), 2 shoulder
 // shoulder female U + pins on the flanks (disc base against the chest side,
 // pin -> Z after the seat rotation), and the waist PIVOT's top stack below
@@ -887,8 +943,8 @@ function torso(add, p) {
   add(translate(cylinder(q.flangeR, q.flangeT, 28), 0, 0, 0));                // waist pivot top stack
   add(translate(cylinder(q.neckR, q.neckLen, 20), 0, q.flangeT, 0));
   add(translate(cylinder(q.capR, q.capT, 24), 0, q.flangeT + q.neckLen, 0));
-  // taper: flipped slope box narrowing into the waist
-  add(translate(rotZ(box(p.chestW * 0.55, L.taperH + 0.06, 0.44, 0.65), Math.PI), 0, L.y0 + L.taperH / 2, 0));
+  // waist block: a plain box bridging the pivot cap up to the chest slab
+  add(translate(box(p.chestW * 0.55, L.taperH + 0.06, p.chestD * 0.75), 0, L.y0 + L.taperH / 2, 0));
   // chest slab: core box + rounded vertical flanks, depth = flank diameter
   const cw = p.chestW - 2 * L.r;
   add(translate(box(cw, p.chestH, 2 * L.r), 0, L.chestY + p.chestH / 2, 0));
@@ -934,73 +990,73 @@ function pelvis(add, p) {
 
 // ATLAS UPPER ARM — shoulder MOVING half on top (solid tongue + disc base
 // seated so the disc base drops down into the arm; the torso holds the
-// clevis + pin), biceps box, elbow clevis + pin at the bottom.
+// clevis + pin), biceps cylinder, elbow clevis + pin at the bottom.
 function upperArm(add, p) {
   const L = upperArmLayout(p);
+  const h = p.len + 0.08;
   hinge1Block(() => {}, (g) => add(rotX(g, HPI)), ATLAS_JP.shoulder);
-  add(translate(box(p.w, p.len + 0.08, p.w), 0, L.y0 - (p.len + 0.08) / 2 + 0.06, 0));
+  add(translate(cylinder(p.w / 2, h, 20), 0, L.y0 + 0.06 - h, 0));           // biceps barrel
   add(translate(rotZ(cylinder(p.w * 0.4, p.w + 0.14, 14), -HPI), -(p.w + 0.14) / 2, L.y0 - p.len, 0)); // elbow housing
   hingeFixedAt(add, ATLAS_JP.elbow, L.elbowY);
 }
 
-// ATLAS FOREARM — male elbow U on top, forearm box, then the hinge2 wrist's
-// STAGE-A clevis + pin (pin = X, the bend axis) at the bottom; the wrist
-// link brings the male U.
+// ATLAS FOREARM — a box running all the way up into the elbow clevis, where
+// it meets the solid male tongue (whose base plate it replaces), and down to
+// the hinge2 wrist's STAGE-A clevis + pin (pin = X, the bend axis); the
+// wrist link brings the male tongue. A 4-plank shroud skirts the box down to
+// the wrist pin, boxing the clevis arms in without fouling the swing.
 function forearm(add, p) {
   const L = forearmLayout(p);
-  hingeMale(add, ATLAS_JP.elbow);
-  add(translate(box(p.w, p.len + 0.06, p.w * 0.9), 0, L.y0 - (p.len + 0.06) / 2 + 0.04, 0));
+  hingeMale(add, ATLAS_JP.elbow, { male: { noBase: 1 } });   // the box IS the tongue's base
+  add(translate(box(p.w, L.boxTop - L.boxBot, p.w * 0.9), 0, (L.boxTop + L.boxBot) / 2, 0));
+  hingeShroud(add, ATLAS_JP.wrist, L.wristY, L.y0 - p.len + 0.02);
   hingeFixedAt(add, ATLAS_JP.wrist, L.wristY);
 }
 
 // ATLAS WRIST — the MIDDLE link of the hinge2 wrist (two hinge1 stages in
-// series): stage-A male U at the origin plugging the forearm's clevis
+// series): stage-A male tongue at the origin plugging the forearm's clevis
 // (pin = X, bend), and directly below the stage-B clevis + pin turned 90°
-// (pin = Z, tilt) that the palm's male U rides. Both stages SHARE stage B's
-// base, so the stage-A male emits none — same scheme as hinge2Block.
+// (pin = Z, tilt) that the palm's male tongue rides. Both stages SHARE stage
+// B's base, so the stage-A male emits none — same scheme as hinge2Block.
+// That shared base is a DISC: the palm's own disc turns on it, which is what
+// gives the wrist its third DOF (twist about the palm normal).
 function wrist(add, p) {
   hingeMale(add, ATLAS_JP.wrist, { male: { noBase: 1 } });
-  hingeBlock((g) => add(translate(rotY(g, HPI), 0, wristMidY(), 0)), () => {}, ATLAS_JP.wrist);
+  hingeBlock((g) => add(translate(rotY(g, HPI), 0, wristMidY(), 0)), () => {},
+    ATLAS_JP.wrist, { female: { disc: 1 } });
 }
 
-// ATLAS PALM — a GRIPPER hand: the hinge2 stage-B male U on top (pre-turned
-// so its pin runs along Z, matching the wrist link's clevis), then a solid
-// palm CUBE mounting two opposing prong sets — ONE knuckle clevis on the
-// back edge (single finger) and TWO on the front edge (finger pair), pins =
-// X, so the prongs curl toward each other.
+// ATLAS PALM — a GRIPPER hand: the hinge2 stage-B male tongue on top
+// (pre-turned so its pin runs along Z, matching the wrist link's clevis) on a
+// DISC base that twists against the wrist link's own disc, over a plain palm
+// BLOCK sized to the forearm. No knuckle clevises: the fingers hang off the
+// block's front and back SIDE FACES, each bringing its own knuckle pin — one
+// behind (single finger), two in front (finger pair), pins = X, so the prongs
+// curl toward each other.
 function palm(add, p) {
   const L = palmLayout(p);
-  hingeBlock(() => {}, (g) => add(rotY(g, HPI)), ATLAS_JP.wrist);   // stage-B male, pin -> Z
-  add(translate(box(p.cube, p.cube, p.cube), 0, L.cubeY, 0));       // palm cube
-  const clevis = (x, z) =>
-    hingeBlock((g) => add(translate(g, x, L.knuckleY, z)), () => {}, ATLAS_JP.knuckle);
-  clevis(0, -L.fz);                                   // back: single finger
-  clevis(-L.fx, L.fz);                                // front: finger pair
-  clevis(L.fx, L.fz);
+  hingeBlock(() => {}, (g) => add(rotY(g, HPI)), ATLAS_JP.wrist, { male: { disc: 1 } });
+  add(translate(box(p.w, p.h, p.d), 0, L.blockY, 0));               // palm block
 }
 
-// ATLAS FINGER — 3 identical BOX digits: male knuckle U at the origin (the
-// palm holds the clevis + pin), then two internal hinge joints chaining the
-// digits, a CUT-CONE tip capping the last (blunt, tapered). RUNTIME pose:
-// pose.curl (radians from the rig) overrides the curl modeling param
-// (degrees) and bends BOTH internal joints — the knuckle itself is the
+// ATLAS FINGER — 3 identical BOX digits, square-tipped, strung on bare
+// KNUCKLE PINS: no clevis anywhere, each digit just carries a short
+// horizontal cylinder (axis X, the bend axis) at its own origin — the first
+// of them is the knuckle pin the palm's side face hangs the finger from.
+// RUNTIME pose: pose.curl (radians from the rig) overrides the curl modeling
+// param (degrees) and bends both inner pins — the knuckle itself is the
 // rig's bone.
 function finger(add, p, pose = {}) {
   const curl = pose.curl ?? rad(p.curl);
-  hingeMale(add, ATLAS_JP.knuckle);
   let at = add;                                      // current digit frame, origin = its pin
   for (let i = 0; i < 3; i++) {
-    const w = p.w * (1 - i * 0.12), L = p.digitLen;
+    const w = p.w * (1 - i * 0.12), L = p.digitLen, span = w + 0.02;
+    at(translate(rotZ(cylinder(w * 0.45, span, 14), -HPI), -span / 2, 0, 0)); // pin, proud both faces
     at(translate(box(w, L + 0.05, w), 0, -(L + 0.05) / 2 + 0.02, 0));
-    if (i === 2) {
-      // tip: cut cone flipped point-down — wide end flush with the digit
-      at(translate(rotX(coneCut(w * 0.5, w * 0.24, 0.14, 12), Math.PI), 0, -(L + 0.01), 0));
-      break;
-    }
+    if (i === 2) break;
     const cur = at, py = -L;
-    const nxt = (g) => cur(translate(rotX(g, curl), 0, py, 0));
-    hingeBlock((g) => cur(translate(g, 0, py, 0)), nxt, ATLAS_JP.digit);
-    at = nxt;
+    // -curl: the digits arch INTO the palm, the way the gripper closes
+    at = (g) => cur(translate(rotX(g, -curl), 0, py, 0));
   }
 }
 
@@ -1025,19 +1081,24 @@ function shin(add, p) {
   hingeFixedAt(add, ATLAS_JP.ankle, L.ankleY);
 }
 
-// ATLAS FOOT — male ankle U over a sole box running forward, slope toe
-// cap; the heel part glues onto the rear face slot.
+// ATLAS FOOT — solid male ankle tongue standing on the ANKLE BASE box, with
+// the foot proper (a slope box) and the toes (a flat box) running forward off
+// it. The heel part glues onto the base's rear face slot.
 function foot(add, p) {
   const L = footLayout(p);
   hingeMale(add, ATLAS_JP.ankle);
-  add(translate(box(p.w, 0.14, p.len), 0, L.soleY - 0.07, p.len / 2 - 0.18));   // sole
-  add(translate(box(p.w * 0.88, 0.15, 0.3, 0.75), 0, L.soleY + 0.05, p.len - 0.35)); // toe cap
+  add(translate(box(p.w, FOOT_H, ANKLE_D), 0, L.soleY - FOOT_H / 2, 0));       // ankle base
+  add(translate(box(p.w, FOOT_H, L.footD, FOOT_SLOPE), 0, L.soleY - FOOT_H / 2, L.footZ));
+  add(translate(box(p.w * 0.92, L.toeH, TOE_D), 0, L.soleY - FOOT_H + L.toeH / 2, L.toeZ));
 }
 
-// ATLAS HEEL — rear bumper block on the foot's heel slot, tapering back.
+// ATLAS HEEL — TWO boxes running BACK off the foot's rear face (the ankle
+// base): a base box continuing the sole, then a slope box tapering down to
+// the ground behind it. Both share the foot's height, so the sole stays one
+// plane from the toe to the heel taper.
 function heel(add, p) {
-  add(translate(box(p.w, p.h, 0.22), 0, 0, -0.11));
-  add(translate(rotY(box(p.w * 0.78, p.h * 0.8, 0.16, 0.85), Math.PI), 0, 0.01, -0.28));
+  add(translate(box(p.w, p.h, p.d), 0, 0, -p.d / 2));                              // heel base
+  add(translate(rotY(box(p.w, p.h, p.capD, 0.7), Math.PI), 0, 0, -p.d - p.capD / 2)); // taper, drops rearward
 }
 
 // catalog views of the joint blocks — pose sliders (degrees) drive the
