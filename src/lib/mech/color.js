@@ -8,7 +8,6 @@ function hashStr(s) {
   return h >>> 0;
 }
 
-// curated mech palette
 export const PALETTE = [
   "#c0392b", "#e67e22", "#f1c40f", "#7dcb2f", "#27ae60", "#1abc9c",
   "#3498db", "#2c5aa0", "#8e44ad", "#d354a4", "#c8a165", "#8d6e63",

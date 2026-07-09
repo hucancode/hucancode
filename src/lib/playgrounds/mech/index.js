@@ -21,13 +21,15 @@ let model = null;                  // current { items, meshes }
 const view = { ...VIEW0 };         // desired framing; orbit adopts it lazily (patches may precede init)
 
 const config = {
-  spin: 0.3,        // auto-rotate speed
-  lightAngle: 0.6,  // light orbit position
+  spin: 0.3,
+  lightAngle: 0.6,
+  lookY: 0,         // orbit center height: a subject standing ON the grid needs one
 };
 
 function setConfig(patch) {
   if ("spin" in patch) config.spin = patch.spin;
   if ("lightAngle" in patch) config.lightAngle = patch.lightAngle;
+  if ("lookY" in patch) config.lookY = patch.lookY;
   if ("dist" in patch) view.dist = patch.dist;                // page-chosen framing, still not auto
   if (patch.resetView) {
     view.yaw = VIEW0.yaw; view.pitch = VIEW0.pitch; view.dist = patch.dist ?? VIEW0.dist;
@@ -60,7 +62,7 @@ const { init, render, destroy } = createPlayground({
   },
   frame(dt, { device, camera }) {
     if (!orbit.dragging) orbit.yaw += config.spin * dt * 0.5;
-    orbit.placeCamera(camera);
+    orbit.placeCamera(camera, config.lookY);
     mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
     const eye = [camera.position.x, camera.position.y, camera.position.z];
     const la = config.lightAngle;

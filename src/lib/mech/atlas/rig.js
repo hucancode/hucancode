@@ -89,7 +89,7 @@ const atlasSide = (S, sgn) => [
 ];
 
 const ATLAS_DEF = [
-  { name: "pelvis", part: "pelvis", pivot: "waist" },   // root
+  { name: "pelvis", part: "pelvis", pivot: "waist" },
   // the waist is a ball: all three bones of the link carry a channel
   { name: "torso", part: "torso", parent: "pelvis", at: "waist", slot: "mount",
     angles: { x: ["waistBend", 1], y: ["twist", 1], z: ["waistTilt", 1] } },
@@ -99,7 +99,9 @@ const ATLAS_DEF = [
   ...atlasSide("R", -1),
 ];
 
-const ATLAS_ROOT = [0, 0.75, 0];   // lift so the figure centers on the origin
+// root placement in the ground plane; the lift is solved from the built figure
+// (createAtlasRig) so the soles stand on the grid whatever the part params are
+const ATLAS_ROOT = [0, 0, 0];
 
 // bone depth of every pose channel (pelvis = 0). A channel drives the link it
 // sits on, so its depth IS that link's depth: `twist` turns the torso near the
@@ -204,11 +206,32 @@ export function createAtlasRig(seed = 1) {
     return { items, meshes: meshCache.meshes };
   }
 
-  return { model };
+  // stand the figure on the grid: build the rest pose off an unlifted root and
+  // push the root up by the lowest vertex it puts underground (the soles). The
+  // span the same sweep measures is the standing height, which frames the view.
+  const rootBone = sk.bones[defs[0].ids[0]];
+  let minY = Infinity, maxY = -Infinity;
+  for (const it of model().items) {
+    const { positions } = meshCache.meshes[it.key];
+    for (let i = 0; i < positions.length; i += 3) {
+      const y = it.m[3] * positions[i] + it.m[4] * positions[i + 1]
+        + it.m[5] * positions[i + 2] + it.t[1];
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  rootBone.offset[1] -= minY;
+
+  return { model, height: maxY - minY };
 }
 
 let _arig = null, _arigSeed = null;
-export function atlasModel(seed = 1, pose = {}) {
+const rigFor = (seed) => {
   if (!_arig || _arigSeed !== seed) { _arig = createAtlasRig(seed); _arigSeed = seed; }
-  return _arig.model(pose);
+  return _arig;
+};
+// head-to-sole span of the standing figure — the page aims the camera at its middle
+export const atlasHeight = (seed = 1) => rigFor(seed).height;
+export function atlasModel(seed = 1, pose = {}) {
+  return rigFor(seed).model(pose);
 }

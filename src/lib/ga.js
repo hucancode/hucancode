@@ -12,7 +12,6 @@ function initGA() {
   gtag("config", GA_MEASUREMENT_ID);
 }
 
-// fire each event at most once per page load
 const fired = new Set();
 function trackOnce(key, name, params) {
   if (!browser || fired.has(key)) return;

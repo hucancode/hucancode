@@ -43,7 +43,6 @@ export async function loadDragonMesh(url, bodyLen) {
   const text = await res.text();
   const { verts, norms, triV, triN } = parseObj(text);
 
-  // bbox -> longest axis
   const min = [Infinity, Infinity, Infinity];
   const max = [-Infinity, -Infinity, -Infinity];
   for (const v of verts) {

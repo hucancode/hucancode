@@ -33,7 +33,7 @@ export const CHAIN_LEN_FRAC = 0.85;      // descent length target as fraction of
                                          // (raises descentAvg -> descentStart, kills start crawl)
 export const CHAIN_MAX = 60;             // cap on circles per roam (safety)
 
-export const ENSO_R = 0.4;           // enso radius (world units; <1 keeps it on-screen)
+export const ENSO_R = 0.4;           // world units; <1 keeps it on-screen
 export const ENSO_WIDTH = 0.15;       // enso brush thickness (polar line width in shader)
 export const ENSO_CLEARANCE = 0.06;  // gap between brush outer edge and dragon head path
 // dragon traces just outside brush so contour clears painted stroke

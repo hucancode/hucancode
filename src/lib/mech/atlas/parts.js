@@ -10,7 +10,6 @@ import {
 } from "../joints.js";
 import { createKit } from "../kit.js";
 
-// editable per-part parameters
 export const ATLAS_PARAMS = {
   head: { headR: 0.28, headD: 0.56, innerR: 0.24 },
   torso: { chestW: 1.15, chestH: 0.95, chestD: 0.68 },
@@ -104,8 +103,6 @@ function hingeShroud(add, jp, pinY, top, t = 0.035) {
     add(translate(box(2 * x + t, h, t), 0, cy, s * z));       // front / back planks
   }
 }
-
-// ---- atlas per-part layouts (builder + partSlots single source) ----------
 
 function torsoLayout(p) {
   const y0 = ballTop(ATLAS_JP.waist);                 // ball center -> male plate top face
@@ -220,7 +217,7 @@ function footLayout(p) {
 function helmet(add, p) {
   const y0 = ballTop(ATLAS_JP.neck), R = p.headR;
   maleBall(add, ATLAS_JP.neck, +1);                   // shaft up into the helmet
-  add(translate(cylinder(0.14, 0.05, 14), 0, y0, 0)); // neck collar
+  add(translate(cylinder(0.14, 0.05, 14), 0, y0, 0));
   const cy = y0 + R + 0.04;                          // drum center height
   const fz = p.headD / 2;                            // face plane
   add(translate(rotX(cylinder(R, p.headD, 24), HPI), 0, cy, -fz));      // drum, face forward
@@ -248,9 +245,8 @@ function torso(add, p) {
   add(translate(box(cw, p.chestH, 2 * L.r), 0, L.chestY + p.chestH / 2, 0));
   for (const s of [1, -1])
     add(translate(rotY(halfCylinder(L.r, p.chestH, 16), s * HPI), s * cw / 2, L.chestY, 0));
-  // front panel plate
   add(translate(box(cw * 0.85, p.chestH * 0.72, 0.06), 0, L.chestY + p.chestH * 0.56, L.r + 0.01));
-  add(translate(cylinder(0.17, 0.1, 16), 0, L.top, 0));                       // collar
+  add(translate(cylinder(0.17, 0.1, 16), 0, L.top, 0));
   socketAt(add, ATLAS_JP.neck, [0, L.neckY, 0]);      // neck socket, opening up
   // shoulders: the torso only offers the SEAT — a cut cone flaring out of the
   // flank, its rim the face the arm's shoulder disc lands on. The whole hinge
@@ -268,7 +264,7 @@ function torso(add, p) {
 function pelvis(add, p) {
   const L = pelvisLayout(p);
   socketAt(add, ATLAS_JP.waist, [0, 0, 0]);                                   // waist socket, opening up
-  add(translate(cylinder(L.discR, L.discT, 28), 0, L.discY, 0));              // top disc
+  add(translate(cylinder(L.discR, L.discT, 28), 0, L.discY, 0));
   add(translate(rotY(rotX(halfCylinder(p.hipH, L.domeW, 20), HPI), HPI), -L.domeW / 2, L.discY, 0)); // dome shell, flat up
   // hips: hinge1 female U + pin per side, same seat scheme as the shoulders
   for (const s of [1, -1]) {
@@ -300,8 +296,8 @@ function upperArm(add, p, pose = {}) {
   // local frame so it turns about the PIN, exactly like the male tongue
   const limb = (g) => (sw ? seat(rotY(rotX(g, -HPI), sw)) : add(g));
   hinge1Block(seat, seat, ATLAS_JP.shoulder, { swing: sw });
-  limb(translate(cylinder(p.w / 2, h, 20), 0, L.y0 + 0.06 - h, 0));          // biceps barrel
-  limb(translate(rotZ(cylinder(p.w * 0.4, p.w + 0.14, 14), -HPI), -(p.w + 0.14) / 2, L.y0 - p.len, 0)); // elbow housing
+  limb(translate(cylinder(p.w / 2, h, 20), 0, L.y0 + 0.06 - h, 0));
+  limb(translate(rotZ(cylinder(p.w * 0.4, p.w + 0.14, 14), -HPI), -(p.w + 0.14) / 2, L.y0 - p.len, 0));
   hingeFixedAt(limb, ATLAS_JP.elbow, L.elbowY);
 }
 
@@ -346,7 +342,7 @@ function wrist(add, p, pose = {}) {
 // the prongs curl toward each other.
 function palm(add, p) {
   const L = palmLayout(p);
-  add(translate(box(p.w, p.h, p.d), 0, L.blockY, 0));               // palm block
+  add(translate(box(p.w, p.h, p.d), 0, L.blockY, 0));
 }
 
 // ATLAS FINGER — 3 identical BOX digits, square-tipped, strung on bare
@@ -377,7 +373,7 @@ function thigh(add, p) {
   const L = thighLayout(p);
   hinge1Block(() => {}, (g) => add(rotX(g, HPI)), ATLAS_JP.hip);
   add(translate(box(p.w, p.len + 0.1, p.w + 0.04), 0, L.y0 - (p.len + 0.1) / 2 + 0.07, 0));
-  add(translate(rotZ(cylinder(p.w * 0.38, p.w + 0.16, 14), -HPI), -(p.w + 0.16) / 2, L.y0 - p.len, 0)); // knee housing
+  add(translate(rotZ(cylinder(p.w * 0.38, p.w + 0.16, 14), -HPI), -(p.w + 0.16) / 2, L.y0 - p.len, 0));
   hingeFixedAt(add, ATLAS_JP.knee, L.kneeY);
 }
 
@@ -387,7 +383,7 @@ function shin(add, p) {
   const L = shinLayout(p);
   const h = p.len + 0.06;
   hingeMale(add, ATLAS_JP.knee);
-  add(translate(cylinder(p.w / 2, h, 20), 0, L.y0 + 0.04 - h, 0));               // shin barrel
+  add(translate(cylinder(p.w / 2, h, 20), 0, L.y0 + 0.04 - h, 0));
   hingeFixedAt(add, ATLAS_JP.ankle, L.ankleY);
 }
 
@@ -398,11 +394,11 @@ function shin(add, p) {
 function foot(add, p) {
   const L = footLayout(p);
   hingeMale(add, ATLAS_JP.ankle);
-  add(translate(box(p.w, FOOT_H, ANKLE_D), 0, L.midY, 0));                     // ankle base
+  add(translate(box(p.w, FOOT_H, ANKLE_D), 0, L.midY, 0));
   add(translate(box(p.w, FOOT_H, L.footD, FOOT_SLOPE), 0, L.midY, L.footZ));
   add(translate(box(p.w * 0.92, L.toeH, TOE_D), 0, L.soleY - FOOT_H + L.toeH / 2, L.toeZ));
-  add(translate(box(p.w, FOOT_H, p.heelD), 0, L.midY, L.heelZ));               // heel base
-  add(translate(rotY(box(p.w, FOOT_H, p.heelCapD, 0.7), Math.PI), 0, L.midY, L.heelCapZ)); // heel taper
+  add(translate(box(p.w, FOOT_H, p.heelD), 0, L.midY, L.heelZ));
+  add(translate(rotY(box(p.w, FOOT_H, p.heelCapD, 0.7), Math.PI), 0, L.midY, L.heelCapZ));
 }
 
 // PART MOUNT SLOTS (see the dragon kit for the contract): mount = the part's

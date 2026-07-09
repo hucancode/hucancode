@@ -7,7 +7,6 @@ export function makeSlots({ prefix, count, field = "data", revive = (p) => p }) 
   const key = (i) => `${prefix}${i}`;
   const ok = () => typeof localStorage !== "undefined";
 
-  // -> { payload, at } or null when empty/corrupt
   function read(i) {
     if (!ok()) return null;
     try {
@@ -18,7 +17,6 @@ export function makeSlots({ prefix, count, field = "data", revive = (p) => p }) 
     return null;
   }
 
-  // per-slot { filled, at } for slot pickers
   const meta = () =>
     Array.from({ length: count }, (_, i) => {
       const e = read(i);

@@ -98,7 +98,7 @@ export function dims(spec) {
   return { sx, sy, sz, h, hw: sx / 2, hd: sz / 2, hh: h / 2 };
 }
 
-// ---- convex polyhedron, stored as a list of CCW-outward polygon faces ------
+// convex polyhedron, stored as a list of CCW-outward polygon faces
 // world cube for one cell of size [W,H,D] at grid index (i,j,k)
 function cellFaces(i, j, k, W, H, D) {
   const x0 = i - W / 2, x1 = x0 + 1;
@@ -146,7 +146,6 @@ function orderRing(pts, n) {
   const c = [0, 0, 0];
   for (const p of uniq) { c[0] += p[0]; c[1] += p[1]; c[2] += p[2]; }
   c[0] /= uniq.length; c[1] /= uniq.length; c[2] /= uniq.length;
-  // plane basis
   let u = Math.abs(n[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
   u = norm(cross(n, u));
   const w = cross(n, u);
@@ -390,7 +389,6 @@ function buildStuds(op, W, H, D, intact) {
   return out;
 }
 
-// ---- joint hardware (ball + hinge) -------------------------------------
 // All builders below emit ADDITIVE geometry (no boolean carving): the part is
 // rendered with one flat color, so the hardware just sits proud of / on the
 // face. Mating/validation ignores joint ops (only studs feed the connector map);
@@ -618,7 +616,6 @@ export function jointFrame(def, op) {
   return { P, n, pin, center };
 }
 
-// ---- stick parts (I connector rod) -------------------------------------
 // A "stick" is a straight rod with a connector at each END. It is NOT a box, so
 // it bypasses the cell mesher (makeStick below). Connector ops on a stick target
 // an `end` index instead of a face; each end is a tip frame {P,n,e1,e2} the male

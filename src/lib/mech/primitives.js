@@ -32,8 +32,6 @@ import { TAU } from "../math/scalar.js";
 
 const q4 = (v) => +(+v).toFixed(4);
 
-// ---- unit-mesh registry ------------------------------------------------------
-
 const REGISTRY = new Map();          // key -> { positions: F32, normals: F32 }
 
 export function meshOf(key) {
@@ -59,8 +57,6 @@ function H(key, gen, sx, sy, sz) {
     t: [0, 0, 0],
   };
 }
-
-// ---- handle transforms (chainable — matrix composition, no vertex work) ------
 
 export function translate(g, x, y, z) {
   g.t[0] += x; g.t[1] += y; g.t[2] += z;
@@ -90,8 +86,6 @@ export const rotZ = (g, r) => rotAxis(g, 0, 1, r); // x,y
 export function bake(g) {
   return { key: g.key, id: g.id, m: g.m.slice(), t: g.t.slice() };
 }
-
-// ---- soup helpers (used only inside unit-mesh generators) --------------------
 
 function geo() {
   return { positions: [], normals: [] };
@@ -127,8 +121,6 @@ function soupTranslate(g, x, y, z) {
   for (let i = 0; i < p.length; i += 3) { p[i] += x; p[i + 1] += y; p[i + 2] += z; }
   return g;
 }
-
-// ---- unit-mesh generators ----------------------------------------------------
 
 // unit box (1x1x1, centered). slope = FRACTION of the height dropped at the
 // top face's front (+Z) edge; curve bends the sloped top (-1 concave, 0
@@ -364,8 +356,6 @@ function genBoxCylinder(cp, fit, seg) {
   const c = cylBody(r, cp, seg, 0, TAU);
   return merge(b, c);
 }
-
-// ---- primitives (public API: same signatures, now instance handles) ---------
 
 // slope = FRACTION of height dropped at the top's front edge (0..1); curve
 // -1 concave .. +1 convex, only acts on the slope.

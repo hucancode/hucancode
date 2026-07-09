@@ -29,7 +29,7 @@ const ensoA0 = Math.PI / 2;
 // Defined for any frac (frac<0 trails before start) so body can lead in.
 export function ensoPos(frac, center) {
   const cx = center ? center.x : 0, cy = center ? center.y : 0;
-  const a = ensoA0 + frac * TAU; // counter-clockwise (increasing angle)
+  const a = ensoA0 + frac * TAU;
   // head traces ENSO_HEAD_R (just outside brush) for clearance over stroke
   return { x: cx + ENSO_HEAD_R * Math.cos(a), y: cy + ENSO_HEAD_R * Math.sin(a) };
 }
@@ -66,11 +66,11 @@ function generateCircleChain(rng, entry, heading, dropTarget, lenTarget = 0) {
   for (let i = 0; i < CHAIN_MAX; i++) {
     // march target: mostly lateral (steered toward centre, x->0) with gentle
     // uniform downward drift
-    const dropFrac = clamp((startY - cy) / dropTarget, 0, 1); // how far we have sunk
+    const dropFrac = clamp((startY - cy) / dropTarget, 0, 1);
     const hx = clamp(-cx / CHAIN_CENTER_R, -1, 1) * CHAIN_LATERAL; // toward centre
     const target = (hx === 0) ? DOWN_ANG : Math.atan2(-CHAIN_DESCEND, hx);
-    march += (rng() * 2 - 1) * CHAIN_TURN;          // random wander
-    march += angDiff(target, march) * CHAIN_DOWN_BIAS; // ease toward target heading
+    march += (rng() * 2 - 1) * CHAIN_TURN;
+    march += angDiff(target, march) * CHAIN_DOWN_BIAS;
 
     const rn = rand(rMin, rMax);
     // sweep to exit with tangent-point aimed along march for the alternating
@@ -101,7 +101,6 @@ function generateCircleChain(rng, entry, heading, dropTarget, lenTarget = 0) {
     aIn = Math.atan2(cy - ncy, cx - ncx); // faces back at shared point
     cx = ncx; cy = ncy; r = rn; dir = -dir; // alternate winding -> C1 S-weave
     pool.push({ x: cx, y: cy, z: 0, r });
-    // stop once sunk far enough OR walked length target, whichever first
     if ((startY - cy >= dropTarget) || len >= lenTarget) break;
   }
 
@@ -236,7 +235,6 @@ function walkFrame(rng, circles, entry, heading) {
     }
     if (!best) break; // isolated circle (never happens on wired frame)
 
-    // sample arc from ang sweeping bestSweep in dir
     const n = Math.max(2, Math.round(FRAME_SAMPLES * bestSweep / TAU));
     for (let i = 1; i <= n; i++) {
       const t = ang + dir * bestSweep * (i / n);
@@ -244,7 +242,7 @@ function walkFrame(rng, circles, entry, heading) {
     }
     len += c.r * bestSweep;
     swept += bestSweep;
-    ang = best.a; // now sitting on tangency point
+    ang = best.a;
 
     if (len >= FRAME_MIN_LEN) break; // end on tangency -> clean 3D handoff
 

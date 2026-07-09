@@ -28,7 +28,6 @@ let busy = false;
 let running = false;
 let queue = [];
 let pendingSolve = false;
-// current solution being played back / scrubbed
 let solution = null;
 let solutionPos = 0;
 let solutionPlaying = false;
@@ -221,7 +220,6 @@ function startMove(face, depth, magnitude, quick = false) {
   });
 }
 
-// apply a move to the bases with no animation (solution scrubbing)
 function applyInstant(face, depth, magnitude) {
   const R = rotationFor(axisForFace(face), (Math.PI / 2) * magnitude);
   for (const c of cubes) {
@@ -257,9 +255,6 @@ function resume() {
 function step() {
   if (!busy) startMoveRandom();
 }
-
-// ---------------------------------------------------------------------------
-// solving
 
 function notifySolution() {
   config.onSolution?.(
@@ -306,7 +301,6 @@ function solveCube() {
   else runSolve();
 }
 
-// jump to an arbitrary point of the current solution, pausing playback
 function seekSolution(pos) {
   if (!solution) return;
   pos = Math.max(0, Math.min(solution.length, Math.round(pos)));
@@ -336,10 +330,6 @@ function pauseSolution() {
   notifySolution();
 }
 
-// ---------------------------------------------------------------------------
-// scramble + notation
-
-// reset to solved, queue a random scramble, return it as notation
 function scramble() {
   if (!running) return "";
   clearSolution();
@@ -353,7 +343,6 @@ function scramble() {
   return moves.map(moveToNotation).join(" ");
 }
 
-// reset to solved, then play `text` as a scramble; false on parse error
 function applyScramble(text) {
   if (!running) return false;
   const moves = parseNotation(text, cubeNum);
