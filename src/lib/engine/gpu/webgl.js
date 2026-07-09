@@ -40,6 +40,12 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
     if (depth === "test") { gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); }
     else { gl.disable(gl.DEPTH_TEST); gl.depthMask(false); }
   }
+  function applyCull(cull) {
+    if (cull !== "back" && cull !== "front") { gl.disable(gl.CULL_FACE); return; }
+    gl.enable(gl.CULL_FACE);
+    gl.frontFace(gl.CCW);
+    gl.cullFace(cull === "back" ? gl.BACK : gl.FRONT);
+  }
 
   function buffer({ kind = "vertex", data = null, size = 0, dynamic = false }) {
     const target = kind === "index" ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
@@ -120,6 +126,7 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
     gl.useProgram(sh._prog);
     applyBlend(sh.desc.blend);
     applyDepth(sh.desc.depth);
+    applyCull(sh.desc.cull);
 
     const buffers = args.buffers || [];
     for (let bi = 0; bi < sh._layouts.length; bi++) {

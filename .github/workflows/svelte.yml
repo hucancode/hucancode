@@ -47,7 +47,6 @@ jobs:
         run: |
           rustup update stable
           rustup target add wasm32-unknown-unknown
-      # naga-cli transpiles WGSL -> GLSL at build time (vite wgsl plugin)
       - name: Install naga-cli
         run: cargo install naga-cli
       - name: Install dependencies

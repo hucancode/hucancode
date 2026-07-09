@@ -16,10 +16,10 @@
   const DRAGON_PARTS = PART_NAMES.dragon;
   const ATLAS_PARTS = PART_NAMES.atlas;
 
-  let view = $state("dragon");            // "parts" | "primitives" | "dragon" | "atlas"
+  let view = $state("atlas");            // "parts" | "primitives" | "dragon" | "atlas"
   let selPart = $state(JOINTS[0]);        // joints tab selection
   let dsel = $state("rig");               // dragon tab: "rig" = whole dragon, else a part
-  let asel = $state("rig");               // atlas tab: same scheme
+  let asel = $state("upperArm");               // atlas tab: same scheme
   let selPrim = $state(PRIM_NAMES[0]);
   let pparams = $state(structuredClone(PRIM_PARAMS));
   let jparams = $state(structuredClone(PART_PARAMS));   // { kit: { part: params } }
@@ -45,8 +45,8 @@
     upperArm: "upper arm",
     hinge1: "hinge 1",
     hinge2: "hinge 2",
-    hinge3: "hinge 3",
     pivot1: "pivot 1",
+    prismatic1: "prismatic 1",
     ball1: "ball 1",
   };
   const PRIM_LABELS = {
@@ -68,35 +68,33 @@
       tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
     },
     atlas: {
-      head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["visorW", "visor width", 0.2, 0.6]],
-      torso: [["chestW", "chest width", 0.7, 1.6], ["chestH", "chest height", 0.5, 1.4]],
+      head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["innerR", "inner ring radius", 0.06, 0.35]],
+      torso: [["chestW", "chest width", 0.7, 1.6], ["chestH", "chest height", 0.5, 1.4], ["chestD", "chest depth", 0.4, 1.0]],
       pelvis: [["hipW", "disc width", 0.5, 1.3], ["hipH", "dome radius", 0.15, 0.5]],
       upperArm: [["len", "length", 0.2, 0.9], ["w", "width", 0.15, 0.5]],
       forearm: [["len", "length", 0.2, 0.9], ["w", "width", 0.12, 0.45]],
       wrist: [],
-      palm: [["cube", "cube size", 0.25, 0.7]],
-      finger: [["digitLen", "digit length", 0.1, 0.35], ["w", "width", 0.05, 0.16], ["curl", "curl", 0, 60, 1]],
+      palm: [["w", "width", 0.15, 0.5], ["h", "height", 0.15, 0.5], ["d", "depth", 0.12, 0.45]],
+      finger: [["digitLen", "digit length", 0.1, 0.4], ["w", "width", 0.05, 0.2], ["curl", "curl", 0, 60, 1]],
       thigh: [["len", "length", 0.3, 1.1], ["w", "width", 0.2, 0.6]],
       shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
       foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5]],
-      heel: [["w", "width", 0.15, 0.5], ["h", "height", 0.08, 0.35]],
+      heel: [["w", "width", 0.15, 0.5], ["h", "height", 0.08, 0.35], ["d", "base depth", 0.08, 0.4], ["capD", "taper depth", 0.06, 0.35]],
     },
     joints: {
-      hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-      hinge3: [["tongueT", "tongue thickness", 0.1, 0.5], ["armT", "arm thickness", 0.06, 0.3], ["armLen", "arm length", 0.2, 1.0], ["barrelR", "barrel radius", 0.15, 0.6], ["barrelLen", "barrel length", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-      hinge4: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+      hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["pinOut", "pin overhang", 0, 0.2], ["baseH", "base height", 0.08, 0.5], ["clr", "arm clearance", 0.004, 0.08], ["solid", "solid male", 0, 1, 1], ["discF", "female disc base", 0, 1, 1], ["discM", "male disc base", 0, 1, 1]],
+      hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["pinOut", "pin overhang", 0, 0.2], ["baseH", "base height", 0.08, 0.5], ["clr", "arm clearance", 0.004, 0.08], ["solid", "solid male", 0, 1, 1], ["discF", "top disc base", 0, 1, 1], ["discMid", "middle disc base", 0, 1, 1], ["discM", "bottom disc base", 0, 1, 1]],
       pivot1: [["barrelR", "barrel radius", 0.12, 0.6], ["barrelLen", "barrel length", 0.3, 1.8], ["flangeR", "flange radius", 0.2, 0.9], ["neckR", "neck radius", 0.08, 0.4], ["neckLen", "neck length", 0.05, 0.5], ["capR", "cap radius", 0.12, 0.6]],
-      hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-      ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6]],
+      prismatic1: [["coverW", "cover width", 0.2, 1.0], ["coverLen", "cover length", 0.3, 1.5], ["coverD", "cover depth", 0.2, 1.0], ["shaftW", "shaft width", 0.1, 0.7], ["shaftLen", "shaft length", 0.2, 1.5]],
+      ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6], ["disc", "disc base", 0, 1, 1]],
     },
   };
   // [key, label, min, max] runtime rotation sliders per joint (degrees)
   const POSE_CTL = {
-    hinge1: [["swing", "swing", -90, 90], ["twistF", "twist female", -180, 180], ["twistM", "twist male", -180, 180]],
-    hinge2: [["swing", "swing", -90, 90]],
-    hinge3: [["swing", "swing", -90, 90], ["spinF", "spin mount 1", -180, 180], ["spinM", "spin mount 2", -180, 180]],
-    hinge4: [["rx", "rotate x", -90, 90], ["rz", "rotate z", -90, 90]],
+    hinge1: [["swing", "swing", -90, 90]],
+    hinge2: [["rx", "rotate x", -90, 90], ["rz", "rotate z", -90, 90]],
     pivot1: [["spinA", "spin top", -180, 180], ["spinB", "spin bottom", -180, 180]],
+    prismatic1: [["slideA", "slide top", 0, 0.5, 0.01], ["slideB", "slide bottom", 0, 0.5, 0.01]],
     ball1: [["rx", "rotate x", -50, 50], ["ry", "rotate y", -180, 180], ["rz", "rotate z", -50, 50]],
   };
   // dragon rig runtime controls — offset slides the body along the loop curve
@@ -118,6 +116,7 @@
     ["elbow", "elbow bend", 0, 90, 1],
     ["wristBend", "wrist bend", -60, 60, 1],
     ["wristTilt", "wrist tilt", -60, 60, 1],
+    ["wristTwist", "wrist twist", -90, 90, 1],
     ["curl", "finger curl", 0, 60, 1],
     ["hip", "leg swing", -45, 45, 1],
     ["knee", "knee bend", 0, 60, 1],
@@ -281,18 +280,25 @@
       <fieldset>
         <legend>params<button type="button" onclick={() => resetPart(kit, pn)}>reset</button></legend>
         {#each PART_CTL[kit][pn] as [key, label, min, max, step]}
-          <label><span>{label}</span>
-            <input type="range" {min} {max} step={step ?? 0.01} value={jparams[kit][pn][key]}
-              oninput={(e) => (jparams[kit][pn][key] = +e.currentTarget.value)} />
-            <output>{jparams[kit][pn][key].toFixed(step ? 0 : 2)}</output></label>
+          {#if min === 0 && max === 1 && step === 1}
+            <!-- 0/1 flag param -> checkbox (e.g. hinge1 solid male / disc cap) -->
+            <label><input type="checkbox" checked={!!jparams[kit][pn][key]}
+              onchange={(e) => (jparams[kit][pn][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={jparams[kit][pn][key]}
+                oninput={(e) => (jparams[kit][pn][key] = +e.currentTarget.value)} />
+              <output>{jparams[kit][pn][key].toFixed(step ? 0 : 2)}</output></label>
+          {/if}
         {/each}
-        {#if kit === "joints"}
+        {#if kit === "joints" && POSE_CTL[pn].length}
             <hr/>
-            {#each POSE_CTL[pn] as [key, label, min, max]}
+            <!-- rotations step by a degree; prismatic slides are distances -->
+            {#each POSE_CTL[pn] as [key, label, min, max, step = 1]}
               <label><span>{label}</span>
-                <input type="range" {min} {max} step="1" value={jpose[pn][key]}
+                <input type="range" {min} {max} {step} value={jpose[pn][key]}
                   oninput={(e) => (jpose[pn][key] = +e.currentTarget.value)} />
-                <output>{jpose[pn][key].toFixed(0)}</output></label>
+                <output>{jpose[pn][key].toFixed(step < 1 ? 2 : 0)}</output></label>
             {/each}
         {/if}
       </fieldset>

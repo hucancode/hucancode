@@ -35,6 +35,7 @@ export const INSTANCED_PROGRAM = {
     { name: "uViewPos", type: "vec3" },
     { name: "uOpacity", type: "f32" },
   ],
+  cull: "back",
 };
 
 // write one item's 28 floats at offset o
@@ -49,42 +50,69 @@ function packInstance(data, o, it) {
   data[o + 24] = c[0]; data[o + 25] = c[1]; data[o + 26] = c[2]; data[o + 27] = it.a ?? 1;
 }
 
+// sign of det(m): a mirrored instance (negative determinant) flips triangle
+// winding in screen space, so back-face culling must cull the OTHER side
+function mirrored(m) {
+  return m[0] * (m[4] * m[8] - m[5] * m[7])
+       - m[1] * (m[3] * m[8] - m[5] * m[6])
+       + m[2] * (m[3] * m[7] - m[4] * m[6]) < 0;
+}
+
 // Instanced drawer: groups items by unit-mesh key, ONE instanced draw per
 // key. Vertex buffers are created once per key (unit meshes are immutable);
 // the per-instance buffer is a capacity-grown dynamic buffer rewritten every
-// draw.
+// draw. Mirrored items (negative-determinant matrix) go in a sibling group
+// drawn with the opposite cull face — they need their own instance buffer
+// because all buffer writes land before the frame's single submit.
 export function createInstancedDrawer(device) {
-  const groups = new Map(); // mesh key -> { pos, norm, inst, count, cap, data }
-  const lists = new Map();  // per-draw grouping scratch (key -> items)
+  const meshBufs = new Map(); // mesh key -> { pos, norm, count }
+  const groups = new Map();   // list key (mesh key | mesh key + "\0m") -> { inst, cap, data }
+  const lists = new Map();    // per-draw grouping scratch (list key -> items)
+  let flipShader = null;      // opposite-cull variant for mirrored groups
+
+  function shaderFor(shader, flip) {
+    if (!flip) return shader;
+    const cull = shader.desc.cull;
+    if (cull !== "back" && cull !== "front") return shader;
+    if (!flipShader)
+      flipShader = device.shader({ ...shader.desc, cull: cull === "back" ? "front" : "back" });
+    return flipShader;
+  }
 
   function draw(p, shader, items, meshes, uniforms) {
     for (const list of lists.values()) list.length = 0;
     for (const it of items) {
-      let list = lists.get(it.key);
-      if (!list) lists.set(it.key, (list = []));
+      const lk = mirrored(it.m) ? it.key + "\0m" : it.key;
+      let list = lists.get(lk);
+      if (!list) lists.set(lk, (list = []));
       list.push(it);
     }
-    for (const [key, list] of lists) {
+    for (const [lk, list] of lists) {
       if (list.length === 0) continue;
-      let g = groups.get(key);
-      if (!g) {
+      const flip = lk.endsWith("\0m");
+      const key = flip ? lk.slice(0, -2) : lk;
+      let mb = meshBufs.get(key);
+      if (!mb) {
         const mesh = meshes?.[key];
         if (!mesh) continue;
-        g = {
+        mb = {
           pos: device.buffer({ kind: "vertex", data: mesh.positions }),
           norm: device.buffer({ kind: "vertex", data: mesh.normals }),
-          inst: device.buffer({ kind: "vertex", size: 0, dynamic: true }),
           count: mesh.positions.length / 3,
-          cap: 0, data: null,
         };
-        groups.set(key, g);
+        meshBufs.set(key, mb);
+      }
+      let g = groups.get(lk);
+      if (!g) {
+        g = { inst: device.buffer({ kind: "vertex", size: 0, dynamic: true }), cap: 0, data: null };
+        groups.set(lk, g);
       }
       if (g.cap < list.length) { g.cap = list.length; g.data = new Float32Array(g.cap * INST_FLOATS); }
       for (let i = 0; i < list.length; i++) packInstance(g.data, i * INST_FLOATS, list[i]);
       g.inst.write(g.data.subarray(0, list.length * INST_FLOATS));
-      p.draw(shader, {
-        buffers: [g.pos, g.norm, g.inst],
-        count: g.count,
+      p.draw(shaderFor(shader, flip), {
+        buffers: [mb.pos, mb.norm, g.inst],
+        count: mb.count,
         instances: list.length,
         uniforms,
       });
@@ -92,7 +120,9 @@ export function createInstancedDrawer(device) {
   }
 
   function destroy() {
-    for (const g of groups.values()) { g.pos.destroy(); g.norm.destroy(); g.inst.destroy(); }
+    for (const mb of meshBufs.values()) { mb.pos.destroy(); mb.norm.destroy(); }
+    for (const g of groups.values()) g.inst.destroy();
+    meshBufs.clear();
     groups.clear();
     lists.clear();
   }

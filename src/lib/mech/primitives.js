@@ -168,11 +168,11 @@ function cylBody(r, h, seg, a0, a1, caps = true) {
     const p00 = [r * c0, 0, r * s0], p01 = [r * c1, 0, r * s1];
     const p10 = [r * c0, h, r * s0], p11 = [r * c1, h, r * s1];
     const n0 = [c0, 0, s0], n1 = [c1, 0, s1];
-    triS(g, p00, p01, p11, n0, n1, n1);
-    triS(g, p00, p11, p10, n0, n1, n0);
+    triS(g, p00, p11, p01, n0, n1, n1);
+    triS(g, p00, p10, p11, n0, n0, n1);
     if (caps) {
-      tri(g, [0, h, 0], p10, p11, [0, 1, 0]);          // top fan
-      tri(g, [0, 0, 0], p01, p00, [0, -1, 0]);         // bottom fan
+      tri(g, [0, h, 0], p11, p10, [0, 1, 0]);          // top fan
+      tri(g, [0, 0, 0], p00, p01, [0, -1, 0]);         // bottom fan
     }
   }
   return g;
@@ -191,13 +191,13 @@ function genConeCut(q, seg) {
     const p00 = [c0, 0, s0], p01 = [c1, 0, s1];
     if (q > 1e-6) {
       const p10 = [q * c0, 1, q * s0], p11 = [q * c1, 1, q * s1];
-      triS(g, p00, p01, p11, n0, n1, n1);
-      triS(g, p00, p11, p10, n0, n1, n0);
-      tri(g, [0, 1, 0], p10, p11, [0, 1, 0]);            // top cap
+      triS(g, p00, p11, p01, n0, n1, n1);
+      triS(g, p00, p10, p11, n0, n0, n1);
+      tri(g, [0, 1, 0], p11, p10, [0, 1, 0]);            // top cap
     } else {
-      triS(g, p00, p01, [0, 1, 0], n0, n1, nrm((c0 + c1) / 2, (s0 + s1) / 2));
+      triS(g, p00, [0, 1, 0], p01, n0, nrm((c0 + c1) / 2, (s0 + s1) / 2), n1);
     }
-    tri(g, [0, 0, 0], p01, p00, [0, -1, 0]);             // base cap
+    tri(g, [0, 0, 0], p00, p01, [0, -1, 0]);             // base cap
   }
   return g;
 }
@@ -215,14 +215,14 @@ function genLathe(seg, rings, phiMax, base) {
     for (let i = 0; i < seg; i++) {
       const n00 = pt(i / seg, j / rings), n01 = pt((i + 1) / seg, j / rings);
       const n10 = pt(i / seg, (j + 1) / rings), n11 = pt((i + 1) / seg, (j + 1) / rings);
-      triS(g, n00, n10, n11, n00, n10, n11);
-      triS(g, n00, n11, n01, n00, n11, n01);
+      triS(g, n00, n11, n10, n00, n11, n10);
+      triS(g, n00, n01, n11, n00, n01, n11);
     }
   }
   if (base)
     for (let i = 0; i < seg; i++) {         // base disc, facing down
       const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
-      tri(g, [0, 0, 0], [Math.cos(t1), 0, Math.sin(t1)], [Math.cos(t0), 0, Math.sin(t0)], [0, -1, 0]);
+      tri(g, [0, 0, 0], [Math.cos(t0), 0, Math.sin(t0)], [Math.cos(t1), 0, Math.sin(t1)], [0, -1, 0]);
     }
   return g;
 }
@@ -243,8 +243,13 @@ function genCutHemisphere(t, cut, seg, rings) {
         const n00 = pt(u0, a), n01 = pt(u1, a), n10 = pt(u0, b), n11 = pt(u1, b);
         const s = (n) => [n[0] * rad, n[1] * rad, n[2] * rad];
         const f = (n) => (out ? n : [-n[0], -n[1], -n[2]]);
-        triS(g, s(n00), s(n10), s(n11), f(n00), f(n10), f(n11));
-        triS(g, s(n00), s(n11), s(n01), f(n00), f(n11), f(n01));
+        if (out) { // outer shell: front faces point outward
+          triS(g, s(n00), s(n11), s(n10), f(n00), f(n11), f(n10));
+          triS(g, s(n00), s(n01), s(n11), f(n00), f(n01), f(n11));
+        } else {   // cavity: front faces point into the bowl
+          triS(g, s(n00), s(n10), s(n11), f(n00), f(n10), f(n11));
+          triS(g, s(n00), s(n11), s(n01), f(n00), f(n11), f(n01));
+        }
       }
     }
   };
@@ -267,7 +272,7 @@ function genCutHemisphere(t, cut, seg, rings) {
 //   flat=false omits the closing rectangle (for the arch-box variant).
 function genHalfCylinder(seg, flat) {
   const g = cylBody(1, 1, seg, 0, Math.PI);
-  if (flat) quad(g, [1, 0, 0], [1, 1, 0], [-1, 1, 0], [-1, 0, 0], [0, 0, -1]);
+  if (flat) quad(g, [-1, 0, 0], [-1, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1]);
   return g;
 }
 
@@ -332,8 +337,11 @@ function genGear(To, Ti) {
     const ex = p1[0] - p0[0], ez = p1[1] - p0[1], l = Math.hypot(ex, ez);
     if (l < 1e-9) return;
     const f = out ? 1 : -1;
-    quad(g, [p0[0], 0, p0[1]], [p1[0], 0, p1[1]], [p1[0], 1, p1[1]], [p0[0], 1, p0[1]],
-      [(f * ez) / l, 0, (-f * ex) / l]);
+    const n = [(f * ez) / l, 0, (-f * ex) / l];
+    const b0 = [p0[0], 0, p0[1]], b1 = [p1[0], 0, p1[1]];
+    const t0 = [p0[0], 1, p0[1]], t1 = [p1[0], 1, p1[1]];
+    if (out) quad(g, b0, t0, t1, b1, n);
+    else quad(g, b0, b1, t1, t0, n);
   };
   const P = (r, a) => [r * Math.cos(a), r * Math.sin(a)];
   for (let j = 0; j < ang.length; j++) {

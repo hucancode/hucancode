@@ -30,6 +30,7 @@ const BLEND = {
   straight: { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
 };
 const TOPO = { tri: "triangle-list", "tri-strip": "triangle-strip", "line-strip": "line-strip", point: "point-list" };
+const CULL = { back: "back", front: "front" }; // desc.cull; CCW = front face
 const align = (n, a) => Math.ceil(n / a) * a;
 
 // clip-space z remap: camera projection is GL convention (z in [-1, 1]); WebGPU
@@ -105,7 +106,7 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
       layout: "auto",
       vertex: { module: mod, entryPoint: "vs", buffers: vbuffers },
       fragment: { module: mod, entryPoint: "fs", targets: [{ format, blend: desc.blend ? BLEND[desc.blend] : undefined }] },
-      primitive: { topology: TOPO[desc.topology || "tri"], cullMode: "none" },
+      primitive: { topology: TOPO[desc.topology || "tri"], frontFace: "ccw", cullMode: CULL[desc.cull] || "none" },
       multisample: { count: msaa ? 4 : 1 },
     };
     if (desc.depth) pdesc.depthStencil = { format: "depth24plus", depthWriteEnabled: desc.depth === "test", depthCompare: desc.depth === "test" ? "less-equal" : "always" };
