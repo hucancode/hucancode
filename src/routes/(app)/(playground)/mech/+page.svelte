@@ -45,8 +45,8 @@
     upperArm: "upper arm",
     hinge1: "hinge 1",
     hinge2: "hinge 2",
-    hinge3: "hinge 3",
     pivot1: "pivot 1",
+    prismatic1: "prismatic 1",
     ball1: "ball 1",
   };
   const PRIM_LABELS = {
@@ -82,21 +82,19 @@
       heel: [["w", "width", 0.15, 0.5], ["h", "height", 0.08, 0.35]],
     },
     joints: {
-      hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-      hinge3: [["tongueT", "tongue thickness", 0.1, 0.5], ["armT", "arm thickness", 0.06, 0.3], ["armLen", "arm length", 0.2, 1.0], ["barrelR", "barrel radius", 0.15, 0.6], ["barrelLen", "barrel length", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-      hinge4: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
+      hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["baseH", "base height", 0.08, 0.5], ["solid", "solid male", 0, 1, 1], ["discF", "female disc base", 0, 1, 1], ["discM", "male disc base", 0, 1, 1]],
+      hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["baseH", "base height", 0.08, 0.5], ["solid", "solid male", 0, 1, 1], ["discF", "top disc base", 0, 1, 1], ["discMid", "middle disc base", 0, 1, 1], ["discM", "bottom disc base", 0, 1, 1]],
       pivot1: [["barrelR", "barrel radius", 0.12, 0.6], ["barrelLen", "barrel length", 0.3, 1.8], ["flangeR", "flange radius", 0.2, 0.9], ["neckR", "neck radius", 0.08, 0.4], ["neckLen", "neck length", 0.05, 0.5], ["capR", "cap radius", 0.12, 0.6]],
-      hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24]],
-      ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6]],
+      prismatic1: [["coverW", "cover width", 0.2, 1.0], ["coverLen", "cover length", 0.3, 1.5], ["coverD", "cover depth", 0.2, 1.0], ["shaftW", "shaft width", 0.1, 0.7], ["shaftLen", "shaft length", 0.2, 1.5]],
+      ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6], ["disc", "disc base", 0, 1, 1]],
     },
   };
   // [key, label, min, max] runtime rotation sliders per joint (degrees)
   const POSE_CTL = {
-    hinge1: [["swing", "swing", -90, 90], ["twistF", "twist female", -180, 180], ["twistM", "twist male", -180, 180]],
-    hinge2: [["swing", "swing", -90, 90]],
-    hinge3: [["swing", "swing", -90, 90], ["spinF", "spin mount 1", -180, 180], ["spinM", "spin mount 2", -180, 180]],
-    hinge4: [["rx", "rotate x", -90, 90], ["rz", "rotate z", -90, 90]],
+    hinge1: [["swing", "swing", -90, 90]],
+    hinge2: [["rx", "rotate x", -90, 90], ["rz", "rotate z", -90, 90]],
     pivot1: [["spinA", "spin top", -180, 180], ["spinB", "spin bottom", -180, 180]],
+    prismatic1: [["slideA", "slide top", 0, 0.5, 0.01], ["slideB", "slide bottom", 0, 0.5, 0.01]],
     ball1: [["rx", "rotate x", -50, 50], ["ry", "rotate y", -180, 180], ["rz", "rotate z", -50, 50]],
   };
   // dragon rig runtime controls — offset slides the body along the loop curve
@@ -281,18 +279,25 @@
       <fieldset>
         <legend>params<button type="button" onclick={() => resetPart(kit, pn)}>reset</button></legend>
         {#each PART_CTL[kit][pn] as [key, label, min, max, step]}
-          <label><span>{label}</span>
-            <input type="range" {min} {max} step={step ?? 0.01} value={jparams[kit][pn][key]}
-              oninput={(e) => (jparams[kit][pn][key] = +e.currentTarget.value)} />
-            <output>{jparams[kit][pn][key].toFixed(step ? 0 : 2)}</output></label>
+          {#if min === 0 && max === 1 && step === 1}
+            <!-- 0/1 flag param -> checkbox (e.g. hinge1 solid male / disc cap) -->
+            <label><input type="checkbox" checked={!!jparams[kit][pn][key]}
+              onchange={(e) => (jparams[kit][pn][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={jparams[kit][pn][key]}
+                oninput={(e) => (jparams[kit][pn][key] = +e.currentTarget.value)} />
+              <output>{jparams[kit][pn][key].toFixed(step ? 0 : 2)}</output></label>
+          {/if}
         {/each}
-        {#if kit === "joints"}
+        {#if kit === "joints" && POSE_CTL[pn].length}
             <hr/>
-            {#each POSE_CTL[pn] as [key, label, min, max]}
+            <!-- rotations step by a degree; prismatic slides are distances -->
+            {#each POSE_CTL[pn] as [key, label, min, max, step = 1]}
               <label><span>{label}</span>
-                <input type="range" {min} {max} step="1" value={jpose[pn][key]}
+                <input type="range" {min} {max} {step} value={jpose[pn][key]}
                   oninput={(e) => (jpose[pn][key] = +e.currentTarget.value)} />
-                <output>{jpose[pn][key].toFixed(0)}</output></label>
+                <output>{jpose[pn][key].toFixed(step < 1 ? 2 : 0)}</output></label>
             {/each}
         {/if}
       </fieldset>

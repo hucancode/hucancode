@@ -9,7 +9,7 @@
 // Skeleton rules (the whole point of the rig):
 //   - a bone is ONE rotation about ONE axis. Only joints rotate, so every
 //     bone sits on a joint DOF: a ball joint = 3 chained bones (x, y, z),
-//     a hinge3 = 3 bones (spinF, swing, spinM), a hinge = 1 bone.
+//     an L-seated hinge1 = 3 bones (spinF, swing, spinM), a hinge = 1 bone.
 //   - every primitive rides exactly one bone: spine bones place whole
 //     segments rigidly (the ball absorbs the relative rotation inside the
 //     socket), limb/jaw bones feed the parts' runtime pose channels, which
@@ -92,7 +92,7 @@ function createSkeleton() {
   };
 }
 
-// a full 3-DOF joint (ball / hinge3) = 3 chained bones, x -> y -> z; the rest
+// a full 3-DOF joint (ball / shoulder) = 3 chained bones, x -> y -> z; the rest
 // (slot-match) rotation rides the first bone
 function addBall(sk, name, parent, offset = [0, 0, 0], rest = null) {
   const x = sk.add(`${name}.x`, parent, offset, "x", rest);
@@ -418,13 +418,13 @@ export const ATLAS_POSE = {
 // `curl` marks the finger links whose part rebuilds with the internal-digit
 // pose channel fed from the knuckle bone.
 const atlasSide = (S, sgn) => [
-  // the right arm seats with a rotY(pi) rest (the hinge3 shoulder disc must
+  // the right arm seats with a rotY(pi) rest (the shoulder hinge1 disc must
   // face the chest), which flips the LOCAL x/z senses — hence per-side signs
   { name: `arm${S}`, part: "upperArm", parent: "torso", at: `shoulder${S}`, slot: "mount",
     angles: { x: ["shoulder", -sgn], z: ["armOut", -1] } },
   { name: `fore${S}`, part: "forearm", parent: `arm${S}`, at: "elbow", slot: "mount",
     angles: { x: ["elbow", -sgn] } },
-  // hinge4 wrist: bend rides the wrist link's X pin, tilt the palm's Z pin
+  // hinge2 wrist: bend rides the wrist link's X pin, tilt the palm's Z pin
   { name: `wrist${S}`, part: "wrist", parent: `fore${S}`, at: "wrist", slot: "mount",
     angles: { x: ["wristBend", -sgn] } },
   { name: `palm${S}`, part: "palm", parent: `wrist${S}`, at: "out", slot: "mount",
