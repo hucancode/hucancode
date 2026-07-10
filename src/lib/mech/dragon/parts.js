@@ -6,7 +6,7 @@
 // rotates is real geometry, not a pivot in the air.
 import {
   box, cylinder, cone, coneCut, sphere, halfCylinder, halfCylinderBox,
-  boxCylinder, quarterCylinder, rotX, rotY, rotZ, translate,
+  quarterCylinder, rotX, rotY, rotZ, translate,
 } from "../primitives.js";
 import { rad } from "../../math/scalar.js";
 import { HPI, jointMounts, ballBlock, hingeBlock, hinge1Block } from "../joints.js";
@@ -186,9 +186,14 @@ function head(add, p, pose = {}) {
     rotX(g, -HPI); rotY(g, HPI);
     add(translate(g, 0.045, 0.92, -0.5));
   }
-  // neck mount: box + cylinder boss pointing out the back (-Z); the mating
-  // ball center (the neck slot) sits 0.1 behind the boss seat
-  add(translate(rotX(boxCylinder(0.5, 0.16, 0.5, 1.75, "in", 20), -HPI), HEAD_NECK[0], HEAD_NECK[1], HEAD_NECK[2] + 0.1));
+  // neck mount: seat plate + cylinder boss pointing out the back (-Z); the
+  // mating ball center (the neck slot) sits 0.1 behind the boss seat
+  {
+    const [nx, ny, nz] = HEAD_NECK;
+    const sz = nz + 0.1;                                                      // boss seat plane
+    add(translate(rotX(translate(box(0.5, 0.16, 0.5), 0, -0.08, 0), -HPI), nx, ny, sz)); // plate, sunk into the skull
+    add(translate(rotX(cylinder(0.25, 0.28, 20), -HPI), nx, ny, sz));         // boss, standing off the seat
+  }
 }
 
 // chain-part ball joint seating, shared by the body segments and the tail:

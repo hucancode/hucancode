@@ -27,7 +27,7 @@
     box: "box", sphere: "sphere", hemisphere: "hemisphere",
     cutHemisphere: "cut hemisphere",
     halfCylinder: "half cylinder", halfCylinderBox: "arch box",
-    boxCylinder: "stamper", quarterCylinder: "quarter disc",
+    quarterCylinder: "quarter disc",
     gear: "gear",
   };
   // [key, label, min, max, step?] sliders per joint; a 0/1/1 row is a flag
@@ -47,7 +47,7 @@
     prismatic1: [["slideA", "slide top", 0, 0.5, 0.01], ["slideB", "slide bottom", 0, 0.5, 0.01]],
     ball1: [["rx", "rotate x", -50, 50, 1], ["ry", "rotate y", -180, 180, 1], ["rz", "rotate z", -50, 50, 1]],
   };
-  // [key, label, min, max, step?] sliders per primitive; `fit` gets its own toggle
+  // [key, label, min, max, step?] sliders per primitive
   const PRIM_CTL = {
     cylinder: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
     cone: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
@@ -58,7 +58,6 @@
     cutHemisphere: [["r", "radius", 0.15, 1.2], ["t", "wall %", 0.05, 0.5], ["cut", "cut height %", 0.2, 0.9]],
     halfCylinder: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5]],
     halfCylinderBox: [["r", "radius", 0.1, 1.2], ["h", "height", 0.1, 2.5], ["depth", "box depth", 0.05, 1.5]],
-    boxCylinder: [["w", "box width", 0.2, 2.2], ["d", "box depth", 0.2, 2.2], ["boxH", "box height", 0.1, 1.5], ["cylH", "cylinder h %", 0.1, 3]],
     quarterCylinder: [["r", "radius", 0.1, 1.2], ["h", "thickness", 0.05, 1.5]],
     // teeth counts are integers; a side under 3 teeth is flat (0 = plain ring)
     gear: [["r", "radius", 0.1, 1.2], ["h", "thickness", 0.05, 1.5], ["teethOut", "outer teeth", 0, 32, 1], ["teethIn", "inner teeth", 0, 32, 1]],
@@ -90,15 +89,6 @@
   <fieldset>
     <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetPrim}>reset</button></legend>
     <Sliders ctl={PRIM_CTL[selPrim]} values={pparams[selPrim]} />
-    {#if selPrim === "boxCylinder"}
-      <fieldset>
-        <legend>cylinder fit</legend>
-        <div role="group">
-          <label><input type="radio" name="mech-fit" value="in" bind:group={pparams.boxCylinder.fit} />internal</label>
-          <label><input type="radio" name="mech-fit" value="out" bind:group={pparams.boxCylinder.fit} />external</label>
-        </div>
-      </fieldset>
-    {/if}
   </fieldset>
 {:else}
   <fieldset>
