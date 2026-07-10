@@ -1,5 +1,5 @@
 <script>
-  import Nav from "$lib/components/notes/nav.svelte";
+  import Nav from "$lib/components/nav.svelte";
   /**
    * @typedef {Object} Props
    * @property {import('svelte').Snippet} [children]

@@ -1,4 +1,6 @@
 <script>
+  import Nav from "$lib/components/nav.svelte";
+
   const playgrounds = [
     { href: "/dragon", name: "Dragon", thumb: "/assets/thumb/dragon.png" },
     { href: "/rubik", name: "Rubik", thumb: "/assets/thumb/rubik.png" },
@@ -17,7 +19,7 @@
   <title>Playgrounds</title>
 </svelte:head>
 
-<nav><a href="/">Home</a></nav>
+<Nav />
 <main>
   <ul>
     {#each playgrounds as p}
@@ -34,10 +36,6 @@
 </main>
 
 <style>
-  nav {
-    max-width: 1280px;
-    padding: 4rem 1.5rem 0;
-  }
   main {
     max-width: 1280px;
     padding: 1rem 1.5rem 4rem;

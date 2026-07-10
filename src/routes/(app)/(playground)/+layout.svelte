@@ -1,5 +1,5 @@
 <script>
-  import { base } from "$app/paths";
+  import Nav from "$lib/components/nav.svelte";
   import "$styles/playground.css";
 
   /**
@@ -11,7 +11,7 @@
   let { children } = $props();
 </script>
 
-<nav><a href="/playgrounds">Playgrounds</a></nav>
+<Nav current="/playgrounds" />
 <main>
   {@render children?.()}
 </main>
