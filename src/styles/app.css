@@ -99,9 +99,6 @@ nav {
   align-items: center;
   justify-content: space-between;
   padding-inline: 1rem;
-}
-
-nav:has(> :only-child) {
   justify-content: center;
 }
 

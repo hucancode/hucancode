@@ -3,7 +3,7 @@
 // primitives.js and every kit builds out of the same functions.
 import {
   box, cylinder, cone, coneCut, sphere, hemisphere, cutHemisphere, halfCylinder,
-  halfCylinderBox, boxCylinder, quarterCylinder, gear,
+  halfCylinderBox, quarterCylinder, gear,
 } from "./primitives.js";
 import { collect } from "./kit.js";
 
@@ -17,7 +17,6 @@ export const PRIM_PARAMS = {
   cutHemisphere: { r: 0.6, t: 0.25, cut: 0.7 },
   halfCylinder: { r: 0.5, h: 1.2 },
   halfCylinderBox: { r: 0.5, h: 1.2, depth: 0.5 },
-  boxCylinder: { w: 1, boxH: 0.5, d: 1, cylH: 0.8, fit: "in" },
   quarterCylinder: { r: 0.5, h: 0.3 },
   gear: { r: 0.6, h: 0.25, teethOut: 12, teethIn: 0 },
 };
@@ -33,7 +32,6 @@ const PRIM_BUILD = {
   cutHemisphere: (p) => cutHemisphere(p.r, p.t, p.cut),
   halfCylinder: (p) => halfCylinder(p.r, p.h),
   halfCylinderBox: (p) => halfCylinderBox(p.r, p.h, p.depth),
-  boxCylinder: (p) => boxCylinder(p.w, p.boxH, p.d, p.cylH, p.fit),
   quarterCylinder: (p) => quarterCylinder(p.r, p.h),
   gear: (p) => gear(p.r, p.h, p.teethOut, p.teethIn),
 };

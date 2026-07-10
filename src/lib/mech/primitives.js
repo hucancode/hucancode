@@ -12,8 +12,6 @@ import { TAU } from "../math/scalar.js";
 //   cutHemisphere   wall t and cut = FRACTIONS of r; key=(t,cut)
 //   halfCylinderBox (arch box) box depth = FRACTION of r in the key; height
 //                   is a free scale axis — same depth ratio => same mesh
-//   boxCylinder     (stamper) cylinder height = FRACTION of box height;
-//                   key=(cylPct,fit) — w/boxH/d are free scale axes
 //   cylinder/sphere/... key = segment counts only, size is all scale
 //
 // Origin conventions (per the catalog spec):
@@ -25,10 +23,6 @@ import { TAU } from "../math/scalar.js";
 //                   flat face on the XY plane, body spans y 0..h
 //   halfCylinderBox halfCylinder + a box filling the flat (-Z) side; origin =
 //                   center of the circle forming the cylinder
-//   boxCylinder     box with a cylinder standing on its top face; origin =
-//                   center of the cylinder's base circle (= box top center).
-//                   fit "in"  -> cylinder inscribed in the box footprint
-//                   fit "out" -> cylinder circumscribes the box footprint
 
 const q4 = (v) => +(+v).toFixed(4);
 
@@ -114,12 +108,6 @@ function merge(...gs) {
     out.normals.push(...g.normals);
   }
   return out;
-}
-
-function soupTranslate(g, x, y, z) {
-  const p = g.positions;
-  for (let i = 0; i < p.length; i += 3) { p[i] += x; p[i + 1] += y; p[i + 2] += z; }
-  return g;
 }
 
 // unit box (1x1x1, centered). slope = FRACTION of the height dropped at the
@@ -348,15 +336,6 @@ function genGear(To, Ti) {
   return g;
 }
 
-// unit stamper: 1x1x1 box (y -1..0) + cylinder on top, height cp (= FRACTION
-// of the box height). fit "in" -> r=0.5 inscribed, "out" -> r=sqrt(2)/2.
-function genBoxCylinder(cp, fit, seg) {
-  const r = fit === "out" ? Math.SQRT2 / 2 : 0.5;
-  const b = soupTranslate(genBox(0, 0), 0, -0.5, 0);
-  const c = cylBody(r, cp, seg, 0, TAU);
-  return merge(b, c);
-}
-
 // slope = FRACTION of height dropped at the top's front edge (0..1); curve
 // -1 concave .. +1 convex, only acts on the slope.
 export function box(w = 1, h = 1, d = 1, slope = 0, curve = 0) {
@@ -419,11 +398,4 @@ export function gear(r = 0.5, h = 0.2, teethOut = 12, teethIn = 0) {
   const q = (t) => { const n = Math.round(t); return n >= 3 ? n : 0; };
   const To = q(teethOut), Ti = q(teethIn);
   return H(`gear:${To}:${Ti}`, () => genGear(To, Ti), r, h, r);
-}
-
-// stamper — cylH = FRACTION of boxH; w/boxH/d are free scale axes (the
-// cylinder radius follows the footprint, so w != d stretches it with the box)
-export function boxCylinder(w = 1, boxH = 0.5, d = 1, cylH = 0.8, fit = "in", seg = 24) {
-  const cp = q4(Math.max(0.01, cylH));
-  return H(`stamper:${cp}:${fit}:${seg}`, () => genBoxCylinder(cp, fit, seg), w, boxH, d);
 }

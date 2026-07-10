@@ -25,9 +25,11 @@
   const BUILD_SECONDS = 6;
   let seed = $state(1);                    // color shuffle seed
 
-  // HUD
-  let spin = $state(0.3);
-  let light = $state(0.6);
+  let render = $state({ spin: 0.3, light: 0.6 });
+  const RENDER_CTL = [
+    ["spin", "spin", 0, 3, 0.1],
+    ["light", "light angle", 0, 6.28, 0.05],
+  ];
 
   const PART_LABELS = { bodySegment: "body segment", bodySegment2: "body segment 2" };
   // [key, label, min, max, step?] sliders per part
@@ -94,8 +96,8 @@
     const dOff = autoplay ? BUILD_SECONDS / LAP_SECONDS : 0;
     return { ...m, items: assembleModel(m.items, asm, asmRefAt(pose, dOff)) };
   });
-  $effect(() => { scene?.apply({ spin }); });
-  $effect(() => { scene?.apply({ lightAngle: light }); });
+  $effect(() => { scene?.apply({ spin: render.spin }); });
+  $effect(() => { scene?.apply({ lightAngle: render.light }); });
   $effect(() => { scene?.apply({ model }); });
   // fixed per-view distance (no auto-fit): the dragon rides a big loop, single
   // parts and catalog blocks sit close in
@@ -137,20 +139,15 @@
 
   <section>
     <Scene bind:this={scene} scene={mech} id="mech" />
-    <footer>
-      {#if rigShown}
+    {#if rigShown}
+      <footer>
         <div>
           <button type="button" onclick={playAssemble}>▶ Assemble</button>
           <input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={grabAsm} />
           <output>{asm.toFixed(2)}</output>
         </div>
-      {/if}
-      <div>
-        <label><span>Spin</span><input type="range" min="0" max="3" step="0.1" bind:value={spin} /></label>
-        <label><span>Light</span><input type="range" min="0" max="6.28" step="0.05" bind:value={light} /></label>
-        <button type="button" onclick={shuffle}>New Color</button>
-      </div>
-    </footer>
+      </footer>
+    {/if}
   </section>
 
   <aside>
@@ -161,6 +158,12 @@
         <label><input type="radio" name="mech-view" value="blocks" bind:group={view} />blocks</label>
         <label><input type="radio" name="mech-view" value="dragon" bind:group={view} />dragon</label>
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>render</legend>
+      <Sliders ctl={RENDER_CTL} values={render} />
+      <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
     </fieldset>
 
     {#if view === "dragon"}
