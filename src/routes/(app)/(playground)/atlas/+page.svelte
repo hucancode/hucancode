@@ -75,8 +75,8 @@
     .filter(([key]) => !CHOREO_SKIP.has(key))
     .map(([key, , min, max]) => ({ key, min, max, big: ATLAS_POSE_DEPTH[key] <= BIG_DEPTH }));
   // the waist ball's three channels share one joint: let each swing freely and
-  // the torso folds through the pelvis, so cap what they may spend between them
-  const CHOREO_BUDGETS = [{ keys: ["twist", "waistBend", "waistTilt"], limit: 180 }];
+  // the torso folds through the pelvis, so only ever activate one of them
+  const CHOREO_EXCLUSIVE = [["twist", "waistBend", "waistTilt"]];
   // beat timing knobs — the anticipation and rest slices bracket the main move,
   // so neither may eat the whole period
   const CHOREO_CTL = [
@@ -139,7 +139,7 @@
     // a timing edit restarts the beat — the tracks it planned are cut to the
     // old period, so there is nothing to carry over
     const cho = createChoreographer(CHOREO_SLIDERS, {
-      home: ATLAS_POSE, montages: ATLAS_MONTAGES, budgets: CHOREO_BUDGETS, seed,
+      home: ATLAS_POSE, montages: ATLAS_MONTAGES, exclusives: CHOREO_EXCLUSIVE, seed,
       ...$state.snapshot(ctiming),
     });
     const stop = driveRaf((dt) => cho.step(dt, arig));
