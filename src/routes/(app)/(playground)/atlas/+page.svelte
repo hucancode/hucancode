@@ -33,7 +33,7 @@
     ["light", "light angle", 0, 6.28, 0.05],
   ];
 
-  const PART_LABELS = { upperArm: "upper arm", armWave: "arm wave", frontWave: "front wave", reverseWave: "reverse wave" };
+  const PART_LABELS = { upperArm: "upper arm", armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
   // [key, label, min, max, step?] sliders per part
   const PART_CTL = {
     head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["innerR", "inner ring radius", 0.06, 0.35]],

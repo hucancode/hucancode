@@ -46,13 +46,13 @@ const REST = {
 // shoulder for the front one), `level` = where it holds, `n` = its raise.
 const WAVE = (lead, level, n) => [
   // shoulder up n -> elbow down 2n, wrist up n
-  { hold: 0.35, pose: { [lead]: level + n, elbow: -2 * n, wristBend: n } },
+  { hold: 0.15, pose: { [lead]: level + n, elbow: -2 * n, wristBend: n } },
   // shoulder home, elbow up n -> wrist down 2n, fingers up n
-  { hold: 0.30, pose: { [lead]: level, elbow: n, wristBend: -2 * n } },
+  { hold: 0.12, pose: { [lead]: level, elbow: n, wristBend: -2 * n } },
   // elbow home, wrist up n -> fingers down 2n
-  { hold: 0.30, pose: { elbow: 0, wristBend: n } },
-  { hold: 0.30, pose: { wristBend: 0, curl: -n } },   // wrist home, fingers up
-  { hold: 0.35, pose: { curl: 0 } },                  // fingers home
+  { hold: 0.12, pose: { elbow: 0, wristBend: n } },
+  { hold: 0.12, pose: { wristBend: 0, curl: -n } },   // wrist home, fingers up
+  { hold: 0.15, pose: { curl: 0 } },                  // fingers home
 ];
 
 // The arm ripple run BACKWARDS — and this is NOT the forward key list reversed.
@@ -70,14 +70,14 @@ const WAVE = (lead, level, n) => [
 // curl closes the hand, i.e. bends it the way a negative wrist bend does — so
 // every compensation that lands on the fingers comes through with its sign
 // flipped.
-const REV_WAVE = (lead, level, n) => [
-  { hold: 0.30, pose: { curl: n } },                              // fingers lead: nothing below them
-  { hold: 0.30, pose: { wristBend: n, curl: -2 * n } },             // wrist swings, fingers fold under it
-  { hold: 0.30, pose: { elbow: n, wristBend: -2 * n, curl: n } }, // elbow swings, wrist + fingers under it
+const VERT_WAVE = (lead, level, n) => [
+  { hold: 0.12, pose: { curl: n } },                              // fingers lead: nothing below them
+  { hold: 0.12, pose: { wristBend: n, curl: -2 * n } },             // wrist swings, fingers fold under it
+  { hold: 0.12, pose: { elbow: n, wristBend: -2 * n, curl: n } }, // elbow swings, wrist + fingers under it
   // shoulder swings, the whole arm under it folds back
-  { hold: 0.30, pose: { [lead]: level - n, elbow: -2 * n, wristBend: n, curl: 0 } },
+  { hold: 0.12, pose: { [lead]: level - n, elbow: -2 * n, wristBend: n, curl: 0 } },
   // the crest is off the top of the chain: everything unwinds to the setup
-  { hold: 0.30, pose: { [lead]: level, elbow: 0, wristBend: 0, curl: 0 } },
+  { hold: 0.12, pose: { [lead]: level, elbow: 0, wristBend: 0, curl: 0 } },
 ];
 
 export const ATLAS_MONTAGES = {
@@ -91,9 +91,9 @@ export const ATLAS_MONTAGES = {
     keys: WAVE("shoulder", 90, 35),
     loops: 3,
   },
-  reverseWave: {
+  verticalWave: {
     setup: { ...REST, armOut: 180, armTwist: 0 },
-    keys: REV_WAVE("shoulder", 0, 20),
+    keys: VERT_WAVE("shoulder", 0, 20),
     loops: 2,
   },
 };
