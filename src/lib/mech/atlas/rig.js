@@ -31,7 +31,7 @@ export const ATLAS_POSE = {
 const REST = {
   armOut: 0, shoulder: 0, armTwist: 0, elbow: 0, foreTwist: 0, wristBend: 0, wristTilt: 0,
   wristTwist: 0, curl: 0, twist: 0, waistBend: 0, waistTilt: 0,
-  headPitch: 0, headYaw: 0,
+  headPitch: 0, headYaw: 0, hip: 0, knee: 0,
 };
 
 // The ripple down an arm, keyframe by keyframe. A joint raising by n swings
@@ -55,25 +55,46 @@ const WAVE = (lead, level, n) => [
   { hold: 0.35, pose: { curl: 0 } },                  // fingers home
 ];
 
+// The arm ripple run BACKWARDS — and this is NOT the forward key list reversed.
+// The bone chain only runs one way: a joint carries everything BELOW it and
+// nothing above it, so a finger can never counter its own wrist. The counters
+// therefore always land on the joints UNDER the one that is swinging, whichever
+// way along the arm the crest happens to be travelling.
+//
+// So the crest starts at the fingers (a leaf — nothing under them to compensate)
+// and climbs. Each key swings the joint the crest has reached by +n while ITS OWN
+// descendants fold -2n / +n back underneath — and that fold is also what releases
+// the joint that just handed the crest up. `lead` = the shoulder channel, parked
+// at `level` by the setup.
+// The finger curl runs the OTHER WAY ROUND from the bend channels — a positive
+// curl closes the hand, i.e. bends it the way a negative wrist bend does — so
+// every compensation that lands on the fingers comes through with its sign
+// flipped.
+const REV_WAVE = (lead, level, n) => [
+  { hold: 0.30, pose: { curl: n } },                              // fingers lead: nothing below them
+  { hold: 0.30, pose: { wristBend: n, curl: -2 * n } },             // wrist swings, fingers fold under it
+  { hold: 0.30, pose: { elbow: n, wristBend: -2 * n, curl: n } }, // elbow swings, wrist + fingers under it
+  // shoulder swings, the whole arm under it folds back
+  { hold: 0.30, pose: { [lead]: level - n, elbow: -2 * n, wristBend: n, curl: 0 } },
+  // the crest is off the top of the chain: everything unwinds to the setup
+  { hold: 0.30, pose: { [lead]: level, elbow: 0, wristBend: 0, curl: 0 } },
+];
+
 export const ATLAS_MONTAGES = {
-  // ARM WAVE. Arms out level with the shoulders and rolled a quarter turn on the
-  // shoulder disc — the roll runs -90, not +90, because on that side of the
-  // turntable a positive elbow / wrist bend LIFTS the hand the same way `armOut`
-  // does, so raise, elbow and wrist all push the wave the same way instead of
-  // each joint undoing the one above it. The keys then run the ripple out of the
-  // shoulder: raise leads, the elbow picks it up, the wrist after that, the
-  // fingers last, and each joint unwinds as the next one takes over.
   armWave: {
     setup: { ...REST, armOut: 90, armTwist: -90 },
     keys: WAVE("armOut", 90, 35),
-    loops: 4,
+    loops: 3,
   },
-  // FRONT WAVE. Arms held out front (no roll: the elbow already bends in the
-  // vertical plane there), the same ripple travelling away from the chest.
   frontWave: {
     setup: { ...REST, shoulder: 90 },
     keys: WAVE("shoulder", 90, 35),
-    loops: 4,
+    loops: 3,
+  },
+  reverseWave: {
+    setup: { ...REST, armOut: 180, armTwist: 0 },
+    keys: REV_WAVE("shoulder", 0, 20),
+    loops: 2,
   },
 };
 
