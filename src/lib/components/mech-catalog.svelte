@@ -5,22 +5,25 @@
   // own rig tab. `view` picks which panel shows; `model` and `sel` bind back
   // out so the page can frame the scene.
   import Sliders from "./mech-sliders.svelte";
-  import { JOINT_KIT, JOINT_POSE } from "$lib/mech/joints.js";
-  import { primitiveModel, PRIM_PARAMS, PRIM_NAMES } from "$lib/mech/blocks.js";
+  import {
+    JOINT_NAMES, JOINT_PARAMS, JOINT_POSE, jointCatalogModel,
+  } from "$lib/mech/joint-catalog.js";
+  import { primitiveModel, PRIM_PARAMS, PRIM_NAMES } from "$lib/mech/primitives-catalog.js";
 
   let { view, seed = 1, model = $bindable(null), sel = $bindable("") } = $props();
 
-  const JOINTS = JOINT_KIT.names;
+  const JOINTS = JOINT_NAMES;
 
   let selJoint = $state(JOINTS[0]);
   let selPrim = $state(PRIM_NAMES[0]);
-  let jparams = $state(structuredClone(JOINT_KIT.params));
-  let jpose = $state(structuredClone(JOINT_POSE));      // runtime joint rotations, degrees
+  let jparams = $state(structuredClone(JOINT_PARAMS));
+  let jpose = $state(structuredClone(JOINT_POSE));      // DOF channels, degrees
   let pparams = $state(structuredClone(PRIM_PARAMS));
 
   const JOINT_LABELS = {
-    hinge1: "hinge 1", hinge2: "hinge 2", pivot1: "pivot 1",
-    prismatic1: "prismatic 1", ball1: "ball 1",
+    hinge: "hinge", hingeTwist: "hinge + twist", discHinge: "disc hinge",
+    wrist: "wrist (2 pins + twist)",
+    pin: "bare pin", ball: "ball", pivot: "pivot", prismatic: "prismatic",
   };
   const PRIM_LABELS = {
     cylinder: "cylinder", cone: "cone", coneCut: "cut cone",
@@ -31,21 +34,28 @@
     gear: "gear",
   };
   // [key, label, min, max, step?] sliders per joint; a 0/1/1 row is a flag
+  const CLEVIS = [["jaw", "clevis jaw", 0.1, 0.6], ["lugT", "lug thickness", 0.05, 0.3], ["lugL", "lug length", 0.3, 1.2], ["lugD", "lug depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["pinOut", "pin overhang", 0, 0.2], ["flangeT", "flange thickness", 0.08, 0.5], ["clr", "lug clearance", 0.004, 0.08]];
   const JOINT_CTL = {
-    hinge1: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["pinOut", "pin overhang", 0, 0.2], ["baseH", "base height", 0.08, 0.5], ["clr", "arm clearance", 0.004, 0.08], ["solid", "solid male", 0, 1, 1], ["discF", "female disc base", 0, 1, 1], ["discM", "male disc base", 0, 1, 1]],
-    hinge2: [["gap", "arm gap", 0.1, 0.6], ["armT", "arm thickness", 0.05, 0.3], ["armH", "arm length", 0.3, 1.2], ["depth", "depth", 0.2, 1.2], ["pinR", "pin radius", 0.06, 0.24], ["pinOut", "pin overhang", 0, 0.2], ["baseH", "base height", 0.08, 0.5], ["clr", "arm clearance", 0.004, 0.08], ["solid", "solid male", 0, 1, 1], ["discF", "top disc base", 0, 1, 1], ["discMid", "middle disc base", 0, 1, 1], ["discM", "bottom disc base", 0, 1, 1]],
-    pivot1: [["barrelR", "barrel radius", 0.12, 0.6], ["barrelLen", "barrel length", 0.3, 1.8], ["flangeR", "flange radius", 0.2, 0.9], ["neckR", "neck radius", 0.08, 0.4], ["neckLen", "neck length", 0.05, 0.5], ["capR", "cap radius", 0.12, 0.6]],
-    prismatic1: [["coverW", "cover width", 0.2, 1.0], ["coverLen", "cover length", 0.3, 1.5], ["coverD", "cover depth", 0.2, 1.0], ["shaftW", "shaft width", 0.1, 0.7], ["shaftLen", "shaft length", 0.2, 1.5]],
-    ball1: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket cut", 0.4, 0.9], ["shaftR", "shaft radius", 0.05, 0.25], ["shaftLen", "shaft length", 0.1, 0.9], ["baseW", "base width", 0.4, 1.6], ["disc", "disc base", 0, 1, 1]],
+    hinge: [...CLEVIS, ["tang", "solid tang", 0, 1, 1], ["discF", "female disc base", 0, 1, 1], ["discM", "male disc base", 0, 1, 1]],
+    hingeTwist: [...CLEVIS, ["tang", "solid tang", 0, 1, 1], ["discF", "female disc base", 0, 1, 1]],
+    discHinge: CLEVIS,
+    wrist: [...CLEVIS, ["tang", "solid tang", 0, 1, 1], ["discF", "top disc base", 0, 1, 1], ["discMid", "middle disc base", 0, 1, 1], ["discM", "bottom disc base", 0, 1, 1]],
+    pin: [["pinR", "pin radius", 0.04, 0.24], ["jaw", "span", 0.05, 0.6], ["lugT", "lug thickness", 0.02, 0.3], ["clr", "clearance", 0.004, 0.08], ["pinOut", "pin overhang", 0, 0.2]],
+    pivot: [["barrelR", "barrel radius", 0.12, 0.6], ["barrelLen", "barrel length", 0.3, 1.8], ["flangeR", "flange radius", 0.2, 0.9], ["neckR", "neck radius", 0.08, 0.4], ["neckLen", "neck length", 0.05, 0.5], ["capR", "cap radius", 0.12, 0.6]],
+    prismatic: [["sleeveW", "sleeve width", 0.2, 1.0], ["sleeveLen", "sleeve length", 0.3, 1.5], ["sleeveD", "sleeve depth", 0.2, 1.0], ["ramW", "ram width", 0.1, 0.7], ["ramLen", "ram length", 0.2, 1.5]],
+    ball: [["ballR", "ball radius", 0.15, 0.6], ["socketT", "socket wall", 0.05, 0.25], ["cut", "socket mouth", 0.4, 0.9], ["studR", "stud radius", 0.05, 0.25], ["studLen", "stud length", 0.1, 0.9], ["flangeW", "flange width", 0.4, 1.6], ["disc", "disc base", 0, 1, 1]],
   };
-  // [key, label, min, max, step?] runtime rotation sliders per joint (degrees);
-  // the prismatic slides are distances, hence their sub-degree step
+  // one slider per DOF — the same channels a rig's bones bind to (degrees; the
+  // prismatic slide is a distance, hence its sub-degree step)
   const POSE_CTL = {
-    hinge1: [["swing", "swing", -90, 90, 1]],
-    hinge2: [["rx", "rotate x", -90, 90, 1], ["rz", "rotate z", -90, 90, 1]],
-    pivot1: [["spinA", "spin top", -180, 180, 1], ["spinB", "spin bottom", -180, 180, 1]],
-    prismatic1: [["slideA", "slide top", 0, 0.5, 0.01], ["slideB", "slide bottom", 0, 0.5, 0.01]],
-    ball1: [["rx", "rotate x", -50, 50, 1], ["ry", "rotate y", -180, 180, 1], ["rz", "rotate z", -50, 50, 1]],
+    hinge: [["swing", "swing (pin)", -90, 90, 1]],
+    pin: [["swing", "swing (pin)", -90, 90, 1]],
+    hingeTwist: [["swing", "swing (pin)", -90, 90, 1], ["twist", "twist (disc)", -180, 180, 1]],
+    discHinge: [["spinF", "female disc spin", -180, 180, 1], ["swing", "swing (pin)", -90, 90, 1], ["spinM", "male disc spin", -180, 180, 1]],
+    wrist: [["bend", "bend (pin 1)", -90, 90, 1], ["tilt", "tilt (pin 2)", -90, 90, 1], ["twist", "twist (disc)", -180, 180, 1]],
+    pivot: [["spin", "spin", -180, 180, 1]],
+    prismatic: [["slide", "slide", 0, 0.5, 0.01]],
+    ball: [["rx", "rotate x", -50, 50, 1], ["ry", "rotate y", -180, 180, 1], ["rz", "rotate z", -50, 50, 1]],
   };
   // [key, label, min, max, step?] sliders per primitive
   const PRIM_CTL = {
@@ -64,7 +74,7 @@
   };
 
   function resetJoint() {
-    jparams[selJoint] = structuredClone(JOINT_KIT.params[selJoint]);
+    jparams[selJoint] = structuredClone(JOINT_PARAMS[selJoint]);
     jpose[selJoint] = structuredClone(JOINT_POSE[selJoint]);
   }
   function resetPrim() { pparams[selPrim] = structuredClone(PRIM_PARAMS[selPrim]); }
@@ -73,7 +83,7 @@
   $effect(() => {
     model = view === "blocks"
       ? primitiveModel(selPrim, $state.snapshot(pparams)[selPrim], seed)
-      : JOINT_KIT.partModel(selJoint, seed, $state.snapshot(jparams)[selJoint], $state.snapshot(jpose)[selJoint]);
+      : jointCatalogModel(selJoint, seed, $state.snapshot(jparams)[selJoint], $state.snapshot(jpose)[selJoint]);
   });
 </script>
 

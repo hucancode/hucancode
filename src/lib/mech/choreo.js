@@ -26,11 +26,11 @@ import { lerp } from "$lib/math/scalar.js";
 // slice, the main move, and a tail where the rig just holds its new pose; the
 // main move spends its own closing `bounceTime` fraction bouncing.
 export const CHOREO_TIMING = {
-  period: 1,          // seconds between beats
+  period: 1.5,        // seconds between beats
   anticRatio: 0.18,   // leading slice of the beat the small sliders ramp across
   restRatio: 0.2,     // trailing slice, everything already settled
-  bounceTime: 0.3,    // closing slice of the main move the bounce occupies
-  bouncePower: 0.35,  // how far the travel aims past the target, as a fraction
+  bounceTime: 0.2,    // closing slice of the main move the bounce occupies
+  bouncePower: 0.1,  // how far the travel aims past the target, as a fraction
                       // of the distance it covers
 };
 const HOME_CHANCE = 0.05;      // odds a beat is a snap back to the rest pose
@@ -72,13 +72,13 @@ function sample(rnd, pool, n) {
 /**
  * @param sliders  [{ key, min, max, big }] — `big` marks the root-near bones
  * @param home     rest pose the rig occasionally snaps back to
- * @param montages { name: { setup, sequence, stepRatio, loops } } routines
- * @param budgets  [{ keys, limit }] — channels sharing one joint, and the total
- *                 rotation they may spend between them
+ * @param montages { name: { setup, keys: [{ pose, hold, ease }], loops } } routines
+ * @param exclusives [[key, ...]] — groups of channels sharing one joint, of
+ *                 which only one may be off its rest pose at a time
  * @param timing   any CHOREO_TIMING key, overriding its default
  */
 export function createChoreographer(
-  sliders, { home = {}, montages = {}, budgets = [], seed = 1, ...timing } = {},
+  sliders, { home = {}, montages = {}, exclusives = [], seed = 1, ...timing } = {},
 ) {
   const { period, anticRatio, restRatio, bounceTime, bouncePower } =
     { ...CHOREO_TIMING, ...timing };
@@ -90,21 +90,28 @@ export function createChoreographer(
   const small = sliders.filter((s) => !s.big);
   const big = sliders.filter((s) => s.big);
   const routines = Object.values(montages);
+  const rest = (key) => home[key] ?? 0;
+  // key -> the channels that must sit at rest while it is off its own
+  const rivals = {};
+  for (const g of exclusives) for (const k of g) rivals[k] = g.filter((x) => x !== k);
   let clock = 0, span = 0;   // time into the current beat, and its length
   let tracks = [];
   let queued = null;         // a montage the caller asked for by hand
 
-  // setup pose struck like any main move, then the sequence walked keyframe by
-  // keyframe; each keyframe is a partial pose, and only the keys it names move
-  const montage = (cut, { setup, sequence, stepRatio = 0.35, loops = 1 }) => {
+  // A montage is a KEYFRAME timeline: the setup pose is struck like any main
+  // move, then the keys are played in order. Each key is a partial pose plus the
+  // `hold` — in beats — it takes to reach it, so a routine can dwell on one frame
+  // and flick through the next; a key names only the channels it moves, and the
+  // rest hold whatever the key before left them at. `loops` replays the timeline.
+  const montage = (cut, { setup, keys, loops = 1, ease = eases.inOutSine }) => {
     let t = 0;
     for (const [key, to] of Object.entries(setup)) cut(key, to, t, SETUP_RATIO * period, hit);
     t += SETUP_RATIO * period;
-    const stepDur = stepRatio * period;
     for (let i = 0; i < loops; i++)
-      for (const frame of sequence) {
-        for (const [key, to] of Object.entries(frame)) cut(key, to, t, stepDur, eases.inOutSine);
-        t += stepDur;
+      for (const k of keys) {
+        const dur = (k.hold ?? 0.35) * period;
+        for (const [key, to] of Object.entries(k.pose)) cut(key, to, t, dur, k.ease ?? ease);
+        t += dur;
       }
     return t + restRatio * period;
   };
@@ -123,9 +130,20 @@ export function createChoreographer(
   const plan = (pose) => {
     const cur = { ...pose };
     tracks = [];
-    const cut = (key, to, t0, dur, ease) => {
+    const push = (key, to, t0, dur, ease) => {
       tracks.push({ key, to, t0, dur, ease, from: cur[key] });
       cur[key] = to;
+    };
+    // Channels sharing a joint are free to pick their targets independently,
+    // and three of them at full swing fold the part through itself. Only one
+    // channel of an exclusive group may be activated: taking one off its rest
+    // parks its rivals back on theirs, over the same window and ease, so the
+    // joint reads as a single clean rotation instead of a tangle.
+    const cut = (key, to, t0, dur, ease) => {
+      push(key, to, t0, dur, ease);
+      if (to === rest(key)) return;
+      for (const r of rivals[key] ?? [])
+        if (cur[r] !== rest(r)) push(r, rest(r), t0, dur, ease);
     };
     if (queued) {
       const m = queued;
@@ -162,16 +180,6 @@ export function createChoreographer(
         // closed) would otherwise have its overshoot flattened — the bounce has
         // to swing past every time, not only where there happens to be headroom
         pose[t.key] = u >= 1 ? t.to : lerp(t.from, t.to, t.ease(u));
-      }
-      // Channels sharing a joint are free to pick their targets independently,
-      // and three of them at full swing fold the part through itself. Each
-      // budget caps what its group may spend in total; over that, the whole
-      // group scales down together, so the pose keeps its shape and only its
-      // amplitude gives. Applied to the POSE, not the targets: a bounce
-      // overshoots past its target and would blow the budget on the way.
-      for (const { keys, limit } of budgets) {
-        const spent = keys.reduce((a, k) => a + Math.abs(pose[k]), 0);
-        if (spent > limit) for (const k of keys) pose[k] *= limit / spent;
       }
     },
     /** run a montage by name at the next beat, cutting the current one short */

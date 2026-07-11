@@ -29,8 +29,8 @@
   let showPath = $state(false);
   let headSize = $state(0.15);
   let whiskerWidth = $state(0.01);
-  let whiskerSegs = $state(5);
-  let whiskerLen = $state(1.2);
+  let whiskerSegs = $state(8);
+  let whiskerLen = $state(1.8);
   let whiskerDamping = $state(0.88);
 
   let vertexCount = $state(16);

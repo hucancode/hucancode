@@ -5,7 +5,7 @@
   import * as mech from "$lib/playgrounds/mech";
   import { DRAGON_KIT } from "$lib/mech/dragon/parts.js";
   import { dragonModel, DRAGON_POSE } from "$lib/mech/dragon/rig.js";
-  import { assembleModel } from "$lib/mech/assembly.js";
+  import { assembleModel } from "$lib/mech/build-anim.js";
 
   let scene = $state(null);
 
@@ -31,14 +31,21 @@
     ["light", "light angle", 0, 6.28, 0.05],
   ];
 
-  const PART_LABELS = { bodySegment: "body segment", bodySegment2: "body segment 2" };
-  // [key, label, min, max, step?] sliders per part
+  const PART_LABELS = {
+    bodySegment: "body segment", bodySegment2: "body segment 2",
+    upperArm: "upper arm", forearm: "forearm",
+  };
+  // [key, label, min, max, step?] sliders per part — BODY shape only; every
+  // joint lives in the joint catalog now, and every angle on a rig slider
   const PART_CTL = {
-    head: [["headW", "head width", 0.7, 2.0], ["snoutLen", "snout length", 0.5, 2.0], ["jawOpen", "jaw open", 0, 45], ["eyeR", "eye radius", 0.08, 0.3], ["hornLen", "horn length", 0.1, 1.2]],
+    head: [["headW", "head width", 0.7, 2.0], ["snoutLen", "snout length", 0.5, 2.0], ["eyeR", "eye radius", 0.08, 0.3], ["hornLen", "horn length", 0.1, 1.2]],
+    jaw: [["jawW", "jaw width", 0.3, 1.2], ["jawLen", "jaw length", 0.6, 2.4]],
     bodySegment: [["bodyR", "body radius", 0.3, 0.9], ["segLen", "segment length", 0.8, 3.0], ["discs", "belly discs", 2, 7, 1], ["finR", "fin radius", 0.15, 0.8]],
     bodySegment2: [["rFront", "front radius", 0.25, 0.9], ["rRear", "rear radius", 0.15, 0.8], ["segLen", "segment length", 0.8, 3.0], ["finR", "fin radius", 0.15, 0.8]],
-    arm: [["upperLen", "upper arm", 0.25, 1.2], ["foreLen", "forearm", 0.2, 1.2], ["elbowBend", "elbow bend", 0, 70], ["clawR", "claw radius", 0.15, 0.5]],
-    leg: [["thighLen", "thigh", 0.25, 1.2], ["shinLen", "shin", 0.2, 1.2], ["kneeBend", "knee bend", 0, 60], ["footLen", "foot length", 0.15, 0.9], ["clawR", "claw radius", 0.15, 0.5]],
+    upperArm: [["len", "length", 0.25, 1.2], ["w", "width", 0.2, 0.7]],
+    forearm: [["len", "length", 0.2, 1.2], ["clawR", "claw radius", 0.15, 0.5]],
+    thigh: [["len", "length", 0.25, 1.2], ["w", "width", 0.2, 0.8]],
+    shin: [["len", "length", 0.2, 1.2], ["footLen", "foot length", 0.15, 0.9], ["clawR", "claw radius", 0.15, 0.5]],
     tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
   };
   // rig runtime controls — offset slides the body along the loop curve
