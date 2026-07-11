@@ -4,8 +4,8 @@
 // them — it never re-models geometry.
 //
 // The body chain is posed on a CLOSED CATMULL-ROM LOOP: joint pivots are
-// chord-marched along the curve at exact part pitches (so every male ball
-// lands exactly in its female socket) and `offset` slides the dragon along.
+// chord-marched along the curve at exact part pitches (so every ball stud
+// lands exactly in its socket) and `offset` slides the dragon along.
 //
 // BUILD/FRAME SPLIT: createDragonRig() compiles everything pose-independent
 // ONCE — part slots, link pitches, the skeleton (offsets + rest rotations),

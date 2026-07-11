@@ -1,9 +1,9 @@
 // DRAGON PART KIT — head, body segments, tapering segments, limbs, tail.
-// A part embeds the FIXED half of every joint it offers to children (female
-// ball socket / hinge clevis + pin at its distal slots) and the MOVING half of
-// the joint it plugs into its parent with (male ball / male hinge U at its
-// mount slot). Both halves come off joints.js, so the mechanism a rig bone
-// rotates is real geometry, not a pivot in the air.
+// A part embeds the FIXED half of every joint it offers to children (ball
+// socket / clevis + pin at its distal slots) and the MOVING half of the joint
+// it plugs into its parent with (ball stud / clevis tang at its mount slot).
+// Both halves come off joints.js, so the mechanism a rig bone rotates is real
+// geometry, not a pivot in the air.
 import {
   box, cylinder, cone, coneCut, sphere, halfCylinder, halfCylinderBox,
   quarterCylinder, rotX, rotY, rotZ, translate,
@@ -25,11 +25,11 @@ export const DRAGON_PARAMS = {
 // fixed joint proportions the dragon parts are modeled around — shared with
 // chainSpec() below so the rig computes the same mounting numbers the
 // builders bake into the geometry.
-const SEG_JP = { ballR: 0.26, socketT: 0.09, shaftLen: 0.14, baseT: 0.12, base: "disc" };
-const SEG2_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.13, baseT: 0.12, base: "disc" };
-const TAIL_JP = { ballR: 0.24, socketT: 0.08, shaftLen: 0.13, baseT: 0.12, base: "disc" };
-const ARM_JP = { gap: 0.1, armT: 0.055, armH: 0.34, depth: 0.22, pinR: 0.045 };
-const LEG_JP = { gap: 0.12, armT: 0.065, armH: 0.38, depth: 0.26, pinR: 0.055 };
+const SEG_JP = { ballR: 0.26, socketT: 0.09, studLen: 0.14, flangeT: 0.12, base: "disc" };
+const SEG2_JP = { ballR: 0.24, socketT: 0.08, studLen: 0.13, flangeT: 0.12, base: "disc" };
+const TAIL_JP = { ballR: 0.24, socketT: 0.08, studLen: 0.13, flangeT: 0.12, base: "disc" };
+const ARM_JP = { jaw: 0.1, lugT: 0.055, lugL: 0.34, lugD: 0.22, pinR: 0.045 };
+const LEG_JP = { jaw: 0.12, lugT: 0.065, lugL: 0.38, lugD: 0.26, pinR: 0.055 };
 
 // head modeling anchors, shared by the builder, partSlots and (via the jaw
 // slot) the rig — the single source for where things mate on the head
@@ -39,12 +39,13 @@ const HEAD_JAW_PIN = [0, 0.02, -0.12];  // jaw hinge pin (X axis) below the skul
 // The numbers a part builder bakes into its geometry, computed ONCE per part
 // kind and consumed by BOTH the builder and partSlots — slots can never drift
 // from the meshes. Chain parts seat a ball joint: z0 = where the body starts
-// (clear of the socket base plate), reach = ball center -> male plate top,
-// front = the male ball center. Limbs seat an L-seated hinge1 shoulder/hip: the pivot
-// height stacks the limb segments plus the joint's mount-2 drop.
+// (clear of the socket flange), reach = ball center -> stud flange top,
+// front = the ball center of the stud. Limbs seat an L-seated hinge1
+// shoulder/hip: the pivot height stacks the limb segments plus the joint's
+// mount-2 drop.
 
 function bodySegmentLayout(p) {
-  const jp = { ...SEG_JP, baseW: p.bodyR * 1.5 };
+  const jp = { ...SEG_JP, flangeW: p.bodyR * 1.5 };
   const jm = jointMounts("ball", jp);
   const z0 = -jm.a.pos[1] + 0.04;
   const plankT = 0.1;                              // side plank thickness (flank slot face)
@@ -57,14 +58,14 @@ function bodySegmentLayout(p) {
 }
 
 function bodySegment2Layout(p) {
-  const jp = { ...SEG2_JP, baseW: p.rRear * 1.6 };
+  const jp = { ...SEG2_JP, flangeW: p.rRear * 1.6 };
   const jm = jointMounts("ball", jp);
   const z0 = -jm.a.pos[1] + 0.04;
   return { jp, jm, cy: p.rFront, z0, reach: jm.b.pos[1], front: z0 + p.segLen + jm.b.pos[1] };
 }
 
 function tailLayout(p) {
-  const jp = { ...TAIL_JP, baseW: p.bodyR * 1.4 };
+  const jp = { ...TAIL_JP, flangeW: p.bodyR * 1.4 };
   const jm = jointMounts("ball", jp);
   return { jp, cy: p.bodyR, reach: jm.b.pos[1], front: p.coreLen + jm.b.pos[1] };
 }
@@ -136,26 +137,26 @@ function head(add, p, pose = {}) {
       add(translate(box(0.05, 0.07, 0.44), s * (W / 2 + 0.13), y, -0.42));
   }
 
-  // JAW HINGE — a real hinge-style joint drives the jaw. Pin axis = X through
-  // HEAD_JAW_PIN (below the skull so the knuckles read); every jaw-side piece
-  // is authored with the pivot at its local origin and rotated about that
-  // exact shaft axis before seating on the pin.
+  // JAW HINGE — a real clevis-and-pin joint drives the jaw. Pin axis = X
+  // through HEAD_JAW_PIN (below the skull so the knuckles read); every jaw-side
+  // piece is authored with the pivot at its local origin and rotated about that
+  // exact pin axis before seating on it.
   const [, hy, hz] = HEAD_JAW_PIN;
   const jawRot = pose.jaw ?? rad(p.jawOpen);
   const jawLen = p.snoutLen + 0.45;
   const jw = W * 0.55;                    // jaw plate width
-  const armT = 0.1;
+  const lugT = 0.1;
   const atPin = (g) => translate(g, 0, hy, hz);           // skull side: just seat
   const jawAt = (g) => translate(rotX(g, jawRot), 0, hy, hz); // jaw side: swing first
-  // one hingeBlock drives the jaw: female half + pin fixed to the skull,
-  // male half routed through jawAt so it swings with the jaw about the shaft.
+  // one hingeBlock drives the jaw: the skull holds the outer clevis + pin, the
+  // moving clevis is routed through jawAt so it swings with the jaw.
   hingeBlock(
     (g) => add(atPin(g)),
     (g) => add(jawAt(g)),
-    { gap: jw - 0.26, armT, pinR: 0.09 },
-    { female: { armH: 0.5, depth: 0.36 }, male: { armH: 0.3, depth: 0.3 } },
+    { jaw: jw - 0.26, lugT, pinR: 0.09 },
+    { female: { lugL: 0.5, lugD: 0.36 }, male: { lugL: 0.3, lugD: 0.3 } },
   );
-  // jaw plate + teeth hang off the male bridge; all share the same swing
+  // jaw plate + teeth hang off the moving flange; all share the same swing
   add(jawAt(translate(box(jw, 0.18, jawLen), 0, -0.21, jawLen / 2 - 0.15)));
   for (const x of [-W * 0.18, 0, W * 0.18])
     add(jawAt(translate(box(0.07, 0.14, 0.07), x, -0.05, jawLen - 0.4)));
@@ -197,14 +198,13 @@ function head(add, p, pose = {}) {
 }
 
 // chain-part ball joint seating, shared by the body segments and the tail:
-// female socket at the rear (ball center = part origin, opening -Z so the
-// previous segment's shaft exits backward), male ball sticking out past the
-// front face. female = false emits the male half only (the mating segment
-// supplies the socket).
-function chainBall(add, jp, cy, front, female = true) {
+// socket at the rear (ball center = part origin, opening -Z so the previous
+// segment's stud exits backward), ball stud sticking out past the front face.
+// socket = false emits the stud only (the mating segment supplies the socket).
+function chainBall(add, jp, cy, front, socket = true) {
   ballBlock(
-    female ? (g) => add(translate(rotX(g, -HPI), 0, cy, 0)) : () => {},  // female socket, rear
-    (g) => add(translate(rotX(g, -HPI), 0, cy, front)),                  // male ball, front
+    socket ? (g) => add(translate(rotX(g, -HPI), 0, cy, 0)) : () => {},  // socket, rear
+    (g) => add(translate(rotX(g, -HPI), 0, cy, front)),                  // ball stud, front
     jp,
   );
 }
@@ -218,10 +218,10 @@ function spineFin(add, finR, y, z) {
 // DRAGON BODY SEGMENT — same construction as the Blender kit piece: solid
 // half-cylinder upper back, belly = stacked half-cylinder discs with small
 // gaps, D-plate spine fins, side planks. Segments CHAIN through the BALL
-// block: female socket at the rear (ball center = part origin, opening -Z so
-// the previous segment's shaft exits backward), male ball sticking out past
-// the front face, so copies daisy-chain male->female and the chain bends in
-// any direction like a spine.
+// block: socket at the rear (ball center = part origin, opening -Z so the
+// previous segment's stud exits backward), ball stud sticking out past the
+// front face, so copies daisy-chain stud->socket and the chain bends in any
+// direction like a spine.
 function bodySegment(add, p) {
   const R = p.bodyR, len = p.segLen;
   const { jp, cy, z0, front, plankT } = bodySegmentLayout(p);
@@ -242,8 +242,8 @@ function bodySegment(add, p) {
 
 // DRAGON BODY SEGMENT TYPE 2 — tapered variant: the core is a CUT CONE lying
 // along the spine (wide at the front, narrow at the rear), so a chain of them
-// forms a shrinking neck or tail run. Same joint scheme as type 1: female
-// ball socket at the rear origin, male ball sticking past the front face.
+// forms a shrinking neck or tail run. Same joint scheme as type 1: ball socket
+// at the rear origin, ball stud sticking past the front face.
 function bodySegment2(add, p) {
   const len = p.segLen, R0 = p.rRear, R1 = p.rFront;
   const { jp, cy, z0, front } = bodySegment2Layout(p);
@@ -255,10 +255,10 @@ function bodySegment2(add, p) {
 }
 
 // DRAGON ARM — parts chained by joint blocks. At the top the hinge1 block as
-// the shoulder: disc base up into the body, pin horizontal, tongue pre-swung
-// about the pin so its disc base drops into the upper arm.
-// Elbow = hinge block driving the forearm (elbowBend swings it about the
-// pin), then wrist barrel and a claw of three quarter-disc talons.
+// the shoulder: clevis flange disc up into the body, pin horizontal, tang
+// pre-swung about the pin so its flange disc drops into the upper arm.
+// Elbow = clevis-and-pin hinge driving the forearm (elbowBend swings it about
+// the pin), then wrist barrel and a claw of three quarter-disc talons.
 // RUNTIME pose: pose.swing / pose.spinF / pose.spinM drive the
 // shoulder hinge1 — the whole limb hangs off mount 2, so it rides the same
 // rotation chain as the joint's own moving half (one bone per rotation, every
@@ -269,12 +269,12 @@ function arm(add, p, pose = {}) {
   const sw = pose.swing || 0, sf = pose.spinF || 0, sm = pose.spinM || 0;
   // shoulder joint, deliberately small next to the limb boxes
   const { jp, ey, sdrop, sy } = armLayout(p);
-  // whole joint rotX(HPI): pin -> Z, female base faces +X so mount 1 (disc) points
-  // RIGHT into the body flank, mount 2 (male disc base) lands on the limb top
+  // whole joint rotX(HPI): pin -> Z, clevis flange faces +X so mount 1 (disc)
+  // points RIGHT into the body flank, mount 2 (the tang disc) lands on the limb top
   const seat = (g) => add(translate(rotX(g, HPI), 0, sy, 0));
   // limb channel: everything below the shoulder is authored RELATIVE TO THE
-  // SHOULDER PIVOT and follows the joint's full moving chain — spinM (disc-base
-  // turntable) -> swing (pin) -> spinF (parent disc) composed in the joint's
+  // SHOULDER PIVOT and follows the joint's full moving chain — spinM (tang-disc
+  // turntable) -> swing (pin) -> spinF (clevis disc) composed in the joint's
   // local frame, then seated exactly like the joint itself
   const limb = (g) => {
     let h = rotX(g, -HPI);            // part frame -> joint local
@@ -287,11 +287,11 @@ function arm(add, p, pose = {}) {
   limb(translate(box(0.38, p.upperLen, 0.42), 0, -sdrop - p.upperLen / 2, 0));
   // upper-arm armor: slope plate riding the front face
   limb(translate(box(0.32, p.upperLen * 0.6, 0.08, 0.5), 0, -sdrop - p.upperLen * 0.4, 0.24));
-  // elbow: female + pin fixed to the upper arm, male swings with the forearm
+  // elbow: clevis + pin fixed to the upper arm, the moving half swings with the forearm
   const rey = ey - sy;                                              // elbow, shoulder-relative
   const at = (g) => limb(translate(g, 0, rey, 0));
   const swing = (g) => limb(translate(rotX(g, -bend), 0, rey, 0));  // bend forward
-  hingeBlock(at, swing, { gap: 0.14, armT: 0.07, armH: 0.3, depth: 0.28, pinR: 0.06 });
+  hingeBlock(at, swing, { jaw: 0.14, lugT: 0.07, lugL: 0.3, lugD: 0.28, pinR: 0.06 });
   // forearm + wrist, authored around the elbow pin, routed through the swing
   swing(translate(box(0.3, p.foreLen, 0.34), 0, -(0.3 + p.foreLen / 2), 0));
   // forearm armor: slope plate on the front face
@@ -319,10 +319,10 @@ function arm(add, p, pose = {}) {
   swing(translate(rotZ(quarterCylinder(p.clawR * 0.7, 0.08, 10), -HPI), 0.21, py - 0.08, -0.06));
 }
 
-// DRAGON LEG — same principle, chunkier: hinge1 block as the hip (disc base
-// up into the body, disc base down into the thigh), hinge block knee
-// driving the shin (kneeBend swings it back), ankle barrel, flat foot with
-// quarter-disc toe claws.
+// DRAGON LEG — same principle, chunkier: hinge1 block as the hip (clevis
+// flange disc up into the body, tang flange disc down into the thigh),
+// clevis-and-pin knee driving the shin (kneeBend swings it back), ankle barrel,
+// flat foot with quarter-disc toe claws.
 // RUNTIME pose, same scheme as the arm: pose.swing/spinF/spinM
 // drive the hip hinge1 (the limb rides the moving chain), pose.knee
 // overrides kneeBend (degrees, UI slider).
@@ -330,8 +330,8 @@ function leg(add, p, pose = {}) {
   const bend = pose.knee ?? rad(p.kneeBend);
   const sw = pose.swing || 0, sf = pose.spinF || 0, sm = pose.spinM || 0;
   const { jp, ky, hdrop, hy } = legLayout(p);
-  // same orientation as the arm's shoulder: mount 1 (disc) facing right into
-  // the body flank, pin along Z, mount 2 (male disc base) onto the thigh top
+  // same orientation as the arm's shoulder: mount 1 (the clevis disc) facing
+  // right into the body flank, pin along Z, mount 2 (the tang disc) onto the thigh top
   const seat = (g) => add(translate(rotX(g, HPI), 0, hy, 0));
   const limb = (g) => {
     let h = rotX(g, -HPI);            // part frame -> joint local (see arm)
@@ -345,7 +345,7 @@ function leg(add, p, pose = {}) {
   const rky = ky - hy;                                             // knee, hip-relative
   const at = (g) => limb(translate(g, 0, rky, 0));
   const swing = (g) => limb(translate(rotX(g, bend), 0, rky, 0));  // knee bends back
-  hingeBlock(at, swing, { gap: 0.16, armT: 0.075, armH: 0.32, depth: 0.3, pinR: 0.07 });
+  hingeBlock(at, swing, { jaw: 0.16, lugT: 0.075, lugL: 0.32, lugD: 0.3, pinR: 0.07 });
   swing(translate(box(0.34, p.shinLen, 0.4), 0, -(0.3 + p.shinLen / 2), 0));
   const ay = -(0.35 + p.shinLen);
   swing(translate(rotZ(cylinder(0.13, 0.4, 18), -HPI), -0.2, ay, 0));
@@ -358,12 +358,12 @@ function leg(add, p, pose = {}) {
 }
 
 // DRAGON TAIL — a stack of FULL discs shrinking toward the tip (no shell, no
-// fins), a MALE ball at the front (+Z) to plug into a body segment's female
-// socket, and a CONE spiking back from the smallest disc as the tail tip.
+// fins), a BALL STUD at the front (+Z) to plug into a body segment's socket,
+// and a CONE spiking back from the smallest disc as the tail tip.
 function tail(add, p) {
   const R = p.bodyR, len = p.coreLen;
   const { jp, cy, front } = tailLayout(p);
-  // male half only — the mating body segment supplies the socket
+  // stud only — the mating body segment supplies the socket
   chainBall(add, jp, cy, front, false);
   // core: full discs on a straight center line, shrinking toward the tip end
   const n = Math.max(3, Math.round(len / 0.28));
@@ -387,8 +387,8 @@ function dragonSlots(name, p) {
     case "bodySegment": {
       const { cy, z0, front, flankX } = bodySegmentLayout(p);
       return {
-        rear: { pos: [0, cy, 0], n: [0, 0, -1], f: [0, 1, 0] },     // female socket, ball center
-        front: { pos: [0, cy, front], n: [0, 0, 1], f: [0, 1, 0] }, // male ball center
+        rear: { pos: [0, cy, 0], n: [0, 0, -1], f: [0, 1, 0] },     // socket, ball center
+        front: { pos: [0, cy, front], n: [0, 0, 1], f: [0, 1, 0] }, // ball stud center
         flankL: { pos: [-flankX, cy, z0 + p.segLen / 2], n: [-1, 0, 0], f: [0, 0, 1] },
         flankR: { pos: [flankX, cy, z0 + p.segLen / 2], n: [1, 0, 0], f: [0, 0, 1] },
       };

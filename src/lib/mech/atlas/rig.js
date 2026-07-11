@@ -63,15 +63,15 @@ const atlasSide = (S, sgn) => [
   // the right arm seats with a rotY(pi) rest (the shoulder hinge1 disc must
   // face the chest), which flips the LOCAL x/z senses — hence per-side signs.
   // x = spinF, the mount-1 ROOT DISC turning in the torso's cone seat (a rigid
-  // spin of the whole joint); z = the pin swing, which only the tongue takes.
+  // spin of the whole joint); z = the pin swing, which only the tang takes.
   { name: `arm${S}`, part: "upperArm", parent: "torso", at: `shoulder${S}`, slot: "mount",
     angles: { x: ["shoulder", -sgn], z: ["armOut", -1] }, swingBone: "z" },
   { name: `fore${S}`, part: "forearm", parent: `arm${S}`, at: "elbow", slot: "mount",
     angles: { x: ["elbow", -sgn] } },
   // hinge2 wrist: bend rides the wrist link's stage-A pin (X). The wrist part
   // owns the WHOLE stage-B hinge, so tilt lives on a `pinBone` seated at that
-  // stage's pin and feeds the part's pose channel — only the tongue swings.
-  // The palm bolts to the tongue's disc, so its twist IS that disc turning.
+  // stage's pin and feeds the part's pose channel — only the tang swings.
+  // The palm bolts to the tang's disc, so its twist IS that disc turning.
   { name: `wrist${S}`, part: "wrist", parent: `fore${S}`, at: "wrist", slot: "mount",
     angles: { x: ["wristBend", -sgn] },
     pinBone: { at: "pin", axis: "z", angle: ["wristTilt", 1], pose: "tilt" } },
