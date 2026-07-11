@@ -5,7 +5,7 @@
   import * as mech from "$lib/playgrounds/mech";
   import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
   import { atlasModel, atlasHeight, ATLAS_POSE, ATLAS_POSE_DEPTH, ATLAS_MONTAGES } from "$lib/mech/atlas/rig.js";
-  import { assembleModel } from "$lib/mech/assembly.js";
+  import { assembleModel } from "$lib/mech/build-anim.js";
   import { createChoreographer, CHOREO_TIMING } from "$lib/mech/choreo.js";
 
   let scene = $state(null);
@@ -41,9 +41,8 @@
     pelvis: [["hipW", "disc width", 0.5, 1.3], ["hipH", "dome radius", 0.15, 0.5]],
     upperArm: [["len", "length", 0.2, 0.9], ["w", "width", 0.15, 0.5]],
     forearm: [["len", "length", 0.2, 0.9], ["w", "width", 0.12, 0.45]],
-    wrist: [],
     palm: [["w", "width", 0.15, 0.5], ["h", "height", 0.15, 0.5], ["d", "depth", 0.12, 0.45]],
-    finger: [["digitLen", "digit length", 0.1, 0.4], ["w", "width", 0.05, 0.2], ["curl", "curl", 0, 60, 1]],
+    digit: [["len", "digit length", 0.1, 0.4], ["w", "width", 0.05, 0.2]],
     thigh: [["len", "length", 0.3, 1.1], ["w", "width", 0.2, 0.6]],
     shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
     foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
@@ -57,11 +56,13 @@
     ["waistTilt", "waist tilt", -45, 45, 1],
     ["shoulder", "arm swing", -180, 180, 1],
     ["armOut", "arm raise", -10, 180, 1],
-    ["elbow", "elbow bend", 0, 90, 1],
+    ["armTwist", "arm twist", -180, 180, 1],
+    ["elbow", "elbow bend", -90, 90, 1],
+    ["foreTwist", "forearm twist", -180, 180, 1],
     ["wristBend", "wrist bend", -100, 100, 1],
     ["wristTilt", "wrist tilt", -100, 100, 1],
     ["wristTwist", "wrist twist", -180, 180, 1],
-    ["curl", "finger curl", 0, 60, 1],
+    ["curl", "finger curl", -30, 60, 1],
     ["hip", "leg swing", -45, 45, 1],
     ["knee", "knee bend", 0, 60, 1],
   ];
@@ -109,7 +110,7 @@
   // fixed per-view distance (no auto-fit): single-part previews use a per-part
   // catalog distance — the atlas kit has much smaller pieces than the dragon's
   const PART_DIST = {
-    finger: 2.5, wrist: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
+    digit: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
     head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,
   };
   // the atlas stands ON the grid, so the whole rig sits above y=0: the camera

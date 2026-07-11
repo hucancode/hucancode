@@ -1,107 +1,124 @@
-// ATLAS RIG — a standing humanoid on the same machinery as the dragon rig:
-// parts (atlas/parts.js) connect by mount-slot matching, one bone per joint
-// DOF, no curve — the pose sliders drive the bones directly. Every articulated
-// link plugs its part's MOVING joint half onto the FIXED half its parent part
-// emits, so the bone rotation happens inside a real mechanism.
-import { ATLAS_KIT } from "./parts.js";
-import { currentJointGroup, resetJointGroups } from "../joints.js";
-import { colorMemo } from "../color.js";
-import { bake } from "../primitives.js";
-import {
-  createSkeleton, addBall, matchRot, createMeshCache, xfCompose, xfT,
-} from "../skeleton.js";
+// ATLAS RIG — DATA. A standing humanoid on the same engines as the dragon: the
+// links below name parts and the parent slots they bolt to, the assemble engine
+// instantiates the joints and spends the bones, and the pose SLIDERS
+// (ATLAS_POSE) are the whole public surface — a choreographer drives those, and
+// never touches a bone.
+//
+// `angles` binds the sliders to a link's joint, one entry per DOF, in the
+// joint's own DOF order:
+//   disc hinge (shoulder / hip)  [disc spin, pin swing, disc spin]
+//   hinge (elbow / knee / ankle) [pin swing]
+//   wrist                        [bend, tilt, twist]
+//   ball (waist / neck)          one free bone, its three euler channels
+// A null entry leaves that DOF resting at zero.
+import { ATLAS_KIT, ATLAS_JOINTS } from "./parts.js";
+import { createAssembly } from "../assemble.js";
 import { rad } from "../../math/scalar.js";
-import { vAdd, vSub, vScale, vNorm, m3Mul, m3MulV } from "../../math/mat3.js";
 
 // runtime rig controls (degrees)
 export const ATLAS_POSE = {
   headYaw: 0, headPitch: 0, twist: 0, waistBend: 0, waistTilt: 0,
-  shoulder: 0, armOut: 30, elbow: 60,
+  shoulder: 0, armOut: 30, armTwist: 0, elbow: 60, foreTwist: 0,
   wristBend: 0, wristTilt: 30, wristTwist: 0, curl: 30,
   hip: 0, knee: 0,
 };
 
-// Rehearsed routines for the choreographer: a setup pose the rig strikes, then
-// a sequence of partial poses walked keyframe by keyframe.
-//
-// Every pose channel drives BOTH sides, so the atlas always waves with two
-// arms: `armOut` swings them out to the sides, `shoulder` swings them forward.
+// Rehearsed routines for the choreographer: a setup pose the rig strikes, then a
+// KEYFRAME timeline — each key is a partial pose and the `hold` (in beats) it
+// takes to reach it, so the routine is authored frame by frame instead of being
+// generated. Every pose channel drives BOTH sides, so the atlas always waves with
+// two arms: `armOut` swings them out to the sides, `shoulder` swings them forward.
 const REST = {
-  armOut: 0, shoulder: 0, elbow: 0, wristBend: 0, wristTilt: 0,
+  armOut: 0, shoulder: 0, armTwist: 0, elbow: 0, foreTwist: 0, wristBend: 0, wristTilt: 0,
   wristTwist: 0, curl: 0, twist: 0, waistBend: 0, waistTilt: 0,
   headPitch: 0, headYaw: 0,
 };
-// A wave: strike the setup, then run a ripple out of it `loops` times. The lead
-// joint swings away and settles back to whatever the setup put it at, and each
-// joint down the chain picks the motion up as the one before it lets go.
-const wave = (setup, lead) => ({
-  setup: { ...REST, ...setup },
-  sequence: [
-    lead,
-    { ...Object.fromEntries(Object.keys(lead).map((k) => [k, setup[k]])), elbow: 45 },
-    { elbow: 0, wristBend: 45 },
-    { wristBend: 0, curl: 60 },
-    { curl: 0 },
-  ],
-  stepRatio: 0.3, loops: 4,
-});
+
+// The ripple down an arm, keyframe by keyframe. A joint raising by n swings
+// everything below it up with it, so the two joints under it fold back: the next
+// one down by 2n, and the one after that up by n again. That +n / -2n / +n chain
+// leaves the hand where it was and reads as a CREST at the raised joint instead
+// of the whole arm lifting. The crest then travels: each key drops the joint that
+// held it back to rest and hands it to the one below, which brings its own pair of
+// compensators with it (the finger curl runs the other way round, so its sign is
+// flipped).
+// `lead` = the shoulder channel the setup holds level (armOut for the side wave,
+// shoulder for the front one), `level` = where it holds, `n` = its raise.
+const WAVE = (lead, level, n) => [
+  // shoulder up n -> elbow down 2n, wrist up n
+  { hold: 0.35, pose: { [lead]: level + n, elbow: -2 * n, wristBend: n } },
+  // shoulder home, elbow up n -> wrist down 2n, fingers up n
+  { hold: 0.30, pose: { [lead]: level, elbow: n, wristBend: -2 * n } },
+  // elbow home, wrist up n -> fingers down 2n
+  { hold: 0.30, pose: { elbow: 0, wristBend: n } },
+  { hold: 0.30, pose: { wristBend: 0, curl: -n } },   // wrist home, fingers up
+  { hold: 0.35, pose: { curl: 0 } },                  // fingers home
+];
 
 export const ATLAS_MONTAGES = {
-  // arms out level with the shoulders, ripple running down each one
-  armWave: wave({ armOut: 90 }, { armOut: 115 }),
-  // arms held out front, the ripple travelling away from the chest
-  frontWave: wave({ shoulder: 90 }, { shoulder: 115 }),
+  // ARM WAVE. Arms out level with the shoulders and rolled a quarter turn on the
+  // shoulder disc — the roll runs -90, not +90, because on that side of the
+  // turntable a positive elbow / wrist bend LIFTS the hand the same way `armOut`
+  // does, so raise, elbow and wrist all push the wave the same way instead of
+  // each joint undoing the one above it. The keys then run the ripple out of the
+  // shoulder: raise leads, the elbow picks it up, the wrist after that, the
+  // fingers last, and each joint unwinds as the next one takes over.
+  armWave: {
+    setup: { ...REST, armOut: 90, armTwist: -90 },
+    keys: WAVE("armOut", 90, 35),
+    loops: 4,
+  },
+  // FRONT WAVE. Arms held out front (no roll: the elbow already bends in the
+  // vertical plane there), the same ripple travelling away from the chest.
+  frontWave: {
+    setup: { ...REST, shoulder: 90 },
+    keys: WAVE("shoulder", 90, 35),
+    loops: 4,
+  },
 };
 
-// `angles` maps a bone axis of the link's 3-DOF joint to [pose key, sign];
-// `curl` marks the finger links whose part rebuilds with the internal-digit
-// pose channel fed from the knuckle bone. `swingBone` marks a link that owns
-// BOTH halves of its mount hinge: the named bone's rotation is the pin swing,
-// so it must not turn the part's fixed half — it goes to the part's pose
-// channel instead, and the part is placed by the bone ABOVE it.
-const atlasSide = (S, sgn) => [
-  // the right arm seats with a rotY(pi) rest (the shoulder hinge1 disc must
-  // face the chest), which flips the LOCAL x/z senses — hence per-side signs.
-  // x = spinF, the mount-1 ROOT DISC turning in the torso's cone seat (a rigid
-  // spin of the whole joint); z = the pin swing, which only the tang takes.
-  { name: `arm${S}`, part: "upperArm", parent: "torso", at: `shoulder${S}`, slot: "mount",
-    angles: { x: ["shoulder", -sgn], z: ["armOut", -1] }, swingBone: "z" },
-  { name: `fore${S}`, part: "forearm", parent: `arm${S}`, at: "elbow", slot: "mount",
-    angles: { x: ["elbow", -sgn] } },
-  // hinge2 wrist: bend rides the wrist link's stage-A pin (X). The wrist part
-  // owns the WHOLE stage-B hinge, so tilt lives on a `pinBone` seated at that
-  // stage's pin and feeds the part's pose channel — only the tang swings.
-  // The palm bolts to the tang's disc, so its twist IS that disc turning.
-  { name: `wrist${S}`, part: "wrist", parent: `fore${S}`, at: "wrist", slot: "mount",
-    angles: { x: ["wristBend", -sgn] },
-    pinBone: { at: "pin", axis: "z", angle: ["wristTilt", 1], pose: "tilt" } },
-  { name: `palm${S}`, part: "palm", parent: `wrist${S}`, at: "out", slot: "mount",
-    angles: { y: ["wristTwist", sgn] } },
-  ...[0, 1, 2].map((i) => ({
-    name: `finger${S}${i}`, part: "finger", parent: `palm${S}`, at: `f${i}`, slot: "mount",
-    angles: { x: ["curl", -1] }, curl: true,
-  })),
-  { name: `leg${S}`, part: "thigh", parent: "pelvis", at: `hip${S}`, slot: "mount",
-    angles: { x: ["hip", -1] } },
-  { name: `shin${S}`, part: "shin", parent: `leg${S}`, at: "knee", slot: "mount",
-    angles: { x: ["knee", 1] } },
-  { name: `foot${S}`, part: "foot", parent: `shin${S}`, at: "ankle", slot: "mount" },
+// one arm + one leg. `sgn` flips the channels that must read the same way on
+// both flanks (the right side's joint seats mirrored, so its local senses flip).
+const side = (S, sgn) => [
+  // shoulder: the female DISC spins the arm fore/aft, the PIN swings it out, and
+  // the male disc is the turntable the upper arm rolls on (armTwist)
+  { name: `arm${S}`, part: "upperArm", parent: "torso", at: `shoulder${S}`,
+    angles: [["shoulder", -sgn], ["armOut", -1], ["armTwist", sgn]] },
+  // the tang's flange is a DISC: it seats on the forearm box's top face and
+  // carries it up to the pin, so the box stays clear of the jaw — and that same
+  // disc is the turntable the forearm rolls on (foreTwist)
+  { name: `fore${S}`, part: "forearm", parent: `arm${S}`, at: "elbow",
+    angles: [["elbow", -sgn], ["foreTwist", sgn]] },
+  // the palm bolts straight to the wrist's tang disc — the twist IS that disc
+  { name: `palm${S}`, part: "palm", parent: `fore${S}`, at: "wrist",
+    angles: [["wristBend", -sgn], ["wristTilt", 1], ["wristTwist", sgn]] },
+  // three fingers, three digits each, every knuckle on the one curl channel
+  ...[0, 1, 2].flatMap((f) => [0, 1, 2].map((i) => ({
+    name: `dig${S}${f}${i}`,
+    part: "digit",
+    params: { w: 0.1 * (1 - i * 0.12), len: 0.12 },
+    parent: i === 0 ? `palm${S}` : `dig${S}${f}${i - 1}`,
+    at: i === 0 ? `f${f}` : "tip",
+    angles: [["curl", 1]],
+  }))),
+  // hip: the DISC swings the leg fore/aft (the pin would kick it out sideways)
+  { name: `leg${S}`, part: "thigh", parent: "pelvis", at: `hip${S}`,
+    angles: [["hip", -sgn], null, null] },
+  { name: `shin${S}`, part: "shin", parent: `leg${S}`, at: "knee",
+    angles: [["knee", 1]] },
+  { name: `foot${S}`, part: "foot", parent: `shin${S}`, at: "ankle" },
 ];
 
 const ATLAS_DEF = [
-  { name: "pelvis", part: "pelvis", pivot: "waist" },
-  // the waist is a ball: all three bones of the link carry a channel
-  { name: "torso", part: "torso", parent: "pelvis", at: "waist", slot: "mount",
-    angles: { x: ["waistBend", 1], y: ["twist", 1], z: ["waistTilt", 1] } },
-  { name: "head", part: "head", parent: "torso", at: "neck", slot: "mount",
-    angles: { x: ["headPitch", 1], y: ["headYaw", 1] } },
-  ...atlasSide("L", 1),
-  ...atlasSide("R", -1),
+  { name: "pelvis", part: "pelvis", pivot: "waist" },                       // root
+  // the waist is a ball: one free bone, all three channels on it
+  { name: "torso", part: "torso", parent: "pelvis", at: "waist",
+    angles: [[["waistBend", 1], ["twist", 1], ["waistTilt", 1]]] },
+  { name: "head", part: "head", parent: "torso", at: "neck",
+    angles: [[["headPitch", 1], ["headYaw", 1], null]] },
+  ...side("L", 1),
+  ...side("R", -1),
 ];
-
-// root placement in the ground plane; the lift is solved from the built figure
-// (createAtlasRig) so the soles stand on the grid whatever the part params are
-const ATLAS_ROOT = [0, 0, 0];
 
 // bone depth of every pose channel (pelvis = 0). A channel drives the link it
 // sits on, so its depth IS that link's depth: `twist` turns the torso near the
@@ -113,106 +130,34 @@ export const ATLAS_POSE_DEPTH = (() => {
   for (const d of ATLAS_DEF) {
     const dep = d.parent ? depth[d.parent] + 1 : 0;
     depth[d.name] = dep;
-    for (const [key] of Object.values(d.angles ?? {})) note(key, dep);
-    if (d.pinBone) note(d.pinBone.angle[0], dep);
+    for (const bind of d.angles ?? []) {
+      if (!bind) continue;
+      if (Array.isArray(bind[0])) for (const b of bind) { if (b) note(b[0], dep); }
+      else note(bind[0], dep);
+    }
   }
   return out;
 })();
 
 export function createAtlasRig(seed = 1) {
-  const defs = ATLAS_DEF.map((d) => ({ ...d, slots: ATLAS_KIT.partSlots(d.part, d.params ?? null) }));
-  const byName = Object.fromEntries(defs.map((d) => [d.name, d]));
-  for (const d of defs) d.slots.slot0 = d.slots[d.parent ? d.slot : d.pivot];
+  const rig = createAssembly({ kit: ATLAS_KIT, links: ATLAS_DEF, seed });
 
-  // skeleton: every link = 3 chained bones at the slot-match point (unused
-  // axes just stay at angle 0)
-  const sk = createSkeleton();
-  const AX = { x: 0, y: 1, z: 2 };
-  const boneOf = {}, geoOf = {}, depthOf = {};
-  // where a link's children measure their offset from: the slot the link's
-  // own bones sit on, unless a pinBone moved the child anchor down to a pin
-  const anchorOf = (d) => (d.pinBone ? d.slots[d.pinBone.at].pos : d.slots.slot0.pos);
-  for (const d of defs) {
-    const par = d.parent ? byName[d.parent] : null;
-    const offset = par ? vSub(par.slots[d.at].pos, anchorOf(par)) : [...ATLAS_ROOT];
-    const rest = par ? matchRot(par.slots[d.at], d.slots[d.slot]) : null;
-    d.ids = addBall(sk, d.name, par ? boneOf[d.parent] : -1, offset, rest);
-    boneOf[d.name] = d.ids[2];                       // children chain off the full rotation
-    // a swingBone link owns its whole mount hinge: its fixed half must not
-    // turn with the swing, so the geometry hangs on the bone just above it
-    geoOf[d.name] = d.swingBone ? d.ids[AX[d.swingBone] - 1] : d.ids[2];
-    // a pinBone link owns a hinge further down its own body: the swing sits on
-    // an extra bone at that pin, which the children (but not the part) ride
-    if (d.pinBone) {
-      d.pinId = sk.add(`${d.name}.pin`, d.ids[2],
-        vSub(d.slots[d.pinBone.at].pos, d.slots.slot0.pos), d.pinBone.axis);
-      boneOf[d.name] = d.pinId;
-    }
-    depthOf[d.name] = par ? depthOf[d.parent] + 1 : 0;
-  }
-
-  const colorFor = colorMemo(seed);
-  const capture = (d, ppose, out) => {
-    ATLAS_KIT.buildPart(d.part, (g) => {
-      const b = bake(g);
-      out.push({
-        key: b.key, m: b.m, t: b.t,
-        color: colorFor(b.id),
-        group: `${d.name}:${currentJointGroup() ?? "body"}`,
-      });
-    }, d.params ?? null, ppose);
-    return out;
-  };
-  // static templates for every part without a live pose channel (all but the
-  // fingers, whose internal digit joints follow the curl bone, and the links
-  // that articulate their own mount hinge)
-  resetJointGroups();
-  for (const d of defs) if (!d.curl && !d.swingBone && !d.pinBone) d.tpl = capture(d, null, []);
-
-  const meshCache = createMeshCache();
-
-  function model(pose = {}) {
+  // `opts` goes straight to the assembly's emit, so a build animation can
+  // displace groups through it
+  function model(pose = {}, opts = {}) {
     const o = { ...ATLAS_POSE, ...pose };
-    for (const d of defs) {
-      if (d.pinBone) {
-        const [key, sign] = d.pinBone.angle;
-        sk.bones[d.pinId].angle = sign * rad(o[key]);
-      }
-      if (!d.angles) continue;
-      for (const [axis, [key, sign]] of Object.entries(d.angles))
-        sk.bones[d.ids[AX[axis]]].angle = sign * rad(o[key]);
-    }
-    const W = sk.resolve();
-
-    const items = [];
-    resetJointGroups();
-    for (const d of defs) {
-      const t = xfCompose(W[geoOf[d.name]], xfT(vScale(d.slots.slot0.pos, -1)));
-      const an = vNorm(vScale(m3MulV(t.r, d.slots.slot0.n), -1));
-      const depth = depthOf[d.name];
-      const ppose = d.curl ? { curl: sk.bones[d.ids[0]].angle }
-        : d.swingBone ? { swing: sk.bones[d.ids[AX[d.swingBone]]].angle }
-        : d.pinBone ? { [d.pinBone.pose]: sk.bones[d.pinId].angle }
-        : null;
-      for (const e of d.tpl ?? capture(d, ppose, []))
-        items.push({
-          key: e.key,
-          m: m3Mul(t.r, e.m),
-          t: vAdd(m3MulV(t.r, e.t), t.t),
-          color: e.color, group: e.group, an, depth,
-        });
-    }
-    meshCache.ensure(items);
-    return { items, meshes: meshCache.meshes };
+    rig.setPose(Object.fromEntries(Object.keys(o).map((k) => [k, rad(o[k])])));
+    return rig.emit(opts);
   }
 
   // stand the figure on the grid: build the rest pose off an unlifted root and
   // push the root up by the lowest vertex it puts underground (the soles). The
   // span the same sweep measures is the standing height, which frames the view.
-  const rootBone = sk.bones[defs[0].ids[0]];
+  const rootBone = rig.bones[rig.link("pelvis").ids[0]];
   let minY = Infinity, maxY = -Infinity;
-  for (const it of model().items) {
-    const { positions } = meshCache.meshes[it.key];
+  const { items, meshes } = model();
+  for (const it of items) {
+    const { positions } = meshes[it.key];
     for (let i = 0; i < positions.length; i += 3) {
       const y = it.m[3] * positions[i] + it.m[4] * positions[i + 1]
         + it.m[5] * positions[i + 2] + it.t[1];
@@ -222,7 +167,7 @@ export function createAtlasRig(seed = 1) {
   }
   rootBone.offset[1] -= minY;
 
-  return { model, height: maxY - minY };
+  return { model, height: maxY - minY, rig };
 }
 
 let _arig = null, _arigSeed = null;
@@ -232,6 +177,6 @@ const rigFor = (seed) => {
 };
 // head-to-sole span of the standing figure — the page aims the camera at its middle
 export const atlasHeight = (seed = 1) => rigFor(seed).height;
-export function atlasModel(seed = 1, pose = {}) {
-  return rigFor(seed).model(pose);
+export function atlasModel(seed = 1, pose = {}, opts = {}) {
+  return rigFor(seed).model(pose, opts);
 }

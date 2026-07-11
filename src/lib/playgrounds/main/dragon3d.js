@@ -1,7 +1,7 @@
 import { clamp } from "$lib/math/scalar.js";
 import { D3, BODY_LEN, SP3, D3_STYLE, D3_MECH_SCALE } from "./config.js";
 import { createDragonRig } from "$lib/mech/dragon/rig.js";
-import { assembleModel } from "$lib/mech/assembly.js";
+import { assembleModel } from "$lib/mech/build-anim.js";
 import { PALETTE as MECH_PALETTE } from "$lib/mech/color.js";
 
 // Site palette (app.css custom properties) for the mech dragon on this page —

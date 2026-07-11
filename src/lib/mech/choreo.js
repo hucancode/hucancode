@@ -26,11 +26,11 @@ import { lerp } from "$lib/math/scalar.js";
 // slice, the main move, and a tail where the rig just holds its new pose; the
 // main move spends its own closing `bounceTime` fraction bouncing.
 export const CHOREO_TIMING = {
-  period: 1,          // seconds between beats
+  period: 1.5,        // seconds between beats
   anticRatio: 0.18,   // leading slice of the beat the small sliders ramp across
   restRatio: 0.2,     // trailing slice, everything already settled
-  bounceTime: 0.3,    // closing slice of the main move the bounce occupies
-  bouncePower: 0.35,  // how far the travel aims past the target, as a fraction
+  bounceTime: 0.2,    // closing slice of the main move the bounce occupies
+  bouncePower: 0.1,  // how far the travel aims past the target, as a fraction
                       // of the distance it covers
 };
 const HOME_CHANCE = 0.05;      // odds a beat is a snap back to the rest pose
@@ -72,7 +72,7 @@ function sample(rnd, pool, n) {
 /**
  * @param sliders  [{ key, min, max, big }] — `big` marks the root-near bones
  * @param home     rest pose the rig occasionally snaps back to
- * @param montages { name: { setup, sequence, stepRatio, loops } } routines
+ * @param montages { name: { setup, keys: [{ pose, hold, ease }], loops } } routines
  * @param exclusives [[key, ...]] — groups of channels sharing one joint, of
  *                 which only one may be off its rest pose at a time
  * @param timing   any CHOREO_TIMING key, overriding its default
@@ -98,17 +98,20 @@ export function createChoreographer(
   let tracks = [];
   let queued = null;         // a montage the caller asked for by hand
 
-  // setup pose struck like any main move, then the sequence walked keyframe by
-  // keyframe; each keyframe is a partial pose, and only the keys it names move
-  const montage = (cut, { setup, sequence, stepRatio = 0.35, loops = 1 }) => {
+  // A montage is a KEYFRAME timeline: the setup pose is struck like any main
+  // move, then the keys are played in order. Each key is a partial pose plus the
+  // `hold` — in beats — it takes to reach it, so a routine can dwell on one frame
+  // and flick through the next; a key names only the channels it moves, and the
+  // rest hold whatever the key before left them at. `loops` replays the timeline.
+  const montage = (cut, { setup, keys, loops = 1, ease = eases.inOutSine }) => {
     let t = 0;
     for (const [key, to] of Object.entries(setup)) cut(key, to, t, SETUP_RATIO * period, hit);
     t += SETUP_RATIO * period;
-    const stepDur = stepRatio * period;
     for (let i = 0; i < loops; i++)
-      for (const frame of sequence) {
-        for (const [key, to] of Object.entries(frame)) cut(key, to, t, stepDur, eases.inOutSine);
-        t += stepDur;
+      for (const k of keys) {
+        const dur = (k.hold ?? 0.35) * period;
+        for (const [key, to] of Object.entries(k.pose)) cut(key, to, t, dur, k.ease ?? ease);
+        t += dur;
       }
     return t + restRatio * period;
   };
