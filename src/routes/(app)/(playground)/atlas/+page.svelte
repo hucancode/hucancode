@@ -81,7 +81,7 @@
   // beat timing knobs — the anticipation and rest slices bracket the main move,
   // so neither may eat the whole period
   const CHOREO_CTL = [
-    ["period", "beat", 0.3, 6, 0.1],
+    ["period", "beat", 0.3, 3, 0.1],
     ["anticRatio", "anticipation", 0, 0.4, 0.01],
     ["restRatio", "rest", 0, 0.4, 0.01],
     ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
