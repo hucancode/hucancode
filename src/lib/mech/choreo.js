@@ -32,6 +32,9 @@ export const CHOREO_TIMING = {
   bounceTime: 0.2,    // closing slice of the main move the bounce occupies
   bouncePower: 0.1,  // how far the travel aims past the target, as a fraction
                       // of the distance it covers
+  switchChance: 0.08, // odds a beat rewires the rig instead of moving it (only
+                      // where the caller offers an `onSwitch` — the atlas
+                      // mirrored/split toggle; ignored everywhere else)
 };
 const HOME_CHANCE = 0.05;      // odds a beat is a snap back to the rest pose
 const MONTAGE_CHANCE = 0.1;    // odds a beat is a rehearsed montage instead
@@ -75,12 +78,17 @@ function sample(rnd, pool, n) {
  * @param montages { name: { setup, keys: [{ pose, hold, ease }], loops } } routines
  * @param exclusives [[key, ...]] — groups of channels sharing one joint, of
  *                 which only one may be off its rest pose at a time
+ * @param onSwitch  optional: called at a beat instead of moving, to rewire the
+ *                 rig (the atlas flipping mirrored <-> split). The caller is
+ *                 expected to hand the new pose to a FRESH choreographer, since
+ *                 the slider set has changed under it — so this one just holds.
  * @param timing   any CHOREO_TIMING key, overriding its default
  */
 export function createChoreographer(
-  sliders, { home = {}, montages = {}, exclusives = [], seed = 1, ...timing } = {},
+  sliders,
+  { home = {}, montages = {}, exclusives = [], onSwitch = null, seed = 1, ...timing } = {},
 ) {
-  const { period, anticRatio, restRatio, bounceTime, bouncePower } =
+  const { period, anticRatio, restRatio, bounceTime, bouncePower, switchChance } =
     { ...CHOREO_TIMING, ...timing };
   const hit = moveBounce(bounceTime, bouncePower);
   const mainAt = anticRatio * period;
@@ -156,6 +164,13 @@ export function createChoreographer(
     if (roll < HOME_CHANCE) return snapHome(cut, cur);
     if (roll < HOME_CHANCE + MONTAGE_CHANCE && routines.length)
       return montage(cut, sample(rnd, routines, 1)[0]);
+    // and now and then it rewires itself — the atlas takes its two flanks apart,
+    // or puts them back together. The pose carries over, so nothing moves on the
+    // beat itself; the next beats are simply planned on the new slider set.
+    if (onSwitch && roll < HOME_CHANCE + MONTAGE_CHANCE + switchChance) {
+      onSwitch();
+      return period;
+    }
 
     const n = 1 + ((rnd() * Math.min(3, small.length)) | 0);
     for (const s of sample(rnd, small, n))

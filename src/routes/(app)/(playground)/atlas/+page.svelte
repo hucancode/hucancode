@@ -4,7 +4,10 @@
   import Sliders from "$lib/components/mech-sliders.svelte";
   import * as mech from "$lib/playgrounds/mech";
   import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
-  import { atlasModel, atlasHeight, ATLAS_POSE, ATLAS_POSE_DEPTH, ATLAS_MONTAGES } from "$lib/mech/atlas/rig.js";
+  import {
+    atlasModel, atlasHeight, atlasPose, atlasMontages, baseChan,
+    ATLAS_POSE_DEPTH, SIDE_CHANNELS, SIDES,
+  } from "$lib/mech/atlas/rig.js";
   import { assembleModel } from "$lib/mech/build-anim.js";
   import { createChoreographer, CHOREO_TIMING } from "$lib/mech/choreo.js";
 
@@ -14,10 +17,18 @@
 
   let view = $state("atlas");              // "joints" | "blocks" | "atlas"
   let asel = $state("rig");                // "rig" = the whole atlas, else a part
+  let partsOpen = $state(false);           // the stage's part picker, shut by default
   let cmodel = $state(null);               // catalog tabs bind their model out
   let csel = $state("");                   // ...and their selection, for framing
   let aparams = $state(structuredClone(ATLAS_KIT.params));
-  let arig = $state(structuredClone(ATLAS_POSE));    // atlas rig pose
+  // The pose ALWAYS carries both flanks (`elbowL` / `elbowR`) — there is no
+  // mirrored channel anywhere. MIRROR is a write rule laid over it: the sliders
+  // and the choreographer touch the LEFT channels only, and `mirrorWrites` copies
+  // every one of those onto the right as it lands. Drop the rule and the right
+  // channels simply stay where the last mirrored write left them, so the flanks
+  // come apart from the pose they were already holding.
+  let mirror = $state(true);
+  let arig = $state(atlasPose());                    // atlas rig pose, L/R keyed
   let choreo = $state(true);                         // procedural beats
   let ctiming = $state(structuredClone(CHOREO_TIMING));   // beat timing
   let live = $state(null);   // the running choreographer, null while it is off
@@ -34,6 +45,17 @@
   ];
 
   const PART_LABELS = { upperArm: "upper arm", armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
+  // routines the mirror rule can't hold come through as `frontWaveOpposed` — the
+  // same wave, the two arms parked in opposite setups
+  const montageLabel = (name) => {
+    const base = name.replace(/Opposed$/, "");
+    return (PART_LABELS[base] ?? base) + (base === name ? "" : " opposed");
+  };
+  // every routine is a wave, so they all wear the same glyph and are told apart by
+  // their number; the written name rides along as the tooltip and accessible name.
+  // The numbering follows the montage order, so it shifts when the opposed pairs
+  // come and go with the split.
+  const MONTAGE_ICON = (i) => `🌊${i + 1}`;
   // [key, label, min, max, step?] sliders per part
   const PART_CTL = {
     head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["innerR", "inner ring radius", 0.06, 0.35]],
@@ -47,7 +69,8 @@
     shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
     foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
   };
-  // rig runtime controls (all degrees, straight onto the bones)
+  // rig runtime controls (all degrees, straight onto the bones), written once per
+  // limb — `sided` puts them on the rig's real per-flank channels
   const ATLAS_CTL = [
     ["headYaw", "head yaw", -180, 180, 1],
     ["headPitch", "head pitch", -30, 30, 1],
@@ -66,15 +89,55 @@
     ["hip", "leg swing", -45, 45, 1],
     ["knee", "knee bend", 0, 60, 1],
   ];
+  // Rows onto the rig's real channels: every limb row forks into `arm raise L` /
+  // `arm raise R`, two sliders on two bones, and both are always on show. While
+  // mirroring, the right ones are LOCKED rather than dropped — they are not
+  // steered, they are copied, and watching them track the left flank is the whole
+  // point of seeing them.
+  const SIDED = new Set(SIDE_CHANNELS);
+  // rows onto the channels a WRITER may name: mirroring, a limb row lands on the
+  // left channel alone (the right one follows by copy); split, it forks in two
+  const sided = (ctl, mir) =>
+    ctl.flatMap(([key, label, ...rest]) =>
+      !SIDED.has(key) ? [[key, label, ...rest]]
+        : mir ? [[key + "L", label, ...rest]]
+          : SIDES.map((S) => [key + S, `${label} ${S}`, ...rest]),
+    );
+  const rigCtl = $derived(
+    ATLAS_CTL.flatMap(([key, label, ...rest]) =>
+      !SIDED.has(key) ? [[key, label, ...rest]]
+        : SIDES.map((S) => [key + S, `${label} ${S}`, ...rest]),
+    ),
+  );
+  // the right flank's channels, while the mirror rule owns them
+  const rigLocked = $derived(
+    new Set(mirror ? SIDE_CHANNELS.map((key) => key + "R") : []),
+  );
+  const montages = $derived(atlasMontages(mirror));
+  // every write to a left channel is echoed onto the right one, so a mirrored
+  // slider (or a mirrored beat) moves both arms while only ever naming one
+  const mirrorWrites = (pose) => new Proxy(pose, {
+    set(t, key, v) {
+      t[key] = v;
+      if (typeof key === "string" && key.endsWith("L") && SIDED.has(baseChan(key)))
+        t[baseChan(key) + "R"] = v;
+      return true;
+    },
+  });
+  // the object the sliders and the choreographer write through: bare while the
+  // flanks are apart, mirror-echoing while they move as one
+  const poseIn = $derived(mirror ? mirrorWrites(arig) : arig);
   // choreographer slider kit: the bone depth of a channel says how much mass it
   // moves, so the shallow ones (waist, shoulder, neck) are the big beats and
   // everything below them (elbow, wrist, fingers) is small detail. The legs sit
-  // it out — the figure has to keep standing.
+  // it out — the figure has to keep standing. Split, every limb channel enters
+  // twice, so a beat can pick the left elbow and leave the right one alone.
   const BIG_DEPTH = 2;
   const CHOREO_SKIP = new Set(["hip", "knee"]);
-  const CHOREO_SLIDERS = ATLAS_CTL
-    .filter(([key]) => !CHOREO_SKIP.has(key))
-    .map(([key, , min, max]) => ({ key, min, max, big: ATLAS_POSE_DEPTH[key] <= BIG_DEPTH }));
+  const choreoSliders = $derived(
+    sided(ATLAS_CTL.filter(([key]) => !CHOREO_SKIP.has(key)), mirror)
+      .map(([key, , min, max]) => ({ key, min, max, big: ATLAS_POSE_DEPTH[key] <= BIG_DEPTH })),
+  );
   // the waist ball's three channels share one joint: let each swing freely and
   // the torso folds through the pelvis, so only ever activate one of them
   const CHOREO_EXCLUSIVE = [["twist", "waistBend", "waistTilt"]];
@@ -86,10 +149,20 @@
     ["restRatio", "rest", 0, 0.4, 0.01],
     ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
     ["bouncePower", "bounce power", 0, 1, 0.01],
+    ["switchChance", "side switch", 0, 0.5, 0.01],
   ];
 
   function resetPart() { aparams[asel] = structuredClone(ATLAS_KIT.params[asel]); }
-  function resetAtlas() { arig = structuredClone(ATLAS_POSE); }
+  function resetAtlas() { arig = atlasPose(); }
+  // Take the flanks apart, or put them back together. Nothing is rekeyed — the
+  // pose already holds both — so all that changes is who writes the right
+  // channels. Clamping the mirror back ON copies the left flank over the right at
+  // once, so the figure snaps square instead of holding a pose half the sliders
+  // no longer name.
+  function toggleMirror() {
+    mirror = !mirror;
+    if (mirror) for (const key of SIDE_CHANNELS) arig[key + "R"] = arig[key + "L"];
+  }
   function resetChoreo() { ctiming = structuredClone(CHOREO_TIMING); }
   function shuffle() { seed = (seed + 1) | 0; }
   function playAssemble() { asm = 0; asmPlay = true; }
@@ -139,11 +212,17 @@
     if (!choreo || !rigShown) return;
     // a timing edit restarts the beat — the tracks it planned are cut to the
     // old period, so there is nothing to carry over
-    const cho = createChoreographer(CHOREO_SLIDERS, {
-      home: ATLAS_POSE, montages: ATLAS_MONTAGES, exclusives: CHOREO_EXCLUSIVE, seed,
+    const cho = createChoreographer(choreoSliders, {
+      home: atlasPose(), montages, exclusives: CHOREO_EXCLUSIVE, seed,
+      // a beat may take the flanks apart (or put them back together) on its own;
+      // the slider set changes under it, so this effect rebuilds it
+      onSwitch: toggleMirror,
       ...$state.snapshot(ctiming),
     });
-    const stop = driveRaf((dt) => cho.step(dt, arig));
+    // the beat writes through the same mirror rule the sliders do: while mirrored
+    // it only ever names left channels, and the right flank follows
+    const pose = poseIn;
+    const stop = driveRaf((dt) => cho.step(dt, pose));
     live = cho;
     return () => { live = null; stop(); };
   });
@@ -161,6 +240,22 @@
 
   <section>
     <Scene bind:this={scene} scene={mech} id="atlas" />
+    {#if view === "atlas"}
+      <menu>
+        <li>
+          <button type="button" aria-pressed={partsOpen} title="parts"
+            onclick={() => (partsOpen = !partsOpen)}>🧩</button>
+        </li>
+        {#if partsOpen}
+          <li><button type="button" aria-pressed={asel === "rig"}
+            onclick={() => (asel = "rig")}>atlas</button></li>
+          {#each ATLAS_PARTS as pn}
+            <li><button type="button" aria-pressed={asel === pn}
+              onclick={() => (asel = pn)}>{PART_LABELS[pn] ?? pn}</button></li>
+          {/each}
+        {/if}
+      </menu>
+    {/if}
     {#if rigShown}
       <footer>
         <div>
@@ -189,30 +284,26 @@
     </fieldset>
 
     {#if view === "atlas"}
-      <fieldset>
-        <legend>parts</legend>
-        <ul>
-          <li><label><input type="radio" name="atlas-part" value="rig" bind:group={asel} />atlas</label></li>
-          {#each ATLAS_PARTS as pn}
-            <li><label><input type="radio" name="atlas-part" value={pn} bind:group={asel} />{PART_LABELS[pn] ?? pn}</label></li>
-          {/each}
-        </ul>
-      </fieldset>
       {#if asel === "rig"}
         <fieldset>
           <legend>choreo<button type="button" onclick={resetChoreo}>reset</button></legend>
           <label><input type="checkbox" bind:checked={choreo} /><span>autoplay</span></label>
           <Sliders ctl={CHOREO_CTL} values={ctiming} />
-          <ul>
-            {#each Object.keys(ATLAS_MONTAGES) as name}
-              <li><button type="button" disabled={!live} onclick={() => live.play(name)}>
-                ▶ {PART_LABELS[name] ?? name}</button></li>
+          <menu>
+            {#each Object.keys(montages) as name, i}
+              <li><button type="button" disabled={!live} onclick={() => live.play(name)}
+                title={montageLabel(name)} aria-label={montageLabel(name)}>
+                {MONTAGE_ICON(i)}</button></li>
             {/each}
-          </ul>
+          </menu>
         </fieldset>
         <fieldset>
           <legend>rig<button type="button" onclick={resetAtlas}>reset</button></legend>
-          <Sliders ctl={ATLAS_CTL} values={arig} />
+          <label>
+            <input type="checkbox" checked={!mirror} onchange={toggleMirror} />
+            <span>split sides</span>
+          </label>
+          <Sliders ctl={rigCtl} values={poseIn} locked={rigLocked} />
         </fieldset>
       {:else}
         <fieldset>
@@ -224,3 +315,17 @@
       <Catalog {view} {seed} bind:model={cmodel} bind:sel={csel} />
     {/if}
   </aside>
+
+<style>
+  section > menu {
+    top: 0.5rem;
+    left: 0.5rem;
+  }
+  section > menu button {
+    width: auto;
+    min-width: 32px;
+    padding: 0 0.5rem;
+    border-radius: 0;
+    border: 0;
+  }
+</style>
