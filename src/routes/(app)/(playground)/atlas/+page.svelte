@@ -69,8 +69,6 @@
     shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
     foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
   };
-  // rig runtime controls (all degrees, straight onto the bones), written once per
-  // limb — `sided` puts them on the rig's real per-flank channels
   const ATLAS_CTL = [
     ["headYaw", "head yaw", -180, 180, 1],
     ["headPitch", "head pitch", -30, 30, 1],
@@ -85,7 +83,7 @@
     ["wristBend", "wrist bend", -100, 100, 1],
     ["wristTilt", "wrist tilt", -100, 100, 1],
     ["wristTwist", "wrist twist", -180, 180, 1],
-    ["curl", "finger curl", -10, 40, 1],
+    ["curl", "finger curl", 0, 1, 0.01],   // a 0..1 fist, not degrees
     ["hip", "leg swing", -45, 45, 1],
     ["knee", "knee bend", -60, 0, 1],
     ["ankle", "ankle bend", -30, 30, 1],
@@ -197,7 +195,6 @@
     ["bouncePower", "bounce power", 0, 1, 0.01],
     ["styleBeats", "style hold", 1, 30, 1],
     ["pulseChance", "hip pulse", 0, 1, 0.05],
-    ["switchChance", "side switch", 0, 0.45, 0.01],
   ];
 
   function resetPart() { aparams[asel] = structuredClone(ATLAS_KIT.params[asel]); }
@@ -210,7 +207,13 @@
   // The legs are how the beat squares itself up: mirrored, they are PARKED (see
   // CHOREO_PARK), so the first mirrored beat walks whatever the split flanks left
   // lifted back onto the floor.
-  function toggleMirror() { mirror = !mirror; }
+  // A flip REBUILDS the choreographer (the slider set changes under it), and a fresh
+  // one draws its randomness from the seed — so the first roll after a flip is the
+  // very roll that flipped it. Left alone the rig ping-pongs: mirrored, that roll
+  // splits it; split, the same roll pairs it straight back up, beat after beat. So a
+  // rewire ADVANCES the beat's seed, and the rig that comes out gets its own draw.
+  function toggleMirror() { mirror = !mirror; rewires = (rewires + 1) | 0; }
+  let rewires = $state(0);
   function resetChoreo() { ctiming = structuredClone(CHOREO_TIMING); }
   function shuffle() { seed = (seed + 1) | 0; }
   function playAssemble() { asm = 0; asmPlay = true; }
@@ -258,7 +261,8 @@
   // nothing worth carrying over.
   const live = $derived(createChoreographer(choreoSliders, {
     home: atlasPose(), montages, exclusives: CHOREO_EXCLUSIVE,
-    grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, pulse: CHOREO_PULSE, seed,
+    grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, pulse: CHOREO_PULSE,
+    seed: (seed + rewires) | 0,
     style: cstyle === RANDOM ? null : cstyle,
     // mirrored, the beat names the left flank and the right is DRIVEN after it —
     // never handed the value, which would snap it across

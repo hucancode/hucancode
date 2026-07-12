@@ -26,24 +26,15 @@ const D = Math.PI / 180;
 const deg = (r) => r / D;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-// THE CURL ROLL. `curl` is one slider, but a finger does not fold flat: every knuckle
-// turning by the same angle coils it into a spiral and drives the tips through each
-// other. A hand rolls shut from the FINGERTIP inward, so each segment answers only
-// its own SLICE of the sweep (`at`) and turns by its own `swing` across it — half a
-// slider is a cupped hand, a full one a fist. The swings sum to about a half turn, as
-// far as a finger goes before its tip drives back through the palm. Below zero there
-// is nothing to roll and the whole finger straightens together.
-const CURL_MAX = 40;
-const CURL_ROLL = [
-  { at: [0.55, 1.0], swing: 45 },           // base knuckle: folds last
-  { at: [0.3, 0.75], swing: 65 },           // middle
-  { at: [0.0, 0.45], swing: 70 },           // tip: leads the roll
+const CURL = [
+  { in: [0, 0.5], out: [0, -30] },  // knuckle: leads, and is spent by the halfway mark
+  { in: [0.2, 0.8], out: [0, 45] },    // middle:  takes over where the knuckle stops
+  { in: [0.5, 1], out: [0, 45] },    // tip:     finishes the fist
 ];
 const CURL_SEG = ["curlBase", "curlMid", "curlTip"];   // what the digits bind, not `curl`
 const curlSeg = (i, curl) => {
-  if (curl <= 0) return curl;
-  const [a, b] = CURL_ROLL[i].at;
-  return CURL_ROLL[i].swing * clamp((curl / CURL_MAX - a) / (b - a), 0, 1);
+  const [a, b] = CURL[i].in, [lo, hi] = CURL[i].out;
+  return lo + (hi - lo) * clamp((curl - a) / (b - a), 0, 1);
 };
 
 const SIDED = new Set([...SIDE_CHANNELS, ...CURL_SEG]);
@@ -63,12 +54,10 @@ export const baseChan = (key) => {
   return SIDES.includes(key.slice(-1)) && SIDED.has(b) ? b : key;
 };
 
-// runtime rig controls (degrees), authored once per limb — the real pose object
-// carries the forked `atlasPose()` channels
 const ATLAS_POSE = {
   headYaw: 0, headPitch: 0, twist: 0, waistBend: 0, waistTilt: 0,
   shoulder: 0, armOut: 30, armTwist: 0, elbow: 60, foreTwist: 0,
-  wristBend: 0, wristTilt: 30, wristTwist: 0, curl: 30,
+  wristBend: 0, wristTilt: 30, wristTwist: 0, curl: 0.35,
   hip: 0, knee: 0, ankle: 0, hipLevel: 0,
 };
 export const atlasPose = () => forSides(ATLAS_POSE);
@@ -139,39 +128,23 @@ const REST = {
   headPitch: 0, headYaw: 0, hip: 0, knee: 0, ankle: 0,
 };
 
-// The ripple down an arm. A joint raising by n swings everything below it up too,
-// so the two joints under it fold back: the next by 2n, the one after by n again.
-// That +n / -2n / +n chain leaves the hand where it was and reads as a CREST at the
-// raised joint. The crest then travels: each key drops the joint that held it back
-// to rest and hands it to the one below, which brings its own compensators with it.
-// `lead` = the shoulder channel the setup holds at `level`; `n` = its raise.
-// The finger curl runs the OTHER WAY ROUND from the bend channels (a positive curl
-// closes the hand), so every compensation landing on the fingers has its sign flipped.
+const fist = (n) => Math.abs(n) / 90;
 const WAVE = (lead, level, n) => [
   { hold: 0.15, pose: { [lead]: level + n, elbow: -2 * n, wristBend: n } },
   { hold: 0.12, pose: { [lead]: level, elbow: n, wristBend: -2 * n } },
   { hold: 0.12, pose: { elbow: 0, wristBend: n } },
-  { hold: 0.12, pose: { wristBend: 0, curl: -n } },
+  { hold: 0.12, pose: { wristBend: 0, curl: fist(n) } },
   { hold: 0.15, pose: { curl: 0 } },
 ];
 
-// The same ripple run BACKWARDS — and NOT the key list reversed. The bone chain
-// only runs one way: a joint carries everything BELOW it and nothing above, so a
-// finger can never counter its own wrist. The counters therefore always land on the
-// joints UNDER the one swinging, whichever way the crest travels. So the crest
-// starts at the fingers (a leaf, nothing under them) and climbs.
 const VERT_WAVE = (lead, level, n) => [
-  { hold: 0.12, pose: { curl: n } },
-  { hold: 0.12, pose: { wristBend: n, curl: -2 * n } },
-  { hold: 0.12, pose: { elbow: n, wristBend: -2 * n, curl: n } },
+  { hold: 0.12, pose: { curl: fist(n) } },
+  { hold: 0.12, pose: { wristBend: n, curl: 0 } },
+  { hold: 0.12, pose: { elbow: n, wristBend: -2 * n, curl: fist(n) } },
   { hold: 0.12, pose: { [lead]: level - n, elbow: -2 * n, wristBend: n, curl: 0 } },
   { hold: 0.12, pose: { [lead]: level, elbow: 0, wristBend: 0, curl: 0 } },
 ];
 
-// ONE ARM'S wave, whole: the `raise` it strikes on top of REST and the keys the
-// crest travels through. A style knows nothing about the other arm — pairing two of
-// them is what makes a routine, so forward and back are two constants, not one with
-// a sign flag.
 const STYLE = {
   sideOut: { raise: { armOut: 90, armTwist: -90 }, keys: WAVE("armOut", 90, 35), loops: 2 },
   front: { raise: { shoulder: 90 }, keys: WAVE("shoulder", 90, 35), loops: 2 },
@@ -180,9 +153,6 @@ const STYLE = {
   hang: { raise: { armOut: 0, armTwist: 0 }, keys: VERT_WAVE("shoulder", 0, -20), loops: 2 },
 };
 
-// A ROUTINE pairs a style per flank. Where the columns differ the arms park in
-// OPPOSITE setups and wave against each other — dropped while mirroring, which would
-// flatten them into one move. Paired styles must share a key count and holds.
 const ROUTINES = {
   armWave: { L: STYLE.sideOut, R: STYLE.sideOut },
   frontWave: { L: STYLE.front, R: STYLE.front },
@@ -194,8 +164,6 @@ const ROUTINES = {
 const onSide = (pose, S) =>
   Object.fromEntries(Object.entries(pose).map(([k, v]) => [chan(k, S), v]));
 
-// the two styles laid side by side: setups merged, and key `i` of the left merged
-// with key `i` of the right, so the arms ripple in lockstep
 export const atlasMontages = (mirror = false) =>
   Object.fromEntries(
     Object.entries(ROUTINES)

@@ -32,10 +32,9 @@ export const CHOREO_TIMING = {
   bouncePower: 0.1,   // how far the travel aims past its target, as a fraction of
                       // the distance it covers
   styleBeats: 10,     // beats a style is danced before another is drawn
-  pulseChance: 0.15,  // odds a beat travels a PULSE channel (see `pulse`) — low, so
-                      // the body sinks now and then rather than pumping every beat
-  switchChance: 0.08, // odds a beat rewires the rig instead of moving it (only
-                      // where the caller offers an `onSwitch`)
+  pulseChance: 0.25,  // odds a beat travels a PULSE channel
+  splitChance: 0.1,   // mirrored -> split
+  mergeChance: 0.3,   // split -> mirrored
 };
 const HOME_CHANCE = 0.05;      // odds a beat is a snap back to the rest pose
 const MONTAGE_CHANCE = 0.1;    // odds a beat is a rehearsed montage instead
@@ -138,7 +137,9 @@ const pick = (rnd, pool) => pool[(rnd() * pool.length) | 0];
  *                 clamping its mirror on, grounding both legs) hands them over here
  * @param onSwitch called at a beat instead of moving, to rewire the rig (the atlas
  *                 flipping mirrored <-> split). The caller hands the new pose to a
- *                 FRESH choreographer, so this one just holds
+ *                 FRESH choreographer, so this one just holds. WHICH way the flip
+ *                 goes is read off `twin`, and each way carries its own odds —
+ *                 `splitChance` while mirrored, `mergeChance` while apart
  * @param timing   any CHOREO_TIMING key, overriding its default
  */
 export function createChoreographer(
@@ -148,14 +149,12 @@ export function createChoreographer(
 ) {
   const {
     period, anticRatio, restRatio, bounceTime, bouncePower,
-    styleBeats, pulseChance, switchChance,
+    styleBeats, pulseChance, splitChance, mergeChance,
   } = { ...CHOREO_TIMING, ...timing };
+  const switchChance = twin ? splitChance : mergeChance;
   const hit = moveBounce(bounceTime, bouncePower);
   const mainAt = anticRatio * period;
   const mainDur = (1 - restRatio - anticRatio) * period;
-  // what each step is WORTH, as a share of a beat — read straight off the timing
-  // knobs, so the plain style times exactly as it always did (its four shares sum
-  // to the period) and any other style shares the period out in the same ratios
   const STEP_SHARE = {
     antic: anticRatio,
     move: (1 - restRatio - anticRatio) * (1 - bounceTime),
