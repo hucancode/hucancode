@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "scripts": {
     "dev": "vite dev --host",
-    "build": "build:wasm && npm run build:resume && vite build",
+    "build": "npm run build:wasm && npm run build:resume && vite build",
     "build:resume": "for f in src/resume/resume*.typ; do typst c --font-path src/resume/fonts \"$f\" \"static/$(basename \"${f%.typ}.pdf\")\"; done",
     "build:wasm": "cargo build --release --target wasm32-unknown-unknown --manifest-path src/lib/poker-solver/Cargo.toml && cp src/lib/poker-solver/target/wasm32-unknown-unknown/release/poker_solver.wasm src/lib/playgrounds/poker/",
     "preview": "vite preview",
