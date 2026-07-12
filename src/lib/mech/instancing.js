@@ -1,12 +1,11 @@
 import { m3InvT } from "../math/mat3.js";
-// SHARED INSTANCED RENDER PATH for procedural models ({ items, meshes } from
-// parts.js / rig.js). One place owns the instance layout, the shading program
-// and the buffer management, so every playground drawing mech parts renders
-// identically and can show assembly alpha.
+// SHARED INSTANCED RENDER PATH for procedural models ({ items, meshes } from a kit
+// or a rig). One place owns the instance layout, the shading program and the
+// buffers, so every mech playground renders identically.
 //
-// Per-instance data = 3 model matrix rows (vec4: linear row + translation in
-// w), 3 normal matrix rows (inverse-transpose, handles non-uniform scale +
-// mirroring) and color (alpha = per-item `a`, assembly fade).
+// Per instance: 3 model matrix rows (vec4 = linear row + translation in w), 3 normal
+// matrix rows (inverse-transpose, for non-uniform scale and mirroring), and color
+// (alpha = the item's `a`, the assembly fade).
 import INSTANCED from "./shaders/instanced.wgsl?shader";
 
 const INST_FLOATS = 28; // 3 model rows + 3 normal rows + color, vec4 each

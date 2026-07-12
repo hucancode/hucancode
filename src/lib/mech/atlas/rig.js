@@ -1,15 +1,14 @@
-// ATLAS RIG — DATA. A standing humanoid on the same engines as the dragon: the
-// links below name parts and the parent slots they bolt to, the assemble engine
-// instantiates the joints and spends the bones, and the pose SLIDERS are the whole
-// public surface — a choreographer drives those, and never touches a bone.
+// ATLAS RIG — DATA. A standing humanoid on the same engines as the dragon: the links
+// name parts and the parent slots they bolt to, assemble instantiates the joints and
+// spends the bones, and the pose SLIDERS are the whole public surface — a
+// choreographer drives those and never touches a bone.
 //
-// `angles` binds the sliders to a link's joint, one entry per DOF, in the joint's
-// own DOF order:
+// `angles` binds the sliders to a link's joint, one entry per DOF, in the joint's own
+// order (a null entry leaves that DOF at zero):
 //   disc hinge (shoulder / hip)  [disc spin, pin swing, disc spin]
 //   hinge (elbow / knee / ankle) [pin swing]
 //   wrist                        [bend, tilt, twist]
 //   ball (waist / neck)          one free bone, its three euler channels
-// A null entry leaves that DOF resting at zero.
 import { ATLAS_KIT } from "./parts.js";
 import { createAssembly } from "../assemble.js";
 import { rad } from "../../math/scalar.js";
@@ -27,14 +26,13 @@ const D = Math.PI / 180;
 const deg = (r) => r / D;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-// THE CURL ROLL. `curl` is one slider, but a finger does not fold flat — every
-// knuckle turning by the same angle coils it into a spiral and drives the tips
-// through each other. A hand rolls shut from the FINGERTIP inward, so each segment
-// answers only its own SLICE of the sweep (`at`, as a fraction of it) and turns by
-// its own `swing` across that slice. Half a slider is a cupped hand, a full one a
-// fist. The swings sum to about a half turn — as far as a finger can go before its
-// tip drives back through the palm. Below zero there is nothing to roll: the whole
-// finger straightens together.
+// THE CURL ROLL. `curl` is one slider, but a finger does not fold flat: every knuckle
+// turning by the same angle coils it into a spiral and drives the tips through each
+// other. A hand rolls shut from the FINGERTIP inward, so each segment answers only
+// its own SLICE of the sweep (`at`) and turns by its own `swing` across it — half a
+// slider is a cupped hand, a full one a fist. The swings sum to about a half turn, as
+// far as a finger goes before its tip drives back through the palm. Below zero there
+// is nothing to roll and the whole finger straightens together.
 const CURL_MAX = 40;
 const CURL_ROLL = [
   { at: [0.55, 1.0], swing: 45 },           // base knuckle: folds last
@@ -76,14 +74,12 @@ const ATLAS_POSE = {
 export const atlasPose = () => forSides(ATLAS_POSE);
 
 // ---- THE LEG ----------------------------------------------------------------
-// The leg is a two-link chain in the fore/aft plane and the three leg sliders ARE
-// its angles: `hip` swings the thigh off the vertical (+ = forward), `knee` turns
-// the shin off the thigh (- = folding back), `ankle` turns the foot off the shin.
-// So the ankle sits Lt·sin(hip) + Ls·sin(hip+knee) forward of the hip and
-// Lt·cos(hip) + Ls·cos(hip+knee) below it, and a sole lies flat on the floor when
-// hip + knee + ankle = 0. Measured off the built rig, so a longer shin just moves
-// the numbers.
-const LEG = { Lt: 0, Ls: 0, hipY: 0, ankleY: 0, perLevel: 0, maxDrop: 0 };
+// A two-link chain in the fore/aft plane, and the three leg sliders ARE its angles:
+// `hip` swings the thigh off the vertical (+ = forward), `knee` turns the shin off
+// the thigh (- = folding back), `ankle` turns the foot off the shin. So the ankle
+// sits Lt·sin(hip) + Ls·sin(hip+knee) forward of the hip and Lt·cos(hip) +
+// Ls·cos(hip+knee) below it, and a sole lies flat when hip + knee + ankle = 0.
+// Measured off the BUILT rig, so a longer shin just moves the numbers.
 const measureLeg = (rig) => {
   rig.setPose({});
   const W = rig.skeleton.resolve();
@@ -91,35 +87,36 @@ const measureLeg = (rig) => {
   const span = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
   const [hip, knee, ankle] = [at("legL"), at("shinL"), at("footL")];
   const Lt = span(hip, knee), Ls = span(knee, ankle);
-  LEG.Lt = Lt;
-  LEG.Ls = Ls;
-  LEG.hipY = hip[1];
-  LEG.ankleY = ankle[1];                     // where a planted foot's ankle rides
-  // hipLevel is a RATE, not a distance: each -1 sinks the hip by what folding a
-  // knee 60° costs it in height, so -2 sinks twice as far and the legs fold on to
-  // hold it. It stops where the leg runs out of fold.
+  // hipLevel is a RATE, not a distance: each -1 sinks the hip by what folding a knee
+  // 60° costs it in height, so -2 sinks twice as far and the legs fold on to hold
+  // it. It stops where the leg runs out of fold.
   const k = -60 * D;
-  LEG.perLevel = Lt + Ls - Math.sqrt(Lt * Lt + Ls * Ls + 2 * Lt * Ls * Math.cos(k));
-  LEG.maxDrop = Lt + Ls - Math.abs(Lt - Ls) - 0.02;
+  return {
+    Lt, Ls,
+    hipY: hip[1],
+    ankleY: ankle[1],                        // where a planted foot's ankle rides
+    perLevel: Lt + Ls - Math.sqrt(Lt * Lt + Ls * Ls + 2 * Lt * Ls * Math.cos(k)),
+    maxDrop: Lt + Ls - Math.abs(Lt - Ls) - 0.02,
+  };
 };
-const hipDrop = (level) => clamp(-Math.min(level, 0) * LEG.perLevel, 0, LEG.maxDrop);
+const hipDrop = (L, level) => clamp(-Math.min(level, 0) * L.perLevel, 0, L.maxDrop);
 
-// THE LEG SOLVER. The leg sliders are an INTENT — where the dancer wants the foot
-// — not the final angles, because the hip may be sunk so low that a straight leg
-// would stand the foot underground, or a swing may reach further than a leg is
-// long. So the intent is read FORWARD into a foot position, corrected THERE (on
-// the floor, within reach), and solved BACK into angles. A leg is then only ever
-// posed by angles a real leg of this length could hold.
+// THE LEG SOLVER. The leg sliders are an INTENT — where the dancer wants the foot —
+// not the final angles: the hip may be sunk so low that a straight leg would stand
+// the foot underground, or a swing may reach further than a leg is long. So the
+// intent is read FORWARD into a foot position, corrected THERE (onto the floor,
+// within reach), and solved BACK into angles — a leg is only ever posed by angles a
+// real leg of this length could hold.
 //
-// The CROUCH needs no author: it is what a leg at rest SOLVES to. Every slider
-// zero asks for a foot straight down, which is under the floor as soon as the hip
-// sinks — so the correction lifts it back onto the floor and the solve folds the
-// knee forward and leans the shin back to meet it.
-const solveLeg = (hip, knee, ankle, level) => {
-  const { Lt, Ls, hipY, ankleY } = LEG;
+// The CROUCH needs no author: it is what a leg at rest SOLVES to. Every slider zero
+// asks for a foot straight down, which is under the floor as soon as the hip sinks,
+// so the correction lifts it back up and the solve folds the knee forward and leans
+// the shin back to meet it.
+const solveLeg = (L, hip, knee, ankle, level) => {
+  const { Lt, Ls, hipY, ankleY } = L;
   const z = Lt * Math.sin(hip * D) + Ls * Math.sin((hip + knee) * D);
   const y = Lt * Math.cos(hip * D) + Ls * Math.cos((hip + knee) * D);
-  const floor = hipY - hipDrop(level) - ankleY;
+  const floor = hipY - hipDrop(L, level) - ankleY;
   const planted = y >= floor - 1e-9;          // it reached the floor, so it stands on it
   const down = Math.min(y, floor);
   // A target further off than the leg is long straightens it: the fold clamps to
@@ -184,9 +181,8 @@ const STYLE = {
 };
 
 // A ROUTINE pairs a style per flank. Where the columns differ the arms park in
-// OPPOSITE setups and wave against each other — dropped while mirroring, which
-// would copy the left arm over the right and flatten them into one move. Paired
-// styles must share a key count and holds.
+// OPPOSITE setups and wave against each other — dropped while mirroring, which would
+// flatten them into one move. Paired styles must share a key count and holds.
 const ROUTINES = {
   armWave: { L: STYLE.sideOut, R: STYLE.sideOut },
   frontWave: { L: STYLE.front, R: STYLE.front },
@@ -296,7 +292,7 @@ export const ATLAS_POSE_DEPTH = (() => {
 
 export function createAtlasRig(seed = 1) {
   const rig = createAssembly({ kit: ATLAS_KIT, links: ATLAS_DEF, seed });
-  measureLeg(rig);                        // the solver poses off these
+  const LEG = measureLeg(rig);            // the solver poses off these
   const restPose = atlasPose();
 
   // `opts` goes straight to the assembly's emit, so a build animation can displace
@@ -310,10 +306,10 @@ export function createAtlasRig(seed = 1) {
         o[CURL_SEG[i] + S] = curlSeg(i, o[chan("curl", S)]);
       // and both legs are re-solved against the floor the hip level leaves them:
       // the planted one folds into the crouch, the dancing one stays out of the ground
-      const leg = solveLeg(o[chan("hip", S)], o[chan("knee", S)], o[chan("ankle", S)], level);
+      const leg = solveLeg(LEG, o[chan("hip", S)], o[chan("knee", S)], o[chan("ankle", S)], level);
       for (const key of ["hip", "knee", "ankle"]) o[chan(key, S)] = leg[key];
     }
-    rootBone.offset[1] = rootY - hipDrop(level);
+    rootBone.offset[1] = rootY - hipDrop(LEG, level);
     rig.setPose(Object.fromEntries(Object.keys(o).map((k) => [k, rad(o[k])])));
     return rig.emit(opts);
   }

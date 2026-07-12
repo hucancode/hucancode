@@ -1,6 +1,5 @@
-// SHAPE COLORING — one palette, one hash. Every primitive instance is its own
-// draw item with a seeded random color, so a given seed reproduces the same
-// coloring across kits and rigs; bump the seed to reshuffle.
+// SHAPE COLORING — one palette, one hash. A seed reproduces the same coloring
+// across kits and rigs; bump it to reshuffle.
 
 function hashStr(s) {
   let h = 2166136261 >>> 0;

@@ -160,9 +160,12 @@
   // foot off the floor is ONE rule over all three, not three rules
   const LEG_CHANNELS = ["hip", "knee", "ankle"];
   const CHOREO_SKIP = $derived(new Set(mirror ? LEG_CHANNELS : []));
-  // The hip level is the biggest move the figure has — it sinks the whole body —
-  // so it plays as a main beat. The legs need no fencing: whatever crouch the beat
-  // drops the hip into, the rig's solver keeps both feet on the floor.
+  // The hip level moves the WHOLE figure, so it does not compete with an arm for
+  // the one main beat: it PULSES, riding under the beat across the full period, and
+  // the body sinks and rises while the limbs keep dancing. The legs need no fencing
+  // — whatever crouch the beat drops the hip into, the rig's solver keeps both feet
+  // on the floor.
+  const CHOREO_PULSE = ["hipLevel"];
   const choreoSliders = $derived(
     sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !CHOREO_SKIP.has(key)), mirror)
       .map(([key, , min, max]) => ({
@@ -193,6 +196,7 @@
     ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
     ["bouncePower", "bounce power", 0, 1, 0.01],
     ["styleBeats", "style hold", 1, 30, 1],
+    ["pulseChance", "hip pulse", 0, 1, 0.05],
     ["switchChance", "side switch", 0, 0.45, 0.01],
   ];
 
@@ -254,7 +258,7 @@
   // nothing worth carrying over.
   const live = $derived(createChoreographer(choreoSliders, {
     home: atlasPose(), montages, exclusives: CHOREO_EXCLUSIVE,
-    grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, seed,
+    grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, pulse: CHOREO_PULSE, seed,
     style: cstyle === RANDOM ? null : cstyle,
     // mirrored, the beat names the left flank and the right is DRIVEN after it —
     // never handed the value, which would snap it across

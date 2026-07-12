@@ -1,16 +1,13 @@
-// DRAGON RIG — DATA, plus the one thing that is really the dragon's own: the
-// spine solve. Everything mechanical belongs to the engines: parts.js models
-// bodies, joints.js models joints, skeleton.js spins bones, assemble.js bolts
-// the three together. This file only says WHICH parts hang off which, and
-// drives the bones the assembly handed it.
+// DRAGON RIG — DATA, plus the one thing really the dragon's own: the spine solve.
+// Everything mechanical belongs to the engines (parts, joints, skeleton, assemble);
+// this file only says WHICH parts hang off which, and drives the bones it was handed.
 //
-// The body chain rides a CLOSED CATMULL-ROM LOOP: the spine's ball joints are
-// chord-marched along the curve at the exact pitches the assembly reports (so
-// every stud lands in its socket), and `offset` slides the dragon along it.
+// The body rides a CLOSED CATMULL-ROM LOOP: the spine's ball joints are chord-marched
+// along the curve at the exact pitches the assembly reports, so every stud lands in
+// its socket, and `offset` slides the dragon along it.
 //
-// The rig's public surface is a handful of SLIDERS (DRAGON_POSE) — that is all
-// a choreographer or a page ever touches. They reach the bones through the
-// assembly; the skeleton underneath is not something a caller has to know.
+// The public surface is a handful of SLIDERS (DRAGON_POSE) — all a choreographer or a
+// page ever touches.
 import { DRAGON_KIT, DRAGON_JOINTS } from "./parts.js";
 import { createAssembly } from "../assemble.js";
 import { buildSpline } from "../../math/curve.js";

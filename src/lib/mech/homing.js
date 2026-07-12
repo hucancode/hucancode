@@ -3,21 +3,19 @@ import { clamp, smooth } from "../math/scalar.js";
 import { eases } from "../math/ease.js";
 
 // ---- HOMING FLIGHT -------------------------------------------------------
-// The assembly's group flight, TWO PHASES over the travel window:
-//   A. APPROACH (tau 0..P.approach): the formed group is a rigid agent
-//      (position + heading + speed) that CHASES a gate hovering P.dock off
-//      the moving mount point along its normal, like a missile — turn-rate-
-//      clamped seek, whole flight compressed into the approach window so it
-//      reads fast. Over the last P.capture of the approach a blend settles
-//      it EXACTLY onto the live gate with the heading exactly on -n: it
-//      arrives parked and fully aligned, ready to land.
-//   B. SNAP-IN (tau P.approach..1): straight plug-in run down the LIVE
-//      mount normal, gate -> seat. No steering, orientation locked.
+// The assembly's group flight, TWO PHASES over the travel window (`tau` = a fraction
+// of it):
+//   A. APPROACH (0..P.approach): the formed group is a rigid agent (position,
+//      heading, speed) CHASING a gate that hovers P.dock off the moving mount point
+//      along its normal — a turn-rate-clamped missile seek, the whole flight
+//      compressed into the approach window so it reads fast. Over the last
+//      P.capture a blend settles it exactly onto the live gate, heading on -n: it
+//      arrives parked and aligned, ready to land.
+//   B. SNAP-IN (P.approach..1): a straight plug-in run down the LIVE mount normal,
+//      gate -> seat. No steering, orientation locked.
 //
-// Everything is deterministic: fixed integration steps anchored at k/steps
-// of the approach window, and all per-group variation hashed off the group
-// index — re-simulating from the start at any scrub position replays the
-// exact same trajectory. Times (`tau`) are fractions of the travel window.
+// All of it deterministic — fixed integration steps, every per-group variation
+// hashed off the group index — so scrubbing the clock replays the same trajectory.
 
 // deterministic per-index random in [0,1) — the assembly's only RNG
 export function hash01(i, salt) {

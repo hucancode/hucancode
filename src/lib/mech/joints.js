@@ -1,39 +1,25 @@
-// JOINT ENGINE — mech joints, built from primitives.js and nothing else. This
-// file knows no parts, no bones and no rigs. It hands the assemble engine
-//   (a) the PIECES a joint is made of — hinge female / male / base / pin, ball
-//       female / male / base — so a part never models a joint half itself, and
-//   (b) a SPEC per joint kind: how many DOFs it has (= how many bones the rig
-//       spends on it), which piece rides which of those bones, and the two
-//       MOUNT frames the parts bolt onto.
+// JOINT ENGINE — mech joints, out of primitives.js and nothing else: no parts,
+// no bones, no rigs. It hands the assemble engine the PIECES a joint is made of
+// and a SPEC per kind (its DOFs = the bones a rig spends on it, which piece
+// rides which bone, and the two faces the parts bolt onto).
 //
-// Nomenclature (standard clevis-and-pin hardware, mirrored from the pieces
-// modeled in Blender / robot_dragon.blend):
-//   clevis   the forked half: two LUGS (parallel plates, each with a rounded
-//            KNUCKLE head bored for the pin) closed by a BASE (the flange the
-//            owning part bolts to). The space between the lugs is the JAW.
-//   tang     the solid blade that fills the jaw (a lug with no fork), pinned in
-//            double shear. A hinge's male half is either a nested inner clevis
-//            (default, interleaved lugs) or a single tang.
-//   pin      the clevis pin: one bare shaft through every knuckle bore.
-//   female   the half that RECEIVES — outer clevis (wide jaw) / socket. It
-//            carries the pin and belongs to the PARENT part.
-//   male     the half that ENTERS — inner clevis or tang / ball stud. It
-//            belongs to the CHILD part.
-//   base     the flange closing a fork, or the plate under a socket / on top of
-//            a stud: the face the owning part bolts to.
+// Nomenclature — standard clevis-and-pin hardware:
+//   clevis  the forked half: two LUGS (plates with a rounded KNUCKLE bored for
+//           the pin) closed by a BASE flange. The gap between them is the JAW.
+//   tang    the solid blade filling the jaw, pinned in double shear. A male
+//           half is either a nested inner clevis (default) or one tang.
+//   pin     one bare shaft through every knuckle bore.
+//   female  the half that RECEIVES (outer clevis / socket) — carries the pin,
+//           belongs to the PARENT. male = the half that ENTERS, the child's.
+//   base    the flange closing a fork / the plate under a socket: the face the
+//           owning part bolts to.
 //
-// TWO CONVENTIONS, and everything downstream falls out of them:
-//
-//   ORIGIN. A joint is authored around its AXIS OF MOTION — pin bore, ball
-//   centre, spin axis. That point is the local origin, so a bone spent on the
-//   joint rotates about the origin and nothing needs re-centring later.
-//
-//   MOUNTS. mount `a` / `b` are the two BOLTING FACES, i.e. the outer face of
-//   the female's base and of the male's base. A part therefore puts its slot on
-//   the plain face of its own body where the joint bolts on, and never computes
-//   how deep the joint reaches — the engine seats the joint so its base face
-//   lands on that slot, and the pin / ball centre ends up wherever the joint
-//   says it does.
+// TWO CONVENTIONS carry everything downstream:
+//   ORIGIN  a joint is authored around its AXIS OF MOTION (pin bore, ball
+//           centre, spin axis), so a bone spent on it turns about the origin.
+//   MOUNTS  `a` / `b` are the two BOLTING FACES — the outer face of the female
+//           base and of the male base. A part puts its slot on its own plain
+//           face and never computes how deep the joint reaches.
 import {
   box, cylinder, sphere, cutHemisphere, halfCylinderBox,
   rotX, rotY, rotZ, translate,
@@ -228,87 +214,87 @@ export const prismaticMale = (add, p, slide = 0) => ram(add, prismaticDims(p), 1
 // ---- JOINT SPECS -----------------------------------------------------------
 // What the assemble engine reads. Per kind:
 //
-//   dof     the bones the joint costs, in chain order parent -> child. ONE bone
-//           per rotation axis ("x"/"y"/"z"), or ONE "free" bone taking all axes
-//           (a ball), or ONE slide bone ("ty", prismatic). `at` = where the bone
-//           sits relative to the PREVIOUS bone, in joint space.
-//   pieces  the geometry, each tagged with the bone it RIDES: -1 = the parent's
-//           bone (a female half is rigid with the parent part), i = DOF bone i.
-//           A piece is authored in the frame of the bone it rides.
-//   mounts  a = the bolting face the PARENT part's slot lands on (on the female
-//           base), in joint space. b = the bolting face the CHILD part's slot
-//           lands on (on the male base), in the LAST bone's frame.
-//           { pos, n, f }: origin + outward normal + forward tangent (f ⊥ n).
-//   pose    the channel name of each DOF, in bone order — what a rig's pose
-//           slider binds to and what the joint catalog puts on a slider. A
-//           "free" bone takes THREE channels (its euler angles).
+//   dof     the bones the joint costs, parent -> child. ONE bone per rotation
+//           axis ("x"/"y"/"z"), or ONE "free" bone taking all axes (a ball), or
+//           ONE slide bone ("ty"). `at` = where the bone sits relative to the
+//           PREVIOUS one, in joint space; `rest` = a fixed rotation baked on it.
+//   pieces  the geometry, tagged with the bone it RIDES and authored in that
+//           bone's frame: -1 = the parent's bone (a female half is rigid with
+//           the parent part), i = DOF bone i.
+//   pose    the channel name of each DOF, in bone order — what a rig's slider
+//           binds to. A "free" bone takes THREE (its euler angles).
+//   mounts  the two bolting faces { pos, n, f } — `a` is where the PARENT's slot
+//           lands (joint space), `b` where the CHILD's does (LAST bone's frame).
 
 const O = [0, 0, 0];
+const X = [1, 0, 0], Z = [0, 0, 1];
+
+// Every joint bolts the same way: the two base faces sit `ra` / `rb` out along
+// the joint axis, back to back, pointing away from each other. `up` = which way
+// the FEMALE base faces (+1 = the clevis family, its base above the pin; -1 =
+// the socket family, its base under the ball).
+const faces = (ra, rb, f, up = 1) => ({
+  a: { pos: [0, up * ra, 0], n: [0, up, 0], f },
+  b: { pos: [0, -up * rb, 0], n: [0, -up, 0], f },
+});
+
+// the clevis halves as pieces. A kit's opts pick the flange style and whether the
+// owning part closes the fork itself; `discM` defaults ON where the male base IS
+// the child's turntable (hinge+twist), OFF where it is a plain flange.
+const femaleP = {
+  bone: -1,
+  build: (add, p, o) => hingeFemale(add, p, { base: o.baseF !== false, disc: !!o.discF }),
+};
+const maleP = (bone, discDflt = false) => ({
+  bone,
+  build: (add, p, o) => hingeMale(add, p, {
+    base: o.baseM !== false,
+    disc: discDflt ? o.discM !== false : !!o.discM,
+    tang: !!o.tang,
+  }),
+});
+const clevisMounts = (p) => {
+  const r = hingeDims(p).reach;
+  return faces(r, r, X);
+};
 
 // HINGE — plain clevis-and-pin. ONE DOF: the pin swing (X).
 const hinge = {
-  dims: hingeDims,
   dof: [{ axis: "x", at: () => O }],
   pose: ["swing"],
-  pieces: [
-    { bone: -1, build: (add, p, o) => hingeFemale(add, p, { base: o.baseF !== false, disc: !!o.discF }) },
-    { bone: 0, build: (add, p, o) => hingeMale(add, p, { base: o.baseM !== false, disc: !!o.discM, tang: !!o.tang }) },
-  ],
-  mounts: (p) => {
-    const d = hingeDims(p);
-    return {
-      a: { pos: [0, d.reach, 0], n: [0, 1, 0], f: [1, 0, 0] },    // female base face, f = pin axis
-      b: { pos: [0, -d.reach, 0], n: [0, -1, 0], f: [1, 0, 0] },  // male base face
-    };
-  },
+  pieces: [femaleP, maleP(0)],
+  mounts: clevisMounts,
 };
 
-// HINGE + TWIST — a plain hinge whose male DISC base doubles as a TURNTABLE: the
-// child spins on that disc face about the tang's own axis. TWO DOF, two bones —
-// swing on the pin (bone 0, which the male half rides), then twist about Y (bone
-// 1, bare hardware: only the child turns on the disc). The elbow of an arm whose
-// forearm can roll.
+// HINGE + TWIST — a hinge whose male DISC base doubles as a TURNTABLE: the child
+// spins on that disc about the tang's axis. TWO bones — swing on the pin (bone 0,
+// which the male half rides), then twist about Y (bone 1, bare: only the child
+// turns). The elbow of an arm whose forearm can roll.
 const hingeTwist = {
-  dims: hingeDims,
   dof: [{ axis: "x", at: () => O }, { axis: "y", at: () => O }],
   pose: ["swing", "twist"],
-  pieces: [
-    { bone: -1, build: (add, p, o) => hingeFemale(add, p, { base: o.baseF !== false, disc: !!o.discF }) },
-    { bone: 0, build: (add, p, o) => hingeMale(add, p, { base: o.baseM !== false, disc: o.discM !== false, tang: !!o.tang }) },
-  ],
-  mounts: (p) => {
-    const d = hingeDims(p);
-    return {
-      a: { pos: [0, d.reach, 0], n: [0, 1, 0], f: [1, 0, 0] },    // female base face
-      b: { pos: [0, -d.reach, 0], n: [0, -1, 0], f: [1, 0, 0] },  // male disc face, in bone 1's frame
-    };
-  },
+  pieces: [femaleP, maleP(0, true)],
+  mounts: clevisMounts,
 };
 
 // PIN — a hinge with no clevis: a BARE knuckle pin the child swings on (the
 // atlas finger digits). ONE DOF about X; the pin rides the parent.
 const pin = {
-  dims: hingeDims,
   dof: [{ axis: "x", at: () => O }],
   pose: ["swing"],
   pieces: [{ bone: -1, build: (add, p) => hingePin(add, p) }],
-  mounts: () => ({
-    a: { pos: [0, 0, 0], n: [0, 1, 0], f: [1, 0, 0] },
-    b: { pos: [0, 0, 0], n: [0, -1, 0], f: [1, 0, 0] },
-  }),
+  mounts: () => faces(0, 0, X),
 };
 
-// DISC HINGE — the same clevis-and-pin, but with a DISC on each base. A disc is
-// a body of revolution, i.e. a TURNTABLE: bolted face to face it spins. So the
-// block is really three revolutes in series and costs THREE bones —
+// DISC HINGE — clevis-and-pin with a DISC on each base. A disc is a body of
+// revolution, i.e. a TURNTABLE: bolted face to face it spins. So the block is
+// three revolutes in series and costs THREE bones —
 //   y  the female disc, spinning in the parent's seat (carries the whole joint)
-//   x  the pin swing (the tang, and everything hanging under it)
+//   x  the pin swing (the tang, and all that hangs under it)
 //   y  the male disc, a turntable for the child (no geometry of its own)
-// and the pin bone RESTS at 90°, which bends the block into the L a limb needs:
-// the female disc bolts flat onto a flank, and the limb still hangs straight
-// down off the tang.
+// The pin bone RESTS at 90°, bending the block into the L a limb needs: the
+// female disc bolts flat onto a flank and the limb still hangs straight down.
 const discHinge = {
-  dims: hingeDims,
   dof: [
     { axis: "y", at: () => O },
     { axis: "x", at: () => O, rest: ["x", HPI] },          // the L: swing the tang down
@@ -319,29 +305,21 @@ const discHinge = {
     { bone: 0, build: (add, p) => hingeFemale(add, p, { disc: true }) },
     { bone: 1, build: (add, p) => hingeMale(add, p, { disc: true, tang: true }) },
   ],
-  mounts: (p) => {
-    const d = hingeDims(p);
-    return {
-      a: { pos: [0, d.reach, 0], n: [0, 1, 0], f: [1, 0, 0] },     // female disc face, f = pin axis
-      b: { pos: [0, -d.reach, 0], n: [0, -1, 0], f: [1, 0, 0] },   // male disc face, in bone 2's frame
-    };
-  },
+  mounts: clevisMounts,
 };
 
-// WRIST — TWO hinges in series sharing ONE middle base (the intermediate yoke),
-// plus the male disc's turntable. A universal (Hooke) joint with a twist, THREE
-// bones —
+// WRIST — TWO hinges in series sharing ONE middle plate (the yoke), plus the male
+// disc's turntable: a universal joint with a twist, THREE bones —
 //   x  stage-A pin (bend)   x' stage-B pin, rested 90° about Y (tilt)   y  twist
-// Stage A's male carries no base of its own: stage B's female base IS the one
-// plate both stages bolt to. Stage B is the whole hinge turned a quarter turn,
-// which is what crosses its pin with stage A's — and that turn lives on the
-// BONE's rest, so the tang and the child both ride it.
+// Stage A's male carries no base: stage B's female base IS the plate both stages
+// bolt to. Stage B is the whole hinge turned a quarter turn — which is what
+// crosses its pin with stage A's — and that turn lives on the BONE's rest, so the
+// tang and the child both ride it.
 const wristDrop = (p) => {                                 // stage-B pin, below stage A's
   const d = hingeDims(p);
   return -(2 * d.shank + d.flangeT);
 };
 const wrist = {
-  dims: hingeDims,
   dof: [
     { axis: "x", at: () => O },
     { axis: "x", at: (p) => [0, wristDrop(p), 0], rest: ["y", -HPI] },
@@ -349,12 +327,12 @@ const wrist = {
   ],
   pose: ["bend", "tilt", "twist"],
   pieces: [
-    { bone: -1, build: (add, p, o) => hingeFemale(add, p, { base: o.baseF !== false, disc: !!o.discF }) },
+    femaleP,
     {
       bone: 0,
       build: (add, p, o) => {
         hingeMale(add, p, { base: false, tang: true });                 // yoke top: stage-A male
-        // stage-B's female is part of the YOKE, so it rides this bone too — and
+        // stage-B's female is part of the YOKE, so it rides this bone too, and
         // carries stage B's quarter turn explicitly (bone 1's rest only turns
         // what hangs BELOW the stage-B pin)
         const at = (g) => add(translate(rotY(g, -HPI), 0, wristDrop(p), 0));
@@ -363,18 +341,11 @@ const wrist = {
     },
     { bone: 1, build: (add, p, o) => hingeMale(add, p, { disc: o.discM !== false, tang: true }) },
   ],
-  mounts: (p) => {
-    const d = hingeDims(p);
-    return {
-      a: { pos: [0, d.reach, 0], n: [0, 1, 0], f: [1, 0, 0] },
-      b: { pos: [0, -d.reach, 0], n: [0, -1, 0], f: [1, 0, 0] },   // in bone 2's frame
-    };
-  },
+  mounts: clevisMounts,
 };
 
 // BALL — ball-and-socket: ONE bone, all three axes (a "free" bone).
 const ball = {
-  dims: ballDims,
   dof: [{ axis: "free", at: () => O }],
   pose: ["rx", "ry", "rz"],                                  // euler channels of the one bone
   pieces: [
@@ -383,48 +354,28 @@ const ball = {
   ],
   mounts: (p) => {
     const d = ballDims(p);
-    return {
-      a: { pos: [0, -(d.drop + d.flangeT), 0], n: [0, -1, 0], f: [0, 0, 1] },  // socket base underside
-      b: { pos: [0, d.top + d.flangeT, 0], n: [0, 1, 0], f: [0, 0, 1] },       // stud base top
-    };
+    return faces(d.drop + d.flangeT, d.top + d.flangeT, Z, -1);
   },
 };
 
 // PIVOT — a turntable: ONE bone about the spin axis (Y).
 const pivot = {
-  dims: pivotDims,
   dof: [{ axis: "y", at: () => O }],
   pose: ["spin"],
-  pieces: [
-    { bone: -1, build: pivotFemale },
-    { bone: 0, build: pivotMale },
-  ],
-  mounts: (p) => {
-    const d = pivotDims(p);
-    return {
-      a: { pos: [0, -d.reach, 0], n: [0, -1, 0], f: [0, 0, 1] },
-      b: { pos: [0, d.reach, 0], n: [0, 1, 0], f: [0, 0, 1] },
-    };
-  },
+  pieces: [{ bone: -1, build: pivotFemale }, { bone: 0, build: pivotMale }],
+  mounts: (p) => faces(pivotDims(p).reach, pivotDims(p).reach, Z, -1),
 };
 
 // PRISMATIC — the LINEAR joint: ONE SLIDE bone (travel in model units, not
 // radians) along Y.
 const prismatic = {
-  dims: prismaticDims,
   dof: [{ axis: "ty", at: () => O }],
   pose: ["slide"],
   pieces: [
     { bone: -1, build: prismaticFemale },
     { bone: 0, build: (add, p) => prismaticMale(add, p, 0) },   // the bone does the sliding
   ],
-  mounts: (p) => {
-    const d = prismaticDims(p);
-    return {
-      a: { pos: [0, -d.reach, 0], n: [0, -1, 0], f: [1, 0, 0] },
-      b: { pos: [0, d.reach, 0], n: [0, 1, 0], f: [1, 0, 0] },
-    };
-  },
+  mounts: (p) => faces(prismaticDims(p).reach, prismaticDims(p).reach, X, -1),
 };
 
 export const JOINTS = { hinge, hingeTwist, pin, discHinge, wrist, ball, pivot, prismatic };
@@ -434,12 +385,6 @@ export const jointSpec = (kind) => {
   if (!J) throw new Error(`unknown joint kind: ${kind}`);
   return J;
 };
-// the two bolting faces of a joint kind — what parts snap their slots to
-export const jointMounts = (kind, p = {}) => jointSpec(kind).mounts(p);
-// the bones a joint kind costs, in chain order
-export const jointDof = (kind) => jointSpec(kind).dof;
-// the pose channels of a joint kind, in bone order (a free bone takes 3)
-export const jointPose = (kind) => jointSpec(kind).pose;
 
 // STANDALONE JOINT — every piece emitted through `add`, each one carrying the
 // DOFs of the bones it rides. This is what the joint catalog previews and what

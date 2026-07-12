@@ -1,12 +1,11 @@
 import { TAU } from "../math/scalar.js";
-// PRIMITIVE ENGINE. A primitive call returns a lightweight HANDLE { key, m, t }
-// a reference to a shared UNIT MESH in the registry plus an affine transform (3x3 linear, row-major,
-// + translation). rotX/rotY/rotZ/translate COMPOSE INTO THE MATRIX; vertices
-// are generated once per distinct key and the renderer draws ONE INSTANCED
-// CALL per key.
+// PRIMITIVE ENGINE. A primitive call returns a HANDLE { key, m, t } — a reference to
+// a shared UNIT MESH in the registry, plus an affine transform (3x3 row-major linear
+// + translation). rotX/rotY/rotZ/translate COMPOSE INTO THE MATRIX; vertices are
+// generated once per distinct key and the renderer draws ONE INSTANCED CALL per key.
 //
-// Shape params that survive into the KEY are RATIOS (percentages), so scaling
-// width/height/depth is pure instance scale:
+// Shape params that survive into the KEY are RATIOS, so scaling width/height/depth
+// is pure instance scale:
 //   box             slope = FRACTION of height (0..1) + curve; key=(slope,curve)
 //   coneCut         key = r1/r0 taper ratio
 //   cutHemisphere   wall t and cut = FRACTIONS of r; key=(t,cut)
