@@ -104,6 +104,10 @@ function sample(rnd, pool, n) {
  * @param grounded [[[key, ...], ...]] — groups of channel SETS (the atlas's two
  *                 legs), of which at least one set must be sitting at rest at
  *                 every instant, so the figure never leaves the floor
+ * @param twin     key -> key | null. The channel that must follow this one, moving
+ *                 with it: the atlas's right flank while it mirrors the left. The
+ *                 twin is DRIVEN to the same target rather than handed the value,
+ *                 so it eases over from wherever it stands instead of snapping.
  * @param parked   [key, ...] — channels the beat never picks AND never leaves off
  *                 their rest pose: a beat that finds one adrift walks it home. A
  *                 caller that takes channels out of the rig mid-dance (the atlas
@@ -118,7 +122,7 @@ function sample(rnd, pool, n) {
 export function createChoreographer(
   sliders,
   { home = {}, montages = {}, exclusives = [], grounded = [], parked = [],
-    onSwitch = null, style: styleName = null, seed = 1, ...timing } = {},
+    twin = null, onSwitch = null, style: styleName = null, seed = 1, ...timing } = {},
 ) {
   const { period, anticRatio, restRatio, bounceTime, bouncePower, styleBeats, switchChance } =
     { ...CHOREO_TIMING, ...timing };
@@ -249,8 +253,17 @@ export function createChoreographer(
     // channel walked home later is still stirred, and the grounded rule counts it
     const stirred = new Set();
     tracks = [];
+    // Writing a channel TWICE in the same window re-aims the track that is already
+    // there; it does not lay a second one over the top. A second track would carry
+    // its own `from` — captured after the first already claimed the target — so it
+    // would read from == to, sit flat on the target for the whole window, and
+    // (being applied last) TELEPORT the channel there on the opening frame. That is
+    // what a mirrored montage does: it names the left channel, whose twin drives the
+    // right, and then names the right one itself.
     const push = (key, to, t0, dur, ease) => {
-      tracks.push({ key, to, t0, dur, ease, from: cur[key] });
+      const laid = tracks.find((t) => t.key === key && t.t0 === t0);
+      if (laid) Object.assign(laid, { to, dur, ease });   // keep the `from` it started at
+      else tracks.push({ key, to, t0, dur, ease, from: cur[key] });
       if (to !== rest(key)) stirred.add(key);
       cur[key] = to;
     };
@@ -261,6 +274,14 @@ export function createChoreographer(
     // joint reads as a single clean rotation instead of a tangle.
     const cut = (key, to, t0, dur, ease) => {
       push(key, to, t0, dur, ease);
+      // THE TWIN. A mirrored rig names one flank and the other must follow. It
+      // follows by being DRIVEN — the twin is cut to the same target, over the same
+      // window, easing from wherever it actually sits. Copying the value across as
+      // it lands would TELEPORT the twin: the moment the mirror is clamped on, the
+      // right arm is still wherever the split left it, and the first write would
+      // snap it onto the left one.
+      const t = twin?.(key);
+      if (t && t !== key) push(t, to, t0, dur, ease);
       if (to === rest(key)) return;
       for (const r of rivals[key] ?? [])
         if (cur[r] !== rest(r)) push(r, rest(r), t0, dur, ease);

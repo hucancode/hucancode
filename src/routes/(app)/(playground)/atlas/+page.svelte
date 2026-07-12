@@ -123,8 +123,14 @@
     new Set(mirror ? SIDE_CHANNELS.map((key) => key + "R") : []),
   );
   const montages = $derived(atlasMontages(mirror));
-  // every write to a left channel is echoed onto the right one, so a mirrored
-  // slider (or a mirrored beat) moves both arms while only ever naming one
+  // A DRAGGED slider echoes onto the other flank as it lands: the hand on the
+  // slider is the thing moving, and the right channel simply reads out what the
+  // left is being given.
+  // The BEAT does not write through this. A beat that echoed its writes would
+  // TELEPORT the right flank the instant the mirror was clamped on — the right arm
+  // is still wherever the split left it, and the first left write would snap it
+  // across. The beat mirrors at PLAN time instead (`twin`, below), driving the
+  // right flank onto the left over the same window it moves the left through.
   const mirrorWrites = (pose) => new Proxy(pose, {
     set(t, key, v) {
       t[key] = v;
@@ -133,9 +139,12 @@
       return true;
     },
   });
-  // the object the sliders and the choreographer write through: bare while the
-  // flanks are apart, mirror-echoing while they move as one
+  // what the SLIDERS write through: bare while the flanks are apart, echoing while
+  // they move as one
   const poseIn = $derived(mirror ? mirrorWrites(arig) : arig);
+  // ...and what the BEAT mirrors with: the right channel each left one drags along
+  const twinOf = (key) =>
+    (key.endsWith("L") && SIDED.has(baseChan(key)) ? baseChan(key) + "R" : null);
   // choreographer slider kit: the bone depth of a channel says how much mass it
   // moves, so the shallow ones (waist, shoulder, neck) are the big beats and
   // everything below them (elbow, wrist, fingers) is small detail. Split, every
@@ -184,7 +193,7 @@
     ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
     ["bouncePower", "bounce power", 0, 1, 0.01],
     ["styleBeats", "style hold", 1, 30, 1],
-    ["switchChance", "side switch", 0, 0.5, 0.01],
+    ["switchChance", "side switch", 0, 0.45, 0.01],
   ];
 
   function resetPart() { aparams[asel] = structuredClone(ATLAS_KIT.params[asel]); }
@@ -247,24 +256,27 @@
     home: atlasPose(), montages, exclusives: CHOREO_EXCLUSIVE,
     grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, seed,
     style: cstyle === RANDOM ? null : cstyle,
+    // mirrored, the beat names the left flank and the right is DRIVEN after it —
+    // never handed the value, which would snap it across
+    twin: mirror ? twinOf : null,
     // a beat may take the flanks apart (or put them back together) on its own; the
     // slider set changes under it, so this rebuilds
     onSwitch: toggleMirror,
     ...$state.snapshot(ctiming),
   }));
   // autoplay: rewrite the atlas pose in place every frame, so the rig sliders
-  // visibly ride the beat. The beat writes through the same mirror rule the sliders
-  // do — mirrored, it only ever names left channels and the right flank follows.
+  // visibly ride the beat. The beat writes the pose RAW — it mirrors through `twin`
+  // at plan time, so it must not also echo through the sliders' proxy.
   $effect(() => {
     if (!choreo || !rigShown) return;
-    const cho = live, pose = poseIn;
+    const cho = live, pose = arig;
     return driveRaf((dt) => cho.step(dt, pose));
   });
   // ...and with autoplay off, a hand-fired beat drives the clock itself, for
   // exactly as long as that one beat lasts
   const danceOnce = () => {
     if (choreo) return;                     // the beat is already running
-    const cho = live, pose = poseIn;
+    const cho = live, pose = arig;
     let t = 0;
     driveRaf((dt) => {
       cho.step(dt, pose);
