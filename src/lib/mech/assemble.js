@@ -193,8 +193,19 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
 
     // PART BODY — its mount slot bolts onto the joint's mount b (or onto the
     // joint's axis, for a part modeled around the pin it swings on)
+    //
+    // `flip` bolts the part in the OTHER WAY ROUND: its mount forward is reversed,
+    // which turns the part half a turn about the mount normal — still a rotation,
+    // so the no-mirroring rule above holds. A symmetric figure needs it on the
+    // parts that have a FRONT. Its right limbs are seated off a reversed pin, so
+    // the whole right chain rides a half-turn about the limb axis: a barrel like
+    // the shin cannot tell, but the foot's toe and the palm's finger layout come
+    // out facing backwards. Flipping those two parts turns their front to the
+    // front again — and it turns the slots they carry with them, so the fingers
+    // follow the palm.
     const b = d.jointFrame ? d.fit.mounts.b : null;
-    const r = b ? matchRot(b, d.slot0) : I3;
+    const mount = d.flip ? { ...d.slot0, f: vScale(d.slot0.f, -1) } : d.slot0;
+    const r = b ? matchRot(b, mount) : I3;
     const bp = b ? (d.slot0.anchor === "axis" ? [0, 0, 0] : b.pos) : null;
     const t = b ? vSub(bp, m3MulV(r, d.slot0.pos)) : vScale(d.slot0.pos, -1);
     d.seatR = r;
