@@ -1,13 +1,11 @@
-// ATLAS PART KIT — a standing humanoid: helmet, torso, pelvis, upper arm,
-// forearm, palm, finger digit, thigh, shin, foot.
+// ATLAS PART KIT — a standing humanoid: helmet, torso, pelvis, upper arm, forearm,
+// palm, finger digit, thigh, shin, foot.
 //
-// Same discipline as the dragon kit: a part is a BODY and its SLOTS, and models
-// no joint. Every rotation the figure can make happens inside a joint the
-// assemble engine instantiates on the slot that offers it.
+// Same discipline as the dragon kit: a part is a BODY and its SLOTS and models no
+// joint — every rotation happens inside a joint assemble puts on the slot offering it.
 //
-// Local frame per part: the `mount` slot is the part's own bolting face and its
-// local ORIGIN, the body hangs along -Y from it, +Z forward — except the head
-// and torso, whose bodies grow +Y up out of their mount.
+// Local frame: the `mount` slot is the part's bolting face and its ORIGIN, the body
+// hangs along -Y from it, +Z forward — except the head and torso, which grow +Y up.
 import {
   box, cylinder, coneCut, halfCylinder, rotX, rotY, rotZ, translate,
 } from "../primitives.js";

@@ -1,52 +1,41 @@
-// ASSEMBLE ENGINE — the layer that turns PARTS + JOINTS + BONES into a figure.
-// It is the only place that knows all three exist: parts.js models bodies,
-// joints.js models joints, skeleton.js spins bones, and none of them import
-// each other. A rig is then pure data — a table of links — plus whatever it
-// wants to do with the bones (the dragon solves its spine off a curve, the
-// atlas just reads pose sliders).
+// ASSEMBLE ENGINE — turns PARTS + JOINTS + BONES into a figure, and the only
+// file that knows all three exist (parts model bodies, joints model joints,
+// skeleton spins bones; none of them import each other). A rig is then pure data
+// — a table of links — plus whatever it does with the bones (the dragon solves
+// its spine off a curve, the atlas just reads pose sliders).
 //
-// HOW A FIGURE IS DESCRIBED
-//   A part is a BODY with SLOTS. A slot is a bolting FACE — { pos, n, f }, an
-//   origin plus an outward normal and a forward tangent, a full frame. A slot
-//   that also carries `joint: { kind, p }` OFFERS that joint to a child: the
-//   part owns the joint's FEMALE half there. A part's `mount` slot is the plain
-//   face where its own MALE half (supplied by the parent's joint) bolts on.
-//   So a mid-chain part carries two joint halves, a root or a leaf carries one,
-//   and no part ever models a joint half itself.
+// A part is a BODY with SLOTS. A slot is a bolting FACE { pos, n, f } — origin,
+// outward normal, forward tangent. A slot carrying `joint: { kind, p }` OFFERS
+// that joint to a child, and the part owns its FEMALE half there; a part's
+// `mount` slot is the plain face where its own MALE half bolts on. So no part
+// ever models a joint half itself.
 //
-//   A link says: this part, mounted on that parent's slot.
-//     { name, part, params?, parent, at, slot?, angles? }
-//   The joint between them comes off the PARENT's slot — one declaration, so
-//   the two halves can never drift apart.
+// A link says: this part, mounted on that parent's slot —
+//   { name, part, params?, parent, at, slot?, angles?, flip? }
+// and the joint between them comes off the PARENT's slot, one declaration, so
+// the halves can never drift apart. The engine then seats the joint (mount `a`
+// onto the parent's slot), spends exactly the bones its DOF list asks for on its
+// axes of motion, rides each piece of geometry on the bone it belongs to, and
+// BAKES all of it once — per frame it only resolves bones and composes matrices.
 //
-// WHAT THE ENGINE DOES WITH IT
-//   1. seats the joint so its mount `a` (the female base face) lands on the
-//      parent's slot,
-//   2. spends exactly the bones the joint's DOF list asks for — a 1-DOF hinge
-//      gets ONE bone about the pin, the 2-DOF wrist gets one bone per pin, a
-//      ball gets ONE free bone taking all axes — each seated on the joint's
-//      axis of motion,
-//   3. rides every piece of geometry on the right bone: the female half on the
-//      parent's, the male half on the joint's last bone, the child part bolted
-//      to the joint's mount `b`,
-//   4. bakes ALL of it once. Parts and joints are pose-independent, so per
-//      frame the engine only resolves bones and composes matrices.
+// A rig's pose sliders reach the bones through `angles`, aligned with the
+// joint's DOF list; a rig may also drive `bones` directly.
 //
-// The pose channels a rig exposes (its sliders) bind to bones through `angles`,
-// aligned with the joint's DOF list. A rig may also drive bones directly
-// (rig.bones) — the dragon's spine solves a rotation matrix straight into the
-// free bone of each ball.
+// NO MIRRORING, deliberately: mirroring a slot is a REFLECTION and a joint can
+// only be seated by a ROTATION, so a reflected frame would flip the joint's
+// handedness. A symmetric figure gives its right-hand slot the REVERSED pin (f)
+// — what a mirrored clevis physically is — and the rig flips that side's signs.
 import { bake, meshOf } from "./primitives.js";
 import { colorMemo } from "./color.js";
 import { jointSpec } from "./joints.js";
-import { createSkeleton, xfCompose, xfT } from "./skeleton.js";
+import { createSkeleton } from "./skeleton.js";
 import {
   I3, vAdd, vSub, vScale, vNorm, vCross, m3Mul, m3MulV, m3T, m3Rot,
 } from "../math/mat3.js";
 
 // ---- SLOT MATCHING ---------------------------------------------------------
 // a slot { pos, n, f } is a full coordinate system: columns [f, n×f, n]
-export const slotFrame = (s) => {
+const slotFrame = (s) => {
   const f = vNorm(s.f), n = vNorm(s.n), b = vCross(n, f);
   return [f[0], b[0], n[0], f[1], b[1], n[1], f[2], b[2], n[2]];
 };
@@ -60,28 +49,22 @@ export const matchRot = (parent, child) => {
   return m3Mul(target, m3T(slotFrame(child)));
 };
 
-// NOTE ON MIRRORING. There is none, deliberately. Mirroring a slot is a
-// REFLECTION, and a joint can only be seated by a ROTATION — a reflected frame
-// would quietly flip the joint's handedness and hang the limb the wrong way. A
-// symmetric figure instead gives its right-hand slot the REVERSED pin direction
-// (f), which is what a mirrored clevis physically is, and the rig flips the sign
-// of that side's channels. See the atlas torso's shoulder slots.
-
-// the unit meshes an item list references, cached across frames — the renderer
-// draws one instanced call per key
-export function createMeshCache() {
-  const meshes = {};
-  return {
-    meshes,
-    ensure(items) {
-      for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
-    },
-  };
-}
-
 // ---- ASSEMBLY --------------------------------------------------------------
 
 const EULER = ["x", "y", "z"];
+
+// Seat a joint's female base onto a slot, in the frame the slot's OWNER rides
+// (its part is itself bolted in at an angle — `ownerR` / `ownerT`). The slot
+// receives either the joint's base FACE (default, so a part never computes how
+// deep a joint reaches) or the joint's AXIS itself (`anchor: "axis"`, for a part
+// modeled around a bare pin: the dragon's jaw, a finger knuckle).
+function seatJoint(slot, mountA, ownerR, ownerT) {
+  const R0 = matchRot(slot, mountA);                        // joint frame -> owner PART frame
+  const org0 = slot.anchor === "axis"
+    ? [...slot.pos]
+    : vSub(slot.pos, m3MulV(R0, mountA.pos));
+  return { r: m3Mul(ownerR, R0), t: vAdd(m3MulV(ownerR, org0), ownerT) };
+}
 
 export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
   const colorFor = colorMemo(seed);
@@ -131,7 +114,7 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       // whole figure through it
       d.ids = [sk.add(`${d.name}.root`, -1, [...root], "free")];
       d.bone = d.ids[0];
-      d.jointFrame = null;
+      d.mountB = null;
     } else {
       const pslot = par.slots[d.at];
       if (!pslot) throw new Error(`${d.name}: parent "${par.name}" has no slot "${d.at}"`);
@@ -144,21 +127,11 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       const { kind, p: jp = {}, opts = {} } = spec;
       const J = jointSpec(kind);
       const M = J.mounts(jp);
-      d.fit = { kind, jp, opts, spec: J, mounts: M };
+      d.mountB = M.b;
 
-      // seat the joint: the parent slot receives either the joint's female BASE
-      // FACE (default — so the part never computes how deep a joint reaches) or
-      // the joint's AXIS itself (anchor: "axis" — for a part modeled around a
-      // bare pin, like the dragon's jaw or a finger knuckle)
-      const R0 = matchRot(pslot, M.a);                       // joint frame -> parent PART frame
-      const org0 = pslot.anchor === "axis"
-        ? [...pslot.pos]
-        : vSub(pslot.pos, m3MulV(R0, M.a.pos));              // joint origin, in parent part space
-      // ... and on into the parent's BONE frame (the parent part is itself
-      // bolted to its own joint, so it sits rotated in there)
-      const R = m3Mul(par.seatR, R0);
-      const org = vAdd(m3MulV(par.seatR, org0), par.seatT);
-      d.jointFrame = { r: R, t: org };
+      // seat it in the parent's BONE frame (the parent part is itself bolted
+      // into its own joint, so it sits rotated in there)
+      const { r: R, t: org } = seatJoint(pslot, M.a, par.seatR, par.seatT);
 
       // one bone per DOF, chained, each on the joint's axis of motion. A DOF may
       // carry a REST rotation — the fixed bend that seats it (the disc hinge's
@@ -192,18 +165,17 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
     }
 
     // PART BODY — its mount slot bolts onto the joint's mount b (or onto the
-    // joint's axis, for a part modeled around the pin it swings on)
+    // joint's axis, for a part modeled around the pin it swings on).
     //
-    // `flip` bolts the part in the OTHER WAY ROUND: its mount forward is reversed,
-    // which turns the part half a turn about the mount normal — still a rotation,
-    // so the no-mirroring rule above holds. A symmetric figure needs it on the
-    // parts that have a FRONT. Its right limbs are seated off a reversed pin, so
-    // the whole right chain rides a half-turn about the limb axis: a barrel like
-    // the shin cannot tell, but the foot's toe and the palm's finger layout come
-    // out facing backwards. Flipping those two parts turns their front to the
-    // front again — and it turns the slots they carry with them, so the fingers
-    // follow the palm.
-    const b = d.jointFrame ? d.fit.mounts.b : null;
+    // `flip` bolts the part in the OTHER WAY ROUND: its mount forward reverses,
+    // turning the part half a turn about the mount normal — still a rotation, so
+    // the no-mirroring rule holds. A symmetric figure needs it on the parts that
+    // have a FRONT: its right limbs seat off a reversed pin, so the whole right
+    // chain rides a half-turn about the limb axis. A barrel like the shin cannot
+    // tell, but the foot's toe and the palm's finger layout would face backwards.
+    // Flipping turns their front to the front again — slots and all, so the
+    // fingers follow the palm.
+    const b = d.mountB;
     const mount = d.flip ? { ...d.slot0, f: vScale(d.slot0.f, -1) } : d.slot0;
     const r = b ? matchRot(b, mount) : I3;
     const bp = b ? (d.slot0.anchor === "axis" ? [0, 0, 0] : b.pos) : null;
@@ -213,18 +185,14 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
     seat(emitTo(d.bone, `${d.name}:body`,
       (add) => kit.buildPart(d.part, add, d.params ?? null)), r, t);
 
-    // ORPHAN FEMALE HALVES — a slot that offers a joint no child took (an empty
+    // ORPHAN FEMALE HALVES — a slot offering a joint no child took (an empty
     // socket on a spare flank). Real hardware, so it gets modeled: the part
-    // carries the half whether or not something plugs into it.
+    // carries the half whether or not anything plugs into it.
     for (const [name, s] of Object.entries(d.slots)) {
       if (!s.joint || L.some((c) => c.par === d && c.at === name)) continue;
       const { kind, p: jp = {}, opts = {} } = s.joint;
       const J = jointSpec(kind);
-      const A = J.mounts(jp).a;
-      const R0 = matchRot(s, A);
-      const org0 = s.anchor === "axis" ? [...s.pos] : vSub(s.pos, m3MulV(R0, A.pos));
-      const R = m3Mul(d.seatR, R0);
-      const org = vAdd(m3MulV(d.seatR, org0), d.seatT);
+      const { r: R, t: org } = seatJoint(s, J.mounts(jp).a, d.seatR, d.seatT);
       for (const piece of J.pieces) {
         if (piece.bone >= 0) continue;                 // no child, no DOF bones to ride
         seat(emitTo(d.bone, `${d.name}:body`, (add) => piece.build(add, jp, opts)), R, org);
@@ -232,8 +200,9 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
     }
   }
 
-  const meshCache = createMeshCache();
-  const boneOf = Object.fromEntries(L.map((d) => [d.name, d.bone]));
+  // the unit meshes the items reference, cached across frames — the renderer
+  // draws one instanced call per key
+  const meshes = {};
 
   // --- POSE: the rig's sliders reach the bones through `angles`, one entry per
   // DOF of the link's joint. An axis bone takes [key, sign]; a free bone (a
@@ -261,13 +230,12 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
 
   // --- EMIT: resolve the bones, compose every baked chunk through its bone.
   //
-  // `opts.group(id, info)` is the ASSEMBLY HOOK: it may displace any group of
-  // the figure (a part body, a joint) rigidly, which is all a build animation
-  // needs. Return { t?: vec3, r?: mat3, a?: number } — an offset and a rotation
-  // about the group's own centroid, and an alpha. Return null to leave the
-  // group seated. `info` = { id, link, kind, depth, n, centroid }, where `n` is
-  // the world assembly normal (the direction the group plugs in FROM) and
-  // `centroid` its seated centre.
+  // `opts.group(id, info)` is the ASSEMBLY HOOK: it displaces any group (a part
+  // body, a joint) rigidly, which is all a build animation needs. Return
+  // { t?, r?, a? } — an offset, a rotation about the group's own centroid, an
+  // alpha — or null to leave it seated. `info` = { id, link, kind, depth, n,
+  // centroid }, `n` being the world assembly normal (the direction the group
+  // plugs in FROM).
   function emit({ group = null } = {}) {
     const W = sk.resolve();
     const items = [];
@@ -324,8 +292,8 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       }
     }
 
-    meshCache.ensure(items);
-    return { items, meshes: meshCache.meshes };
+    for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
+    return { items, meshes };
   }
 
   return {

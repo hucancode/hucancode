@@ -4,27 +4,21 @@ import { eases } from "../math/ease.js";
 import { hash01, homingParams, simulateHoming, approachBlend, snapIn } from "./homing.js";
 
 // ---- ASSEMBLY ANIMATION --------------------------------------------------------
-// The dragon builds itself in FOUR phases, hierarchically: primitives belong
-// to sub-assembly GROUPS (a part body or a joint block — the `group` tag on
-// every item), groups belong to the dragon.
-//   1. each primitive FLIES from a scatter point to a small standoff near its
-//      seat in the group; the group is parked at its assembling spot, a far
-//      offset along the assembly normal from its final seat
-//   2. the primitive SNAPS into its seat — the group is formed
-//   3. the formed group launches and HOMES on its moving mount point like a
-//      missile (homing.js), entirely in WORLD space: fast turn-rate-clamped
-//      seek toward a gate hovering off the mount normal, arriving ON the
-//      gate FULLY ALIGNED with the live seat (position settled, rotation
-//      matched, heading on the mount axis) — ready to land. The group banks
-//      rigidly along its velocity (about its centroid) and levels out onto
+// The figure builds itself in FOUR phases, hierarchically: primitives belong to
+// sub-assembly GROUPS (a part body or a joint block — the `group` tag on every
+// item), and the groups belong to the figure.
+//   1. each primitive FLIES from a scatter point to a standoff near its seat in the
+//      group, while the group waits parked far out along its assembly normal
+//   2. the primitive SNAPS into that seat — the group is formed
+//   3. the formed group launches and HOMES on its moving mount point like a missile
+//      (homing.js), in WORLD space, arriving ON the gate fully aligned with the live
+//      seat. It banks rigidly along its velocity about its centroid, and levels onto
 //      the mount axis as it arrives
-//   4. the aligned group SNAPS IN: a straight plug-in run down the live
-//      mount normal, gate -> seat, orientation locked
-// Group flights are re-simulated with fixed steps from launch on every call
-// and all randomness is HASHED off group/item indices, so scrubbing the
-// clock replays the exact same build. Distances are RIG UNITS, phase times
-// are relative durations — the build clock is normalized so the last group
-// seats exactly at u = 1, whatever they sum to.
+//   4. the aligned group SNAPS IN down the live mount normal, gate -> seat
+// Flights re-simulate from launch on every call with fixed steps, and all randomness
+// is HASHED off group/item indices, so scrubbing the clock replays the same build.
+// Distances are RIG UNITS and phase times relative durations — the clock is
+// normalized so the last group seats exactly at u = 1, whatever they sum to.
 export const ASSEMBLY = {
   gSpan: 0.7,              // group start stagger (chain-ordered, head first)
   pSpan: 0.08,             // primitive stagger within its group

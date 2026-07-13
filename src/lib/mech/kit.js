@@ -1,17 +1,16 @@
-// PART KIT — the registry a rig's part catalog is declared with. A kit is pure
-// data: default params, body builders, and a slot table.
+// PART KIT — the registry a rig's part catalog is declared with: pure data, being
+// default params, body builders and a slot table.
 //
-// A part is a BODY and its SLOTS, and nothing else. It models no joint, has no
-// pose and no moving piece: every rotation in the figure happens in a JOINT,
-// which the assemble engine instantiates on the slot that offers it. That is
-// why a builder takes only (add, params) — there is nothing to pose.
+// A part is a BODY and its SLOTS, nothing else. It models no joint, has no pose and
+// no moving piece — every rotation happens in a JOINT the assemble engine puts on
+// the slot that offers it, which is why a builder takes only (add, params).
 //
 //   partModel(name, seed, params)   a standalone { items, meshes } preview
 //   buildPart(name, add, params)    raw build for an assembler (a rig)
 //   partSlots(name, params)         the part's slots, in part space
 //
-// Kits are SCOPED: a part name only has to be unique inside its own kit, so the
-// atlas has a plain "head" next to the dragon's.
+// Kits are SCOPED: a part name need only be unique inside its own kit, so the atlas
+// has a plain "head" next to the dragon's.
 import { bake, meshOf } from "./primitives.js";
 import { colorOf } from "./color.js";
 
