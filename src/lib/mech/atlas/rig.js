@@ -150,7 +150,6 @@ const STYLE = {
   front: { raise: { shoulder: 90 }, keys: WAVE("shoulder", 90, 35), loops: 2 },
   back: { raise: { shoulder: -90 }, keys: WAVE("shoulder", -90, -35), loops: 2 },
   overhead: { raise: { armOut: 180, armTwist: 0 }, keys: VERT_WAVE("shoulder", 0, 20), loops: 2 },
-  hang: { raise: { armOut: 0, armTwist: 0 }, keys: VERT_WAVE("shoulder", 0, -20), loops: 2 },
 };
 
 const ROUTINES = {
@@ -158,7 +157,6 @@ const ROUTINES = {
   frontWave: { L: STYLE.front, R: STYLE.front },
   frontWaveOpposed: { L: STYLE.front, R: STYLE.back },
   verticalWave: { L: STYLE.overhead, R: STYLE.overhead },
-  verticalWaveOpposed: { L: STYLE.overhead, R: STYLE.hang },
 };
 
 const onSide = (pose, S) =>
