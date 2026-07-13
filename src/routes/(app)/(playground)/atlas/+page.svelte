@@ -9,6 +9,7 @@
   } from "$lib/mech/atlas/rig.js";
   import { assembleModel } from "$lib/mech/build-anim.js";
   import { createChoreographer, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
+  import { createMusic, MUSIC_DEFAULTS } from "$lib/audio/music.js";
 
   let scene = $state(null);
 
@@ -32,6 +33,34 @@
   // and swap it every `style hold` beats, anything else pins it there
   const RANDOM = "random";
   let cstyle = $state(RANDOM);
+  // THE MUSIC. Two engines that know NOTHING about each other — the choreographer has never
+  // heard of a note, the generator has never heard of a rig — wired together HERE and ONLY
+  // through a clock: the music publishes the quarter note it plays, this page cues the
+  // choreographer every `beatsPerMove` of them.
+  //
+  // Built lazily on the first click (a browser will not let a page make noise unasked), so
+  // it lives outside `$state`: nothing renders off the object itself.
+  let music = null;
+  let musicOn = $state(false);
+  let mus = $state({ bpm: MUSIC_DEFAULTS.bpm, gain: MUSIC_DEFAULTS.gain, energy: MUSIC_DEFAULTS.energy, swing: MUSIC_DEFAULTS.swing });
+  let layers = $state({ ...MUSIC_DEFAULTS.layers });
+  let mkey = $state("");                             // the key it drew, for the panel
+  let mseed = $state(0);                             // bumped to change key mid-dance
+
+  // THE TEMPO IS ONE NUMBER, and it is the music's: the choreographer's period is not a
+  // knob, it is read off the bpm, so the two can never be dragged out of agreement.
+  let move = $state({ beats: 2 });
+  const beatsPerMove = $derived(move.beats);
+  const period = $derived((beatsPerMove * 60) / mus.bpm);
+  // THE GRID a step may begin or end on: a 16th note, HALVED until a style has at least
+  // two ticks per step. At one beat per move a 16th grid leaves a four-step style exactly
+  // four ticks, forcing every step to the same length and flattening the attack out of it.
+  const MAX_STEPS = 4;                               // the longest style, in steps
+  const grid = $derived.by(() => {
+    let g = period / (beatsPerMove * 4);             // a 16th
+    while (period / g < 2 * MAX_STEPS) g /= 2;
+    return g;
+  });
   // assembly build scrub: 1 = fully assembled, <1 runs the 4-phase build
   let asm = $state(1);
   let asmPlay = $state(false);
@@ -188,13 +217,26 @@
   // beat timing knobs — the anticipation and rest slices bracket the main move,
   // so neither may eat the whole period
   const CHOREO_CTL = [
-    ["period", "beat", 0.3, 3, 0.1],
     ["anticRatio", "anticipation", 0, 0.4, 0.01],
     ["restRatio", "rest", 0, 0.4, 0.01],
     ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
     ["bouncePower", "bounce power", 0, 1, 0.01],
     ["styleBeats", "style hold", 1, 30, 1],
     ["pulseChance", "hip pulse", 0, 1, 0.05],
+  ];
+  // the music's knobs — the TEMPO among them, because the tempo belongs to the music
+  const MUSIC_CTL = [
+    ["bpm", "tempo", 60, 200, 1],
+    ["gain", "volume", 0, 1, 0.05],
+    ["energy", "energy", 0, 1, 0.05],
+    ["swing", "swing", 0, 0.6, 0.01],
+  ];
+  // how much music a dance move is worth: 1 = every kick, 4 = one move a bar. The
+  // dance's period falls out of this and the tempo.
+  const MOVE_CTL = [["beats", "move every (beats)", 1, 4, 1]];
+  const LAYERS = [
+    ["kick", "kick"], ["snare", "snare"], ["hats", "hats"],
+    ["bass", "bass"], ["lead", "lead"], ["chord", "chord"],
   ];
 
   function resetPart() { aparams[asel] = structuredClone(ATLAS_KIT.params[asel]); }
@@ -217,6 +259,26 @@
   function resetChoreo() { ctiming = structuredClone(CHOREO_TIMING); }
   function shuffle() { seed = (seed + 1) | 0; }
   function playAssemble() { asm = 0; asmPlay = true; }
+  // The music is switched on BY HAND, and has to be: an AudioContext built outside a user
+  // gesture starts suspended. So this runs on the click, not in an effect downstream of it.
+  function toggleMusic() {
+    musicOn = !musicOn;
+    if (!musicOn) return music?.stop();
+    music ??= createMusic({
+      seed: (seed + mseed) | 0,
+      ...$state.snapshot(mus),
+      layers: $state.snapshot(layers),
+    });
+    music.start();
+    mkey = music.key;
+  }
+  // a KEY CHANGE mid-dance: scale, root and chord loop redrawn, patterns re-voiced at the
+  // next bar, and the rig never breaks stride
+  function newKey() {
+    mseed = (mseed + 1) | 0;
+    music?.reseed((seed + mseed) | 0);
+    if (music) mkey = music.key;
+  }
 
   const rigShown = $derived(asel === "rig");
 
@@ -271,14 +333,43 @@
     // slider set changes under it, so this rebuilds
     onSwitch: toggleMirror,
     ...$state.snapshot(ctiming),
+    // the tempo, and the tick a step may land on, both read off the music's bpm
+    period,
+    grid,
   }));
-  // autoplay: rewrite the atlas pose in place every frame, so the rig sliders
-  // visibly ride the beat. The beat writes the pose RAW — it mirrors through `twin`
-  // at plan time, so it must not also echo through the sliders' proxy.
+  // The music's knobs are live: tempo and volume land at once, energy at the next section.
+  // READING THE KNOBS BEFORE THE CALL IS LOAD-BEARING: written as
+  // `music?.set({ ...$state.snapshot(mus) })` the optional chain short-circuits its own
+  // ARGUMENTS while `music` is still null, so the effect registers no dependencies on the
+  // first run and never fires again once the first click has built the thing.
+  $effect(() => {
+    const knobs = { ...$state.snapshot(mus), layers: $state.snapshot(layers) };
+    music?.set(knobs);
+  });
+  $effect(() => () => music?.stop());   // leave the page, stop the noise
+
+  // autoplay: rewrite the atlas pose in place every frame, so the rig sliders visibly ride
+  // the beat. The beat writes the pose RAW — it mirrors through `twin` at plan time, so it
+  // must not also echo through the sliders' proxy.
+  //
+  // THE MUSIC IS THE CLOCK. The dance runs off rAF and the music off the audio hardware, and
+  // two clocks agreeing on the tempo still slide apart (a dropped frame, a throttled tab, a
+  // slider edit rebuilding the choreographer mid-beat). So the dance is CUED off the count
+  // the music publishes: in lock that costs nothing, out of lock it hauls the rig back on
+  // the beat inside one move. A montage is left alone — it already ends on a downbeat.
   $effect(() => {
     if (!choreo || !rigShown) return;
     const cho = live, pose = arig;
-    return driveRaf((dt) => cho.step(dt, pose));
+    let last = null;
+    return driveRaf((dt) => {
+      const q = musicOn ? music?.quarter() : null;
+      if (q != null) {
+        const at = Math.floor(q / beatsPerMove);
+        if (last != null && at !== last && cho.span <= period * 1.01) cho.cue();
+        last = at;
+      }
+      cho.step(dt, pose);
+    });
   });
   // ...and with autoplay off, a hand-fired beat drives the clock itself, for
   // exactly as long as that one beat lasts
@@ -376,6 +467,23 @@
               {MONTAGE_ICON(i)}</button></li>
           {/each}
         </menu>
+      </fieldset>
+
+      <fieldset>
+        <legend>music</legend>
+        <label>
+          <input type="checkbox" checked={musicOn} onchange={toggleMusic} />
+          <span>play{musicOn && mkey ? ` — ${mkey}` : ""}</span>
+        </label>
+        <Sliders ctl={MUSIC_CTL} values={mus} />
+        <Sliders ctl={MOVE_CTL} values={move} />
+        <menu>
+          <li><button type="button" onclick={newKey} disabled={!musicOn}
+            title="new key" aria-label="new key">🎵</button></li>
+        </menu>
+        {#each LAYERS as [key, label]}
+          <label><input type="checkbox" bind:checked={layers[key]} /><span>{label}</span></label>
+        {/each}
       </fieldset>
     {:else if asel === "rig"}
       <fieldset>
