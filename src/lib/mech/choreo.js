@@ -103,6 +103,8 @@ const pick = (rnd, pool) => pool[(rnd() * pool.length) | 0];
  *                 never leaves the floor
  * @param pulse    [key, ...] — WHOLE-BODY channels with their own slot in the beat instead
  *                 of competing for the one `move` (the atlas's hip level)
+ * @param spin     key — the channel a MOVELESS style turns on instead (the atlas's waist
+ *                 twist): linear, across the whole period, under the anticts
  * @param twin     key -> key | null. The channel that must follow this one (the right
  *                 flank, while mirrored). DRIVEN to the same target rather than handed the
  *                 value, so it eases over from where it stands instead of snapping
@@ -118,7 +120,8 @@ const pick = (rnd, pool) => pool[(rnd() * pool.length) | 0];
 export function createChoreographer(
   sliders,
   { home = {}, montages = {}, exclusives = [], grounded = [], parked = [], pulse = [],
-    twin = null, onSwitch = null, style: styleName = null, seed = 1, grid = 0, ...timing } = {},
+    spin = null, twin = null, onSwitch = null, style: styleName = null, seed = 1, grid = 0,
+    ...timing } = {},
 ) {
   const {
     period, anticRatio, restRatio, bounceTime, bouncePower,
@@ -171,6 +174,7 @@ export function createChoreographer(
   const small = sliders.filter((s) => !s.big && !pulsed.has(s.key));
   const big = sliders.filter((s) => s.big && !pulsed.has(s.key));
   const pulses = sliders.filter((s) => pulsed.has(s.key));
+  const spinner = sliders.find((s) => s.key === spin) ?? null;
   const routines = Object.values(montages);
   const rest = (key) => home[key] ?? 0;
   const rivals = {};
@@ -270,6 +274,15 @@ export function createChoreographer(
         cut(s.key, aim(rnd, s, cur), 0, period, eases.inOutSine);
         moved.add(s.key);
       }
+
+    // THE SPIN — a style with no `move` in it has no travel: the anticts are all leaves
+    // flicking, and nothing carries the beat. So the spin channel does, TURNING under them
+    // the way the pulse rides under a normal beat: linear, no bounce, the whole period long,
+    // so the body is still coming round as the beat lands.
+    if (spinner && !style.includes("move") && allowed(was, stirred, spinner.key)) {
+      cut(spinner.key, aim(rnd, spinner, cur), 0, period, eases.linear);
+      moved.add(spinner.key);
+    }
 
     // ROTATE THE TRAILING `rest` TO THE FRONT. It is DEAD TIME, so danced where it is
     // written the rig arrives early and waits out the bar, missing the downbeat by whatever

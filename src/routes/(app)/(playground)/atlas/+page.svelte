@@ -193,6 +193,9 @@
   // — whatever crouch the beat drops the hip into, the rig's solver keeps both feet
   // on the floor.
   const CHOREO_PULSE = ["hipLevel"];
+  // a style with no `move` step (the all-antic one) has nothing carrying it, so the
+  // waist twist turns the whole figure about its own axis under the flicking limbs
+  const CHOREO_SPIN = "twist";
   const choreoSliders = $derived(
     sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !CHOREO_SKIP.has(key)), mirror)
       .map(([key, , min, max]) => ({
@@ -324,6 +327,7 @@
   const live = $derived(createChoreographer(choreoSliders, {
     home: atlasPose(), montages, exclusives: CHOREO_EXCLUSIVE,
     grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, pulse: CHOREO_PULSE,
+    spin: CHOREO_SPIN,
     seed: (seed + rewires) | 0,
     style: cstyle === RANDOM ? null : cstyle,
     // mirrored, the beat names the left flank and the right is DRIVEN after it —
