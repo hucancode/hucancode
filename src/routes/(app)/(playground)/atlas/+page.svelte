@@ -9,7 +9,9 @@
   } from "$lib/mech/atlas/rig.js";
   import { assembleModel } from "$lib/mech/build-anim.js";
   import { createChoreographer, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
-  import { createMusic, MUSIC_DEFAULTS } from "$lib/audio/music.js";
+  import {
+    createMusic, MUSIC_DEFAULTS, MUSIC_STYLE_NAMES, MUSIC_ROOT_NAMES, MUSIC_SCALE_NAMES, styleOf,
+  } from "$lib/audio/music.js";
   import VolumeUp from "$icons/google-material/volume-up.svg?raw";
   import VolumeOff from "$icons/google-material/volume-off.svg?raw";
   import Bot from "$icons/carbon/bot.svg?raw";
@@ -31,9 +33,11 @@
   let music = null;
   let musicOn = $state(false);
   let mus = $state({ bpm: MUSIC_DEFAULTS.bpm, gain: MUSIC_DEFAULTS.gain, energy: MUSIC_DEFAULTS.energy, swing: MUSIC_DEFAULTS.swing });
+  let mstyle = $state(MUSIC_DEFAULTS.style);         // the genre the generator draws in
   let layers = $state({ ...MUSIC_DEFAULTS.layers });
-  let mkey = $state("");                             // the key it drew, for the panel
-  let mseed = $state(0);                             // bumped to change key mid-dance
+  let mroot = $state(MUSIC_DEFAULTS.root);
+  let mscale = $state(MUSIC_DEFAULTS.scale);
+  const mkey = $derived(`${mroot} ${mscale}`);
   let move = $state({ beats: 2 });
   const beatsPerMove = $derived(move.beats);
   const period = $derived((beatsPerMove * 60) / mus.bpm);
@@ -168,17 +172,21 @@
     musicOn = !musicOn;
     if (!musicOn) return music?.stop();
     music ??= createMusic({
-      seed: (seed + mseed) | 0,
+      seed,
+      style: mstyle,
+      root: mroot,
+      scale: mscale,
       ...$state.snapshot(mus),
       layers: $state.snapshot(layers),
     });
     music.start();
-    mkey = music.key;
   }
-  function newKey() {
-    mseed = (mseed + 1) | 0;
-    music?.reseed((seed + mseed) | 0);
-    if (music) mkey = music.key;
+  function pickStyle(name) {
+    mstyle = name;
+    const st = styleOf(name);
+    mus.bpm = st.bpm;
+    mus.swing = st.swing;
+    mscale = st.scale;
   }
 
   const rigShown = $derived(asel === "rig");
@@ -226,7 +234,10 @@
     grid,
   }));
   $effect(() => {
-    const knobs = { ...$state.snapshot(mus), layers: $state.snapshot(layers) };
+    const knobs = {
+      style: mstyle, root: mroot, scale: mscale,
+      ...$state.snapshot(mus), layers: $state.snapshot(layers),
+    };
     music?.set(knobs);
   });
   $effect(() => () => music?.stop());   // leave the page, stop the noise
@@ -348,17 +359,27 @@
       </fieldset>
 
       <fieldset>
-        <legend>music</legend>
+        <legend>music — {mkey}</legend>
         <label>
-          <input type="checkbox" checked={musicOn} onchange={toggleMusic} />
-          <span>play{musicOn && mkey ? ` — ${mkey}` : ""}</span>
+          <span>style</span>
+          <select value={mstyle} onchange={(e) => pickStyle(e.currentTarget.value)}>
+            {#each MUSIC_STYLE_NAMES as s}<option value={s}>{s}</option>{/each}
+          </select>
+        </label>
+        <label>
+          <span>root</span>
+          <select bind:value={mroot}>
+            {#each MUSIC_ROOT_NAMES as r}<option value={r}>{r}</option>{/each}
+          </select>
+        </label>
+        <label>
+          <span>scale</span>
+          <select bind:value={mscale}>
+            {#each MUSIC_SCALE_NAMES as s}<option value={s}>{s}</option>{/each}
+          </select>
         </label>
         <Sliders ctl={MUSIC_CTL} values={mus} />
         <Sliders ctl={MOVE_CTL} values={move} />
-        <menu>
-          <li><button type="button" onclick={newKey} disabled={!musicOn}
-            title="new key" aria-label="new key">🎵</button></li>
-        </menu>
         {#each LAYERS as [key, label]}
           <label><input type="checkbox" bind:checked={layers[key]} /><span>{label}</span></label>
         {/each}
