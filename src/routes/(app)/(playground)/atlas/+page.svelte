@@ -10,6 +10,9 @@
   import { assembleModel } from "$lib/mech/build-anim.js";
   import { createChoreographer, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
   import { createMusic, MUSIC_DEFAULTS } from "$lib/audio/music.js";
+  import VolumeUp from "$icons/google-material/volume-up.svg?raw";
+  import VolumeOff from "$icons/google-material/volume-off.svg?raw";
+  import Bot from "$icons/carbon/bot.svg?raw";
 
   let scene = $state(null);
 
@@ -19,42 +22,21 @@
   let asel = $state("rig");                // "rig" = the whole atlas, else a part
   let partsOpen = $state(false);           // the stage's part picker, shut by default
   let aparams = $state(structuredClone(ATLAS_KIT.params));
-  // The pose ALWAYS carries both flanks (`elbowL` / `elbowR`) — there is no
-  // mirrored channel anywhere. MIRROR is a write rule laid over it: the sliders
-  // and the choreographer touch the LEFT channels only, and `mirrorWrites` copies
-  // every one of those onto the right as it lands. Drop the rule and the right
-  // channels simply stay where the last mirrored write left them, so the flanks
-  // come apart from the pose they were already holding.
   let mirror = $state(true);
   let arig = $state(atlasPose());                    // atlas rig pose, L/R keyed
   let choreo = $state(true);                         // procedural beats
   let ctiming = $state(structuredClone(CHOREO_TIMING));   // beat timing
-  // the style the beat is danced in — RANDOM lets the choreographer draw its own
-  // and swap it every `style hold` beats, anything else pins it there
   const RANDOM = "random";
   let cstyle = $state(RANDOM);
-  // THE MUSIC. Two engines that know NOTHING about each other — the choreographer has never
-  // heard of a note, the generator has never heard of a rig — wired together HERE and ONLY
-  // through a clock: the music publishes the quarter note it plays, this page cues the
-  // choreographer every `beatsPerMove` of them.
-  //
-  // Built lazily on the first click (a browser will not let a page make noise unasked), so
-  // it lives outside `$state`: nothing renders off the object itself.
   let music = null;
   let musicOn = $state(false);
   let mus = $state({ bpm: MUSIC_DEFAULTS.bpm, gain: MUSIC_DEFAULTS.gain, energy: MUSIC_DEFAULTS.energy, swing: MUSIC_DEFAULTS.swing });
   let layers = $state({ ...MUSIC_DEFAULTS.layers });
   let mkey = $state("");                             // the key it drew, for the panel
   let mseed = $state(0);                             // bumped to change key mid-dance
-
-  // THE TEMPO IS ONE NUMBER, and it is the music's: the choreographer's period is not a
-  // knob, it is read off the bpm, so the two can never be dragged out of agreement.
   let move = $state({ beats: 2 });
   const beatsPerMove = $derived(move.beats);
   const period = $derived((beatsPerMove * 60) / mus.bpm);
-  // THE GRID a step may begin or end on: a 16th note, HALVED until a style has at least
-  // two ticks per step. At one beat per move a 16th grid leaves a four-step style exactly
-  // four ticks, forcing every step to the same length and flattening the attack out of it.
   const MAX_STEPS = 4;                               // the longest style, in steps
   const grid = $derived.by(() => {
     let g = period / (beatsPerMove * 4);             // a 16th
@@ -74,16 +56,10 @@
   ];
 
   const PART_LABELS = { upperArm: "upper arm", armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
-  // routines the mirror rule can't hold come through as `frontWaveOpposed` — the
-  // same wave, the two arms parked in opposite setups
   const montageLabel = (name) => {
     const base = name.replace(/Opposed$/, "");
     return (PART_LABELS[base] ?? base) + (base === name ? "" : " opposed");
   };
-  // every routine is a wave, so they all wear the same glyph and are told apart by
-  // their number; the written name rides along as the tooltip and accessible name.
-  // The numbering follows the montage order, so it shifts when the opposed pairs
-  // come and go with the split.
   const MONTAGE_ICON = (i) => `🌊${i + 1}`;
   // [key, label, min, max, step?] sliders per part
   const PART_CTL = {
@@ -117,47 +93,22 @@
     ["knee", "knee bend", -60, 0, 1],
     ["ankle", "ankle bend", -30, 30, 1],
   ];
-  // The hip level sinks the figure on its legs: 0 stands it up, and each -1 sinks it
-  // by another knee's worth of fold — so this goes deeper than one. It is a pose
-  // channel like any other: the beat drives it, and the rig's leg solver answers for
-  // it, folding the planted leg into the crouch and keeping the dancing one out of
-  // the floor.
   const LEVEL_CTL = [["hipLevel", "hip level", -1.5, 0, 0.01]];
-  // Rows onto the rig's real channels: every limb row forks into `arm raise L` /
-  // `arm raise R`, two sliders on two bones, and both are always on show. While
-  // mirroring, the right ones are LOCKED rather than dropped — they are not
-  // steered, they are copied, and watching them track the left flank is the whole
-  // point of seeing them.
   const SIDED = new Set(SIDE_CHANNELS);
-  // rows onto the channels a WRITER may name: mirroring, a limb row lands on the
-  // left channel alone (the right one follows by copy); split, it forks in two
   const sided = (ctl, mir) =>
     ctl.flatMap(([key, label, ...rest]) =>
       !SIDED.has(key) ? [[key, label, ...rest]]
         : mir ? [[key + "L", label, ...rest]]
           : SIDES.map((S) => [key + S, `${label} ${S}`, ...rest]),
     );
-  // The rig panel in three: what the figure has ONE of (the spine, and the hip
-  // level that sinks the whole of it), and then a fieldset per FLANK. The flank
-  // owns the side, so its rows keep their bare names — `elbow bend`, not `elbow
-  // bend L` — and the two columns read as the same limb twice.
   const coreCtl = [...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !SIDED.has(key));
   const flankCtl = (S) =>
     ATLAS_CTL.filter(([key]) => SIDED.has(key))
       .map(([key, label, ...rest]) => [key + S, label, ...rest]);
-  // the right flank's channels, while the mirror rule owns them
   const rigLocked = $derived(
     new Set(mirror ? SIDE_CHANNELS.map((key) => key + "R") : []),
   );
   const montages = $derived(atlasMontages(mirror));
-  // A DRAGGED slider echoes onto the other flank as it lands: the hand on the
-  // slider is the thing moving, and the right channel simply reads out what the
-  // left is being given.
-  // The BEAT does not write through this. A beat that echoed its writes would
-  // TELEPORT the right flank the instant the mirror was clamped on — the right arm
-  // is still wherever the split left it, and the first left write would snap it
-  // across. The beat mirrors at PLAN time instead (`twin`, below), driving the
-  // right flank onto the left over the same window it moves the left through.
   const mirrorWrites = (pose) => new Proxy(pose, {
     set(t, key, v) {
       t[key] = v;
@@ -166,35 +117,13 @@
       return true;
     },
   });
-  // what the SLIDERS write through: bare while the flanks are apart, echoing while
-  // they move as one
   const poseIn = $derived(mirror ? mirrorWrites(arig) : arig);
-  // ...and what the BEAT mirrors with: the right channel each left one drags along
   const twinOf = (key) =>
     (key.endsWith("L") && SIDED.has(baseChan(key)) ? baseChan(key) + "R" : null);
-  // choreographer slider kit: the bone depth of a channel says how much mass it
-  // moves, so the shallow ones (waist, shoulder, neck) are the big beats and
-  // everything below them (elbow, wrist, fingers) is small detail. Split, every
-  // limb channel enters twice, so a beat can pick the left elbow and leave the
-  // right one alone.
-  // The legs dance only while the flanks are APART: mirrored, every leg write is
-  // copied onto the other flank, so the figure would lift both feet at once. So
-  // mirroring, they sit the beat out and are PARKED instead — the first mirrored
-  // beat walks them home and they stay planted; split, the grounded rule below
-  // keeps one of the two on the floor.
   const BIG_DEPTH = 2;
-  // a leg, in channels — the ankle rides with the hip and the knee, so taking a
-  // foot off the floor is ONE rule over all three, not three rules
   const LEG_CHANNELS = ["hip", "knee", "ankle"];
   const CHOREO_SKIP = $derived(new Set(mirror ? LEG_CHANNELS : []));
-  // The hip level moves the WHOLE figure, so it does not compete with an arm for
-  // the one main beat: it PULSES, riding under the beat across the full period, and
-  // the body sinks and rises while the limbs keep dancing. The legs need no fencing
-  // — whatever crouch the beat drops the hip into, the rig's solver keeps both feet
-  // on the floor.
   const CHOREO_PULSE = ["hipLevel"];
-  // a style with no `move` step (the all-antic one) has nothing carrying it, so the
-  // waist twist turns the whole figure about its own axis under the flicking limbs
   const CHOREO_SPIN = "twist";
   const choreoSliders = $derived(
     sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !CHOREO_SKIP.has(key)), mirror)
@@ -203,22 +132,11 @@
         big: key === "hipLevel" || ATLAS_POSE_DEPTH[key] <= BIG_DEPTH,
       })),
   );
-  // the waist ball's three channels share one joint: let each swing freely and
-  // the torso folds through the pelvis, so only ever activate one of them
   const CHOREO_EXCLUSIVE = [["twist", "waistBend", "waistTilt"]];
-  // the two legs, whole: the beat may take ONE of them off its rest pose — swing
-  // the hip, bend the knee, pitch the ankle, all three — but never the other leg
-  // at the same time, so the figure always has a leg under it. A leg only leaves
-  // the floor once the other has come all the way home.
   const CHOREO_GROUNDED = [SIDES.map((S) => LEG_CHANNELS.map((key) => key + S))];
-  // mirrored, both legs are parked: the beat never picks them, and the next beat
-  // after the switch walks whatever the split flanks left lifted back down. The
-  // mirror never touches the pose itself, so this is what squares the legs up.
   const CHOREO_PARK = $derived(
     mirror ? LEG_CHANNELS.flatMap((key) => SIDES.map((S) => key + S)) : [],
   );
-  // beat timing knobs — the anticipation and rest slices bracket the main move,
-  // so neither may eat the whole period
   const CHOREO_CTL = [
     ["anticRatio", "anticipation", 0, 0.4, 0.01],
     ["restRatio", "rest", 0, 0.4, 0.01],
@@ -227,15 +145,12 @@
     ["styleBeats", "style hold", 1, 30, 1],
     ["pulseChance", "hip pulse", 0, 1, 0.05],
   ];
-  // the music's knobs — the TEMPO among them, because the tempo belongs to the music
   const MUSIC_CTL = [
     ["bpm", "tempo", 60, 200, 1],
     ["gain", "volume", 0, 1, 0.05],
     ["energy", "energy", 0, 1, 0.05],
     ["swing", "swing", 0, 0.6, 0.01],
   ];
-  // how much music a dance move is worth: 1 = every kick, 4 = one move a bar. The
-  // dance's period falls out of this and the tempo.
   const MOVE_CTL = [["beats", "move every (beats)", 1, 4, 1]];
   const LAYERS = [
     ["kick", "kick"], ["snare", "snare"], ["hats", "hats"],
@@ -244,26 +159,11 @@
 
   function resetPart() { aparams[asel] = structuredClone(ATLAS_KIT.params[asel]); }
   function resetAtlas() { arig = atlasPose(); }
-  // The mirror is a rule about the NEXT pose, never a rewrite of the current one:
-  // flipping it copies nothing and moves nothing, it only changes who writes the
-  // right channels from here on. So the figure holds whatever pose it is standing
-  // in, and the next beat is the one that comes out mirrored — the flanks converge
-  // by being DRIVEN together, not by being snapped.
-  // The legs are how the beat squares itself up: mirrored, they are PARKED (see
-  // CHOREO_PARK), so the first mirrored beat walks whatever the split flanks left
-  // lifted back onto the floor.
-  // A flip REBUILDS the choreographer (the slider set changes under it), and a fresh
-  // one draws its randomness from the seed — so the first roll after a flip is the
-  // very roll that flipped it. Left alone the rig ping-pongs: mirrored, that roll
-  // splits it; split, the same roll pairs it straight back up, beat after beat. So a
-  // rewire ADVANCES the beat's seed, and the rig that comes out gets its own draw.
   function toggleMirror() { mirror = !mirror; rewires = (rewires + 1) | 0; }
   let rewires = $state(0);
   function resetChoreo() { ctiming = structuredClone(CHOREO_TIMING); }
   function shuffle() { seed = (seed + 1) | 0; }
   function playAssemble() { asm = 0; asmPlay = true; }
-  // The music is switched on BY HAND, and has to be: an AudioContext built outside a user
-  // gesture starts suspended. So this runs on the click, not in an effect downstream of it.
   function toggleMusic() {
     musicOn = !musicOn;
     if (!musicOn) return music?.stop();
@@ -275,8 +175,6 @@
     music.start();
     mkey = music.key;
   }
-  // a KEY CHANGE mid-dance: scale, root and chord loop redrawn, patterns re-voiced at the
-  // next bar, and the rig never breaks stride
   function newKey() {
     mseed = (mseed + 1) | 0;
     music?.reseed((seed + mseed) | 0);
@@ -295,14 +193,10 @@
   $effect(() => { scene?.apply({ spin: render.spin }); });
   $effect(() => { scene?.apply({ lightAngle: render.light }); });
   $effect(() => { scene?.apply({ model }); });
-  // fixed per-view distance (no auto-fit): single-part previews use a per-part
-  // catalog distance — the atlas kit has much smaller pieces than the dragon's
   const PART_DIST = {
     digit: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
     head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,
   };
-  // the atlas stands ON the grid, so the whole rig sits above y=0: the camera
-  // has to look at its waist, not at the origin. Parts sit on their own origin.
   $effect(() => {
     const dist = rigShown ? 12 : PART_DIST[asel] ?? 6;
     scene?.apply({ resetView: true, dist, lookY: rigShown ? atlasHeight(seed) / 2 : 0 });
@@ -319,50 +213,26 @@
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   };
-  // THE CHOREOGRAPHER stands ready whether or not it is dancing: autoplay only
-  // decides who turns the clock. So a montage or a single beat can be fired by
-  // hand with the rig otherwise still. A timing (or style, or slider) edit builds a
-  // fresh one — the tracks it had planned are cut to the old shape, so there is
-  // nothing worth carrying over.
   const live = $derived(createChoreographer(choreoSliders, {
     home: atlasPose(), montages, exclusives: CHOREO_EXCLUSIVE,
     grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, pulse: CHOREO_PULSE,
     spin: CHOREO_SPIN,
     seed: (seed + rewires) | 0,
     style: cstyle === RANDOM ? null : cstyle,
-    // mirrored, the beat names the left flank and the right is DRIVEN after it —
-    // never handed the value, which would snap it across
     twin: mirror ? twinOf : null,
-    // a beat may take the flanks apart (or put them back together) on its own; the
-    // slider set changes under it, so this rebuilds
     onSwitch: toggleMirror,
     ...$state.snapshot(ctiming),
-    // the tempo, and the tick a step may land on, both read off the music's bpm
     period,
     grid,
   }));
-  // The music's knobs are live: tempo and volume land at once, energy at the next section.
-  // READING THE KNOBS BEFORE THE CALL IS LOAD-BEARING: written as
-  // `music?.set({ ...$state.snapshot(mus) })` the optional chain short-circuits its own
-  // ARGUMENTS while `music` is still null, so the effect registers no dependencies on the
-  // first run and never fires again once the first click has built the thing.
   $effect(() => {
     const knobs = { ...$state.snapshot(mus), layers: $state.snapshot(layers) };
     music?.set(knobs);
   });
   $effect(() => () => music?.stop());   // leave the page, stop the noise
 
-  // autoplay: rewrite the atlas pose in place every frame, so the rig sliders visibly ride
-  // the beat. The beat writes the pose RAW — it mirrors through `twin` at plan time, so it
-  // must not also echo through the sliders' proxy.
-  //
-  // THE MUSIC IS THE CLOCK. The dance runs off rAF and the music off the audio hardware, and
-  // two clocks agreeing on the tempo still slide apart (a dropped frame, a throttled tab, a
-  // slider edit rebuilding the choreographer mid-beat). So the dance is CUED off the count
-  // the music publishes: in lock that costs nothing, out of lock it hauls the rig back on
-  // the beat inside one move. A montage is left alone — it already ends on a downbeat.
   $effect(() => {
-    if (!choreo || !rigShown) return;
+    if (!choreo || !rigShown || asmPlay) return;
     const cho = live, pose = arig;
     let last = null;
     return driveRaf((dt) => {
@@ -375,8 +245,6 @@
       cho.step(dt, pose);
     });
   });
-  // ...and with autoplay off, a hand-fired beat drives the clock itself, for
-  // exactly as long as that one beat lasts
   const danceOnce = () => {
     if (choreo) return;                     // the beat is already running
     const cho = live, pose = arig;
@@ -395,7 +263,6 @@
     live.play(name);
     danceOnce();                            // a montage owns the clock for its whole run
   }
-  // replay build: sweep the assembly scrub 0 -> 1 once
   $effect(() => {
     if (!asmPlay || !rigShown) return;
     return driveRaf((dt) => {
@@ -411,8 +278,8 @@
     <Scene bind:this={scene} scene={mech} id="atlas" />
     <menu>
       <li>
-        <button type="button" aria-pressed={partsOpen} title="parts"
-          onclick={() => (partsOpen = !partsOpen)}>🧩</button>
+        <button type="button" aria-pressed={partsOpen} title="parts" aria-label="parts"
+          onclick={() => (partsOpen = !partsOpen)}>{@html Bot}</button>
       </li>
       {#if partsOpen}
         <li><button type="button" aria-pressed={asel === "rig"}
@@ -422,6 +289,13 @@
             onclick={() => (asel = pn)}>{PART_LABELS[pn] ?? pn}</button></li>
         {/each}
       {/if}
+    </menu>
+    <menu class="sound">
+      <li>
+        <button type="button" aria-pressed={musicOn} onclick={toggleMusic}
+          title={musicOn ? `music on${mkey ? ` — ${mkey}` : ""}` : "music off"}
+          aria-label={musicOn ? "stop music" : "play music"}>{@html musicOn ? VolumeUp : VolumeOff}</button>
+      </li>
     </menu>
     {#if rigShown}
       <footer>
@@ -497,8 +371,6 @@
       {#each SIDES as S}
         <fieldset>
           <legend>{S === "L" ? "left" : "right"}</legend>
-          <!-- the mirror rides with the LEFT flank: it is the one that does the
-               steering, and the right merely copies whatever it is handed -->
           {#if S === "L"}
             <label>
               <input type="checkbox" checked={mirror} onchange={toggleMirror} />
@@ -520,12 +392,23 @@
   section > menu {
     top: 0.5rem;
     left: 0.5rem;
+    min-width: 1rem;
+    height: 1rem;
+  }
+  section > menu.sound {
+    top: 3rem;
+    width: 1rem;
   }
   section > menu button {
     width: auto;
-    min-width: 32px;
     padding: 0 0.5rem;
     border-radius: 0;
     border: 0;
+  }
+  /* the icons come in through {@html}, so the scoping attribute never lands on them */
+  section > menu button :global(svg) {
+    width: 20px;
+    height: 20px;
+    display: block;
   }
 </style>
