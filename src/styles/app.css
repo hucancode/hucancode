@@ -98,9 +98,8 @@ nav {
   width: 100%;
   max-width: 1024px;
   align-items: center;
-  justify-content: space-between;
-  padding-inline: 1rem;
   justify-content: center;
+  padding-inline: 1rem;
 }
 
 nav a {

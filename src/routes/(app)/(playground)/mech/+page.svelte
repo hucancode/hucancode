@@ -144,61 +144,61 @@
 
 <svelte:head><title>Mech</title></svelte:head>
 
-  <section>
-    <Scene bind:this={scene} scene={mech} id="mech" />
-    {#if rigShown}
-      <footer>
-        <div>
-          <button type="button" onclick={playAssemble}>▶ Assemble</button>
-          <input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={grabAsm} />
-          <output>{asm.toFixed(2)}</output>
-        </div>
-      </footer>
-    {/if}
-  </section>
-
-  <aside>
-    <fieldset>
-      <legend>view</legend>
-      <div role="group">
-        <label><input type="radio" name="mech-view" value="joints" bind:group={view} />joints</label>
-        <label><input type="radio" name="mech-view" value="blocks" bind:group={view} />blocks</label>
-        <label><input type="radio" name="mech-view" value="dragon" bind:group={view} />dragon</label>
+<section>
+  <Scene bind:this={scene} scene={mech} id="mech" />
+  {#if rigShown}
+    <footer>
+      <div>
+        <button type="button" onclick={playAssemble}>▶ Assemble</button>
+        <input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={grabAsm} />
+        <output>{asm.toFixed(2)}</output>
       </div>
-    </fieldset>
+    </footer>
+  {/if}
+</section>
 
+<aside>
+  <fieldset>
+    <legend>view</legend>
+    <div role="group">
+      <label><input type="radio" name="mech-view" value="joints" bind:group={view} />joints</label>
+      <label><input type="radio" name="mech-view" value="blocks" bind:group={view} />blocks</label>
+      <label><input type="radio" name="mech-view" value="dragon" bind:group={view} />dragon</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>render</legend>
+    <Sliders ctl={RENDER_CTL} values={render} />
+    <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
+  </fieldset>
+
+  {#if view === "dragon"}
     <fieldset>
-      <legend>render</legend>
-      <Sliders ctl={RENDER_CTL} values={render} />
-      <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
+      <legend>parts</legend>
+      <ul>
+        <li><label><input type="radio" name="dragon-part" value="rig" bind:group={dsel} />dragon</label></li>
+        {#each DRAGON_PARTS as pn}
+          <li><label><input type="radio" name="dragon-part" value={pn} bind:group={dsel} />{PART_LABELS[pn] ?? pn}</label></li>
+        {/each}
+      </ul>
     </fieldset>
-
-    {#if view === "dragon"}
+    {#if dsel === "rig"}
       <fieldset>
-        <legend>parts</legend>
-        <ul>
-          <li><label><input type="radio" name="dragon-part" value="rig" bind:group={dsel} />dragon</label></li>
-          {#each DRAGON_PARTS as pn}
-            <li><label><input type="radio" name="dragon-part" value={pn} bind:group={dsel} />{PART_LABELS[pn] ?? pn}</label></li>
-          {/each}
-        </ul>
+        <legend>choreo</legend>
+        <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
       </fieldset>
-      {#if dsel === "rig"}
-        <fieldset>
-          <legend>choreo</legend>
-          <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
-        </fieldset>
-        <fieldset>
-          <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
-          <Sliders ctl={DRAGON_CTL} values={drig} />
-        </fieldset>
-      {:else}
-        <fieldset>
-          <legend>params<button type="button" onclick={resetPart}>reset</button></legend>
-          <Sliders ctl={PART_CTL[dsel]} values={dparams[dsel]} />
-        </fieldset>
-      {/if}
+      <fieldset>
+        <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
+        <Sliders ctl={DRAGON_CTL} values={drig} />
+      </fieldset>
     {:else}
-      <Catalog {view} {seed} bind:model={cmodel} bind:sel={csel} />
+      <fieldset>
+        <legend>params<button type="button" onclick={resetPart}>reset</button></legend>
+        <Sliders ctl={PART_CTL[dsel]} values={dparams[dsel]} />
+      </fieldset>
     {/if}
-  </aside>
+  {:else}
+    <Catalog {view} {seed} bind:model={cmodel} bind:sel={csel} />
+  {/if}
+</aside>

@@ -224,8 +224,6 @@
     aspect-ratio: 1 / 1;
   }
   section :global(canvas) {
-    background: #f5eddc;
-    border-radius: 0.25rem;
     touch-action: none;
   }
 </style>

@@ -36,20 +36,13 @@
   }
 </script>
 
-<dialog
-  bind:this={dialog}
-  on:close={close}
-  on:click|self={close}
-  class="modal"
->
-  <div class="inner" on:click|stopPropagation role="presentation">
-    <header>
-      <h3>{title}</h3>
-    </header>
+<dialog bind:this={dialog} on:close={close} on:click|self={close}>
+  <form method="dialog">
+    <h3>{title}</h3>
 
     <RangeMatrix {notation} on:change={onMatrixChange} />
 
-    <details class="adv">
+    <details>
       <summary>Notation</summary>
       <input
         type="text"
@@ -61,29 +54,27 @@
 
     <footer>
       {#if removable}
-        <button type="button" class="remove" on:click={remove}>
-          Remove
-        </button>
+        <button type="button" class="remove" on:click={remove}>Remove</button>
       {/if}
-      <button type="button" class="done" on:click={close}>Done</button>
+      <button>Done</button>
     </footer>
-  </div>
+  </form>
 </dialog>
 
 <style>
-  .modal {
+  dialog {
     border: 0;
     padding: 0;
     background: transparent;
     max-width: 100vw;
     max-height: 100vh;
   }
-  .modal::backdrop {
+  dialog::backdrop {
     background: rgba(0, 0, 0, 0.5);
   }
-  .inner {
-    background: var(--bg, #fff);
-    color: var(--fg, #111);
+  form {
+    background: var(--paper);
+    color: var(--ink);
     padding: 0.75rem;
     width: min(100vw, 32rem);
     max-height: 90vh;
@@ -92,26 +83,19 @@
     gap: 0.5rem;
     overflow-y: auto;
   }
-  header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  header h3 {
-    margin: 0;
+  h3 {
+    margin: 0 0 0.5rem;
     font-size: 1rem;
-    flex: 1;
     text-align: center;
-    margin-bottom: 0.5rem;
   }
-  .adv {
+  details {
     font-size: 0.875rem;
   }
-  .adv summary {
+  summary {
     cursor: pointer;
     color: #6b7280;
   }
-  .adv input {
+  input {
     width: 100%;
     padding: 0.25rem;
     border: 1px solid #d1d5db;
@@ -123,7 +107,7 @@
     gap: 0.5rem;
     justify-content: center;
   }
-  .done {
+  footer button {
     background: #000;
     color: #fff;
     border: 0;
@@ -132,13 +116,8 @@
     text-transform: uppercase;
     cursor: pointer;
   }
-  .remove {
+  footer button.remove {
     background: #b91c1c;
-    color: #fff;
-    border: 0;
     padding: 0.5rem 1.25rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    cursor: pointer;
   }
 </style>

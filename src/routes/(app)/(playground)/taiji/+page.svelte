@@ -29,53 +29,53 @@
   <title>Taiji</title>
 </svelte:head>
 
-  <section>
-    <Scene bind:this={scene} scene={taiji} id="taiji" />
-  </section>
+<section>
+  <Scene bind:this={scene} scene={taiji} id="taiji" />
+</section>
 
-  <aside>
-    <fieldset>
-      <legend>motion</legend>
-      <label>
-        <span>Disc spin</span>
-        <input type="range" min="-4" max="4" step="0.1" bind:value={taijiSpin} />
-        <output>{taijiSpin.toFixed(1)}</output>
-      </label>
-      <label>
-        <span>Cloud drift</span>
-        <input type="range" min="0" max="12" step="0.5" bind:value={cloudSpeed} />
-        <output>{cloudSpeed.toFixed(1)}</output>
-      </label>
-    </fieldset>
+<aside>
+  <fieldset>
+    <legend>motion</legend>
+    <label>
+      <span>Disc spin</span>
+      <input type="range" min="-4" max="4" step="0.1" bind:value={taijiSpin} />
+      <output>{taijiSpin.toFixed(1)}</output>
+    </label>
+    <label>
+      <span>Cloud drift</span>
+      <input type="range" min="0" max="12" step="0.5" bind:value={cloudSpeed} />
+      <output>{cloudSpeed.toFixed(1)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>symbol</legend>
-      <label>
-        <span>Bagua bars</span>
-        <input type="range" min="1" max="5" step="1" bind:value={bitCount} />
-        <output>{bitCount}</output>
-      </label>
-      <label>
-        <span>Border size</span>
-        <input type="range" min="0" max="0.15" step="0.005" bind:value={stroke} />
-        <output>{stroke.toFixed(3)}</output>
-      </label>
-      <label>
-        <span>Dot size</span>
-        <input type="range" min="0.04" max="0.2" step="0.005" bind:value={dot} />
-        <output>{dot.toFixed(3)}</output>
-      </label>
-    </fieldset>
+  <fieldset>
+    <legend>symbol</legend>
+    <label>
+      <span>Bagua bars</span>
+      <input type="range" min="1" max="5" step="1" bind:value={bitCount} />
+      <output>{bitCount}</output>
+    </label>
+    <label>
+      <span>Border size</span>
+      <input type="range" min="0" max="0.15" step="0.005" bind:value={stroke} />
+      <output>{stroke.toFixed(3)}</output>
+    </label>
+    <label>
+      <span>Dot size</span>
+      <input type="range" min="0.04" max="0.2" step="0.005" bind:value={dot} />
+      <output>{dot.toFixed(3)}</output>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>colors</legend>
-      <label>
-        <span>Yang</span>
-        <input type="color" bind:value={color1} />
-      </label>
-      <label>
-        <span>Yin</span>
-        <input type="color" bind:value={color2} />
-      </label>
-    </fieldset>
-  </aside>
+  <fieldset>
+    <legend>colors</legend>
+    <label>
+      <span>Yang</span>
+      <input type="color" bind:value={color1} />
+    </label>
+    <label>
+      <span>Yin</span>
+      <input type="color" bind:value={color2} />
+    </label>
+  </fieldset>
+</aside>

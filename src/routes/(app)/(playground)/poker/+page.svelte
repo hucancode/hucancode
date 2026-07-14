@@ -89,53 +89,36 @@
   <title>Poker</title>
 </svelte:head>
 
-<article class="poker">
-  <h1>Poker Simulator <WavingHand>🃏</WavingHand></h1>
+<h1>Poker Simulator <WavingHand>🃏</WavingHand></h1>
 
-  <form on:submit|preventDefault={compute}>
-    <GameBoard
-      disabled={isWorking}
-      bind:this={gameBoard}
-      on:updated={() => {
-        result = { ...UNKNOWN_RESULT };
-        errorMessage = "";
-      }}
-    />
-    <div class="action">
-      <button type="submit" disabled={isWorking}>Compute</button>
-    </div>
-  </form>
+<form on:submit|preventDefault={compute}>
+  <GameBoard
+    disabled={isWorking}
+    bind:this={gameBoard}
+    on:updated={() => {
+      result = { ...UNKNOWN_RESULT };
+      errorMessage = "";
+    }}
+  />
+  <button type="submit" disabled={isWorking}>Compute</button>
+</form>
 
-  {#if errorMessage}
-    <p class="error">{errorMessage}</p>
+{#if errorMessage}
+  <strong>{errorMessage}</strong>
+{/if}
+
+<output>
+  {#if isWorking}
+    <Bar />
+    <small>Crunching outcomes…</small>
+  {:else if result.ready}
+    <ResultMulti {result} />
+  {:else}
+    <small>Enter your game state and let computer do the hard work for you</small>
   {/if}
-
-  <div class="result-area">
-    {#if isWorking}
-      <Bar />
-      <small class="muted">Crunching outcomes…</small>
-    {:else if result.ready}
-      <ResultMulti {result} />
-    {:else}
-      <small class="muted"
-        >Enter your game state and let computer do the hard work for you</small
-      >
-    {/if}
-  </div>
-</article>
+</output>
 
 <style>
-  .poker {
-    --bg: var(--paper);
-    --fg: var(--ink);
-    --muted: var(--color-neutral-400);
-    --border: var(--color-neutral-300);
-    --card-bg: var(--color-neutral-100);
-    width: 100%;
-    max-width: 32rem;
-    margin: 0 auto;
-    padding: 0 1rem;
-  }
   h1 {
     margin-top: 0;
     margin-bottom: 1rem;
@@ -146,13 +129,13 @@
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
-  }
-  .action {
-    display: flex;
-    justify-content: center;
-    margin-top: 0.75rem;
+    width: 100%;
+    max-width: 32rem;
+    margin-inline: auto;
   }
   button[type="submit"] {
+    align-self: center;
+    margin-top: 0.75rem;
     background: var(--ink);
     color: var(--paper);
     padding: 0.5rem 1.5rem;
@@ -162,17 +145,21 @@
     border: 0;
     cursor: pointer;
   }
-  .result-area {
-    margin-top: 1rem;
+  output {
+    display: block;
+    margin: 1rem auto 0;
+    max-width: 32rem;
     text-align: center;
   }
-  .error {
+  strong {
+    display: block;
     color: #b91c1c;
     text-align: center;
     font-size: 0.875rem;
+    font-weight: normal;
     margin: 0.5rem 0;
   }
-  .muted {
-    color: var(--muted);
+  small {
+    color: var(--color-neutral-400);
   }
 </style>

@@ -24,7 +24,6 @@
   $: communityUsed = hero;
 
   function open(target) {
-    if (disabled) return;
     editing = target;
   }
 
@@ -109,55 +108,40 @@
   }
 </script>
 
-<div class="overview" class:disabled>
-  <section
-    class="row"
-    role="button"
-    tabindex="0"
-    on:click={() => open("board")}
-    on:keydown={(e) => (e.key === "Enter" || e.key === " ") && open("board")}
-  >
-    <span class="label">Community</span>
-    <div class="cards-row">
+<fieldset {disabled}>
+  <button type="button" on:click={() => open("board")}>
+    <b>Community</b>
+    <span>
       {#each Array(5) as _, i}
         <Card card={i < community.length ? community[i] : -1} />
       {/each}
-    </div>
-  </section>
+    </span>
+  </button>
 
-  <section
-    class="hero"
-    role="button"
-    tabindex="0"
-    on:click={() => open("hero")}
-    on:keydown={(e) => (e.key === "Enter" || e.key === " ") && open("hero")}
-  >
-    <span class="label">You</span>
-    <div class="cards-row">
+  <button type="button" on:click={() => open("hero")}>
+    <b>You</b>
+    <span>
       {#each Array(2) as _, i}
         <Card card={i < hero.length ? hero[i] : -1} />
       {/each}
-    </div>
-  </section>
+    </span>
+  </button>
 
-  <div class="villains" aria-label="Villains">
+  <ul aria-label="Villains">
     {#each villains as v, i (i)}
-      <div
-        class="villain"
-        class:empty={!v.notation.trim()}
-        role="button"
-        tabindex="0"
-        on:click={() => open({ type: "villain", idx: i })}
-        on:keydown={(e) =>
-          (e.key === "Enter" || e.key === " ") &&
-          open({ type: "villain", idx: i })}
-      >
-        <span class="label">{VILLAIN_NAMES[i]}</span>
-        <VillainDisplay notation={v.notation} dead={hero.concat(community)} />
-      </div>
+      <li>
+        <button
+          type="button"
+          class:empty={!v.notation.trim()}
+          on:click={() => open({ type: "villain", idx: i })}
+        >
+          <b>{VILLAIN_NAMES[i]}</b>
+          <VillainDisplay notation={v.notation} dead={hero.concat(community)} />
+        </button>
+      </li>
     {/each}
-  </div>
-</div>
+  </ul>
+</fieldset>
 
 {#if editing === "hero"}
   <CardPickerModal
@@ -194,66 +178,72 @@
 {/if}
 
 <style>
-  .overview {
+  fieldset {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
     width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
   }
-  .overview.disabled {
-    pointer-events: none;
+  fieldset:disabled {
     opacity: 0.6;
   }
-  .row {
-    padding: 0.625rem 0;
+  button {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.375rem;
+    padding: 0.625rem 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: inherit;
     cursor: pointer;
-    transition: border-color 100ms, background 100ms;
+    transition: border-color 100ms, opacity 100ms;
   }
-  .label {
+  b {
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--muted);
+    color: var(--color-neutral-400);
   }
-  .cards-row {
+  button > span {
     display: flex;
     gap: 0.25rem;
     justify-content: center;
     flex-wrap: wrap;
   }
-  .villains {
+  ul {
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    padding-bottom: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0.5rem;
   }
-  .villain {
+  li {
     flex: 0 0 min(11rem, 45%);
     scroll-snap-align: start;
-    padding: 0.5rem;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.375rem;
-    cursor: pointer;
-    background: var(--card-bg);
-    color: var(--fg);
-    transition: border-color 100ms, opacity 100ms;
   }
-  .villain.empty {
+  li button {
+    width: 100%;
+    padding: 0.5rem;
+    background: var(--color-neutral-100);
+    color: var(--ink);
+  }
+  li button.empty {
     opacity: 0.75;
   }
-  .villain:hover,
-  .villain:focus-visible,
-  .villain.empty:hover {
+  li button:hover,
+  li button:focus-visible {
     opacity: 1;
-    border-color: var(--fg);
+    border-color: var(--ink);
     outline: none;
   }
 </style>

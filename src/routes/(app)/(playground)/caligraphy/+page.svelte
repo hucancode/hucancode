@@ -1279,8 +1279,6 @@
     cursor: grabbing;
   }
   canvas {
-    background: #fffce0;
-    border-radius: 0.25rem;
     touch-action: none;
   }
   svg circle {

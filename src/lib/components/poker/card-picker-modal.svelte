@@ -18,7 +18,6 @@
   }
 
   function toggle(i) {
-    if (usedCards.includes(i)) return;
     if (cards.includes(i)) {
       cards = cards.filter((x) => x !== i);
     } else {
@@ -34,25 +33,18 @@
   }
 </script>
 
-<dialog
-  bind:this={dialog}
-  on:close={close}
-  on:click|self={close}
-  class="modal"
->
-  <div class="inner" on:click|stopPropagation role="presentation">
+<dialog bind:this={dialog} on:close={close} on:click|self={close}>
+  <form method="dialog">
     <header>
       <h3>{title}</h3>
-      <span class="count" class:invalid={cards.length < min}>
-        {cards.length} / {max}
-      </span>
+      <output class:invalid={cards.length < min}>{cards.length} / {max}</output>
     </header>
 
-    <div class="picked-row">
+    <output>
       {#each Array(max) as _, i}
         <Card card={i < cards.length ? cards[i] : -1} />
       {/each}
-    </div>
+    </output>
 
     <div class="grid">
       {#each Array(52) as _, i}
@@ -67,25 +59,25 @@
     </div>
 
     <footer>
-      <button type="button" class="done" on:click={close}>Done</button>
+      <button>Done</button>
     </footer>
-  </div>
+  </form>
 </dialog>
 
 <style>
-  .modal {
+  dialog {
     border: 0;
     padding: 0;
     background: transparent;
     max-width: 100vw;
     max-height: 100vh;
   }
-  .modal::backdrop {
+  dialog::backdrop {
     background: rgba(0, 0, 0, 0.5);
   }
-  .inner {
-    background: var(--bg, #fff);
-    color: var(--fg, #111);
+  form {
+    background: var(--paper);
+    color: var(--ink);
     padding: 0.75rem;
     width: min(100vw, 42rem);
     max-height: 90vh;
@@ -103,14 +95,14 @@
     font-size: 1rem;
     flex: 1;
   }
-  .count {
+  header output {
     font-family: ui-monospace, monospace;
     font-weight: 700;
   }
-  .count.invalid {
+  header output.invalid {
     color: #b91c1c;
   }
-  .picked-row {
+  form > output {
     display: flex;
     justify-content: center;
     gap: 0.25rem;
@@ -133,7 +125,7 @@
     display: flex;
     justify-content: center;
   }
-  .done {
+  footer button {
     background: #000;
     color: #fff;
     border: 0;

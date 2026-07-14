@@ -14,7 +14,6 @@
   let key = 0;
 
   $: combos = expandNotationToCombos(notation, dead);
-  $: total = combos.length;
   $: if (combos.length === 0) {
     current = null;
   } else if (current === null) {
@@ -51,42 +50,30 @@
   });
 </script>
 
-<div class="vd">
-  <div class="cards">
-    {#if current}
-      {#key key}
-        <div
-          class="combo"
-          in:fade={{ duration: 300 }}
-          out:fade={{ duration: 300 }}
-        >
-          <Card card={current[0]} />
-          <Card card={current[1]} />
-        </div>
-      {/key}
-    {:else}
-      <div class="combo placeholder">
-        <Card card={-1} />
-        <Card card={-1} />
-      </div>
-    {/if}
-  </div>
+<div class="cards">
+  {#if current}
+    {#key key}
+      <span in:fade={{ duration: 300 }} out:fade={{ duration: 300 }}>
+        <Card card={current[0]} />
+        <Card card={current[1]} />
+      </span>
+    {/key}
+  {:else}
+    <span class="placeholder">
+      <Card card={-1} />
+      <Card card={-1} />
+    </span>
+  {/if}
 </div>
 
 <style>
-  .vd {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-  }
   .cards {
     position: relative;
     display: grid;
     place-items: center;
     min-height: 5rem;
   }
-  .combo {
+  span {
     display: flex;
     gap: 0.25rem;
     grid-area: 1 / 1;

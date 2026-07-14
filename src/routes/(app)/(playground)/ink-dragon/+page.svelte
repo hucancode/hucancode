@@ -613,8 +613,6 @@
     aspect-ratio: 1 / 1;
   }
   canvas {
-    background: #fffce0;
-    border-radius: 0.25rem;
     touch-action: none;
     cursor: grab;
   }

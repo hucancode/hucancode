@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
   import {
-    RANKS,
     cellLabel,
     cellKind,
     notationFromCells,
@@ -10,7 +9,6 @@
   } from "$lib/playgrounds/poker/range.js";
 
   export let notation = "";
-  export let disabled = false;
 
   const dispatch = createEventDispatcher();
 
@@ -31,7 +29,6 @@
   }
 
   function startDrag(r, c, e) {
-    if (disabled) return;
     e.preventDefault();
     const i = r * 13 + c;
     dragMode = selected.has(i) ? "remove" : "add";
@@ -42,9 +39,8 @@
   }
 
   function continueDrag(r, c) {
-    if (!dragging || disabled) return;
-    const i = r * 13 + c;
-    setCell(i, dragMode);
+    if (!dragging) return;
+    setCell(r * 13 + c, dragMode);
     selected = selected;
     syncNotation();
   }
@@ -62,75 +58,62 @@
   }
 
   function preset(name) {
-    if (disabled) return;
     selected = PRESETS[name]();
     syncNotation();
-  }
-
-  function count() {
-    return selected.size;
-  }
-
-  function percent() {
-    return ((selected.size / 169) * 100).toFixed(0);
   }
 </script>
 
 <svelte:window on:pointerup={endDrag} on:pointercancel={endDrag} />
 
-<div class="range">
-  <div class="presets" role="toolbar">
-    <button type="button" {disabled} on:click={() => preset("any")}>Any</button>
-    <button type="button" {disabled} on:click={() => preset("premium")}>Premium</button>
-    <button type="button" {disabled} on:click={() => preset("broadway")}>Broadway</button>
-    <button type="button" {disabled} on:click={() => preset("pairs")}>Pairs</button>
-    <button type="button" {disabled} on:click={() => preset("suited_connectors")}>Connectors</button>
-    <button type="button" class="clear" {disabled} on:click={() => preset("clear")}>Clear</button>
+<fieldset>
+  <div role="toolbar" aria-label="Range presets">
+    <button type="button" on:click={() => preset("any")}>Any</button>
+    <button type="button" on:click={() => preset("premium")}>Premium</button>
+    <button type="button" on:click={() => preset("broadway")}>Broadway</button>
+    <button type="button" on:click={() => preset("pairs")}>Pairs</button>
+    <button type="button" on:click={() => preset("suited_connectors")}>Connectors</button>
+    <button type="button" class="clear" on:click={() => preset("clear")}>Clear</button>
   </div>
 
-  <div
-    class="grid"
-    role="grid"
-    aria-label="Range matrix"
-    style="touch-action: none;"
-  >
+  <div class="grid" role="grid" aria-label="Range matrix">
     {#each Array(13) as _, r}
       {#each Array(13) as _, c}
-        {@const i = r * 13 + c}
-        {@const sel = selected.has(i)}
-        {@const kind = cellKind(r, c)}
+        {@const sel = selected.has(r * 13 + c)}
         <button
           type="button"
-          class="cell {kind}"
+          class={cellKind(r, c)}
           class:selected={sel}
-          {disabled}
           aria-label={cellLabel(r, c)}
           aria-pressed={sel}
           on:pointerdown={(e) => startDrag(r, c, e)}
           on:pointerenter={() => continueDrag(r, c)}
         >
-          <span>{cellLabel(r, c)}</span>
+          {cellLabel(r, c)}
         </button>
       {/each}
     {/each}
   </div>
-</div>
+</fieldset>
 
 <style>
-  .range {
+  fieldset {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     align-items: center;
     width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
   }
-  .presets {
+  [role="toolbar"] {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.25rem;
   }
-  .presets button {
+  [role="toolbar"] button {
     background: #1f2937;
     color: #fff;
     padding: 0.25rem 0.5rem;
@@ -140,12 +123,8 @@
     border: 0;
     cursor: pointer;
   }
-  .presets button.clear {
+  [role="toolbar"] button.clear {
     background: #b91c1c;
-  }
-  .presets button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
   .grid {
     display: grid;
@@ -154,8 +133,9 @@
     width: min(100%, 26rem);
     aspect-ratio: 1 / 1;
     user-select: none;
+    touch-action: none;
   }
-  .cell {
+  .grid button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -169,40 +149,36 @@
     cursor: pointer;
     transition: background-color 75ms;
   }
-  .cell.pair {
+  .grid button.pair {
     background: #fef3c7;
   }
-  .cell.suited {
+  .grid button.suited {
     background: #ecfdf5;
   }
-  .cell.offsuit {
+  .grid button.offsuit {
     background: #f3f4f6;
   }
-  .cell.selected {
+  .grid button.selected {
     background: #f97316;
     color: #fff;
     border-color: #c2410c;
   }
-  .cell.pair.selected {
+  .grid button.pair.selected {
     background: #ea580c;
   }
-  .cell.suited.selected {
+  .grid button.suited.selected {
     background: #16a34a;
   }
-  .cell.offsuit.selected {
+  .grid button.offsuit.selected {
     background: #2563eb;
   }
-  .cell:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
   @media (min-width: 480px) {
-    .cell {
+    .grid button {
       font-size: 0.7rem;
     }
   }
   @media (min-width: 768px) {
-    .cell {
+    .grid button {
       font-size: 0.85rem;
     }
   }

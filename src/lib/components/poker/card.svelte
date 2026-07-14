@@ -12,42 +12,37 @@
   $: isRed = suitIdx >= 2;
   $: isCourt = card >= 0 && rankIdx >= 9 && rankIdx <= 11;
   $: courtCid = isCourt ? poker.cardIdToText(card) : "";
+  $: blank = used || card < 0;
 
   const dispatch = createEventDispatcher();
-  function toggle(event) {
-    if (!selectable) return;
-    event.stopPropagation();
-    if (used) return;
-    dispatch("selectedChange", { selected: !selected });
-  }
 </script>
 
-<label class="card" class:is-high={isHigh}>
-  <input
-    checked={selected}
-    disabled={!selectable}
-    type="checkbox"
-    on:change={toggle}
-  />
-  <div class="face" class:selected class:is-red={isRed}>
-    <div class="rank">
-      {poker.readableRanks[rankIdx] ?? ""}
-    </div>
+<svelte:element
+  this={selectable ? "label" : "span"}
+  class="card"
+  class:is-high={isHigh}
+>
+  {#if selectable}
+    <input
+      type="checkbox"
+      checked={selected}
+      disabled={used}
+      on:change={() => dispatch("selectedChange", { selected: !selected })}
+    />
+  {/if}
+  <span class="face" class:selected class:is-red={isRed} class:blank>
+    <b>{poker.readableRanks[rankIdx] ?? ""}</b>
     {#if isCourt}
-      <img class="court" src="/courts/{courtCid}.svg" alt={courtCid} draggable="false" />
+      <img src="/courts/{courtCid}.svg" alt={courtCid} draggable="false" />
     {:else}
-      <div class="suit">
-        {poker.suitSymbols[suitIdx] ?? ""}
-      </div>
+      <i>{poker.suitSymbols[suitIdx] ?? ""}</i>
     {/if}
-    {#if used || card < 0}
-      <div class="stripe"></div>
-    {/if}
-  </div>
-</label>
+  </span>
+</svelte:element>
 
 <style>
   .card {
+    display: block;
     aspect-ratio: 2 / 2.5;
     width: 3.5rem;
     border-radius: 0.275rem;
@@ -56,9 +51,9 @@
   }
   @media (min-width: 512px) {
     .card {
-        width: 4rem;
-        border-radius: 0.375rem;
-        padding: 0.125rem;
+      width: 4rem;
+      border-radius: 0.375rem;
+      padding: 0.125rem;
     }
   }
   input {
@@ -87,36 +82,10 @@
   .face.is-red {
     color: #ef4444;
   }
-  .rank {
-    position: absolute;
-    top: 0.25rem;
-    left: 0.25rem;
-    line-height: 1;
-    z-index: 1;
-    font-weight: bolder;
-  }
-  .suit {
-    font-size: 1.5rem;
-  }
-  @media (min-width: 768px) {
-    .suit {
-      font-size: 2.25rem;
-    }
-  }
-  .court {
+  .face.blank::after {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    pointer-events: none;
-  }
-  .stripe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
+    content: "";
     color: rgba(0, 0, 0, 0.8);
     background-image: repeating-linear-gradient(
       45deg,
@@ -125,6 +94,31 @@
       currentColor 10px,
       currentColor 20px
     );
+  }
+  .face b {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    line-height: 1;
+    z-index: 1;
+    font-weight: bolder;
+  }
+  .face i {
+    font-size: 1.5rem;
+    font-style: normal;
+  }
+  @media (min-width: 768px) {
+    .face i {
+      font-size: 2.25rem;
+    }
+  }
+  .face img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
   }
   .card.is-high {
     position: relative;

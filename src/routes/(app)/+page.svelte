@@ -186,11 +186,7 @@
   <!-- empty-state coach marks: one fixed-size popover per icon (top layer),
        each centered under its own icon so it never drifts or scales. -->
   {#each ICON_HINTS as h, i}
-    <div
-      popover="manual"
-      bind:this={iconHintEls[i]}
-      aria-hidden="true"
-    >
+    <aside popover="manual" bind:this={iconHintEls[i]} aria-hidden="true">
       <svg viewBox="0 0 90 60">
         <g
           fill="none"
@@ -211,11 +207,11 @@
           transform={`rotate(${h.rot} ${h.lx} ${h.ly})`}>{h.label}</text
         >
       </svg>
-    </div>
+    </aside>
   {/each}
 
   <!-- coach mark for the seek bar -->
-  <div popover="manual" bind:this={hints2El} aria-hidden="true">
+  <aside popover="manual" bind:this={hints2El} aria-hidden="true">
     <svg viewBox="0 0 120 60">
       <g
         fill="none"
@@ -234,7 +230,7 @@
         transform="rotate(-4 60 44)">Animation!</text
       >
     </svg>
-  </div>
+  </aside>
 </nav>
 
 <main style:height={`calc(100vh + ${SCROLL_LEN}px)`}>
@@ -257,8 +253,6 @@
 </footer>
 
 <style>
-  /* single <nav> top bar: full-width fixed, content clamped to 1100px and
-     centered via side padding (overrides the global <nav> max-width/justify). */
   nav {
     position: fixed;
     top: 0;
@@ -312,9 +306,6 @@
     fill: currentColor;
   }
   nav > a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 2.2rem;
     height: 2.2rem;
     color: var(--ink);
@@ -325,7 +316,7 @@
     fill: currentColor;
   }
   /* playback controls: fill all space left of the icons -> long seek bar */
-  nav > div:not([popover]) {
+  nav > div {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
