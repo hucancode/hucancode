@@ -1,14 +1,13 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
-  import Sliders from "$lib/components/mech-sliders.svelte";
   import * as mech from "$lib/playgrounds/mech";
   import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
   import {
-    atlasModel, atlasHeight, atlasPose, atlasMontages, baseChan,
-    ATLAS_POSE_DEPTH, SIDE_CHANNELS, SIDES,
+    atlasModel, atlasHeight, atlasPose, atlasChoreo, montageLabel,
+    coreCtl, flankCtl, rigLocked, mirrorWrites, SIDES,
   } from "$lib/mech/atlas/rig.js";
-  import { assembleModel } from "$lib/mech/build-anim.js";
-  import { createChoreographer, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
+  import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
+  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
   import {
     createMusic, MUSIC_DEFAULTS, MUSIC_STYLE_NAMES, MUSIC_ROOT_NAMES, MUSIC_SCALE_NAMES, styleOf,
   } from "$lib/audio/music.js";
@@ -39,31 +38,19 @@
   let mscale = $state(MUSIC_DEFAULTS.scale);
   const mkey = $derived(`${mroot} ${mscale}`);
   let move = $state({ beats: 2 });
-  const beatsPerMove = $derived(move.beats);
-  const period = $derived((beatsPerMove * 60) / mus.bpm);
-  const MAX_STEPS = 4;                               // the longest style, in steps
-  const grid = $derived.by(() => {
-    let g = period / (beatsPerMove * 4);             // a 16th
-    while (period / g < 2 * MAX_STEPS) g /= 2;
-    return g;
-  });
+  const clock = $derived(beatClock(mus.bpm, move.beats));
   // assembly build scrub: 1 = fully assembled, <1 runs the 4-phase build
   let asm = $state(1);
   let asmPlay = $state(false);
-  const BUILD_SECONDS = 6;
   let seed = $state(1);                    // color shuffle seed
 
   let render = $state({ spin: 0.3, light: 0.6 });
+
   const RENDER_CTL = [
     ["spin", "spin", 0, 3, 0.1],
     ["light", "light angle", 0, 6.28, 0.05],
   ];
-
-  const PART_LABELS = { upperArm: "upper arm", armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
-  const montageLabel = (name) => {
-    const base = name.replace(/Opposed$/, "");
-    return (PART_LABELS[base] ?? base) + (base === name ? "" : " opposed");
-  };
+  const PART_LABELS = { upperArm: "upper arm" };
   const MONTAGE_ICON = (i) => `🌊${i + 1}`;
   // [key, label, min, max, step?] sliders per part
   const PART_CTL = {
@@ -78,69 +65,6 @@
     shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
     foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
   };
-  const ATLAS_CTL = [
-    ["headYaw", "head yaw", -180, 180, 1],
-    ["headPitch", "head pitch", -30, 30, 1],
-    ["twist", "waist twist", -180, 180, 1],
-    ["waistBend", "waist bend", -45, 45, 1],
-    ["waistTilt", "waist tilt", -45, 45, 1],
-    ["shoulder", "arm swing", -180, 180, 1],
-    ["armOut", "arm raise", -10, 180, 1],
-    ["armTwist", "arm twist", -180, 180, 1],
-    ["elbow", "elbow bend", -90, 90, 1],
-    ["foreTwist", "forearm twist", -180, 180, 1],
-    ["wristBend", "wrist bend", -100, 100, 1],
-    ["wristTilt", "wrist tilt", -100, 100, 1],
-    ["wristTwist", "wrist twist", -180, 180, 1],
-    ["curl", "finger curl", 0, 1, 0.01],   // a 0..1 fist, not degrees
-    ["hip", "leg swing", -45, 45, 1],
-    ["knee", "knee bend", -60, 0, 1],
-    ["ankle", "ankle bend", -30, 30, 1],
-  ];
-  const LEVEL_CTL = [["hipLevel", "hip level", -1.5, 0, 0.01]];
-  const SIDED = new Set(SIDE_CHANNELS);
-  const sided = (ctl, mir) =>
-    ctl.flatMap(([key, label, ...rest]) =>
-      !SIDED.has(key) ? [[key, label, ...rest]]
-        : mir ? [[key + "L", label, ...rest]]
-          : SIDES.map((S) => [key + S, `${label} ${S}`, ...rest]),
-    );
-  const coreCtl = [...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !SIDED.has(key));
-  const flankCtl = (S) =>
-    ATLAS_CTL.filter(([key]) => SIDED.has(key))
-      .map(([key, label, ...rest]) => [key + S, label, ...rest]);
-  const rigLocked = $derived(
-    new Set(mirror ? SIDE_CHANNELS.map((key) => key + "R") : []),
-  );
-  const montages = $derived(atlasMontages(mirror));
-  const mirrorWrites = (pose) => new Proxy(pose, {
-    set(t, key, v) {
-      t[key] = v;
-      if (typeof key === "string" && key.endsWith("L") && SIDED.has(baseChan(key)))
-        t[baseChan(key) + "R"] = v;
-      return true;
-    },
-  });
-  const poseIn = $derived(mirror ? mirrorWrites(arig) : arig);
-  const twinOf = (key) =>
-    (key.endsWith("L") && SIDED.has(baseChan(key)) ? baseChan(key) + "R" : null);
-  const BIG_DEPTH = 2;
-  const LEG_CHANNELS = ["hip", "knee", "ankle"];
-  const CHOREO_SKIP = $derived(new Set(mirror ? LEG_CHANNELS : []));
-  const CHOREO_PULSE = ["hipLevel"];
-  const CHOREO_SPIN = "twist";
-  const choreoSliders = $derived(
-    sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !CHOREO_SKIP.has(key)), mirror)
-      .map(([key, , min, max]) => ({
-        key, min, max,
-        big: key === "hipLevel" || ATLAS_POSE_DEPTH[key] <= BIG_DEPTH,
-      })),
-  );
-  const CHOREO_EXCLUSIVE = [["twist", "waistBend", "waistTilt"]];
-  const CHOREO_GROUNDED = [SIDES.map((S) => LEG_CHANNELS.map((key) => key + S))];
-  const CHOREO_PARK = $derived(
-    mirror ? LEG_CHANNELS.flatMap((key) => SIDES.map((S) => key + S)) : [],
-  );
   const CHOREO_CTL = [
     ["anticRatio", "anticipation", 0, 0.4, 0.01],
     ["restRatio", "rest", 0, 0.4, 0.01],
@@ -160,6 +84,9 @@
     ["kick", "kick"], ["snare", "snare"], ["hats", "hats"],
     ["bass", "bass"], ["lead", "lead"], ["chord", "chord"],
   ];
+
+  const rig = $derived(atlasChoreo(mirror));
+  const poseIn = $derived(mirror ? mirrorWrites(arig) : arig);
 
   function resetPart() { aparams[asel] = structuredClone(ATLAS_KIT.params[asel]); }
   function resetAtlas() { arig = atlasPose(); }
@@ -198,9 +125,7 @@
     // static body: no ride curve, the live items are their own anchors
     return { ...m, items: assembleModel(m.items, asm) };
   });
-  $effect(() => { scene?.apply({ spin: render.spin }); });
-  $effect(() => { scene?.apply({ lightAngle: render.light }); });
-  $effect(() => { scene?.apply({ model }); });
+  $effect(() => { scene?.apply({ spin: render.spin, lightAngle: render.light, model }); });
   const PART_DIST = {
     digit: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
     head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,
@@ -209,30 +134,6 @@
     const dist = rigShown ? 12 : PART_DIST[asel] ?? 6;
     scene?.apply({ resetView: true, dist, lookY: rigShown ? atlasHeight(seed) / 2 : 0 });
   });
-  // dt-clamped rAF driver; step returns false to stop
-  const driveRaf = (step) => {
-    let raf, last = performance.now();
-    const tick = (t) => {
-      const dt = Math.min((t - last) / 1000, 0.1);
-      last = t;
-      if (step(dt) === false) return;
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  };
-  const live = $derived(createChoreographer(choreoSliders, {
-    home: atlasPose(), montages, exclusives: CHOREO_EXCLUSIVE,
-    grounded: CHOREO_GROUNDED, parked: CHOREO_PARK, pulse: CHOREO_PULSE,
-    spin: CHOREO_SPIN,
-    seed: (seed + rewires) | 0,
-    style: cstyle === RANDOM ? null : cstyle,
-    twin: mirror ? twinOf : null,
-    onSwitch: toggleMirror,
-    ...$state.snapshot(ctiming),
-    period,
-    grid,
-  }));
   $effect(() => {
     const knobs = {
       style: mstyle, root: mroot, scale: mscale,
@@ -242,51 +143,58 @@
   });
   $effect(() => () => music?.stop());   // leave the page, stop the noise
 
-  $effect(() => {
-    if (!choreo || !rigShown || asmPlay) return;
-    const cho = live, pose = arig;
-    let last = null;
-    return driveRaf((dt) => {
+  // the beat, and the quarter note it last synced to — a fresh choreographer starts
+  // its count over
+  const beat = $derived({ cho: createChoreographer(rig.sliders, {
+    ...rig,
+    seed: (seed + rewires) | 0,
+    style: cstyle === RANDOM ? null : cstyle,
+    onSwitch: toggleMirror,
+    ...$state.snapshot(ctiming),
+    ...clock,
+  }), last: null });
+  let solo = null;   // a hand-fired beat/montage, running while autoplay is off
+
+  // every page clock runs off the canvas's frame, so they pause with it
+  function frame(dt) {
+    if (rigShown && asmPlay) {
+      asm = Math.min(1, asm + dt / BUILD_SECONDS);
+      if (asm >= 1) asmPlay = false;
+    } else if (rigShown && choreo) {
       const q = musicOn ? music?.quarter() : null;
       if (q != null) {
-        const at = Math.floor(q / beatsPerMove);
-        if (last != null && at !== last && cho.span <= period * 1.01) cho.cue();
-        last = at;
+        const at = Math.floor(q / move.beats);
+        if (beat.last != null && at !== beat.last && beat.cho.span <= clock.period * 1.01) beat.cho.cue();
+        beat.last = at;
       }
-      cho.step(dt, pose);
-    });
-  });
+      beat.cho.step(dt, arig);
+    } else {
+      beat.last = null;
+    }
+    if (solo) {
+      solo.cho.step(dt, solo.pose);
+      solo.t += dt;
+      if (solo.t >= solo.cho.span) solo = null;
+    }
+  }
   const danceOnce = () => {
     if (choreo) return;                     // the beat is already running
-    const cho = live, pose = arig;
-    let t = 0;
-    driveRaf((dt) => {
-      cho.step(dt, pose);
-      t += dt;
-      if (t >= cho.span) return false;
-    });
+    solo = { cho: beat.cho, pose: arig, t: 0 };
   };
   function beatOnce() {
-    live.cue();                             // whatever was playing ends here
+    beat.cho.cue();                         // whatever was playing ends here
     danceOnce();
   }
   function playMontage(name) {
-    live.play(name);
+    beat.cho.play(name);
     danceOnce();                            // a montage owns the clock for its whole run
   }
-  $effect(() => {
-    if (!asmPlay || !rigShown) return;
-    return driveRaf((dt) => {
-      asm = Math.min(1, asm + dt / BUILD_SECONDS);
-      if (asm >= 1) { asmPlay = false; return false; }
-    });
-  });
 </script>
 
 <svelte:head><title>Atlas</title></svelte:head>
 
   <section>
-    <Scene bind:this={scene} scene={mech} id="atlas" />
+    <Scene bind:this={scene} scene={mech} id="atlas" onFrame={frame} />
     <menu>
       <li>
         <button type="button" aria-pressed={partsOpen} title="parts" aria-label="parts"
@@ -310,11 +218,11 @@
     </menu>
     {#if rigShown}
       <footer>
-        <div>
-          <button type="button" onclick={playAssemble}>▶ Assemble</button>
-          <input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={() => (asmPlay = false)} />
-          <output>{asm.toFixed(2)}</output>
-        </div>
+        <menu>
+          <li><button type="button" onclick={playAssemble}>▶ Assemble</button></li>
+          <li><input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={() => (asmPlay = false)} /></li>
+          <li><output>{asm.toFixed(2)}</output></li>
+        </menu>
       </footer>
     {/if}
   </section>
@@ -322,17 +230,27 @@
   <aside>
     <fieldset>
       <legend>panel</legend>
-      <div role="group">
-        <label><input type="radio" name="atlas-tab" value="render" bind:group={tab} />render</label>
-        <label><input type="radio" name="atlas-tab" value="choreo" bind:group={tab} />choreo</label>
-        <label><input type="radio" name="atlas-tab" value="rig" bind:group={tab} />rig</label>
-      </div>
+      <menu role="group">
+        <li><label><input type="radio" name="atlas-tab" value="render" bind:group={tab} />render</label></li>
+        <li><label><input type="radio" name="atlas-tab" value="choreo" bind:group={tab} />choreo</label></li>
+        <li><label><input type="radio" name="atlas-tab" value="rig" bind:group={tab} />rig</label></li>
+      </menu>
     </fieldset>
 
     {#if tab === "render"}
       <fieldset>
         <legend>render</legend>
-        <Sliders ctl={RENDER_CTL} values={render} />
+        {#each RENDER_CTL as [key, label, min, max, step]}
+          {#if min === 0 && max === 1 && step === 1}
+            <label><input type="checkbox" checked={!!render[key]}
+              onchange={(e) => (render[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={render[key]}
+                oninput={(e) => (render[key] = +e.currentTarget.value)} />
+              <output>{render[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+          {/if}
+        {/each}
         <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
       </fieldset>
     {:else if tab === "choreo"}
@@ -346,11 +264,21 @@
             {#each CHOREO_STYLES as s}<option value={s}>{s}</option>{/each}
           </select>
         </label>
-        <Sliders ctl={CHOREO_CTL} values={ctiming} />
+        {#each CHOREO_CTL as [key, label, min, max, step]}
+          {#if min === 0 && max === 1 && step === 1}
+            <label><input type="checkbox" checked={!!ctiming[key]}
+              onchange={(e) => (ctiming[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={ctiming[key]}
+                oninput={(e) => (ctiming[key] = +e.currentTarget.value)} />
+              <output>{ctiming[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+          {/if}
+        {/each}
         <menu>
           <li><button type="button" disabled={choreo} onclick={beatOnce}
             title="run a single beat" aria-label="run a single beat">▶ beat</button></li>
-          {#each Object.keys(montages) as name, i}
+          {#each Object.keys(rig.montages) as name, i}
             <li><button type="button" onclick={() => playMontage(name)}
               title={montageLabel(name)} aria-label={montageLabel(name)}>
               {MONTAGE_ICON(i)}</button></li>
@@ -378,8 +306,28 @@
             {#each MUSIC_SCALE_NAMES as s}<option value={s}>{s}</option>{/each}
           </select>
         </label>
-        <Sliders ctl={MUSIC_CTL} values={mus} />
-        <Sliders ctl={MOVE_CTL} values={move} />
+        {#each MUSIC_CTL as [key, label, min, max, step]}
+          {#if min === 0 && max === 1 && step === 1}
+            <label><input type="checkbox" checked={!!mus[key]}
+              onchange={(e) => (mus[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={mus[key]}
+                oninput={(e) => (mus[key] = +e.currentTarget.value)} />
+              <output>{mus[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+          {/if}
+        {/each}
+        {#each MOVE_CTL as [key, label, min, max, step]}
+          {#if min === 0 && max === 1 && step === 1}
+            <label><input type="checkbox" checked={!!move[key]}
+              onchange={(e) => (move[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={move[key]}
+                oninput={(e) => (move[key] = +e.currentTarget.value)} />
+              <output>{move[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+          {/if}
+        {/each}
         {#each LAYERS as [key, label]}
           <label><input type="checkbox" bind:checked={layers[key]} /><span>{label}</span></label>
         {/each}
@@ -387,7 +335,17 @@
     {:else if asel === "rig"}
       <fieldset>
         <legend>core<button type="button" onclick={resetAtlas}>reset</button></legend>
-        <Sliders ctl={coreCtl} values={poseIn} />
+        {#each coreCtl as [key, label, min, max, step]}
+          {#if min === 0 && max === 1 && step === 1}
+            <label><input type="checkbox" checked={!!poseIn[key]}
+              onchange={(e) => (poseIn[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={poseIn[key]}
+                oninput={(e) => (poseIn[key] = +e.currentTarget.value)} />
+              <output>{poseIn[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+          {/if}
+        {/each}
       </fieldset>
       {#each SIDES as S}
         <fieldset>
@@ -398,34 +356,43 @@
               <span>mirror</span>
             </label>
           {/if}
-          <Sliders ctl={flankCtl(S)} values={poseIn} locked={rigLocked} />
+          {#each flankCtl(S) as [key, label, min, max, step]}
+            {#if min === 0 && max === 1 && step === 1}
+              <label><input type="checkbox" checked={!!poseIn[key]} disabled={rigLocked(mirror)?.has(key)}
+                onchange={(e) => (poseIn[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+            {:else}
+              <label><span>{label}</span>
+                <input type="range" {min} {max} step={step ?? 0.01} value={poseIn[key]} disabled={rigLocked(mirror)?.has(key)}
+                  oninput={(e) => (poseIn[key] = +e.currentTarget.value)} />
+                <output>{poseIn[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+            {/if}
+          {/each}
         </fieldset>
       {/each}
     {:else}
       <fieldset>
         <legend>params<button type="button" onclick={resetPart}>reset</button></legend>
-        <Sliders ctl={PART_CTL[asel]} values={aparams[asel]} />
+        {#each PART_CTL[asel] as [key, label, min, max, step]}
+          {#if min === 0 && max === 1 && step === 1}
+            <label><input type="checkbox" checked={!!aparams[asel][key]}
+              onchange={(e) => (aparams[asel][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+          {:else}
+            <label><span>{label}</span>
+              <input type="range" {min} {max} step={step ?? 0.01} value={aparams[asel][key]}
+                oninput={(e) => (aparams[asel][key] = +e.currentTarget.value)} />
+              <output>{aparams[asel][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+          {/if}
+        {/each}
       </fieldset>
     {/if}
   </aside>
 
 <style>
-  section > menu {
-    top: 0.5rem;
-    left: 0.5rem;
-    min-width: 1rem;
-    height: 1rem;
-  }
-  section > menu.sound {
-    top: 3rem;
-    width: 1rem;
-  }
-  section > menu button {
-    width: auto;
-    padding: 0 0.5rem;
-    border-radius: 0;
-    border: 0;
-  }
+  /* the two stage menus stack in the top-left corner (playground.css floats them) */
+  section > menu { top: 0.5rem; left: 0.5rem; }
+  section > menu.sound { top: 3rem; }
+  /* part names ride in the same pill menu as the icons: as wide as their label */
+  section > menu button { width: auto; padding: 0 0.5rem; }
   /* the icons come in through {@html}, so the scoping attribute never lands on them */
   section > menu button :global(svg) {
     width: 20px;

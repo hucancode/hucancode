@@ -176,6 +176,12 @@ export const atlasMontages = (mirror = false) =>
       }]),
   );
 
+const MONTAGE_LABELS = { armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
+export const montageLabel = (name) => {
+  const base = name.replace(/Opposed$/, "");
+  return (MONTAGE_LABELS[base] ?? base) + (base === name ? "" : " opposed");
+};
+
 // ---- THE LINKS --------------------------------------------------------------
 // One arm + one leg, on their OWN channels. `sgn` flips the ones that must READ the
 // same on both flanks: the right limb hangs off a REVERSED PIN (see assemble's note
@@ -255,6 +261,88 @@ export const ATLAS_POSE_DEPTH = (() => {
     out[chan("curl", S)] = Math.min(...CURL_SEG.map((key) => out[key + S]));
   return out;
 })();
+
+// ---- THE SLIDER SURFACE ------------------------------------------------------
+// Every pose channel, its range, and the MIRROR rule laid over them. The rig is always
+// split (see SIDE_CHANNELS), so mirroring is these functions tying the two flanks
+// together — a caller's rule, never a wiring.
+// [key, label, min, max, step?], on BARE channel names
+export const ATLAS_CTL = [
+  ["headYaw", "head yaw", -180, 180, 1],
+  ["headPitch", "head pitch", -30, 30, 1],
+  ["twist", "waist twist", -180, 180, 1],
+  ["waistBend", "waist bend", -45, 45, 1],
+  ["waistTilt", "waist tilt", -45, 45, 1],
+  ["shoulder", "arm swing", -180, 180, 1],
+  ["armOut", "arm raise", -10, 180, 1],
+  ["armTwist", "arm twist", -180, 180, 1],
+  ["elbow", "elbow bend", -90, 90, 1],
+  ["foreTwist", "forearm twist", -180, 180, 1],
+  ["wristBend", "wrist bend", -100, 100, 1],
+  ["wristTilt", "wrist tilt", -100, 100, 1],
+  ["wristTwist", "wrist twist", -180, 180, 1],
+  ["curl", "finger curl", 0, 1, 0.01],   // a 0..1 fist, not degrees
+  ["hip", "leg swing", -45, 45, 1],
+  ["knee", "knee bend", -60, 0, 1],
+  ["ankle", "ankle bend", -30, 30, 1],
+];
+export const LEVEL_CTL = [["hipLevel", "hip level", -1.5, 0, 0.01]];
+
+// bare rows -> flanked ones; mirrored, the left channel stands for both
+export const sided = (ctl, mirror) =>
+  ctl.flatMap(([key, label, ...rest]) =>
+    !SIDED.has(key) ? [[key, label, ...rest]]
+      : mirror ? [[key + "L", label, ...rest]]
+        : SIDES.map((S) => [key + S, `${label} ${S}`, ...rest]),
+  );
+export const coreCtl = [...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !SIDED.has(key));
+export const flankCtl = (S) =>
+  ATLAS_CTL.filter(([key]) => SIDED.has(key))
+    .map(([key, label, ...rest]) => [key + S, label, ...rest]);
+// mirrored, the right flank is not the user's to edit — it follows the left
+export const rigLocked = (mirror) =>
+  new Set(mirror ? SIDE_CHANNELS.map((key) => key + "R") : []);
+// a pose whose left-flank writes land on the right flank too
+export const mirrorWrites = (pose) => new Proxy(pose, {
+  set(t, key, v) {
+    t[key] = v;
+    if (typeof key === "string" && key.endsWith("L") && SIDED.has(baseChan(key)))
+      t[baseChan(key) + "R"] = v;
+    return true;
+  },
+});
+export const twinOf = (key) =>
+  (key.endsWith("L") && SIDED.has(baseChan(key)) ? baseChan(key) + "R" : null);
+
+// ---- WHAT A CHOREOGRAPHER MAY DRIVE -----------------------------------------
+const BIG_DEPTH = 2;                 // this near the root, a channel carries a beat
+const LEG_CHANNELS = ["hip", "knee", "ankle"];
+const CHOREO_PULSE = ["hipLevel"];   // whole-body: its own slot in the beat
+const CHOREO_SPIN = "twist";
+const CHOREO_EXCLUSIVE = [["twist", "waistBend", "waistTilt"]];   // one waist ball
+const CHOREO_GROUNDED = [SIDES.map((S) => LEG_CHANNELS.map((key) => key + S))];
+// mirrored, the legs move as ONE and the figure would hop: take them out of the beat
+// and park them (a leg left in the air by the flip still has to walk home)
+const choreoSliders = (mirror) => {
+  const skip = new Set(mirror ? LEG_CHANNELS : []);
+  return sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !skip.has(key)), mirror)
+    .map(([key, , min, max]) => ({
+      key, min, max,
+      big: key === "hipLevel" || ATLAS_POSE_DEPTH[key] <= BIG_DEPTH,
+    }));
+};
+// the whole rig, as createChoreographer wants it, under the mirror rule
+export const atlasChoreo = (mirror) => ({
+  sliders: choreoSliders(mirror),
+  home: atlasPose(),
+  montages: atlasMontages(mirror),
+  exclusives: CHOREO_EXCLUSIVE,
+  grounded: CHOREO_GROUNDED,
+  parked: mirror ? LEG_CHANNELS.flatMap((key) => SIDES.map((S) => key + S)) : [],
+  pulse: CHOREO_PULSE,
+  spin: CHOREO_SPIN,
+  twin: mirror ? twinOf : null,
+});
 
 export function createAtlasRig(seed = 1) {
   const rig = createAssembly({ kit: ATLAS_KIT, links: ATLAS_DEF, seed });

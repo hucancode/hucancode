@@ -41,6 +41,17 @@ const STYLES = [
 ];
 export const CHOREO_STYLES = STYLES.map((s) => s.join("-"));
 
+// THE BEAT CLOCK, off the music's tempo: `beats` quarter notes to a beat. Its grid is a
+// 16th, halved until the longest style's every step can hold two ticks — snap() needs
+// that room, or a style finer than the grid is left where it fell.
+const MAX_STEPS = Math.max(...STYLES.map((s) => s.length));
+export function beatClock(bpm, beats) {
+  const period = (beats * 60) / bpm;
+  let grid = period / (beats * 4);
+  while (period / grid < 2 * MAX_STEPS) grid /= 2;
+  return { period, grid };
+}
+
 // an ease that LEAVES [0,1] on the way: constant speed out past the target, then
 // outBounce hauls it back to exactly 1
 const moveBounce = (time, power) => (t) =>

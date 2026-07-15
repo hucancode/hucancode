@@ -2,13 +2,13 @@
   import Scene from "$lib/components/playground-canvas.svelte";
   import * as dragon from "$lib/playgrounds/dragon";
 
-  const MAX_DRAGON = 8;
   const PRESETS = [
     { id: "circle", label: "Circle" },
     { id: "figure8", label: "Fig8" },
     { id: "helix", label: "Helix" },
     { id: "random", label: "Random" },
   ];
+  let scene = $state(null);
   let preset = $state("circle");
   let points = $state(20);
   let spread = $state(1);
@@ -18,23 +18,18 @@
   let bodyFraction = $state(0.25);
   let girthFactor = $state(0.0012);
 
-  // change a knob that reshapes the curve -> rebuild onto a new path
-  function reshape(patch) {
-    dragon.setConfig(patch);
-    dragon.regenerate();
-  }
-  function addDragon() {
-    if (dragon.getCurrentDragonCount() >= MAX_DRAGON) return;
-    dragon.makeDragon();
-  }
+  // curve knobs rebuild the dragons, so they commit on change (not on every
+  // drag tick); speed/lights/path are live and flow straight through
+  let shape = $state({ preset, points, spread, bodyFraction, girthFactor });
+  const reshape = () => (shape = { preset, points, spread, bodyFraction, girthFactor });
+
   function reset() {
     dragon.clearDragon();
     dragon.makeDragon();
   }
 
-  // knobs that only affect the live render (speed, lights)
   $effect(() => {
-    dragon.setConfig({ speed: speed / 1000, showLights, showPath });
+    scene?.apply({ ...shape, speed: speed / 1000, showLights, showPath });
   });
 </script>
 
@@ -43,21 +38,20 @@
 </svelte:head>
 
 <section>
-  <Scene scene={dragon} id="dragon" />
+  <Scene bind:this={scene} scene={dragon} id="dragon" />
 </section>
 
 <aside>
   <fieldset>
     <legend>flight path</legend>
-    <div role="group">
+    <menu role="group">
       {#each PRESETS as p}
-        <label>
-          <input type="radio" name="preset" value={p.id} bind:group={preset}
-            onchange={() => reshape({ preset: p.id })} />
+        <li><label>
+          <input type="radio" name="preset" value={p.id} bind:group={preset} onchange={reshape} />
           {p.label}
-        </label>
+        </label></li>
       {/each}
-    </div>
+    </menu>
   </fieldset>
 
   <fieldset>
@@ -69,26 +63,22 @@
     </label>
     <label>
       <span>Path detail</span>
-      <input type="range" min="4" max="40" step="1" bind:value={points}
-        onchange={() => reshape({ points })} />
+      <input type="range" min="4" max="40" step="1" bind:value={points} onchange={reshape} />
       <output>{points}</output>
     </label>
     <label>
       <span>Path size</span>
-      <input type="range" min="0.4" max="1.6" step="0.05" bind:value={spread}
-        onchange={() => reshape({ spread })} />
+      <input type="range" min="0.4" max="1.6" step="0.05" bind:value={spread} onchange={reshape} />
       <output>{spread.toFixed(2)}</output>
     </label>
     <label>
       <span>Body length</span>
-      <input type="range" min="0.05" max="0.6" step="0.01" bind:value={bodyFraction}
-        onchange={() => reshape({ bodyFraction })} />
+      <input type="range" min="0.05" max="0.6" step="0.01" bind:value={bodyFraction} onchange={reshape} />
       <output>{bodyFraction.toFixed(2)}</output>
     </label>
     <label>
       <span>Girth</span>
-      <input type="range" min="0.0004" max="0.004" step="0.0002" bind:value={girthFactor}
-        onchange={() => reshape({ girthFactor })} />
+      <input type="range" min="0.0004" max="0.004" step="0.0002" bind:value={girthFactor} onchange={reshape} />
       <output>{girthFactor.toFixed(4)}</output>
     </label>
     <label>
@@ -103,7 +93,7 @@
 
   <menu>
     <li><button onclick={() => dragon.regenerate()}>New path</button></li>
-    <li><button onclick={() => addDragon()}>+ Add</button></li>
-    <li><button onclick={() => reset()}>Reset</button></li>
+    <li><button onclick={() => dragon.makeDragon()}>+ Add</button></li>
+    <li><button onclick={reset}>Reset</button></li>
   </menu>
 </aside>

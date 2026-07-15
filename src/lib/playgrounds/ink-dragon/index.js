@@ -10,6 +10,7 @@ import {
   updatePolylineStroke,
   setStrokeLineWidth,
 } from "./stroke-mesh.js";
+import { createWalker } from "./rosette-walk.js";
 
 const PAPER_COLOR = [1.0, 1.0, 0.875, 1.0];
 
@@ -47,13 +48,9 @@ const camMatrix = mat4.create();
 // camera: world -> view is (w - pan) * zoom, applied CPU-side (meshes re-upload
 // every step, head via its matrix), so shaders stay camera-free.
 const view = { zoom: 1, panX: 0, panY: 0 };
+let camEpoch = 0; // bumps on any camera change so the page can reproject its overlay
+const ZOOM_MIN = 0.2, ZOOM_MAX = 20;
 
-export function setView(v) {
-  if (typeof v.zoom === "number") view.zoom = v.zoom;
-  if (typeof v.panX === "number") view.panX = v.panX;
-  if (typeof v.panY === "number") view.panY = v.panY;
-  updateHeadTransform();
-}
 const headPos = { x: 0, y: 0, z: 0 };
 const headEuler = { x: 0, y: 0, z: 0 };
 const headScale = { x: 1, y: 1, z: 1 };
@@ -201,18 +198,18 @@ function setup(ctx) {
 
   bodyRibbon = makeRibbon({
     maxPoints: BODY_MAX_POINTS,
-    lineWidth: 0.12,
+    lineWidth: params.width,
     brushColor,
     // taper in the mesh: widthEnd fraction at the tail (arcT = 0), growing to
     // full width over BODY_TAPER_SPAN of the arc toward the head
     widthAt: (t, s) => s.lineWidth * (s.widthEnd + (1 - s.widthEnd) * smooth(clamp(t / BODY_TAPER_SPAN, 0, 1))),
   }, { withUV: true });
-  bodyRibbon.stroke.widthEnd = 0.1;
+  bodyRibbon.stroke.widthEnd = params.widthEnd;
 
   for (let i = 0; i < 2; i++) {
     whiskers[i] = makeRibbon({
       maxPoints: WHISKER_MAX_POINTS,
-      lineWidth: 0.01,
+      lineWidth: params.whiskerWidth,
       brushColor,
       // taper baked into the mesh: full width at the anchor (arcT = 1, points
       // reversed in setWhisker), tapering to zero at the free tip (arcT = 0)
@@ -224,12 +221,14 @@ function setup(ctx) {
     });
   }
 
+  // head render size tracks phys.headSize; headState.size is only a seed
+  headState.size = phys.headSize;
+  resetBaseline();
+  resetWhiskers();
   updateHeadTransform();
 }
 
-function frame() {
-  syncAspect();
-
+function draw() {
   device.beginFrame();
   device.pass({ clear: [PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0] }, (p) => {
     p.draw(pPaper, { buffers: [quadPosBuf, quadUVBuf], count: 6, uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR } });
@@ -256,23 +255,24 @@ function frame() {
   device.endFrame();
 }
 
+// mesh-shape params the page owns. setup() builds the ribbons from these, so the
+// initial config lands even when the first apply() arrives before init() (the page
+// $effect fires while init() is still awaiting the device) or matches a phys default.
+const params = { width: 0.05, widthEnd: 0.1, whiskerWidth: 0.01 };
+
 const PARAM_APPLY = {
-  width:     (v) => { if (bodyRibbon && bodyRibbon.stroke.lineWidth !== v) setStrokeLineWidth(bodyRibbon.stroke, v); },
-  widthEnd:  (v) => { if (bodyRibbon && bodyRibbon.stroke.widthEnd !== v) { bodyRibbon.stroke.widthEnd = v; setStrokeLineWidth(bodyRibbon.stroke, bodyRibbon.stroke.lineWidth); } },
+  width:     (v) => { params.width = v; if (bodyRibbon) setStrokeLineWidth(bodyRibbon.stroke, v); },
+  widthEnd:  (v) => { params.widthEnd = v; if (bodyRibbon) { bodyRibbon.stroke.widthEnd = v; setStrokeLineWidth(bodyRibbon.stroke, bodyRibbon.stroke.lineWidth); } },
   // re-meshed (and aspect-baked) on the next setWhisker
-  whiskerWidth: (v) => { for (const w of whiskers) if (w) w.stroke.lineWidth = v; },
+  whiskerWidth: (v) => { params.whiskerWidth = v; for (const w of whiskers) if (w) w.stroke.lineWidth = v; },
 };
 
-export function setParams(patch) {
-  for (const k in patch) PARAM_APPLY[k]?.(patch[k]);
-}
-
-export function setControlPoints(points) {
+function setControlPoints(points) {
   if (!bodyRibbon || !device) return;
   uploadRibbon(bodyRibbon, points);
 }
 
-export function setWhisker(slot, points) {
+function setWhisker(slot, points) {
   const w = whiskers[slot];
   if (!w || !device) return;
   // caller passes anchor -> free-tip. stroke convention: arc=0 = thick end.
@@ -282,7 +282,7 @@ export function setWhisker(slot, points) {
   uploadRibbon(w, pts, { bakeAspect: true });
 }
 
-export function setHead(pos, dir, size, show) {
+function setHead(pos, dir, size, show) {
   if (pos) { headState.pos.x = pos.x; headState.pos.y = pos.y; }
   if (dir) { headState.dir.x = dir.x; headState.dir.y = dir.y; }
   if (typeof size === "number") headState.size = size;
@@ -302,9 +302,11 @@ function teardown() {
   whiskers = [null, null];
   canvas = null;
   device = null;
+  // module singletons: clear the sim too so a re-init starts from baseline
+  walker.reset();
+  tipTarget = null;
+  dragging = false;
 }
-
-export const { init, render, destroy } = createPlayground({ init: setup, frame, destroy: teardown });
 
 function screenToWorld(x, y, w, h) {
   const a = w / h;
@@ -316,12 +318,12 @@ function screenToWorld(x, y, w, h) {
   };
 }
 
-export function eventToWorld(canvasEl, e) {
-  if (!canvasEl) return { x: 0, y: 0 };
-  const r = canvasEl.getBoundingClientRect();
+export function eventToWorld(e) {
+  if (!canvas) return { x: 0, y: 0 };
+  const r = canvas.getBoundingClientRect();
   if (r.width === 0 || r.height === 0) return { x: 0, y: 0 };
-  const x = Math.max(0, Math.min(r.width,  e.clientX - r.left));
-  const y = Math.max(0, Math.min(r.height, e.clientY - r.top));
+  const x = clamp(e.clientX - r.left, 0, r.width);
+  const y = clamp(e.clientY - r.top, 0, r.height);
   return screenToWorld(x, y, r.width, r.height);
 }
 
@@ -334,6 +336,36 @@ export function worldToScreen(p, w, h) {
   return { x: u * w, y: (1 - v) * h };
 }
 
+// wheel = zoom about the cursor; drag on empty space = pan. Pixel->world math
+// lives here because it needs the camera the lib owns.
+export const camera = {
+  get zoom() { return view.zoom; },
+  // monotonic; changes whenever zoom/pan move, so the page reprojects the overlay
+  get epoch() { return camEpoch; },
+  reset() {
+    view.zoom = 1; view.panX = 0; view.panY = 0;
+    camEpoch++;
+    updateHeadTransform();
+  },
+  zoomAtEvent(e, deltaY) {
+    const before = eventToWorld(e);
+    view.zoom = clamp(view.zoom * Math.exp(-deltaY * 0.0015), ZOOM_MIN, ZOOM_MAX);
+    const after = eventToWorld(e);
+    view.panX += before.x - after.x;
+    view.panY += before.y - after.y;
+    camEpoch++;
+    updateHeadTransform();
+  },
+  panPixels(dx, dy) {
+    if (!canvas) return;
+    const w = canvas.clientWidth, h = Math.max(canvas.clientHeight, 1);
+    view.panX -= ((dx / w) * 2 * (w / h)) / view.zoom;
+    view.panY += ((dy / h) * 2) / view.zoom;
+    camEpoch++;
+    updateHeadTransform();
+  },
+};
+
 const WHISKER_ANCHOR_X = 0.5;
 const WHISKER_ANCHOR_Y = 0.08;
 
@@ -343,28 +375,56 @@ const phys = {
   propagationSpeed: 0.6,
   maxBendDeg: 60,
   whiskerSegs: 5,
-  whiskerLen: 1.2,
+  whiskerLen: 2.5,
   whiskerDamping: 0.88,
   headSize: 0.15,
 };
 
+const auto = { on: false, speed: 2.0 };
+const walker = createWalker();
+
 let body = [];
 let whiskerL = [], whiskerR = [];
 let tipTarget = null;
+let dragging = false;
 
-export function setPhysicsParam(name, value) {
-  if (!(name in phys)) return;
-  const prev = phys[name];
+function setPhys(name, value) {
+  if (phys[name] === value) return;
   phys[name] = value;
   if (name === "vertexCount" || name === "bodyLen") resetBaseline();
-  if (name === "whiskerSegs" || name === "headSize" || name === "whiskerLen") {
-    if (prev !== value) resetWhiskers();
+  else if (name === "headSize") { setHead(null, null, value); resetWhiskers(); }
+  else if (name === "whiskerSegs" || name === "whiskerLen") resetWhiskers();
+}
+
+// one patch channel for the whole page. every write is change-guarded: a single
+// $effect re-sends every key on any slider move, and an unguarded vertexCount /
+// bodyLen write would snap the body back to baseline on unrelated edits.
+function applyConfig(patch) {
+  for (const k in patch) {
+    const v = patch[k];
+    if (k in PARAM_APPLY) PARAM_APPLY[k](v);
+    else if (k in phys) setPhys(k, v);
+    else if (k === "autoSpeed") auto.speed = v;
+    else if (k === "autoFly") {
+      if (v === auto.on) continue;
+      auto.on = v;
+      walker.reset();
+      if (!v && !dragging) tipTarget = null;
+    } else if (k === "tip") {
+      tipTarget = v;
+      dragging = v != null;
+    }
   }
 }
 
-export function setTipTarget(p) { tipTarget = p; }
+// generous grab radius so the head is easy to catch
+export function grabHead(p) {
+  const tip = body[body.length - 1];
+  if (!tip) return false;
+  return Math.hypot(p.x - tip.x, p.y - tip.y) <= Math.max(0.25, phys.headSize * 2.5);
+}
 
-export function resetBaseline() {
+function resetBaseline() {
   const N = Math.max(2, Math.floor(phys.vertexCount));
   const L = phys.bodyLen;
   body = new Array(N);
@@ -413,7 +473,7 @@ function makeWhisker(side) {
   return pts;
 }
 
-export function resetWhiskers() {
+function resetWhiskers() {
   whiskerL = makeWhisker(+1);
   whiskerR = makeWhisker(-1);
 }
@@ -559,8 +619,12 @@ function stepWhisker(chain, side) {
   }
 }
 
-export function step() {
+function frame(dt) {
   syncAspect(); // whisker/head writes below bake in the aspect
+  if (auto.on) {
+    walker.step(dt, auto.speed, headFrame());
+    tipTarget = walker.tip;
+  }
   stepBody();
   stepWhisker(whiskerL, +1);
   stepWhisker(whiskerR, -1);
@@ -571,12 +635,39 @@ export function step() {
   }
   if (whiskerL.length >= 2) setWhisker(0, whiskerL);
   if (whiskerR.length >= 2) setWhisker(1, whiskerR);
+  draw();
 }
 
-export function getOverlay() {
-  return {
-    body: body.map(p => ({ x: p.x, y: p.y })),
-    whiskerL: whiskerL.map(p => ({ x: p.x, y: p.y })),
-    whiskerR: whiskerR.map(p => ({ x: p.x, y: p.y })),
-  };
+// debug overlays run every frame: fill the caller's scratch arrays in place
+// instead of minting fresh points each time.
+function fillXY(src, dst) {
+  for (let i = 0; i < src.length; i++) {
+    const d = dst[i] ?? (dst[i] = { x: 0, y: 0 });
+    d.x = src[i].x; d.y = src[i].y;
+  }
+  if (dst.length !== src.length) dst.length = src.length;
 }
+
+// out: { body: [], whiskerL: [], whiskerR: [] }
+export function getOverlay(out) {
+  fillXY(body, out.body);
+  fillXY(whiskerL, out.whiskerL);
+  fillXY(whiskerR, out.whiskerR);
+  return out;
+}
+
+// out: { circles: [], cursor: {x,y}|null, cursorOn: bool }
+export function getPath(out) {
+  const cs = walker.circles;
+  for (let i = 0; i < cs.length; i++) {
+    const d = out.circles[i] ?? (out.circles[i] = { cx: 0, cy: 0, r: 0 });
+    d.cx = cs[i].cx; d.cy = cs[i].cy; d.r = cs[i].r;
+  }
+  if (out.circles.length !== cs.length) out.circles.length = cs.length;
+  const c = out.cursor ?? (out.cursor = { x: 0, y: 0 });
+  c.x = walker.tip.x; c.y = walker.tip.y;
+  out.cursorOn = auto.on && walker.seeded;
+  return out;
+}
+
+export const { init, render, destroy, setConfig } = createPlayground({ init: setup, frame, destroy: teardown, setConfig: applyConfig });

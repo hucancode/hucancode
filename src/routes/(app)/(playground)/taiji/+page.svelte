@@ -18,10 +18,9 @@
       bitCount,
       stroke,
       dot,
+      color1,
+      color2,
     });
-  });
-  $effect(() => {
-    scene?.apply({ color1, color2 });
   });
 </script>
 

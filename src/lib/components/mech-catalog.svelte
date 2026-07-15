@@ -4,7 +4,6 @@
   // dragon and atlas pages mount the same component and only differ in their
   // own rig tab. `view` picks which panel shows; `model` and `sel` bind back
   // out so the page can frame the scene.
-  import Sliders from "./mech-sliders.svelte";
   import {
     JOINT_NAMES, JOINT_PARAMS, JOINT_POSE, jointCatalogModel,
   } from "$lib/mech/joint-catalog.js";
@@ -98,7 +97,17 @@
   </fieldset>
   <fieldset>
     <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetPrim}>reset</button></legend>
-    <Sliders ctl={PRIM_CTL[selPrim]} values={pparams[selPrim]} />
+    {#each PRIM_CTL[selPrim] as [key, label, min, max, step]}
+      {#if min === 0 && max === 1 && step === 1}
+        <label><input type="checkbox" checked={!!pparams[selPrim][key]}
+          onchange={(e) => (pparams[selPrim][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+      {:else}
+        <label><span>{label}</span>
+          <input type="range" {min} {max} step={step ?? 0.01} value={pparams[selPrim][key]}
+            oninput={(e) => (pparams[selPrim][key] = +e.currentTarget.value)} />
+          <output>{pparams[selPrim][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+      {/if}
+    {/each}
   </fieldset>
 {:else}
   <fieldset>
@@ -111,8 +120,28 @@
   </fieldset>
   <fieldset>
     <legend>params<button type="button" onclick={resetJoint}>reset</button></legend>
-    <Sliders ctl={JOINT_CTL[selJoint]} values={jparams[selJoint]} />
+    {#each JOINT_CTL[selJoint] as [key, label, min, max, step]}
+      {#if min === 0 && max === 1 && step === 1}
+        <label><input type="checkbox" checked={!!jparams[selJoint][key]}
+          onchange={(e) => (jparams[selJoint][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+      {:else}
+        <label><span>{label}</span>
+          <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selJoint][key]}
+            oninput={(e) => (jparams[selJoint][key] = +e.currentTarget.value)} />
+          <output>{jparams[selJoint][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+      {/if}
+    {/each}
     <hr />
-    <Sliders ctl={POSE_CTL[selJoint]} values={jpose[selJoint]} />
+    {#each POSE_CTL[selJoint] as [key, label, min, max, step]}
+      {#if min === 0 && max === 1 && step === 1}
+        <label><input type="checkbox" checked={!!jpose[selJoint][key]}
+          onchange={(e) => (jpose[selJoint][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+      {:else}
+        <label><span>{label}</span>
+          <input type="range" {min} {max} step={step ?? 0.01} value={jpose[selJoint][key]}
+            oninput={(e) => (jpose[selJoint][key] = +e.currentTarget.value)} />
+          <output>{jpose[selJoint][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+      {/if}
+    {/each}
   </fieldset>
 {/if}

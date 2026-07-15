@@ -18,8 +18,9 @@ const RANDOM_EASES = [
   eases.outInCubic, eases.outInBack, eases.outInBounce,
 ];
 
-const config = { speed: 1, autoplay: true, randomEase: true, onSolution: null };
+const config = { speed: 1, autoplay: true, randomEase: true };
 let cubeNum = CUBE_NUM_DEFAULT;
+let solutionListener = null;
 
 let device = null, shader, orbit;
 let cubes = [];
@@ -39,12 +40,9 @@ const _model = mat4.create();
 const _t = mat4.create();
 const _vp = mat4.create();
 
-function setConfig(patch) {
-  Object.assign(config, patch);
-  if (config.autoplay) resume();
-}
-function setCubeSize(size) {
-  cubeNum = size;
+// registered once at setup; the scene pushes solution playback state back out
+function onSolution(fn) {
+  solutionListener = fn;
 }
 
 function isInFace(x, y, z, face, depth) {
@@ -257,7 +255,7 @@ function step() {
 }
 
 function notifySolution() {
-  config.onSolution?.(
+  solutionListener?.(
     solution
       ? { pos: solutionPos, total: solution.length, playing: solutionPlaying }
       : { pos: 0, total: 0, playing: false },
@@ -356,6 +354,20 @@ function applyScramble(text) {
   return true;
 }
 
+// cube size changed: drop every cubelet and replay the intro on the new grid
+function rebuild() {
+  running = false;
+  busy = false;
+  queue = [];
+  pendingSolve = false;
+  clearSolution();
+  cancelMove();
+  utils.remove(cubes.map((c) => c.intro));
+  disposeCubes();
+  buildCubes();
+  entrance();
+}
+
 function entrance() {
   const targets = cubes.map((c) => c.intro);
   for (const c of cubes) {
@@ -375,7 +387,16 @@ function entrance() {
   });
 }
 
-const { init, render, destroy } = createPlayground({
+const { init, render, destroy, setConfig } = createPlayground({
+  // size arrives here too: before init it just seeds cubeNum, after it rebuilds
+  setConfig({ size, ...patch }) {
+    Object.assign(config, patch);
+    if (size !== undefined && size !== cubeNum) {
+      cubeNum = size;
+      if (device) rebuild();
+    }
+    if (config.autoplay) resume();
+  },
   camera: { fov: 45, near: 1, far: 2000 },
   init(ctx) {
     device = ctx.device;
@@ -439,6 +460,6 @@ const { init, render, destroy } = createPlayground({
 });
 
 export {
-  init, render, destroy, setConfig, setCubeSize, step, resume, config,
+  init, render, destroy, setConfig, onSolution, step,
   solveCube, seekSolution, playSolution, pauseSolution, scramble, applyScramble,
 };

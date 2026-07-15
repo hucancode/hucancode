@@ -12,21 +12,16 @@ const BUF_NRM = { stride: 12, step: "vertex", attributes: [{ name: "normal", loc
 const BUF_PATH = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
 
 const config = {
-  preset: "circle", points: 10, spread: 1, speed: 0.0008, showLights: false, showPath: true,
+  preset: "circle", points: 20, spread: 1, speed: 0.0008, showLights: false, showPath: true,
   bodyFraction: 0.25,   // body length as fraction of loop
   girthFactor: 0.0012,  // cross-section scale relative to path length
 };
+// knobs baked into the spline/mesh: changing any rebuilds every dragon
+const SHAPE_KEYS = ["preset", "points", "spread", "bodyFraction", "girthFactor"];
 
 let device = null, prog, pathProg, dragonPos, dragonNorm, dragonCount = 0;
 let dragons = [];
 let time = 0;
-
-function setConfig(patch) {
-  Object.assign(config, patch);
-}
-function getCurrentDragonCount() {
-  return dragons.length;
-}
 
 function buildPath(preset, n, s) {
   const pts = [];
@@ -123,7 +118,12 @@ function regenerate() {
   for (let i = 0; i < count; i++) makeDragon();
 }
 
-const { init, render, destroy } = createPlayground({
+const { init, render, destroy, setConfig } = createPlayground({
+  setConfig(patch) {
+    const reshaped = SHAPE_KEYS.some((k) => k in patch && patch[k] !== config[k]);
+    Object.assign(config, patch);
+    if (reshaped) regenerate();
+  },
   camera: { fov: 45, near: 1, far: 2000 },
   async init(ctx) {
     device = ctx.device;
@@ -206,7 +206,4 @@ const { init, render, destroy } = createPlayground({
   },
 });
 
-export {
-  init, render, destroy,
-  getCurrentDragonCount, clearDragon, makeDragon, regenerate, setConfig, config,
-};
+export { init, render, destroy, setConfig, makeDragon, clearDragon, regenerate };

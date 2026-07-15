@@ -1,770 +1,152 @@
 <script>
   import { onMount } from "svelte";
-  import {
-    makeStrokeRaw,
-    makePoint,
-    insertPointAfter,
-    removePoint,
-    resolveControl,
-    setUidFloor,
-    uid,
-    step,
-    DEFAULT_CONNECT,
-    DEFAULT_TIMING,
-  } from "$lib/brush/engine";
-  import { yong } from "$lib/brush/yong";
-  import { long } from "$lib/brush/long";
-  import { fu } from "$lib/brush/fu";
-  import { maxSymbolId } from "$lib/brush/glyphs";
+  import Scene from "$lib/components/playground-canvas.svelte";
+  import { resolveControl } from "$lib/brush/engine";
   import { bakeGLSL, bakeSegs } from "$lib/brush/bake";
-  import { makeSlots, slotLabel } from "$lib/save-slots.js";
-  import { makeRenderer } from "$lib/playgrounds/caligraphy";
+  import * as caligraphy from "$lib/playgrounds/caligraphy";
+  import {
+    SAMPLES,
+    makeDoc,
+    loadSample,
+    selectStroke,
+    selStroke,
+    selPoint,
+    selPath,
+    selPathK,
+    spawnPoint,
+    despawnPoint,
+    moveStroke,
+    canSplit,
+    splitStroke,
+    glyphBBox,
+    resetControl,
+    setPctrlK,
+    resetPressure,
+  } from "$lib/playgrounds/caligraphy/model.js";
+  import { worldToScreen, resetView } from "$lib/playgrounds/caligraphy/view.js";
+  import { makeDrag } from "$lib/playgrounds/caligraphy/drag.js";
+  import { makePlayback, togglePlay, seek, exitAnim, tick } from "$lib/playgrounds/caligraphy/playback.js";
+  import * as store from "$lib/playgrounds/caligraphy/persist.js";
 
-  // World coords: x in [-aspect,+aspect], y in [-1,+1], origin centred.
-  // view: { zoom, panX, panY } applied as pScreen = view((p - pan) * zoom).
-  function worldToScreen(p, w, h, view) {
-    const aspect = w / h;
-    const vx = (p.x - view.panX) * view.zoom;
-    const vy = (p.y - view.panY) * view.zoom;
-    return { x: ((vx / aspect + 1) / 2) * w, y: (1 - (vy + 1) / 2) * h };
-  }
-  function screenToWorld(x, y, w, h, view) {
-    const aspect = w / h;
-    const vx = ((x / w) * 2 - 1) * aspect;
-    const vy = (1 - y / h) * 2 - 1;
-    return { x: vx / view.zoom + view.panX, y: vy / view.zoom + view.panY };
-  }
+  let scene = $state(null);
+  let stageEl = $state();
+  let stageW = $state(600), stageH = $state(600);
 
-  const LS_KEY = "brush:state:v1";
-  const SLOT_COUNT = 5;
-  const slotStore = makeSlots({ prefix: "brush:slot:", count: SLOT_COUNT });
+  const doc = $state(makeDoc());
+  const drag = makeDrag(() => stageEl, doc);
+  const autosave = store.makeAutosave(doc);
 
-  // fixed save slots (as in /lego): slot i persisted as { data, at }.
+  let pb = $state(makePlayback());
+  let sampleKey = $state("yong");
+  let frameMode = $state(false); // edit the whole glyph (translate + uniform scale)
+
+  // fixed save slots: slot i persisted as { data, at }.
   let slot = $state(0);
-  let slots = $state(
-    Array.from({ length: SLOT_COUNT }, () => ({ filled: false, at: null })),
-  );
+  let slots = $state(Array.from({ length: store.SLOT_COUNT }, () => ({ filled: false, at: null })));
   let saved = $state(false);
   let loaded = $state(false);
 
-  // seed samples: dropdown picks one to load fresh.
-  const SAMPLES = {
-    yong: { label: "永 (yong)", ...yong },
-    long: { label: "龍 (long)", ...long },
-    fu: { label: "福 (fu)", ...fu },
-  };
-  const INITIAL_SAMPLE = "yong";
-  let sampleKey = $state(INITIAL_SAMPLE);
+  // single bake shared by renderer + timeline: recomputes only when
+  // symbol/connect/timing deep-change (bakeSegs reads them all), and its
+  // identity doubles as the renderer's re-pack key.
+  const baked = $derived(bakeSegs(doc.symbol, { connect: doc.connect, timing: doc.timing }));
+  const total = $derived(baked.total);
+  const curStroke = $derived(selStroke(doc));
+  const curPoint = $derived(selPoint(doc));
+  const curPath = $derived(selPath(doc));
+  const curK = $derived(selPathK(doc));
+  const splittable = $derived(canSplit(doc));
+  // recomputed live during frame drags: glyphBBox reads every point, so the
+  // derived deep-tracks the glyph by itself.
+  const frameWorld = $derived(frameMode ? glyphBBox(doc.symbol) : null);
 
-  let canvasEl;
-  let glRenderer = null;
-  let stageW = $state(600),
-    stageH = $state(600);
-
-  // initial: load yong as seed; uid floor bumped past stored ids.
-  setUidFloor(SAMPLES[INITIAL_SAMPLE].maxId());
-  const seedSymbol = SAMPLES[INITIAL_SAMPLE].symbol();
-  let symbol = $state(seedSymbol);
-
-  // selection
-  let selKind = $state("path");
-  let selStrokeId = $state(seedSymbol.strokes[0].id);
-  let selIdx = $state(0);
-
-  // brush params
-  let baseRadius = $state(0.07);
-  let showHandles = $state(true);
-  let showGrid = $state(true);
-  let view = $state({ zoom: 1, panX: 0, panY: 0 });
-
-  // frame mode: edit the whole glyph at once (translate + uniform scale)
-  // instead of individual points.
-  let frameMode = $state(false);
+  const ws = (p) => worldToScreen(p, stageW, stageH, doc.view);
 
   // show-code panel: dump the live symbol.strokes array as JSON.
   let showCode = $state(false);
-  const codeText = $derived(JSON.stringify(symbol.strokes, null, 2));
+  const codeText = $derived(JSON.stringify(doc.symbol.strokes, null, 2));
 
   // bake panel: emit the shadertoy GLSL Seg[] table for the live symbol.
   let bakeText = $state("");
   let bakeInfo = $state("");
   function bake() {
-    const r = bakeGLSL(symbol, {
-      connect: { enabled: connect.enabled, thread: connect.thread },
-      timing: { speed: timing.speed },
+    const r = bakeGLSL(doc.symbol, {
+      connect: { enabled: doc.connect.enabled, thread: doc.connect.thread },
+      timing: { speed: doc.timing.speed },
       glyph: SAMPLES[sampleKey]?.label ?? "?",
     });
     bakeText = r.glsl;
     bakeInfo = `${r.segCount} segs / ${r.strokeCount} strokes / ${r.total.toFixed(3)}s`;
   }
 
-  // auto connectors: derive a thin silk thread between every consecutive
-  // stroke pair. Pure derived geometry - not stored on the symbol.
-  let connect = $state(DEFAULT_CONNECT());
-
-  // auto timing: per-path durations derived from geometry + pressure (slow at
-  // pivots, accelerate leaving them, faster on thin line). Only base speed is
-  // configurable; timing is always auto-computed.
-  let timing = $state(DEFAULT_TIMING());
-
-  // single bake shared by renderer + timeline: recomputes only when
-  // symbol/connect/timing deep-change (bakeSegs reads them all), and its
-  // identity doubles as the renderer's re-pack key.
-  const baked = $derived(bakeSegs(symbol, { connect, timing }));
-
-  // playback: anim=true renders partially up to pb.t; false = full edit view.
-  let anim = $state(false);
-  let pb = $state({ t: 0, playing: false });
-  let rafId = null;
-  let lastTs = null;
-
-  // drag state
-  // mode: "point" (move single point), "edge" (translate segment),
-  // "ctrl" (move control point)
-  let dragMode = null;
-  let dragStrokeId = null;
-  let dragIdx = null;
-  let dragLastWorld = null;
-  let frameAnchor = null; // pivot (world) for frame-scale drag
-
-  function randPressure() {
-    return 0.25 + Math.random() * 0.7;
-  }
-
-  function findStroke(id) {
-    return symbol.strokes.find((s) => s.id === id);
-  }
-
-  // load a fresh seed sample, discarding current edits.
-  function loadSample(key) {
-    const s = SAMPLES[key];
-    if (!s) return;
+  function pickSample(key) {
+    if (!loadSample(doc, key)) return;
     sampleKey = key;
-    setUidFloor(s.maxId());
-    symbol = s.symbol();
-    selKind = "stroke";
-    selStrokeId = symbol.strokes[0].id;
-    selIdx = 0;
-    pause();
-    anim = false;
+    exitAnim(pb);
   }
 
-  function selectStroke(id) {
-    selKind = "stroke";
-    selStrokeId = id;
-    selIdx = 0;
-  }
-  function selectPoint(id, i) {
-    selKind = "point";
-    selStrokeId = id;
-    selIdx = i;
-  }
-  function selectPath(id, i) {
-    selKind = "path";
-    selStrokeId = id;
-    selIdx = i;
-  }
-
-  // "+ point":
-  //  - point selected  -> insert after selected point on same stroke
-  //  - else            -> spawn new stroke with 1 point (not rendered yet)
-  function spawnPoint() {
-    if (selKind === "point") {
-      const s = findStroke(selStrokeId);
-      if (!s) return;
-      const p = s.points[selIdx];
-      const next = s.points[selIdx + 1];
-      let nx, ny;
-      if (next) {
-        nx = (p.x + next.x) / 2;
-        ny = (p.y + next.y) / 2;
-      } else {
-        const prev = s.points[selIdx - 1];
-        if (prev) {
-          const dx = p.x - prev.x,
-            dy = p.y - prev.y;
-          nx = p.x + dx * 0.7;
-          ny = p.y + dy * 0.7;
-        } else {
-          nx = p.x + 0.2;
-          ny = p.y;
-        }
-      }
-      insertPointAfter(s, selIdx, nx, ny, randPressure());
-      selectPoint(s.id, selIdx + 1);
-    } else {
-      const s = makeStrokeRaw([
-        makePoint(
-          (Math.random() - 0.5) * 1.4,
-          (Math.random() - 0.5) * 1.4,
-          randPressure(),
-        ),
-      ]);
-      symbol.strokes.push(s);
-      selectPoint(s.id, 0);
-    }
-  }
-  function despawnPoint() {
-    if (selKind !== "point") return;
-    const s = findStroke(selStrokeId);
-    if (!s) return;
-    if (s.points.length <= 1) {
-      // last point on stroke -> remove stroke
-      const idx = symbol.strokes.findIndex((x) => x.id === s.id);
-      symbol.strokes.splice(idx, 1);
-      const fallback = symbol.strokes[Math.max(0, idx - 1)];
-      if (fallback) selectStroke(fallback.id);
-      else {
-        selKind = "stroke";
-        selStrokeId = -1;
-        selIdx = 0;
-      }
-      return;
-    }
-    removePoint(s, selIdx);
-    const newIdx = Math.min(selIdx, s.points.length - 1);
-    selectPoint(s.id, newIdx);
-  }
-
-  // --- stroke order -----------------------------------------------------------
-  function moveStroke(idx, dir) {
-    const j = idx + dir;
-    const arr = symbol.strokes;
-    if (j < 0 || j >= arr.length) return;
-    [arr[idx], arr[j]] = [arr[j], arr[idx]];
-  }
-
-  // Split the selected stroke at the selected (interior) point, dropping that
-  // point as the lift gap: stroke A keeps points before it, B keeps points
-  // after. The auto-connector then threads the gap. Turns connectors on so the
-  // result is visible immediately.
-  const canSplit = $derived(
-    selKind === "point" &&
-      selStroke &&
-      selIdx > 0 &&
-      selIdx < selStroke.points.length - 1,
-  );
-  function splitStroke() {
-    const s = findStroke(selStrokeId);
-    if (!s || selKind !== "point") return;
-    const i = selIdx;
-    if (i <= 0 || i >= s.points.length - 1) return;
-    const idx = symbol.strokes.findIndex((x) => x.id === s.id);
-    const a = {
-      id: s.id,
-      points: s.points.slice(0, i),
-      paths: s.paths.slice(0, i - 1),
-    };
-    const b = {
-      id: uid(),
-      points: s.points.slice(i + 1),
-      paths: s.paths.slice(i + 1),
-    };
-    symbol.strokes.splice(idx, 1, a, b);
-    connect.enabled = true;
-    selectStroke(b.id);
-  }
-
-  // --- playback ---------------------------------------------------------------
-  function stopRaf() {
-    if (rafId != null) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    }
-    lastTs = null;
-  }
-  function tick(ts) {
-    if (lastTs == null) lastTs = ts;
-    const dt = (ts - lastTs) / 1000;
-    lastTs = ts;
-    step(pb, dt, totalDuration); // pb.t mutation triggers the render effect
-    if (pb.playing) rafId = requestAnimationFrame(tick);
-    else stopRaf();
-  }
-  function play() {
-    if (totalDuration <= 0) return;
-    if (pb.t >= totalDuration) pb.t = 0; // replay from start
-    anim = true;
-    pb.playing = true;
-    lastTs = null;
-    stopRaf();
-    rafId = requestAnimationFrame(tick);
-  }
-  function pause() {
-    pb.playing = false;
-    stopRaf();
-  }
-  function togglePlay() {
-    pb.playing ? pause() : play();
-  }
-  function seekTo(v) {
-    pause();
-    anim = true;
-    pb.t = Math.max(0, Math.min(totalDuration, v));
-  }
-  function exitAnim() {
-    pause();
-    anim = false;
-  }
-
-  function ws(p) {
-    return worldToScreen(p, stageW, stageH, view);
-  }
-
-  function pointerWorld(e) {
-    const r = canvasEl.getBoundingClientRect();
-    return screenToWorld(
-      e.clientX - r.left,
-      e.clientY - r.top,
-      stageW,
-      stageH,
-      view,
-    );
-  }
-  let dragLastScreen = null;
-  let dragDownScreen = null;
-  let dragMoved = false;
-  function onStageDown(e) {
-    // bg-only drag → pan. Ignore if hitting a real interactive overlay element.
-    const tag = e.target?.tagName;
-    if (tag === "circle" || tag === "rect") return;
-    if (tag === "path" && e.target.style.cursor === "move") return; // edge hit area
-    e.preventDefault();
-    dragMode = "pan";
-    dragLastScreen = { x: e.clientX, y: e.clientY };
-    dragDownScreen = { x: e.clientX, y: e.clientY };
-    dragMoved = false;
-  }
-  function deselectAll() {
-    selKind = "none";
-    selIdx = 0;
-  }
-  function onWheel(e) {
-    if (!canvasEl) return;
-    e.preventDefault();
-    const r = canvasEl.getBoundingClientRect();
-    const sx = e.clientX - r.left,
-      sy = e.clientY - r.top;
-    const before = screenToWorld(sx, sy, stageW, stageH, view);
-    const factor = Math.exp(-e.deltaY * 0.0015);
-    const newZoom = Math.max(0.2, Math.min(20, view.zoom * factor));
-    view.zoom = newZoom;
-    const after = screenToWorld(sx, sy, stageW, stageH, view);
-    view.panX += before.x - after.x;
-    view.panY += before.y - after.y;
-  }
-  function resetView() {
-    view.zoom = 1;
-    view.panX = 0;
-    view.panY = 0;
-  }
-
-  // --- frame mode: transform whole glyph --------------------------------------
-  // world-space bounding box over every point of every stroke.
-  function glyphBBox() {
-    let minX = Infinity,
-      minY = Infinity,
-      maxX = -Infinity,
-      maxY = -Infinity;
-    for (const s of symbol.strokes) {
-      for (const p of s.points) {
-        if (p.x < minX) minX = p.x;
-        if (p.x > maxX) maxX = p.x;
-        if (p.y < minY) minY = p.y;
-        if (p.y > maxY) maxY = p.y;
-      }
-    }
-    if (!isFinite(minX)) return null;
-    return { minX, minY, maxX, maxY };
-  }
-  // shift every point + explicit control point by (dx,dy).
-  function translateGlyph(dx, dy) {
-    for (const s of symbol.strokes) {
-      for (const p of s.points) {
-        p.x += dx;
-        p.y += dy;
-      }
-      for (const pa of s.paths)
-        if (pa.ctrl) {
-          pa.ctrl.x += dx;
-          pa.ctrl.y += dy;
-        }
-    }
-  }
-  // uniform scale by f about pivot (ox,oy) in world space.
-  function scaleGlyph(f, ox, oy) {
-    if (!isFinite(f) || f <= 0) return;
-    for (const s of symbol.strokes) {
-      for (const p of s.points) {
-        p.x = ox + (p.x - ox) * f;
-        p.y = oy + (p.y - oy) * f;
-      }
-      for (const pa of s.paths)
-        if (pa.ctrl) {
-          pa.ctrl.x = ox + (pa.ctrl.x - ox) * f;
-          pa.ctrl.y = oy + (pa.ctrl.y - oy) * f;
-        }
-    }
-  }
-  function onPointerDownFrameMove(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dragMode = "frame-move";
-    dragLastWorld = pointerWorld(e);
-  }
-  // anchor = opposite corner (world); scaling pins it in place.
-  function onPointerDownFrameScale(e, ax, ay) {
-    e.preventDefault();
-    e.stopPropagation();
-    dragMode = "frame-scale";
-    frameAnchor = { x: ax, y: ay };
-    dragLastWorld = pointerWorld(e);
-  }
-  function onPointerDownPoint(e, strokeId, i) {
-    e.preventDefault();
-    e.stopPropagation();
-    dragMode = "point";
-    dragStrokeId = strokeId;
-    dragIdx = i;
-    dragLastWorld = pointerWorld(e);
-    selectPoint(strokeId, i);
-  }
-  function onPointerDownEdge(e, strokeId, i) {
-    e.preventDefault();
-    e.stopPropagation();
-    selectPath(strokeId, i);
-    dragMode = "edge";
-    dragStrokeId = strokeId;
-    dragIdx = i;
-    dragLastWorld = pointerWorld(e);
-  }
-  function onPointerDownHandle(e, strokeId, i) {
-    e.preventDefault();
-    e.stopPropagation();
-    selectPath(strokeId, i);
-    dragMode = "ctrl";
-    dragStrokeId = strokeId;
-    dragIdx = i;
-    dragLastWorld = pointerWorld(e);
-    // materialize control point if currently auto
-    const s = findStroke(strokeId);
-    if (s && !s.paths[i].ctrl) s.paths[i].ctrl = resolveControl(s, i);
-  }
-  function onPointerMove(e) {
-    if (!dragMode || !canvasEl) return;
-    if (dragMode === "pan") {
-      const dx = e.clientX - dragLastScreen.x;
-      const dy = e.clientY - dragLastScreen.y;
-      dragLastScreen = { x: e.clientX, y: e.clientY };
-      const tot = Math.hypot(
-        e.clientX - dragDownScreen.x,
-        e.clientY - dragDownScreen.y,
-      );
-      if (tot > 3) dragMoved = true;
-      const aspect = stageW / stageH;
-      view.panX -= ((dx / stageW) * 2 * aspect) / view.zoom;
-      view.panY += ((dy / stageH) * 2) / view.zoom;
-      return;
-    }
-    if (dragMode === "frame-move") {
-      const w = pointerWorld(e);
-      translateGlyph(w.x - dragLastWorld.x, w.y - dragLastWorld.y);
-      dragLastWorld = w;
-      return;
-    }
-    if (dragMode === "frame-scale") {
-      const w = pointerWorld(e);
-      const a = frameAnchor;
-      const dPrev = Math.hypot(dragLastWorld.x - a.x, dragLastWorld.y - a.y);
-      const dNow = Math.hypot(w.x - a.x, w.y - a.y);
-      if (dPrev > 1e-4) scaleGlyph(dNow / dPrev, a.x, a.y);
-      dragLastWorld = w;
-      return;
-    }
-    const w = pointerWorld(e);
-    const s = findStroke(dragStrokeId);
-    if (!s) return;
-    if (dragMode === "point") {
-      s.points[dragIdx].x = w.x;
-      s.points[dragIdx].y = w.y;
-    } else if (dragMode === "edge") {
-      const dx = w.x - dragLastWorld.x;
-      const dy = w.y - dragLastWorld.y;
-      const a = s.points[dragIdx];
-      const b = s.points[dragIdx + 1];
-      a.x += dx;
-      a.y += dy;
-      b.x += dx;
-      b.y += dy;
-      const path = s.paths[dragIdx];
-      if (path.ctrl) {
-        path.ctrl.x += dx;
-        path.ctrl.y += dy;
-      }
-    } else if (dragMode === "ctrl") {
-      s.paths[dragIdx].ctrl = { x: w.x, y: w.y };
-    }
-    dragLastWorld = w;
-  }
-  function endDrag() {
-    const wasPan = dragMode === "pan";
-    const wasClick = wasPan && !dragMoved;
-    dragMode = null;
-    dragStrokeId = null;
-    dragIdx = null;
-    dragLastWorld = null;
-    dragLastScreen = null;
-    dragDownScreen = null;
-    frameAnchor = null;
-    dragMoved = false;
-    if (wasClick) deselectAll();
-  }
-  function resetControl() {
-    const s = findStroke(selStrokeId);
-    if (!s || selKind !== "path") return;
-    s.paths[selIdx].ctrl = null;
-  }
-
-  // pressure curve control {k}: stroke belly thins/swells toward k.
-  // materialize from a straight line (k = lerp(A,B,0.5)) on first edit.
-  function ensurePctrl() {
-    const s = findStroke(selStrokeId);
-    if (!s || selKind !== "path") return null;
-    const p = s.paths[selIdx];
-    if (!p.pctrl) {
-      const a = s.points[selIdx].pressure;
-      const b = s.points[selIdx + 1].pressure;
-      p.pctrl = { k: (a + b) / 2 };
-    }
-    return p.pctrl;
-  }
-  function setPctrlK(v) {
-    const c = ensurePctrl();
-    if (c) c.k = v;
-  }
-  function resetPressure() {
-    const s = findStroke(selStrokeId);
-    if (!s || selKind !== "path") return;
-    s.paths[selIdx].pctrl = null;
-  }
-
-  // backing store in device pixels (capped at 2x), CSS size stays stageW/stageH.
-  // All pointer/overlay math stays in CSS px; only the canvas resolution scales.
-  function syncCanvasSize() {
-    if (!canvasEl || stageW <= 0 || stageH <= 0) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.max(1, Math.floor(stageW * dpr));
-    const h = Math.max(1, Math.floor(stageH * dpr));
-    if (canvasEl.width !== w || canvasEl.height !== h) {
-      canvasEl.width = w;
-      canvasEl.height = h;
-    }
-  }
-
-  function render() {
-    if (!canvasEl || stageW <= 0 || stageH <= 0) return;
-    syncCanvasSize();
-    if (!glRenderer) return; // device renderer is created async in onMount
-    glRenderer.render(baked.segs, {
-      baseRadius,
-      view,
-      showGrid,
-      gridSize: 1.6,
-      playhead: anim ? pb.t : undefined,
-    });
-  }
-
-  $effect(() => {
-    void baked; // deep-tracks symbol + connect + timing via bakeSegs
-    void baseRadius;
-    void showGrid;
-    void view.zoom;
-    void view.panX;
-    void view.panY;
-    void stageW;
-    void stageH;
-    void anim; // single render path: playback ticks/seeks mutate pb.t and
-    void pb.t; // land here; nothing calls render() directly per frame.
-    render();
-  });
-
-  // snapshot all editable state into a plain serializable object.
-  function serializeState() {
-    return {
-      symbol,
-      params: { baseRadius, showHandles, showGrid },
-      connect: { enabled: connect.enabled, thread: connect.thread },
-      timing: { speed: timing.speed },
-      view: { zoom: view.zoom, panX: view.panX, panY: view.panY },
-      selection: { selKind, selStrokeId, selIdx },
-    };
-  }
-
-  // restore state from a snapshot object (from scratch autosave or a slot).
-  function applyState(data) {
-    if (!data) return;
-    if (data.symbol && Array.isArray(data.symbol.strokes)) {
-      // bump uid past highest stored id
-      setUidFloor(maxSymbolId(data.symbol));
-      symbol = data.symbol;
-    }
-    if (data.params) {
-      const p = data.params;
-      if (typeof p.baseRadius === "number") baseRadius = p.baseRadius;
-      if (typeof p.showHandles === "boolean") showHandles = p.showHandles;
-      if (typeof p.showGrid === "boolean") showGrid = p.showGrid;
-    }
-    if (data.connect) {
-      const c = data.connect;
-      if (typeof c.enabled === "boolean") connect.enabled = c.enabled;
-      if (typeof c.thread === "number") connect.thread = c.thread;
-    }
-    if (data.timing && typeof data.timing.speed === "number") {
-      timing.speed = data.timing.speed;
-    }
-    if (data.view && typeof data.view.zoom === "number") {
-      view.zoom = data.view.zoom;
-      view.panX = data.view.panX || 0;
-      view.panY = data.view.panY || 0;
-    }
-    if (data.selection) {
-      const sel = data.selection;
-      const stroke = symbol.strokes.find((s) => s.id === sel.selStrokeId);
-      if (stroke) {
-        selStrokeId = sel.selStrokeId;
-        selKind = sel.selKind || "stroke";
-        selIdx = Math.min(
-          Math.max(0, sel.selIdx | 0),
-          Math.max(
-            0,
-            (selKind === "path" ? stroke.paths.length : stroke.points.length) -
-              1,
-          ),
-        );
-      }
-    }
-  }
-
-  function loadState() {
-    if (typeof localStorage === "undefined") return;
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
-      applyState(JSON.parse(raw));
-    } catch (e) {
-      console.warn("brush: failed to load saved state", e);
-    }
-  }
-
-  function saveState() {
-    if (typeof localStorage === "undefined") return;
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(serializeState()));
-    } catch (e) {
-      /* quota/private mode */
-    }
-  }
-
-  // --- fixed save slots ---------------------------------------------------
-  // scratch autosave (LS_KEY) is the live working copy; slots are explicit
-  // snapshots via the shared slot store.
-  function saveSlot() {
-    slots = slotStore.save(slot, serializeState());
+  function onSaveSlot() {
+    slots = store.saveSlot(slot, doc);
     saved = true;
     setTimeout(() => (saved = false), 1200);
   }
-  function loadSlot() {
-    const e = slotStore.read(slot);
-    if (!e) return;
-    applyState(e.payload);
-    pause();
-    anim = false;
+  function onLoadSlot() {
+    if (!store.loadSlot(slot, doc)) return;
+    exitAnim(pb);
     loaded = true;
     setTimeout(() => (loaded = false), 1200);
   }
-  function clearSlot() {
-    slots = slotStore.clear(slot);
-  }
 
   onMount(() => {
-    loadState();
-    slots = slotStore.meta();
-    let cancelled = false;
-    syncCanvasSize();
-    makeRenderer(canvasEl).then((r) => {
-      if (cancelled) { r.dispose(); return; }
-      glRenderer = r;
-      render();
-    });
-    return () => {
-      cancelled = true;
-      clearTimeout(_saveTimer);
-      if (_saveReady) saveState(); // flush a pending debounced autosave
-      glRenderer?.dispose();
-      glRenderer = null;
-    };
+    store.loadScratch(doc);
+    slots = store.slotMeta();
+    return () => autosave.flush(); // flush a pending debounced autosave
   });
 
-  // persist on change (after mount/load done), debounced: an un-debounced
-  // save is a synchronous stringify + localStorage write per pointermove.
-  let _saveReady = false;
-  let _saveTimer = null;
+  $effect(() => {
+    scene?.apply({
+      segs: baked.segs,
+      baseRadius: doc.baseRadius,
+      showGrid: doc.showGrid,
+      view: { zoom: doc.view.zoom, panX: doc.view.panX, panY: doc.view.panY },
+      playhead: pb.anim ? pb.t : undefined,
+    });
+  });
+
+  // persist on change (after mount/load done), debounced.
   $effect(() => {
     void baked; // deep-tracks symbol + connect + timing via bakeSegs
-    void baseRadius;
-    void showHandles;
-    void selKind;
-    void selStrokeId;
-    void selIdx;
-    if (_saveReady) {
-      clearTimeout(_saveTimer);
-      _saveTimer = setTimeout(saveState, 300);
-    } else _saveReady = true;
+    void doc.baseRadius;
+    void doc.showHandles;
+    void doc.sel.kind;
+    void doc.sel.strokeId;
+    void doc.sel.idx;
+    autosave.schedule();
   });
-
-  const totalDuration = $derived(baked.total);
-  const selStroke = $derived(findStroke(selStrokeId));
-  const selPoint = $derived(
-    selKind === "point" && selStroke ? selStroke.points[selIdx] : null,
-  );
-  const selPath = $derived(
-    selKind === "path" && selStroke ? selStroke.paths[selIdx] : null,
-  );
-  // belly slider value: explicit pctrl.k, else the straight-line default
-  const selPathK = $derived(
-    selPath
-      ? (selPath.pctrl?.k ??
-          (selStroke.points[selIdx].pressure +
-            selStroke.points[selIdx + 1].pressure) /
-            2)
-      : 0,
-  );
-  // recomputed live during frame drags: glyphBBox reads every point, so the
-  // derived deep-tracks the glyph by itself.
-  const frameWorld = $derived(frameMode ? glyphBBox() : null);
 </script>
+
 <svelte:head>
   <title>Caligraphy</title>
 </svelte:head>
 
-
-<svelte:window onpointermove={onPointerMove} onpointerup={endDrag} />
+<svelte:window onpointermove={drag.move} onpointerup={drag.up} />
 
 <section
+  data-stage="square grab"
+  bind:this={stageEl}
   bind:clientWidth={stageW}
   bind:clientHeight={stageH}
-  onwheel={onWheel}
-  onpointerdown={onStageDown}
+  onwheel={drag.wheel}
+  onpointerdown={drag.stageDown}
 >
-  <canvas bind:this={canvasEl} style="width:{stageW}px;height:{stageH}px"
-  ></canvas>
+  <Scene bind:this={scene} scene={caligraphy} id="caligraphy" onFrame={(dt) => tick(pb, dt, total)} />
   <menu>
     <li><button
       type="button"
-      aria-pressed={showGrid}
-      title={showGrid ? "hide 米 grid" : "show 米 grid"}
+      aria-pressed={doc.showGrid}
+      title={doc.showGrid ? "hide 米 grid" : "show 米 grid"}
       onpointerdown={(e) => e.stopPropagation()}
-      onclick={() => (showGrid = !showGrid)}
+      onclick={() => (doc.showGrid = !doc.showGrid)}
       aria-label="toggle grid"
     >
       <svg
@@ -785,18 +167,18 @@
     </button></li>
     <li><button
       type="button"
-      aria-pressed={showHandles && !anim}
-      title={anim
+      aria-pressed={doc.showHandles && !pb.anim}
+      title={pb.anim
         ? "back to edit"
-        : showHandles
+        : doc.showHandles
           ? "hide control points"
           : "show control points"}
       onpointerdown={(e) => e.stopPropagation()}
       onclick={() => {
-        if (anim) {
-          exitAnim();
-          showHandles = true;
-        } else showHandles = !showHandles;
+        if (pb.anim) {
+          exitAnim(pb);
+          doc.showHandles = true;
+        } else doc.showHandles = !doc.showHandles;
       }}
       aria-label="toggle edit"
     >
@@ -816,13 +198,11 @@
     </button></li>
     <li><button
       type="button"
-      aria-pressed={frameMode && !anim}
-      title={frameMode
-        ? "exit frame mode"
-        : "frame mode (scale/move whole glyph)"}
+      aria-pressed={frameMode && !pb.anim}
+      title={frameMode ? "exit frame mode" : "frame mode (scale/move whole glyph)"}
       onpointerdown={(e) => e.stopPropagation()}
       onclick={() => {
-        if (anim) exitAnim();
+        if (pb.anim) exitAnim(pb);
         frameMode = !frameMode;
       }}
       aria-label="toggle frame mode"
@@ -843,11 +223,11 @@
     </button></li>
   </menu>
   <menu onpointerdown={(e) => e.stopPropagation()}>
-    <li><output>{Math.round(view.zoom * 100)}%</output></li>
+    <li><output>{Math.round(doc.view.zoom * 100)}%</output></li>
     <li><button
       type="button"
       title="reset zoom"
-      onclick={resetView}
+      onclick={() => resetView(doc.view)}
       aria-label="reset zoom"
     >
       <svg
@@ -865,7 +245,7 @@
       </svg>
     </button></li>
   </menu>
-  {#if frameMode && !anim && stageW > 0 && frameWorld}
+  {#if frameMode && !pb.anim && stageW > 0 && frameWorld}
     {@const fw = frameWorld}
     {@const cA = ws({ x: fw.minX, y: fw.minY })}
     {@const cB = ws({ x: fw.maxX, y: fw.minY })}
@@ -886,7 +266,7 @@
         stroke-width="1.5"
         stroke-dasharray="6 4"
         style="cursor:move; pointer-events:all;"
-        onpointerdown={onPointerDownFrameMove}
+        onpointerdown={drag.frameMove}
       />
       <!-- corner handles: each scales uniformly about the opposite corner -->
       {#each [{ p: cA, ax: fw.maxX, ay: fw.maxY }, { p: cB, ax: fw.minX, ay: fw.maxY }, { p: cC, ax: fw.minX, ay: fw.minY }, { p: cD, ax: fw.maxX, ay: fw.minY }] as h}
@@ -899,22 +279,22 @@
           stroke="white"
           stroke-width="2"
           style="cursor:nwse-resize; pointer-events:all;"
-          onpointerdown={(e) => onPointerDownFrameScale(e, h.ax, h.ay)}
+          onpointerdown={(e) => drag.frameScale(e, h.ax, h.ay)}
         />
       {/each}
     </svg>
   {/if}
-  {#if showHandles && !anim && !frameMode && stageW > 0}
+  {#if doc.showHandles && !pb.anim && !frameMode && stageW > 0}
     <svg width={stageW} height={stageH}>
       <!-- pass 1: edges (preview + hit area) for every segment of every stroke -->
-      {#each symbol.strokes as stroke (stroke.id)}
-        {@const isActive = selKind !== "none" && stroke.id === selStrokeId}
+      {#each doc.symbol.strokes as stroke (stroke.id)}
+        {@const isActive = doc.sel.kind !== "none" && stroke.id === doc.sel.strokeId}
         {#each stroke.points.slice(0, -1) as p, i}
           {@const a = ws(p)}
           {@const b = ws(stroke.points[i + 1])}
           {@const cs = ws(resolveControl(stroke, i))}
           {@const edgeSelected =
-            selKind === "path" && selStrokeId === stroke.id && selIdx === i}
+            doc.sel.kind === "path" && doc.sel.strokeId === stroke.id && doc.sel.idx === i}
           <path
             d={`M ${a.x} ${a.y} Q ${cs.x} ${cs.y}, ${b.x} ${b.y}`}
             fill="none"
@@ -933,16 +313,16 @@
             stroke="transparent"
             stroke-width="16"
             style="cursor:move; pointer-events:stroke;"
-            onpointerdown={(e) => onPointerDownEdge(e, stroke.id, i)}
+            onpointerdown={(e) => drag.edge(e, stroke.id, i)}
           />
         {/each}
       {/each}
 
       <!-- pass 2: control point of selected edge (rendered on top of all edges) -->
-      {#if selKind === "path" && selStroke && selPath}
-        {@const a = ws(selStroke.points[selIdx])}
-        {@const b = ws(selStroke.points[selIdx + 1])}
-        {@const cs = ws(resolveControl(selStroke, selIdx))}
+      {#if curPath && curStroke}
+        {@const a = ws(curStroke.points[doc.sel.idx])}
+        {@const b = ws(curStroke.points[doc.sel.idx + 1])}
+        {@const cs = ws(resolveControl(curStroke, doc.sel.idx))}
         <line
           x1={a.x}
           y1={a.y}
@@ -970,13 +350,13 @@
           stroke="white"
           stroke-width="2"
           style="cursor:grab; pointer-events:all;"
-          onpointerdown={(e) => onPointerDownHandle(e, selStrokeId, selIdx)}
+          onpointerdown={(e) => drag.handle(e, doc.sel.strokeId, doc.sel.idx)}
         />
       {/if}
 
       <!-- pass 3: points (rendered last, on top of everything) -->
-      {#each symbol.strokes as stroke (stroke.id)}
-        {@const isActive = selKind !== "none" && stroke.id === selStrokeId}
+      {#each doc.symbol.strokes as stroke (stroke.id)}
+        {@const isActive = doc.sel.kind !== "none" && stroke.id === doc.sel.strokeId}
         {#each stroke.points as pt, i}
           {@const sp = ws(pt)}
           {@const r = 5 + pt.pressure * 7}
@@ -984,9 +364,7 @@
             cx={sp.x}
             cy={sp.y}
             {r}
-            fill={selKind === "point" &&
-            selStrokeId === stroke.id &&
-            selIdx === i
+            fill={doc.sel.kind === "point" && doc.sel.strokeId === stroke.id && doc.sel.idx === i
               ? "rgba(255,200,40,0.95)"
               : i === 0
                 ? "rgba(40,160,40,0.85)"
@@ -995,7 +373,7 @@
                   : "rgba(220,40,40,0.85)"}
             stroke={isActive ? "white" : "rgba(255,255,255,0.6)"}
             stroke-width="2"
-            onpointerdown={(e) => onPointerDownPoint(e, stroke.id, i)}
+            onpointerdown={(e) => drag.point(e, stroke.id, i)}
           />
           <text
             x={sp.x + r + 2}
@@ -1016,25 +394,25 @@
     <legend>symbol</legend>
     <label>
       <span>sample</span>
-      <select value={sampleKey} onchange={(e) => loadSample(e.target.value)}>
+      <select value={sampleKey} onchange={(e) => pickSample(e.target.value)}>
         {#each Object.entries(SAMPLES) as [key, s]}
           <option value={key}>{s.label}</option>
         {/each}
       </select>
     </label>
     <menu>
-      <li><button type="button" onclick={spawnPoint} disabled={!showHandles}
+      <li><button type="button" onclick={() => spawnPoint(doc)} disabled={!doc.showHandles}
         >+ point</button
       ></li>
       <li><button
         type="button"
-        onclick={despawnPoint}
-        disabled={!showHandles || selKind !== "point"}>− point</button
+        onclick={() => despawnPoint(doc)}
+        disabled={!doc.showHandles || doc.sel.kind !== "point"}>− point</button
       ></li>
       <li><button
         type="button"
-        onclick={splitStroke}
-        disabled={!showHandles || !canSplit}
+        onclick={() => splitStroke(doc)}
+        disabled={!doc.showHandles || !splittable}
         title="cut this stroke at the selected point; the gap auto-connects with a silk thread"
         >split</button
       ></li>
@@ -1053,8 +431,7 @@
       <li><button
         type="button"
         onclick={bake}
-        title="generate the shadertoy GLSL Seg[] table for this glyph"
-        >bake glsl</button
+        title="generate the shadertoy GLSL Seg[] table for this glyph">bake glsl</button
       ></li>
       {#if bakeText}
         <li><button
@@ -1073,50 +450,48 @@
       {/if}
     </menu>
     {#if showCode}
-      <textarea
-        readonly
-        rows="12"
-        onpointerdown={(e) => e.stopPropagation()}>{codeText}</textarea
-      >
+      <textarea readonly rows="12" onpointerdown={(e) => e.stopPropagation()}>{codeText}</textarea>
     {/if}
     {#if bakeText}
       <small>baked: {bakeInfo}</small>
-      <textarea
-        readonly
-        rows="14"
-        onpointerdown={(e) => e.stopPropagation()}>{bakeText}</textarea
-      >
+      <textarea readonly rows="14" onpointerdown={(e) => e.stopPropagation()}>{bakeText}</textarea>
     {/if}
   </fieldset>
 
   <fieldset>
     <legend>save slots</legend>
-    <div role="group" aria-label="save slots">
+    <menu role="group" aria-label="save slots">
       {#each slots as s, i (i)}
-        <label title={slotLabel(s.at)}>
+        <li><label title={store.slotLabel(s.at)}>
           <input type="radio" name="brush-slot" value={i} bind:group={slot} />
           {i + 1}{#if s.filled}<em>●</em>{/if}
-        </label>
+        </label></li>
       {/each}
-    </div>
+    </menu>
     <menu>
-      <li><button type="button" onclick={saveSlot}>{saved ? "✓ saved" : "💾 save"}</button></li>
-      <li><button type="button" onclick={loadSlot} disabled={!slots[slot].filled}>{loaded ? "✓ loaded" : "📂 load"}</button></li>
-      <li><button type="button" onclick={clearSlot} disabled={!slots[slot].filled}>🗑 clear</button></li>
+      <li><button type="button" onclick={onSaveSlot}>{saved ? "✓ saved" : "💾 save"}</button></li>
+      <li><button type="button" onclick={onLoadSlot} disabled={!slots[slot].filled}
+        >{loaded ? "✓ loaded" : "📂 load"}</button
+      ></li>
+      <li><button
+        type="button"
+        onclick={() => (slots = store.clearSlot(slot))}
+        disabled={!slots[slot].filled}>🗑 clear</button
+      ></li>
     </menu>
   </fieldset>
 
   <fieldset>
     <legend>strokes</legend>
     <ol>
-      {#each symbol.strokes as stroke, i (stroke.id)}
+      {#each doc.symbol.strokes as stroke, i (stroke.id)}
         <li>
           <label>
             <input
               type="radio"
               name="brush-stroke"
-              checked={selKind !== "none" && selStrokeId === stroke.id}
-              onclick={() => selectStroke(stroke.id)}
+              checked={doc.sel.kind !== "none" && doc.sel.strokeId === stroke.id}
+              onclick={() => selectStroke(doc.sel, stroke.id)}
             />
             stroke {i + 1}
           </label>
@@ -1124,13 +499,13 @@
             type="button"
             title="move earlier"
             disabled={i === 0}
-            onclick={() => moveStroke(i, -1)}>▲</button
+            onclick={() => moveStroke(doc.symbol, i, -1)}>▲</button
           >
           <button
             type="button"
             title="move later"
-            disabled={i === symbol.strokes.length - 1}
-            onclick={() => moveStroke(i, 1)}>▼</button
+            disabled={i === doc.symbol.strokes.length - 1}
+            onclick={() => moveStroke(doc.symbol, i, 1)}>▼</button
           >
         </li>
       {/each}
@@ -1140,7 +515,7 @@
   <fieldset>
     <legend>playback</legend>
     <menu>
-      <li><button type="button" onclick={togglePlay} disabled={totalDuration <= 0}>
+      <li><button type="button" onclick={() => togglePlay(pb, total)} disabled={total <= 0}>
         {pb.playing ? "⏸ pause" : "▶ play"}
       </button></li>
     </menu>
@@ -1149,30 +524,24 @@
       <input
         type="range"
         min="0"
-        max={totalDuration || 0.001}
+        max={total || 0.001}
         step="0.01"
         value={pb.t}
-        oninput={(e) => seekTo(+e.target.value)}
+        oninput={(e) => seek(pb, total, +e.target.value)}
       />
       <output>{pb.t.toFixed(2)}</output>
     </label>
     <label>
       <span>speed</span>
-      <input
-        type="range"
-        min="0.2"
-        max="4"
-        step="0.05"
-        bind:value={timing.speed}
-      />
-      <output>{timing.speed.toFixed(2)}</output>
+      <input type="range" min="0.2" max="4" step="0.05" bind:value={doc.timing.speed} />
+      <output>{doc.timing.speed.toFixed(2)}</output>
     </label>
   </fieldset>
 
   <fieldset>
     <legend>brush</legend>
     <label>
-      <input type="checkbox" bind:checked={connect.enabled} />
+      <input type="checkbox" bind:checked={doc.connect.enabled} />
       <span>auto-thread strokes</span>
     </label>
     <label>
@@ -1182,66 +551,42 @@
         min="0.0"
         max="0.6"
         step="0.01"
-        bind:value={connect.thread}
-        disabled={!connect.enabled}
+        bind:value={doc.connect.thread}
+        disabled={!doc.connect.enabled}
       />
-      <output>{connect.thread.toFixed(2)}</output>
+      <output>{doc.connect.thread.toFixed(2)}</output>
     </label>
     <label>
       <span>base radius</span>
-      <input
-        type="range"
-        min="0.005"
-        max="0.2"
-        step="0.001"
-        bind:value={baseRadius}
-      />
-      <output>{baseRadius.toFixed(3)}</output>
+      <input type="range" min="0.005" max="0.2" step="0.001" bind:value={doc.baseRadius} />
+      <output>{doc.baseRadius.toFixed(3)}</output>
     </label>
   </fieldset>
 
-  {#if selPoint}
+  {#if curPoint}
     <fieldset>
-      <legend>point #{selIdx}</legend>
+      <legend>point #{doc.sel.idx}</legend>
       <label>
         <span>x</span>
-        <input
-          type="range"
-          min="-1.5"
-          max="1.5"
-          step="0.001"
-          bind:value={selPoint.x}
-        />
-        <output>{selPoint.x.toFixed(2)}</output>
+        <input type="range" min="-1.5" max="1.5" step="0.001" bind:value={curPoint.x} />
+        <output>{curPoint.x.toFixed(2)}</output>
       </label>
       <label>
         <span>y</span>
-        <input
-          type="range"
-          min="-1"
-          max="1"
-          step="0.001"
-          bind:value={selPoint.y}
-        />
-        <output>{selPoint.y.toFixed(2)}</output>
+        <input type="range" min="-1" max="1" step="0.001" bind:value={curPoint.y} />
+        <output>{curPoint.y.toFixed(2)}</output>
       </label>
       <label>
         <span>pressure</span>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          bind:value={selPoint.pressure}
-        />
-        <output>{selPoint.pressure.toFixed(2)}</output>
+        <input type="range" min="0" max="1" step="0.01" bind:value={curPoint.pressure} />
+        <output>{curPoint.pressure.toFixed(2)}</output>
       </label>
     </fieldset>
   {/if}
 
-  {#if selPath}
+  {#if curPath}
     <fieldset>
-      <legend>path #{selIdx} → {selIdx + 1}</legend>
+      <legend>path #{doc.sel.idx} → {doc.sel.idx + 1}</legend>
       <label>
         <span>belly thin</span>
         <input
@@ -1249,16 +594,16 @@
           min="0"
           max="1"
           step="0.01"
-          value={selPathK}
-          oninput={(e) => setPctrlK(+e.target.value)}
+          value={curK}
+          oninput={(e) => setPctrlK(doc, +e.target.value)}
         />
-        <output>{selPathK.toFixed(2)}</output>
+        <output>{curK.toFixed(2)}</output>
       </label>
       <menu>
-        <li><button type="button" onclick={resetControl} disabled={!selPath.ctrl}
+        <li><button type="button" onclick={() => resetControl(doc)} disabled={!curPath.ctrl}
           >reset curve</button
         ></li>
-        <li><button type="button" onclick={resetPressure} disabled={!selPath.pctrl}
+        <li><button type="button" onclick={() => resetPressure(doc)} disabled={!curPath.pctrl}
           >reset pressure</button
         ></li>
       </menu>
@@ -1269,17 +614,7 @@
 <style>
   section {
     max-width: 720px;
-    aspect-ratio: 1 / 1;
     flex: 0 0 auto;
-    overscroll-behavior: contain;
-    touch-action: none;
-    cursor: grab;
-  }
-  section:active {
-    cursor: grabbing;
-  }
-  canvas {
-    touch-action: none;
   }
   svg circle {
     pointer-events: all;
@@ -1299,7 +634,6 @@
     align-items: center;
   }
   textarea {
-    width: 100%;
     margin-top: 0.35rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.7rem;

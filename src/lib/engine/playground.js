@@ -7,7 +7,7 @@ import { Camera } from "./camera.js";
 const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
 const MAX_DT = 0.05;
 
-export function createPlayground({ camera: camSpec, init, frame, destroy } = {}) {
+export function createPlayground({ camera: camSpec, device: devSpec, init, frame, destroy, setConfig } = {}) {
   let canvas = null, device = null, camera = null;
   let disposed = false, lastT = 0;
 
@@ -28,6 +28,7 @@ export function createPlayground({ camera: camSpec, init, frame, destroy } = {})
     get canvas() { return canvas; },
     get device() { return device; },
     get camera() { return camera; },
+    get aspect() { return canvas.height > 0 ? canvas.width / canvas.height : 1; },
     // for init() to re-check after its own awaits (asset loads)
     disposed: () => disposed,
   };
@@ -39,7 +40,7 @@ export function createPlayground({ camera: camSpec, init, frame, destroy } = {})
       const dpr = DPR();
       canvas.width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
       canvas.height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
-      device = await createDevice(canvas);
+      device = await createDevice(canvas, devSpec);
       if (disposed) { device.destroy(); device = null; return; }
       device.resize(canvas.width, canvas.height);
       if (camSpec) {
@@ -50,14 +51,18 @@ export function createPlayground({ camera: camSpec, init, frame, destroy } = {})
       if (disposed && device) { device.destroy(); device = null; return; }
       lastT = performance.now();
     },
+    // returns the dt it used, so a page can drive its own clocks (autoplay,
+    // scrub, scroll) off the same one instead of running a second RAF.
     render() {
-      if (!device) return;
+      if (!device) return 0;
       const now = performance.now();
       const dt = Math.min((now - lastT) / 1000, MAX_DT);
       lastT = now;
       syncSize();
       frame(dt, ctx);
+      return dt;
     },
+    setConfig,
     destroy() {
       disposed = true;
       destroy?.(ctx);

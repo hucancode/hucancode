@@ -12,18 +12,17 @@ let pCloud, pBagua, pTaiji;
 let time = 0, rot = 0;
 const cloudA = { v: 0 }, baguaA = { v: 0 }, taijiA = { v: 0 };
 
-function setConfig(patch) {
-  if (patch.color1) color1 = hexToRGB(patch.color1);
-  if (patch.color2) color2 = hexToRGB(patch.color2);
-  Object.assign(config, patch);
-}
-
 // half-size that keeps centered square square for any canvas aspect
 function square(s, aspect) {
   return aspect >= 1 ? [s / aspect, s] : [s, s * aspect];
 }
 
-const { init, render, destroy } = createPlayground({
+const { init, render, destroy, setConfig } = createPlayground({
+  setConfig(patch) {
+    if (patch.color1) color1 = hexToRGB(patch.color1);
+    if (patch.color2) color2 = hexToRGB(patch.color2);
+    Object.assign(config, patch);
+  },
   init({ device }) {
     pCloud = device.shader({
       ...CLOUD,
@@ -76,4 +75,4 @@ const { init, render, destroy } = createPlayground({
   },
 });
 
-export { init, render, destroy, setConfig, config };
+export { init, render, destroy, setConfig };

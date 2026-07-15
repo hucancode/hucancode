@@ -1,8 +1,8 @@
 <script>
-  import PlaygroundCanvas from "$lib/components/playground-canvas.svelte";
+  import Scene from "$lib/components/playground-canvas.svelte";
   import * as enso from "$lib/playgrounds/enso";
-  import { setConfig, setBrushColor, setBgColor } from "$lib/playgrounds/enso";
 
+  let scene = $state(null);
   let radius = $state(0.55);
   let angleStart = $state(0.0);
   let lineWidth = $state(0.28);
@@ -22,18 +22,8 @@
   let brushHex = $state("#0d0d12");
   let bgHex = $state("#f5eddc");
 
-  function hexToRgba(hex) {
-    const h = hex.replace("#", "");
-    return [
-      parseInt(h.slice(0, 2), 16) / 255,
-      parseInt(h.slice(2, 4), 16) / 255,
-      parseInt(h.slice(4, 6), 16) / 255,
-      1.0,
-    ];
-  }
-
   $effect(() => {
-    setConfig({
+    scene?.apply({
       radius,
       angleStart,
       lineWidth,
@@ -50,13 +40,9 @@
       widthOffset,
       widthRange,
       widthAnchor,
+      brushColor: brushHex,
+      bgColor: bgHex,
     });
-  });
-  $effect(() => {
-    setBrushColor(hexToRgba(brushHex));
-  });
-  $effect(() => {
-    setBgColor(hexToRgba(bgHex));
   });
 </script>
 <svelte:head>
@@ -64,8 +50,8 @@
 </svelte:head>
 
 
-<section>
-  <PlaygroundCanvas scene={enso} id="enso" />
+<section data-stage="square">
+  <Scene bind:this={scene} scene={enso} id="enso" />
 </section>
 <aside>
   <fieldset>
@@ -219,11 +205,5 @@
 </aside>
 
 <style>
-  section {
-    max-width: 640px;
-    aspect-ratio: 1 / 1;
-  }
-  section :global(canvas) {
-    touch-action: none;
-  }
+  section { max-width: 640px; }
 </style>

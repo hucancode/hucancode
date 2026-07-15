@@ -14,9 +14,22 @@ main {
     margin: 0;
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 3;   /* stage keeps shape; ink scenes override to 1/1 */
+    aspect-ratio: 4 / 3;
     overflow: hidden;
   }
+
+  /* square ink stage (pages still cap their own max-width) */
+  > section[data-stage~="square"] {
+    aspect-ratio: 1 / 1;
+    touch-action: none;
+  }
+  /* pannable stage: swallow browser gestures so a drag pans instead of scrolling */
+  > section[data-stage~="grab"] {
+    touch-action: none;
+    overscroll-behavior: contain;
+    cursor: grab;
+  }
+  > section[data-stage~="grab"]:active { cursor: grabbing; }
 
   > section canvas {
     display: block;
@@ -145,19 +158,40 @@ main {
   }
 
   /* ---- segmented radio group: numbered save slots, ● marks filled -------- */
-  [role="group"]:has(input[type="radio"]) { display: flex; }
+  /* the whole control is one bordered bar; segments divide it, checked fills */
+  [role="group"]:has(input[type="radio"]) {
+    display: flex;
+    gap: 0;
+    border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-radius: 0.35rem;
+    overflow: hidden;
+    background: color-mix(in srgb, currentColor 5%, transparent);
+  }
   [role="group"] label {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.2rem;
-    padding: 0.2rem 0;
-    opacity: 0.5;
+    padding: 0.25rem 0.4rem;
+    opacity: 0.7;
     cursor: pointer;
   }
-  [role="group"] label:has(em) { opacity: 0.8; }
-  [role="group"] label:has(:checked) { opacity: 1; font-weight: 600; }
+  /* divider between segments (li is display:contents, so it goes on the label) */
+  [role="group"] li:not(:first-child) > label,
+  [role="group"] > label + label {
+    border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  }
+  /* the native radio dot is redundant once the segment fills */
+  [role="group"] input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+  [role="group"] label:hover { background: color-mix(in srgb, currentColor 10%, transparent); opacity: 1; }
+  [role="group"] label:has(:checked) {
+    opacity: 1;
+    font-weight: 600;
+    background: var(--accent, #2850dc);
+    color: #fff;
+  }
+  [role="group"] label:has(:focus-visible) { outline: 2px solid var(--accent, #2850dc); outline-offset: -2px; }
   [role="group"] em {
     font-style: normal;
     font-size: 0.55rem;
@@ -229,7 +263,8 @@ main {
     font-size: 0.75rem;
     pointer-events: none;
   }
-  > section > footer > div {
+  /* the footer itself is click-through; its rows opt back in */
+  > section > footer > menu {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -240,6 +275,7 @@ main {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex: 1 1 8rem;
   }
   > section > footer label span { opacity: 0.8; }
   > section > footer input[type="range"] { flex: 1; }
