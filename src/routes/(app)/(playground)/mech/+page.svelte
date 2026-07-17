@@ -10,6 +10,7 @@
   const RENDER_CTL = [
     ["spin", "spin", 0, 3, 0.1],
     ["light", "light angle", 0, 6.28, 0.05],
+    ["wire", "wireframe", 0, 1],
   ];
 
   let scene = $state(null);
@@ -30,7 +31,7 @@
   let asmPlay = $state(false);
   let seed = $state(1);                    // color shuffle seed
 
-  let render = $state({ spin: 0.3, light: 0.6 });
+  let render = $state({ spin: 0.3, light: 0.6, wire: 0 });
 
   const PART_LABELS = {
     bodySegment: "body segment", bodySegment2: "body segment 2",
@@ -63,18 +64,49 @@
   function resetDragon() { drig = structuredClone(DRAGON_POSE); }
   function shuffle() { seed = (seed + 1) | 0; }
 
-  function playAssemble() { asm = 0; asmPlay = true; }
+  function playAssemble() { asmCache.clear(); asmOff0 = drig.offset; asm = 0; asmPlay = true; }
+  // scrub start: freeze the ride offset the current build clock implies, so
+  // the anchors stay world-fixed while dragging even though autoplay keeps
+  // moving the body
+  function grabAsm() {
+    asmPlay = false;
+    asmOff0 = drig.offset - asm * (autoplay ? BUILD_SECONDS / LAP_SECONDS : 0);
+  }
+
+  // frozen WORLD anchors for the build: groups form at the pose the body had
+  // when they started, then convert to the local frame for the dock flight.
+  // asmOff0 = the ride offset at build start, captured ONCE per build/scrub —
+  // deriving it from the live offset each frame would drag the anchors along
+  // with the body (local-space build) whenever the two clocks decouple.
+  // Cached per anchor pose — anchors are per-group constants, so steady
+  // state is pure cache hits.
+  let asmOff0 = DRAGON_POSE.offset;
+  const asmCache = new Map();
+  function asmRefAt(pose, dOff) {
+    const off0 = asmOff0;
+    return (uu) => {
+      const off = (((off0 + uu * dOff) % 1) + 1) % 1;
+      const key = [seed, off.toFixed(5), pose.jaw, pose.armSwing, pose.elbow, pose.legSwing, pose.knee].join("|");
+      if (!asmCache.has(key)) {
+        if (asmCache.size > 200) asmCache.clear();
+        asmCache.set(key, dragonModel(seed, { ...pose, offset: off }).items);
+      }
+      return asmCache.get(key);
+    };
+  }
 
   const rigShown = $derived(view === "dragon" && dsel === "rig");
 
   const model = $derived.by(() => {
     if (view !== "dragon") return cmodel;
     if (dsel !== "rig") return DRAGON_KIT.partModel(dsel, seed, $state.snapshot(dparams)[dsel]);
-    const m = dragonModel(seed, $state.snapshot(drig));
+    const pose = $state.snapshot(drig);
+    const m = dragonModel(seed, pose);
     if (asm >= 1) return m;
-    return { ...m, items: assembleModel(m.items, asm) };
+    const dOff = autoplay ? BUILD_SECONDS / LAP_SECONDS : 0;
+    return { ...m, items: assembleModel(m.items, asm, asmRefAt(pose, dOff)) };
   });
-  $effect(() => { scene?.apply({ spin: render.spin, lightAngle: render.light, model }); });
+  $effect(() => { scene?.apply({ spin: render.spin, lightAngle: render.light, wire: render.wire, model }); });
   // fixed per-view distance (no auto-fit): the dragon rides a big loop, single
   // parts and catalog blocks sit close in
   $effect(() => {
@@ -117,7 +149,7 @@
     <footer>
       <menu>
         <li><button type="button" onclick={playAssemble}>▶ Assemble</button></li>
-        <li><input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={() => (asmPlay = false)} /></li>
+        <li><input type="range" min="0" max="1" step="0.001" bind:value={asm} onpointerdown={grabAsm} /></li>
         <li><output>{asm.toFixed(2)}</output></li>
       </menu>
     </footer>

@@ -1,11 +1,6 @@
 // SHAPE COLORING — one palette, one hash. A seed reproduces the same coloring
 // across kits and rigs; bump it to reshuffle.
-
-function hashStr(s) {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return h >>> 0;
-}
+import { hashStr } from "../math/random.js";
 
 export const PALETTE = [
   "#c0392b", "#e67e22", "#f1c40f", "#7dcb2f", "#27ae60", "#1abc9c",

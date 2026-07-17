@@ -28,11 +28,14 @@ export const INSTANCED_PROGRAM = {
       { name: "iColor", location: 8, format: "float32x4", offset: 96 },
     ] },
   ],
+  // uWire (0..1) fades in a barycentric wireframe overlay; consumers that never
+  // pass it leave it at 0, which is no overlay at all
   uniforms: [
     { name: "uViewProj", type: "mat4" },
     { name: "uLightPos", type: "vec3" },
     { name: "uViewPos", type: "vec3" },
     { name: "uOpacity", type: "f32" },
+    { name: "uWire", type: "f32" },
   ],
   cull: "back",
 };

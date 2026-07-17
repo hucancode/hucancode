@@ -44,11 +44,12 @@
   let asmPlay = $state(false);
   let seed = $state(1);                    // color shuffle seed
 
-  let render = $state({ spin: 0.3, light: 0.6 });
+  let render = $state({ spin: 0.3, light: 0.6, wire: 0 });
 
   const RENDER_CTL = [
     ["spin", "spin", 0, 3, 0.1],
     ["light", "light angle", 0, 6.28, 0.05],
+    ["wire", "wireframe", 0, 1],
   ];
   const PART_LABELS = { upperArm: "upper arm" };
   const MONTAGE_ICON = (i) => `🌊${i + 1}`;
@@ -125,7 +126,7 @@
     // static body: no ride curve, the live items are their own anchors
     return { ...m, items: assembleModel(m.items, asm) };
   });
-  $effect(() => { scene?.apply({ spin: render.spin, lightAngle: render.light, model }); });
+  $effect(() => { scene?.apply({ spin: render.spin, lightAngle: render.light, wire: render.wire, model }); });
   const PART_DIST = {
     digit: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
     head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,

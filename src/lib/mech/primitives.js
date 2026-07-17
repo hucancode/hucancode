@@ -1,4 +1,5 @@
 import { TAU } from "../math/scalar.js";
+import { geo, tri, triS, quad, merge } from "./geo.js";
 // PRIMITIVE ENGINE. A primitive call returns a HANDLE { key, m, t } — a reference to
 // a shared UNIT MESH in the registry, plus an affine transform (3x3 row-major linear
 // + translation). rotX/rotY/rotZ/translate COMPOSE INTO THE MATRIX; vertices are
@@ -23,7 +24,7 @@ import { TAU } from "../math/scalar.js";
 //   halfCylinderBox halfCylinder + a box filling the flat (-Z) side; origin =
 //                   center of the circle forming the cylinder
 
-const q4 = (v) => +(+v).toFixed(4);
+export const q4 = (v) => +(+v).toFixed(4);
 
 const REGISTRY = new Map();          // key -> { positions: F32, normals: F32 }
 
@@ -34,8 +35,9 @@ export function meshOf(key) {
 // handle factory: register the unit mesh on first use, return an instance
 // handle with a pure-scale starting matrix. `id` = shape identity INCLUDING
 // size (key + creation scale; rotations don't change it) — consumers color
-// by it so identical pieces match.
-function H(key, gen, sx, sy, sz) {
+// by it so identical pieces match. Exported as `handle` for sibling mesh
+// families (sculpt.js) that register through the same registry.
+export function handle(key, gen, sx, sy, sz) {
   if (!REGISTRY.has(key)) {
     const g = gen();
     REGISTRY.set(key, {
@@ -78,35 +80,6 @@ export const rotZ = (g, r) => rotAxis(g, 0, 1, r); // x,y
 // finalize a handle for the model item list
 export function bake(g) {
   return { key: g.key, id: g.id, m: g.m.slice(), t: g.t.slice() };
-}
-
-function geo() {
-  return { positions: [], normals: [] };
-}
-
-function tri(g, a, b, c, n) {
-  g.positions.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
-  if (n) g.normals.push(n[0], n[1], n[2], n[0], n[1], n[2], n[0], n[1], n[2]);
-}
-
-// triangle with per-vertex (smooth) normals
-function triS(g, a, b, c, na, nb, nc) {
-  g.positions.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
-  g.normals.push(na[0], na[1], na[2], nb[0], nb[1], nb[2], nc[0], nc[1], nc[2]);
-}
-
-function quad(g, a, b, c, d, n) {
-  tri(g, a, b, c, n);
-  tri(g, a, c, d, n);
-}
-
-function merge(...gs) {
-  const out = geo();
-  for (const g of gs) {
-    out.positions.push(...g.positions);
-    out.normals.push(...g.normals);
-  }
-  return out;
 }
 
 // unit box (1x1x1, centered). slope = FRACTION of the height dropped at the
@@ -340,17 +313,17 @@ function genGear(To, Ti) {
 export function box(w = 1, h = 1, d = 1, slope = 0, curve = 0) {
   const sp = q4(Math.max(0, Math.min(slope, 0.9999)));
   const k = q4(Math.max(-1, Math.min(1, curve)));
-  return H(`box:${sp}:${k}`, () => genBox(sp, k), w, h, d);
+  return handle(`box:${sp}:${k}`, () => genBox(sp, k), w, h, d);
 }
 
 export function cylinder(r = 0.5, h = 1, seg = 24) {
-  return H(`cyl:${seg}`, () => cylBody(1, 1, seg, 0, TAU), r, h, r);
+  return handle(`cyl:${seg}`, () => cylBody(1, 1, seg, 0, TAU), r, h, r);
 }
 
 // truncated cone: only the taper RATIO r1/r0 shapes the mesh
 export function coneCut(r0 = 0.5, r1 = 0.25, h = 1, seg = 24) {
   const q = q4(Math.max(0, r1 / r0));
-  return H(`coneCut:${q}:${seg}`, () => genConeCut(q, seg), r0, h, r0);
+  return handle(`coneCut:${q}:${seg}`, () => genConeCut(q, seg), r0, h, r0);
 }
 
 // a cone IS coneCut(r, 0, ...)
@@ -359,33 +332,33 @@ export function cone(r = 0.5, h = 1, seg = 24) {
 }
 
 export function sphere(r = 0.5, seg = 24, rings = 16) {
-  return H(`sph:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI, false), r, r, r);
+  return handle(`sph:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI, false), r, r, r);
 }
 
 export function hemisphere(r = 0.5, seg = 24, rings = 8) {
-  return H(`hemi:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI / 2, true), r, r, r);
+  return handle(`hemi:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI / 2, true), r, r, r);
 }
 
 // socket shell — wall t and cut height are FRACTIONS of r
 export function cutHemisphere(r = 0.5, t = 0.25, cut = 0.7, seg = 24, rings = 6) {
   const tp = q4(Math.max(0.02, Math.min(t, 0.95)));
   const cp = q4(Math.max(0, Math.min(cut, 0.98)));
-  return H(`cutHemi:${tp}:${cp}:${seg}:${rings}`, () => genCutHemisphere(tp, cp, seg, rings), r, r, r);
+  return handle(`cutHemi:${tp}:${cp}:${seg}:${rings}`, () => genCutHemisphere(tp, cp, seg, rings), r, r, r);
 }
 
 export function halfCylinder(r = 0.5, h = 1, seg = 12) {
-  return H(`halfCyl:${seg}`, () => genHalfCylinder(seg, true), r, h, r);
+  return handle(`halfCyl:${seg}`, () => genHalfCylinder(seg, true), r, h, r);
 }
 
 // arch box — the box depth enters the KEY as a FRACTION of r; height is a
 // free scale axis, so all arch boxes with one depth ratio share a mesh
 export function halfCylinderBox(r = 0.5, h = 1, depth = 0.5, seg = 12) {
   const dp = q4(depth / r);
-  return H(`archBox:${dp}:${seg}`, () => genHalfCylinderBox(dp, seg), r, h, r);
+  return handle(`archBox:${dp}:${seg}`, () => genHalfCylinderBox(dp, seg), r, h, r);
 }
 
 export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
-  return H(`qCyl:${seg}`, () => genQuarterCylinder(seg), r, h, r);
+  return handle(`qCyl:${seg}`, () => genQuarterCylinder(seg), r, h, r);
 }
 
 // gear ring — teethOut / teethIn put teeth on the outer / inner rim; a count
@@ -396,5 +369,5 @@ export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
 export function gear(r = 0.5, h = 0.2, teethOut = 12, teethIn = 0) {
   const q = (t) => { const n = Math.round(t); return n >= 3 ? n : 0; };
   const To = q(teethOut), Ti = q(teethIn);
-  return H(`gear:${To}:${Ti}`, () => genGear(To, Ti), r, h, r);
+  return handle(`gear:${To}:${Ti}`, () => genGear(To, Ti), r, h, r);
 }
