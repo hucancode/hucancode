@@ -8,8 +8,7 @@
   let color = $state("#ff6633");
   let brushSize = $state(12);
   let intensity = $state(6);
-  let occluder = $state(true);
-  let movingLight = $state(false);
+  let brush = $state("light");
 
   // cascade algorithm
   let baseRays = $state(4);
@@ -35,8 +34,7 @@
       color,
       brushSize,
       intensity,
-      occluder,
-      movingLight,
+      brush,
       baseRays,
       branching,
       probeSpacing0: probeSpacing,
@@ -50,6 +48,10 @@
 
   function clear() {
     radiance.clear();
+  }
+
+  function loadDefaultScene() {
+    radiance.loadDefaultScene();
   }
 
   function frame() {
@@ -84,7 +86,7 @@
 
 <aside>
   <fieldset>
-    <legend>light brush</legend>
+    <legend>brush</legend>
     <label>
       <span>color</span>
       <input type="color" bind:value={color} />
@@ -99,16 +101,14 @@
       <input type="range" min="1" max="20" step="1" bind:value={intensity} />
       <output>{intensity}</output>
     </label>
-    <label>
-      <input type="checkbox" bind:checked={occluder} />
-      <span>block light (paint occluders)</span>
-    </label>
-    <label>
-      <input type="checkbox" bind:checked={movingLight} />
-      <span>moving light (spawn bouncers)</span>
-    </label>
+    <menu role="group" aria-label="brush type">
+      <li><label><input type="radio" name="brush" value="wall" bind:group={brush} />wall</label></li>
+      <li><label><input type="radio" name="brush" value="light" bind:group={brush} />light</label></li>
+      <li><label><input type="radio" name="brush" value="moving-light" bind:group={brush} />ember</label></li>
+    </menu>
     <menu>
-      <li><button type="button" onclick={clear}>clear</button></li>
+      <li><button type="button" onclick={loadDefaultScene}>Reset</button></li>
+      <li><button type="button" onclick={clear}>Clear</button></li>
     </menu>
   </fieldset>
 
@@ -172,6 +172,13 @@
       <input type="checkbox" bind:checked={showProbes} />
       <span>show probes</span>
     </label>
+  </fieldset>
+  <fieldset>
+    <legend>extra</legend>
+    <label>
+      <span>paper</span>
+      <a href="https://arxiv.org/abs/2408.14425" >Radiance Cascades: A Novel High-Resolution Formal Solution for Multidimensional Non-LTE Radiative Transfer</a>
+      </label>
   </fieldset>
 </aside>
 
