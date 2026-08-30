@@ -52,7 +52,6 @@
     ["wire", "wireframe", 0, 1],
   ];
   const PART_LABELS = { upperArm: "upper arm" };
-  const MONTAGE_ICON = (i) => `🌊${i + 1}`;
   // [key, label, min, max, step?] sliders per part
   const PART_CTL = {
     head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["innerR", "inner ring radius", 0.06, 0.35]],
@@ -282,7 +281,7 @@
           {#each Object.keys(rig.montages) as name, i}
             <li><button type="button" onclick={() => playMontage(name)}
               title={montageLabel(name)} aria-label={montageLabel(name)}>
-              {MONTAGE_ICON(i)}</button></li>
+              {`🌊${i+1}`}</button></li>
           {/each}
         </menu>
       </fieldset>
