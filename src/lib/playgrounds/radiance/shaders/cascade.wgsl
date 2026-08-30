@@ -1,22 +1,16 @@
-// Radiance Cascades (2D) — cascade builder, expressed as a fragment-shader
-// "compute" pass: one fragment per (probe, ray) texel, rendered into an
-// RGBA16F target. Each level traces its near interval and merges with the
-// next-coarser cascade (which was computed first, coarse -> fine).
-//
+// Radiance Cascades (2D)
 // https://arxiv.org/abs/2408.14425
 
 struct Params {
   sceneSize: vec2<f32>,
-  cascadeIdx: f32,
-  cascadeCnt: f32,
-  raysBase: f32,
-  branching: f32,
-  intervalBase: f32,
-  probeSpacing0: f32,
+  spacing: f32,
+  rays: f32,
+  intervalLo: f32,
+  intervalHi: f32,
   stepsPerRay: f32,
-  exposure: f32,
-  probeOverlay: f32,
-  pad0: f32,
+  branching: f32,
+  hasCoarser: f32,
+  bilinearFix: f32,
 };
 
 const PI = 3.14159265359;
@@ -48,14 +42,6 @@ fn vs(@builtin(vertex_index) vi: u32) -> VOut {
   out.pos = vec4<f32>(p, 0.0, 1.0);
   out.uv = vec2<f32>(p.x * 0.5 + 0.5, 0.5 - p.y * 0.5);
   return out;
-}
-
-fn probeSpacing(idx: f32) -> f32 { return params.probeSpacing0 * pow(2.0, idx); }
-fn rayCount(idx: f32) -> f32 { return params.raysBase * pow(params.branching, idx); }
-fn intervalRange(idx: f32) -> vec2<f32> {
-  let t0 = select(0.0, params.intervalBase * pow(params.branching, idx - 1.0), idx > 0.0);
-  let t1 = params.intervalBase * pow(params.branching, idx);
-  return vec2<f32>(t0, t1);
 }
 
 struct BilinearTaps { nx: array<i32,4>, ny: array<i32,4>, w: array<f32,4> };
@@ -99,10 +85,9 @@ fn traceRay(origin: vec2<f32>, dir: vec2<f32>, t0: f32, t1: f32) -> vec4<f32> {
 
 @fragment
 fn fs(in: VOut) -> @location(0) vec4<f32> {
-  let idx = params.cascadeIdx;
-  let spacing = probeSpacing(idx);
-  let rays = u32(rayCount(idx));
   let dims = params.sceneSize;
+  let spacing = params.spacing;
+  let rays = u32(params.rays);
   let probesX = u32(ceil(dims.x / spacing));
   let probesY = u32(ceil(dims.y / spacing));
   let outW = probesX * rays;
@@ -112,43 +97,62 @@ fn fs(in: VOut) -> @location(0) vec4<f32> {
   let py = u32(floor(pixel.y));
 
   let probeCenter = (vec2<f32>(f32(px), f32(py)) + 0.5) * spacing;
-  let range = intervalRange(idx);
   let angle = (f32(rayIdx) + 0.5) / f32(rays) * 2.0 * PI;
   let dir = vec2<f32>(cos(angle), sin(angle));
 
   var radiance = vec3<f32>(0.0);
-  if (idx < params.cascadeCnt - 1.0) {
-    // Bilinear fix (paper §2.5): trace the near interval toward the ray-start
-    // position of each of the four coarser probes, merge with that probe's own
-    // samples, then average with the usual bilinear weights.
+  if (params.hasCoarser > 0.5) {
+    // Coarser cascade geometry: probes are 2x apart with `branching`x the rays,
+    // so this probe's ray cone covers `branching` child rays in cascade i+1.
     let nextSpacing = spacing * 2.0;
     let nextRays = rays * u32(params.branching);
     let nextProbesX = i32(ceil(dims.x / nextSpacing));
     let nextProbesY = i32(ceil(dims.y / nextSpacing));
     let childRaysPerParent = u32(params.branching);
-    let childRayIdx = rayIdx * childRaysPerParent;
-
-    let start = probeCenter + dir * range.x;
+    let childRayBase = rayIdx * childRaysPerParent;
     let taps = bilinearProbeTaps(probeCenter / nextSpacing, nextProbesX, nextProbesY);
-    for (var i = 0; i < 4; i = i + 1) {
-      let childCenter = (vec2<f32>(f32(taps.nx[i]), f32(taps.ny[i])) + 0.5) * nextSpacing;
-      let endPoint = childCenter + dir * range.y;
-      let toTarget = endPoint - start;
-      let dist = max(length(toTarget), 1e-4);
-      let fixedDir = toTarget / dist;
-      let hit = traceRay(start, fixedDir, 0.0, dist);
 
-      var childAcc = vec3<f32>(0.0);
-      for (var c: u32 = 0; c < childRaysPerParent; c = c + 1) {
-        let sampleX = u32(taps.nx[i]) * nextRays + childRayIdx + c;
-        childAcc += textureLoad(cascadeIn, vec2<i32>(i32(sampleX), taps.ny[i]), 0).rgb;
+    if (params.bilinearFix > 0.5) {
+      // Bilinear fix (paper §2.5): trace the near interval toward the ray-start
+      // position of each of the four coarser probes, merge with that probe's own
+      // samples, then average with the usual bilinear weights. Costs 4x traces
+      // but removes the parallax ringing of the basic method.
+      let start = probeCenter + dir * params.intervalLo;
+      for (var i = 0; i < 4; i = i + 1) {
+        let childCenter = (vec2<f32>(f32(taps.nx[i]), f32(taps.ny[i])) + 0.5) * nextSpacing;
+        let endPoint = childCenter + dir * params.intervalHi;
+        let toTarget = endPoint - start;
+        let dist = max(length(toTarget), 1e-4);
+        let fixedDir = toTarget / dist;
+        let hit = traceRay(start, fixedDir, 0.0, dist);
+
+        var childAcc = vec3<f32>(0.0);
+        for (var c: u32 = 0; c < childRaysPerParent; c = c + 1) {
+          let sampleX = u32(taps.nx[i]) * nextRays + childRayBase + c;
+          childAcc += textureLoad(cascadeIn, vec2<i32>(i32(sampleX), taps.ny[i]), 0).rgb;
+        }
+        radiance += (hit.rgb + hit.a * (childAcc / f32(childRaysPerParent))) * taps.w[i];
       }
-      let merged = hit.rgb + hit.a * (childAcc / f32(childRaysPerParent));
-      radiance += merged * taps.w[i];
+    } else {
+      // Basic method (paper §2.3): trace the near interval once in the ray
+      // direction, then merge with the bilinearly interpolated coarser radiance
+      // sampled in the same direction cone.
+      let hit = traceRay(probeCenter, dir, params.intervalLo, params.intervalHi);
+      var far = vec3<f32>(0.0);
+      for (var i = 0; i < 4; i = i + 1) {
+        var childAcc = vec3<f32>(0.0);
+        for (var c: u32 = 0; c < childRaysPerParent; c = c + 1) {
+          let sampleX = u32(taps.nx[i]) * nextRays + childRayBase + c;
+          childAcc += textureLoad(cascadeIn, vec2<i32>(i32(sampleX), taps.ny[i]), 0).rgb;
+        }
+        far += (childAcc / f32(childRaysPerParent)) * taps.w[i];
+      }
+      radiance = hit.rgb + hit.a * far;
     }
   } else {
-    // coarsest cascade: nothing to merge with; trace until it leaves the domain.
-    let hit = traceRay(probeCenter, dir, range.x, range.y);
+    // coarsest cascade: nothing to merge with; trace its interval (stopping at
+    // the domain boundary) and stop.
+    let hit = traceRay(probeCenter, dir, params.intervalLo, params.intervalHi);
     radiance = hit.rgb;
   }
 

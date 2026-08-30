@@ -16,6 +16,7 @@
   let probeSpacing = $state(4);
   let baseInterval = $state(6);
   let stepsPerRay = $state(24);
+  let bilinearFix = $state(true);
 
   // cascade levels
   let autoCascades = $state(true);
@@ -40,6 +41,7 @@
       probeSpacing0: probeSpacing,
       baseInterval,
       stepsPerRay,
+      bilinearFix,
       cascadeCount: autoCascades ? 0 : cascadeLevels,
       exposure,
       probeOverlay: showProbes,
@@ -143,6 +145,10 @@
       <span>steps / ray</span>
       <input type="range" min="4" max="48" step="1" bind:value={stepsPerRay} />
       <output>{stepsPerRay}</output>
+    </label>
+    <label>
+      <input type="checkbox" bind:checked={bilinearFix} />
+      <span>bilinear fix</span>
     </label>
   </fieldset>
 

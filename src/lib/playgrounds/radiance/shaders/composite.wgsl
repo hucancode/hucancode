@@ -1,19 +1,13 @@
-// Radiance Cascades (2D) — final upsample: bilinearly gather the finest
-// cascade's per-probe directional samples and mix with the painted scene
-// (emission rgb / occlusion a) plus the optional probe-grid overlay.
+// Radiance Cascades (2D)
+// https://arxiv.org/abs/2408.14425
 
 struct Params {
   sceneSize: vec2<f32>,
-  cascadeIdx: f32,
-  cascadeCnt: f32,
-  raysBase: f32,
-  branching: f32,
-  intervalBase: f32,
   probeSpacing0: f32,
-  stepsPerRay: f32,
+  raysBase: f32,
+  cascadeCnt: f32,
   exposure: f32,
   probeOverlay: f32,
-  pad0: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: Params;

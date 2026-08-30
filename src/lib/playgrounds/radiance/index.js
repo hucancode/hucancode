@@ -27,6 +27,7 @@ const config = {
   probeSpacing0: 4,
   baseInterval: 6,
   stepsPerRay: 24,
+  bilinearFix: true,
   cascadeCount: 0, // 0 = auto-fit to screen
   // display
   exposure: 1,
@@ -90,6 +91,10 @@ function neededCascadeCount(w, h) {
 function effectiveCascadeCount(w, h) {
   return config.cascadeCount > 0 ? config.cascadeCount : neededCascadeCount(w, h);
 }
+function cascadeSpacing(i) { return config.probeSpacing0 * 2 ** i; }
+function cascadeRays(i) { return config.baseRays * config.branching ** i; }
+function cascadeIntervalLo(i) { return i > 0 ? config.baseInterval * config.branching ** (i - 1) : 0; }
+function cascadeIntervalHi(i) { return config.baseInterval * config.branching ** i; }
 function sceneKey(w, h) {
   return w + "x" + h;
 }
@@ -285,19 +290,28 @@ function onPointerUp() { isDrawing = false; }
 
 // ---- resource lifecycle --------------------------------------------------
 
-function paramsFor(cascadeIdx, cascadeCnt) {
+function cascadeParams(cascadeIdx, cascadeCnt) {
+  const d = cascadeDims[cascadeIdx];
   return {
     sceneSize: [W, H],
-    cascadeIdx,
-    cascadeCnt,
-    raysBase: config.baseRays,
-    branching: config.branching,
-    intervalBase: config.baseInterval,
-    probeSpacing0: config.probeSpacing0,
+    spacing: d.spacing,
+    rays: d.rays,
+    intervalLo: d.intervalLo,
+    intervalHi: d.intervalHi,
     stepsPerRay: config.stepsPerRay,
+    branching: config.branching,
+    hasCoarser: cascadeIdx < cascadeCnt - 1 ? 1 : 0,
+    bilinearFix: config.bilinearFix ? 1 : 0,
+  };
+}
+function compositeParams(cascadeCnt) {
+  return {
+    sceneSize: [W, H],
+    probeSpacing0: config.probeSpacing0,
+    raysBase: config.baseRays,
+    cascadeCnt,
     exposure: config.exposure,
     probeOverlay: config.probeOverlay ? 1 : 0,
-    pad0: 0,
   };
 }
 
@@ -329,10 +343,14 @@ function rebuildCascades(w, h) {
   const count = effectiveCascadeCount(W, H);
   cascadeDims = [];
   for (let i = 0; i < count; i++) {
-    const spacing = config.probeSpacing0 * 2 ** i;
+    const spacing = cascadeSpacing(i);
     const probesX = Math.ceil(W / spacing), probesY = Math.ceil(H / spacing);
-    const rays = config.baseRays * config.branching ** i;
-    cascadeDims.push({ width: Math.max(1, probesX * rays), height: Math.max(1, probesY), probesX, probesY, rays, spacing });
+    const rays = cascadeRays(i);
+    cascadeDims.push({
+      width: Math.max(1, probesX * rays), height: Math.max(1, probesY),
+      probesX, probesY, rays, spacing,
+      intervalLo: cascadeIntervalLo(i), intervalHi: cascadeIntervalHi(i),
+    });
   }
   cascadeTexs = cascadeDims.map((d) => device.texture({ width: d.width, height: d.height, format: "rgba16f", filter: "nearest" }));
   dummyTex = device.texture({ width: 1, height: 1, format: "rgba16f", filter: "nearest" });
@@ -352,10 +370,9 @@ const { init, render, destroy } = createPlayground({
     cascadeShader = device.shader({
       ...CASCADE,
       uniforms: [
-        VEC2("sceneSize"), F32("cascadeIdx"), F32("cascadeCnt"),
-        F32("raysBase"), F32("branching"), F32("intervalBase"),
-        F32("probeSpacing0"), F32("stepsPerRay"), F32("exposure"),
-        F32("probeOverlay"), F32("pad0"),
+        VEC2("sceneSize"), F32("spacing"), F32("rays"),
+        F32("intervalLo"), F32("intervalHi"), F32("stepsPerRay"),
+        F32("branching"), F32("hasCoarser"), F32("bilinearFix"),
       ],
       textures: [
         { name: "sceneTex", binding: 1, samplerBinding: 2 },
@@ -367,10 +384,8 @@ const { init, render, destroy } = createPlayground({
     compositeShader = device.shader({
       ...COMPOSITE,
       uniforms: [
-        VEC2("sceneSize"), F32("cascadeIdx"), F32("cascadeCnt"),
-        F32("raysBase"), F32("branching"), F32("intervalBase"),
-        F32("probeSpacing0"), F32("stepsPerRay"), F32("exposure"),
-        F32("probeOverlay"), F32("pad0"),
+        VEC2("sceneSize"), F32("probeSpacing0"), F32("raysBase"),
+        F32("cascadeCnt"), F32("exposure"), F32("probeOverlay"),
       ],
       textures: [
         { name: "sceneTex", binding: 1, samplerBinding: 2 },
@@ -447,7 +462,7 @@ const { init, render, destroy } = createPlayground({
       device.target(cascadeTexs[i], { clear: [0, 0, 0, 0] }, (p) => {
         p.draw(cascadeShader, {
           count: 6,
-          uniforms: paramsFor(i, count),
+          uniforms: cascadeParams(i, count),
           textures: { sceneTex, lightTex, cascadeIn },
         });
       });
@@ -457,7 +472,7 @@ const { init, render, destroy } = createPlayground({
     device.pass({ clear: [0, 0, 0, 1] }, (p) => {
       p.draw(compositeShader, {
         count: 6,
-        uniforms: paramsFor(0, count),
+        uniforms: compositeParams(count),
         textures: { sceneTex, cascade0: cascadeTexs[0], lightTex },
       });
     });
