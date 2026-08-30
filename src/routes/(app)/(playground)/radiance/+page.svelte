@@ -54,6 +54,10 @@
     radiance.loadDefaultScene();
   }
 
+  function spawnLights() {
+    radiance.spawnRandomLights(100);
+  }
+
   function frame() {
     const now = performance.now();
     if (now - lastStats > 250) {
@@ -76,7 +80,7 @@
           {#if stats.error}
             {stats.error}
           {:else}
-            {stats.fps} fps · {stats.cascades} cascades · {stats.emissive.toLocaleString()} emissive px · {stats.lights} lights
+            {stats.fps} FPS · {stats.cascades} cascades · {stats.emissive.toLocaleString()} light px · {stats.lights} embers
           {/if}
         </output>
       </li>
@@ -108,6 +112,7 @@
     </menu>
     <menu>
       <li><button type="button" onclick={loadDefaultScene}>Reset</button></li>
+      <li><button type="button" onclick={spawnLights}>+100 embers</button></li>
       <li><button type="button" onclick={clear}>Clear</button></li>
     </menu>
   </fieldset>

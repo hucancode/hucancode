@@ -1,9 +1,19 @@
-import { createPlayground } from "$lib/engine/index.js";
-import WGSL from "./shaders/radiance.wgsl?raw";
+// Radiance Cascades (2D) playground. The cascade builder is expressed as
+// fragment-shader "compute" passes (one texel per probe×ray) rendered into
+// RGBA16F targets, so the same WGSL + engine abstraction runs on WebGPU and
+// WebGL2 (no compute shaders / storage textures required).
+//
+// Resources:
+//   sceneTex   rgba8   painted emission (rgb) + occlusion (a), uploaded on paint
+//   lightTex   rgba8   moving-light accumulation buffer, cleared each frame
+//   cascadeTex rgba16f one target per cascade level, coarse -> fine
+import { createPlayground, F32, VEC2 } from "$lib/engine/index.js";
+import CASCADE from "./shaders/cascade.wgsl?shader";
+import COMPOSITE from "./shaders/composite.wgsl?shader";
+import LIGHTS from "./shaders/lights.wgsl?shader";
 
 const MAX_LIGHTS = 4096;
-const PARAMS_FLOATS = 12; // Params struct: vec2 + 10 f32 = 48 bytes
-const PARAMS_BYTES = PARAMS_FLOATS * 4;
+const LIGHT_FLOATS = 6; // pos.xy, radius, color.rgb
 
 const config = {
   // brush / scene
@@ -23,34 +33,34 @@ const config = {
   probeOverlay: false,
 };
 
+let device = null;
 let canvas = null;
-let gpu = null;          // raw GPUDevice
-let context = null;
-let format = null;
-let sampler = null;
-let shaderModule = null;
-
-// size-dependent scene resources (rebuilt on resize / cascade-shape changes)
 let W = 0, H = 0;
-let baseTexture = null, compositeTexture = null;
-let sceneMirror = null;
-let cascadeDims = [], cascadeTextures = [];
-let dummyTex = null;
-let computeBGL = null, computePipeline = null, computeBindGroups = [];
-let renderBGL = null, renderPipeline = null, renderBindGroup = null;
-let paramsBuffers = [], paramsBufferFinal = null;
 
-// constant-sized light resources
-let lightBGL = null, lightPipeline = null, lightGPUBuffer = null;
-let lightCPUStage = new Float32Array(MAX_LIGHTS * 8);
-let lightParamsBuffer = null, lightBindGroup = null;
+// size-dependent scene resources
+let sceneMirror = null; // Uint8ClampedArray W*H*4, the CPU-side paint target
+let sceneTex = null;
+let lightTex = null;
+
+// cascade resources (rebuilt on resize / grid-shape changes)
+let cascadeTexs = [];
+let cascadeDims = [];
+let dummyTex = null;
+
+let cascadeShader = null, compositeShader = null, lightsShader = null;
+let lightsBuffer = null;
+let lightsData = new Float32Array(MAX_LIGHTS * LIGHT_FLOATS);
 
 const bouncingLights = [];
 let isDrawing = false;
 let paintCount = 0;
 let lastSceneKey = "";
+<<<<<<< Updated upstream
 let lastCascadeKey = "";
 let error = null;
+=======
+let lastBuildKey = "";
+>>>>>>> Stashed changes
 
 // fps / stats
 let fps = 0, frameCount = 0, lastFpsTime = 0;
@@ -59,6 +69,23 @@ const hexToBytes = (hex) => {
   const v = parseInt(hex.slice(1), 16);
   return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 };
+const hexToRGB01 = (hex) => hexToBytes(hex).map((v) => v / 255);
+
+// Random vivid color (HSV with full saturation/value converted to RGB).
+function randomColor01() {
+  const hue = Math.random();
+  const i = Math.floor(hue * 6);
+  const f = hue * 6 - i;
+  const q = 1 - f;
+  switch (i % 6) {
+    case 0: return [1, f, 0];
+    case 1: return [q, 1, 0];
+    case 2: return [0, 1, f];
+    case 3: return [0, q, 1];
+    case 4: return [f, 0, 1];
+    default: return [1, 0, q];
+  }
+}
 
 function neededCascadeCount(w, h) {
   const diag = Math.hypot(w, h);
@@ -85,7 +112,7 @@ function getStats() {
     cascades: cascadeDims.length,
     emissive: paintCount,
     lights: bouncingLights.length,
-    error,
+    error: null,
   };
 }
 
@@ -104,12 +131,10 @@ function stampCircle(buffer, cx, cy, radius, rgb, alpha) {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > radius) continue;
       const idx = ((y0 + y) * W + (x0 + x)) * 4;
-      const falloff = 1.0 - Math.pow(dist / radius, 3.0);
-      const a = alpha === "falloff" ? Math.min(255, Math.floor(200 * falloff + 55)) : alpha;
       buffer[idx] = Math.min(255, r);
       buffer[idx + 1] = Math.min(255, g);
       buffer[idx + 2] = Math.min(255, b);
-      buffer[idx + 3] = a;
+      buffer[idx + 3] = alpha;
     }
   }
   return { x0, y0, w, h };
@@ -134,15 +159,23 @@ function stampRect(buffer, x, y, w, h, rgb, alpha) {
 }
 
 function paintDab(cx, cy) {
-  if (!sceneMirror || !baseTexture || !gpu) return;
+  if (!sceneMirror || !sceneTex) return;
   const radius = config.brushSize;
   const intensity = config.intensity / 6;
   const [r, g, b] = hexToBytes(config.color);
   // Emission (rgb) and occlusion (a) are independent: a wall is dark and
+<<<<<<< Updated upstream
   // opaque, a light is bright and transparent.
   const isWall = config.brush === "wall";
   const rgb = isWall ? [0, 0, 0] : [r * intensity, g * intensity, b * intensity];
   const alpha = isWall ? "falloff" : 0;
+=======
+  // fully opaque (matching the default scene's occluders), a light is bright
+  // and transparent.
+  const isWall = config.brush === "wall";
+  const rgb = isWall ? [0, 0, 0] : [r * intensity, g * intensity, b * intensity];
+  const alpha = isWall ? 255 : 0;
+>>>>>>> Stashed changes
   const { x0, y0, w, h } = stampCircle(sceneMirror, cx, cy, radius, rgb, alpha);
   if (w <= 0 || h <= 0) return;
   if (!isWall) paintCount += w * h;
@@ -153,18 +186,13 @@ function paintDab(cx, cy) {
     const srcOff = ((y0 + y) * W + x0) * 4;
     rectBuf.set(sceneMirror.subarray(srcOff, srcOff + w * 4), y * w * 4);
   }
-  gpu.queue.writeTexture(
-    { texture: baseTexture, origin: { x: x0, y: y0 } },
-    rectBuf,
-    { bytesPerRow: w * 4, rowsPerImage: h },
-    { width: w, height: h },
-  );
+  sceneTex.writeSub(rectBuf, x0, y0, w, h);
 }
 
 function spawnBouncingLight(cx, cy) {
   const radius = config.brushSize;
   const intensity = config.intensity / 6;
-  const [r, g, b] = hexToBytes(config.color);
+  const [r, g, b] = hexToRGB01(config.color);
   const speed = 120 + Math.random() * 180;
   const angle = Math.random() * 2 * Math.PI;
   bouncingLights.push({
@@ -174,6 +202,26 @@ function spawnBouncingLight(cx, cy) {
     radius,
     rgb: [r * intensity, g * intensity, b * intensity],
   });
+}
+
+function spawnRandomLights(count = 100) {
+  if (W <= 0 || H <= 0) return;
+  const remaining = MAX_LIGHTS - bouncingLights.length;
+  if (remaining <= 0) return;
+  const n = Math.min(count, remaining);
+  for (let i = 0; i < n; i++) {
+    const radius = 3 + Math.random() * 30;
+    const speed = 60 + Math.random() * 200;
+    const angle = Math.random() * 2 * Math.PI;
+    bouncingLights.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      radius,
+      rgb: randomColor01(),
+    });
+  }
 }
 
 function updateBouncingLights(dt) {
@@ -188,11 +236,41 @@ function updateBouncingLights(dt) {
 }
 
 function clear() {
-  if (!sceneMirror || !gpu || !baseTexture) { paintCount = 0; bouncingLights.length = 0; return; }
+  paintCount = 0;
+  bouncingLights.length = 0;
+  if (!sceneMirror || !sceneTex) return;
   sceneMirror.fill(0);
-  gpu.queue.writeTexture({ texture: baseTexture }, sceneMirror, { bytesPerRow: W * 4, rowsPerImage: H }, { width: W, height: H });
+  sceneTex.write(sceneMirror);
+}
+
+// Load the default demo scene: a single light in the center and four short
+// occluder bars around it, one in front of each canvas side, so the cascades
+// cast four distinct shadows outward.
+function loadDefaultScene() {
+  if (!sceneMirror || !sceneTex || W <= 0 || H <= 0) return;
+
+  sceneMirror.fill(0);
   bouncingLights.length = 0;
   paintCount = 0;
+
+  const cx = W / 2, cy = H / 2;
+  const lightRadius = Math.max(10, Math.min(30, Math.min(W, H) * 0.06));
+  const gap = lightRadius * 2.2;
+  const barLen = lightRadius * 2.8;
+  const barThick = Math.max(6, Math.round(lightRadius * 0.4));
+  const occluder = [0, 0, 0];
+
+  // central light: bright emissive and transparent (it does not occlude)
+  stampCircle(sceneMirror, cx, cy, lightRadius, [255, 205, 140], 0);
+  paintCount += Math.round(Math.PI * lightRadius * lightRadius);
+
+  // four short bars, each blocking the light toward one side of the canvas
+  stampRect(sceneMirror, cx - barLen / 2, cy - gap - barThick / 2, barLen, barThick, occluder, 255); // top
+  stampRect(sceneMirror, cx - barLen / 2, cy + gap - barThick / 2, barLen, barThick, occluder, 255); // bottom
+  stampRect(sceneMirror, cx - gap - barThick / 2, cy - barLen / 2, barThick, barLen, occluder, 255); // left
+  stampRect(sceneMirror, cx + gap - barThick / 2, cy - barLen / 2, barThick, barLen, occluder, 255); // right
+
+  sceneTex.write(sceneMirror);
 }
 
 // Load the default demo scene: a single light in the center and four short
@@ -254,20 +332,23 @@ function onPointerUp() { isDrawing = false; }
 
 // ---- resource lifecycle --------------------------------------------------
 
-function writeParams(buffer, values) {
-  gpu.queue.writeBuffer(buffer, 0, new Float32Array(values));
-}
-function paramsFor(cascadeIdx, count) {
-  return [
-    W, H,
-    cascadeIdx, count,
-    config.baseRays, config.branching,
-    config.baseInterval, config.probeSpacing0,
-    config.stepsPerRay, config.exposure,
-    config.probeOverlay ? 1 : 0, 0,
-  ];
+function paramsFor(cascadeIdx, cascadeCnt) {
+  return {
+    sceneSize: [W, H],
+    cascadeIdx,
+    cascadeCnt,
+    raysBase: config.baseRays,
+    branching: config.branching,
+    intervalBase: config.baseInterval,
+    probeSpacing0: config.probeSpacing0,
+    stepsPerRay: config.stepsPerRay,
+    exposure: config.exposure,
+    probeOverlay: config.probeOverlay ? 1 : 0,
+    pad0: 0,
+  };
 }
 
+<<<<<<< Updated upstream
 // scene resources: the painted emission/occlusion layer and moving-light
 // uniforms. These only depend on screen size, so they are rebuilt (and the
 // painting is reset) only when the canvas is resized.
@@ -294,21 +375,32 @@ function destroyCascadeResources() {
 function rebuildScene(w, h) {
   W = w; H = h;
   destroySceneResources();
+=======
+// scene resources: the painted emission/occlusion layer and the moving-light
+// accumulation buffer. These only depend on screen size.
+function rebuildScene(w, h) {
+  W = w; H = h;
+  sceneTex?.destroy(); sceneTex = null;
+  lightTex?.destroy(); lightTex = null;
+>>>>>>> Stashed changes
 
   sceneMirror = new Uint8ClampedArray(W * H * 4);
   bouncingLights.length = 0;
   paintCount = 0;
   isDrawing = false;
 
-  baseTexture = gpu.createTexture({
-    size: [W, H], format: "rgba8unorm",
-    usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST,
-  });
-  compositeTexture = gpu.createTexture({
-    size: [W, H], format: "rgba8unorm",
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-  gpu.queue.writeTexture({ texture: baseTexture }, sceneMirror, { bytesPerRow: W * 4, rowsPerImage: H }, { width: W, height: H });
+  sceneTex = device.texture({ width: W, height: H, format: "rgba8", data: sceneMirror });
+  lightTex = device.texture({ width: W, height: H, format: "rgba8" });
+  lastSceneKey = sceneKey(W, H);
+}
+
+// cascade resources: depend on grid shape (rays/branching/spacing/levels) and
+// screen size. Rebuilt when either changes, without touching the painted scene.
+function rebuildCascades(w, h) {
+  W = w; H = h;
+  for (const t of cascadeTexs) t.destroy();
+  cascadeTexs = [];
+  dummyTex?.destroy(); dummyTex = null;
 
   lightParamsBuffer = gpu.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   gpu.queue.writeBuffer(lightParamsBuffer, 0, new Float32Array([W, H, 0, 0]));
@@ -335,6 +427,7 @@ function rebuildCascades(w, h) {
     const rays = config.baseRays * config.branching ** i;
     cascadeDims.push({ width: Math.max(1, probesX * rays), height: Math.max(1, probesY), probesX, probesY, rays, spacing });
   }
+<<<<<<< Updated upstream
   cascadeTextures = cascadeDims.map((d) => gpu.createTexture({
     size: [d.width, d.height], format: "rgba16float",
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
@@ -369,74 +462,67 @@ function rebuildCascades(w, h) {
   });
 
   lastCascadeKey = buildKey(W, H);
+=======
+  cascadeTexs = cascadeDims.map((d) => device.texture({ width: d.width, height: d.height, format: "rgba16f", filter: "nearest" }));
+  dummyTex = device.texture({ width: 1, height: 1, format: "rgba16f", filter: "nearest" });
+  lastBuildKey = buildKey(W, H);
+>>>>>>> Stashed changes
 }
 
 // ---- lifecycle -----------------------------------------------------------
 
 const { init, render, destroy } = createPlayground({
-  device: { msaa: false }, // we render our own fullscreen pass; no engine MSAA target
-  init({ device, canvas: canvasEl }) {
+  device: { msaa: false }, // fullscreen passes; no engine MSAA resolve target
+
+  setConfig,
+  init({ device: dev, canvas: canvasEl }) {
+    device = dev;
     canvas = canvasEl;
-    if (device.backend !== "webgpu" || !device.device) {
-      error = "Radiance Cascades needs a WebGPU browser.";
-      return;
-    }
-    gpu = device.device;
-    format = navigator.gpu.getPreferredCanvasFormat();
-    context = canvas.getContext("webgpu");
-    sampler = gpu.createSampler({ magFilter: "linear", minFilter: "linear" });
-    shaderModule = gpu.createShaderModule({ code: WGSL });
 
-    computeBGL = gpu.createBindGroupLayout({ entries: [
-      { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
-      { binding: 1, visibility: GPUShaderStage.COMPUTE, texture: {} },
-      { binding: 2, visibility: GPUShaderStage.COMPUTE, sampler: {} },
-      { binding: 3, visibility: GPUShaderStage.COMPUTE, texture: {} },
-      { binding: 4, visibility: GPUShaderStage.COMPUTE, storageTexture: { access: "write-only", format: "rgba16float" } },
-    ]});
-    computePipeline = gpu.createComputePipeline({
-      layout: gpu.createPipelineLayout({ bindGroupLayouts: [computeBGL] }),
-      compute: { module: shaderModule, entryPoint: "buildCascade" },
+    cascadeShader = device.shader({
+      ...CASCADE,
+      uniforms: [
+        VEC2("sceneSize"), F32("cascadeIdx"), F32("cascadeCnt"),
+        F32("raysBase"), F32("branching"), F32("intervalBase"),
+        F32("probeSpacing0"), F32("stepsPerRay"), F32("exposure"),
+        F32("probeOverlay"), F32("pad0"),
+      ],
+      textures: [
+        { name: "sceneTex", binding: 1, samplerBinding: 2 },
+        { name: "lightTex", binding: 3, samplerBinding: 4 },
+        { name: "cascadeIn", binding: 5 },
+      ],
+      blend: "none", topology: "tri", targetFormat: "rgba16f",
     });
-
-    renderBGL = gpu.createBindGroupLayout({ entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
-      { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    ]});
-    renderPipeline = gpu.createRenderPipeline({
-      layout: gpu.createPipelineLayout({ bindGroupLayouts: [renderBGL] }),
-      vertex: { module: shaderModule, entryPoint: "vsMain" },
-      fragment: { module: shaderModule, entryPoint: "fsMain", targets: [{ format }] },
-      primitive: { topology: "triangle-list" },
+    compositeShader = device.shader({
+      ...COMPOSITE,
+      uniforms: [
+        VEC2("sceneSize"), F32("cascadeIdx"), F32("cascadeCnt"),
+        F32("raysBase"), F32("branching"), F32("intervalBase"),
+        F32("probeSpacing0"), F32("stepsPerRay"), F32("exposure"),
+        F32("probeOverlay"), F32("pad0"),
+      ],
+      textures: [
+        { name: "sceneTex", binding: 1, samplerBinding: 2 },
+        { name: "cascade0", binding: 3 },
+        { name: "lightTex", binding: 4, samplerBinding: 5 },
+      ],
+      blend: "none", topology: "tri",
     });
-
-    lightBGL = gpu.createBindGroupLayout({ entries: [
-      { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "uniform" } },
-      { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } },
-    ]});
-    lightPipeline = gpu.createRenderPipeline({
-      layout: gpu.createPipelineLayout({ bindGroupLayouts: [lightBGL] }),
-      vertex: { module: shaderModule, entryPoint: "vsLight" },
-      fragment: {
-        module: shaderModule,
-        entryPoint: "fsLight",
-        targets: [{
-          format: "rgba8unorm",
-          // additive: bouncers add light without erasing painted occlusion below
-          blend: {
-            color: { srcFactor: "one", dstFactor: "one" },
-            alpha: { srcFactor: "one", dstFactor: "one" },
-          },
-        }],
-      },
-      primitive: { topology: "triangle-list" },
+    lightsShader = device.shader({
+      ...LIGHTS,
+      uniforms: [VEC2("dims"), F32("pad0"), F32("pad1")],
+      buffers: [{
+        stride: LIGHT_FLOATS * 4, step: "instance",
+        attributes: [
+          { name: "lPos", location: 0, format: "float32x2", offset: 0 },
+          { name: "lRadius", location: 1, format: "float32", offset: 8 },
+          { name: "lColor", location: 2, format: "float32x3", offset: 12 },
+        ],
+      }],
+      blend: "additive", topology: "tri", targetFormat: "rgba8",
     });
-    lightGPUBuffer = gpu.createBuffer({
-      size: MAX_LIGHTS * 2 * 16,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    });
+    lightsBuffer = device.buffer({ kind: "vertex", size: MAX_LIGHTS * LIGHT_FLOATS * 4, dynamic: true });
 
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
@@ -450,55 +536,72 @@ const { init, render, destroy } = createPlayground({
   },
 
   frame(dt) {
-    if (!gpu || error) return;
     const w = canvas.width, h = canvas.height;
     if (w <= 0 || h <= 0) return;
     if (sceneKey(w, h) !== lastSceneKey) rebuildScene(w, h);
+<<<<<<< Updated upstream
     if (buildKey(w, h) !== lastCascadeKey) rebuildCascades(w, h);
+=======
+    if (buildKey(w, h) !== lastBuildKey) rebuildCascades(w, h);
+>>>>>>> Stashed changes
 
     updateBouncingLights(dt);
-
-    const count = cascadeDims.length;
-    for (let i = 0; i < count; i++) writeParams(paramsBuffers[i], paramsFor(i, count));
-    writeParams(paramsBufferFinal, paramsFor(0, count));
 
     const n = Math.min(bouncingLights.length, MAX_LIGHTS);
     for (let i = 0; i < n; i++) {
       const l = bouncingLights[i];
-      const o = i * 8;
-      lightCPUStage[o] = l.x; lightCPUStage[o + 1] = l.y; lightCPUStage[o + 2] = l.radius; lightCPUStage[o + 3] = 0;
-      lightCPUStage[o + 4] = l.rgb[0] / 255; lightCPUStage[o + 5] = l.rgb[1] / 255; lightCPUStage[o + 6] = l.rgb[2] / 255; lightCPUStage[o + 7] = 0;
+      const o = i * LIGHT_FLOATS;
+      lightsData[o] = l.x;
+      lightsData[o + 1] = l.y;
+      lightsData[o + 2] = l.radius;
+      lightsData[o + 3] = l.rgb[0];
+      lightsData[o + 4] = l.rgb[1];
+      lightsData[o + 5] = l.rgb[2];
     }
+<<<<<<< Updated upstream
     // n lights × 8 floats × 4 bytes. GPUQueue.writeBuffer's size arg is in bytes, not elements.
     if (n > 0) gpu.queue.writeBuffer(lightGPUBuffer, 0, lightCPUStage, 0, n * 8 * 4);
+=======
+    if (n > 0) lightsBuffer.write(lightsData.subarray(0, n * LIGHT_FLOATS));
+>>>>>>> Stashed changes
 
-    const encoder = gpu.createCommandEncoder();
-    encoder.copyTextureToTexture({ texture: baseTexture }, { texture: compositeTexture }, [W, H]);
-    if (n > 0) {
-      const lightPass = encoder.beginRenderPass({
-        colorAttachments: [{ view: compositeTexture.createView(), loadOp: "load", storeOp: "store" }],
-      });
-      lightPass.setPipeline(lightPipeline);
-      lightPass.setBindGroup(0, lightBindGroup);
-      lightPass.draw(6, n);
-      lightPass.end();
-    }
-    for (let i = count - 1; i >= 0; i--) {
-      const pass = encoder.beginComputePass();
-      pass.setPipeline(computePipeline);
-      pass.setBindGroup(0, computeBindGroups[i]);
-      const d = cascadeDims[i];
-      pass.dispatchWorkgroups(Math.ceil(d.probesX * d.rays / 8), Math.ceil(d.probesY / 8), 1);
-      pass.end();
-    }
-    const renderPass = encoder.beginRenderPass({
-      colorAttachments: [{ view: context.getCurrentTexture().createView(), clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: "clear", storeOp: "store" }],
+    device.beginFrame();
+
+    // moving lights -> lightTex (cleared each frame, additive accumulation)
+    device.target(lightTex, { clear: [0, 0, 0, 0] }, (p) => {
+      if (n > 0) {
+        p.draw(lightsShader, {
+          buffers: [lightsBuffer],
+          count: 6,
+          instances: n,
+          uniforms: { dims: [W, H], pad0: 0, pad1: 0 },
+        });
+      }
     });
-    renderPass.setPipeline(renderPipeline);
-    renderPass.setBindGroup(0, renderBindGroup);
-    renderPass.draw(6);
-    renderPass.end();
-    gpu.queue.submit([encoder.finish()]);
+
+    // cascade levels, coarse -> fine (each reads the coarser cascade above it)
+    const count = cascadeDims.length;
+    for (let i = count - 1; i >= 0; i--) {
+      const cascadeIn = i < count - 1 ? cascadeTexs[i + 1] : dummyTex;
+      device.target(cascadeTexs[i], { clear: [0, 0, 0, 0] }, (p) => {
+        p.draw(cascadeShader, {
+          count: 6,
+          uniforms: paramsFor(i, count),
+          textures: { sceneTex, lightTex, cascadeIn },
+        });
+      });
+    }
+
+    // upsample finest cascade + painted scene -> screen
+    device.pass({ clear: [0, 0, 0, 1] }, (p) => {
+      p.draw(compositeShader, {
+        count: 6,
+        uniforms: paramsFor(0, count),
+        textures: { sceneTex, cascade0: cascadeTexs[0], lightTex },
+      });
+    });
+
+    device.endFrame();
 
     frameCount++;
     const now = performance.now();
@@ -514,6 +617,7 @@ const { init, render, destroy } = createPlayground({
     canvas?.removeEventListener?.("pointermove", onPointerMove);
     canvas?.removeEventListener?.("pointerup", onPointerUp);
     canvas?.removeEventListener?.("pointercancel", onPointerUp);
+<<<<<<< Updated upstream
     destroySceneResources();
     destroyCascadeResources();
     lightGPUBuffer?.destroy(); lightGPUBuffer = null;
@@ -525,3 +629,20 @@ const { init, render, destroy } = createPlayground({
 });
 
 export { init, render, destroy, setConfig, clear, loadDefaultScene, getStats };
+=======
+
+    sceneTex?.destroy(); sceneTex = null;
+    lightTex?.destroy(); lightTex = null;
+    for (const t of cascadeTexs) t.destroy();
+    cascadeTexs = [];
+    dummyTex?.destroy(); dummyTex = null;
+    lightsBuffer?.destroy(); lightsBuffer = null;
+    lightsData = new Float32Array(0);
+
+    cascadeShader = compositeShader = lightsShader = null;
+    device = canvas = null;
+  },
+});
+
+export { init, render, destroy, setConfig, clear, loadDefaultScene, spawnRandomLights, getStats };
+>>>>>>> Stashed changes

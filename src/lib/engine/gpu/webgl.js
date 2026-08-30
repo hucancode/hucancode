@@ -6,6 +6,7 @@ import { uniformLayout, packUniforms } from "./std140.js";
 
 const TEX = {
   rgba8: { internal: "RGBA8", format: "RGBA", type: "UNSIGNED_BYTE" },
+  rgba16f: { internal: "RGBA16F", format: "RGBA", type: "HALF_FLOAT" },
   rgba32f: { internal: "RGBA32F", format: "RGBA", type: "FLOAT" },
 };
 const TOPO = {
@@ -16,9 +17,20 @@ const FMT = { // vertex attribute format -> component count (all f32)
   float32: 1, float32x2: 2, float32x3: 3, float32x4: 4,
 };
 
+// WebGL framebuffers are bottom-up (texel 0 = bottom) while WebGPU render
+// targets are top-down. `target()` flips the vertex-stage Y so offscreen passes
+// write the same top-down orientation as WebGPU, keeping authored WGSL
+// backend-agnostic. naga's entry point is always `void main()`.
+function flipVertexY(src) {
+  return src.replace(/void\s+main\s*\(\s*\)/, "void main_impl()") +
+    "\nvoid main() { main_impl(); gl_Position.y = -gl_Position.y; }\n";
+}
+
 export function createWebGLDevice(canvas, { msaa = true } = {}) {
   const gl = canvas.getContext("webgl2", { alpha: false, antialias: msaa, premultipliedAlpha: false });
   if (!gl) throw new Error("WebGL2 not available");
+  // Half/float render targets (cascade buffers) need a color-buffer extension.
+  gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float");
   let W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
 
   const compile = (type, src) => {
@@ -35,6 +47,8 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
     if (blend === "premult") gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     else if (blend === "straight")
       gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    else if (blend === "additive")
+      gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ONE, gl.ONE);
   }
   function applyDepth(depth) {
     if (depth === "test") { gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); }
@@ -83,27 +97,48 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
         if (dw !== w || dh !== h) { gl.texImage2D(gl.TEXTURE_2D, 0, gl[F.internal], dw, dh, 0, gl[F.format], gl[F.type], d); w = dw; h = dh; }
         else gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, w, h, gl[F.format], gl[F.type], d);
       },
+      writeSub(d, x, y, sw, sh) {
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, sw, sh, gl[F.format], gl[F.type], d);
+      },
       destroy() { gl.deleteTexture(tex); },
     };
   }
 
   function shader(desc) {
-    const prog = gl.createProgram();
-    const v = compile(gl.VERTEX_SHADER, desc.glsl.vertex);
     const f = compile(gl.FRAGMENT_SHADER, desc.glsl.fragment);
-    gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
-      throw new Error("program link failed:\n" + gl.getProgramInfoLog(prog));
-    gl.deleteShader(v); gl.deleteShader(f);
+
+    // Two vertex-stage variants: normal (screen passes) and Y-flipped (offscreen
+    // `target()` passes). They share uniforms, samplers and vertex layouts; only
+    // the vertex program differs.
+    function link(vertexSrc) {
+      const v = compile(gl.VERTEX_SHADER, vertexSrc);
+      const prog = gl.createProgram();
+      gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+        throw new Error("program link failed:\n" + gl.getProgramInfoLog(prog));
+      gl.deleteShader(v);
+
+      // naga emits one uniform block per stage referencing the same struct; bind all to point 0
+      const nBlocks = gl.getProgramParameter(prog, gl.ACTIVE_UNIFORM_BLOCKS);
+      for (let i = 0; i < nBlocks; i++) gl.uniformBlockBinding(prog, i, 0);
+
+      // a texture read in both stages gets one combined sampler per stage
+      const samplers = (desc.textures || []).flatMap((t) =>
+        ["vs", "fs"].map((st) => ({ name: t.name, loc: gl.getUniformLocation(prog, `_group_0_binding_${t.binding}_${st}`) }))
+          .filter((s) => s.loc !== null));
+      return { _prog: prog, _samplers: samplers };
+    }
+
+    const normal = link(desc.glsl.vertex);
+    const flipped = link(flipVertexY(desc.glsl.vertex));
+    gl.deleteShader(f);
 
     const layouts = (desc.buffers || []).map((b) => ({
       stride: b.stride, instanced: b.step === "instance",
       attrs: b.attributes.map((a) => ({ loc: a.location, comps: FMT[a.format], offset: a.offset || 0 })),
     }));
 
-    // naga emits one uniform block per stage referencing the same struct; bind all to point 0
-    const nBlocks = gl.getProgramParameter(prog, gl.ACTIVE_UNIFORM_BLOCKS);
-    for (let i = 0; i < nBlocks; i++) gl.uniformBlockBinding(prog, i, 0);
     const ulayout = desc.uniforms && desc.uniforms.length ? uniformLayout(desc.uniforms) : null;
     let ubo = null, view = null, bytes = null;
     if (ulayout) {
@@ -114,16 +149,12 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
       view = new DataView(scratch); bytes = new Uint8Array(scratch);
     }
 
-    // a texture read in both stages gets one combined sampler per stage
-    const samplers = (desc.textures || []).flatMap((t) =>
-      ["vs", "fs"].map((st) => ({ name: t.name, loc: gl.getUniformLocation(prog, `_group_0_binding_${t.binding}_${st}`) }))
-        .filter((s) => s.loc !== null));
-
-    return { _prog: prog, _layouts: layouts, _samplers: samplers, _ulayout: ulayout, _ubo: ubo, _view: view, _bytes: bytes, desc };
+    return { _normal: normal, _flipped: flipped, _layouts: layouts, _ulayout: ulayout, _ubo: ubo, _view: view, _bytes: bytes, desc };
   }
 
-  function drawImpl(sh, args) {
-    gl.useProgram(sh._prog);
+  function drawImpl(sh, args, flip) {
+    const info = flip ? sh._flipped : sh._normal;
+    gl.useProgram(info._prog);
     applyBlend(sh.desc.blend);
     applyDepth(sh.desc.depth);
     applyCull(sh.desc.cull);
@@ -150,7 +181,7 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
     }
 
     let unit = 0;
-    for (const s of sh._samplers) {
+    for (const s of info._samplers) {
       const t = args.textures && args.textures[s.name];
       if (!t) continue;
       gl.activeTexture(gl.TEXTURE0 + unit);
@@ -180,7 +211,34 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
       if (opts.depth) { gl.clearDepth(opts.depthClear ?? 1); gl.depthMask(true); bits |= gl.DEPTH_BUFFER_BIT; }
       gl.clear(bits);
     }
-    fn({ draw: (sh, args) => drawImpl(sh, args) });
+    fn({ draw: (sh, args) => drawImpl(sh, args, false) });
+  }
+
+  // Render-to-texture for the fragment-shader "compute" passes (cascades and
+  // the moving-light accumulation buffer). Uses one cached FBO per texture.
+  // WebGL framebuffers are bottom-up (texel 0 = bottom) while WebGPU render
+  // targets are top-down, so the vertex stage is Y-flipped (flipVertexY) to
+  // write the same top-down orientation as WebGPU.
+  const fbos = new WeakMap();
+  function fboFor(tex) {
+    let fbo = fbos.get(tex);
+    if (!fbo) { fbo = gl.createFramebuffer(); fbos.set(tex, fbo); }
+    return fbo;
+  }
+  function target(tex, opts = {}, fn) {
+    const fbo = fboFor(tex);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex._tex, 0);
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+      throw new Error("FBO incomplete (float color buffer extension unavailable?)");
+    gl.viewport(0, 0, tex.width, tex.height);
+    if (opts.clear) {
+      const c = opts.clear;
+      gl.clearColor(c[0], c[1], c[2], c[3]);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+    fn({ draw: (sh, args) => drawImpl(sh, args, true) });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
   // WebGL clip-space z already [-1, 1] (camera's native convention), no correction
@@ -188,7 +246,7 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
 
   return {
     backend: "webgl", gl,
-    buffer, texture, shader, pass, correctViewProj,
+    buffer, texture, shader, pass, target, correctViewProj,
     beginFrame() {}, endFrame() {},
     resize(w, h) { W = w; H = h; },
     destroy() {},
