@@ -16,6 +16,7 @@
   let probeSpacing = $state(4);
   let baseInterval = $state(6);
   let stepsPerRay = $state(24);
+  let bilinearFix = $state(true);
 
   // cascade levels
   let autoCascades = $state(true);
@@ -40,6 +41,7 @@
       probeSpacing0: probeSpacing,
       baseInterval,
       stepsPerRay,
+      bilinearFix,
       cascadeCount: autoCascades ? 0 : cascadeLevels,
       exposure,
       probeOverlay: showProbes,
@@ -52,6 +54,10 @@
 
   function loadDefaultScene() {
     radiance.loadDefaultScene();
+  }
+
+  function spawnLights() {
+    radiance.spawnRandomLights(100);
   }
 
   function frame() {
@@ -76,7 +82,7 @@
           {#if stats.error}
             {stats.error}
           {:else}
-            {stats.fps} fps · {stats.cascades} cascades · {stats.emissive.toLocaleString()} emissive px · {stats.lights} lights
+            {stats.fps} FPS · {stats.cascades} cascades · {stats.emissive.toLocaleString()} light px · {stats.lights} embers
           {/if}
         </output>
       </li>
@@ -108,6 +114,7 @@
     </menu>
     <menu>
       <li><button type="button" onclick={loadDefaultScene}>Reset</button></li>
+      <li><button type="button" onclick={spawnLights}>+100 embers</button></li>
       <li><button type="button" onclick={clear}>Clear</button></li>
     </menu>
   </fieldset>
@@ -138,6 +145,10 @@
       <span>steps / ray</span>
       <input type="range" min="4" max="48" step="1" bind:value={stepsPerRay} />
       <output>{stepsPerRay}</output>
+    </label>
+    <label>
+      <input type="checkbox" bind:checked={bilinearFix} />
+      <span>bilinear fix</span>
     </label>
   </fieldset>
 
@@ -174,11 +185,8 @@
     </label>
   </fieldset>
   <fieldset>
-    <legend>extra</legend>
-    <label>
-      <span>paper</span>
+    <legend>paper</legend>
       <a href="https://arxiv.org/abs/2408.14425" >Radiance Cascades: A Novel High-Resolution Formal Solution for Multidimensional Non-LTE Radiative Transfer</a>
-      </label>
   </fieldset>
 </aside>
 
