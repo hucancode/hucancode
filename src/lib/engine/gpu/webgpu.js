@@ -28,9 +28,11 @@ async function makeWebGPUContext(canvas) {
 const BLEND = {
   premult: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
   straight: { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } },
+  additive: { color: { srcFactor: "one", dstFactor: "one" }, alpha: { srcFactor: "one", dstFactor: "one" } },
 };
 const TOPO = { tri: "triangle-list", "tri-strip": "triangle-strip", "line-strip": "line-strip", point: "point-list" };
 const CULL = { back: "back", front: "front" }; // desc.cull; CCW = front face
+const RENDER_FMT = { rgba8: "rgba8unorm", rgba16f: "rgba16float", rgba32f: "rgba32float" };
 const align = (n, a) => Math.ceil(n / a) * a;
 
 // clip-space z remap: camera projection is GL convention (z in [-1, 1]); WebGPU
@@ -61,6 +63,12 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
   }
   makeMSAA();
 
+  let linearSampler = null, nearestSampler = null;
+  function samplerFor(filter) {
+    if (filter === "nearest") { nearestSampler ??= device.createSampler({ magFilter: "nearest", minFilter: "nearest" }); return nearestSampler; }
+    linearSampler ??= device.createSampler({ magFilter: "linear", minFilter: "linear" }); return linearSampler;
+  }
+
   function buffer({ kind = "vertex", data = null, size = 0, dynamic = false }) {
     const um = { vertex: GPUBufferUsage.VERTEX, index: GPUBufferUsage.INDEX, uniform: GPUBufferUsage.UNIFORM, storage: GPUBufferUsage.STORAGE };
     const usage = (um[kind] || GPUBufferUsage.VERTEX) | GPUBufferUsage.COPY_DST;
@@ -78,8 +86,8 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
   }
 
   function texture({ width, height, format: fmt = "rgba8", filter = "linear", data = null }) {
-    const gfmt = fmt === "rgba32f" ? "rgba32float" : "rgba8unorm";
-    const bpp = fmt === "rgba32f" ? 16 : 4;
+    const gfmt = fmt === "rgba32f" ? "rgba32float" : fmt === "rgba16f" ? "rgba16float" : "rgba8unorm";
+    const bpp = fmt === "rgba32f" ? 16 : fmt === "rgba16f" ? 8 : 4;
     let w = width, h = height, tex, view, id;
     function alloc(nw, nh) {
       tex?.destroy?.();
@@ -92,6 +100,9 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
     return {
       get _view() { return view; }, get _id() { return id; }, get width() { return w; }, get height() { return h; },
       write(d, dw = w, dh = h) { upload(d, dw, dh); },
+      writeSub(d, x, y, sw, sh) {
+        queue.writeTexture({ texture: tex, origin: { x, y } }, d, { bytesPerRow: sw * bpp, rowsPerImage: sh }, { width: sw, height: sh });
+      },
       destroy() { tex.destroy(); },
     };
   }
@@ -105,7 +116,7 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
     const pdesc = {
       layout: "auto",
       vertex: { module: mod, entryPoint: "vs", buffers: vbuffers },
-      fragment: { module: mod, entryPoint: "fs", targets: [{ format, blend: desc.blend ? BLEND[desc.blend] : undefined }] },
+      fragment: { module: mod, entryPoint: "fs", targets: [{ format: desc.targetFormat ? (RENDER_FMT[desc.targetFormat] || desc.targetFormat) : format, blend: desc.blend ? BLEND[desc.blend] : undefined }] },
       primitive: { topology: TOPO[desc.topology || "tri"], frontFace: "ccw", cullMode: CULL[desc.cull] || "none" },
       multisample: { count: msaa ? 4 : 1 },
     };
@@ -154,7 +165,11 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
     if (!bg) {
       const entries = [];
       if (ubo) entries.push({ binding: 0, resource: { buffer: ubo } });
-      for (const t of texList) { const tex = args.textures && args.textures[t.name]; if (tex) entries.push({ binding: t.binding, resource: tex._view }); }
+      for (const t of texList) {
+        const tex = args.textures && args.textures[t.name];
+        if (tex) entries.push({ binding: t.binding, resource: tex._view });
+        if (t.samplerBinding != null) entries.push({ binding: t.samplerBinding, resource: samplerFor(t.samplerFilter) });
+      }
       bg = device.createBindGroup({ layout: sh._bgl, entries });
       holder.bgCache.set(sig, bg);
       if (holder.bgCache.size > 8) { const k = holder.bgCache.keys().next().value; holder.bgCache.delete(k); } // bound size (texture reallocs change ids)
@@ -165,6 +180,15 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
     for (let i = 0; i < buffers.length; i++) if (buffers[i]) rp.setVertexBuffer(i, buffers[i]._buf);
     if (args.index) { rp.setIndexBuffer(args.index._buf, "uint16"); rp.drawIndexed(args.count, args.instances || 1); }
     else rp.draw(args.count, args.instances || 1);
+  }
+
+  function target(tex, opts = {}, fn) {
+    const cv = opts.clear ? { r: opts.clear[0], g: opts.clear[1], b: opts.clear[2], a: opts.clear[3] } : { r: 0, g: 0, b: 0, a: 1 };
+    const rp = encoder.beginRenderPass({
+      colorAttachments: [{ view: tex._view, clearValue: cv, loadOp: opts.clear ? "clear" : "load", storeOp: "store" }],
+    });
+    fn({ draw: (sh, args) => drawImpl(rp, sh, args) });
+    rp.end();
   }
 
   function pass(opts, fn) {
@@ -187,7 +211,7 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
 
   return {
     backend: "webgpu", device,
-    buffer, texture, shader, pass, correctViewProj,
+    buffer, texture, shader, pass, target, correctViewProj,
     beginFrame() { encoder = device.createCommandEncoder(); for (const s of shaders) s._ring = 0; },
     endFrame() { if (encoder) { queue.submit([encoder.finish()]); encoder = null; } },
     resize(w, h) {
