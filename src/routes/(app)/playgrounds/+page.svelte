@@ -14,7 +14,6 @@
     { href: "/sculpt", name: "Sculpt", thumb: "/assets/thumb/sculpt.png" },
     { href: "/poker", name: "Poker", thumb: "/assets/thumb/poker.png" },
     { href: "/radiance", name: "Radiance Cascades", thumb: "/assets/thumb/radiance.png" },
-    { href: "/radiance-3d", name: "Radiance Cascades 3D", thumb: "/assets/thumb/radiance.png" },
   ];
 </script>
 
