@@ -1,9 +1,12 @@
 // Everything on ONE ground plane (x/y); camera looks straight DOWN during glyph
 // trace, then tilts to 45deg as 2D hands off to 3D.
 
+import { createPlayground } from "$lib/engine/index.js";
+import { profile, mark, stamp } from "$lib/engine/profile.js";
 import { clamp, lerp, smooth } from "$lib/math/scalar.js";
 import { mulberry32 } from "$lib/math/random.js";
 import { buildOpenSpline, arcLengthCurve } from "$lib/math/curve.js";
+import { makeSceneRenderer } from "./render/scene.js";
 import { makeTimeline, createCameraTrack } from "./stage/index.js";
 import {
   GLYPH_RADIUS, GRID, GRID_MINOR_DIV,
@@ -312,4 +315,86 @@ function poolPoints() {
     _poolF32[i * 3 + 2] = 0;
   }
   return _poolF32;
+}
+
+// Orbit drag: YAW only. Pitch (elevation) is fully scripted by the camera track
+// (top-down 90deg during the glyph trace -> 45deg as the 3D dragon appears).
+function attachOrbitDrag(canvas, cfg) {
+  let dragging = false, lastX = 0;
+  const down = (e) => {
+    if (e.pointerType !== "mouse") return; // touch -> let the page scroll/scrub
+    dragging = true; lastX = e.clientX;
+    canvas.setPointerCapture?.(e.pointerId);
+  };
+  const move = (e) => {
+    if (!dragging || e.pointerType !== "mouse") return;
+    cfg.orbitYaw += (e.clientX - lastX) * 0.01;
+    lastX = e.clientX;
+  };
+  const up = () => { dragging = false; };
+  canvas.addEventListener("pointerdown", down);
+  canvas.addEventListener("pointermove", move);
+  canvas.addEventListener("pointerup", up);
+  canvas.addEventListener("pointerleave", up);
+  return () => {
+    canvas.removeEventListener("pointerdown", down);
+    canvas.removeEventListener("pointermove", move);
+    canvas.removeEventListener("pointerup", up);
+    canvas.removeEventListener("pointerleave", up);
+  };
+}
+
+// The landing-page scene as a standard playground module. The page owns the
+// clock (autoplay / scroll scrubbing) and pushes it in via setConfig; the scene
+// itself is stateless per frame — buildState mutates the shared _frame scratch.
+// `prefer` picks the backend at device creation, so it is a factory argument
+// rather than a setConfig key.
+export function createScene({ prefer = "webgpu", yaw = 0 } = {}) {
+  const cfg = { t: 0, debug: {}, orbitYaw: yaw };
+  let renderer = null;
+  let detachDrag = null;
+  let firstFrame = true;
+
+  return createPlayground({
+    device: { prefer },
+    async init(ctx) {
+      stamp("main scene init start");
+      const endInit = mark("scene init total");
+      profile("initScene", () => initScene());
+      renderer = await profile("createRenderer", async () => {
+        const r = makeSceneRenderer(ctx.device, ctx.canvas);
+        await r.init();
+        return r;
+      });
+      if (ctx.disposed()) return;
+      console.log(`[paint] render backend: ${renderer.backend}`);
+      detachDrag = attachOrbitDrag(ctx.canvas, cfg);
+      endInit();
+    },
+    // render every frame while visible (the 3D dragon loops on forever); dt is
+    // the page's clock source, it does NOT advance scene time here.
+    frame(dt, ctx) {
+      if (!renderer) return;
+      if (firstFrame) {
+        const endBuild = mark("buildState (first)");
+        const state = buildState(cfg.t, ctx.aspect, cfg.debug, cfg.orbitYaw);
+        endBuild();
+        const endFrame = mark("renderer.frame (first)");
+        renderer.frame(state);
+        endFrame();
+        stamp("first frame painted");
+        firstFrame = false;
+        return;
+      }
+      renderer.frame(buildState(cfg.t, ctx.aspect, cfg.debug, cfg.orbitYaw));
+    },
+    destroy() {
+      detachDrag?.();
+      detachDrag = null;
+      renderer?.destroy(); // the device itself is owned (and destroyed) by createPlayground
+      renderer = null;
+    },
+    // { t, debug, orbitYaw } — orbitYaw is also written by the canvas drag
+    setConfig(patch) { Object.assign(cfg, patch); },
+  });
 }

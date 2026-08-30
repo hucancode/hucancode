@@ -4,9 +4,7 @@
   import { onMount } from "svelte";
   import { init, solveMulti } from "$lib/playgrounds/poker/solver.js";
   import GameBoard from "$lib/components/poker/board-overview.svelte";
-  import ResultMulti from "$lib/components/poker/result-multi.svelte";
-  import WavingHand from "$lib/components/poker/waving-hand.svelte";
-  import Bar from "$lib/components/poker/progress-bar.svelte";
+  import "$styles/poker.css";
 
   const UNKNOWN_RESULT = {
     iterations: 0,
@@ -23,6 +21,8 @@
   let result = { ...UNKNOWN_RESULT };
   let isWorking = false;
   let errorMessage = "";
+
+  $: heroEquity = result.heroWin + result.heroTie / 2;
 
   // let the "crunching" state paint before the solver blocks the main thread
   function nextPaint() {
@@ -74,6 +74,9 @@
     goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
 
+  const pct = (x) => `${(x * 100).toFixed(2)}%`;
+  const round = (x) => `${(x * 100).toFixed(0)}%`;
+
   onMount(() => {
     const params = $page.url.searchParams;
     if (params.has("h") || params.has("v") || params.has("c")) {
@@ -89,90 +92,86 @@
   <title>Poker</title>
 </svelte:head>
 
-<article class="poker">
-  <h1>Poker Simulator <WavingHand>🃏</WavingHand></h1>
+<h1>Poker Simulator <span>🃏</span></h1>
 
-  <form on:submit|preventDefault={compute}>
-    <GameBoard
-      disabled={isWorking}
-      bind:this={gameBoard}
-      on:updated={() => {
-        result = { ...UNKNOWN_RESULT };
-        errorMessage = "";
-      }}
-    />
-    <div class="action">
-      <button type="submit" disabled={isWorking}>Compute</button>
-    </div>
-  </form>
+<form on:submit|preventDefault={compute}>
+  <GameBoard
+    disabled={isWorking}
+    bind:this={gameBoard}
+    on:updated={() => {
+      result = { ...UNKNOWN_RESULT };
+      errorMessage = "";
+    }}
+  />
+  <button type="submit" disabled={isWorking}>Compute</button>
+</form>
 
-  {#if errorMessage}
-    <p class="error">{errorMessage}</p>
+{#if errorMessage}
+  <strong>{errorMessage}</strong>
+{/if}
+
+<output>
+  {#if isWorking}
+    <progress></progress>
+    <small>Crunching outcomes…</small>
+  {:else if result.ready}
+    <section>
+      <hgroup>
+        <h3>Your equity</h3>
+        <p><data value={heroEquity}>{pct(heroEquity)}</data></p>
+      </hgroup>
+
+      <ul aria-label="Hero outcomes">
+        <li
+          data-outcome="win"
+          style="flex: {result.heroWin}"
+          title="Win {round(result.heroWin)}"
+        >
+          {#if result.heroWin > 0.2}Win {round(result.heroWin)}{/if}
+        </li>
+        <li
+          data-outcome="tie"
+          style="flex: {result.heroTie}"
+          title="Tie {round(result.heroTie)}"
+        >
+          {#if result.heroTie > 0.2}Tie {round(result.heroTie)}{/if}
+        </li>
+        <li
+          data-outcome="lose"
+          style="flex: {result.heroLose}"
+          title="Lose {round(result.heroLose)}"
+        >
+          {#if result.heroLose > 0.2}Lose {round(result.heroLose)}{/if}
+        </li>
+      </ul>
+
+      {#if result.villainEquity.length > 0}
+        <h3>Villain equity</h3>
+        <ul>
+          {#each result.villainEquity as eq, i}
+            <li>
+              <b>{result.villainNames[i] ?? ""}</b>
+              <meter value={eq} max="1" aria-label={result.villainNames[i] ?? ""}
+              ></meter>
+              <data value={eq}>{pct(eq)}</data>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+
+      <small>
+        {#if result.time > 2000}
+          In the matter of
+          <em>{Math.floor(result.time / 1000)} seconds</em>,
+        {/if}
+        I have fast-forwarded into the future and saw
+        <em>{result.iterations.toLocaleString()}</em>
+        outcomes,
+        <em>{Math.round(result.heroWin * result.iterations).toLocaleString()}</em>
+        of that you win
+      </small>
+    </section>
+  {:else}
+    <small>Enter your game state and let computer do the hard work for you</small>
   {/if}
-
-  <div class="result-area">
-    {#if isWorking}
-      <Bar />
-      <small class="muted">Crunching outcomes…</small>
-    {:else if result.ready}
-      <ResultMulti {result} />
-    {:else}
-      <small class="muted"
-        >Enter your game state and let computer do the hard work for you</small
-      >
-    {/if}
-  </div>
-</article>
-
-<style>
-  .poker {
-    --bg: var(--paper);
-    --fg: var(--ink);
-    --muted: var(--color-neutral-400);
-    --border: var(--color-neutral-300);
-    --card-bg: var(--color-neutral-100);
-    width: 100%;
-    max-width: 32rem;
-    margin: 0 auto;
-    padding: 0 1rem;
-  }
-  h1 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-  form {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-  .action {
-    display: flex;
-    justify-content: center;
-    margin-top: 0.75rem;
-  }
-  button[type="submit"] {
-    background: var(--ink);
-    color: var(--paper);
-    padding: 0.5rem 1.5rem;
-    font-size: 1.125rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    border: 0;
-    cursor: pointer;
-  }
-  .result-area {
-    margin-top: 1rem;
-    text-align: center;
-  }
-  .error {
-    color: #b91c1c;
-    text-align: center;
-    font-size: 0.875rem;
-    margin: 0.5rem 0;
-  }
-  .muted {
-    color: var(--muted);
-  }
-</style>
+</output>

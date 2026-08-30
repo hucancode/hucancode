@@ -24,12 +24,14 @@ const config = {
   spin: 0.3,
   lightAngle: 0.6,
   lookY: 0,         // orbit center height: a subject standing ON the grid needs one
+  wire: 0,          // wireframe overlay strength, 0 = off
 };
 
 function setConfig(patch) {
   if ("spin" in patch) config.spin = patch.spin;
   if ("lightAngle" in patch) config.lightAngle = patch.lightAngle;
   if ("lookY" in patch) config.lookY = patch.lookY;
+  if ("wire" in patch) config.wire = patch.wire;
   if ("dist" in patch) view.dist = patch.dist;                // page-chosen framing, still not auto
   if (patch.resetView) {
     view.yaw = VIEW0.yaw; view.pitch = VIEW0.pitch; view.dist = patch.dist ?? VIEW0.dist;
@@ -80,6 +82,7 @@ const { init, render, destroy } = createPlayground({
       if (model)
         drawer.draw(p, shader, model.items, model.meshes, {
           uViewProj: _vp, uLightPos: light, uViewPos: eye, uOpacity: 1,
+          uWire: config.wire,
         });
     });
     device.endFrame();

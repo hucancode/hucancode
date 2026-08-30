@@ -2,6 +2,7 @@
   import Scene from "$lib/components/playground-canvas.svelte";
   import * as rubik from "$lib/playgrounds/rubik";
 
+  let scene = $state(null);
   let size = $state(3);
   let speed = $state(1);
   let autoplay = $state(true);
@@ -15,21 +16,14 @@
   let solveTotal = $state(0);
   let solvePlaying = $state(false);
 
-  // cube size must be set before the canvas host mounts (re-keyed below)
-  function sized(s) {
-    rubik.setCubeSize(s);
-    return rubik;
-  }
+  rubik.onSolution((s) => {
+    solvePos = s.pos;
+    solveTotal = s.total;
+    solvePlaying = s.playing;
+  });
 
   $effect(() => {
-    rubik.setConfig({
-      speed, autoplay, randomEase,
-      onSolution: (s) => {
-        solvePos = s.pos;
-        solveTotal = s.total;
-        solvePlaying = s.playing;
-      },
-    });
+    scene?.apply({ size, speed, autoplay, randomEase });
   });
 
   function randomScramble() {
@@ -45,87 +39,85 @@
   <title>Rubik</title>
 </svelte:head>
 
-  <section>
-    {#key size}
-      <Scene scene={sized(size)} id="rubik" />
-    {/key}
-  </section>
+<section>
+  <Scene bind:this={scene} scene={rubik} id="rubik" />
+</section>
 
-  <aside>
-    <fieldset>
-      <legend>parameters</legend>
-      <label>
-        <span>Cube size</span>
-        <input type="range" min="2" max="6" step="1" bind:value={size} />
-        <output>{size}</output>
-      </label>
-      <label>
-        <span>Turn speed</span>
-        <input type="range" min="0.25" max="3" step="0.25" bind:value={speed} />
-        <output>{speed.toFixed(2)}</output>
-      </label>
-      <label>
-        <input type="checkbox" bind:checked={autoplay} />
-        <span>Auto-shuffle</span>
-      </label>
-      <label>
-        <input type="checkbox" bind:checked={randomEase} />
-        <span>Random easing</span>
-      </label>
-    </fieldset>
+<aside>
+  <fieldset>
+    <legend>parameters</legend>
+    <label>
+      <span>Cube size</span>
+      <input type="range" min="2" max="6" step="1" bind:value={size} />
+      <output>{size}</output>
+    </label>
+    <label>
+      <span>Turn speed</span>
+      <input type="range" min="0.25" max="3" step="0.25" bind:value={speed} />
+      <output>{speed.toFixed(2)}</output>
+    </label>
+    <label>
+      <input type="checkbox" bind:checked={autoplay} />
+      <span>Auto-shuffle</span>
+    </label>
+    <label>
+      <input type="checkbox" bind:checked={randomEase} />
+      <span>Random easing</span>
+    </label>
+  </fieldset>
 
-    <fieldset>
-      <legend>scramble</legend>
-      <textarea rows="3" bind:value={scrambleText} placeholder="R U' Fw2 ..."></textarea>
-      {#if badScramble}
-        <small>invalid notation</small>
-      {/if}
-      <menu>
-        <li><button onclick={randomScramble}>random</button></li>
-        <li><button onclick={applyScramble} disabled={!scrambleText.trim()}>apply</button></li>
-      </menu>
-    </fieldset>
-
+  <fieldset>
+    <legend>scramble</legend>
+    <textarea rows="3" bind:value={scrambleText} placeholder="R U' Fw2 ..."></textarea>
+    {#if badScramble}
+      <small>invalid notation</small>
+    {/if}
     <menu>
-      {#if !autoplay}
-        <li><button onclick={() => rubik.step()}>One move</button></li>
-      {/if}
-      {#if size === 3}
+      <li><button onclick={randomScramble}>random</button></li>
+      <li><button onclick={applyScramble} disabled={!scrambleText.trim()}>apply</button></li>
+    </menu>
+  </fieldset>
+
+  <menu>
+    {#if !autoplay}
+      <li><button onclick={() => rubik.step()}>One move</button></li>
+    {/if}
+    {#if size === 3}
+      <li>
+        <button
+          onclick={() => {
+            autoplay = false;
+            rubik.solveCube();
+          }}>Solve</button
+        >
+      </li>
+    {/if}
+  </menu>
+
+  {#if solveTotal}
+    <fieldset>
+      <legend>solution</legend>
+      <label>
+        <span>move {solvePos}/{solveTotal}</span>
+        <input
+          type="range"
+          min="0"
+          max={solveTotal}
+          step="1"
+          value={solvePos}
+          oninput={(e) => rubik.seekSolution(+e.currentTarget.value)}
+        />
+      </label>
+      <menu>
         <li>
           <button
-            onclick={() => {
-              autoplay = false;
-              rubik.solveCube();
-            }}>Solve</button
+            onclick={() => (solvePlaying ? rubik.pauseSolution() : rubik.playSolution())}
+            disabled={!solvePlaying && solvePos >= solveTotal}
           >
+            {solvePlaying ? "pause" : "play"}
+          </button>
         </li>
-      {/if}
-    </menu>
-
-    {#if solveTotal}
-      <fieldset>
-        <legend>solution</legend>
-        <label>
-          <span>move {solvePos}/{solveTotal}</span>
-          <input
-            type="range"
-            min="0"
-            max={solveTotal}
-            step="1"
-            value={solvePos}
-            oninput={(e) => rubik.seekSolution(+e.currentTarget.value)}
-          />
-        </label>
-        <menu>
-          <li>
-            <button
-              onclick={() => (solvePlaying ? rubik.pauseSolution() : rubik.playSolution())}
-              disabled={!solvePlaying && solvePos >= solveTotal}
-            >
-              {solvePlaying ? "pause" : "play"}
-            </button>
-          </li>
-        </menu>
-      </fieldset>
-    {/if}
-  </aside>
+      </menu>
+    </fieldset>
+  {/if}
+</aside>

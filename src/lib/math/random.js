@@ -1,3 +1,12 @@
+// FNV-1a over a string -> 32-bit hash. Pairs with mulberry32 to seed a PRNG
+// from an IDENTITY rather than a position in a sequence: hash the thing itself
+// and its randoms follow it around, independent of what was drawn before it.
+export function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
 // Deterministic mulberry32 PRNG, seeded for stable replayable sequences.
 export function mulberry32(seed) {
   let a = seed >>> 0;

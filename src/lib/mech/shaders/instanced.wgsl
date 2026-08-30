@@ -9,6 +9,7 @@ struct Uni {
   uLightPos: vec3<f32>,
   uViewPos: vec3<f32>,
   uOpacity: f32,
+  uWire: f32,
 };
 @group(0) @binding(0) var<uniform> u: Uni;
 
@@ -18,16 +19,28 @@ struct VsOut {
   @location(1) vW: vec3<f32>,
   @location(2) vC: vec3<f32>,
   @location(3) vA: f32,
+  @location(4) vB: vec3<f32>,
 };
+
+// wireframe ink; uWire fades the overlay in, 0 = none
+const WIRE = vec3<f32>(0.05, 0.06, 0.09);
 
 @vertex
 fn vs(
+  @builtin(vertex_index) vi: u32,
   @location(0) position: vec3<f32>, @location(1) normal: vec3<f32>,
   @location(2) iM0: vec4<f32>, @location(3) iM1: vec4<f32>, @location(4) iM2: vec4<f32>,
   @location(5) iN0: vec4<f32>, @location(6) iN1: vec4<f32>, @location(7) iN2: vec4<f32>,
   @location(8) iColor: vec4<f32>,
 ) -> VsOut {
   var o: VsOut;
+  // Geometry is a triangle SOUP, so a vertex's slot within its own triangle is
+  // just its index mod 3 — that hands us barycentrics free, with no extra
+  // attribute and no change to the buffers the drawer already uploads.
+  let k = vi % 3u;
+  o.vB = vec3(
+    select(0.0, 1.0, k == 0u), select(0.0, 1.0, k == 1u), select(0.0, 1.0, k == 2u),
+  );
   let wp = vec3(
     dot(iM0.xyz, position) + iM0.w,
     dot(iM1.xyz, position) + iM1.w,
@@ -49,6 +62,13 @@ fn fs(in: VsOut) -> @location(0) vec4<f32> {
   let H = normalize(L + V);
   let diff = max(dot(N, L), 0.0);
   let spec = pow(max(dot(N, H), 0.0), 32.0) * 0.25;
-  let col = in.vC * (0.32 + 0.68 * diff) + vec3(spec);
+  var col = in.vC * (0.32 + 0.68 * diff) + vec3(spec);
+  // edge = how close this pixel is to any of the triangle's three sides;
+  // fwidth keeps the line one pixel wide however near or far the camera sits
+  if (u.uWire > 0.0) {
+    let aa = smoothstep(vec3(0.0), fwidth(in.vB) * 1.2, in.vB);
+    let edge = 1.0 - min(min(aa.x, aa.y), aa.z);
+    col = mix(col, WIRE, edge * u.uWire);
+  }
   return vec4(col, u.uOpacity * in.vA);
 }

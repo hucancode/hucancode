@@ -1,63 +1,137 @@
 <script>
-  import { createEventDispatcher } from "svelte";
-  import { handTextToArray, handArrayToText } from "$lib/playgrounds/poker/cards.js";
+  import { createEventDispatcher, onMount } from "svelte";
+  import { fade } from "svelte/transition";
+  import {
+    handTextToArray,
+    handArrayToText,
+  } from "$lib/playgrounds/poker/cards.js";
+  import { expandNotationToCombos } from "$lib/playgrounds/poker/range.js";
   import Card from "$lib/components/poker/card.svelte";
-  import VillainDisplay from "$lib/components/poker/villain-display.svelte";
-  import CardPickerModal from "$lib/components/poker/card-picker-modal.svelte";
-  import RangePickerModal from "$lib/components/poker/range-picker-modal.svelte";
+  import RangeMatrix from "$lib/components/poker/range-matrix.svelte";
 
   export let disabled = false;
 
-  const VILLAIN_NAMES = ["Alice", "Bob", "Carol", "Dave", "Eve", "Frank", "Grace", "Heidi"];
+  const VILLAIN_NAMES = [
+    "Alice",
+    "Bob",
+    "Carol",
+    "Dave",
+    "Eve",
+    "Frank",
+    "Grace",
+    "Heidi",
+  ];
   const VILLAIN_SLOTS = VILLAIN_NAMES.length;
+  /** how often each villain slot re-draws a sample hand from its range */
+  const SAMPLE_INTERVAL_MS = 3000;
+
+  const dispatch = createEventDispatcher();
+
   let hero = [];
   let community = [];
   let villains = Array(VILLAIN_SLOTS)
     .fill()
     .map(() => ({ notation: "" }));
 
+  /** "hero" | "board" | villain slot index | null */
   let editing = null;
+  let dialog;
 
-  const dispatch = createEventDispatcher();
+  // ---- the one dialog, in card-picking or range-picking mode ---------------
 
-  $: heroUsed = community;
-  $: communityUsed = hero;
+  $: pickingCards = editing === "hero" || editing === "board";
+  $: pickingRange = typeof editing === "number";
+  $: picked = editing === "hero" ? hero : community;
+  $: usedElsewhere = editing === "hero" ? community : hero;
+  $: pickMax = editing === "hero" ? 2 : 5;
+  $: pickMin = editing === "hero" ? 2 : 3;
+  $: title =
+    editing === "hero"
+      ? "Your two cards"
+      : editing === "board"
+        ? "Community cards"
+        : pickingRange
+          ? `${VILLAIN_NAMES[editing]} range`
+          : "";
 
-  function open(target) {
-    if (disabled) return;
-    editing = target;
+  $: if (dialog) {
+    if (editing !== null && !dialog.open) dialog.showModal();
+    else if (editing === null && dialog.open) dialog.close();
   }
 
-  function closeModal() {
+  function close() {
     editing = null;
   }
 
-  function onHeroChange(e) {
-    hero = e.detail.cards;
+  // backdrop click: the dialog element *is* the panel, so a click only counts as
+  // "outside" when it targets the dialog itself and lands beyond its box.
+  function onDialogClick(e) {
+    if (e.target !== dialog) return;
+    const r = dialog.getBoundingClientRect();
+    const inside =
+      e.clientX >= r.left &&
+      e.clientX <= r.right &&
+      e.clientY >= r.top &&
+      e.clientY <= r.bottom;
+    if (!inside) close();
+  }
+
+  function toggleCard(i) {
+    let next;
+    if (picked.includes(i)) {
+      next = picked.filter((x) => x !== i);
+    } else {
+      if (picked.length >= pickMax) return;
+      next = [...picked, i];
+    }
+    if (editing === "hero") hero = next;
+    else community = next;
     notify();
   }
 
-  function onCommunityChange(e) {
-    community = e.detail.cards;
-    notify();
-  }
-
-  function onVillainChange(idx, e) {
-    villains[idx].notation = e.detail.notation;
+  function setVillain(idx, notation) {
+    villains[idx].notation = notation;
     villains = villains;
     notify();
   }
 
   function clearVillain(idx) {
-    villains[idx].notation = "";
-    villains = villains;
-    editing = null;
-    notify();
+    setVillain(idx, "");
+    close();
   }
 
   function notify() {
     dispatch("updated");
   }
+
+  // ---- sample hands: one timer drives every villain slot -------------------
+
+  let tick = 0;
+  const lastPick = Array(VILLAIN_SLOTS).fill(0);
+
+  $: dead = hero.concat(community);
+  $: combos = villains.map((v) => expandNotationToCombos(v.notation, dead));
+  // `tick` is a dependency on purpose: it is what re-rolls the sample hands.
+  $: sample = drawSamples(combos, tick);
+
+  /** one random combo per villain, avoiding an immediate repeat.
+   * `_tick` is unused: it is only there to make the call re-run on each tick. */
+  function drawSamples(all, _tick) {
+    return all.map((cs, i) => {
+      if (cs.length === 0) return null;
+      let k = Math.floor(Math.random() * cs.length);
+      if (cs.length > 1 && k === lastPick[i]) k = (k + 1) % cs.length;
+      lastPick[i] = k;
+      return cs[k];
+    });
+  }
+
+  onMount(() => {
+    const timer = setInterval(() => (tick += 1), SAMPLE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  });
+
+  // ---- API used by the page ------------------------------------------------
 
   export function getHero() {
     return handArrayToText(hero);
@@ -109,151 +183,93 @@
   }
 </script>
 
-<div class="overview" class:disabled>
-  <section
-    class="row"
-    role="button"
-    tabindex="0"
-    on:click={() => open("board")}
-    on:keydown={(e) => (e.key === "Enter" || e.key === " ") && open("board")}
-  >
-    <span class="label">Community</span>
-    <div class="cards-row">
-      {#each Array(5) as _, i}
-        <Card card={i < community.length ? community[i] : -1} />
-      {/each}
-    </div>
-  </section>
-
-  <section
-    class="hero"
-    role="button"
-    tabindex="0"
-    on:click={() => open("hero")}
-    on:keydown={(e) => (e.key === "Enter" || e.key === " ") && open("hero")}
-  >
-    <span class="label">You</span>
-    <div class="cards-row">
-      {#each Array(2) as _, i}
-        <Card card={i < hero.length ? hero[i] : -1} />
-      {/each}
-    </div>
-  </section>
-
-  <div class="villains" aria-label="Villains">
-    {#each villains as v, i (i)}
-      <div
-        class="villain"
-        class:empty={!v.notation.trim()}
-        role="button"
-        tabindex="0"
-        on:click={() => open({ type: "villain", idx: i })}
-        on:keydown={(e) =>
-          (e.key === "Enter" || e.key === " ") &&
-          open({ type: "villain", idx: i })}
-      >
-        <span class="label">{VILLAIN_NAMES[i]}</span>
-        <VillainDisplay notation={v.notation} dead={hero.concat(community)} />
-      </div>
+<fieldset {disabled}>
+  <button type="button" on:click={() => (editing = "board")}>
+    <b>Community</b>
+    {#each Array(5) as _, i}
+      <Card card={i < community.length ? community[i] : -1} />
     {/each}
-  </div>
-</div>
+  </button>
 
-{#if editing === "hero"}
-  <CardPickerModal
-    open={true}
-    cards={hero}
-    usedCards={heroUsed}
-    max={2}
-    min={2}
-    title="Your two cards"
-    on:change={onHeroChange}
-    on:close={closeModal}
-  />
-{:else if editing === "board"}
-  <CardPickerModal
-    open={true}
-    cards={community}
-    usedCards={communityUsed}
-    max={5}
-    min={3}
-    title="Community cards"
-    on:change={onCommunityChange}
-    on:close={closeModal}
-  />
-{:else if editing && editing.type === "villain"}
-  <RangePickerModal
-    open={true}
-    notation={villains[editing.idx].notation}
-    title={`${VILLAIN_NAMES[editing.idx]} range`}
-    removable={!!villains[editing.idx].notation.trim()}
-    on:change={(e) => onVillainChange(editing.idx, e)}
-    on:remove={() => clearVillain(editing.idx)}
-    on:close={closeModal}
-  />
-{/if}
+  <button type="button" on:click={() => (editing = "hero")}>
+    <b>You</b>
+    {#each Array(2) as _, i}
+      <Card card={i < hero.length ? hero[i] : -1} />
+    {/each}
+  </button>
 
-<style>
-  .overview {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 100%;
-  }
-  .overview.disabled {
-    pointer-events: none;
-    opacity: 0.6;
-  }
-  .row {
-    padding: 0.625rem 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.375rem;
-    cursor: pointer;
-    transition: border-color 100ms, background 100ms;
-  }
-  .label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-  }
-  .cards-row {
-    display: flex;
-    gap: 0.25rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .villains {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding-bottom: 0.5rem;
-  }
-  .villain {
-    flex: 0 0 min(11rem, 45%);
-    scroll-snap-align: start;
-    padding: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.375rem;
-    cursor: pointer;
-    background: var(--card-bg);
-    color: var(--fg);
-    transition: border-color 100ms, opacity 100ms;
-  }
-  .villain.empty {
-    opacity: 0.75;
-  }
-  .villain:hover,
-  .villain:focus-visible,
-  .villain.empty:hover {
-    opacity: 1;
-    border-color: var(--fg);
-    outline: none;
-  }
-</style>
+  <ul aria-label="Villains">
+    {#each villains as v, i (i)}
+      <li>
+        <button type="button" on:click={() => (editing = i)}>
+          <b>{VILLAIN_NAMES[i]}</b>
+          {#key sample[i]}
+            <span in:fade={{ duration: 300 }} out:fade={{ duration: 300 }}>
+              <Card card={sample[i] ? sample[i][0] : -1} />
+              <Card card={sample[i] ? sample[i][1] : -1} />
+            </span>
+          {/key}
+        </button>
+      </li>
+    {/each}
+  </ul>
+</fieldset>
+
+<dialog bind:this={dialog} on:close={close} on:click={onDialogClick}>
+  {#if pickingCards}
+    <h3>
+      {title}
+      <output data-invalid={picked.length < pickMin || null}>
+        {picked.length} / {pickMax}
+      </output>
+    </h3>
+
+    <output>
+      {#each Array(pickMax) as _, i}
+        <Card card={i < picked.length ? picked[i] : -1} />
+      {/each}
+    </output>
+
+    <fieldset>
+      {#each Array(52) as _, i}
+        <Card
+          card={i}
+          selectable
+          used={usedElsewhere.includes(i)}
+          selected={picked.includes(i)}
+          on:selectedChange={() => toggleCard(i)}
+        />
+      {/each}
+    </fieldset>
+
+    <footer>
+      <button type="button" on:click={close}>Done</button>
+    </footer>
+  {:else if pickingRange}
+    <h3>{title}</h3>
+
+    <RangeMatrix
+      notation={villains[editing].notation}
+      on:change={(e) => setVillain(editing, e.detail.notation)}
+    />
+
+    <details>
+      <summary>Notation</summary>
+      <input
+        type="text"
+        value={villains[editing].notation}
+        on:change={(e) => setVillain(editing, e.target.value)}
+        placeholder="e.g. QQ+,AKs,AKo"
+      />
+    </details>
+
+    <footer>
+      {#if villains[editing].notation.trim()}
+        <button type="button" data-danger on:click={() => clearVillain(editing)}>
+          Remove
+        </button>
+      {/if}
+      <button type="button" on:click={close}>Done</button>
+    </footer>
+  {/if}
+</dialog>

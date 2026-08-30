@@ -1,5 +1,8 @@
 import { createPlayground, F32, VEC2, VEC4 } from "$lib/engine/index.js";
+import { hexToRGB } from "$lib/math/color.js";
 import ENSO from "./shaders/enso.wgsl?shader";
+
+const rgba = (hex) => [...hexToRGB(hex), 1];
 
 const config = {
   radius: 0.55,
@@ -19,16 +22,17 @@ const config = {
   opacityWet: 1.0,
   opacityDry: 1.0,
 };
-let brushColor = [0.05, 0.05, 0.07, 1.0];
-let bgColor = [0.96, 0.93, 0.86, 1.0];
+let brushColor = rgba("#0d0d12");
+let bgColor = rgba("#f5eddc");
 
 let shader;
 
-function setConfig(patch) { Object.assign(config, patch); }
-function setBrushColor(rgba) { brushColor = rgba.slice(0, 4); }
-function setBgColor(rgba) { bgColor = rgba.slice(0, 4); }
-
-const { init, render, destroy } = createPlayground({
+const { init, render, destroy, setConfig } = createPlayground({
+  setConfig(patch) {
+    if (patch.brushColor) brushColor = rgba(patch.brushColor);
+    if (patch.bgColor) bgColor = rgba(patch.bgColor);
+    Object.assign(config, patch);
+  },
   init({ device }) {
     shader = device.shader({
       ...ENSO,
@@ -64,4 +68,4 @@ const { init, render, destroy } = createPlayground({
   destroy() { shader = null; },
 });
 
-export { init, render, destroy, setConfig, setBrushColor, setBgColor, config };
+export { init, render, destroy, setConfig };

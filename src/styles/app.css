@@ -94,12 +94,12 @@ body {
 
 nav {
   display: flex;
+  gap: 1rem;
   width: 100%;
   max-width: 1024px;
   align-items: center;
-  justify-content: space-between;
-  padding-inline: 1rem;
   justify-content: center;
+  padding-inline: 1rem;
 }
 
 nav a {
@@ -110,6 +110,14 @@ nav a {
   text-decoration: none;
   font-size: 1.25rem;
   font-weight: bold;
+}
+
+nav a[aria-current="page"] {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 2px;
+  text-decoration-skip-ink: auto;
 }
 
 nav a:hover {

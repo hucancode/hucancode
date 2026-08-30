@@ -33,7 +33,6 @@ export function makeSceneRenderer(device, canvas) {
   let strokePos, strokeUV, strokeIdx, headBuf;
   let mechDrawer;
   let objDragon = null; // legacy obj-mesh dragon, lazy-loaded only for D3_STYLE "obj"
-  let w = 1, h = 1;
 
   let segRef = null, segRows = 0, segBuf = new Float32Array(0);
   const headData = new Float32Array(16);
@@ -53,12 +52,6 @@ export function makeSceneRenderer(device, canvas) {
         .then((m) => m.createObjDragon(device))
         .then((o) => { objDragon = o; })
         .catch((e) => console.warn("[paint] obj dragon load failed", e));
-    resize(canvas.width || 1, canvas.height || 1);
-  }
-
-  function resize(nw, nh) {
-    w = Math.max(1, nw | 0); h = Math.max(1, nh | 0);
-    device.resize(w, h);
   }
 
   // 5 texels/seg; texel 0 = cull header (cen.xy, hullR, t0). Re-upload only on
@@ -141,6 +134,8 @@ export function makeSceneRenderer(device, canvas) {
 
   function frame(state) {
     const aspect = state.aspect;
+    // drawing-buffer size (the playground host owns canvas sizing + device.resize)
+    const w = Math.max(1, canvas.width), h = Math.max(1, canvas.height);
     const nSeg = uploadSegs(state.glyph.segs);
     // WebGPU remaps clip z to [0,1], so route every viewProj through the camera seam
     const vp = device.correctViewProj(state.dragon3d.viewProj);
@@ -189,8 +184,7 @@ export function makeSceneRenderer(device, canvas) {
     objDragon?.destroy(); objDragon = null;
     mechDrawer?.destroy();
     for (const b of lineBufs) b.destroy();
-    device.destroy();
   }
 
-  return { init, resize, frame, destroy, backend: device.backend };
+  return { init, frame, destroy, backend: device.backend };
 }

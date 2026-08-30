@@ -19,6 +19,7 @@ import { hash01, homingParams, simulateHoming, approachBlend, snapIn } from "./h
 // is HASHED off group/item indices, so scrubbing the clock replays the same build.
 // Distances are RIG UNITS and phase times relative durations — the clock is
 // normalized so the last group seats exactly at u = 1, whatever they sum to.
+export const BUILD_SECONDS = 6;   // wall clock of a full 0 -> 1 build
 export const ASSEMBLY = {
   gSpan: 0.7,              // group start stagger (chain-ordered, head first)
   pSpan: 0.08,             // primitive stagger within its group
