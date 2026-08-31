@@ -11,7 +11,7 @@
 //
 // Kits are SCOPED: a part name need only be unique inside its own kit, so the atlas
 // has a plain "head" next to the dragon's.
-import { bake, meshOf } from "./primitives.js";
+import { bake, meshOf, shapeOf } from "./primitives.js";
 import { colorOf } from "./color.js";
 
 // build a model from one builder: instance handles + the unit meshes they
@@ -24,8 +24,12 @@ export function collect(builderFn, seed, params) {
   };
   builderFn(add, params);
   const meshes = {};
-  for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
-  return { items, meshes };
+  const shapes = {};
+  for (const it of items) {
+    if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
+    if (!shapes[it.key]) shapes[it.key] = shapeOf(it.key);
+  }
+  return { items, meshes, shapes };
 }
 
 // `slots` maps (name, mergedParams) -> { slotName: { pos, n, f, joint?, anchor? } }

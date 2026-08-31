@@ -4,11 +4,9 @@
 //
 // The pose sliders drive the joint's DOF channels — the SAME channels a rig's
 // bones bind to, so what the catalog shows a joint doing is exactly what it
-// does in a figure. Degrees in, radians out (a prismatic slide is a distance,
-// so it skips the conversion).
+// does in a figure. Pose arrives in RADIANS (the catalog UI converts degrees).
 import { JOINTS, jointModel } from "./joints.js";
 import { collect } from "./kit.js";
-import { rad } from "../math/scalar.js";
 
 const HINGE = { jaw: 0.24, lugT: 0.12, lugL: 0.45, lugD: 0.55, pinR: 0.14, clr: 0.03, pinOut: 0.05, flangeT: 0.16 };
 
@@ -34,7 +32,7 @@ export function jointCatalogModel(kind, seed = 1, params = null, pose = null) {
   const p = { ...JOINT_PARAMS[kind], ...(params || {}) };
   const q = {};
   for (const k of Object.keys(JOINT_POSE[kind]))
-    q[k] = kind === "prismatic" ? (pose?.[k] ?? 0) : rad(pose?.[k] ?? 0);
+    q[k] = pose?.[k] ?? 0;   // radians (a prismatic slide is a distance, same path)
   // the params double as the joint's build options (the disc / tang flags)
   return collect((add) => jointModel(kind, add, p, q, p), seed);
 }

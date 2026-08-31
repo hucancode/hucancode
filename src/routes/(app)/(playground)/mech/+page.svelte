@@ -2,16 +2,75 @@
   import Scene from "$lib/components/playground-canvas.svelte";
   import Catalog from "$lib/components/mech-catalog.svelte";
   import * as mech from "$lib/playgrounds/mech";
+  import * as rt from "$lib/playgrounds/raytrace";
   import { DRAGON_KIT } from "$lib/mech/dragon/parts.js";
   import { dragonModel, DRAGON_POSE } from "$lib/mech/dragon/rig.js";
+  import { rad, deg } from "$lib/math/scalar.js";
   import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
   import Dragon from "$icons/simple-icons/dragon.svg?raw";
+
+  let render = $state({
+    spin: 0.3, light: 0.6, wire: 0,
+    raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0,
+  });
 
   const RENDER_CTL = [
     ["spin", "spin", 0, 3, 0.1],
     ["light", "light angle", 0, 6.28, 0.05],
     ["wire", "wireframe", 0, 1],
   ];
+  const RT_CTL = [
+    ["light", "light angle", 0, 6.28, 0.05],
+    ["exposure", "exposure", 0.2, 3, 0.05],
+    ["softness", "shadow softness", 0, 0.3, 0.005],
+    ["quality", "resolution", 0.15, 1, 0.05],
+  ];
+  const renderCtl = $derived(render.raytrace ? RT_CTL : RENDER_CTL);
+  const engine = $derived(render.raytrace ? rt : mech);
+
+  // raytracer material slots — the dragon's links fold onto one picker entry each
+  const MATERIAL_TYPES = ["lambertian", "metal", "dielectric"];
+  const RT_PARTS = [
+    ["head", "head"], ["jaw", "jaw"], ["body", "body"], ["taper", "taper"],
+    ["tail", "tail"], ["upperArm", "upper arm"], ["forearm", "forearm"],
+    ["thigh", "thigh"], ["shin", "shin"],
+  ];
+  const DEFAULT_MATERIALS = {
+    head: { type: "dielectric", ior: 1.5 },
+    jaw: { type: "metal", fuzz: 0.1 },
+    body: { type: "lambertian", roughness: 0.3 },
+    taper: { type: "lambertian", roughness: 0.3 },
+    tail: { type: "lambertian", roughness: 0.3 },
+    upperArm: { type: "metal", fuzz: 0.1 },
+    forearm: { type: "lambertian", roughness: 0.3 },
+    thigh: { type: "lambertian", roughness: 0.3 },
+    shin: { type: "metal", fuzz: 0.1 },
+  };
+  let materials = $state(structuredClone(DEFAULT_MATERIALS));
+  const PART_OF_GROUP = (group) => {
+    const link = group ? group.slice(0, group.indexOf(":")) : "";
+    if (link === "head") return "head";
+    if (link === "jaw") return "jaw";
+    if (link === "tail") return "tail";
+    if (link === "seg7" || link.startsWith("taper")) return "taper";
+    if (link.startsWith("seg")) return "body";
+    if (link.startsWith("fore")) return "forearm";
+    if (link.startsWith("arm")) return "upperArm";
+    if (link.startsWith("leg")) return "thigh";
+    if (link.startsWith("shin")) return "shin";
+    return link;
+  };
+  function setMatType(key, type) {
+    const next = { type };
+    if (type === "lambertian") next.roughness = 0.3;
+    if (type === "metal") next.fuzz = 0.1;
+    if (type === "dielectric") next.ior = 1.5;
+    materials = { ...materials, [key]: next };
+  }
+  function setMatParam(key, field, value) {
+    materials = { ...materials, [key]: { ...materials[key], [field]: value } };
+  }
+  let stats = $state({ instances: 0, nodes: 0, buildMs: 0, traceMs: 0, fps: 0, samples: 0 });
 
   let scene = $state(null);
   let partsOpen = $state(false); // stage part picker, shut by default
@@ -30,8 +89,6 @@
   let asm = $state(1);
   let asmPlay = $state(false);
   let seed = $state(1);                    // color shuffle seed
-
-  let render = $state({ spin: 0.3, light: 0.6, wire: 0 });
 
   const PART_LABELS = {
     bodySegment: "body segment", bodySegment2: "body segment 2",
@@ -106,13 +163,37 @@
     const dOff = autoplay ? BUILD_SECONDS / LAP_SECONDS : 0;
     return { ...m, items: assembleModel(m.items, asm, asmRefAt(pose, dOff)) };
   });
-  $effect(() => { scene?.apply({ spin: render.spin, lightAngle: render.light, wire: render.wire, model }); });
+  $effect(() => {
+    scene?.apply({
+      spin: render.spin,
+      lightAngle: render.light,
+      wire: render.wire,
+      model,
+      ...(render.raytrace ? {
+        light: render.light,
+        exposure: render.exposure,
+        softness: render.softness,
+        quality: render.quality,
+        materials,
+        partKey: PART_OF_GROUP,
+      } : {}),
+    });
+  });
   // fixed per-view distance (no auto-fit): the dragon rides a big loop, single
   // parts and catalog blocks sit close in
   $effect(() => {
     csel;
+    engine;   // reframe the swapped-in renderer on the same view
     const dist = view !== "dragon" ? 6 : dsel === "rig" ? 24 : 6;
     scene?.apply({ resetView: true, dist });
+  });
+  $effect(() => {
+    if (!render.raytrace) return;
+    const t = setInterval(() => {
+      stats = rt.getStats();
+      stats.instances = model?.items?.length ?? 0;
+    }, 400);
+    return () => clearInterval(t);
   });
   // every page clock runs off the canvas's frame, so they pause with it
   function frame(dt) {
@@ -128,7 +209,8 @@
 <svelte:head><title>Mech</title></svelte:head>
 
 <section>
-  <Scene bind:this={scene} scene={mech} id="mech" onFrame={frame} />
+  <Scene bind:this={scene} scene={engine} id="mech" onFrame={frame}
+    onError={() => (render.raytrace = false)} />
   {#if view === "dragon"}
     <menu>
       <li>
@@ -168,7 +250,9 @@
 
   <fieldset>
     <legend>render</legend>
-    {#each RENDER_CTL as [key, label, min, max, step]}
+    <label><input type="checkbox" checked={render.raytrace}
+      onchange={(e) => (render.raytrace = e.currentTarget.checked)} /><span>ray tracing</span></label>
+    {#each renderCtl as [key, label, min, max, step]}
       {#if min === 0 && max === 1 && step === 1}
         <label><input type="checkbox" checked={!!render[key]}
           onchange={(e) => (render[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
@@ -181,6 +265,44 @@
     {/each}
     <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
   </fieldset>
+  {#if render.raytrace}
+    {#if view === "dragon" && dsel === "rig"}
+      <fieldset>
+        <legend>materials</legend>
+        <ul class="mats">
+          {#each RT_PARTS as [key, label]}
+            <li class="mat-row">
+              <span class="mat-name">{label}</span>
+              <select value={materials[key].type} onchange={(e) => setMatType(key, e.currentTarget.value)}>
+                {#each MATERIAL_TYPES as mt}<option value={mt}>{mt}</option>{/each}
+              </select>
+              {#if materials[key].type === "metal"}
+                <input type="range" min="0" max="0.5" step="0.01" value={materials[key].fuzz}
+                  oninput={(e) => setMatParam(key, "fuzz", +e.currentTarget.value)} title="fuzz" />
+              {:else if materials[key].type === "dielectric"}
+                <input type="range" min="1" max="2.5" step="0.01" value={materials[key].ior}
+                  oninput={(e) => setMatParam(key, "ior", +e.currentTarget.value)} title="ior" />
+              {:else}
+                <input type="range" min="0" max="1" step="0.01" value={materials[key].roughness}
+                  oninput={(e) => setMatParam(key, "roughness", +e.currentTarget.value)} title="roughness" />
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </fieldset>
+    {/if}
+    <fieldset>
+      <legend>stats</legend>
+      <dl>
+        <dt>primitives</dt><dd>{stats.instances}</dd>
+        <dt>bvh nodes</dt><dd>{stats.nodes}</dd>
+        <dt>bvh build</dt><dd>{stats.buildMs.toFixed(2)} ms</dd>
+        <dt>trace</dt><dd>{stats.traceMs.toFixed(1)} ms</dd>
+        <dt>samples</dt><dd>{stats.samples}</dd>
+        <dt>fps</dt><dd>{stats.fps || 0}</dd>
+      </dl>
+    </fieldset>
+  {/if}
 
   {#if view === "dragon"}
     {#if dsel === "rig"}
@@ -207,9 +329,9 @@
               onchange={(e) => (drig[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
           {:else}
             <label><span>{label}</span>
-              <input type="range" {min} {max} step={step ?? 0.01} value={drig[key]}
-                oninput={(e) => (drig[key] = +e.currentTarget.value)} />
-              <output>{drig[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+              <input type="range" {min} {max} step={step ?? 0.01} value={deg(drig[key])}
+                oninput={(e) => (drig[key] = rad(+e.currentTarget.value))} />
+              <output>{deg(drig[key]).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
           {/if}
         {/each}
       </fieldset>
@@ -240,4 +362,13 @@
   section > menu button { width: auto; padding: 0 0.5rem; }
   /* the icon comes in through {@html}, so the scoping attribute never lands on it */
   section > menu button :global(svg) { width: 20px; height: 20px; display: block; }
+
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.75rem; margin: 0; font-size: 0.85rem; }
+  dt { opacity: 0.6; }
+  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  ul.mats { display: grid; gap: 0.4rem; }
+  li.mat-row { display: flex; align-items: center; gap: 0.4rem; }
+  .mat-name { flex: 1; font-size: 0.8rem; opacity: 0.85; }
+  li.mat-row select { flex: none; max-width: 6.5rem; font-size: 0.8rem; }
+  li.mat-row input[type="range"] { flex: 1; max-width: 5.5rem; }
 </style>
