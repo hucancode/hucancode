@@ -25,7 +25,7 @@
 // only be seated by a ROTATION, so a reflected frame would flip the joint's
 // handedness. A symmetric figure gives its right-hand slot the REVERSED pin (f)
 // — what a mirrored clevis physically is — and the rig flips that side's signs.
-import { bake, meshOf } from "./primitives.js";
+import { bake, meshOf, shapeOf } from "./primitives.js";
 import { colorMemo } from "./color.js";
 import { jointSpec } from "./joints.js";
 import { createSkeleton } from "./skeleton.js";
@@ -201,8 +201,10 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
   }
 
   // the unit meshes the items reference, cached across frames — the renderer
-  // draws one instanced call per key
+  // draws one instanced call per key; `shapes` is the ANALYTIC twin for the
+  // ray tracer (one closed-form primitive per key)
   const meshes = {};
+  const shapes = {};
 
   // --- POSE: the rig's sliders reach the bones through `angles`, one entry per
   // DOF of the link's joint. An axis bone takes [key, sign]; a free bone (a
@@ -292,8 +294,11 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       }
     }
 
-    for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
-    return { items, meshes };
+    for (const it of items) {
+      if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
+      if (!shapes[it.key]) shapes[it.key] = shapeOf(it.key);
+    }
+    return { items, meshes, shapes };
   }
 
   return {

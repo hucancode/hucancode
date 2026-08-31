@@ -1,11 +1,13 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
   import * as mech from "$lib/playgrounds/mech";
+  import * as rt from "$lib/playgrounds/raytrace";
   import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
   import {
     atlasModel, atlasHeight, atlasPose, atlasChoreo, montageLabel,
-    coreCtl, flankCtl, rigLocked, mirrorWrites, SIDES,
+    coreCtl, flankCtl, rigLocked, mirrorWrites, SIDES, baseChan,
   } from "$lib/mech/atlas/rig.js";
+  import { rad, deg } from "$lib/math/scalar.js";
   import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
   import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
   import {
@@ -44,14 +46,82 @@
   let asmPlay = $state(false);
   let seed = $state(1);                    // color shuffle seed
 
-  let render = $state({ spin: 0.3, light: 0.6, wire: 0 });
+  let render = $state({
+    spin: 0.3, light: 0.6, wire: 0,
+    raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0,
+  });
 
   const RENDER_CTL = [
     ["spin", "spin", 0, 3, 0.1],
     ["light", "light angle", 0, 6.28, 0.05],
     ["wire", "wireframe", 0, 1],
   ];
+  const RT_CTL = [
+    ["light", "light angle", 0, 6.28, 0.05],
+    ["exposure", "exposure", 0.2, 3, 0.05],
+    ["softness", "shadow softness", 0, 0.3, 0.005],
+    ["quality", "resolution", 0.15, 1, 0.05],
+  ];
+  const renderCtl = $derived(render.raytrace ? RT_CTL : RENDER_CTL);
+  const engine = $derived(render.raytrace ? rt : mech);
+
   const PART_LABELS = { upperArm: "upper arm" };
+
+  // pose channels arrive from the rig in RADIANS; sliders speak DEGREES. A few
+  // channels are ratios (curl 0..1, hipLevel a rate) and pass through untouched.
+  const RATIO = new Set(["curl", "hipLevel"]);
+  const isRatio = (key) => RATIO.has(baseChan(key));
+  const uiCtl = (rows) => rows.map(([key, label, min, max, step]) =>
+    isRatio(key)
+      ? [key, label, min, max, step ?? 0.01]
+      : [key, label, deg(min), deg(max), deg(step ?? 0.01)]);
+  const uiVal = (key, v) => (isRatio(key) ? v : deg(v));
+  const setPoseVal = (key, v) => (isRatio(key) ? +v : rad(+v));
+
+  // raytracer material slots — symmetric atlas parts fold onto one picker entry
+  const MATERIAL_TYPES = ["lambertian", "metal", "dielectric"];
+  const RT_PARTS = [
+    ["pelvis", "pelvis"], ["torso", "torso"], ["head", "head"],
+    ["upperArm", "upper arm"], ["forearm", "forearm"], ["hand", "hand"],
+    ["thigh", "thigh"], ["shin", "shin"], ["foot", "foot"],
+  ];
+  const DEFAULT_MATERIALS = {
+    pelvis: { type: "metal", fuzz: 0.08 },
+    torso: { type: "lambertian", roughness: 0.3 },
+    head: { type: "dielectric", ior: 1.5 },
+    upperArm: { type: "metal", fuzz: 0.1 },
+    forearm: { type: "lambertian", roughness: 0.3 },
+    hand: { type: "metal", fuzz: 0.15 },
+    thigh: { type: "lambertian", roughness: 0.3 },
+    shin: { type: "metal", fuzz: 0.1 },
+    foot: { type: "metal", fuzz: 0.05 },
+  };
+  let materials = $state(structuredClone(DEFAULT_MATERIALS));
+  const PART_OF_GROUP = (group) => {
+    const link = group ? group.slice(0, group.indexOf(":")) : "";
+    if (link.startsWith("dig") || link.startsWith("palm")) return "hand";
+    let base = link;
+    if (base.endsWith("L") || base.endsWith("R")) base = base.slice(0, -1);
+    switch (base) {
+      case "arm": return "upperArm";
+      case "fore": return "forearm";
+      case "leg": return "thigh";
+      case "shin": return "shin";
+      case "foot": return "foot";
+      default: return base;
+    }
+  };
+  function setMatType(key, type) {
+    const next = { type };
+    if (type === "lambertian") next.roughness = 0.3;
+    if (type === "metal") next.fuzz = 0.1;
+    if (type === "dielectric") next.ior = 1.5;
+    materials = { ...materials, [key]: next };
+  }
+  function setMatParam(key, field, value) {
+    materials = { ...materials, [key]: { ...materials[key], [field]: value } };
+  }
+  let stats = $state({ instances: 0, nodes: 0, buildMs: 0, traceMs: 0, fps: 0, samples: 0 });
   // [key, label, min, max, step?] sliders per part
   const PART_CTL = {
     head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["innerR", "inner ring radius", 0.06, 0.35]],
@@ -125,14 +195,38 @@
     // static body: no ride curve, the live items are their own anchors
     return { ...m, items: assembleModel(m.items, asm) };
   });
-  $effect(() => { scene?.apply({ spin: render.spin, lightAngle: render.light, wire: render.wire, model }); });
+  $effect(() => {
+    scene?.apply({
+      spin: render.spin,
+      lightAngle: render.light,
+      wire: render.wire,
+      model,
+      ...(render.raytrace ? {
+        light: render.light,
+        exposure: render.exposure,
+        softness: render.softness,
+        quality: render.quality,
+        materials,
+        partKey: PART_OF_GROUP,
+      } : {}),
+    });
+  });
   const PART_DIST = {
     digit: 2.5, palm: 3, forearm: 3.5, upperArm: 3.5,
     head: 3.5, foot: 3.5, shin: 4, thigh: 4, pelvis: 4, torso: 5.5,
   };
   $effect(() => {
     const dist = rigShown ? 12 : PART_DIST[asel] ?? 6;
+    engine;   // reframe the swapped-in renderer on the same view
     scene?.apply({ resetView: true, dist, lookY: rigShown ? atlasHeight(seed) / 2 : 0 });
+  });
+  $effect(() => {
+    if (!render.raytrace) return;
+    const t = setInterval(() => {
+      stats = rt.getStats();
+      stats.instances = model.items.length;
+    }, 400);
+    return () => clearInterval(t);
   });
   $effect(() => {
     const knobs = {
@@ -194,7 +288,8 @@
 <svelte:head><title>Atlas</title></svelte:head>
 
   <section>
-    <Scene bind:this={scene} scene={mech} id="atlas" onFrame={frame} />
+    <Scene bind:this={scene} scene={engine} id="atlas" onFrame={frame}
+      onError={() => (render.raytrace = false)} />
     <menu>
       <li>
         <button type="button" aria-pressed={partsOpen} title="parts" aria-label="parts"
@@ -240,7 +335,9 @@
     {#if tab === "render"}
       <fieldset>
         <legend>render</legend>
-        {#each RENDER_CTL as [key, label, min, max, step]}
+        <label><input type="checkbox" checked={render.raytrace}
+          onchange={(e) => (render.raytrace = e.currentTarget.checked)} /><span>ray tracing</span></label>
+        {#each renderCtl as [key, label, min, max, step]}
           {#if min === 0 && max === 1 && step === 1}
             <label><input type="checkbox" checked={!!render[key]}
               onchange={(e) => (render[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
@@ -253,6 +350,44 @@
         {/each}
         <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
       </fieldset>
+      {#if render.raytrace}
+        {#if rigShown}
+          <fieldset>
+            <legend>materials</legend>
+          <ul class="mats">
+            {#each RT_PARTS as [key, label]}
+              <li class="mat-row">
+                <span class="mat-name">{label}</span>
+                <select value={materials[key].type} onchange={(e) => setMatType(key, e.currentTarget.value)}>
+                  {#each MATERIAL_TYPES as mt}<option value={mt}>{mt}</option>{/each}
+                </select>
+                {#if materials[key].type === "metal"}
+                  <input type="range" min="0" max="0.5" step="0.01" value={materials[key].fuzz}
+                    oninput={(e) => setMatParam(key, "fuzz", +e.currentTarget.value)} title="fuzz" />
+                {:else if materials[key].type === "dielectric"}
+                  <input type="range" min="1" max="2.5" step="0.01" value={materials[key].ior}
+                    oninput={(e) => setMatParam(key, "ior", +e.currentTarget.value)} title="ior" />
+                {:else}
+                  <input type="range" min="0" max="1" step="0.01" value={materials[key].roughness}
+                    oninput={(e) => setMatParam(key, "roughness", +e.currentTarget.value)} title="roughness" />
+                {/if}
+              </li>
+            {/each}
+          </ul>
+        </fieldset>
+        {/if}
+        <fieldset>
+          <legend>stats</legend>
+          <dl>
+            <dt>primitives</dt><dd>{stats.instances}</dd>
+            <dt>bvh nodes</dt><dd>{stats.nodes}</dd>
+            <dt>bvh build</dt><dd>{stats.buildMs.toFixed(2)} ms</dd>
+            <dt>trace</dt><dd>{stats.traceMs.toFixed(1)} ms</dd>
+            <dt>samples</dt><dd>{stats.samples}</dd>
+            <dt>fps</dt><dd>{stats.fps || 0}</dd>
+          </dl>
+        </fieldset>
+      {/if}
     {:else if tab === "choreo"}
       <fieldset>
         <legend>choreo<button type="button" onclick={resetChoreo}>reset</button></legend>
@@ -335,15 +470,15 @@
     {:else if asel === "rig"}
       <fieldset>
         <legend>core<button type="button" onclick={resetAtlas}>reset</button></legend>
-        {#each coreCtl as [key, label, min, max, step]}
+        {#each uiCtl(coreCtl) as [key, label, min, max, step]}
           {#if min === 0 && max === 1 && step === 1}
             <label><input type="checkbox" checked={!!poseIn[key]}
               onchange={(e) => (poseIn[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
           {:else}
             <label><span>{label}</span>
-              <input type="range" {min} {max} step={step ?? 0.01} value={poseIn[key]}
-                oninput={(e) => (poseIn[key] = +e.currentTarget.value)} />
-              <output>{poseIn[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+              <input type="range" {min} {max} step={step ?? 0.01} value={uiVal(key, poseIn[key])}
+                oninput={(e) => (poseIn[key] = setPoseVal(key, e.currentTarget.value))} />
+              <output>{uiVal(key, poseIn[key]).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
           {/if}
         {/each}
       </fieldset>
@@ -356,15 +491,15 @@
               <span>mirror</span>
             </label>
           {/if}
-          {#each flankCtl(S) as [key, label, min, max, step]}
+          {#each uiCtl(flankCtl(S)) as [key, label, min, max, step]}
             {#if min === 0 && max === 1 && step === 1}
               <label><input type="checkbox" checked={!!poseIn[key]} disabled={rigLocked(mirror)?.has(key)}
                 onchange={(e) => (poseIn[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
             {:else}
               <label><span>{label}</span>
-                <input type="range" {min} {max} step={step ?? 0.01} value={poseIn[key]} disabled={rigLocked(mirror)?.has(key)}
-                  oninput={(e) => (poseIn[key] = +e.currentTarget.value)} />
-                <output>{poseIn[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+                <input type="range" {min} {max} step={step ?? 0.01} value={uiVal(key, poseIn[key])} disabled={rigLocked(mirror)?.has(key)}
+                  oninput={(e) => (poseIn[key] = setPoseVal(key, e.currentTarget.value))} />
+                <output>{uiVal(key, poseIn[key]).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
             {/if}
           {/each}
         </fieldset>
@@ -399,4 +534,20 @@
     height: 20px;
     display: block;
   }
+
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.15rem 0.75rem;
+    margin: 0;
+    font-size: 0.85rem;
+  }
+  dt { opacity: 0.6; }
+  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+  ul.mats { display: grid; gap: 0.4rem; }
+  li.mat-row { display: flex; align-items: center; gap: 0.4rem; }
+  .mat-name { flex: 1; font-size: 0.8rem; opacity: 0.85; }
+  li.mat-row select { flex: none; max-width: 6.5rem; font-size: 0.8rem; }
+  li.mat-row input[type="range"] { flex: 1; max-width: 5.5rem; }
 </style>

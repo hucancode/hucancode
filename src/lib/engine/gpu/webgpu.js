@@ -46,6 +46,7 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
   const shaders = [];
   let encoder = null;
   let texCounter = 0; // stable id per live GPUTexture, for bind-group cache keys
+  let bufCounter = 0; // stable id per live GPUBuffer (storage-buffer bind-group cache keys)
   let W = canvas.width, H = canvas.height;
   let msaaTex, msaaView, depthTex, depthView;
   const vpScratch = mat4.create();
@@ -75,23 +76,28 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
     let cap = align(data ? data.byteLength : size, 4);
     let buf = device.createBuffer({ size: Math.max(cap, 4), usage });
     if (data) queue.writeBuffer(buf, 0, data);
+    let id = ++bufCounter;
     return {
       get _buf() { return buf; },
+      get _id() { return id; },
       write(d, offset = 0) {
-        if (offset === 0 && d.byteLength > cap) { buf.destroy(); cap = align(d.byteLength, 4); buf = device.createBuffer({ size: cap, usage }); }
+        if (offset === 0 && d.byteLength > cap) { buf.destroy(); cap = align(d.byteLength, 4); buf = device.createBuffer({ size: cap, usage }); id = ++bufCounter; }
         queue.writeBuffer(buf, offset, d);
       },
       destroy() { buf.destroy(); },
     };
   }
 
-  function texture({ width, height, format: fmt = "rgba8", filter = "linear", data = null }) {
+  function texture({ width, height, format: fmt = "rgba8", filter = "linear", data = null, storage = false }) {
     const gfmt = fmt === "rgba32f" ? "rgba32float" : fmt === "rgba16f" ? "rgba16float" : "rgba8unorm";
     const bpp = fmt === "rgba32f" ? 16 : fmt === "rgba16f" ? 8 : 4;
+    let usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST;
+    if (storage) usage |= GPUTextureUsage.STORAGE_BINDING;
+    else usage |= GPUTextureUsage.RENDER_ATTACHMENT;
     let w = width, h = height, tex, view, id;
     function alloc(nw, nh) {
       tex?.destroy?.();
-      tex = device.createTexture({ size: [nw, nh], format: gfmt, usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT });
+      tex = device.createTexture({ size: [nw, nh], format: gfmt, usage });
       view = tex.createView(); w = nw; h = nh; id = ++texCounter; // realloc -> new id invalidates cached bind groups
     }
     function upload(d, dw, dh) { if (dw !== w || dh !== h) alloc(dw, dh); queue.writeTexture({ texture: tex }, d, { bytesPerRow: w * bpp, rowsPerImage: h }, { width: w, height: h }); }
@@ -140,6 +146,83 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
     if (sh._ring >= sh._ubos.length)
       sh._ubos.push({ buffer: device.createBuffer({ size: sh._ulayout.size, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), bgCache: new Map() });
     return sh._ubos[sh._ring++];
+  }
+
+  // WebGPU-only compute pipeline. `desc` mirrors shader():
+  //   wgsl            compute module (entry point defaults to "main")
+  //   uniforms        std140 block bound at @binding(0), optional
+  //   storage         [{ name, binding }] -> var<storage, read> buffers
+  //   textures        [{ name, binding }] -> read-only texture_2d<f32> bindings
+  //   storageTextures [{ name, binding }] -> texture_storage_2d bindings
+  // The returned handle's dispatch(gx, gy, gz, { uniforms, buffers, textures,
+  // storageTextures }) encodes one compute pass into the active frame encoder.
+  function computeShader(desc) {
+    const mod = device.createShaderModule({ code: desc.wgsl });
+    const pipeline = device.createComputePipeline({
+      layout: "auto",
+      compute: { module: mod, entryPoint: desc.entry || "main" },
+    });
+    const ulayout = desc.uniforms && desc.uniforms.length ? uniformLayout(desc.uniforms) : null;
+    const sh = {
+      _compute: pipeline, desc,
+      _bgl: pipeline.getBindGroupLayout(0),
+      _ulayout: ulayout,
+      _scratch: ulayout ? new ArrayBuffer(ulayout.size) : null,
+      _ubos: [], _ring: 0,
+      _noUbo: null,
+    };
+    if (sh._scratch) { sh._view = new DataView(sh._scratch); sh._bytes = new Uint8Array(sh._scratch); }
+    sh.dispatch = (gx, gy, gz, args) => dispatchImpl(sh, { gx, gy, gz, ...args });
+    shaders.push(sh); // beginFrame() resets its _ring along with render shaders
+    return sh;
+  }
+
+  function dispatchImpl(sh, args) {
+    let holder, ubo = null;
+    if (sh._ulayout) {
+      const e = nextUbo(sh);
+      sh._bytes.fill(0);
+      packUniforms(sh._ulayout, args.uniforms || {}, sh._view);
+      queue.writeBuffer(e.buffer, 0, sh._bytes);
+      ubo = e.buffer; holder = e;
+    } else {
+      holder = sh._noUbo || (sh._noUbo = { bgCache: new Map() });
+    }
+
+    const storages = sh.desc.storage || [];
+    const storageTextures = sh.desc.storageTextures || [];
+    const textures = sh.desc.textures || [];
+    let sig = "";
+    for (const s of storages) { const b = args.buffers && args.buffers[s.name]; sig += (b ? b._id : 0) + ":"; }
+    for (const t of storageTextures) { const tex = args.storageTextures && args.storageTextures[t.name]; sig += (tex ? tex._id : 0) + ":"; }
+    for (const t of textures) { const tex = args.textures && args.textures[t.name]; sig += (tex ? tex._id : 0) + ":"; }
+    let bg = holder.bgCache.get(sig);
+    if (!bg) {
+      const entries = [];
+      if (ubo) entries.push({ binding: 0, resource: { buffer: ubo } });
+      for (const s of storages) {
+        const b = args.buffers && args.buffers[s.name];
+        if (b) entries.push({ binding: s.binding, resource: { buffer: b._buf } });
+      }
+      for (const t of storageTextures) {
+        const tex = args.storageTextures && args.storageTextures[t.name];
+        if (tex) entries.push({ binding: t.binding, resource: tex._view });
+      }
+      for (const t of textures) {
+        const tex = args.textures && args.textures[t.name];
+        if (tex) entries.push({ binding: t.binding, resource: tex._view });
+        if (t.samplerBinding != null) entries.push({ binding: t.samplerBinding, resource: samplerFor(t.samplerFilter) });
+      }
+      bg = device.createBindGroup({ layout: sh._bgl, entries });
+      holder.bgCache.set(sig, bg);
+      if (holder.bgCache.size > 8) { const k = holder.bgCache.keys().next().value; holder.bgCache.delete(k); }
+    }
+
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(sh._compute);
+    pass.setBindGroup(0, bg);
+    pass.dispatchWorkgroups(args.gx || 1, args.gy || 1, args.gz || 1);
+    pass.end();
   }
 
   function drawImpl(rp, sh, args) {
@@ -211,7 +294,7 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
 
   return {
     backend: "webgpu", device,
-    buffer, texture, shader, pass, target, correctViewProj,
+    buffer, texture, shader, computeShader, pass, target, correctViewProj,
     beginFrame() { encoder = device.createCommandEncoder(); for (const s of shaders) s._ring = 0; },
     endFrame() { if (encoder) { queue.submit([encoder.finish()]); encoder = null; } },
     resize(w, h) {

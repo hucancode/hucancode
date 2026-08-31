@@ -26,10 +26,17 @@ import { geo, tri, triS, quad, merge } from "./geo.js";
 
 export const q4 = (v) => +(+v).toFixed(4);
 
-const REGISTRY = new Map();          // key -> { positions: F32, normals: F32 }
+const REGISTRY = new Map();          // key -> { positions: F32, normals: F32, shape }
 
 export function meshOf(key) {
   return REGISTRY.get(key);
+}
+
+// the ANALYTIC twin of a unit mesh (null for meshes with no closed form, e.g.
+// sculpted surfaces) — a ray tracer intersects THIS, not the triangle soup.
+//   { kind: "box"|"cylinder"|"coneCut"|..., p: [shape params in unit space] }
+export function shapeOf(key) {
+  return REGISTRY.get(key)?.shape ?? null;
 }
 
 // handle factory: register the unit mesh on first use, return an instance
@@ -37,12 +44,13 @@ export function meshOf(key) {
 // size (key + creation scale; rotations don't change it) — consumers color
 // by it so identical pieces match. Exported as `handle` for sibling mesh
 // families (sculpt.js) that register through the same registry.
-export function handle(key, gen, sx, sy, sz) {
+export function handle(key, gen, sx, sy, sz, shape = null) {
   if (!REGISTRY.has(key)) {
     const g = gen();
     REGISTRY.set(key, {
       positions: new Float32Array(g.positions),
       normals: new Float32Array(g.normals),
+      shape,
     });
   }
   return {
@@ -313,17 +321,17 @@ function genGear(To, Ti) {
 export function box(w = 1, h = 1, d = 1, slope = 0, curve = 0) {
   const sp = q4(Math.max(0, Math.min(slope, 0.9999)));
   const k = q4(Math.max(-1, Math.min(1, curve)));
-  return handle(`box:${sp}:${k}`, () => genBox(sp, k), w, h, d);
+  return handle(`box:${sp}:${k}`, () => genBox(sp, k), w, h, d, { kind: "box", p: [sp, k] });
 }
 
 export function cylinder(r = 0.5, h = 1, seg = 24) {
-  return handle(`cyl:${seg}`, () => cylBody(1, 1, seg, 0, TAU), r, h, r);
+  return handle(`cyl:${seg}`, () => cylBody(1, 1, seg, 0, TAU), r, h, r, { kind: "cylinder", p: [] });
 }
 
 // truncated cone: only the taper RATIO r1/r0 shapes the mesh
 export function coneCut(r0 = 0.5, r1 = 0.25, h = 1, seg = 24) {
   const q = q4(Math.max(0, r1 / r0));
-  return handle(`coneCut:${q}:${seg}`, () => genConeCut(q, seg), r0, h, r0);
+  return handle(`coneCut:${q}:${seg}`, () => genConeCut(q, seg), r0, h, r0, { kind: "coneCut", p: [q] });
 }
 
 // a cone IS coneCut(r, 0, ...)
@@ -332,33 +340,35 @@ export function cone(r = 0.5, h = 1, seg = 24) {
 }
 
 export function sphere(r = 0.5, seg = 24, rings = 16) {
-  return handle(`sph:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI, false), r, r, r);
+  return handle(`sph:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI, false), r, r, r, { kind: "sphere", p: [] });
 }
 
 export function hemisphere(r = 0.5, seg = 24, rings = 8) {
-  return handle(`hemi:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI / 2, true), r, r, r);
+  return handle(`hemi:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI / 2, true), r, r, r, { kind: "hemisphere", p: [] });
 }
 
 // socket shell — wall t and cut height are FRACTIONS of r
 export function cutHemisphere(r = 0.5, t = 0.25, cut = 0.7, seg = 24, rings = 6) {
   const tp = q4(Math.max(0.02, Math.min(t, 0.95)));
   const cp = q4(Math.max(0, Math.min(cut, 0.98)));
-  return handle(`cutHemi:${tp}:${cp}:${seg}:${rings}`, () => genCutHemisphere(tp, cp, seg, rings), r, r, r);
+  const ri = Math.max(0.05, 1 - tp);
+  const yc = Math.min(cp, ri - 1e-3);
+  return handle(`cutHemi:${tp}:${cp}:${seg}:${rings}`, () => genCutHemisphere(tp, cp, seg, rings), r, r, r, { kind: "cutHemisphere", p: [ri, yc] });
 }
 
 export function halfCylinder(r = 0.5, h = 1, seg = 12) {
-  return handle(`halfCyl:${seg}`, () => genHalfCylinder(seg, true), r, h, r);
+  return handle(`halfCyl:${seg}`, () => genHalfCylinder(seg, true), r, h, r, { kind: "halfCylinder", p: [] });
 }
 
 // arch box — the box depth enters the KEY as a FRACTION of r; height is a
 // free scale axis, so all arch boxes with one depth ratio share a mesh
 export function halfCylinderBox(r = 0.5, h = 1, depth = 0.5, seg = 12) {
   const dp = q4(depth / r);
-  return handle(`archBox:${dp}:${seg}`, () => genHalfCylinderBox(dp, seg), r, h, r);
+  return handle(`archBox:${dp}:${seg}`, () => genHalfCylinderBox(dp, seg), r, h, r, { kind: "halfCylinderBox", p: [dp] });
 }
 
 export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
-  return handle(`qCyl:${seg}`, () => genQuarterCylinder(seg), r, h, r);
+  return handle(`qCyl:${seg}`, () => genQuarterCylinder(seg), r, h, r, { kind: "quarterCylinder", p: [] });
 }
 
 // gear ring — teethOut / teethIn put teeth on the outer / inner rim; a count
@@ -369,5 +379,5 @@ export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
 export function gear(r = 0.5, h = 0.2, teethOut = 12, teethIn = 0) {
   const q = (t) => { const n = Math.round(t); return n >= 3 ? n : 0; };
   const To = q(teethOut), Ti = q(teethIn);
-  return handle(`gear:${To}:${Ti}`, () => genGear(To, Ti), r, h, r);
+  return handle(`gear:${To}:${Ti}`, () => genGear(To, Ti), r, h, r, { kind: "gear", p: [To, Ti] });
 }

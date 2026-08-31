@@ -1,6 +1,7 @@
 export const TAU = Math.PI * 2;
 export const DEG2RAD = Math.PI / 180;
 export const rad = (d) => d * DEG2RAD;
+export const deg = (r) => r / DEG2RAD;
 
 export const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 export const lerp = (a, b, k) => a + (b - a) * k;

@@ -8,6 +8,7 @@
     JOINT_NAMES, JOINT_PARAMS, JOINT_POSE, jointCatalogModel,
   } from "$lib/mech/joint-catalog.js";
   import { primitiveModel, PRIM_PARAMS, PRIM_NAMES } from "$lib/mech/primitives-catalog.js";
+  import { rad, deg } from "$lib/math/scalar.js";
 
   let { view, seed = 1, model = $bindable(null), sel = $bindable("") } = $props();
 
@@ -16,7 +17,7 @@
   let selJoint = $state(JOINTS[0]);
   let selPrim = $state(PRIM_NAMES[0]);
   let jparams = $state(structuredClone(JOINT_PARAMS));
-  let jpose = $state(structuredClone(JOINT_POSE));      // DOF channels, degrees
+  let jpose = $state(structuredClone(JOINT_POSE));      // DOF channels, radians
   let pparams = $state(structuredClone(PRIM_PARAMS));
 
   const JOINT_LABELS = {
@@ -78,6 +79,11 @@
   }
   function resetPrim() { pparams[selPrim] = structuredClone(PRIM_PARAMS[selPrim]); }
 
+  // pose channels live in RADIANS; the sliders speak degrees (a prismatic slide
+  // is a distance, so it passes through unconverted)
+  const poseOut = (key) => (selJoint === "prismatic" ? jpose[selJoint][key] : deg(jpose[selJoint][key]));
+  const poseIn = (key, v) => { jpose[selJoint][key] = selJoint === "prismatic" ? +v : rad(+v); };
+
   $effect(() => { sel = view === "blocks" ? selPrim : selJoint; });
   $effect(() => {
     model = view === "blocks"
@@ -138,9 +144,9 @@
           onchange={(e) => (jpose[selJoint][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
       {:else}
         <label><span>{label}</span>
-          <input type="range" {min} {max} step={step ?? 0.01} value={jpose[selJoint][key]}
-            oninput={(e) => (jpose[selJoint][key] = +e.currentTarget.value)} />
-          <output>{jpose[selJoint][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+          <input type="range" {min} {max} step={step ?? 0.01} value={poseOut(key)}
+            oninput={(e) => poseIn(key, e.currentTarget.value)} />
+          <output>{poseOut(key).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
       {/if}
     {/each}
   </fieldset>

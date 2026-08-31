@@ -64,17 +64,18 @@ const moveBounce = (time, power) => (t) =>
 // take the WHOLE range and reach the near-side angles too. `stale` = targets played lately
 // — the grid alphabet is SHORT (a [-60, 0] knee has two words), so a channel that does not
 // deliberately look elsewhere just alternates.
-const GRID = 45;
+const GRID = Math.PI / 4;
 const NEAR_CHANCE = 0.35;   // odds a beat takes a shorter move instead of crossing
 const MIN_TRAVEL = 0.15;    // shortest move worth making, as a fraction of the range
-function target(rnd, from, min, max, stale) {
+function target(rnd, from, min, max, stale, gridStep = GRID) {
   const mid = (min + max) / 2;
   const [flo, fhi] = from < mid ? [mid, max] : [min, mid];        // the far half
   const [lo, hi] = rnd() < NEAR_CHANCE ? [min, max] : [flo, fhi];
   const reach = MIN_TRAVEL * (max - min);
   const grid = [];
-  for (let g = Math.ceil(lo / GRID) * GRID; g <= hi + 1e-9; g += GRID)
-    if (Math.abs(g - from) >= reach) grid.push(g);
+  if (gridStep > 0)
+    for (let g = Math.ceil(lo / gridStep) * gridStep; g <= hi + 1e-9; g += gridStep)
+      if (Math.abs(g - from) >= reach) grid.push(g);
   const fresh = grid.filter((g) => !stale?.has(g));
   if (fresh.length) return pick(rnd, fresh);
   if (grid.length) return pick(rnd, grid);
@@ -222,7 +223,7 @@ export function createChoreographer(
     if (hist.length > MEMORY) hist.shift();
   };
   const aim = (rnd, s, cur) => {
-    const to = target(rnd, cur[s.key], s.min, s.max, new Set(played.get(s.key)));
+    const to = target(rnd, cur[s.key], s.min, s.max, new Set(played.get(s.key)), s.grid ?? GRID);
     remember(s.key, to);
     return to;
   };
