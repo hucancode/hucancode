@@ -203,7 +203,7 @@ function setConfig(patch) {
 }
 
 const { init, render, destroy } = createPlayground({
-  camera: { fov: 45, near: 1, far: 2000 },
+  camera: { fov: (45 * Math.PI) / 180, near: 1, far: 2000 },
   async init(ctx) {
     device = ctx.device;
     prog = device.program(DRAGON, { depth: true, topology: "tri" });

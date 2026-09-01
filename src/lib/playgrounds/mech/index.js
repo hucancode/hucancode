@@ -59,7 +59,7 @@ function setConfig(patch) {
 }
 
 const { init, render, destroy } = createPlayground({
-  camera: { fov: 45, near: 0.05, far: 500 },
+  camera: { fov: (45 * Math.PI) / 180, near: 0.05, far: 500 },
   init({ device, canvas }) {
     shader = device.program(INSTANCED_MODULE, {
       ...INSTANCED_OPTS,

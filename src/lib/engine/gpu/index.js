@@ -7,8 +7,7 @@ const ORDER = (prefer) => [...new Set([prefer, "webgpu", "webgl"])];
 function available(name) {
   if (name === "webgpu")
     return typeof navigator !== "undefined" && !!navigator.gpu;
-  if (name === "webgl") return typeof document !== "undefined";
-  return false;
+  return name === "webgl";
 }
 
 export async function createDevice(

@@ -272,7 +272,7 @@ function poseModel(out, pc) {
 }
 
 const { init, render, destroy } = createPlayground({
-  camera: { fov: 45, near: 0.1, far: 2000 },
+  camera: { fov: (45 * Math.PI) / 180, near: 0.1, far: 2000 },
   init(ctx) {
     device = ctx.device;
     shader = device.program(LEGO, { depth: true, topology: "tri" });

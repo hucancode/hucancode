@@ -51,7 +51,6 @@ const TOPO = {
   "line-strip": "line-strip",
   point: "point-list",
 };
-const CULL = { none: "none", back: "back", front: "front" };
 const RENDER_FMT = {
   rgba8: "rgba8unorm",
   rgba16f: "rgba16float",
@@ -256,7 +255,7 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
   }
 
   function pipelineFor(sh, targetFormat, sampleCount, hasDepth, cullOverride) {
-    const cull = CULL[(cullOverride ?? sh._opts.cull) || "none"];
+    const cull = (cullOverride ?? sh._opts.cull) || "none";
     const key =
       targetFormat + ":" + sampleCount + ":" + (hasDepth ? 1 : 0) + ":" + cull;
     let p = sh._pipelines.get(key);
@@ -439,8 +438,8 @@ export async function createWebGPUDevice(canvas, { msaa = true } = {}) {
 
   return {
     backend: "webgpu",
-    perspective(out, fovyDeg, aspect, near, far) {
-      mat4.perspective(out, (fovyDeg * Math.PI) / 180, aspect, near, far);
+    perspective(out, fovy, aspect, near, far) {
+      mat4.perspective(out, fovy, aspect, near, far);
       mat4.clipZ0to1(out, out);
       return out;
     },

@@ -410,8 +410,8 @@ export function createWebGLDevice(canvas, { msaa = true } = {}) {
 
   return {
     backend: "webgl",
-    perspective(out, fovyDeg, aspect, near, far) {
-      mat4.perspective(out, (fovyDeg * Math.PI) / 180, aspect, near, far);
+    perspective(out, fovy, aspect, near, far) {
+      mat4.perspective(out, fovy, aspect, near, far);
       return out;
     },
     buffer,
