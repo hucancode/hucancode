@@ -33,6 +33,7 @@ export function jointCatalogModel(kind, seed = 1, params = null, pose = null) {
   const q = {};
   for (const k of Object.keys(JOINT_POSE[kind]))
     q[k] = pose?.[k] ?? 0;   // radians (a prismatic slide is a distance, same path)
-  // the params double as the joint's build options (the disc / tang flags)
-  return collect((add) => jointModel(kind, add, p, q, p), seed);
+  // the params carry the joint's build flags too (disc / tang), so one object
+  // drives both geometry and build options
+  return collect((add) => jointModel(kind, add, p, q), seed);
 }

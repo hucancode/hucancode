@@ -12,21 +12,21 @@
     onSeek = null,
   } = $props();
 
-  const W = width;
-  const H = height;
-  const left = pad;
-  const right = W - pad;
-  const top = pad;
-  const bottom = H - pad;
-  const plotW = right - left;
-  const plotH = bottom - top;
+  const W = $derived(width);
+  const H = $derived(height);
+  const left = $derived(pad);
+  const right = $derived(W - pad);
+  const top = $derived(pad);
+  const bottom = $derived(H - pad);
+  const plotW = $derived(right - left);
+  const plotH = $derived(bottom - top);
 
   const sx = (x) => left + ((x - xMin) / (xMax - xMin)) * plotW;
   const sy = (y) => top + ((yMax - y) / (yMax - yMin)) * plotH;
   const ix = (px) => xMin + ((px - left) / plotW) * (xMax - xMin);
   const iy = (py) => yMax - ((py - top) / plotH) * (yMax - yMin);
 
-  const scale = { x: sx, y: sy, ix, iy, left, right, top, bottom };
+  const scale = $derived({ x: sx, y: sy, ix, iy, left, right, top, bottom });
 
   function niceStep(range, target = 7) {
     const raw = range / target;
@@ -35,18 +35,24 @@
     const f = n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10;
     return f * mag;
   }
-  const xStep = niceStep(xMax - xMin);
-  const yStep = niceStep(yMax - yMin);
-  const xTicks = [];
-  for (let t = Math.ceil(xMin / xStep) * xStep; t <= xMax + xStep * 1e-6; t += xStep) xTicks.push(t);
-  const yTicks = [];
-  for (let t = Math.ceil(yMin / yStep) * yStep; t <= yMax + yStep * 1e-6; t += yStep) yTicks.push(t);
+  const xStep = $derived(niceStep(xMax - xMin));
+  const yStep = $derived(niceStep(yMax - yMin));
+  const xTicks = $derived.by(() => {
+    const ticks = [];
+    for (let t = Math.ceil(xMin / xStep) * xStep; t <= xMax + xStep * 1e-6; t += xStep) ticks.push(t);
+    return ticks;
+  });
+  const yTicks = $derived.by(() => {
+    const ticks = [];
+    for (let t = Math.ceil(yMin / yStep) * yStep; t <= yMax + yStep * 1e-6; t += yStep) ticks.push(t);
+    return ticks;
+  });
   const fmt = (t) => {
     const r = Math.round(t * 1e6) / 1e6;
     return Object.is(r, -0) ? "0" : String(r);
   };
-  const xLabelY = Math.min(Math.max(sy(0) + 15, top + 10), bottom + 18);
-  const yLabelX = Math.min(Math.max(sx(0) - 8, 8), left - 6);
+  const xLabelY = $derived(Math.min(Math.max(sy(0) + 15, top + 10), bottom + 18));
+  const yLabelX = $derived(Math.min(Math.max(sx(0) - 8, 8), left - 6));
 
   let svg = $state();
   let dragging = $state(false);

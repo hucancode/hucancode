@@ -40,7 +40,7 @@
 // since a corner and its mirror fold to the same u.
 //
 // DESIGNS — the layout is a grid, so a grid of TEXT can state it outright (see
-// SCULPT_NOTATION). A design replaces the dice for a face: it fixes the cells,
+// the design notation in the sculpt playground's +page.svelte). A design replaces the dice for a face: it fixes the cells,
 // what merges with what, and which way each plate goes. `slant` and `seed` still
 // shape the corners, since the notation says nothing about them.
 import { TAU } from "../math/scalar.js";
@@ -71,38 +71,6 @@ export function sculptKey(sc) {
   return [s.cell, s.size, s.depth, s.slant, s.density, s.merge, s.cuts,
     s.boss, s.bossR, s.bossH, s.bossCuts, s.mirror, s.seed].map(q4).join(",") + `:${d}`;
 }
-
-// ---- NOTATION --------------------------------------------------------------
-// A design is a picture of the face, one character per cell, drawn the way you
-// look at it: the FIRST line is the TOP row. Whitespace is ignored, so
-// ".a a ." and ".aa." are the same and columns can be spaced out to stay
-// readable. Short rows pad with flat cells.
-//
-//   .   flat — no sculpt
-//   *   stud — a cylindrical stub standing OUT of the face ('O' does the same)
-//   o   hole — the same stud bored IN, a round socket
-//   a-z plate, CUT INTO the face
-//   A-Z plate, RAISED out of the face
-//
-// Lower case goes IN and upper case comes OUT throughout, studs included, which
-// is why 'o' and 'O' are spoken for and cannot name a plate. Every other letter
-// can. The LETTER names the plate: cells touching edge-to-edge that carry the
-// same letter merge into ONE plate, and different letters stay apart even when
-// they touch. That is the whole trick — it is how you draw an L, a long rail, or
-// two plates butted against each other without them fusing:
-//
-//   a a . B B B      one L-shaped cut plate 'a', one raised rail 'B', a stud
-//   a . . . . *      standing out, a hole bored in, and 'c'/'d' side by side
-//   a . o . c c d d  but separate because they are named differently.
-//
-// A design fixes the layout, so `density`, `merge` and `cuts` no longer apply to
-// that face, and `mirror` is ignored — draw it symmetric if you want symmetry.
-// `cell` no longer sets the grid either: the text's own size does.
-export const SCULPT_NOTATION = `.   flat
-*   stud OUT
-o   hole IN
-a-z plate cut IN
-A-Z plate raised OUT`;
 
 const isStudOut = (c) => c === "*" || c === "O";
 const isStudIn = (c) => c === "o";

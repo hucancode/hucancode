@@ -1,9 +1,3 @@
-// Instanced mesh shading for the procedural primitive engine. Geometry is a
-// shared UNIT MESH; each instance carries its model matrix rows (3x vec4:
-// linear row + translation in w), normal matrix rows (inverse-transpose, so
-// non-uniform scale and mirroring shade correctly) and a color whose alpha
-// (x uOpacity) drives assembly fade-ins.
-// Fields MUST match the `uniforms` list order in instancing.js.
 struct Uni {
   uViewProj: mat4x4<f32>,
   uLightPos: vec3<f32>,

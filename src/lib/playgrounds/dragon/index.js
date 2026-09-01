@@ -1,4 +1,5 @@
-import { createPlayground, loadDragonMesh, F32, VEC3, MAT4 } from "$lib/engine/index.js";
+import { createPlayground } from "$lib/engine/index.js";
+import { loadDragonMesh } from "$lib/mesh/obj.js";
 import { buildSpline } from "$lib/math/curve.js";
 import DRAGON from "./shaders/dragon.wgsl?shader";
 import PATH from "./shaders/path.wgsl?shader";
@@ -7,36 +8,79 @@ const DRAGON_OBJ = "/assets/obj/dragon-low.obj";
 const N_FRAMES = 384;
 const MAX_DRAGON = 8;
 
-const BUF_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
-const BUF_NRM = { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] };
-const BUF_PATH = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
-
 const config = {
-  preset: "circle", points: 20, spread: 1, speed: 0.0008, showLights: false, showPath: true,
-  bodyFraction: 0.25,   // body length as fraction of loop
-  girthFactor: 0.0012,  // cross-section scale relative to path length
+  preset: "circle",
+  points: 20,
+  spread: 1,
+  speed: 0.0008,
+  showLights: false,
+  showPath: true,
+  bodyFraction: 0.25, // body length as fraction of loop
+  girthFactor: 0.0012, // cross-section scale relative to path length
 };
 // knobs baked into the spline/mesh: changing any rebuilds every dragon
-const SHAPE_KEYS = ["preset", "points", "spread", "bodyFraction", "girthFactor"];
+const SHAPE_KEYS = [
+  "preset",
+  "points",
+  "spread",
+  "bodyFraction",
+  "girthFactor",
+];
 
-let device = null, prog, pathProg, dragonPos, dragonNorm, dragonCount = 0;
+let device = null,
+  prog,
+  pathProg,
+  dragonPos,
+  dragonNorm,
+  dragonCount = 0;
 let dragons = [];
 let time = 0;
 
 function buildPath(preset, n, s) {
   const pts = [];
   if (preset === "circle") {
-    const R = 14 * s, CZ = 150 * s, CY = 12 * s; // facing camera: circle in XY plane
-    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; pts.push({ x: Math.cos(a) * R, y: Math.sin(a) * R + CY, z: CZ }); }
+    const R = 14 * s,
+      CZ = 150 * s,
+      CY = 12 * s; // facing camera: circle in XY plane
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      pts.push({ x: Math.cos(a) * R, y: Math.sin(a) * R + CY, z: CZ });
+    }
   } else if (preset === "figure8") {
-    const R = 21 * s, CZ = 150 * s, CY = 12 * s; // facing camera: lemniscate in XY plane
-    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; pts.push({ x: Math.sin(a) * R, y: Math.sin(a * 2) * R * 0.5 + CY, z: CZ }); }
+    const R = 21 * s,
+      CZ = 150 * s,
+      CY = 12 * s; // facing camera: lemniscate in XY plane
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      pts.push({
+        x: Math.sin(a) * R,
+        y: Math.sin(a * 2) * R * 0.5 + CY,
+        z: CZ,
+      });
+    }
   } else if (preset === "helix") {
     const R = 55 * s;
-    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 * 3; pts.push({ x: Math.cos(a) * R, y: (i / n - 0.5) * 120 * s, z: Math.sin(a) * R }); }
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 * 3;
+      pts.push({
+        x: Math.cos(a) * R,
+        y: (i / n - 0.5) * 120 * s,
+        z: Math.sin(a) * R,
+      });
+    }
   } else {
-    const MIN_X = -40 * s, VAR_X = 80 * s, MIN_Y = -40 * s, VAR_Y = 80 * s, MIN_Z = -80 * s, VAR_Z = 160 * s;
-    for (let i = 0; i < n; i++) pts.push({ x: Math.random() * VAR_X + MIN_X, y: Math.random() * VAR_Y + MIN_Y, z: Math.random() * VAR_Z + MIN_Z });
+    const MIN_X = -40 * s,
+      VAR_X = 80 * s,
+      MIN_Y = -40 * s,
+      VAR_Y = 80 * s,
+      MIN_Z = -80 * s,
+      VAR_Z = 160 * s;
+    for (let i = 0; i < n; i++)
+      pts.push({
+        x: Math.random() * VAR_X + MIN_X,
+        y: Math.random() * VAR_Y + MIN_Y,
+        z: Math.random() * VAR_Z + MIN_Z,
+      });
   }
   return pts;
 }
@@ -51,33 +95,61 @@ function bakeFrames(points) {
     const p = spline.pos(arc);
     const tg = spline.tan(arc);
     // world-up frame. tangent near-vertical -> fall back +Z
-    let ux = 0, uy = 1, uz = 0;
-    if (Math.abs(tg.y) > 0.95) { ux = 0; uy = 0; uz = 1; }
+    let ux = 0,
+      uy = 1,
+      uz = 0;
+    if (Math.abs(tg.y) > 0.95) {
+      ux = 0;
+      uy = 0;
+      uz = 1;
+    }
     let nx = uy * tg.z - uz * tg.y;
     let ny = uz * tg.x - ux * tg.z;
     let nz = ux * tg.y - uy * tg.x;
     const nl = Math.hypot(nx, ny, nz) || 1;
-    nx /= nl; ny /= nl; nz /= nl;
+    nx /= nl;
+    ny /= nl;
+    nz /= nl;
     const bx = tg.y * nz - tg.z * ny;
     const by = tg.z * nx - tg.x * nz;
     const bz = tg.x * ny - tg.y * nx;
     const o = i * 16;
-    frames[o] = tg.x; frames[o + 1] = tg.y; frames[o + 2] = tg.z; frames[o + 3] = 0;
-    frames[o + 4] = nx; frames[o + 5] = ny; frames[o + 6] = nz; frames[o + 7] = 0;
-    frames[o + 8] = bx; frames[o + 9] = by; frames[o + 10] = bz; frames[o + 11] = 0;
-    frames[o + 12] = p.x; frames[o + 13] = p.y; frames[o + 14] = p.z; frames[o + 15] = 1;
+    frames[o] = tg.x;
+    frames[o + 1] = tg.y;
+    frames[o + 2] = tg.z;
+    frames[o + 3] = 0;
+    frames[o + 4] = nx;
+    frames[o + 5] = ny;
+    frames[o + 6] = nz;
+    frames[o + 7] = 0;
+    frames[o + 8] = bx;
+    frames[o + 9] = by;
+    frames[o + 10] = bz;
+    frames[o + 11] = 0;
+    frames[o + 12] = p.x;
+    frames[o + 13] = p.y;
+    frames[o + 14] = p.z;
+    frames[o + 15] = 1;
   }
   return { frames, pathLen: total };
 }
 
 function randomColor() {
-  const palette = [[0.25, 0.7, 1.0], [1.0, 0.55, 0.2], [0.6, 0.9, 0.4], [0.95, 0.4, 0.5], [0.8, 0.7, 1.0]];
+  const palette = [
+    [0.25, 0.7, 1.0],
+    [1.0, 0.55, 0.2],
+    [0.6, 0.9, 0.4],
+    [0.95, 0.4, 0.5],
+    [0.8, 0.7, 1.0],
+  ];
   return palette[Math.floor(Math.random() * palette.length)];
 }
 
 function makeDragon() {
   if (!device || !dragonCount || dragons.length >= MAX_DRAGON) return;
-  const { frames, pathLen } = bakeFrames(buildPath(config.preset, config.points, config.spread));
+  const { frames, pathLen } = bakeFrames(
+    buildPath(config.preset, config.points, config.spread),
+  );
   // append first point again to close the loop (line-strip, not line-loop)
   const pathCount = N_FRAMES + 1;
   const pathPos = new Float32Array(pathCount * 3);
@@ -90,7 +162,13 @@ function makeDragon() {
   pathPos[N_FRAMES * 3 + 1] = frames[13];
   pathPos[N_FRAMES * 3 + 2] = frames[14];
 
-  const tex = device.texture({ width: 4, height: N_FRAMES, format: "rgba32f", filter: "nearest", data: frames });
+  const tex = device.texture({
+    width: 4,
+    height: N_FRAMES,
+    format: "rgba32f",
+    filter: "nearest",
+    data: frames,
+  });
   const pathBuf = device.buffer({ kind: "vertex", data: pathPos });
   dragons.push({
     tex,
@@ -118,30 +196,20 @@ function regenerate() {
   for (let i = 0; i < count; i++) makeDragon();
 }
 
-const { init, render, destroy, setConfig } = createPlayground({
-  setConfig(patch) {
-    const reshaped = SHAPE_KEYS.some((k) => k in patch && patch[k] !== config[k]);
-    Object.assign(config, patch);
-    if (reshaped) regenerate();
-  },
+function setConfig(patch) {
+  const reshaped = SHAPE_KEYS.some((k) => k in patch && patch[k] !== config[k]);
+  Object.assign(config, patch);
+  if (reshaped) regenerate();
+}
+
+const { init, render, destroy } = createPlayground({
   camera: { fov: 45, near: 1, far: 2000 },
   async init(ctx) {
     device = ctx.device;
-    prog = device.shader({
-      ...DRAGON,
-      buffers: [BUF_POS, BUF_NRM],
-      uniforms: [
-        F32("uN"), F32("uPathLen"), F32("uBodyLen"), F32("uHeadOffset"), F32("uGirth"),
-        MAT4("uViewProj"), VEC3("uLightDir"), VEC3("uLightColor"), VEC3("uAmbient"), VEC3("uBaseColor"),
-      ],
-      textures: [{ name: "uFrames", binding: 1 }],
-      blend: "none", depth: "test", topology: "tri",
-    });
-    pathProg = device.shader({
-      ...PATH,
-      buffers: [BUF_PATH],
-      uniforms: [MAT4("uViewProj"), VEC3("uColor")],
-      blend: "straight", depth: "none", topology: "line-strip",
+    prog = device.program(DRAGON, { depth: true, topology: "tri" });
+    pathProg = device.program(PATH, {
+      blend: "straight",
+      topology: "line-strip",
     });
 
     ctx.camera.position.set(0, 20, 200);
@@ -160,45 +228,71 @@ const { init, render, destroy, setConfig } = createPlayground({
     time += dt;
 
     camera.update(); // refresh viewProj after any aspect change
-    // copy shared scratch before reusing across draws
-    const vp = device.correctViewProj(camera.viewProjMatrix).slice();
+    const vp = camera.viewProjMatrix;
 
     let lightDir, lightColor, ambient;
     if (config.showLights) {
-      lightDir = [Math.sin(time * 0.7) * 0.6 + 0.2, Math.cos(time * 0.5) * 0.8 + 0.6, Math.cos(time * 0.3) * 0.6 + 0.3];
-      lightColor = [(Math.sin(time * 0.3) + 1) * 0.5, (Math.sin(time * 0.7) + 1) * 0.5, (Math.sin(time * 0.2) + 1) * 0.5];
-      ambient = [(Math.sin(time * 0.1) + 1) * 0.25, (Math.sin(time * 0.07) + 1) * 0.25, (Math.sin(time * 0.03) + 1) * 0.3];
+      lightDir = [
+        Math.sin(time * 0.7) * 0.6 + 0.2,
+        Math.cos(time * 0.5) * 0.8 + 0.6,
+        Math.cos(time * 0.3) * 0.6 + 0.3,
+      ];
+      lightColor = [
+        (Math.sin(time * 0.3) + 1) * 0.5,
+        (Math.sin(time * 0.7) + 1) * 0.5,
+        (Math.sin(time * 0.2) + 1) * 0.5,
+      ];
+      ambient = [
+        (Math.sin(time * 0.1) + 1) * 0.25,
+        (Math.sin(time * 0.07) + 1) * 0.25,
+        (Math.sin(time * 0.03) + 1) * 0.3,
+      ];
     } else {
       lightDir = [0.3, 1.0, 0.5];
       lightColor = [1, 1, 1];
       ambient = [0.25, 0.28, 0.35];
     }
 
-    device.beginFrame();
-    device.pass({ clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
-      for (const d of dragons) {
-        // wrap by pathLen so offset stays bounded over long runs
-        d.headOffset = (d.headOffset + config.speed * d.pathLen) % d.pathLen;
-        p.draw(prog, {
-          buffers: [dragonPos, dragonNorm], count: dragonCount, textures: { uFrames: d.tex },
-          uniforms: {
-            uViewProj: vp, uN: N_FRAMES, uPathLen: d.pathLen, uBodyLen: d.bodyLen,
-            uHeadOffset: d.headOffset, uGirth: d.girth,
-            uLightDir: lightDir, uLightColor: lightColor, uAmbient: ambient, uBaseColor: d.color,
-          },
-        });
-      }
-      if (config.showPath) {
+    device.render(
+      { clear: { color: [0.09, 0.09, 0.11, 1], depth: 1 } },
+      (p) => {
         for (const d of dragons) {
-          p.draw(pathProg, { buffers: [d.pathBuf], count: d.pathCount, uniforms: { uViewProj: vp, uColor: d.color } });
+          // wrap by pathLen so offset stays bounded over long runs
+          d.headOffset = (d.headOffset + config.speed * d.pathLen) % d.pathLen;
+          p.draw(prog, {
+            buffers: { position: dragonPos, normal: dragonNorm },
+            count: dragonCount,
+            bindings: { uFrames: d.tex },
+            uniforms: {
+              uViewProj: vp,
+              uN: N_FRAMES,
+              uPathLen: d.pathLen,
+              uBodyLen: d.bodyLen,
+              uHeadOffset: d.headOffset,
+              uGirth: d.girth,
+              uLightDir: lightDir,
+              uLightColor: lightColor,
+              uAmbient: ambient,
+              uBaseColor: d.color,
+            },
+          });
         }
-      }
-    });
-    device.endFrame();
+        if (config.showPath) {
+          for (const d of dragons) {
+            p.draw(pathProg, {
+              buffers: { position: d.pathBuf },
+              count: d.pathCount,
+              uniforms: { uViewProj: vp, uColor: d.color },
+            });
+          }
+        }
+      },
+    );
   },
   destroy() {
     clearDragon();
-    dragonPos?.destroy(); dragonNorm?.destroy();
+    dragonPos?.destroy();
+    dragonNorm?.destroy();
     dragonPos = dragonNorm = null;
     dragonCount = 0;
     prog = pathProg = null;
@@ -206,4 +300,12 @@ const { init, render, destroy, setConfig } = createPlayground({
   },
 });
 
-export { init, render, destroy, setConfig, makeDragon, clearDragon, regenerate };
+export {
+  init,
+  render,
+  destroy,
+  setConfig,
+  makeDragon,
+  clearDragon,
+  regenerate,
+};

@@ -11,9 +11,9 @@
 // A beat may instead be rehearsed: a snap home, or a MONTAGE (setup + keyframes). Every
 // plan is beat-length or a WHOLE multiple of it, so an outside clock (the music) can rely
 // on the beat and never has to ask what the rig is in the middle of.
-import { mulberry32 } from "$lib/math/random.js";
-import { eases } from "$lib/math/ease.js";
-import { lerp } from "$lib/math/scalar.js";
+import { mulberry32 } from "../math/random.js";
+import { eases } from "../math/ease.js";
+import { lerp } from "../math/scalar.js";
 
 export const CHOREO_TIMING = {
   period: 1.5,        // seconds between beats
@@ -27,6 +27,16 @@ export const CHOREO_TIMING = {
   splitChance: 0.1,   // mirrored -> split
   mergeChance: 0.3,   // split -> mirrored
 };
+
+// The slider surface over CHOREO_TIMING (seconds / ratios, no unit conversion).
+export const CHOREO_CTL = [
+  ["anticRatio", "anticipation", 0, 0.4, 0.01],
+  ["restRatio", "rest", 0, 0.4, 0.01],
+  ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
+  ["bouncePower", "bounce power", 0, 1, 0.01],
+  ["styleBeats", "style hold", 1, 30, 1],
+  ["pulseChance", "hip pulse", 0, 1, 0.05],
+];
 const NEAR_END = 0.05;         // a cue this close to the beat's end is that beat ENDING
 const HOME_CHANCE = 0.05;      // odds a beat is a snap back to the rest pose
 const MONTAGE_CHANCE = 0.1;    // odds a beat is a rehearsed montage instead

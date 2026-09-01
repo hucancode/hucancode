@@ -1,4 +1,6 @@
-// GPU RAY TRACER (WebGPU compute)
+// GPU RAY TRACER (raster fullscreen pass). The BVH and per-instance records are
+// packed into rgba32f DATA TEXTURES so the tracer runs on WebGPU and WebGL2 alike
+// (no compute, no storage buffers/textures).
 
 struct Params {
   camOrigin: vec3<f32>,
@@ -10,21 +12,18 @@ struct Params {
   aspect: f32,
   softness: f32,
   reset: f32,
-  jx: f32,
-  jy: f32,
+  raycount: i32,
+  sampleBase: i32,
   frameNo: i32,
   width: i32,
   height: i32,
   root: i32,
-  nodeCount: i32,
-  instanceCount: i32,
 };
 
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var<storage, read> bvh: array<f32>;
-@group(0) @binding(2) var<storage, read> inst: array<f32>;
+@group(0) @binding(1) var bvhTex: texture_2d<f32>;
+@group(0) @binding(2) var instTex: texture_2d<f32>;
 @group(0) @binding(3) var accPrev: texture_2d<f32>;
-@group(0) @binding(4) var accNext: texture_storage_2d<rgba32float, write>;
 
 const EPS = 1e-5;      // world-distance epsilon for a hit
 const PAR = 1e-9;      // near-parallel guard for planar faces
@@ -64,6 +63,19 @@ fn hash3(x: i32, y: i32, z: i32) -> u32 {
   return n ^ (n >> 16u);
 }
 
+// radical-inverse Halton sample in base b — low-discrepancy per-pixel jitter
+fn halton(i: i32, b: i32) -> f32 {
+  var f = 1.0;
+  var r = 0.0;
+  var n = i;
+  while (n > 0) {
+    f = f / f32(b);
+    r = r + f * f32(n % b);
+    n = n / b;
+  }
+  return r;
+}
+
 // one of 64 golden-spiral directions on the area-light cone around lightDir
 fn areaLightDir(k: i32) -> vec3<f32> {
   let ld = params.lightDir;
@@ -78,12 +90,34 @@ fn areaLightDir(k: i32) -> vec3<f32> {
   return normalize(ld + t1 * ca + t2 * cb);
 }
 
-// row-major 3x3 starting at `base` in the instance array, times a vector
-fn matMulVAt(base: i32, v: vec3<f32>) -> vec3<f32> {
+// instance data texture layout (width=8, one row per instance):
+//   texel 0 = (kind, p0, p1, p2)         texel 1 = (p3, IM0, IM1, IM2)
+//   texel 2 = (IM3, IM4, IM5, IM6)       texel 3 = (IM7, IM8, IMT0, IMT1)
+//   texel 4 = (IMT2, IMT3, IMT4, IMT5)   texel 5 = (IMT6, IMT7, IMT8, IinvT.x)
+//   texel 6 = (IinvT.y, IinvT.z, cr, cg) texel 7 = (cb, mat, matParam, pad)
+fn instT(i: i32, t: i32) -> vec4<f32> { return textureLoad(instTex, vec2<i32>(t, i), 0); }
+
+// row-major inverse matrix (IM) times a vector
+fn matMulVAt(i: i32, v: vec3<f32>) -> vec3<f32> {
+  let t1 = instT(i, 1);
+  let t2 = instT(i, 2);
+  let t3 = instT(i, 3);
   return vec3<f32>(
-    inst[base] * v.x + inst[base + 1] * v.y + inst[base + 2] * v.z,
-    inst[base + 3] * v.x + inst[base + 4] * v.y + inst[base + 5] * v.z,
-    inst[base + 6] * v.x + inst[base + 7] * v.y + inst[base + 8] * v.z,
+    t1.y * v.x + t1.z * v.y + t1.w * v.z,
+    t2.x * v.x + t2.y * v.y + t2.z * v.z,
+    t2.w * v.x + t3.x * v.y + t3.y * v.z,
+  );
+}
+
+// row-major inverse-transpose matrix (IMT) times a vector
+fn matMulNormalAt(i: i32, v: vec3<f32>) -> vec3<f32> {
+  let t3 = instT(i, 3);
+  let t4 = instT(i, 4);
+  let t5 = instT(i, 5);
+  return vec3<f32>(
+    t3.z * v.x + t3.w * v.y + t4.x * v.z,
+    t4.y * v.x + t4.z * v.y + t4.w * v.z,
+    t5.x * v.x + t5.y * v.y + t5.z * v.z,
   );
 }
 
@@ -554,27 +588,32 @@ fn tracePrimary(o: vec3<f32>, d: vec3<f32>) -> TraceResult {
   while (sp > 0) {
     sp = sp - 1;
     let node = stack[sp];
-    let base = node * 8;
-    let l = i32(bvh[base]);
-    let r = i32(bvh[base + 1]);
+    let n0 = textureLoad(bvhTex, vec2<i32>(0, node), 0);
+    let n1 = textureLoad(bvhTex, vec2<i32>(1, node), 0);
+    let l = i32(n0.x);
+    let r = i32(n0.y);
     if (r < 0) {
       let i = l;
-      let ib = i * 32;
-      let kkind = i32(inst[ib]);
-      let p0 = inst[ib + 1]; let p1 = inst[ib + 2]; let p2 = inst[ib + 3]; let p3 = inst[ib + 4];
-      let lo = matMulVAt(ib + 5, o) + vec3<f32>(inst[ib + 23], inst[ib + 24], inst[ib + 25]);
-      let ld = matMulVAt(ib + 5, d);
+      let t0 = instT(i, 0);
+      let t1 = instT(i, 1);
+      let t5 = instT(i, 5);
+      let t6 = instT(i, 6);
+      let kkind = i32(t0.x);
+      let p0 = t0.y; let p1 = t0.z; let p2 = t0.w; let p3 = t1.x;
+      let lo = matMulVAt(i, o) + vec3<f32>(t5.w, t6.x, t6.y);
+      let ld = matMulVAt(i, d);
       let h = intersectShape(kkind, p0, p1, p2, p3, lo, ld);
       if (h.t < best) {
         best = h.t; kind = i;
-        n = normalize(matMulVAt(ib + 14, h.n));
+        n = normalize(matMulNormalAt(i, h.n));
       }
     } else {
-      let mnl = vec3<f32>(bvh[base + 2], bvh[base + 3], bvh[base + 4]);
-      let mxl = vec3<f32>(bvh[base + 5], bvh[base + 6], bvh[base + 7]);
-      let rb = r * 8;
-      let mnr = vec3<f32>(bvh[rb + 2], bvh[rb + 3], bvh[rb + 4]);
-      let mxr = vec3<f32>(bvh[rb + 5], bvh[rb + 6], bvh[rb + 7]);
+      let mnl = vec3<f32>(n0.z, n0.w, n1.x);
+      let mxl = vec3<f32>(n1.y, n1.z, n1.w);
+      let rn0 = textureLoad(bvhTex, vec2<i32>(0, r), 0);
+      let rn1 = textureLoad(bvhTex, vec2<i32>(1, r), 0);
+      let mnr = vec3<f32>(rn0.z, rn0.w, rn1.x);
+      let mxr = vec3<f32>(rn1.y, rn1.z, rn1.w);
       let tl = slabEntry(o, d, invD, mnl, mxl);
       let tr = slabEntry(o, d, invD, mnr, mxr);
       if (tl <= tr) {
@@ -609,24 +648,29 @@ fn shadowed(o: vec3<f32>, d: vec3<f32>) -> f32 {
   while (sp > 0) {
     sp = sp - 1;
     let node = stack[sp];
-    let base = node * 8;
-    let l = i32(bvh[base]);
-    let r = i32(bvh[base + 1]);
+    let n0 = textureLoad(bvhTex, vec2<i32>(0, node), 0);
+    let n1 = textureLoad(bvhTex, vec2<i32>(1, node), 0);
+    let l = i32(n0.x);
+    let r = i32(n0.y);
     if (r < 0) {
       let i = l;
-      let ib = i * 32;
-      let kkind = i32(inst[ib]);
-      let p0 = inst[ib + 1]; let p1 = inst[ib + 2]; let p2 = inst[ib + 3]; let p3 = inst[ib + 4];
-      let lo = matMulVAt(ib + 5, o) + vec3<f32>(inst[ib + 23], inst[ib + 24], inst[ib + 25]);
-      let ld = matMulVAt(ib + 5, d);
+      let t0 = instT(i, 0);
+      let t1 = instT(i, 1);
+      let t5 = instT(i, 5);
+      let t6 = instT(i, 6);
+      let kkind = i32(t0.x);
+      let p0 = t0.y; let p1 = t0.z; let p2 = t0.w; let p3 = t1.x;
+      let lo = matMulVAt(i, o) + vec3<f32>(t5.w, t6.x, t6.y);
+      let ld = matMulVAt(i, d);
       let h = intersectShape(kkind, p0, p1, p2, p3, lo, ld);
       if (h.t < INF) { return 0.0; }
     } else {
-      let mnl = vec3<f32>(bvh[base + 2], bvh[base + 3], bvh[base + 4]);
-      let mxl = vec3<f32>(bvh[base + 5], bvh[base + 6], bvh[base + 7]);
-      let rb = r * 8;
-      let mnr = vec3<f32>(bvh[rb + 2], bvh[rb + 3], bvh[rb + 4]);
-      let mxr = vec3<f32>(bvh[rb + 5], bvh[rb + 6], bvh[rb + 7]);
+      let mnl = vec3<f32>(n0.z, n0.w, n1.x);
+      let mxl = vec3<f32>(n1.y, n1.z, n1.w);
+      let rn0 = textureLoad(bvhTex, vec2<i32>(0, r), 0);
+      let rn1 = textureLoad(bvhTex, vec2<i32>(1, r), 0);
+      let mnr = vec3<f32>(rn0.z, rn0.w, rn1.x);
+      let mxr = vec3<f32>(rn1.y, rn1.z, rn1.w);
       let tl = slabEntry(o, d, invD, mnl, mxl);
       let tr = slabEntry(o, d, invD, mnr, mxr);
       if (tl <= tr) {
@@ -706,10 +750,11 @@ fn shadeHit(tr0: TraceResult, ro: vec3<f32>, rd: vec3<f32>, px: i32, py: i32) ->
       let ch = select(0.24, 0.42, ((i32(gx) + i32(gz)) & 1) == 1);
       albedo = vec3<f32>(ch, ch * 0.99, ch * 0.92);
     } else {
-      let ib = tr.kind * 32;
-      albedo = vec3<f32>(inst[ib + 26], inst[ib + 27], inst[ib + 28]);
-      mtype = i32(inst[ib + 29]);
-      mparam = inst[ib + 30];
+      let t6 = instT(tr.kind, 6);
+      let t7 = instT(tr.kind, 7);
+      albedo = vec3<f32>(t6.z, t6.w, t7.x);
+      mtype = i32(t7.y);
+      mparam = t7.z;
     }
 
     if (mtype == MAT_LAMBERTIAN) {
@@ -790,29 +835,51 @@ fn shadeHit(tr0: TraceResult, ro: vec3<f32>, rd: vec3<f32>, px: i32, py: i32) ->
   return col;
 }
 
-@compute @workgroup_size(8, 8)
-fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
-  let x = i32(gid.x);
-  let y = i32(gid.y);
-  if (x >= params.width || y >= params.height) { return; }
+struct VOut {
+  @builtin(position) pos: vec4<f32>,
+  @location(0) uv: vec2<f32>,
+};
 
-  let u = (f32(x) + params.jx) / f32(params.width);
-  let v = (f32(y) + params.jy) / f32(params.height);
-  let sx = (2.0 * u - 1.0) * params.tanHalf * params.aspect;
-  let sy = (1.0 - 2.0 * v) * params.tanHalf;
-  let d = normalize(params.camFwd + params.camRight * sx + params.camUp * sy);
+@vertex
+fn vs(@builtin(vertex_index) vi: u32) -> VOut {
+  let positions = array<vec2<f32>, 6>(
+    vec2<f32>(-1.0, -1.0), vec2<f32>(1.0, -1.0), vec2<f32>(-1.0, 1.0),
+    vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, -1.0), vec2<f32>(1.0, 1.0),
+  );
+  var o: VOut;
+  let p = positions[vi];
+  o.pos = vec4<f32>(p, 0.0, 1.0);
+  o.uv = vec2<f32>(p.x * 0.5 + 0.5, 0.5 - p.y * 0.5);
+  return o;
+}
+
+@fragment
+fn fs(in: VOut) -> @location(0) vec4<f32> {
+  let x = i32(clamp(floor(in.uv.x * f32(params.width)), 0.0, f32(params.width) - 1.0));
+  let y = i32(clamp(floor(in.uv.y * f32(params.height)), 0.0, f32(params.height) - 1.0));
+
   let o = params.camOrigin;
+  let rc = max(1, params.raycount);
+  var sum = vec3<f32>(0.0);
 
-  let tr = tracePrimary(o, d);
-  let col = shadeHit(tr, o, d, x, y);
+  // trace `raycount` decorrelated rays per pixel this frame; each uses its own
+  // Halton offset so the batch stays stratified across frames
+  for (var s = 0; s < rc; s = s + 1) {
+    let jx = halton(params.sampleBase + s, 2);
+    let jy = halton(params.sampleBase + s, 3);
+    let u = (f32(x) + jx) / f32(params.width);
+    let v = (f32(y) + jy) / f32(params.height);
+    let sx = (2.0 * u - 1.0) * params.tanHalf * params.aspect;
+    let sy = (1.0 - 2.0 * v) * params.tanHalf;
+    let d = normalize(params.camFwd + params.camRight * sx + params.camUp * sy);
+    let tr = tracePrimary(o, d);
+    sum = sum + shadeHit(tr, o, d, x, y);
+  }
 
   let coord = vec2<i32>(x, y);
   let prev = textureLoad(accPrev, coord, 0);
-  var outv = vec4<f32>(col, 1.0);
   if (params.reset > 0.5) {
-    outv = vec4<f32>(col, 1.0);
-  } else {
-    outv = vec4<f32>(prev.rgb + col, prev.a + 1.0);
+    return vec4<f32>(sum, f32(rc));
   }
-  textureStore(accNext, coord, outv);
+  return vec4<f32>(prev.rgb + sum, prev.a + f32(rc));
 }

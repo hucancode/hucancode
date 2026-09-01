@@ -1,10 +1,11 @@
-// ATLAS RIG — DATA. A standing humanoid on the same engines as the dragon: the links
-// name parts and the parent slots they bolt to, assemble instantiates the joints and
-// spends the bones, and the pose SLIDERS are the whole public surface — a
-// choreographer drives those and never touches a bone.
+// ATLAS RIG — the links name parts and the parent slots they bolt to, assemble
+// instantiates the joints and spends the bones, and the pose channels (radians,
+// L/R keyed) are the whole public surface — a caller drives those and never
+// touches a bone. The slider rows, mirror helpers and choreographer config that
+// render over those channels live in the atlas playground's +page.svelte.
 //
-// `angles` binds the sliders to a link's joint, one entry per DOF, in the joint's own
-// order (a null entry leaves that DOF at zero):
+// `angles` binds the channels to a link's joint, one entry per DOF, in the joint's
+// own order (a null entry leaves that DOF at zero):
 //   disc hinge (shoulder / hip)  [disc spin, pin swing, disc spin]
 //   hinge (elbow / knee / ankle) [pin swing]
 //   wrist                        [bend, tilt, twist]
@@ -12,9 +13,6 @@
 import { ATLAS_KIT } from "./parts.js";
 import { createRig, rigCache, boundsY } from "../rig.js";
 import { clamp } from "../../math/scalar.js";
-
-// angles are RADIANS end to end here; degrees live only in the UI pages.
-const DEG = Math.PI / 180;   // radian value of one degree, for writing constants
 
 // The channels that live on a limb, and so exist once per flank: the rig is ALWAYS
 // split, `shoulderL` and `shoulderR` are two channels on two bones, and nothing
@@ -30,27 +28,22 @@ const CURL = [
   { in: [0.2, 0.8], out: [0, Math.PI / 4] }, // middle:  takes over where the knuckle stops
   { in: [0.5, 1], out: [0, Math.PI / 4] },   // tip:     finishes the fist
 ];
-const CURL_SEG = ["curlBase", "curlMid", "curlTip"];   // what the digits bind, not `curl`
+export const CURL_SEG = ["curlBase", "curlMid", "curlTip"];   // what the digits bind, not `curl`
 const curlSeg = (i, curl) => {
   const [a, b] = CURL[i].in, [lo, hi] = CURL[i].out;
   return lo + (hi - lo) * clamp((curl - a) / (b - a), 0, 1);
 };
 
-const SIDED = new Set([...SIDE_CHANNELS, ...CURL_SEG]);
+export const SIDED = new Set([...SIDE_CHANNELS, ...CURL_SEG]);
 // a channel's name on flank S — spine channels have no flank and keep their own
-const chan = (key, S) => (SIDED.has(key) ? key + S : key);
-const forSides = (pose) => {
+export const chan = (key, S) => (SIDED.has(key) ? key + S : key);
+export const forSides = (pose) => {
   const out = {};
   for (const [k, v] of Object.entries(pose)) {
     if (SIDED.has(k)) for (const S of SIDES) out[k + S] = v;
     else out[k] = v;
   }
   return out;
-};
-// the bare channel a flanked one came off (`elbowR` -> `elbow`); spine keys pass
-export const baseChan = (key) => {
-  const b = key.slice(0, -1);
-  return SIDES.includes(key.slice(-1)) && SIDED.has(b) ? b : key;
 };
 
 const ATLAS_POSE = {
@@ -68,10 +61,8 @@ export const atlasPose = () => forSides(ATLAS_POSE);
 // sits Lt·sin(hip) + Ls·sin(hip+knee) forward of the hip and Lt·cos(hip) +
 // Ls·cos(hip+knee) below it, and a sole lies flat when hip + knee + ankle = 0.
 // Measured off the BUILT rig, so a longer shin just moves the numbers.
-const measureLeg = (rig) => {
-  rig.setPose({});
-  const W = rig.skeleton.resolve();
-  const at = (link) => W[rig.dof(link)[0]].t;
+const measureLeg = (d) => {
+  const at = (link) => d.jointPos(link);
   const span = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
   const [hip, knee, ankle] = [at("legL"), at("shinL"), at("footL")];
   const Lt = span(hip, knee), Ls = span(knee, ankle);
@@ -114,72 +105,6 @@ const solveLeg = (L, hip, knee, ankle, level) => {
   const k = -Math.acos(clamp((r * r - Lt * Lt - Ls * Ls) / (2 * Lt * Ls), -1, 1));
   const h = Math.atan2(z, down) - Math.atan2(Ls * Math.sin(k), Lt + Ls * Math.cos(k));
   return { hip: h, knee: k, ankle: planted ? -(h + k) : ankle };
-};
-
-// ---- ROUTINES ---------------------------------------------------------------
-// A setup pose the rig strikes, then a KEYFRAME timeline: each key is a partial
-// pose and the `hold` (in beats) it takes to reach it. A routine is an ARM routine,
-// so REST stands the legs squarely and the solver folds them into whatever stance
-// the hip level asks for.
-const REST = {
-  armOut: 0, shoulder: 0, armTwist: 0, elbow: 0, foreTwist: 0, wristBend: 0, wristTilt: 0,
-  wristTwist: 0, curl: 0, twist: 0, waistBend: 0, waistTilt: 0,
-  headPitch: 0, headYaw: 0, hip: 0, knee: 0, ankle: 0,
-};
-
-const fist = (n) => Math.abs(n) / (Math.PI / 2);
-const WAVE = (lead, level, n) => [
-  { hold: 0.15, pose: { [lead]: level + n, elbow: -2 * n, wristBend: n } },
-  { hold: 0.12, pose: { [lead]: level, elbow: n, wristBend: -2 * n } },
-  { hold: 0.12, pose: { elbow: 0, wristBend: n } },
-  { hold: 0.12, pose: { wristBend: 0, curl: fist(n) } },
-  { hold: 0.15, pose: { curl: 0 } },
-];
-
-const VERT_WAVE = (lead, level, n) => [
-  { hold: 0.12, pose: { curl: fist(n) } },
-  { hold: 0.12, pose: { wristBend: n, curl: 0 } },
-  { hold: 0.12, pose: { elbow: n, wristBend: -2 * n, curl: fist(n) } },
-  { hold: 0.12, pose: { [lead]: level - n, elbow: -2 * n, wristBend: n, curl: 0 } },
-  { hold: 0.12, pose: { [lead]: level, elbow: 0, wristBend: 0, curl: 0 } },
-];
-
-const P2 = Math.PI / 2;   // 90°
-const STYLE = {
-  sideOut: { raise: { armOut: P2, armTwist: -P2 }, keys: WAVE("armOut", P2, 35 * DEG), loops: 2 },
-  front: { raise: { shoulder: P2 }, keys: WAVE("shoulder", P2, 35 * DEG), loops: 2 },
-  back: { raise: { shoulder: -P2 }, keys: WAVE("shoulder", -P2, -35 * DEG), loops: 2 },
-  overhead: { raise: { armOut: Math.PI, armTwist: 0 }, keys: VERT_WAVE("shoulder", 0, 20 * DEG), loops: 2 },
-};
-
-const ROUTINES = {
-  armWave: { L: STYLE.sideOut, R: STYLE.sideOut },
-  frontWave: { L: STYLE.front, R: STYLE.front },
-  frontWaveOpposed: { L: STYLE.front, R: STYLE.back },
-  verticalWave: { L: STYLE.overhead, R: STYLE.overhead },
-};
-
-const onSide = (pose, S) =>
-  Object.fromEntries(Object.entries(pose).map(([k, v]) => [chan(k, S), v]));
-
-export const atlasMontages = (mirror = false) =>
-  Object.fromEntries(
-    Object.entries(ROUTINES)
-      .filter(([name]) => !mirror || !name.endsWith("Opposed"))
-      .map(([name, { L, R }]) => [name, {
-        setup: { ...forSides(REST), ...onSide(L.raise, "L"), ...onSide(R.raise, "R") },
-        keys: L.keys.map((k, i) => ({
-          ...k,
-          pose: { ...onSide(k.pose, "L"), ...onSide(R.keys[i].pose, "R") },
-        })),
-        loops: L.loops,
-      }]),
-  );
-
-const MONTAGE_LABELS = { armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
-export const montageLabel = (name) => {
-  const base = name.replace(/Opposed$/, "");
-  return (MONTAGE_LABELS[base] ?? base) + (base === name ? "" : " opposed");
 };
 
 // ---- THE LINKS --------------------------------------------------------------
@@ -228,7 +153,7 @@ const side = (S, sgn) => {
   ];
 };
 
-const ATLAS_DEF = [
+export const ATLAS_DEF = [
   { name: "pelvis", part: "pelvis", pivot: "waist" },                       // root
   // the waist is a ball: one free bone, all three channels on it
   { name: "torso", part: "torso", parent: "pelvis", at: "waist",
@@ -239,130 +164,21 @@ const ATLAS_DEF = [
   ...side("R", -1),
 ];
 
-// bone depth of every pose channel (pelvis = 0). A channel drives the link it sits
-// on, so its depth IS that link's depth: `twist` turns the torso near the root,
-// `curl` turns a finger out at a leaf. The choreographer reads this to tell a big
-// root move from a small leaf one.
-export const ATLAS_POSE_DEPTH = (() => {
-  const depth = {}, out = {};
-  const note = (key, d) => { out[key] = key in out ? Math.min(out[key], d) : d; };
-  for (const d of ATLAS_DEF) {
-    const dep = d.parent ? depth[d.parent] + 1 : 0;
-    depth[d.name] = dep;
-    for (const bind of d.angles ?? []) {
-      if (!bind) continue;
-      if (Array.isArray(bind[0])) for (const b of bind) { if (b) note(b[0], dep); }
-      else note(bind[0], dep);
-    }
-  }
-  // the digits ride the segment channels, so the `curl` SLIDER binds nothing of its
-  // own — it is as deep as the knuckles it rolls
-  for (const S of SIDES)
-    out[chan("curl", S)] = Math.min(...CURL_SEG.map((key) => out[key + S]));
-  return out;
-})();
-
-// ---- THE SLIDER SURFACE ------------------------------------------------------
-// Every pose channel, its range, and the MIRROR rule laid over them. The rig is always
-// split (see SIDE_CHANNELS), so mirroring is these functions tying the two flanks
-// together — a caller's rule, never a wiring.
-// [key, label, min, max, step?], on BARE channel names
-export const ATLAS_CTL = [
-  ["headYaw", "head yaw", -Math.PI, Math.PI, DEG],
-  ["headPitch", "head pitch", -30 * DEG, 30 * DEG, DEG],
-  ["twist", "waist twist", -Math.PI, Math.PI, DEG],
-  ["waistBend", "waist bend", -45 * DEG, 45 * DEG, DEG],
-  ["waistTilt", "waist tilt", -45 * DEG, 45 * DEG, DEG],
-  ["shoulder", "arm swing", -Math.PI, Math.PI, DEG],
-  ["armOut", "arm raise", -10 * DEG, Math.PI, DEG],
-  ["armTwist", "arm twist", -Math.PI, Math.PI, DEG],
-  ["elbow", "elbow bend", -Math.PI / 2, Math.PI / 2, DEG],
-  ["foreTwist", "forearm twist", -Math.PI, Math.PI, DEG],
-  ["wristBend", "wrist bend", -100 * DEG, 100 * DEG, DEG],
-  ["wristTilt", "wrist tilt", -100 * DEG, 100 * DEG, DEG],
-  ["wristTwist", "wrist twist", -Math.PI, Math.PI, DEG],
-  ["curl", "finger curl", 0, 1, 0.01],   // a 0..1 fist, not an angle
-  ["hip", "leg swing", -45 * DEG, 45 * DEG, DEG],
-  ["knee", "knee bend", -Math.PI / 3, 0, DEG],
-  ["ankle", "ankle bend", -30 * DEG, 30 * DEG, DEG],
-];
-export const LEVEL_CTL = [["hipLevel", "hip level", -1.5, 0, 0.01]];
-
-// bare rows -> flanked ones; mirrored, the left channel stands for both
-export const sided = (ctl, mirror) =>
-  ctl.flatMap(([key, label, ...rest]) =>
-    !SIDED.has(key) ? [[key, label, ...rest]]
-      : mirror ? [[key + "L", label, ...rest]]
-        : SIDES.map((S) => [key + S, `${label} ${S}`, ...rest]),
-  );
-export const coreCtl = [...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !SIDED.has(key));
-export const flankCtl = (S) =>
-  ATLAS_CTL.filter(([key]) => SIDED.has(key))
-    .map(([key, label, ...rest]) => [key + S, label, ...rest]);
-// mirrored, the right flank is not the user's to edit — it follows the left
-export const rigLocked = (mirror) =>
-  new Set(mirror ? SIDE_CHANNELS.map((key) => key + "R") : []);
-// a pose whose left-flank writes land on the right flank too
-export const mirrorWrites = (pose) => new Proxy(pose, {
-  set(t, key, v) {
-    t[key] = v;
-    if (typeof key === "string" && key.endsWith("L") && SIDED.has(baseChan(key)))
-      t[baseChan(key) + "R"] = v;
-    return true;
-  },
-});
-export const twinOf = (key) =>
-  (key.endsWith("L") && SIDED.has(baseChan(key)) ? baseChan(key) + "R" : null);
-
-// ---- WHAT A CHOREOGRAPHER MAY DRIVE -----------------------------------------
-const BIG_DEPTH = 2;                 // this near the root, a channel carries a beat
-const LEG_CHANNELS = ["hip", "knee", "ankle"];
-const CHOREO_PULSE = ["hipLevel"];   // whole-body: its own slot in the beat
-const CHOREO_SPIN = "twist";
-const CHOREO_EXCLUSIVE = [["twist", "waistBend", "waistTilt"]];   // one waist ball
-const CHOREO_GROUNDED = [SIDES.map((S) => LEG_CHANNELS.map((key) => key + S))];
-// ratio channels (a rate, a 0..1 fist) have no angle grid to snap to
-const RATIO = new Set(["curl", "hipLevel"]);
-// mirrored, the legs move as ONE and the figure would hop: take them out of the beat
-// and park them (a leg left in the air by the flip still has to walk home)
-const choreoSliders = (mirror) => {
-  const skip = new Set(mirror ? LEG_CHANNELS : []);
-  return sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !skip.has(key)), mirror)
-    .map(([key, , min, max]) => ({
-      key, min, max,
-      big: key === "hipLevel" || ATLAS_POSE_DEPTH[key] <= BIG_DEPTH,
-      grid: RATIO.has(baseChan(key)) ? 0 : undefined,
-    }));
-};
-// the whole rig, as createChoreographer wants it, under the mirror rule
-export const atlasChoreo = (mirror) => ({
-  sliders: choreoSliders(mirror),
-  home: atlasPose(),
-  montages: atlasMontages(mirror),
-  exclusives: CHOREO_EXCLUSIVE,
-  grounded: CHOREO_GROUNDED,
-  parked: mirror ? LEG_CHANNELS.flatMap((key) => SIDES.map((S) => key + S)) : [],
-  pulse: CHOREO_PULSE,
-  spin: CHOREO_SPIN,
-  twin: mirror ? twinOf : null,
-});
-
 export function createAtlasRig(seed = 1) {
   const restPose = atlasPose();
-  let LEG, rootBone, rootY;
+  let LEG, rootY;
 
   const { model, rig } = createRig({
     kit: ATLAS_KIT,
     links: ATLAS_DEF,
     rest: restPose,
     seed,
-    setup(r) {
-      LEG = measureLeg(r);                 // the solver poses off these
-      rootBone = r.bones[r.link("pelvis").ids[0]];
-      rootY = rootBone.offset[1];
+    setup(d) {
+      LEG = measureLeg(d);                 // the solver poses off these
+      rootY = d.root.offset()[1];
       return {};
     },
-    solve(o) {
+    solve(o, d) {
       const level = o.hipLevel ?? 0;
       for (const S of SIDES) {
         // the curl slider rolls out into the segment channels the digits ride
@@ -373,7 +189,7 @@ export function createAtlasRig(seed = 1) {
         const leg = solveLeg(LEG, o[chan("hip", S)], o[chan("knee", S)], o[chan("ankle", S)], level);
         for (const key of ["hip", "knee", "ankle"]) o[chan(key, S)] = leg[key];
       }
-      rootBone.offset[1] = rootY - hipDrop(LEG, level);
+      d.root.setOffset([0, rootY - hipDrop(LEG, level), 0]);
     },
   });
 
@@ -383,7 +199,7 @@ export function createAtlasRig(seed = 1) {
   const { items, meshes } = model();
   const b = boundsY(items, meshes);
   rootY -= b.minY;                          // the standing root, which the hip level sinks from
-  rootBone.offset[1] = rootY;
+  rig.root.setOffset([0, rootY, 0]);
 
   return { model, height: b.height, rig };
 }

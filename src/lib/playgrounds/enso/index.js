@@ -1,4 +1,4 @@
-import { createPlayground, F32, VEC2, VEC4 } from "$lib/engine/index.js";
+import { createPlayground } from "$lib/engine/index.js";
 import { hexToRGB } from "$lib/math/color.js";
 import ENSO from "./shaders/enso.wgsl?shader";
 
@@ -27,45 +27,50 @@ let bgColor = rgba("#f5eddc");
 
 let shader;
 
-const { init, render, destroy, setConfig } = createPlayground({
-  setConfig(patch) {
-    if (patch.brushColor) brushColor = rgba(patch.brushColor);
-    if (patch.bgColor) bgColor = rgba(patch.bgColor);
-    Object.assign(config, patch);
-  },
+function setConfig(patch) {
+  if (patch.brushColor) brushColor = rgba(patch.brushColor);
+  if (patch.bgColor) bgColor = rgba(patch.bgColor);
+  Object.assign(config, patch);
+}
+
+const { init, render, destroy } = createPlayground({
   init({ device }) {
-    shader = device.shader({
-      ...ENSO,
-      uniforms: [
-        VEC2("uResolution"), F32("uClockwise"), F32("uRadius"), F32("uAngleStart"),
-        F32("uLineWidth"), F32("uWobble"), F32("uStrands"), F32("uInkFlow"),
-        F32("uWaterFlow"), F32("uWidthEnd"), F32("uWidthOffset"), F32("uWidthRange"),
-        F32("uWidthAnchor"), F32("uSweepAmt"), F32("uOpacityBleed"), F32("uOpacityWet"),
-        F32("uOpacityDry"), VEC4("uBrushColor"), VEC4("uBgColor"),
-      ],
-      blend: "none", topology: "tri",
-    });
+    shader = device.program(ENSO, { blend: "none", topology: "tri" });
   },
   frame(dt, { device, canvas }) {
-    device.beginFrame();
-    device.pass({ clear: [bgColor[0], bgColor[1], bgColor[2], 1.0] }, (p) => {
-      p.draw(shader, {
-        count: 3,
-        uniforms: {
-          uResolution: [canvas.width, canvas.height],
-          uClockwise: config.clockwise ? 1 : 0,
-          uRadius: config.radius, uAngleStart: config.angleStart, uLineWidth: config.lineWidth,
-          uWobble: config.wobble, uStrands: config.strands, uInkFlow: config.inkFlow,
-          uWaterFlow: config.waterFlow, uWidthEnd: config.widthEnd, uWidthOffset: config.widthOffset,
-          uWidthRange: config.widthRange, uWidthAnchor: config.widthAnchor, uSweepAmt: config.sweep,
-          uOpacityBleed: config.opacityBleed, uOpacityWet: config.opacityWet, uOpacityDry: config.opacityDry,
-          uBrushColor: brushColor, uBgColor: bgColor,
-        },
-      });
-    });
-    device.endFrame();
+    device.render(
+      { clear: { color: [bgColor[0], bgColor[1], bgColor[2], 1.0] } },
+      (p) => {
+        p.draw(shader, {
+          count: 3,
+          uniforms: {
+            uResolution: [canvas.width, canvas.height],
+            uClockwise: config.clockwise ? 1 : 0,
+            uRadius: config.radius,
+            uAngleStart: config.angleStart,
+            uLineWidth: config.lineWidth,
+            uWobble: config.wobble,
+            uStrands: config.strands,
+            uInkFlow: config.inkFlow,
+            uWaterFlow: config.waterFlow,
+            uWidthEnd: config.widthEnd,
+            uWidthOffset: config.widthOffset,
+            uWidthRange: config.widthRange,
+            uWidthAnchor: config.widthAnchor,
+            uSweepAmt: config.sweep,
+            uOpacityBleed: config.opacityBleed,
+            uOpacityWet: config.opacityWet,
+            uOpacityDry: config.opacityDry,
+            uBrushColor: brushColor,
+            uBgColor: bgColor,
+          },
+        });
+      },
+    );
   },
-  destroy() { shader = null; },
+  destroy() {
+    shader = null;
+  },
 });
 
 export { init, render, destroy, setConfig };

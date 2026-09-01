@@ -25,12 +25,12 @@
 // only be seated by a ROTATION, so a reflected frame would flip the joint's
 // handedness. A symmetric figure gives its right-hand slot the REVERSED pin (f)
 // — what a mirrored clevis physically is — and the rig flips that side's signs.
-import { bake, meshOf, shapeOf } from "./primitives.js";
+import { bake, modelOf } from "./primitives.js";
 import { colorMemo } from "./color.js";
 import { jointSpec } from "./joints.js";
 import { createSkeleton } from "./skeleton.js";
 import {
-  I3, vAdd, vSub, vScale, vNorm, vCross, m3Mul, m3MulV, m3T, m3Rot,
+  I3, vAdd, vSub, vScale, vNorm, vCross, vLen, m3Mul, m3MulV, m3T, m3Rot,
 } from "../math/mat3.js";
 
 // ---- SLOT MATCHING ---------------------------------------------------------
@@ -42,7 +42,7 @@ const slotFrame = (s) => {
 
 // the rotation seating a child slot against a parent slot: positions coincide
 // (the caller supplies the offset), forwards ALIGN, normals OPPOSE
-export const matchRot = (parent, child) => {
+const matchRot = (parent, child) => {
   const f = vNorm(parent.f), n = vScale(vNorm(parent.n), -1);
   const b = vCross(n, f);
   const target = [f[0], b[0], n[0], f[1], b[1], n[1], f[2], b[2], n[2]];
@@ -124,7 +124,7 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       // dragon's spare flanks stay bare planks)
       const spec = d.joint ?? pslot.joint;
       if (!spec) throw new Error(`${d.name}: parent slot "${d.at}" offers no joint`);
-      const { kind, p: jp = {}, opts = {} } = spec;
+      const { kind, p: jp = {} } = spec;
       const J = jointSpec(kind);
       const M = J.mounts(jp);
       d.mountB = M.b;
@@ -159,7 +159,7 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       for (const piece of J.pieces) {
         const onParent = piece.bone < 0;
         const prims = emitTo(onParent ? par.bone : d.ids[piece.bone], jg,
-          (add) => piece.build(add, jp, opts));
+          (add) => piece.build(add, jp));
         if (onParent) seat(prims, R, org);
       }
     }
@@ -190,21 +190,15 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
     // carries the half whether or not anything plugs into it.
     for (const [name, s] of Object.entries(d.slots)) {
       if (!s.joint || L.some((c) => c.par === d && c.at === name)) continue;
-      const { kind, p: jp = {}, opts = {} } = s.joint;
+      const { kind, p: jp = {} } = s.joint;
       const J = jointSpec(kind);
       const { r: R, t: org } = seatJoint(s, J.mounts(jp).a, d.seatR, d.seatT);
       for (const piece of J.pieces) {
         if (piece.bone >= 0) continue;                 // no child, no DOF bones to ride
-        seat(emitTo(d.bone, `${d.name}:body`, (add) => piece.build(add, jp, opts)), R, org);
+        seat(emitTo(d.bone, `${d.name}:body`, (add) => piece.build(add, jp)), R, org);
       }
     }
   }
-
-  // the unit meshes the items reference, cached across frames — the renderer
-  // draws one instanced call per key; `shapes` is the ANALYTIC twin for the
-  // ray tracer (one closed-form primitive per key)
-  const meshes = {};
-  const shapes = {};
 
   // --- POSE: the rig's sliders reach the bones through `angles`, one entry per
   // DOF of the link's joint. An axis bone takes [key, sign]; a free bone (a
@@ -294,20 +288,50 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       }
     }
 
-    for (const it of items) {
-      if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
-      if (!shapes[it.key]) shapes[it.key] = shapeOf(it.key);
-    }
-    return { items, meshes, shapes };
+    return modelOf(items);
   }
 
-  return {
-    bones: sk.bones,
-    skeleton: sk,
-    links: L,
-    link: (name) => byName[name],
-    dof: (name) => byName[name].ids,        // the bone ids of a link's joint, in DOF order
-    setPose,
-    emit,
+  // ---- DRIVER --------------------------------------------------------------
+  // The typed surface a rig's setup/solve receives. It exposes exactly the
+  // operations a scene needs — move the root, drive a DOF, place a part in a
+  // world frame, read a joint position or a spine reach — and NOTHING about
+  // bones, ids, rest matrices or seat matrices. A rig stays declarative, and
+  // the assembly is free to change its bone layout without touching a scene.
+  const rootD = L.find((d) => !d.par);
+  const rootBone = sk.bones[rootD.ids[0]];
+  const publicLinks = L.map((d) => ({
+    name: d.name, part: d.part, parent: d.parent, at: d.at, depth: d.depth,
+    spine: d.spine, limb: d.limb, sign: d.sign, phase: d.phase,
+  }));
+  const boneAt = (name, i = 0) => sk.bones[byName[name].ids[i]];
+  const driver = {
+    links: publicLinks,
+    root: {
+      offset: () => [...rootBone.offset],
+      setOffset: (o) => { rootBone.offset = [...o]; },
+      setRot: (r) => { rootBone.rot = r; },
+      set: ({ offset, rot } = {}) => {
+        if (offset) rootBone.offset = [...offset];
+        if (rot) rootBone.rot = rot;
+      },
+    },
+    // one DOF's angle (a hinge swing, a disc spin, a prismatic slide, ...)
+    setDOF(name, i, angle) { boneAt(name, i).angle = angle; },
+    // place a part by its WORLD orientation: the bone carrying it reaches
+    // partWorld · seatRᵀ, and the bone's own rest rotation is accounted for,
+    // so the solver only reasons about part frames
+    setPartWorld(name, i, partWorld) {
+      const b = boneAt(name, i);
+      const W = m3Mul(partWorld, m3T(byName[name].seatR));
+      const ws = sk.resolve();
+      const pw = b.parent < 0 ? I3 : ws[b.parent].r;
+      b.rot = m3Mul(m3T(b.rest ?? I3), m3Mul(m3T(pw), W));
+    },
+    // world position of a link's joint (its first DOF bone)
+    jointPos(name) { return [...sk.resolve()[byName[name].ids[0]].t]; },
+    // |first bone offset| — the chord a link spans between its two pivots
+    reach(name) { return vLen(boneAt(name).offset); },
   };
+
+  return { driver, setPose, emit };
 }

@@ -9,16 +9,40 @@ import { buildOpenSpline, arcLengthCurve } from "$lib/math/curve.js";
 import { makeSceneRenderer } from "./render/scene.js";
 import { makeTimeline, createCameraTrack } from "./stage/index.js";
 import {
-  GLYPH_RADIUS, GRID, GRID_MINOR_DIV,
-  ENSO_R, ENSO_HEAD_R, ENSO_WIDTH, BODY_LEN, HEAD_SIZE, D3, D3_GIRTH, SP3,
-  GROW_DUR, ENTRY_GROW_MIN, ENTRY_SIZE_MIN,
-  LOOP3_CIRCLES, R3D, Z3D, LOOP3_WAVES,
-  CORRIDOR_DROP, FLYIN_TOP_Y, FLYIN_BOW, ENSO_REVS,
-  CRUISE_SP, CHAIN_LEN_FRAC, CAM,
+  GLYPH_RADIUS,
+  GRID,
+  GRID_MINOR_DIV,
+  ENSO_R,
+  ENSO_HEAD_R,
+  ENSO_WIDTH,
+  BODY_LEN,
+  HEAD_SIZE,
+  D3,
+  D3_GIRTH,
+  SP3,
+  GROW_DUR,
+  ENTRY_GROW_MIN,
+  ENTRY_SIZE_MIN,
+  LOOP3_CIRCLES,
+  R3D,
+  Z3D,
+  LOOP3_WAVES,
+  CORRIDOR_DROP,
+  FLYIN_TOP_Y,
+  FLYIN_BOW,
+  ENSO_REVS,
+  CRUISE_SP,
+  CHAIN_LEN_FRAC,
+  CAM,
 } from "./config.js";
 import { computeTiming } from "./timing.js";
 import { buildGlyph } from "./glyph.js";
-import { ensoPos, generateFramePath, buildDescent, generateOrbit3d } from "./frame-path.js";
+import {
+  ensoPos,
+  generateFramePath,
+  buildDescent,
+  generateOrbit3d,
+} from "./frame-path.js";
 import { createHeadPath } from "./head-path.js";
 import { createBodyController } from "./body.js";
 import { createDragon3d } from "./dragon3d.js";
@@ -34,15 +58,15 @@ export const TIMELINE_END = computeTiming().timelineEnd;
 
 let timing = null;
 let glyph = null;
-let headPath = null;    // head phase sequence + samplers
+let headPath = null; // head phase sequence + samplers
 let bodyCtrl = null;
 let dragon3d = null;
 let timeline = null;
 let cameraTrack = null; // corridor descent + pitch + yaw gate
 let ensoCenter = { x: 0, y: 0 }; // world station of glyph + enso
 let _ctx = null;
-let pool = [];          // debug: circle centres (both roams)
-let _poolF32 = null;    // cached debug-point buffer
+let pool = []; // debug: circle centres (both roams)
+let _poolF32 = null; // cached debug-point buffer
 
 // 2D-dragon grow ramp: small while dragon reveals + first roam, full by enso.
 // shared by body length + head/stroke size.
@@ -75,24 +99,36 @@ export function initScene() {
 
   // corridor camera: descends through B1-B3, holds during B4, tilts from B5
   cameraTrack = createCameraTrack({
-    descent: { enabled: true, yTop: 0, yBottom: -CORRIDOR_DROP, startT: timing.flyinStart, endT: timing.descentEnd },
+    descent: {
+      enabled: true,
+      yTop: 0,
+      yBottom: -CORRIDOR_DROP,
+      startT: timing.flyinStart,
+      endT: timing.descentEnd,
+    },
     pitch: { anchorT: timing.pitchAnchor, dur: timing.camPitchDur },
     yaw: { gateStart: timing.d3Start, gateEnd: timing.d3End },
   });
   const camY = cameraTrack.camY;
 
   // stations: world-Y where each object sits centred when camera looks at it
-  const topY = camY(timing.flyinStart) + FLYIN_TOP_Y;      // dragon spawn (top-middle)
-  const flyinEndY = camY(timing.roam1Start);               // mid-screen at t=roam1Start
-  ensoCenter = { x: 0, y: camY(timing.ensoStart) };        // glyph + enso station
+  const topY = camY(timing.flyinStart) + FLYIN_TOP_Y; // dragon spawn (top-middle)
+  const flyinEndY = camY(timing.roam1Start); // mid-screen at t=roam1Start
+  ensoCenter = { x: 0, y: camY(timing.ensoStart) }; // glyph + enso station
 
   // enso entry (top) + exit (bottom after 1.5 revs), with circle tangents
   const ensoTop = ensoPos(0, ensoCenter);
   const ensoTopNext = ensoPos(1e-3, ensoCenter);
-  const ensoTopHeading = Math.atan2(ensoTopNext.y - ensoTop.y, ensoTopNext.x - ensoTop.x);
+  const ensoTopHeading = Math.atan2(
+    ensoTopNext.y - ensoTop.y,
+    ensoTopNext.x - ensoTop.x,
+  );
   const ensoBottom = ensoPos(ENSO_REVS, ensoCenter);
   const ensoBottomNext = ensoPos(ENSO_REVS + 1e-3, ensoCenter);
-  const ensoBottomHeading = Math.atan2(ensoBottomNext.y - ensoBottom.y, ensoBottomNext.x - ensoBottom.x);
+  const ensoBottomHeading = Math.atan2(
+    ensoBottomNext.y - ensoBottom.y,
+    ensoBottomNext.x - ensoBottom.x,
+  );
 
   // B1 fly-in: top-middle -> mid-screen (slightly bowed line)
   const flyin = buildFlyin(topY, flyinEndY);
@@ -111,8 +147,13 @@ export function initScene() {
   const descentDur = timing.ensoStart - timing.roam1Start;
   const descentLenTarget = CRUISE_SP * descentDur * CHAIN_LEN_FRAC;
   const descent = buildDescent(
-    rng, { x: 0, y: flyinEndY }, flyinEndHeading, ensoTop, ensoTopHeading,
-    flyinEndY - (ensoCenter.y + ENSO_HEAD_R), descentLenTarget,
+    rng,
+    { x: 0, y: flyinEndY },
+    flyinEndHeading,
+    ensoTop,
+    ensoTopHeading,
+    flyinEndY - (ensoCenter.y + ENSO_HEAD_R),
+    descentLenTarget,
   );
 
   // B5 roam2: flower of tangent circles centred on enso station; camera held here
@@ -120,11 +161,16 @@ export function initScene() {
   // first SP3*roamDur arc of flower at constant SP3 so it (a) matches 3D loop speed
   // -> no jump at handoff and (b) shares exact curve position with 3D dragon
   // through crossfade.
-  const roam2 = generateFramePath(rng, ensoBottom, ensoBottomHeading, ensoCenter);
+  const roam2 = generateFramePath(
+    rng,
+    ensoBottom,
+    ensoBottomHeading,
+    ensoCenter,
+  );
   const roamDur = timing.loop3Start - timing.ensoExit;
   const branchArc = (roam2.curve.headStart || 0) + SP3 * roamDur;
   roam2.curve.headEnd = branchArc; // head ends here at loop3Start (3D loop start)
-  const curvePath = roam2.curve;   // 2D roam2 path the 3D dragon transitions off of
+  const curvePath = roam2.curve; // 2D roam2 path the 3D dragon transitions off of
   pool = [...descent.pool, ...roam2.pool];
   _poolF32 = null;
 
@@ -144,7 +190,8 @@ export function initScene() {
   // preferred winding follows the 2D exit tangent (else the connector tends
   // to U-turn onto the loop) — but the weave crosses its centre-ring radially
   // at the entry tangency, so BOTH windings go into the candidate search
-  const winding = (bp.x - ensoCenter.x) * tb.y - (bp.y - ensoCenter.y) * tb.x >= 0 ? 1 : -1;
+  const winding =
+    (bp.x - ensoCenter.x) * tb.y - (bp.y - ensoCenter.y) * tb.x >= 0 ? 1 : -1;
   // connector: cubic HERMITE from the 2D branch point onto the ring entry —
   // exact tangent match at BOTH ends (the ring climbs at its entry, so its
   // actual 3D tangent is used), no interior control points to wiggle around.
@@ -153,16 +200,20 @@ export function initScene() {
   const hermite = (ring0, rt0) => {
     const span3 = Math.hypot(ring0.x - bp.x, ring0.y - bp.y, ring0.z || 0);
     if (span3 < 0.25) return { hp: null, worst: Infinity }; // degenerate: entry on top of bp
-    const hL = Math.max(0.8, 1.15 * span3);         // tangent magnitude ~ span (wider spreads the turn)
+    const hL = Math.max(0.8, 1.15 * span3); // tangent magnitude ~ span (wider spreads the turn)
     const hp = new Array(49);
     for (let i = 0; i <= 48; i++) {
-      const s = i / 48, s2 = s * s, s3 = s2 * s;
-      const h00 = 2 * s3 - 3 * s2 + 1, h10 = s3 - 2 * s2 + s;
-      const h01 = -2 * s3 + 3 * s2, h11 = s3 - s2;
+      const s = i / 48,
+        s2 = s * s,
+        s3 = s2 * s;
+      const h00 = 2 * s3 - 3 * s2 + 1,
+        h10 = s3 - 2 * s2 + s;
+      const h01 = -2 * s3 + 3 * s2,
+        h11 = s3 - s2;
       hp[i] = {
         x: h00 * bp.x + h10 * hL * tb.x + h01 * ring0.x + h11 * hL * rt0.x,
         y: h00 * bp.y + h10 * hL * tb.y + h01 * ring0.y + h11 * hL * rt0.y,
-        z: h01 * ring0.z + h11 * hL * rt0.z,        // 2D side is planar (z=0)
+        z: h01 * ring0.z + h11 * hL * rt0.z, // 2D side is planar (z=0)
       };
     }
     // score by ARC-uniform tangent turn (parameter-uniform polyline angles hide
@@ -171,7 +222,8 @@ export function initScene() {
     let worst = 0;
     const st = c.total / 60;
     for (let s = 0; s < c.total - st; s += st) {
-      const a = c.tan(s), b = c.tan(s + st);
+      const a = c.tan(s),
+        b = c.tan(s + st);
       const dot = a.x * b.x + a.y * b.y + a.z * b.z;
       worst = Math.max(worst, Math.acos(Math.min(1, Math.max(-1, dot))));
     }
@@ -184,17 +236,31 @@ export function initScene() {
   const rot = bpA + Math.PI / LOOP3_CIRCLES; // anchor a tangency at the branch angle
   let best = null;
   for (const w of [winding, -winding]) {
-    const pts = generateOrbit3d(ensoCenter, LOOP3_CIRCLES, R3D, Z3D, LOOP3_WAVES, rot, w < 0);
+    const pts = generateOrbit3d(
+      ensoCenter,
+      LOOP3_CIRCLES,
+      R3D,
+      Z3D,
+      LOOP3_WAVES,
+      rot,
+      w < 0,
+    );
     const spline = arcLengthCurve(pts, true);
     for (let j = 0; j < 48; j++) {
       const s0 = (j / 48) * spline.total;
       const cand = hermite(spline.pos(s0), spline.tan(s0));
-      if (cand.hp && (!best || cand.worst < best.worst)) best = { spline, s0, hp: cand.hp, worst: cand.worst };
+      if (cand.hp && (!best || cand.worst < best.worst))
+        best = { spline, s0, hp: cand.hp, worst: cand.worst };
     }
   }
-  const bs = best.spline, bs0 = best.s0;
-  const loop3 = { total: bs.total, pos: (s) => bs.pos(s + bs0), tan: (s) => bs.tan(s + bs0) };
-  const conn3 = arcLengthCurve(best.hp, false);   // connector spur: 2D branch point -> ring entry
+  const bs = best.spline,
+    bs0 = best.s0;
+  const loop3 = {
+    total: bs.total,
+    pos: (s) => bs.pos(s + bs0),
+    tan: (s) => bs.tan(s + bs0),
+  };
+  const conn3 = arcLengthCurve(best.hp, false); // connector spur: 2D branch point -> ring entry
 
   dragon3d = createDragon3d({ timing });
   dragon3d.build(loop3, curvePath, conn3);
@@ -222,20 +288,50 @@ export function initScene() {
 const EMPTY_F32 = new Float32Array(0);
 const _frame = {
   aspect: 1,
-  camY: 0,  // corridor look-at world-Y (0 = stationary)
+  camY: 0, // corridor look-at world-Y (0 = stationary)
   opacity: { glyph: 1, inkDragon: 0, dragon3d: 0 },
-  grid: { opacity: 0, reveal: 0, revealMinor: 0, viewProj: null, ext: GRID.ext, z: GRID.z, step: GRID.step, minorDiv: GRID_MINOR_DIV },
+  grid: {
+    opacity: 0,
+    reveal: 0,
+    revealMinor: 0,
+    viewProj: null,
+    ext: GRID.ext,
+    z: GRID.z,
+    step: GRID.step,
+    minorDiv: GRID_MINOR_DIV,
+  },
   glyph: { segs: null, playhead: 1, baseRadius: GLYPH_RADIUS, stationY: 0 },
-  enso: { alpha: 0, sweep: 0, radius: ENSO_R, lineWidth: ENSO_WIDTH, angleStart: 0, time: 0, stationY: 0 },
+  enso: {
+    alpha: 0,
+    sweep: 0,
+    radius: ENSO_R,
+    lineWidth: ENSO_WIDTH,
+    angleStart: 0,
+    time: 0,
+    stationY: 0,
+  },
   inkDragon: {
     body: null,
-    head: { pos: { x: 0, y: 0 }, dir: { x: 0, y: 1 }, size: HEAD_SIZE, alpha: 1 },
+    head: {
+      pos: { x: 0, y: 0 },
+      dir: { x: 0, y: 1 },
+      size: HEAD_SIZE,
+      alpha: 1,
+    },
     widthScale: 1,
   },
   dragon3d: {
-    frames: null, frameCount: D3.N, pathLen: 1, bodyLen: BODY_LEN * D3.bodyFactor, headOffset: 0, girth: D3_GIRTH, // legacy obj mesh
-    items: null, meshes: null, eye: [0, 0, CAM.dist], // mech rig instances + camera pos (specular)
-    viewProj: null, time: 0,
+    frames: null,
+    frameCount: D3.N,
+    pathLen: 1,
+    bodyLen: BODY_LEN * D3.bodyFactor,
+    headOffset: 0,
+    girth: D3_GIRTH, // legacy obj mesh
+    items: null,
+    meshes: null,
+    eye: [0, 0, CAM.dist], // mech rig instances + camera pos (specular)
+    viewProj: null,
+    time: 0,
   },
   debug: { show: false, path2d: EMPTY_F32, path3d: EMPTY_F32, pool: EMPTY_F32 },
 };
@@ -243,7 +339,7 @@ const _frame = {
 // Build FrameState for scene time t. debug adds path polylines; yaw = user orbit
 // heading (pitch scripted by camera block). Runs timeline (each block restores
 // defaults then updates), then assembles _frame in place.
-export function buildState(t, aspect, debug = {}, yaw = 0) {
+export function buildState(t, aspect, debug = {}, yaw = 0, device = null) {
   _ctx.t = t;
   timeline.frame(_ctx, t);
 
@@ -253,7 +349,7 @@ export function buildState(t, aspect, debug = {}, yaw = 0) {
   const userYaw = cameraTrack.yawGate(t, yaw || 0);
   const camY = cameraTrack.camY(t);
   const camPitch = cameraTrack.camPitch(t);
-  const viewProj = sceneViewProj(aspect, userYaw, camPitch, camY);
+  const viewProj = sceneViewProj(aspect, userYaw, camPitch, camY, device);
 
   _frame.aspect = aspect;
   _frame.camY = camY;
@@ -262,7 +358,9 @@ export function buildState(t, aspect, debug = {}, yaw = 0) {
   _frame.opacity.dragon3d = _ctx.d3Alpha;
 
   const g = _frame.grid;
-  g.opacity = _ctx.gridStrength; g.reveal = _ctx.gridReveal; g.revealMinor = _ctx.gridRevealMinor;
+  g.opacity = _ctx.gridStrength;
+  g.reveal = _ctx.gridReveal;
+  g.revealMinor = _ctx.gridRevealMinor;
   g.viewProj = viewProj;
 
   _frame.glyph.segs = glyph.segs;
@@ -270,7 +368,10 @@ export function buildState(t, aspect, debug = {}, yaw = 0) {
   _frame.glyph.stationY = ensoCenter.y; // glyph parked at enso station
 
   const en = _frame.enso;
-  en.alpha = _ctx.ensoAlpha; en.sweep = _ctx.ensoSweep; en.angleStart = 0; en.time = t;
+  en.alpha = _ctx.ensoAlpha;
+  en.sweep = _ctx.ensoSweep;
+  en.angleStart = 0;
+  en.time = t;
   en.stationY = ensoCenter.y;
 
   const ink = _frame.inkDragon;
@@ -280,7 +381,8 @@ export function buildState(t, aspect, debug = {}, yaw = 0) {
   ink.widthScale = _ctx.inkWidthScale;
 
   // camera world position (inverse of sceneViewProj's view chain) for specular
-  const vy = CAM.dist * Math.sin(camPitch), vz = CAM.dist * Math.cos(camPitch);
+  const vy = CAM.dist * Math.sin(camPitch),
+    vz = CAM.dist * Math.cos(camPitch);
   const eye = _frame.dragon3d.eye;
   eye[0] = vy * Math.sin(userYaw);
   eye[1] = vy * Math.cos(userYaw) + camY;
@@ -296,7 +398,9 @@ function buildDebugState(t, debug) {
   const d = _frame.debug;
   if (!debug.path2d && !debug.path3d) {
     d.show = false;
-    d.path2d = EMPTY_F32; d.path3d = EMPTY_F32; d.pool = EMPTY_F32;
+    d.path2d = EMPTY_F32;
+    d.path3d = EMPTY_F32;
+    d.pool = EMPTY_F32;
     return;
   }
   d.show = true;
@@ -320,10 +424,12 @@ function poolPoints() {
 // Orbit drag: YAW only. Pitch (elevation) is fully scripted by the camera track
 // (top-down 90deg during the glyph trace -> 45deg as the 3D dragon appears).
 function attachOrbitDrag(canvas, cfg) {
-  let dragging = false, lastX = 0;
+  let dragging = false,
+    lastX = 0;
   const down = (e) => {
     if (e.pointerType !== "mouse") return; // touch -> let the page scroll/scrub
-    dragging = true; lastX = e.clientX;
+    dragging = true;
+    lastX = e.clientX;
     canvas.setPointerCapture?.(e.pointerId);
   };
   const move = (e) => {
@@ -331,7 +437,9 @@ function attachOrbitDrag(canvas, cfg) {
     cfg.orbitYaw += (e.clientX - lastX) * 0.01;
     lastX = e.clientX;
   };
-  const up = () => { dragging = false; };
+  const up = () => {
+    dragging = false;
+  };
   canvas.addEventListener("pointerdown", down);
   canvas.addEventListener("pointermove", move);
   canvas.addEventListener("pointerup", up);
@@ -355,46 +463,58 @@ export function createScene({ prefer = "webgpu", yaw = 0 } = {}) {
   let detachDrag = null;
   let firstFrame = true;
 
-  return createPlayground({
-    device: { prefer },
-    async init(ctx) {
-      stamp("main scene init start");
-      const endInit = mark("scene init total");
-      profile("initScene", () => initScene());
-      renderer = await profile("createRenderer", async () => {
-        const r = makeSceneRenderer(ctx.device, ctx.canvas);
-        await r.init();
-        return r;
-      });
-      if (ctx.disposed()) return;
-      console.log(`[paint] render backend: ${renderer.backend}`);
-      detachDrag = attachOrbitDrag(ctx.canvas, cfg);
-      endInit();
-    },
-    // render every frame while visible (the 3D dragon loops on forever); dt is
-    // the page's clock source, it does NOT advance scene time here.
-    frame(dt, ctx) {
-      if (!renderer) return;
-      if (firstFrame) {
-        const endBuild = mark("buildState (first)");
-        const state = buildState(cfg.t, ctx.aspect, cfg.debug, cfg.orbitYaw);
-        endBuild();
-        const endFrame = mark("renderer.frame (first)");
-        renderer.frame(state);
-        endFrame();
-        stamp("first frame painted");
-        firstFrame = false;
-        return;
-      }
-      renderer.frame(buildState(cfg.t, ctx.aspect, cfg.debug, cfg.orbitYaw));
-    },
-    destroy() {
-      detachDrag?.();
-      detachDrag = null;
-      renderer?.destroy(); // the device itself is owned (and destroyed) by createPlayground
-      renderer = null;
-    },
+  return {
+    ...createPlayground({
+      device: { prefer },
+      async init(ctx) {
+        stamp("main scene init start");
+        const endInit = mark("scene init total");
+        profile("initScene", () => initScene());
+        renderer = await profile("createRenderer", async () => {
+          const r = makeSceneRenderer(ctx.device, ctx.canvas);
+          await r.init();
+          return r;
+        });
+        if (ctx.disposed()) return;
+        console.log(`[paint] render backend: ${renderer.backend}`);
+        detachDrag = attachOrbitDrag(ctx.canvas, cfg);
+        endInit();
+      },
+      // render every frame while visible (the 3D dragon loops on forever); dt is
+      // the page's clock source, it does NOT advance scene time here.
+      frame(dt, ctx) {
+        if (!renderer) return;
+        if (firstFrame) {
+          const endBuild = mark("buildState (first)");
+          const state = buildState(
+            cfg.t,
+            ctx.aspect,
+            cfg.debug,
+            cfg.orbitYaw,
+            ctx.device,
+          );
+          endBuild();
+          const endFrame = mark("renderer.frame (first)");
+          renderer.frame(state);
+          endFrame();
+          stamp("first frame painted");
+          firstFrame = false;
+          return;
+        }
+        renderer.frame(
+          buildState(cfg.t, ctx.aspect, cfg.debug, cfg.orbitYaw, ctx.device),
+        );
+      },
+      destroy() {
+        detachDrag?.();
+        detachDrag = null;
+        renderer?.destroy(); // the device itself is owned (and destroyed) by createPlayground
+        renderer = null;
+      },
+    }),
     // { t, debug, orbitYaw } — orbitYaw is also written by the canvas drag
-    setConfig(patch) { Object.assign(cfg, patch); },
-  });
+    setConfig(patch) {
+      Object.assign(cfg, patch);
+    },
+  };
 }

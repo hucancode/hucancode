@@ -11,7 +11,7 @@
 import { DRAGON_KIT, DRAGON_JOINTS } from "./parts.js";
 import { createRig, rigCache } from "../rig.js";
 import { buildSpline } from "../../math/curve.js";
-import { vSub, vLen, vNorm, vCross, m3Mul, m3T } from "../../math/mat3.js";
+import { vSub, vLen, vNorm, vCross } from "../../math/mat3.js";
 
 // angles are RADIANS end to end here; degrees live only in the UI pages.
 const DEG = Math.PI / 180;   // radian value of one degree, for writing constants
@@ -149,27 +149,25 @@ export function createDragonRig(seed = 1) {
     links: DRAGON_DEF,
     rest: DRAGON_POSE,
     seed,
-    setup(r) {
-      const bones = r.bones;
+    setup(d) {
       // the spine chain, and the PITCH of each link — the chord from its parent's
       // ball centre to its own. The assembly already worked that out when it seated
-      // the joints: it IS the offset of the link's first bone.
-      const spine = r.links.filter((d) => d.spine);
-      for (const d of spine) d.pitch = vLen(bones[d.ids[0]].offset);
-      const pitch = spine.reduce((a, d) => a + d.pitch, 0);
+      // the joints: it IS the offset of the link's first bone (driver.reach).
+      const spine = d.links.filter((x) => x.spine);
+      for (const x of spine) x.pitch = d.reach(x.name);
+      const pitch = spine.reduce((a, x) => a + x.pitch, 0);
       const tailChord = TAIL_P.coreLen;                 // orients the last link
-      const rootBone = bones[r.link("head").ids[0]];
-      return { bones, spine, pitch, tailChord, rootBone };
+      return { spine, pitch, tailChord };
     },
-    solve(o, r, c, path) {
-      const { bones, spine, tailChord, rootBone } = c;
+    solve(o, d, c, path) {
+      const { spine, tailChord } = c;
       // `path` (optional) = an external ride curve { total, posAt(s), tangentAt(s) }
       // in RIG SPACE (y-up); defaults to the built-in flight loop.
       const loop = path ?? defaultLoop();
 
       // spine pivots, chord-marched backward from the head anchor
       const sList = [(((o.offset % 1) + 1) % 1) * loop.total];
-      for (const d of spine) sList.push(marchBack(loop, sList.at(-1), d.pitch));
+      for (const x of spine) sList.push(marchBack(loop, sList.at(-1), x.pitch));
       const piv = sList.map((s) => loop.posAt(s));
       const qTail = loop.posAt(marchBack(loop, sList.at(-1), tailChord));
 
@@ -179,38 +177,29 @@ export function createDragonRig(seed = 1) {
       for (let i = 1; i < piv.length - 1; i++) frames.push(frameFromZ(vSub(piv[i], piv[i + 1])));
       frames.push(frameFromZ(vSub(piv.at(-1), qTail)));                   // tail
 
-      // SPINE — one free bone per ball. The curve gives each link's PART frame;
-      // the bone it rides is not the same thing (the part is bolted into the ball
-      // at an angle — `seatR`), so the frame the bone must reach is
-      // frame · seatRᵀ. The bone then takes what is left of it after its parent
-      // and its own rest (slot-match) rotation: R = RESTᵀ · parentᵀ · W.
-      rootBone.offset = piv[0];
-      rootBone.rot = frames[0];                       // the root part sits square on its bone
-      let prev = frames[0];
-      spine.forEach((d, i) => {
-        const W = m3Mul(frames[i + 1], m3T(d.seatR));
-        const b = bones[d.ids[0]];
-        b.rot = m3Mul(m3T(b.rest), m3Mul(m3T(prev), W));
-        prev = W;
-      });
+      // SPINE — one free bone per ball. setPartWorld takes the PART frame the
+      // curve wants and handles the seating (seatRᵀ) and the bone's own rest
+      // rotation, so the solver only thinks about part frames.
+      d.root.set({ offset: piv[0], rot: frames[0] });   // the root part sits square on its bone
+      spine.forEach((x, i) => d.setPartWorld(x.name, 0, frames[i + 1]));
 
       // LIMBS — the sliders, plus the swim stroke layered on top. One driven bone
       // each: the shoulder / hip disc, the elbow / knee pin.
       const swimLap = o.swim ?? o.offset;             // one timeline drives ride and gait
-      for (const d of r.links) {
-        if (!d.limb) continue;
-        const m = LIMB[d.limb];
-        const ph = ((((swimLap % 1) + 1) % 1) * SWIM.strokes + (d.phase || 0)) * 2 * Math.PI;
+      for (const x of d.links) {
+        if (!x.limb) continue;
+        const m = LIMB[x.limb];
+        const ph = ((((swimLap % 1) + 1) % 1) * SWIM.strokes + (x.phase || 0)) * 2 * Math.PI;
         // the disc channels read the flank's sign (its pin is reversed); the pin
         // channels (elbow, knee) bend the same way on both sides
-        const s = m.mirror ? d.sign : 1;
-        bones[d.ids[m.dof]].angle = s * (o[m.key] + SWIM[m.amp] * Math.sin(ph + m.lag));
+        const s = m.mirror ? x.sign : 1;
+        d.setDOF(x.name, m.dof, s * (o[m.key] + SWIM[m.amp] * Math.sin(ph + m.lag)));
       }
     },
   });
 
   // the dragon's public model keeps its (pose, path, opts) signature; the
-  // generic model's trailing `env` slot carries the ride path
+  // ride path flows through as the solve argument to the generic solve
   const rigModel = (pose = {}, path = null, opts = {}) => model(pose, opts, path);
   return { model: rigModel, pitch: ctx.pitch, rig };
 }

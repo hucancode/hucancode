@@ -1,22 +1,6 @@
-// SCENE BUILDER — turns a mech model ({ items, shapes }) into flat typed arrays
-// the tracer walks: one entry per primitive INSTANCE (not per triangle), with
-// its inverse / inverse-transpose matrices, analytic shape id + params, color
-// and a world-space AABB. Then a median-split BVH is built over those AABBs.
-//
-// Rebuilt EVERY FRAME: animated rigs move the primitives, so the AABBs and the
-// BVH are invalidated and rebuilt from scratch each frame (cheap at these
-// counts — a few hundred to a few thousand instances).
-
 import { m3Inv, m3InvT, m3MulV } from "../math/mat3.js";
 import { SHAPE, localAabb } from "./shapes.js";
 
-// ---- MATERIALS -------------------------------------------------------------
-// The tracer supports three shading models per primitive instance. A material
-// spec is `{ type: "lambertian" | "metal" | "dielectric", ... }`; the scene
-// builder normalizes it into a packed (type, param) pair for the GPU.
-//   lambertian  param = roughness (0..1, Oren-Nayar sigma; 0 = pure Lambert)
-//   metal       param = fuzz (0..1 roughness of the mirror reflection)
-//   dielectric  param = index of refraction (e.g. 1.5 glass)
 export const MAT = { LAMBERTIAN: 0, METAL: 1, DIELECTRIC: 2 };
 
 export function materialOf(spec) {
@@ -32,11 +16,11 @@ export function materialOf(spec) {
 export function buildScene(model, opts = {}) {
   const { materials = {}, partKey = null } = opts;
   const items = model?.items;
-  const shapes = model?.shapes;
+  const meshes = model?.meshes;
   const valid = [];
-  if (items && shapes) {
+  if (items && meshes) {
     for (let i = 0; i < items.length; i++) {
-      const s = shapes[items[i].key];
+      const s = meshes[items[i].key]?.shape;
       if (s && SHAPE[s.kind] !== undefined) valid.push(i);
     }
   }
@@ -57,7 +41,7 @@ export function buildScene(model, opts = {}) {
   for (let ci = 0; ci < n; ci++) {
     const i = valid[ci];
     const it = items[i];
-    const s = shapes[it.key];
+    const s = meshes[it.key].shape;
     const kind = SHAPE[s.kind];
     const p = s.p || [];
     IKind[ci] = kind;
@@ -107,11 +91,11 @@ export function buildScene(model, opts = {}) {
   return { n, IKind, IP0, IP1, IP2, IP3, IM, IMT, IinvT, IC, IMat, IMatP, aabb, centroid, bvh };
 }
 
-// GPU packing — flat storage-buffer layouts consumed by the WebGPU compute
-// tracer (trace.wgsl). Indices are stored as f32 (exact up to 2^24, far above
-// any scene here) so a single buffer holds both ints and bounds.
-//   bvhData:  8 floats / node   [left, right, min.x, min.y, min.z, max.x, max.y, max.z]
-//   instData: 32 floats / prim  [kind, p0..p3, IM(9), IMT(9), IinvT(3), color(3), mat, matParam, pad]
+// GPU packing — flat float arrays uploaded as rgba32f DATA TEXTURES (see
+// trace.wgsl). Indices are stored as f32 (exact up to 2^24, far above any
+// scene here) so a single texture holds both ints and bounds.
+//   bvhData:  8 floats / node   [left, right, min.x, min.y, min.z, max.x, max.y, max.z] (2 texels)
+//   instData: 32 floats / prim  [kind, p0..p3, IM(9), IMT(9), IinvT(3), color(3), mat, matParam, pad] (8 texels)
 export function buildGpuScene(model, opts = {}) {
   const scene = buildScene(model, opts);
   const { n, bvh, IKind, IP0, IP1, IP2, IP3, IM, IMT, IinvT, IC, IMat, IMatP } = scene;

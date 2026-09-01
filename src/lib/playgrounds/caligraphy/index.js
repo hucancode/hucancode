@@ -1,4 +1,4 @@
-import { createPlayground, F32, I32, VEC2 } from "$lib/engine/index.js";
+import { createPlayground } from "$lib/engine/index.js";
 import CALI from "./shaders/caligraphy-playground.wgsl?shader";
 
 const TEXELS_PER_SEG = 5;
@@ -13,7 +13,8 @@ const config = {
   playhead: undefined,
 };
 
-let shader = null, segTex = null;
+let shader = null,
+  segTex = null;
 let buf = new Float32Array(0);
 let nSeg = 0;
 let segRef = null; // re-pack only on segs identity change (page bakes in a $derived)
@@ -36,11 +37,26 @@ function packSegs(segs) {
     const dc = Math.hypot(s.ctrl.x - cx, s.ctrl.y - cy);
     const hullR = Math.max(d1, dc);
     let o = i * TEXELS_PER_SEG * 4;
-    buf[o++] = cx; buf[o++] = cy; buf[o++] = hullR; buf[o++] = s.t0;
-    buf[o++] = s.p1.x; buf[o++] = s.p1.y; buf[o++] = s.p2.x; buf[o++] = s.p2.y;
-    buf[o++] = s.ctrl.x; buf[o++] = s.ctrl.y; buf[o++] = s.pr1; buf[o++] = s.pr2;
-    buf[o++] = s.k; buf[o++] = s.belly; buf[o++] = s.dur; buf[o++] = 0;
-    buf[o++] = s.v0; buf[o++] = s.v1; buf[o++] = 0; buf[o++] = 0;
+    buf[o++] = cx;
+    buf[o++] = cy;
+    buf[o++] = hullR;
+    buf[o++] = s.t0;
+    buf[o++] = s.p1.x;
+    buf[o++] = s.p1.y;
+    buf[o++] = s.p2.x;
+    buf[o++] = s.p2.y;
+    buf[o++] = s.ctrl.x;
+    buf[o++] = s.ctrl.y;
+    buf[o++] = s.pr1;
+    buf[o++] = s.pr2;
+    buf[o++] = s.k;
+    buf[o++] = s.belly;
+    buf[o++] = s.dur;
+    buf[o++] = 0;
+    buf[o++] = s.v0;
+    buf[o++] = s.v1;
+    buf[o++] = 0;
+    buf[o++] = 0;
   }
   segTex.write(buf.subarray(0, need), TEXELS_PER_SEG, n);
   return n;
@@ -51,31 +67,28 @@ const { init, render, destroy } = createPlayground({
   // shader; multisampling would only burn a hidden 4x target + resolve.
   device: { msaa: false },
   init({ device }) {
-    shader = device.shader({
-      ...CALI,
-      uniforms: [
-        VEC2("uResolution"), F32("uBaseRadius"), F32("uZoom"), VEC2("uPan"),
-        F32("uGridSize"), I32("uShowGrid"), F32("uTime"), I32("uNSeg"),
-      ],
-      textures: [{ name: "uSegTex", binding: 1 }],
-      blend: "none", topology: "tri",
+    shader = device.program(CALI, { blend: "none", topology: "tri" });
+    segTex = device.texture({
+      width: TEXELS_PER_SEG,
+      height: 1,
+      format: "rgba32f",
+      filter: "nearest",
     });
-    segTex = device.texture({ width: TEXELS_PER_SEG, height: 1, format: "rgba32f", filter: "nearest" });
   },
   frame(dt, { device, canvas }) {
-    const w = canvas.width, h = canvas.height;
+    const w = canvas.width,
+      h = canvas.height;
     if (w <= 0 || h <= 0) return;
     if (config.segs !== segRef) {
       nSeg = packSegs(config.segs);
       segRef = config.segs;
     }
     const view = config.view;
-    device.beginFrame();
-    device.pass({ clear: [1.0, 0.988, 0.878, 1.0] }, (p) => {
+    device.render({ clear: { color: [1.0, 0.988, 0.878, 1.0] } }, (p) => {
       if (nSeg <= 0) return;
       p.draw(shader, {
         count: 3,
-        textures: { uSegTex: segTex },
+        bindings: { uSegTex: segTex },
         uniforms: {
           uResolution: [w, h],
           uBaseRadius: config.baseRadius,
@@ -89,7 +102,6 @@ const { init, render, destroy } = createPlayground({
         },
       });
     });
-    device.endFrame();
   },
   destroy() {
     segTex?.destroy();

@@ -9,8 +9,10 @@ const _vpRot = mat4.create();
 const _vpTmp = mat4.create();
 const _vpResult = mat4.create();
 
-export function sceneViewProj(aspect, yaw, pitch, camY = 0) {
-  mat4.perspective(_vpProj, CAM.fov, aspect, 0.1, 60);
+// `device` supplies the clip-convention-aware projection (WebGPU clips z to
+// [0,1], WebGL to [-1,1]); callers pass the device instead of a boolean.
+export function sceneViewProj(aspect, yaw, pitch, camY = 0, device) {
+  device.perspective(_vpProj, CAM.fov, aspect, 0.1, 60);
   // ground = x/y plane, +z up. yaw spins about z (ground normal); pitch tilts
   // elevation. rotZ first so yaw stays true heading once tilted.
   mat4.rotationZ(_vpRot, yaw);
