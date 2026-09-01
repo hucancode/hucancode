@@ -341,9 +341,13 @@ fn intersectShape(kind: i32, p0: f32, p1: f32, p2: f32, p3: f32, o: vec3<f32>, d
       }
     }
     if (abs(d.y) > PAR) {
+      // the lip is the shell's cross-section at the cut plane: each sphere's
+      // radius where it meets y=yc, not the y=0 ring radii
+      let rr = sqrt(max(0.0, ri * ri - yc * yc));  // inner shell r at yc
+      let ro = sqrt(max(0.0, 1.0 - yc * yc));      // outer shell r at yc
       var t = (yc - o.y) / d.y;
       var x = o.x + d.x * t; var z = o.z + d.z * t; var r2 = x * x + z * z;
-      if (r2 >= ri * ri && r2 <= 1.0) {
+      if (r2 >= rr * rr && r2 <= ro * ro) {
         if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
       }
       t = -o.y / d.y;
