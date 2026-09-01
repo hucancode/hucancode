@@ -5,13 +5,49 @@
   import * as rt from "$lib/playgrounds/raytrace";
   import { DRAGON_KIT } from "$lib/mech/dragon/parts.js";
   import { dragonModel, DRAGON_POSE } from "$lib/mech/dragon/rig.js";
+  // ---- dragon UI surface (inlined from $lib/ui/dragon.js) ----
+// DRAGON UI SURFACE — the slider rows for the dragon playground's rig and part
+// picker. The rig itself (links, spine solve, model) lives in lib/mech/dragon/rig.js
+// and the part geometry in lib/mech/dragon/parts.js.
+const DEG = Math.PI / 180;   // radian value of one degree, for writing constants
+
+// rig pose sliders (radians in the engine, degrees in the UI)
+const DRAGON_CTL = [
+  ["jaw", "jaw open", 0, 45 * DEG, DEG],
+  ["armSwing", "arm swing", -Math.PI, Math.PI, DEG],
+  ["elbow", "elbow bend", 0, 70 * DEG, DEG],
+  ["legSwing", "leg swing", -60 * DEG, 60 * DEG, DEG],
+  ["knee", "knee bend", 0, 60 * DEG, DEG],
+];
+// offset slides the body along the loop curve (0..1); it's what autoplay drives
+const LOOP_CTL = [["offset", "loop offset", 0, 1, 0.002]];
+
+// ---- PART PICKER ------------------------------------------------------------
+const PART_LABELS = {
+  bodySegment: "body segment", bodySegment2: "body segment 2",
+  upperArm: "upper arm", forearm: "forearm",
+};
+
+// [key, label, min, max, step?] sliders per part — BODY shape only
+const PART_CTL = {
+  head: [["headW", "head width", 0.7, 2.0], ["snoutLen", "snout length", 0.5, 2.0], ["eyeR", "eye radius", 0.08, 0.3], ["hornLen", "horn length", 0.1, 1.2]],
+  jaw: [["jawW", "jaw width", 0.3, 1.2], ["jawLen", "jaw length", 0.6, 2.4]],
+  bodySegment: [["bodyR", "body radius", 0.3, 0.9], ["segLen", "segment length", 0.8, 3.0], ["discs", "belly discs", 2, 7, 1], ["finR", "fin radius", 0.15, 0.8]],
+  bodySegment2: [["rFront", "front radius", 0.25, 0.9], ["rRear", "rear radius", 0.15, 0.8], ["segLen", "segment length", 0.8, 3.0], ["finR", "fin radius", 0.15, 0.8]],
+  upperArm: [["len", "length", 0.25, 1.2], ["w", "width", 0.2, 0.7]],
+  forearm: [["len", "length", 0.2, 1.2], ["clawR", "claw radius", 0.15, 0.5]],
+  thigh: [["len", "length", 0.25, 1.2], ["w", "width", 0.2, 0.8]],
+  shin: [["len", "length", 0.2, 1.2], ["footLen", "foot length", 0.15, 0.9], ["clawR", "claw radius", 0.15, 0.5]],
+  tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
+};
+  const CHOREO_CTL = LOOP_CTL;
   import { rad, deg } from "$lib/math/scalar.js";
   import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
   import Dragon from "$icons/simple-icons/dragon.svg?raw";
 
   let render = $state({
     spin: 0.3, light: 0.6, wire: 0,
-    raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0,
+    raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0, raycount: 1,
   });
 
   const RENDER_CTL = [
@@ -24,6 +60,7 @@
     ["exposure", "exposure", 0.2, 3, 0.05],
     ["softness", "shadow softness", 0, 0.3, 0.005],
     ["quality", "resolution", 0.15, 1, 0.05],
+    ["raycount", "ray count", 1, 16, 1],
   ];
   const renderCtl = $derived(render.raytrace ? RT_CTL : RENDER_CTL);
   const engine = $derived(render.raytrace ? rt : mech);
@@ -90,32 +127,13 @@
   let asmPlay = $state(false);
   let seed = $state(1);                    // color shuffle seed
 
-  const PART_LABELS = {
-    bodySegment: "body segment", bodySegment2: "body segment 2",
-    upperArm: "upper arm", forearm: "forearm",
-  };
-  // [key, label, min, max, step?] sliders per part — BODY shape only; every
-  // joint lives in the joint catalog now, and every angle on a rig slider
-  const PART_CTL = {
-    head: [["headW", "head width", 0.7, 2.0], ["snoutLen", "snout length", 0.5, 2.0], ["eyeR", "eye radius", 0.08, 0.3], ["hornLen", "horn length", 0.1, 1.2]],
-    jaw: [["jawW", "jaw width", 0.3, 1.2], ["jawLen", "jaw length", 0.6, 2.4]],
-    bodySegment: [["bodyR", "body radius", 0.3, 0.9], ["segLen", "segment length", 0.8, 3.0], ["discs", "belly discs", 2, 7, 1], ["finR", "fin radius", 0.15, 0.8]],
-    bodySegment2: [["rFront", "front radius", 0.25, 0.9], ["rRear", "rear radius", 0.15, 0.8], ["segLen", "segment length", 0.8, 3.0], ["finR", "fin radius", 0.15, 0.8]],
-    upperArm: [["len", "length", 0.25, 1.2], ["w", "width", 0.2, 0.7]],
-    forearm: [["len", "length", 0.2, 1.2], ["clawR", "claw radius", 0.15, 0.5]],
-    thigh: [["len", "length", 0.25, 1.2], ["w", "width", 0.2, 0.8]],
-    shin: [["len", "length", 0.2, 1.2], ["footLen", "foot length", 0.15, 0.9], ["clawR", "claw radius", 0.15, 0.5]],
-    tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
-  };
-  // offset slides the body along the loop curve; it's what autoplay drives
-  const CHOREO_CTL = [["offset", "loop offset", 0, 1, 0.002]];
-  const DRAGON_CTL = [
-    ["jaw", "jaw open", 0, 45, 1],
-    ["armSwing", "arm swing", -180, 180, 1],
-    ["elbow", "elbow bend", 0, 70, 1],
-    ["legSwing", "leg swing", -60, 60, 1],
-    ["knee", "knee bend", 0, 60, 1],
-  ];
+  // rig pose sliders are radians in the engine, degrees in the UI; the loop
+  // offset (CHOREO_CTL) is a 0..1 ratio and passes
+  // through untouched
+  const rigRows = $derived(DRAGON_CTL.map(([key, label, min, max, step]) =>
+    [key, label, deg(min), deg(max), step ? deg(step) : 0.01]));
+  const rigVal = (key) => deg(drig[key]);
+  const rigSet = (key, v) => { drig[key] = rad(+v); };
 
   function resetPart() { dparams[dsel] = structuredClone(DRAGON_KIT.params[dsel]); }
   function resetDragon() { drig = structuredClone(DRAGON_POSE); }
@@ -174,6 +192,7 @@
         exposure: render.exposure,
         softness: render.softness,
         quality: render.quality,
+        raycount: render.raycount,
         materials,
         partKey: PART_OF_GROUP,
       } : {}),
@@ -323,15 +342,15 @@
       </fieldset>
       <fieldset>
         <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
-        {#each DRAGON_CTL as [key, label, min, max, step]}
+        {#each rigRows as [key, label, min, max, step]}
           {#if min === 0 && max === 1 && step === 1}
             <label><input type="checkbox" checked={!!drig[key]}
               onchange={(e) => (drig[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
           {:else}
             <label><span>{label}</span>
-              <input type="range" {min} {max} step={step ?? 0.01} value={deg(drig[key])}
-                oninput={(e) => (drig[key] = rad(+e.currentTarget.value))} />
-              <output>{deg(drig[key]).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+              <input type="range" {min} {max} step={step ?? 0.01} value={rigVal(key)}
+                oninput={(e) => rigSet(key, e.currentTarget.value)} />
+              <output>{rigVal(key).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
           {/if}
         {/each}
       </fieldset>

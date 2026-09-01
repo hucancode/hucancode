@@ -9,7 +9,9 @@ function parseObj(text) {
   const lines = text.split("\n");
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li];
-    const c0 = line.charCodeAt(0), c1 = line.charCodeAt(1), c2 = line.charCodeAt(2);
+    const c0 = line.charCodeAt(0),
+      c1 = line.charCodeAt(1),
+      c2 = line.charCodeAt(2);
     if (c0 === 118 && c1 === 32) {
       const p = line.split(/\s+/);
       verts.push([parseFloat(p[1]), parseFloat(p[2]), parseFloat(p[3])]);
@@ -19,7 +21,8 @@ function parseObj(text) {
     } else if (c0 === 102 && c1 === 32) {
       // "f " tokens v, v/vt, v//vn, v/vt/vn. triangulate fan
       const p = line.split(/\s+/);
-      const vidx = [], nidx = [];
+      const vidx = [],
+        nidx = [];
       for (let i = 1; i < p.length; i++) {
         if (!p[i]) continue;
         const parts = p[i].split("/");
@@ -69,7 +72,9 @@ export async function loadDragonMesh(url, bodyLen) {
     positions[i * 3 + 2] = v[a2];
     // normal: reorder axes same way, renormalise (no scale)
     const nm = triN[i] >= 0 ? norms[triN[i]] : null;
-    let nx = nm ? nm[longAxis] : 0, ny = nm ? nm[a1] : 0, nz = nm ? nm[a2] : 1;
+    let nx = nm ? nm[longAxis] : 0,
+      ny = nm ? nm[a1] : 0,
+      nz = nm ? nm[a2] : 1;
     const l = Math.hypot(nx, ny, nz) || 1;
     normals[i * 3 + 0] = nx / l;
     normals[i * 3 + 1] = ny / l;

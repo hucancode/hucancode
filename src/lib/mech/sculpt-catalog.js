@@ -2,7 +2,7 @@
 // its own with its surface controls exposed. Purely a viewer; the geometry
 // lives in sculpt.js.
 import { sculptBox, sculptCylinder, sculptSphere } from "./sculpt.js";
-import { bake, meshOf } from "./primitives.js";
+import { bake, modelOf } from "./primitives.js";
 import { colorOf } from "./color.js";
 
 export const SHAPE_PARAMS = {
@@ -11,15 +11,6 @@ export const SHAPE_PARAMS = {
   sphere: { r: 1 },
 };
 export const SHAPE_NAMES = Object.keys(SHAPE_PARAMS);
-
-// a starter design showing every mark: a merged L, a raised rail, a stud, a
-// hole, and two plates named apart so they stay apart while touching
-export const DESIGN_SAMPLE = `a a . B B B
-a . . . o *
-a . c c d d
-. * . c c .
-E E . . o .
-E E . f f f`;
 
 const SHAPE_BUILD = {
   box: (p, sc) => sculptBox(p.w, p.h, p.d, sc),
@@ -35,8 +26,5 @@ export function sculptModel(name, params, sc, seed = 1) {
   const key = SHAPE_BUILD[name] ? name : SHAPE_NAMES[0];
   const p = { ...SHAPE_PARAMS[key], ...(params || {}) };
   const b = bake(SHAPE_BUILD[key](p, sc));
-  return {
-    items: [{ ...b, color: colorOf(key, seed) }],
-    meshes: { [b.key]: meshOf(b.key) },
-  };
+  return modelOf([{ ...b, color: colorOf(key, seed) }]);
 }

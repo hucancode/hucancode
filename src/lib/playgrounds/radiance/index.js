@@ -7,7 +7,7 @@
 //   sceneTex   rgba8   painted emission (rgb) + occlusion (a), uploaded on paint
 //   lightTex   rgba8   moving-light accumulation buffer, cleared each frame
 //   cascadeTex rgba16f one target per cascade level, coarse -> fine
-import { createPlayground, F32, VEC2 } from "$lib/engine/index.js";
+import { createPlayground } from "$lib/engine/index.js";
 import CASCADE from "./shaders/cascade.wgsl?shader";
 import COMPOSITE from "./shaders/composite.wgsl?shader";
 import LIGHTS from "./shaders/lights.wgsl?shader";
@@ -36,7 +36,8 @@ const config = {
 
 let device = null;
 let canvas = null;
-let W = 0, H = 0;
+let W = 0,
+  H = 0;
 
 // size-dependent scene resources
 let sceneMirror = null; // Uint8ClampedArray W*H*4, the CPU-side paint target
@@ -48,7 +49,9 @@ let cascadeTexs = [];
 let cascadeDims = [];
 let dummyTex = null;
 
-let cascadeShader = null, compositeShader = null, lightsShader = null;
+let cascadeShader = null,
+  compositeShader = null,
+  lightsShader = null;
 let lightsBuffer = null;
 let lightsData = new Float32Array(MAX_LIGHTS * LIGHT_FLOATS);
 
@@ -59,7 +62,9 @@ let lastSceneKey = "";
 let lastBuildKey = "";
 
 // fps / stats
-let fps = 0, frameCount = 0, lastFpsTime = 0;
+let fps = 0,
+  frameCount = 0,
+  lastFpsTime = 0;
 
 const hexToBytes = (hex) => {
   const v = parseInt(hex.slice(1), 16);
@@ -74,32 +79,61 @@ function randomColor01() {
   const f = hue * 6 - i;
   const q = 1 - f;
   switch (i % 6) {
-    case 0: return [1, f, 0];
-    case 1: return [q, 1, 0];
-    case 2: return [0, 1, f];
-    case 3: return [0, q, 1];
-    case 4: return [f, 0, 1];
-    default: return [1, 0, q];
+    case 0:
+      return [1, f, 0];
+    case 1:
+      return [q, 1, 0];
+    case 2:
+      return [0, 1, f];
+    case 3:
+      return [0, q, 1];
+    case 4:
+      return [f, 0, 1];
+    default:
+      return [1, 0, q];
   }
 }
 
 function neededCascadeCount(w, h) {
   const diag = Math.hypot(w, h);
   const base = Math.max(2, config.branching);
-  return Math.min(12, Math.max(4, Math.ceil(Math.log(diag / config.baseInterval) / Math.log(base)) + 1));
+  return Math.min(
+    12,
+    Math.max(
+      4,
+      Math.ceil(Math.log(diag / config.baseInterval) / Math.log(base)) + 1,
+    ),
+  );
 }
 function effectiveCascadeCount(w, h) {
-  return config.cascadeCount > 0 ? config.cascadeCount : neededCascadeCount(w, h);
+  return config.cascadeCount > 0
+    ? config.cascadeCount
+    : neededCascadeCount(w, h);
 }
-function cascadeSpacing(i) { return config.probeSpacing0 * 2 ** i; }
-function cascadeRays(i) { return config.baseRays * config.branching ** i; }
-function cascadeIntervalLo(i) { return i > 0 ? config.baseInterval * config.branching ** (i - 1) : 0; }
-function cascadeIntervalHi(i) { return config.baseInterval * config.branching ** i; }
+function cascadeSpacing(i) {
+  return config.probeSpacing0 * 2 ** i;
+}
+function cascadeRays(i) {
+  return config.baseRays * config.branching ** i;
+}
+function cascadeIntervalLo(i) {
+  return i > 0 ? config.baseInterval * config.branching ** (i - 1) : 0;
+}
+function cascadeIntervalHi(i) {
+  return config.baseInterval * config.branching ** i;
+}
 function sceneKey(w, h) {
   return w + "x" + h;
 }
 function buildKey(w, h) {
-  return [w, h, config.baseRays, config.branching, config.probeSpacing0, effectiveCascadeCount(w, h)].join("|");
+  return [
+    w,
+    h,
+    config.baseRays,
+    config.branching,
+    config.probeSpacing0,
+    effectiveCascadeCount(w, h),
+  ].join("|");
 }
 
 function setConfig(patch) {
@@ -120,14 +154,18 @@ function getStats() {
 
 function stampCircle(buffer, cx, cy, radius, rgb, alpha) {
   const [r, g, b] = rgb;
-  const x0 = Math.max(0, Math.floor(cx - radius)), y0 = Math.max(0, Math.floor(cy - radius));
-  const x1 = Math.min(W, Math.ceil(cx + radius)), y1 = Math.min(H, Math.ceil(cy + radius));
-  const w = x1 - x0, h = y1 - y0;
+  const x0 = Math.max(0, Math.floor(cx - radius)),
+    y0 = Math.max(0, Math.floor(cy - radius));
+  const x1 = Math.min(W, Math.ceil(cx + radius)),
+    y1 = Math.min(H, Math.ceil(cy + radius));
+  const w = x1 - x0,
+    h = y1 - y0;
   if (w <= 0 || h <= 0) return { x0, y0, w: 0, h: 0 };
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const dx = (x0 + x) - cx, dy = (y0 + y) - cy;
+      const dx = x0 + x - cx,
+        dy = y0 + y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > radius) continue;
       const idx = ((y0 + y) * W + (x0 + x)) * 4;
@@ -167,7 +205,9 @@ function paintDab(cx, cy) {
   // fully opaque (matching the default scene's occluders), a light is bright
   // and transparent.
   const isWall = config.brush === "wall";
-  const rgb = isWall ? [0, 0, 0] : [r * intensity, g * intensity, b * intensity];
+  const rgb = isWall
+    ? [0, 0, 0]
+    : [r * intensity, g * intensity, b * intensity];
   const alpha = isWall ? 255 : 0;
   const { x0, y0, w, h } = stampCircle(sceneMirror, cx, cy, radius, rgb, alpha);
   if (w <= 0 || h <= 0) return;
@@ -189,7 +229,8 @@ function spawnBouncingLight(cx, cy) {
   const speed = 120 + Math.random() * 180;
   const angle = Math.random() * 2 * Math.PI;
   bouncingLights.push({
-    x: cx, y: cy,
+    x: cx,
+    y: cy,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
     radius,
@@ -221,10 +262,20 @@ function updateBouncingLights(dt) {
   for (const l of bouncingLights) {
     l.x += l.vx * dt;
     l.y += l.vy * dt;
-    if (l.x - l.radius < 0) { l.x = l.radius; l.vx = Math.abs(l.vx); }
-    else if (l.x + l.radius > W) { l.x = W - l.radius; l.vx = -Math.abs(l.vx); }
-    if (l.y - l.radius < 0) { l.y = l.radius; l.vy = Math.abs(l.vy); }
-    else if (l.y + l.radius > H) { l.y = H - l.radius; l.vy = -Math.abs(l.vy); }
+    if (l.x - l.radius < 0) {
+      l.x = l.radius;
+      l.vx = Math.abs(l.vx);
+    } else if (l.x + l.radius > W) {
+      l.x = W - l.radius;
+      l.vx = -Math.abs(l.vx);
+    }
+    if (l.y - l.radius < 0) {
+      l.y = l.radius;
+      l.vy = Math.abs(l.vy);
+    } else if (l.y + l.radius > H) {
+      l.y = H - l.radius;
+      l.vy = -Math.abs(l.vy);
+    }
   }
 }
 
@@ -246,7 +297,8 @@ function loadDefaultScene() {
   bouncingLights.length = 0;
   paintCount = 0;
 
-  const cx = W / 2, cy = H / 2;
+  const cx = W / 2,
+    cy = H / 2;
   const lightRadius = Math.max(10, Math.min(30, Math.min(W, H) * 0.06));
   const gap = lightRadius * 2.2;
   const barLen = lightRadius * 2.8;
@@ -258,10 +310,42 @@ function loadDefaultScene() {
   paintCount += Math.round(Math.PI * lightRadius * lightRadius);
 
   // four short bars, each blocking the light toward one side of the canvas
-  stampRect(sceneMirror, cx - barLen / 2, cy - gap - barThick / 2, barLen, barThick, occluder, 255); // top
-  stampRect(sceneMirror, cx - barLen / 2, cy + gap - barThick / 2, barLen, barThick, occluder, 255); // bottom
-  stampRect(sceneMirror, cx - gap - barThick / 2, cy - barLen / 2, barThick, barLen, occluder, 255); // left
-  stampRect(sceneMirror, cx + gap - barThick / 2, cy - barLen / 2, barThick, barLen, occluder, 255); // right
+  stampRect(
+    sceneMirror,
+    cx - barLen / 2,
+    cy - gap - barThick / 2,
+    barLen,
+    barThick,
+    occluder,
+    255,
+  ); // top
+  stampRect(
+    sceneMirror,
+    cx - barLen / 2,
+    cy + gap - barThick / 2,
+    barLen,
+    barThick,
+    occluder,
+    255,
+  ); // bottom
+  stampRect(
+    sceneMirror,
+    cx - gap - barThick / 2,
+    cy - barLen / 2,
+    barThick,
+    barLen,
+    occluder,
+    255,
+  ); // left
+  stampRect(
+    sceneMirror,
+    cx + gap - barThick / 2,
+    cy - barLen / 2,
+    barThick,
+    barLen,
+    occluder,
+    255,
+  ); // right
 
   sceneTex.write(sceneMirror);
 }
@@ -278,15 +362,25 @@ const canvasCoords = (e) => {
 
 function onPointerDown(e) {
   if (e.pointerType === "mouse" && e.button !== 0) return;
-  try { canvas.setPointerCapture?.(e.pointerId); } catch { /* ignore */ }
+  try {
+    canvas.setPointerCapture?.(e.pointerId);
+  } catch {
+    /* ignore */
+  }
   const [x, y] = canvasCoords(e);
   if (config.brush === "moving-light") spawnBouncingLight(x, y);
-  else { isDrawing = true; paintDab(x, y); }
+  else {
+    isDrawing = true;
+    paintDab(x, y);
+  }
 }
 function onPointerMove(e) {
-  if (isDrawing && config.brush !== "moving-light") paintDab(...canvasCoords(e));
+  if (isDrawing && config.brush !== "moving-light")
+    paintDab(...canvasCoords(e));
 }
-function onPointerUp() { isDrawing = false; }
+function onPointerUp() {
+  isDrawing = false;
+}
 
 // ---- resource lifecycle --------------------------------------------------
 
@@ -318,16 +412,24 @@ function compositeParams(cascadeCnt) {
 // scene resources: the painted emission/occlusion layer and the moving-light
 // accumulation buffer. These only depend on screen size.
 function rebuildScene(w, h) {
-  W = w; H = h;
-  sceneTex?.destroy(); sceneTex = null;
-  lightTex?.destroy(); lightTex = null;
+  W = w;
+  H = h;
+  sceneTex?.destroy();
+  sceneTex = null;
+  lightTex?.destroy();
+  lightTex = null;
 
   sceneMirror = new Uint8ClampedArray(W * H * 4);
   bouncingLights.length = 0;
   paintCount = 0;
   isDrawing = false;
 
-  sceneTex = device.texture({ width: W, height: H, format: "rgba8", data: sceneMirror });
+  sceneTex = device.texture({
+    width: W,
+    height: H,
+    format: "rgba8",
+    data: sceneMirror,
+  });
   lightTex = device.texture({ width: W, height: H, format: "rgba8" });
   lastSceneKey = sceneKey(W, H);
 }
@@ -335,25 +437,45 @@ function rebuildScene(w, h) {
 // cascade resources: depend on grid shape (rays/branching/spacing/levels) and
 // screen size. Rebuilt when either changes, without touching the painted scene.
 function rebuildCascades(w, h) {
-  W = w; H = h;
+  W = w;
+  H = h;
   for (const t of cascadeTexs) t.destroy();
   cascadeTexs = [];
-  dummyTex?.destroy(); dummyTex = null;
+  dummyTex?.destroy();
+  dummyTex = null;
 
   const count = effectiveCascadeCount(W, H);
   cascadeDims = [];
   for (let i = 0; i < count; i++) {
     const spacing = cascadeSpacing(i);
-    const probesX = Math.ceil(W / spacing), probesY = Math.ceil(H / spacing);
+    const probesX = Math.ceil(W / spacing),
+      probesY = Math.ceil(H / spacing);
     const rays = cascadeRays(i);
     cascadeDims.push({
-      width: Math.max(1, probesX * rays), height: Math.max(1, probesY),
-      probesX, probesY, rays, spacing,
-      intervalLo: cascadeIntervalLo(i), intervalHi: cascadeIntervalHi(i),
+      width: Math.max(1, probesX * rays),
+      height: Math.max(1, probesY),
+      probesX,
+      probesY,
+      rays,
+      spacing,
+      intervalLo: cascadeIntervalLo(i),
+      intervalHi: cascadeIntervalHi(i),
     });
   }
-  cascadeTexs = cascadeDims.map((d) => device.texture({ width: d.width, height: d.height, format: "rgba16f", filter: "nearest" }));
-  dummyTex = device.texture({ width: 1, height: 1, format: "rgba16f", filter: "nearest" });
+  cascadeTexs = cascadeDims.map((d) =>
+    device.texture({
+      width: d.width,
+      height: d.height,
+      format: "rgba16f",
+      filter: "nearest",
+    }),
+  );
+  dummyTex = device.texture({
+    width: 1,
+    height: 1,
+    format: "rgba16f",
+    filter: "nearest",
+  });
   lastBuildKey = buildKey(W, H);
 }
 
@@ -362,52 +484,27 @@ function rebuildCascades(w, h) {
 const { init, render, destroy } = createPlayground({
   device: { msaa: false }, // fullscreen passes; no engine MSAA resolve target
 
-  setConfig,
   init({ device: dev, canvas: canvasEl }) {
     device = dev;
     canvas = canvasEl;
 
-    cascadeShader = device.shader({
-      ...CASCADE,
-      uniforms: [
-        VEC2("sceneSize"), F32("spacing"), F32("rays"),
-        F32("intervalLo"), F32("intervalHi"), F32("stepsPerRay"),
-        F32("branching"), F32("hasCoarser"), F32("bilinearFix"),
-      ],
-      textures: [
-        { name: "sceneTex", binding: 1, samplerBinding: 2 },
-        { name: "lightTex", binding: 3, samplerBinding: 4 },
-        { name: "cascadeIn", binding: 5 },
-      ],
-      blend: "none", topology: "tri", targetFormat: "rgba16f",
+    cascadeShader = device.program(CASCADE, { blend: "none", topology: "tri" });
+    compositeShader = device.program(COMPOSITE, {
+      blend: "none",
+      topology: "tri",
     });
-    compositeShader = device.shader({
-      ...COMPOSITE,
-      uniforms: [
-        VEC2("sceneSize"), F32("probeSpacing0"), F32("raysBase"),
-        F32("cascadeCnt"), F32("exposure"), F32("probeOverlay"),
-      ],
-      textures: [
-        { name: "sceneTex", binding: 1, samplerBinding: 2 },
-        { name: "cascade0", binding: 3 },
-        { name: "lightTex", binding: 4, samplerBinding: 5 },
-      ],
-      blend: "none", topology: "tri",
+    lightsShader = device.program(LIGHTS, {
+      blend: "additive",
+      topology: "tri",
+      layout: {
+        instance: { inputs: ["lPos", "lRadius", "lColor"], step: "instance" },
+      },
     });
-    lightsShader = device.shader({
-      ...LIGHTS,
-      uniforms: [VEC2("dims"), F32("pad0"), F32("pad1")],
-      buffers: [{
-        stride: LIGHT_FLOATS * 4, step: "instance",
-        attributes: [
-          { name: "lPos", location: 0, format: "float32x2", offset: 0 },
-          { name: "lRadius", location: 1, format: "float32", offset: 8 },
-          { name: "lColor", location: 2, format: "float32x3", offset: 12 },
-        ],
-      }],
-      blend: "additive", topology: "tri", targetFormat: "rgba8",
+    lightsBuffer = device.buffer({
+      kind: "vertex",
+      size: MAX_LIGHTS * LIGHT_FLOATS * 4,
+      dynamic: true,
     });
-    lightsBuffer = device.buffer({ kind: "vertex", size: MAX_LIGHTS * LIGHT_FLOATS * 4, dynamic: true });
 
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
@@ -421,7 +518,8 @@ const { init, render, destroy } = createPlayground({
   },
 
   frame(dt) {
-    const w = canvas.width, h = canvas.height;
+    const w = canvas.width,
+      h = canvas.height;
     if (w <= 0 || h <= 0) return;
     if (sceneKey(w, h) !== lastSceneKey) rebuildScene(w, h);
     if (buildKey(w, h) !== lastBuildKey) rebuildCascades(w, h);
@@ -441,13 +539,11 @@ const { init, render, destroy } = createPlayground({
     }
     if (n > 0) lightsBuffer.write(lightsData.subarray(0, n * LIGHT_FLOATS));
 
-    device.beginFrame();
-
     // moving lights -> lightTex (cleared each frame, additive accumulation)
-    device.target(lightTex, { clear: [0, 0, 0, 0] }, (p) => {
+    device.render({ target: lightTex, clear: { color: [0, 0, 0, 0] } }, (p) => {
       if (n > 0) {
         p.draw(lightsShader, {
-          buffers: [lightsBuffer],
+          buffers: { instance: lightsBuffer },
           count: 6,
           instances: n,
           uniforms: { dims: [W, H], pad0: 0, pad1: 0 },
@@ -459,25 +555,26 @@ const { init, render, destroy } = createPlayground({
     const count = cascadeDims.length;
     for (let i = count - 1; i >= 0; i--) {
       const cascadeIn = i < count - 1 ? cascadeTexs[i + 1] : dummyTex;
-      device.target(cascadeTexs[i], { clear: [0, 0, 0, 0] }, (p) => {
-        p.draw(cascadeShader, {
-          count: 6,
-          uniforms: cascadeParams(i, count),
-          textures: { sceneTex, lightTex, cascadeIn },
-        });
-      });
+      device.render(
+        { target: cascadeTexs[i], clear: { color: [0, 0, 0, 0] } },
+        (p) => {
+          p.draw(cascadeShader, {
+            count: 6,
+            uniforms: cascadeParams(i, count),
+            bindings: { sceneTex, lightTex, cascadeIn },
+          });
+        },
+      );
     }
 
     // upsample finest cascade + painted scene -> screen
-    device.pass({ clear: [0, 0, 0, 1] }, (p) => {
+    device.render({ clear: { color: [0, 0, 0, 1] } }, (p) => {
       p.draw(compositeShader, {
         count: 6,
         uniforms: compositeParams(count),
-        textures: { sceneTex, cascade0: cascadeTexs[0], lightTex },
+        bindings: { sceneTex, cascade0: cascadeTexs[0], lightTex },
       });
     });
-
-    device.endFrame();
 
     frameCount++;
     const now = performance.now();
@@ -494,12 +591,16 @@ const { init, render, destroy } = createPlayground({
     canvas?.removeEventListener?.("pointerup", onPointerUp);
     canvas?.removeEventListener?.("pointercancel", onPointerUp);
 
-    sceneTex?.destroy(); sceneTex = null;
-    lightTex?.destroy(); lightTex = null;
+    sceneTex?.destroy();
+    sceneTex = null;
+    lightTex?.destroy();
+    lightTex = null;
     for (const t of cascadeTexs) t.destroy();
     cascadeTexs = [];
-    dummyTex?.destroy(); dummyTex = null;
-    lightsBuffer?.destroy(); lightsBuffer = null;
+    dummyTex?.destroy();
+    dummyTex = null;
+    lightsBuffer?.destroy();
+    lightsBuffer = null;
     lightsData = new Float32Array(0);
 
     cascadeShader = compositeShader = lightsShader = null;
@@ -507,4 +608,13 @@ const { init, render, destroy } = createPlayground({
   },
 });
 
-export { init, render, destroy, setConfig, clear, loadDefaultScene, spawnRandomLights, getStats };
+export {
+  init,
+  render,
+  destroy,
+  setConfig,
+  clear,
+  loadDefaultScene,
+  spawnRandomLights,
+  getStats,
+};

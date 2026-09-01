@@ -1,9 +1,6 @@
 // ATLAS PART KIT — a standing humanoid: helmet, torso, pelvis, upper arm, forearm,
 // palm, finger digit, thigh, shin, foot.
 //
-// Same discipline as the dragon kit: a part is a BODY and its SLOTS and models no
-// joint — every rotation happens inside a joint assemble puts on the slot offering it.
-//
 // Local frame: the `mount` slot is the part's bolting face and its ORIGIN, the body
 // hangs along -Y from it, +Z forward — except the head and torso, which grow +Y up.
 import {
@@ -48,8 +45,8 @@ export const ATLAS_JOINTS = {
   // wrist = two hinge stages in series (pins X then Z) plus the tang disc's
   // turntable: bend, tilt, twist
   wrist: { kind: "wrist", p: { jaw: 0.1, lugT: 0.05, lugL: 0.2, lugD: 0.2, pinR: 0.04, clr: 0.008, tang: 1, pinOut: 0 } },
-  knee: { kind: "hinge", p: { jaw: 0.15, lugT: 0.07, lugL: 0.2, lugD: 0.3, pinR: 0.06, tang: 1, pinOut: 0 }, opts: { discF: 1, discM: 1 } },
-  ankle: { kind: "hinge", p: { jaw: 0.14, lugT: 0.065, lugL: 0.2, lugD: 0.26, pinR: 0.055, tang: 1, pinOut: 0 }, opts: { discF: 1, discM: 1 } },
+  knee: { kind: "hinge", p: { jaw: 0.15, lugT: 0.07, lugL: 0.2, lugD: 0.3, pinR: 0.06, tang: 1, pinOut: 0, discF: 1, discM: 1 } },
+  ankle: { kind: "hinge", p: { jaw: 0.14, lugT: 0.065, lugL: 0.2, lugD: 0.26, pinR: 0.055, tang: 1, pinOut: 0, discF: 1, discM: 1 } },
   // finger knuckles: a BARE pin, no clevis — the digit just swings on it. The
   // span is sized off the digit, so the pin is a knuckle, not a crossbar.
   knuckle: { kind: "pin", p: { pinR: 0.035, jaw: 0.06, lugT: 0.01, clr: 0.005, pinOut: 0.01 } },

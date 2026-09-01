@@ -1,25 +1,32 @@
 // RIG — the shared shell every articulated figure builds on. A rig declares
 // LINKS (parts bolted through parent slots) and a pose SOLVE (how pose channels
 // become bone writes); createRig wraps createAssembly, runs a one-time `setup`
-// to measure the built skeleton, and returns a `model(pose, opts, env)` that
+// to measure the built skeleton, and returns a `model(pose, opts, solveArg)` that
 // merges the rest pose, runs the solve, poses the bones and emits the meshes.
+//
+// `setup(driver)` and `solve(pose, driver, ctx, solveArg)` receive a DRIVER,
+// not the assembly: a small typed surface (set root, drive DOFs, place parts,
+// read joint positions/reaches) that keeps rigs from touching bone internals.
 //
 // Pose channels are RADIANS end to end here (and in choreo.js): the UI pages
 // hold degrees and convert at the boundary via math/scalar.js `rad`/`deg`.
 import { createAssembly } from "./assemble.js";
 
 export function createRig({ kit, links, rest = {}, seed = 1, setup = null, solve = null }) {
-  const rig = createAssembly({ kit, links, seed });
-  const ctx = setup ? setup(rig) : {};
+  const asm = createAssembly({ kit, links, seed });
+  const driver = asm.driver;
+  const ctx = setup ? setup(driver) : {};
 
-  function model(pose = {}, opts = {}, env = undefined) {
+  // `opts` are EMIT options (e.g. the build-animation group hook); `solveArg`
+  // is whatever the solve needs beyond the pose (the dragon's ride path).
+  function model(pose = {}, opts = {}, solveArg = null) {
     const o = { ...rest, ...pose };
-    if (solve) solve(o, rig, ctx, env);
-    rig.setPose(o);
-    return rig.emit(opts);
+    if (solve) solve(o, driver, ctx, solveArg);
+    asm.setPose(o);
+    return asm.emit(opts);
   }
 
-  return { model, rig, ctx };
+  return { model, rig: driver, ctx };
 }
 
 // a rig is baked geometry: rebuild only when its seed changes

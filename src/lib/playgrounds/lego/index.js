@@ -1,6 +1,11 @@
 import {
-  createPlayground, createOrbit, mat4, Vec3,
-  animate, utils, eases, F32, VEC3, MAT4,
+  createPlayground,
+  createOrbit,
+  mat4,
+  Vec3,
+  animate,
+  utils,
+  eases,
 } from "$lib/engine/index.js";
 import { hexToRGB } from "$lib/math/color.js";
 import { makeSolid } from "./solid.js";
@@ -9,30 +14,57 @@ import { MODEL, PALETTE, VIEW } from "./templates.js";
 import LEGO from "./shaders/lego.wgsl?shader";
 import GRID from "./shaders/grid.wgsl?shader";
 
-const GROUND = { ext: 40, y: 0, step: 4, minorDiv: 4, opacity: 0.5, color: [0.45, 0.5, 0.58] };
-const DUR = 2000;         // ms per piece (flight + snap)
-const DEPTH_STEP = 800;  // ms stagger per hierarchy level
-const JITTER = 600;      // ms random extra delay within a level
-const FLIGHT = 0.7;     // fraction of timeline spent flying (rest = snap)
-const SCATTER_MIN = 14, SCATTER_MAX = 24;   // start radius around origin
-const OFF_MIN = 2.5, OFF_MAX = 4.0;         // pre-snap standoff along mount normal
-const SPIN_MIN = 1.5, SPIN_MAX = 4.0;       // self-rotation during flight, in revolutions
+const GROUND = {
+  ext: 40,
+  y: 0,
+  step: 4,
+  minorDiv: 4,
+  opacity: 0.5,
+  color: [0.45, 0.5, 0.58],
+};
+const DUR = 2000; // ms per piece (flight + snap)
+const DEPTH_STEP = 800; // ms stagger per hierarchy level
+const JITTER = 600; // ms random extra delay within a level
+const FLIGHT = 0.7; // fraction of timeline spent flying (rest = snap)
+const SCATTER_MIN = 14,
+  SCATTER_MAX = 24; // start radius around origin
+const OFF_MIN = 2.5,
+  OFF_MAX = 4.0; // pre-snap standoff along mount normal
+const SPIN_MIN = 1.5,
+  SPIN_MAX = 4.0; // self-rotation during flight, in revolutions
 
 // random per-piece ease pools. flight = smooth in/out; snap = overshoot/bounce
-const FLIGHT_EASES = [eases.inOutCubic, eases.inOutQuart, eases.inOutQuint, eases.inOutSine, eases.inOutExpo];
-const SNAP_EASES = [eases.outBack, eases.outElastic, eases.outBounce, eases.outQuint, eases.outBack, eases.outCubic];
+const FLIGHT_EASES = [
+  eases.inOutCubic,
+  eases.inOutQuart,
+  eases.inOutQuint,
+  eases.inOutSine,
+  eases.inOutExpo,
+];
+const SNAP_EASES = [
+  eases.outBack,
+  eases.outElastic,
+  eases.outBounce,
+  eases.outQuint,
+  eases.outBack,
+  eases.outCubic,
+];
 const pick = (a) => a[(Math.random() * a.length) | 0];
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
-const spin = () => (Math.random() < 0.5 ? -1 : 1) * rand(SPIN_MIN, SPIN_MAX) * Math.PI * 2;
+const spin = () =>
+  (Math.random() < 0.5 ? -1 : 1) * rand(SPIN_MIN, SPIN_MAX) * Math.PI * 2;
 
 const config = {
   spin: 0.0,
   explode: 0,
 };
 
-let device = null, shader, gridShader, orbit;
-let viewCfg = VIEW;             // active camera framing; swapped when a template loads
-let mode = "assemble";          // "assemble" | "inspect"
+let device = null,
+  shader,
+  gridShader,
+  orbit;
+let viewCfg = VIEW; // active camera framing; swapped when a template loads
+let mode = "assemble"; // "assemble" | "inspect"
 let inspect = null;
 let inspectSpec = null;
 let activeModel = MODEL;
@@ -40,10 +72,9 @@ let pieces = [];
 let centroid = new Vec3(0, 0, 0);
 const light = new Vec3(30, 40, 30);
 const _model = mat4.create();
-const _vp = mat4.create();
 const _pos = new Vec3();
 const _scale = new Vec3(1, 1, 1);
-const _rot = new Vec3();   // euler XYZ angles for mat4.compose/decompose
+const _rot = new Vec3(); // euler XYZ angles for mat4.compose/decompose
 
 // pieces share cached buffers; destroy each unique buffer once
 function disposePieces() {
@@ -51,7 +82,8 @@ function disposePieces() {
   for (const p of pieces) {
     if (seen.has(p.posBuf)) continue;
     seen.add(p.posBuf);
-    p.posBuf?.destroy(); p.normBuf?.destroy();
+    p.posBuf?.destroy();
+    p.normBuf?.destroy();
   }
   pieces = [];
 }
@@ -68,49 +100,85 @@ function buildEagle(model = activeModel) {
     if (!geom) {
       const g = makeSolid(pl.spec, pl.mesh ?? undefined);
       geom = {
-        posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
-        normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
+        posBuf: device.buffer({
+          kind: "vertex",
+          data: g.attributes.position.array,
+        }),
+        normBuf: device.buffer({
+          kind: "vertex",
+          data: g.attributes.normal.array,
+        }),
         count: g.attributes.position.count,
       };
       cache.set(key, geom);
     }
     mat4.decompose(pl.model, _pos, _rot, _scale);
-    const frx = _rot.x, fry = _rot.y, frz = _rot.z;
+    const frx = _rot.x,
+      fry = _rot.y,
+      frz = _rot.z;
     const [cx, cy, cz] = pl.center;
     const n = pl.mountN;
     const off = rand(OFF_MIN, OFF_MAX);
     // pre-snap target: standoff along mount normal
-    const ex = cx + n[0] * off, ey = cy + n[1] * off, ez = cz + n[2] * off;
+    const ex = cx + n[0] * off,
+      ey = cy + n[1] * off,
+      ez = cz + n[2] * off;
     // scatter start: random point + orientation around origin
-    const uu = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, sr = Math.sqrt(1 - uu * uu);
+    const uu = Math.random() * 2 - 1,
+      th = Math.random() * Math.PI * 2,
+      sr = Math.sqrt(1 - uu * uu);
     const radius = rand(SCATTER_MIN, SCATTER_MAX);
-    const sx = sr * Math.cos(th) * radius, sy = uu * radius, sz = sr * Math.sin(th) * radius;
+    const sx = sr * Math.cos(th) * radius,
+      sy = uu * radius,
+      sz = sr * Math.sin(th) * radius;
     // polar flight params (twirl around origin: orbit by whole turns, land on E)
-    const a0 = Math.atan2(sz, sx), a1 = Math.atan2(ez, ex);
-    let da = a1 - a0; da = Math.atan2(Math.sin(da), Math.cos(da));
+    const a0 = Math.atan2(sz, sx),
+      a1 = Math.atan2(ez, ex);
+    let da = a1 - a0;
+    da = Math.atan2(Math.sin(da), Math.cos(da));
     da += pick([-2, -1, 1, 2]) * Math.PI * 2;
     return {
-      posBuf: geom.posBuf, normBuf: geom.normBuf, count: geom.count,
+      posBuf: geom.posBuf,
+      normBuf: geom.normBuf,
+      count: geom.count,
       color: hexToRGB(PALETTE[pl.color] ?? pl.color),
-      model: pl.model,           // world transform (column-major mat4)
-      cx, cy, cz,
+      model: pl.model, // world transform (column-major mat4)
+      cx,
+      cy,
+      cz,
       _p: 0,
       _depth: pl.depth ?? 0,
       _delay: (pl.depth ?? 0) * DEPTH_STEP + rand(0, JITTER),
-      _nx: n[0], _ny: n[1], _nz: n[2], _off: off,
-      _frx: frx, _fry: fry, _frz: frz,                         // final euler
+      _nx: n[0],
+      _ny: n[1],
+      _nz: n[2],
+      _off: off,
+      _frx: frx,
+      _fry: fry,
+      _frz: frz, // final euler
       // start euler = final minus several full turns per axis -> sweeps >1 rev, lands exactly on final
-      _srx: frx + spin(), _sry: fry + spin(), _srz: frz + spin(),
-      _r0: Math.hypot(sx, sz), _a0: a0, _sy: sy,               // flight start (polar)
-      _r1: Math.hypot(ex, ez), _da: da, _ey: ey,              // flight end (polar) -> pre-snap
-      _flightEase: pick(FLIGHT_EASES), _snapEase: pick(SNAP_EASES),
+      _srx: frx + spin(),
+      _sry: fry + spin(),
+      _srz: frz + spin(),
+      _r0: Math.hypot(sx, sz),
+      _a0: a0,
+      _sy: sy, // flight start (polar)
+      _r1: Math.hypot(ex, ez),
+      _da: da,
+      _ey: ey, // flight end (polar) -> pre-snap
+      _flightEase: pick(FLIGHT_EASES),
+      _snapEase: pick(SNAP_EASES),
     };
   });
   centroid.set(cen[0], cen[1], cen[2]);
 }
 
 function disposeInspect() {
-  if (inspect) { inspect.posBuf?.destroy(); inspect.normBuf?.destroy(); inspect = null; }
+  if (inspect) {
+    inspect.posBuf?.destroy();
+    inspect.normBuf?.destroy();
+    inspect = null;
+  }
 }
 
 // build one isolated, origin-centered piece from a live spec
@@ -120,7 +188,10 @@ function buildInspect(spec) {
   disposeInspect();
   const g = makeSolid(spec);
   inspect = {
-    posBuf: device.buffer({ kind: "vertex", data: g.attributes.position.array }),
+    posBuf: device.buffer({
+      kind: "vertex",
+      data: g.attributes.position.array,
+    }),
     normBuf: device.buffer({ kind: "vertex", data: g.attributes.normal.array }),
     count: g.attributes.position.count,
     color: hexToRGB(PALETTE[spec.color] ?? spec.color ?? "#cccccc"),
@@ -133,7 +204,10 @@ function play() {
   // linear drive; flight + snap phases (each its own random ease) read _p in render.
   // deeper pieces start later via per-piece _delay.
   animate(pieces, {
-    _p: 1, duration: DUR, delay: (p) => p._delay, ease: eases.linear,
+    _p: 1,
+    duration: DUR,
+    delay: (p) => p._delay,
+    ease: eases.linear,
   });
 }
 
@@ -141,7 +215,9 @@ function play() {
 function setProgress(frac) {
   utils.remove(pieces);
   const n = frac * pieces.length;
-  pieces.forEach((p, i) => { p._p = Math.max(0, Math.min(1, n - i)); });
+  pieces.forEach((p, i) => {
+    p._p = Math.max(0, Math.min(1, n - i));
+  });
 }
 
 function setConfig(patch) {
@@ -149,14 +225,20 @@ function setConfig(patch) {
   if ("explode" in patch) config.explode = patch.explode;
   if ("mode" in patch) {
     mode = patch.mode;
-    if (mode === "inspect") buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
+    if (mode === "inspect")
+      buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
   }
   if (patch.spec) buildInspect(patch.spec);
-  if (patch.model) {                                              // live edit: show fully assembled
-    try { buildEagle(patch.model); setProgress(1); }
-    catch (e) { console.warn("[lego] invalid model", e); }
+  if (patch.model) {
+    // live edit: show fully assembled
+    try {
+      buildEagle(patch.model);
+      setProgress(1);
+    } catch (e) {
+      console.warn("[lego] invalid model", e);
+    }
   }
-  if (patch.view) viewCfg = patch.view;                           // template framing swap
+  if (patch.view) viewCfg = patch.view; // template framing swap
   if ("progress" in patch && pieces.length) setProgress(patch.progress);
   if (patch.replay && pieces.length) play();
 }
@@ -178,8 +260,12 @@ function poseModel(out, pc) {
     );
   } else {
     const ts = pc._snapEase((p - FLIGHT) / (1 - FLIGHT));
-    const k = 1 - ts;                       // standoff remaining (ts may overshoot past seat)
-    _pos.set(pc.cx + pc._nx * pc._off * k, pc.cy + pc._ny * pc._off * k, pc.cz + pc._nz * pc._off * k);
+    const k = 1 - ts; // standoff remaining (ts may overshoot past seat)
+    _pos.set(
+      pc.cx + pc._nx * pc._off * k,
+      pc.cy + pc._ny * pc._off * k,
+      pc.cz + pc._nz * pc._off * k,
+    );
     _rot.set(pc._frx, pc._fry, pc._frz);
   }
   mat4.compose(out, _pos, _rot, _scale);
@@ -189,29 +275,16 @@ const { init, render, destroy } = createPlayground({
   camera: { fov: 45, near: 0.1, far: 2000 },
   init(ctx) {
     device = ctx.device;
-    shader = device.shader({
-      ...LEGO,
-      buffers: [
-        { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
-        { stride: 12, step: "vertex", attributes: [{ name: "normal", location: 1, format: "float32x3", offset: 0 }] },
-      ],
-      uniforms: [
-        MAT4("uViewProj"), MAT4("uModel"), VEC3("uColor"), VEC3("uLightPos"), VEC3("uViewPos"),
-      ],
-      depth: "test", blend: "none", topology: "tri",
-    });
-    gridShader = device.shader({
-      ...GRID,
-      uniforms: [
-        MAT4("uViewProj"), F32("uExt"), F32("uY"), F32("uStep"),
-        F32("uMinorDiv"), F32("uOpacity"), VEC3("uColor"),
-      ],
-      depth: "none", blend: "premult", topology: "tri-strip",
+    shader = device.program(LEGO, { depth: true, topology: "tri" });
+    gridShader = device.program(GRID, {
+      blend: "premult",
+      topology: "tri-strip",
     });
     orbit = createOrbit(ctx.canvas, { yaw: 0.6, pitch: 0.35, pitchClamp: 1.2 });
     buildEagle();
     play();
-    if (mode === "inspect") buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
+    if (mode === "inspect")
+      buildInspect(inspectSpec ?? Object.values(MODEL.parts)[0]);
   },
   frame(dt, { camera }) {
     if (!orbit.dragging) orbit.yaw += config.spin * dt * 0.4;
@@ -220,52 +293,64 @@ const { init, render, destroy } = createPlayground({
     const lookY = inspecting ? 0 : viewCfg.lookY;
     orbit.dist = (inspecting ? 6 : viewCfg.dist) || 15;
     orbit.placeCamera(camera, lookY);
-    mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
+    const vp = camera.viewProjMatrix;
     const eye = [camera.position.x, camera.position.y, camera.position.z];
 
-    device.beginFrame();
-    device.pass({ clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
-      if (inspecting) {
-        _pos.set(0, 0, 0);
-        _rot.set(0, 0, 0);
-        mat4.compose(_model, _pos, _rot, _scale);
-        p.draw(shader, {
-          buffers: [inspect.posBuf, inspect.normBuf],
-          count: inspect.count,
+    device.render(
+      { clear: { color: [0.09, 0.09, 0.11, 1], depth: 1 } },
+      (p) => {
+        if (inspecting) {
+          _pos.set(0, 0, 0);
+          _rot.set(0, 0, 0);
+          mat4.compose(_model, _pos, _rot, _scale);
+          p.draw(shader, {
+            buffers: { position: inspect.posBuf, normal: inspect.normBuf },
+            count: inspect.count,
+            uniforms: {
+              uViewProj: vp,
+              uModel: _model,
+              uColor: inspect.color,
+              uLightPos: [light.x, light.y, light.z],
+              uViewPos: eye,
+            },
+          });
+          return;
+        }
+        p.draw(gridShader, {
+          count: 4,
           uniforms: {
-            uViewProj: _vp, uModel: _model,
-            uColor: inspect.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
+            uViewProj: vp,
+            uExt: GROUND.ext,
+            uY: GROUND.y,
+            uStep: GROUND.step,
+            uMinorDiv: GROUND.minorDiv,
+            uOpacity: GROUND.opacity,
+            uColor: GROUND.color,
           },
         });
-        return;
-      }
-      p.draw(gridShader, {
-        count: 4,
-        uniforms: {
-          uViewProj: _vp, uExt: GROUND.ext, uY: GROUND.y, uStep: GROUND.step,
-          uMinorDiv: GROUND.minorDiv, uOpacity: GROUND.opacity, uColor: GROUND.color,
-        },
-      });
-      const ex = config.explode;
-      for (const pc of pieces) {
-        if (pc._p <= 0) continue;
-        if (pc._p >= 1) mat4.copy(_model, pc.model);
-        else poseModel(_model, pc);
-        // explode view: push each piece out from the centroid
-        _model[12] += (pc.cx - centroid.x) * ex;
-        _model[13] += (pc.cy - centroid.y) * ex;
-        _model[14] += (pc.cz - centroid.z) * ex;
-        p.draw(shader, {
-          buffers: [pc.posBuf, pc.normBuf],
-          count: pc.count,
-          uniforms: {
-            uViewProj: _vp, uModel: _model,
-            uColor: pc.color, uLightPos: [light.x, light.y, light.z], uViewPos: eye,
-          },
-        });
-      }
-    });
-    device.endFrame();
+        const ex = config.explode;
+        for (const pc of pieces) {
+          if (pc._p <= 0) continue;
+          if (pc._p >= 1) mat4.copy(_model, pc.model);
+          else poseModel(_model, pc);
+          // explode view: push each piece out from the centroid
+          _model[12] += (pc.cx - centroid.x) * ex;
+          _model[13] += (pc.cy - centroid.y) * ex;
+          _model[14] += (pc.cz - centroid.z) * ex;
+          p.draw(shader, {
+            buffers: { position: pc.posBuf, normal: pc.normBuf },
+            count: pc.count,
+            uniforms: {
+              uViewProj: vp,
+              uModel: _model,
+              uColor: pc.color,
+              uLightPos: [light.x, light.y, light.z],
+              uViewPos: eye,
+            },
+          });
+        }
+      },
+    );
   },
   destroy() {
     orbit?.detach();

@@ -1,4 +1,4 @@
-import { createPlayground, mat4, planeGeometry, F32, VEC4, MAT4 } from "$lib/engine/index.js";
+import { createPlayground, mat4, planeGeometry } from "$lib/engine/index.js";
 import { catmullOpen } from "$lib/math/curve.js";
 import { clamp, smooth } from "$lib/math/scalar.js";
 import PAPER from "./shaders/paper.wgsl?shader";
@@ -25,11 +25,8 @@ const HEAD_PLANE_H = 1.6;
 
 const brushColor = [0.05, 0.05, 0.05, 0.95];
 
-const BUF_POS = { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] };
-const BUF_UV = { stride: 8, step: "vertex", attributes: [{ name: "uv", location: 1, format: "float32x2", offset: 0 }] };
-const BUF_STROKE_UV = { stride: 8, step: "vertex", attributes: [{ name: "aLineUV", location: 1, format: "float32x2", offset: 0 }] };
-
-let canvas = null, device = null;
+let canvas = null,
+  device = null;
 let pPaper, pBody, pWhisker, pHead;
 let quadPosBuf, quadUVBuf, headPosBuf, headUVBuf;
 // body + whiskers share the same ribbon record shape:
@@ -49,7 +46,8 @@ const camMatrix = mat4.create();
 // every step, head via its matrix), so shaders stay camera-free.
 const view = { zoom: 1, panX: 0, panY: 0 };
 let camEpoch = 0; // bumps on any camera change so the page can reproject its overlay
-const ZOOM_MIN = 0.2, ZOOM_MAX = 20;
+const ZOOM_MIN = 0.2,
+  ZOOM_MAX = 20;
 
 const headPos = { x: 0, y: 0, z: 0 };
 const headEuler = { x: 0, y: 0, z: 0 };
@@ -71,7 +69,10 @@ function smoothChain(controlPoints, perSegment, maxPoints) {
     return controlPoints.slice(0, Math.min(controlPoints.length, maxPoints));
   }
   const nSeg = controlPoints.length - 1;
-  const perSeg = Math.max(1, Math.min(perSegment, Math.floor((maxPoints - 1) / nSeg)));
+  const perSeg = Math.max(
+    1,
+    Math.min(perSegment, Math.floor((maxPoints - 1) / nSeg)),
+  );
   const totalSamples = Math.min(nSeg * perSeg + 1, maxPoints);
   const pts = new Array(totalSamples);
   let idx = 0;
@@ -93,7 +94,8 @@ function smoothChain(controlPoints, perSegment, maxPoints) {
 // live canvas size before each use (physics step and frame).
 function syncAspect() {
   if (!canvas) return;
-  const a = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
+  const a =
+    canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
   if (a !== aspect) {
     aspect = a;
     updateHeadTransform();
@@ -107,7 +109,9 @@ function makeRibbon(strokeOpts, { withUV = false } = {}) {
   const r = {
     stroke,
     posBuf: device.buffer({ kind: "vertex", size: 0, dynamic: true }),
-    uvBuf: withUV ? device.buffer({ kind: "vertex", size: 0, dynamic: true }) : null,
+    uvBuf: withUV
+      ? device.buffer({ kind: "vertex", size: 0, dynamic: true })
+      : null,
     idxBuf: device.buffer({ kind: "index", size: 0, dynamic: true }),
     idxCount: 0,
   };
@@ -162,32 +166,13 @@ function quadBuffer(geom, name) {
 function setup(ctx) {
   canvas = ctx.canvas;
   device = ctx.device;
-  aspect = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
+  aspect =
+    canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
 
-  pPaper = device.shader({
-    ...PAPER,
-    buffers: [BUF_POS, BUF_UV],
-    uniforms: [MAT4("uModel"), F32("uAspect"), VEC4("uBgColor")],
-    blend: "none", topology: "tri",
-  });
-  pBody = device.shader({
-    ...STROKE,
-    buffers: [BUF_POS, BUF_STROKE_UV],
-    uniforms: [F32("uAspect"), VEC4("uBrushColor")],
-    blend: "straight", topology: "tri",
-  });
-  pWhisker = device.shader({
-    ...WHISKER,
-    buffers: [BUF_POS],
-    uniforms: [VEC4("uBrushColor")],
-    blend: "straight", topology: "tri",
-  });
-  pHead = device.shader({
-    ...HEAD,
-    buffers: [BUF_POS, BUF_UV],
-    uniforms: [MAT4("uModel"), VEC4("uBrushColor")],
-    blend: "straight", topology: "tri",
-  });
+  pPaper = device.program(PAPER, { blend: "none", topology: "tri" });
+  pBody = device.program(STROKE, { blend: "straight", topology: "tri" });
+  pWhisker = device.program(WHISKER, { blend: "straight", topology: "tri" });
+  pHead = device.program(HEAD, { blend: "straight", topology: "tri" });
 
   const paperQuad = planeGeometry(2, 2);
   const headQuad = planeGeometry(HEAD_PLANE_W, HEAD_PLANE_H);
@@ -196,14 +181,20 @@ function setup(ctx) {
   headPosBuf = quadBuffer(headQuad, "position");
   headUVBuf = quadBuffer(headQuad, "uv");
 
-  bodyRibbon = makeRibbon({
-    maxPoints: BODY_MAX_POINTS,
-    lineWidth: params.width,
-    brushColor,
-    // taper in the mesh: widthEnd fraction at the tail (arcT = 0), growing to
-    // full width over BODY_TAPER_SPAN of the arc toward the head
-    widthAt: (t, s) => s.lineWidth * (s.widthEnd + (1 - s.widthEnd) * smooth(clamp(t / BODY_TAPER_SPAN, 0, 1))),
-  }, { withUV: true });
+  bodyRibbon = makeRibbon(
+    {
+      maxPoints: BODY_MAX_POINTS,
+      lineWidth: params.width,
+      brushColor,
+      // taper in the mesh: widthEnd fraction at the tail (arcT = 0), growing to
+      // full width over BODY_TAPER_SPAN of the arc toward the head
+      widthAt: (t, s) =>
+        s.lineWidth *
+        (s.widthEnd +
+          (1 - s.widthEnd) * smooth(clamp(t / BODY_TAPER_SPAN, 0, 1))),
+    },
+    { withUV: true },
+  );
   bodyRibbon.stroke.widthEnd = params.widthEnd;
 
   for (let i = 0; i < 2; i++) {
@@ -215,7 +206,14 @@ function setup(ctx) {
       // reversed in setWhisker), tapering to zero at the free tip (arcT = 0)
       widthAt: (t, s) => {
         const relArc = 1 - t;
-        const curve = smooth(clamp((relArc - WHISKER_TAPER.offset + WHISKER_TAPER.range * 0.5) / WHISKER_TAPER.range, 0, 1));
+        const curve = smooth(
+          clamp(
+            (relArc - WHISKER_TAPER.offset + WHISKER_TAPER.range * 0.5) /
+              WHISKER_TAPER.range,
+            0,
+            1,
+          ),
+        );
         return s.lineWidth * (1 - curve * (1 - WHISKER_TAPER.end));
       },
     });
@@ -229,30 +227,46 @@ function setup(ctx) {
 }
 
 function draw() {
-  device.beginFrame();
-  device.pass({ clear: [PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0] }, (p) => {
-    p.draw(pPaper, { buffers: [quadPosBuf, quadUVBuf], count: 6, uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR } });
-
-    if (bodyRibbon && bodyRibbon.stroke.n >= 2 && bodyRibbon.idxCount > 0) {
-      p.draw(pBody, {
-        buffers: [bodyRibbon.posBuf, bodyRibbon.uvBuf], index: bodyRibbon.idxBuf, count: bodyRibbon.idxCount,
-        uniforms: { uAspect: aspect, uBrushColor: bodyRibbon.stroke.brushColor },
+  device.render(
+    { clear: { color: [PAPER_COLOR[0], PAPER_COLOR[1], PAPER_COLOR[2], 1.0] } },
+    (p) => {
+      p.draw(pPaper, {
+        buffers: { position: quadPosBuf, uv: quadUVBuf },
+        count: 6,
+        uniforms: { uModel: IDENTITY, uAspect: aspect, uBgColor: PAPER_COLOR },
       });
-    }
 
-    for (const w of whiskers) {
-      if (!w || w.stroke.n < 2 || w.idxCount <= 0) continue;
-      p.draw(pWhisker, {
-        buffers: [w.posBuf], index: w.idxBuf, count: w.idxCount,
-        uniforms: { uBrushColor: w.stroke.brushColor },
-      });
-    }
+      if (bodyRibbon && bodyRibbon.stroke.n >= 2 && bodyRibbon.idxCount > 0) {
+        p.draw(pBody, {
+          buffers: { position: bodyRibbon.posBuf, aLineUV: bodyRibbon.uvBuf },
+          index: bodyRibbon.idxBuf,
+          count: bodyRibbon.idxCount,
+          uniforms: {
+            uAspect: aspect,
+            uBrushColor: bodyRibbon.stroke.brushColor,
+          },
+        });
+      }
 
-    if (headVisible) {
-      p.draw(pHead, { buffers: [headPosBuf, headUVBuf], count: 6, uniforms: { uModel: headMatrix, uBrushColor: brushColor } });
-    }
-  });
-  device.endFrame();
+      for (const w of whiskers) {
+        if (!w || w.stroke.n < 2 || w.idxCount <= 0) continue;
+        p.draw(pWhisker, {
+          buffers: { position: w.posBuf },
+          index: w.idxBuf,
+          count: w.idxCount,
+          uniforms: { uBrushColor: w.stroke.brushColor },
+        });
+      }
+
+      if (headVisible) {
+        p.draw(pHead, {
+          buffers: { position: headPosBuf, uv: headUVBuf },
+          count: 6,
+          uniforms: { uModel: headMatrix, uBrushColor: brushColor },
+        });
+      }
+    },
+  );
 }
 
 // mesh-shape params the page owns. setup() builds the ribbons from these, so the
@@ -261,10 +275,22 @@ function draw() {
 const params = { width: 0.05, widthEnd: 0.1, whiskerWidth: 0.01 };
 
 const PARAM_APPLY = {
-  width:     (v) => { params.width = v; if (bodyRibbon) setStrokeLineWidth(bodyRibbon.stroke, v); },
-  widthEnd:  (v) => { params.widthEnd = v; if (bodyRibbon) { bodyRibbon.stroke.widthEnd = v; setStrokeLineWidth(bodyRibbon.stroke, bodyRibbon.stroke.lineWidth); } },
+  width: (v) => {
+    params.width = v;
+    if (bodyRibbon) setStrokeLineWidth(bodyRibbon.stroke, v);
+  },
+  widthEnd: (v) => {
+    params.widthEnd = v;
+    if (bodyRibbon) {
+      bodyRibbon.stroke.widthEnd = v;
+      setStrokeLineWidth(bodyRibbon.stroke, bodyRibbon.stroke.lineWidth);
+    }
+  },
   // re-meshed (and aspect-baked) on the next setWhisker
-  whiskerWidth: (v) => { params.whiskerWidth = v; for (const w of whiskers) if (w) w.stroke.lineWidth = v; },
+  whiskerWidth: (v) => {
+    params.whiskerWidth = v;
+    for (const w of whiskers) if (w) w.stroke.lineWidth = v;
+  },
 };
 
 function setControlPoints(points) {
@@ -278,23 +304,38 @@ function setWhisker(slot, points) {
   // caller passes anchor -> free-tip. stroke convention: arc=0 = thick end.
   // reverse so anchor (at dragon head) sits at arc=0 -> renders thick.
   // whisker vertex shader is a pure passthrough, so bake the aspect divide in.
-  const pts = smoothChain(points.slice().reverse(), WHISKER_SAMPLES_PER_SEGMENT, w.stroke.maxPoints);
+  const pts = smoothChain(
+    points.slice().reverse(),
+    WHISKER_SAMPLES_PER_SEGMENT,
+    w.stroke.maxPoints,
+  );
   uploadRibbon(w, pts, { bakeAspect: true });
 }
 
 function setHead(pos, dir, size, show) {
-  if (pos) { headState.pos.x = pos.x; headState.pos.y = pos.y; }
-  if (dir) { headState.dir.x = dir.x; headState.dir.y = dir.y; }
+  if (pos) {
+    headState.pos.x = pos.x;
+    headState.pos.y = pos.y;
+  }
+  if (dir) {
+    headState.dir.x = dir.x;
+    headState.dir.y = dir.y;
+  }
   if (typeof size === "number") headState.size = size;
   if (typeof show === "boolean") headVisible = show;
   updateHeadTransform();
 }
 
 function teardown() {
-  quadPosBuf?.destroy(); quadUVBuf?.destroy(); headPosBuf?.destroy(); headUVBuf?.destroy();
+  quadPosBuf?.destroy();
+  quadUVBuf?.destroy();
+  headPosBuf?.destroy();
+  headUVBuf?.destroy();
   for (const r of [bodyRibbon, ...whiskers]) {
     if (!r) continue;
-    r.posBuf?.destroy(); r.uvBuf?.destroy(); r.idxBuf?.destroy();
+    r.posBuf?.destroy();
+    r.uvBuf?.destroy();
+    r.idxBuf?.destroy();
   }
   quadPosBuf = quadUVBuf = headPosBuf = headUVBuf = null;
   pPaper = pBody = pWhisker = pHead = null;
@@ -339,17 +380,27 @@ export function worldToScreen(p, w, h) {
 // wheel = zoom about the cursor; drag on empty space = pan. Pixel->world math
 // lives here because it needs the camera the lib owns.
 export const camera = {
-  get zoom() { return view.zoom; },
+  get zoom() {
+    return view.zoom;
+  },
   // monotonic; changes whenever zoom/pan move, so the page reprojects the overlay
-  get epoch() { return camEpoch; },
+  get epoch() {
+    return camEpoch;
+  },
   reset() {
-    view.zoom = 1; view.panX = 0; view.panY = 0;
+    view.zoom = 1;
+    view.panX = 0;
+    view.panY = 0;
     camEpoch++;
     updateHeadTransform();
   },
   zoomAtEvent(e, deltaY) {
     const before = eventToWorld(e);
-    view.zoom = clamp(view.zoom * Math.exp(-deltaY * 0.0015), ZOOM_MIN, ZOOM_MAX);
+    view.zoom = clamp(
+      view.zoom * Math.exp(-deltaY * 0.0015),
+      ZOOM_MIN,
+      ZOOM_MAX,
+    );
     const after = eventToWorld(e);
     view.panX += before.x - after.x;
     view.panY += before.y - after.y;
@@ -358,7 +409,8 @@ export const camera = {
   },
   panPixels(dx, dy) {
     if (!canvas) return;
-    const w = canvas.clientWidth, h = Math.max(canvas.clientHeight, 1);
+    const w = canvas.clientWidth,
+      h = Math.max(canvas.clientHeight, 1);
     view.panX -= ((dx / w) * 2 * (w / h)) / view.zoom;
     view.panY += ((dy / h) * 2) / view.zoom;
     camEpoch++;
@@ -384,7 +436,8 @@ const auto = { on: false, speed: 2.0 };
 const walker = createWalker();
 
 let body = [];
-let whiskerL = [], whiskerR = [];
+let whiskerL = [],
+  whiskerR = [];
 let tipTarget = null;
 let dragging = false;
 
@@ -392,8 +445,10 @@ function setPhys(name, value) {
   if (phys[name] === value) return;
   phys[name] = value;
   if (name === "vertexCount" || name === "bodyLen") resetBaseline();
-  else if (name === "headSize") { setHead(null, null, value); resetWhiskers(); }
-  else if (name === "whiskerSegs" || name === "whiskerLen") resetWhiskers();
+  else if (name === "headSize") {
+    setHead(null, null, value);
+    resetWhiskers();
+  } else if (name === "whiskerSegs" || name === "whiskerLen") resetWhiskers();
 }
 
 // one patch channel for the whole page. every write is change-guarded: a single
@@ -421,7 +476,9 @@ function applyConfig(patch) {
 export function grabHead(p) {
   const tip = body[body.length - 1];
   if (!tip) return false;
-  return Math.hypot(p.x - tip.x, p.y - tip.y) <= Math.max(0.25, phys.headSize * 2.5);
+  return (
+    Math.hypot(p.x - tip.x, p.y - tip.y) <= Math.max(0.25, phys.headSize * 2.5)
+  );
 }
 
 function resetBaseline() {
@@ -436,25 +493,38 @@ function resetBaseline() {
 
 function headFrame() {
   const N = body.length;
-  if (N < 2) return { pos: { x: 0, y: 0 }, dir: { x: 1, y: 0 }, perp: { x: 0, y: 1 } };
+  if (N < 2)
+    return { pos: { x: 0, y: 0 }, dir: { x: 1, y: 0 }, perp: { x: 0, y: 1 } };
   const tip = body[N - 1];
   const prev = body[N - 2];
-  let dx = tip.x - prev.x, dy = tip.y - prev.y;
+  let dx = tip.x - prev.x,
+    dy = tip.y - prev.y;
   const m = Math.hypot(dx, dy);
-  if (m < 1e-6) { dx = 1; dy = 0; }
-  else { dx /= m; dy /= m; }
+  if (m < 1e-6) {
+    dx = 1;
+    dy = 0;
+  } else {
+    dx /= m;
+    dy /= m;
+  }
   const neckLen = 0.05;
   return {
-    pos:  { x: tip.x + dx * neckLen, y: tip.y + dy * neckLen },
-    dir:  { x: dx, y: dy },
+    pos: { x: tip.x + dx * neckLen, y: tip.y + dy * neckLen },
+    dir: { x: dx, y: dy },
     perp: { x: -dy, y: dx },
   };
 }
 
 function whiskerAnchor(side) {
   const f = headFrame();
-  const ax = f.pos.x + f.dir.x * (WHISKER_ANCHOR_X * phys.headSize) + f.perp.x * (side * WHISKER_ANCHOR_Y * phys.headSize);
-  const ay = f.pos.y + f.dir.y * (WHISKER_ANCHOR_X * phys.headSize) + f.perp.y * (side * WHISKER_ANCHOR_Y * phys.headSize);
+  const ax =
+    f.pos.x +
+    f.dir.x * (WHISKER_ANCHOR_X * phys.headSize) +
+    f.perp.x * (side * WHISKER_ANCHOR_Y * phys.headSize);
+  const ay =
+    f.pos.y +
+    f.dir.y * (WHISKER_ANCHOR_X * phys.headSize) +
+    f.perp.y * (side * WHISKER_ANCHOR_Y * phys.headSize);
   return { x: ax, y: ay, dir: f.dir, perp: f.perp };
 }
 
@@ -500,21 +570,28 @@ function stepBody() {
   if (maxBend < Math.PI - 1e-3 && N >= 3) {
     const minCosForClamp = -Math.cos(maxBend);
     for (let i = N - 2; i >= 1; i--) {
-      const tip = next[i + 1], mid = next[i], head = next[i - 1];
-      const ax = tip.x - mid.x, ay = tip.y - mid.y;
-      const bx = head.x - mid.x, by = head.y - mid.y;
+      const tip = next[i + 1],
+        mid = next[i],
+        head = next[i - 1];
+      const ax = tip.x - mid.x,
+        ay = tip.y - mid.y;
+      const bx = head.x - mid.x,
+        by = head.y - mid.y;
       const aLen = Math.hypot(ax, ay);
       const bLen = Math.hypot(bx, by);
       if (aLen < 1e-6 || bLen < 1e-6) continue;
-      const adx = ax / aLen, ady = ay / aLen;
-      const bdx = bx / bLen, bdy = by / bLen;
+      const adx = ax / aLen,
+        ady = ay / aLen;
+      const bdx = bx / bLen,
+        bdy = by / bLen;
       const cosAng = adx * bdx + ady * bdy;
       if (cosAng > minCosForClamp) {
         const curAng = Math.atan2(adx * bdy - ady * bdx, adx * bdx + ady * bdy);
         const sgn = curAng >= 0 ? 1 : -1;
         const targetAng = (Math.PI - maxBend) * sgn;
         const newAng = curAng + (targetAng - curAng) * speed;
-        const c = Math.cos(newAng), s = Math.sin(newAng);
+        const c = Math.cos(newAng),
+          s = Math.sin(newAng);
         const newBdx = adx * c - ady * s;
         const newBdy = adx * s + ady * c;
         next[i - 1] = { x: mid.x + newBdx * bLen, y: mid.y + newBdy * bLen };
@@ -540,12 +617,15 @@ function stepWhisker(chain, side) {
   const segLen = (phys.whiskerLen * phys.headSize) / (N - 1);
   const damping = Math.max(0, Math.min(0.999, phys.whiskerDamping));
 
-  const ax = a.x - chain[0].x, ay = a.y - chain[0].y;
+  const ax = a.x - chain[0].x,
+    ay = a.y - chain[0].y;
   if (Math.hypot(ax, ay) > phys.whiskerLen * phys.headSize * 0.5) {
     const fresh = makeWhisker(side);
     for (let i = 0; i < N && i < fresh.length; i++) {
-      chain[i].x = fresh[i].x; chain[i].y = fresh[i].y;
-      chain[i].px = fresh[i].x; chain[i].py = fresh[i].y;
+      chain[i].x = fresh[i].x;
+      chain[i].y = fresh[i].y;
+      chain[i].px = fresh[i].x;
+      chain[i].py = fresh[i].y;
     }
     return;
   }
@@ -554,31 +634,41 @@ function stepWhisker(chain, side) {
     const p = chain[i];
     const vx = (p.x - p.px) * damping;
     const vy = (p.y - p.py) * damping;
-    p.px = p.x; p.py = p.y;
-    p.x += vx; p.y += vy;
+    p.px = p.x;
+    p.py = p.y;
+    p.x += vx;
+    p.y += vy;
   }
-  chain[0].x = a.x; chain[0].y = a.y;
-  chain[0].px = a.x; chain[0].py = a.y;
+  chain[0].x = a.x;
+  chain[0].y = a.y;
+  chain[0].px = a.x;
+  chain[0].py = a.y;
 
   const ITERS = 6;
   const ROOT_FAN = (145 * Math.PI) / 180;
-  const ROOT_TOL = (5   * Math.PI) / 180;
-  const TIP_TOL  = (45  * Math.PI) / 180;
+  const ROOT_TOL = (5 * Math.PI) / 180;
+  const TIP_TOL = (45 * Math.PI) / 180;
   const lastSeg = N - 2;
   const hd = a.dir;
 
   for (let it = 0; it < ITERS; it++) {
     for (let i = 1; i < N; i++) {
-      const a0 = chain[i - 1], b0 = chain[i];
-      const dx = b0.x - a0.x, dy = b0.y - a0.y;
+      const a0 = chain[i - 1],
+        b0 = chain[i];
+      const dx = b0.x - a0.x,
+        dy = b0.y - a0.y;
       const dist = Math.hypot(dx, dy);
       if (dist < 1e-6) continue;
       const diff = (dist - segLen) / dist;
-      if (i === 1) { b0.x -= dx * diff; b0.y -= dy * diff; }
-      else {
+      if (i === 1) {
+        b0.x -= dx * diff;
+        b0.y -= dy * diff;
+      } else {
         const half = diff * 0.5;
-        a0.x += dx * half; a0.y += dy * half;
-        b0.x -= dx * half; b0.y -= dy * half;
+        a0.x += dx * half;
+        a0.y += dy * half;
+        b0.x -= dx * half;
+        b0.y -= dy * half;
       }
     }
     for (let k = 0; k <= lastSeg; k++) {
@@ -588,7 +678,8 @@ function stepWhisker(chain, side) {
       if (bLen < 1e-6) continue;
       let pdx, pdy, center, tol;
       if (k === 0) {
-        pdx = hd.x; pdy = hd.y;
+        pdx = hd.x;
+        pdy = hd.y;
         center = ROOT_FAN * side;
         tol = ROOT_TOL;
       } else {
@@ -596,20 +687,23 @@ function stepWhisker(chain, side) {
         const ay2 = chain[k].y - chain[k - 1].y;
         const aLen = Math.hypot(ax2, ay2);
         if (aLen < 1e-6) continue;
-        pdx = ax2 / aLen; pdy = ay2 / aLen;
+        pdx = ax2 / aLen;
+        pdy = ay2 / aLen;
         center = 0;
         const t = lastSeg > 1 ? (k - 1) / (lastSeg - 1) : 1.0;
         tol = ROOT_TOL + (TIP_TOL - ROOT_TOL) * t;
       }
-      const bdx = bx / bLen, bdy = by / bLen;
+      const bdx = bx / bLen,
+        bdy = by / bLen;
       const cross = pdx * bdy - pdy * bdx;
-      const dot   = pdx * bdx + pdy * bdy;
-      const ang   = Math.atan2(cross, dot);
+      const dot = pdx * bdx + pdy * bdy;
+      const ang = Math.atan2(cross, dot);
       let target = ang;
       if (ang > center + tol) target = center + tol;
       else if (ang < center - tol) target = center - tol;
       if (target !== ang) {
-        const c = Math.cos(target), s = Math.sin(target);
+        const c = Math.cos(target),
+          s = Math.sin(target);
         const ndx = pdx * c - pdy * s;
         const ndy = pdx * s + pdy * c;
         chain[k + 1].x = chain[k].x + ndx * bLen;
@@ -643,7 +737,8 @@ function frame(dt) {
 function fillXY(src, dst) {
   for (let i = 0; i < src.length; i++) {
     const d = dst[i] ?? (dst[i] = { x: 0, y: 0 });
-    d.x = src[i].x; d.y = src[i].y;
+    d.x = src[i].x;
+    d.y = src[i].y;
   }
   if (dst.length !== src.length) dst.length = src.length;
 }
@@ -661,13 +756,21 @@ export function getPath(out) {
   const cs = walker.circles;
   for (let i = 0; i < cs.length; i++) {
     const d = out.circles[i] ?? (out.circles[i] = { cx: 0, cy: 0, r: 0 });
-    d.cx = cs[i].cx; d.cy = cs[i].cy; d.r = cs[i].r;
+    d.cx = cs[i].cx;
+    d.cy = cs[i].cy;
+    d.r = cs[i].r;
   }
   if (out.circles.length !== cs.length) out.circles.length = cs.length;
   const c = out.cursor ?? (out.cursor = { x: 0, y: 0 });
-  c.x = walker.tip.x; c.y = walker.tip.y;
+  c.x = walker.tip.x;
+  c.y = walker.tip.y;
   out.cursorOn = auto.on && walker.seeded;
   return out;
 }
 
-export const { init, render, destroy, setConfig } = createPlayground({ init: setup, frame, destroy: teardown, setConfig: applyConfig });
+export const { init, render, destroy } = createPlayground({
+  init: setup,
+  frame,
+  destroy: teardown,
+});
+export { applyConfig as setConfig };

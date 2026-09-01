@@ -65,6 +65,13 @@ export function copy(out, a) {
   return out;
 }
 
+// GL clip-space convention is z in [-1,1]; WebGPU clips to [0,1]. Post-multiply
+// a projection (or viewProj) by this to remap: out = Z_REMAP * m.
+const _Z_REMAP = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 1]);
+export function clipZ0to1(out, m) {
+  return multiply(out, _Z_REMAP, m);
+}
+
 // compose T * R(euler XYZ) * S
 export function compose(out, pos, euler, scale) {
   const cx = Math.cos(euler.x), sx = Math.sin(euler.x);

@@ -1,8 +1,65 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
   import * as mech from "$lib/playgrounds/mech";
-  import { SHAPE_NAMES, SHAPE_PARAMS, sculptModel, DESIGN_SAMPLE } from "$lib/mech/sculpt-catalog.js";
-  import { SCULPT_DEFAULTS, SCULPT_NOTATION } from "$lib/mech/sculpt.js";
+  import { SHAPE_NAMES, SHAPE_PARAMS, sculptModel } from "$lib/mech/sculpt-catalog.js";
+  import { SCULPT_DEFAULTS } from "$lib/mech/sculpt.js";
+  // ---- sculpt UI surface (inlined from $lib/ui/sculpt.js) ----
+// SCULPT UI SURFACE — slider rows, labels and the design-editor notation for the
+// sculpt playground. The geometry (surfaces, params, sculptKey) lives in
+// lib/mech/sculpt.js; the catalog model builder in lib/mech/sculpt-catalog.js.
+const SHAPE_LABELS = { box: "box", cylinder: "cylinder", sphere: "sphere" };
+
+// [key, label, min, max, step?] — the face the sculpt lands on
+const SHAPE_CTL = {
+  box: [["w", "width", 0.5, 3], ["h", "height", 0.5, 3], ["d", "depth", 0.5, 3]],
+  cylinder: [["r", "radius", 0.3, 1.5], ["h", "height", 0.5, 3]],
+  sphere: [["r", "radius", 0.4, 1.5]],
+};
+
+// a starter design showing every mark: a merged L, a raised rail, a stud, a
+// hole, and two plates named apart so they stay apart while touching
+const DESIGN_SAMPLE = `a a . B B B
+a . . . o *
+a . c c d d
+. * . c c .
+E E . . o .
+E E . f f f`;
+
+// slider surface over the sculpt params, in world/ratio units (no conversion).
+// `cell` is a world length, so panels keep their size as the shape grows.
+const SCULPT_CTL = [
+  ["cell", "sculpt size", 0.15, 1.5],
+  ["size", "panel fill", 0.2, 0.95],
+  ["depth", "depth", 0, 0.3],
+  ["slant", "45° slant", 0, 1],
+  ["density", "density", 0, 1],
+  ["merge", "merge plates", 0, 1],
+  ["cuts", "cut vs extrude", 0, 1],
+];
+// studs: the cylindrical greebles. bossCuts at 1 bores every one in as a hole,
+// at 0 stands every one out as a stub.
+const BOSS_CTL = [
+  ["boss", "stud mix", 0, 1],
+  ["bossR", "stud radius", 0.1, 1],
+  ["bossH", "stud depth", 0, 0.4],
+  ["bossCuts", "hole vs stud", 0, 1],
+];
+
+// The design notation cheat-sheet for the editor. A design is a picture of the
+// face, one character per cell:
+//   .   flat — no sculpt
+//   *   stud — a cylindrical stub standing OUT of the face ('O' does the same)
+//   o   hole — the same stud bored IN, a round socket
+//   a-z plate, CUT INTO the face
+//   A-Z plate, RAISED out of the face
+// Lower case goes IN and upper case comes OUT throughout. Cells touching
+// edge-to-edge that carry the same letter merge into ONE plate; different
+// letters stay apart even when they touch.
+const SCULPT_NOTATION = `.   flat
+*   stud OUT
+o   hole IN
+a-z plate cut IN
+A-Z plate raised OUT`;
 
   let scene = $state(null);
 
@@ -11,34 +68,8 @@
     ["light", "light angle", 0, 6.28, 0.05],
     ["wire", "wireframe", 0, 1],
   ];
-  const SHAPE_LABELS = { box: "box", cylinder: "cylinder", sphere: "sphere" };
-  // [key, label, min, max, step?] — the face the sculpt lands on
-  const SHAPE_CTL = {
-    box: [["w", "width", 0.5, 3], ["h", "height", 0.5, 3], ["d", "depth", 0.5, 3]],
-    cylinder: [["r", "radius", 0.3, 1.5], ["h", "height", 0.5, 3]],
-    sphere: [["r", "radius", 0.4, 1.5]],
-  };
-  // the sculpt itself. `cell` is a world length, so panels keep their size when
-  // the shape grows; `cuts` at 1 carves every panel in, at 0 raises every one.
-  const SCULPT_CTL = [
-    ["cell", "sculpt size", 0.15, 1.5],
-    ["size", "panel fill", 0.2, 0.95],
-    ["depth", "depth", 0, 0.3],
-    ["slant", "45° slant", 0, 1],
-    ["density", "density", 0, 1],
-    ["merge", "merge plates", 0, 1],
-    ["cuts", "cut vs extrude", 0, 1],
-  ];
   // a design fixes the layout, so the dice that would have rolled it go quiet
   const DESIGNED = new Set(["density", "merge", "cuts", "cell"]);
-  // studs: the cylindrical greebles. bossCuts at 1 bores every one in as a
-  // hole, at 0 stands every one out as a stub.
-  const BOSS_CTL = [
-    ["boss", "stud mix", 0, 1],
-    ["bossR", "stud radius", 0.1, 1],
-    ["bossH", "stud depth", 0, 0.4],
-    ["bossCuts", "hole vs stud", 0, 1],
-  ];
 
   let shape = $state(SHAPE_NAMES[0]);
   let sparams = $state(structuredClone(SHAPE_PARAMS));
@@ -155,5 +186,4 @@
     opacity: 0.75;
     white-space: pre-wrap;
   }
-  aside small { opacity: 0.6; }
 </style>

@@ -1,10 +1,32 @@
-import { createPlayground, createOrbit, boxGeometry, mat4, animate, stagger, utils, eases, MAT4 } from "$lib/engine/index.js";
+import {
+  createPlayground,
+  createOrbit,
+  boxGeometry,
+  mat4,
+  animate,
+  stagger,
+  utils,
+  eases,
+} from "$lib/engine/index.js";
 import { hexToRGB } from "$lib/math/color.js";
 import RUBIK from "./shaders/rubik.wgsl?shader";
-import { solve, extractState, toPlaygroundMoves, moveToNotation, parseNotation } from "./solver.js";
+import {
+  solve,
+  extractState,
+  toPlaygroundMoves,
+  moveToNotation,
+  parseNotation,
+} from "./solver.js";
 
-const FACE_RIGHT = 0, FACE_LEFT = 1, FACE_TOP = 2, FACE_BOTTOM = 3, FACE_FRONT = 4, FACE_BACK = 5;
-const FACE_TO_COLOR = [0x40a02b, 0x89b4fa, 0xf9e2af, 0xf8fafc, 0xef4444, 0xfe640b];
+const FACE_RIGHT = 0,
+  FACE_LEFT = 1,
+  FACE_TOP = 2,
+  FACE_BOTTOM = 3,
+  FACE_FRONT = 4,
+  FACE_BACK = 5;
+const FACE_TO_COLOR = [
+  0x40a02b, 0x89b4fa, 0xf9e2af, 0xf8fafc, 0xef4444, 0xfe640b,
+];
 const BLACK = 0x181825;
 const RUBIK_SIZE = 8;
 const CUBE_MARGIN = 0.1;
@@ -12,17 +34,32 @@ const CELL = (1 + CUBE_MARGIN) * RUBIK_SIZE;
 const CUBE_NUM_DEFAULT = 3;
 
 const RANDOM_EASES = [
-  eases.inElastic, eases.outElastic, eases.inOutElastic, eases.outInElastic,
-  eases.inCubic, eases.inQuint, eases.inBack, eases.outCubic, eases.outQuint,
-  eases.outBack, eases.inBounce, eases.inOutCubic, eases.inOutBack, eases.outBounce,
-  eases.outInCubic, eases.outInBack, eases.outInBounce,
+  eases.inElastic,
+  eases.outElastic,
+  eases.inOutElastic,
+  eases.outInElastic,
+  eases.inCubic,
+  eases.inQuint,
+  eases.inBack,
+  eases.outCubic,
+  eases.outQuint,
+  eases.outBack,
+  eases.inBounce,
+  eases.inOutCubic,
+  eases.inOutBack,
+  eases.outBounce,
+  eases.outInCubic,
+  eases.outInBack,
+  eases.outInBounce,
 ];
 
 const config = { speed: 1, autoplay: true, randomEase: true };
 let cubeNum = CUBE_NUM_DEFAULT;
 let solutionListener = null;
 
-let device = null, shader, orbit;
+let device = null,
+  shader,
+  orbit;
 let cubes = [];
 let move = null;
 let busy = false;
@@ -38,7 +75,6 @@ const CAM_PITCH = Math.PI / 4;
 const _rot = mat4.create();
 const _model = mat4.create();
 const _t = mat4.create();
-const _vp = mat4.create();
 
 // registered once at setup; the scene pushes solution playback state back out
 function onSolution(fn) {
@@ -69,7 +105,9 @@ function makeCubeData(x, y, z) {
     const c = hexToRGB(faceColor(x, y, z, face));
     for (let v = 0; v < 6; v++) {
       const o = (face * 6 + v) * 3;
-      color[o] = c[0]; color[o + 1] = c[1]; color[o + 2] = c[2];
+      color[o] = c[0];
+      color[o + 1] = c[1];
+      color[o + 2] = c[2];
     }
   }
   return { position: pos, color, count };
@@ -137,14 +175,18 @@ function rotationFor(axis, angle) {
 }
 
 const axisForFace = (face) =>
-  face === FACE_LEFT || face === FACE_RIGHT ? 0
-  : face === FACE_TOP || face === FACE_BOTTOM ? 1 : 2;
+  face === FACE_LEFT || face === FACE_RIGHT
+    ? 0
+    : face === FACE_TOP || face === FACE_BOTTOM
+      ? 1
+      : 2;
 
 function randomMove() {
   return {
     face: Math.floor(Math.random() * 6),
     depth: Math.floor(Math.random() * (cubeNum - 1)) + 1,
-    magnitude: (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1),
+    magnitude:
+      (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1),
     quick: true,
   };
 }
@@ -187,10 +229,11 @@ function startMove(face, depth, magnitude, quick = false) {
     if (isInFace(g.x, g.y, g.z, face, depth)) idx.push(i);
   }
   const target = (Math.PI / 2) * magnitude;
-  const ease = quick ? eases.outCubic
+  const ease = quick
+    ? eases.outCubic
     : config.randomEase
-    ? RANDOM_EASES[Math.floor(Math.random() * RANDOM_EASES.length)]
-    : eases.inOutCubic;
+      ? RANDOM_EASES[Math.floor(Math.random() * RANDOM_EASES.length)]
+      : eases.inOutCubic;
   const spd = config.speed || 1;
   busy = true;
   move = { idx, axis, angle: { v: 0 }, target };
@@ -276,8 +319,14 @@ function cubeletsForSolver() {
   return cubes.map((c) => {
     const b = c.base;
     return {
-      p: [Math.round(b[12] / CELL), Math.round(b[13] / CELL), Math.round(b[14] / CELL)],
-      r: [b[0], b[1], b[2], b[4], b[5], b[6], b[8], b[9], b[10]].map((v) => Math.round(v / RUBIK_SIZE)),
+      p: [
+        Math.round(b[12] / CELL),
+        Math.round(b[13] / CELL),
+        Math.round(b[14] / CELL),
+      ],
+      r: [b[0], b[1], b[2], b[4], b[5], b[6], b[8], b[9], b[10]].map((v) =>
+        Math.round(v / RUBIK_SIZE),
+      ),
     };
   });
 }
@@ -387,57 +436,58 @@ function entrance() {
   });
 }
 
-const { init, render, destroy, setConfig } = createPlayground({
-  // size arrives here too: before init it just seeds cubeNum, after it rebuilds
-  setConfig({ size, ...patch }) {
-    Object.assign(config, patch);
-    if (size !== undefined && size !== cubeNum) {
-      cubeNum = size;
-      if (device) rebuild();
-    }
-    if (config.autoplay) resume();
-  },
+function setConfig({ size, ...patch }) {
+  Object.assign(config, patch);
+  if (size !== undefined && size !== cubeNum) {
+    cubeNum = size;
+    if (device) rebuild();
+  }
+  if (config.autoplay) resume();
+}
+
+const { init, render, destroy } = createPlayground({
   camera: { fov: 45, near: 1, far: 2000 },
   init(ctx) {
     device = ctx.device;
-    shader = device.shader({
-      ...RUBIK,
-      buffers: [
-        { stride: 12, step: "vertex", attributes: [{ name: "position", location: 0, format: "float32x3", offset: 0 }] },
-        { stride: 12, step: "vertex", attributes: [{ name: "color", location: 1, format: "float32x3", offset: 0 }] },
-      ],
-      uniforms: [MAT4("uViewProj"), MAT4("uModel")],
-      depth: "test", blend: "none", topology: "tri",
-    });
+    shader = device.program(RUBIK, { depth: true, topology: "tri" });
     // orbit yaw = PI/2 - old yaw convention; PI/4 is its own mirror, drag sign matches
-    orbit = createOrbit(ctx.canvas, { yaw: Math.PI / 4, pitch: CAM_PITCH, lockPitch: true });
+    orbit = createOrbit(ctx.canvas, {
+      yaw: Math.PI / 4,
+      pitch: CAM_PITCH,
+      lockPitch: true,
+    });
     buildCubes();
     entrance();
   },
   frame(_dt, { device, camera }) {
     orbit.dist = cubeNum * CELL * 2.2 + RUBIK_SIZE * 2;
     orbit.placeCamera(camera);
-    mat4.copy(_vp, device.correctViewProj(camera.viewProjMatrix));
+    const vp = camera.viewProjMatrix;
 
-    device.beginFrame();
-    device.pass({ clear: [0.09, 0.09, 0.11, 1], depth: true, depthClear: 1 }, (p) => {
-      for (let i = 0; i < cubes.length; i++) {
-        const cube = cubes[i];
-        let model = cube.base;
-        if (move && move.idx.includes(i)) {
-          mat4.multiply(_model, rotationFor(move.axis, move.angle.v), cube.base);
-          model = _model;
+    device.render(
+      { clear: { color: [0.09, 0.09, 0.11, 1], depth: 1 } },
+      (p) => {
+        for (let i = 0; i < cubes.length; i++) {
+          const cube = cubes[i];
+          let model = cube.base;
+          if (move && move.idx.includes(i)) {
+            mat4.multiply(
+              _model,
+              rotationFor(move.axis, move.angle.v),
+              cube.base,
+            );
+            model = _model;
+          }
+          mat4.translation(_t, cube.intro.x, cube.intro.y, 0);
+          mat4.multiply(_t, _t, model);
+          p.draw(shader, {
+            buffers: { position: cube.posBuf, color: cube.colorBuf },
+            count: cube.count,
+            uniforms: { uViewProj: vp, uModel: _t },
+          });
         }
-        mat4.translation(_t, cube.intro.x, cube.intro.y, 0);
-        mat4.multiply(_t, _t, model);
-        p.draw(shader, {
-          buffers: [cube.posBuf, cube.colorBuf],
-          count: cube.count,
-          uniforms: { uViewProj: _vp, uModel: _t },
-        });
-      }
-    });
-    device.endFrame();
+      },
+    );
   },
   destroy() {
     running = false;
@@ -460,6 +510,16 @@ const { init, render, destroy, setConfig } = createPlayground({
 });
 
 export {
-  init, render, destroy, setConfig, onSolution, step,
-  solveCube, seekSolution, playSolution, pauseSolution, scramble, applyScramble,
+  init,
+  render,
+  destroy,
+  setConfig,
+  onSolution,
+  step,
+  solveCube,
+  seekSolution,
+  playSolution,
+  pauseSolution,
+  scramble,
+  applyScramble,
 };

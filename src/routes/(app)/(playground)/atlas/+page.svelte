@@ -3,13 +3,217 @@
   import * as mech from "$lib/playgrounds/mech";
   import * as rt from "$lib/playgrounds/raytrace";
   import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
-  import {
-    atlasModel, atlasHeight, atlasPose, atlasChoreo, montageLabel,
-    coreCtl, flankCtl, rigLocked, mirrorWrites, SIDES, baseChan,
-  } from "$lib/mech/atlas/rig.js";
+  import { atlasModel, atlasHeight, atlasPose, SIDES, ATLAS_DEF, chan, forSides, SIDED, SIDE_CHANNELS, CURL_SEG } from "$lib/mech/atlas/rig.js";
+  // ---- atlas UI surface (inlined from $lib/ui/atlas.js) ----
+// ATLAS UI SURFACE — the slider rows, mirror helpers, montages and choreographer
+// config the atlas playground renders and drives. Everything here is presentation
+// and control; the rig itself (links, solve, model) lives in lib/mech/atlas/rig.js,
+// which supplies the shared sided-channel naming and rig data.
+const DEG = Math.PI / 180;   // radian value of one degree, for writing constants
+
+// the bare channel a flanked one came off (`elbowR` -> `elbow`); spine keys pass
+const baseChan = (key) => {
+  const b = key.slice(0, -1);
+  return SIDES.includes(key.slice(-1)) && SIDED.has(b) ? b : key;
+};
+
+// ratio channels (a rate, a 0..1 fist) have no angle grid to snap to — also
+// what the UI uses to decide a channel passes through without degree conversion
+const ATLAS_RATIO = new Set(["curl", "hipLevel"]);
+
+// ---- THE SLIDER SURFACE ------------------------------------------------------
+// Every pose channel, its range, and the MIRROR rule laid over them. The rig is
+// always split (see SIDE_CHANNELS), so mirroring is these functions tying the
+// two flanks together — a caller's rule, never a wiring.
+// [key, label, min, max, step?], on BARE channel names
+const ATLAS_CTL = [
+  ["headYaw", "head yaw", -Math.PI, Math.PI, DEG],
+  ["headPitch", "head pitch", -30 * DEG, 30 * DEG, DEG],
+  ["twist", "waist twist", -Math.PI, Math.PI, DEG],
+  ["waistBend", "waist bend", -45 * DEG, 45 * DEG, DEG],
+  ["waistTilt", "waist tilt", -45 * DEG, 45 * DEG, DEG],
+  ["shoulder", "arm swing", -Math.PI, Math.PI, DEG],
+  ["armOut", "arm raise", -10 * DEG, Math.PI, DEG],
+  ["armTwist", "arm twist", -Math.PI, Math.PI, DEG],
+  ["elbow", "elbow bend", -Math.PI / 2, Math.PI / 2, DEG],
+  ["foreTwist", "forearm twist", -Math.PI, Math.PI, DEG],
+  ["wristBend", "wrist bend", -100 * DEG, 100 * DEG, DEG],
+  ["wristTilt", "wrist tilt", -100 * DEG, 100 * DEG, DEG],
+  ["wristTwist", "wrist twist", -Math.PI, Math.PI, DEG],
+  ["curl", "finger curl", 0, 1, 0.01],   // a 0..1 fist, not an angle
+  ["hip", "leg swing", -45 * DEG, 45 * DEG, DEG],
+  ["knee", "knee bend", -Math.PI / 3, 0, DEG],
+  ["ankle", "ankle bend", -30 * DEG, 30 * DEG, DEG],
+];
+const LEVEL_CTL = [["hipLevel", "hip level", -1.5, 0, 0.01]];
+
+// bare rows -> flanked ones; mirrored, the left channel stands for both
+const sided = (ctl, mirror) =>
+  ctl.flatMap(([key, label, ...rest]) =>
+    !SIDED.has(key) ? [[key, label, ...rest]]
+      : mirror ? [[key + "L", label, ...rest]]
+        : SIDES.map((S) => [key + S, `${label} ${S}`, ...rest]),
+  );
+const coreCtl = [...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !SIDED.has(key));
+const flankCtl = (S) =>
+  ATLAS_CTL.filter(([key]) => SIDED.has(key))
+    .map(([key, label, ...rest]) => [key + S, label, ...rest]);
+// mirrored, the right flank is not the user's to edit — it follows the left
+const rigLocked = (mirror) =>
+  new Set(mirror ? SIDE_CHANNELS.map((key) => key + "R") : []);
+// a pose whose left-flank writes land on the right flank too
+const mirrorWrites = (pose) => new Proxy(pose, {
+  set(t, key, v) {
+    t[key] = v;
+    if (typeof key === "string" && key.endsWith("L") && SIDED.has(baseChan(key)))
+      t[baseChan(key) + "R"] = v;
+    return true;
+  },
+});
+const twinOf = (key) =>
+  (key.endsWith("L") && SIDED.has(baseChan(key)) ? baseChan(key) + "R" : null);
+
+// ---- ROUTINES ---------------------------------------------------------------
+// A setup pose the rig strikes, then a KEYFRAME timeline: each key is a partial
+// pose and the `hold` (in beats) it takes to reach it. A routine is an ARM routine,
+// so REST stands the legs squarely and the solver folds them into whatever stance
+// the hip level asks for.
+const REST = {
+  armOut: 0, shoulder: 0, armTwist: 0, elbow: 0, foreTwist: 0, wristBend: 0, wristTilt: 0,
+  wristTwist: 0, curl: 0, twist: 0, waistBend: 0, waistTilt: 0,
+  headPitch: 0, headYaw: 0, hip: 0, knee: 0, ankle: 0,
+};
+
+const fist = (n) => Math.abs(n) / (Math.PI / 2);
+const WAVE = (lead, level, n) => [
+  { hold: 0.15, pose: { [lead]: level + n, elbow: -2 * n, wristBend: n } },
+  { hold: 0.12, pose: { [lead]: level, elbow: n, wristBend: -2 * n } },
+  { hold: 0.12, pose: { elbow: 0, wristBend: n } },
+  { hold: 0.12, pose: { wristBend: 0, curl: fist(n) } },
+  { hold: 0.15, pose: { curl: 0 } },
+];
+
+const VERT_WAVE = (lead, level, n) => [
+  { hold: 0.12, pose: { curl: fist(n) } },
+  { hold: 0.12, pose: { wristBend: n, curl: 0 } },
+  { hold: 0.12, pose: { elbow: n, wristBend: -2 * n, curl: fist(n) } },
+  { hold: 0.12, pose: { [lead]: level - n, elbow: -2 * n, wristBend: n, curl: 0 } },
+  { hold: 0.12, pose: { [lead]: level, elbow: 0, wristBend: 0, curl: 0 } },
+];
+
+const P2 = Math.PI / 2;   // 90°
+const STYLE = {
+  sideOut: { raise: { armOut: P2, armTwist: -P2 }, keys: WAVE("armOut", P2, 35 * DEG), loops: 2 },
+  front: { raise: { shoulder: P2 }, keys: WAVE("shoulder", P2, 35 * DEG), loops: 2 },
+  back: { raise: { shoulder: -P2 }, keys: WAVE("shoulder", -P2, -35 * DEG), loops: 2 },
+  overhead: { raise: { armOut: Math.PI, armTwist: 0 }, keys: VERT_WAVE("shoulder", 0, 20 * DEG), loops: 2 },
+};
+
+const ROUTINES = {
+  armWave: { L: STYLE.sideOut, R: STYLE.sideOut },
+  frontWave: { L: STYLE.front, R: STYLE.front },
+  frontWaveOpposed: { L: STYLE.front, R: STYLE.back },
+  verticalWave: { L: STYLE.overhead, R: STYLE.overhead },
+};
+
+const onSide = (pose, S) =>
+  Object.fromEntries(Object.entries(pose).map(([k, v]) => [chan(k, S), v]));
+
+const atlasMontages = (mirror = false) =>
+  Object.fromEntries(
+    Object.entries(ROUTINES)
+      .filter(([name]) => !mirror || !name.endsWith("Opposed"))
+      .map(([name, { L, R }]) => [name, {
+        setup: { ...forSides(REST), ...onSide(L.raise, "L"), ...onSide(R.raise, "R") },
+        keys: L.keys.map((k, i) => ({
+          ...k,
+          pose: { ...onSide(k.pose, "L"), ...onSide(R.keys[i].pose, "R") },
+        })),
+        loops: L.loops,
+      }]),
+  );
+
+const MONTAGE_LABELS = { armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
+const montageLabel = (name) => {
+  const base = name.replace(/Opposed$/, "");
+  return (MONTAGE_LABELS[base] ?? base) + (base === name ? "" : " opposed");
+};
+
+// bone depth of every pose channel (pelvis = 0). A channel drives the link it
+// sits on, so its depth IS that link's depth: `twist` turns the torso near the
+// root, `curl` turns a finger out at a leaf. The choreographer reads this to
+// tell a big root move from a small leaf one.
+const ATLAS_POSE_DEPTH = (() => {
+  const depth = {}, out = {};
+  const note = (key, d) => { out[key] = key in out ? Math.min(out[key], d) : d; };
+  for (const d of ATLAS_DEF) {
+    const dep = d.parent ? depth[d.parent] + 1 : 0;
+    depth[d.name] = dep;
+    for (const bind of d.angles ?? []) {
+      if (!bind) continue;
+      if (Array.isArray(bind[0])) for (const b of bind) { if (b) note(b[0], dep); }
+      else note(bind[0], dep);
+    }
+  }
+  // the digits ride the segment channels, so the `curl` SLIDER binds nothing of its
+  // own — it is as deep as the knuckles it rolls
+  for (const S of SIDES)
+    out[chan("curl", S)] = Math.min(...CURL_SEG.map((key) => out[key + S]));
+  return out;
+})();
+
+// ---- WHAT A CHOREOGRAPHER MAY DRIVE -----------------------------------------
+const BIG_DEPTH = 2;                 // this near the root, a channel carries a beat
+const LEG_CHANNELS = ["hip", "knee", "ankle"];
+const CHOREO_PULSE = ["hipLevel"];   // whole-body: its own slot in the beat
+const CHOREO_SPIN = "twist";
+const CHOREO_EXCLUSIVE = [["twist", "waistBend", "waistTilt"]];   // one waist ball
+const CHOREO_GROUNDED = [SIDES.map((S) => LEG_CHANNELS.map((key) => key + S))];
+const RATIO = ATLAS_RATIO;
+// mirrored, the legs move as ONE and the figure would hop: take them out of the beat
+// and park them (a leg left in the air by the flip still has to walk home)
+const choreoSliders = (mirror) => {
+  const skip = new Set(mirror ? LEG_CHANNELS : []);
+  return sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !skip.has(key)), mirror)
+    .map(([key, , min, max]) => ({
+      key, min, max,
+      big: key === "hipLevel" || ATLAS_POSE_DEPTH[key] <= BIG_DEPTH,
+      grid: RATIO.has(baseChan(key)) ? 0 : undefined,
+    }));
+};
+// the whole rig, as createChoreographer wants it, under the mirror rule
+const atlasChoreo = (mirror) => ({
+  sliders: choreoSliders(mirror),
+  home: atlasPose(),
+  montages: atlasMontages(mirror),
+  exclusives: CHOREO_EXCLUSIVE,
+  grounded: CHOREO_GROUNDED,
+  parked: mirror ? LEG_CHANNELS.flatMap((key) => SIDES.map((S) => key + S)) : [],
+  pulse: CHOREO_PULSE,
+  spin: CHOREO_SPIN,
+  twin: mirror ? twinOf : null,
+});
+
+// ---- PART PICKER ------------------------------------------------------------
+// Slider surface for the part picker, in model units (no unit conversion).
+const PART_LABELS = { upperArm: "upper arm" };
+
+// [key, label, min, max, step?] sliders per part
+const PART_CTL = {
+  head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["innerR", "inner ring radius", 0.06, 0.35]],
+  torso: [["chestW", "chest width", 0.7, 1.6], ["chestH", "chest height", 0.5, 1.4], ["chestD", "chest depth", 0.4, 1.0]],
+  pelvis: [["hipW", "disc width", 0.5, 1.3], ["hipH", "dome radius", 0.15, 0.5]],
+  upperArm: [["len", "length", 0.2, 0.9], ["w", "width", 0.15, 0.5]],
+  forearm: [["len", "length", 0.2, 0.9], ["w", "width", 0.12, 0.45]],
+  palm: [["w", "width", 0.15, 0.5], ["h", "height", 0.15, 0.5], ["d", "depth", 0.12, 0.45]],
+  digit: [["len", "digit length", 0.1, 0.4], ["w", "width", 0.05, 0.2]],
+  thigh: [["len", "length", 0.3, 1.1], ["w", "width", 0.2, 0.6]],
+  shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
+  foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
+};
   import { rad, deg } from "$lib/math/scalar.js";
   import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
-  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
+  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES, CHOREO_CTL } from "$lib/mech/choreo.js";
   import {
     createMusic, MUSIC_DEFAULTS, MUSIC_STYLE_NAMES, MUSIC_ROOT_NAMES, MUSIC_SCALE_NAMES, styleOf,
   } from "$lib/audio/music.js";
@@ -48,7 +252,7 @@
 
   let render = $state({
     spin: 0.3, light: 0.6, wire: 0,
-    raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0,
+    raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0, raycount: 1,
   });
 
   const RENDER_CTL = [
@@ -61,20 +265,17 @@
     ["exposure", "exposure", 0.2, 3, 0.05],
     ["softness", "shadow softness", 0, 0.3, 0.005],
     ["quality", "resolution", 0.15, 1, 0.05],
+    ["raycount", "ray count", 1, 16, 1],
   ];
   const renderCtl = $derived(render.raytrace ? RT_CTL : RENDER_CTL);
   const engine = $derived(render.raytrace ? rt : mech);
 
-  const PART_LABELS = { upperArm: "upper arm" };
-
   // pose channels arrive from the rig in RADIANS; sliders speak DEGREES. A few
   // channels are ratios (curl 0..1, hipLevel a rate) and pass through untouched.
-  const RATIO = new Set(["curl", "hipLevel"]);
-  const isRatio = (key) => RATIO.has(baseChan(key));
+  const isRatio = (key) => ATLAS_RATIO.has(baseChan(key));
   const uiCtl = (rows) => rows.map(([key, label, min, max, step]) =>
-    isRatio(key)
-      ? [key, label, min, max, step ?? 0.01]
-      : [key, label, deg(min), deg(max), deg(step ?? 0.01)]);
+    isRatio(key) ? [key, label, min, max, step]
+      : [key, label, deg(min), deg(max), step ? deg(step) : 0.01]);
   const uiVal = (key, v) => (isRatio(key) ? v : deg(v));
   const setPoseVal = (key, v) => (isRatio(key) ? +v : rad(+v));
 
@@ -122,27 +323,6 @@
     materials = { ...materials, [key]: { ...materials[key], [field]: value } };
   }
   let stats = $state({ instances: 0, nodes: 0, buildMs: 0, traceMs: 0, fps: 0, samples: 0 });
-  // [key, label, min, max, step?] sliders per part
-  const PART_CTL = {
-    head: [["headR", "head radius", 0.18, 0.45], ["headD", "head depth", 0.3, 0.9], ["innerR", "inner ring radius", 0.06, 0.35]],
-    torso: [["chestW", "chest width", 0.7, 1.6], ["chestH", "chest height", 0.5, 1.4], ["chestD", "chest depth", 0.4, 1.0]],
-    pelvis: [["hipW", "disc width", 0.5, 1.3], ["hipH", "dome radius", 0.15, 0.5]],
-    upperArm: [["len", "length", 0.2, 0.9], ["w", "width", 0.15, 0.5]],
-    forearm: [["len", "length", 0.2, 0.9], ["w", "width", 0.12, 0.45]],
-    palm: [["w", "width", 0.15, 0.5], ["h", "height", 0.15, 0.5], ["d", "depth", 0.12, 0.45]],
-    digit: [["len", "digit length", 0.1, 0.4], ["w", "width", 0.05, 0.2]],
-    thigh: [["len", "length", 0.3, 1.1], ["w", "width", 0.2, 0.6]],
-    shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
-    foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
-  };
-  const CHOREO_CTL = [
-    ["anticRatio", "anticipation", 0, 0.4, 0.01],
-    ["restRatio", "rest", 0, 0.4, 0.01],
-    ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
-    ["bouncePower", "bounce power", 0, 1, 0.01],
-    ["styleBeats", "style hold", 1, 30, 1],
-    ["pulseChance", "hip pulse", 0, 1, 0.05],
-  ];
   const MUSIC_CTL = [
     ["bpm", "tempo", 60, 200, 1],
     ["gain", "volume", 0, 1, 0.05],
@@ -206,6 +386,7 @@
         exposure: render.exposure,
         softness: render.softness,
         quality: render.quality,
+        raycount: render.raycount,
         materials,
         partKey: PART_OF_GROUP,
       } : {}),

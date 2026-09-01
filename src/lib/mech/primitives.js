@@ -28,15 +28,26 @@ export const q4 = (v) => +(+v).toFixed(4);
 
 const REGISTRY = new Map();          // key -> { positions: F32, normals: F32, shape }
 
-export function meshOf(key) {
+function meshOf(key) {
   return REGISTRY.get(key);
 }
 
 // the ANALYTIC twin of a unit mesh (null for meshes with no closed form, e.g.
 // sculpted surfaces) — a ray tracer intersects THIS, not the triangle soup.
 //   { kind: "box"|"cylinder"|"coneCut"|..., p: [shape params in unit space] }
-export function shapeOf(key) {
+function shapeOf(key) {
   return REGISTRY.get(key)?.shape ?? null;
+}
+
+// THE MODEL CONTRACT — a list of baked items plus the unit meshes they
+// reference, built once and shared across frames. `meshes[key]` is the unit
+// mesh AND carries its analytic shape twin (`mesh.shape`), so consumers read
+// ONE map: the instanced renderer uses positions/normals, the ray tracer uses
+// shape. Every producer (a kit preview, an assembly emit, a sculpt) ends here.
+export function modelOf(items) {
+  const meshes = {};
+  for (const it of items) if (!meshes[it.key]) meshes[it.key] = meshOf(it.key);
+  return { items, meshes };
 }
 
 // handle factory: register the unit mesh on first use, return an instance
