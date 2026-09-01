@@ -97,11 +97,9 @@ fn areaLightDir(k: i32) -> vec3<f32> {
 //   texel 6 = (IinvT.y, IinvT.z, cr, cg) texel 7 = (cb, mat, matParam, pad)
 fn instT(i: i32, t: i32) -> vec4<f32> { return textureLoad(instTex, vec2<i32>(t, i), 0); }
 
-// row-major inverse matrix (IM) times a vector
-fn matMulVAt(i: i32, v: vec3<f32>) -> vec3<f32> {
-  let t1 = instT(i, 1);
-  let t2 = instT(i, 2);
-  let t3 = instT(i, 3);
+// row-major inverse matrix (IM) times a vector — t1,t2,t3 are instT(i,1..3),
+// passed in so a leaf visit fetches each texel once instead of once per call
+fn matMulV(t1: vec4<f32>, t2: vec4<f32>, t3: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
   return vec3<f32>(
     t1.y * v.x + t1.z * v.y + t1.w * v.z,
     t2.x * v.x + t2.y * v.y + t2.z * v.z,
@@ -109,16 +107,106 @@ fn matMulVAt(i: i32, v: vec3<f32>) -> vec3<f32> {
   );
 }
 
-// row-major inverse-transpose matrix (IMT) times a vector
-fn matMulNormalAt(i: i32, v: vec3<f32>) -> vec3<f32> {
-  let t3 = instT(i, 3);
-  let t4 = instT(i, 4);
-  let t5 = instT(i, 5);
+// row-major inverse-transpose matrix (IMT) times a vector — t3,t4,t5 are instT(i,3..5)
+fn matMulNormal(t3: vec4<f32>, t4: vec4<f32>, t5: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
   return vec3<f32>(
     t3.z * v.x + t3.w * v.y + t4.x * v.z,
     t4.y * v.x + t4.z * v.y + t4.w * v.z,
     t5.x * v.x + t5.y * v.y + t5.z * v.z,
   );
+}
+
+// ---- shared analytic solvers ------------------------------------------------
+// The 10 primitive kinds boil down to two quadric families sharing the Y axis:
+// a "cone" x^2+z^2=(1+k*y)^2 (k=0 is a plain cylinder wall) and a sphere shell
+// |p|=r, plus axis-aligned planar caps. Routing every kind through ONE solver
+// per family means a ray runs the identical instruction stream no matter which
+// of those kinds it actually hit — only the coefficients (radius, k, y-range,
+// quadrant mask) differ — which keeps SIMD lanes inside a BVH leaf in lockstep
+// instead of diverging over a 10-way shape switch. Only the box (curved-top
+// slab) doesn't fit either family and stays bespoke below.
+
+// nearest/farthest real root of a*t^2 + 2*hb*t + c = 0 (half-b form: fewer
+// multiplies than the textbook b/4ac form), ordered near-first regardless of
+// sign(a). (INF, INF) if no real root.
+fn quadRoots(a: f32, hb: f32, c: f32) -> vec2<f32> {
+  let disc = hb * hb - a * c;
+  if (disc < 0.0) { return vec2<f32>(INF, INF); }
+  let sq = sqrt(disc);
+  let inva = 1.0 / a;
+  let r0 = (-hb - sq) * inva;
+  let r1 = (-hb + sq) * inva;
+  return vec2<f32>(min(r0, r1), max(r0, r1));
+}
+
+// radial wall x^2+z^2=r2 (axis Y), near/far ordered. (INF, INF) if the ray is
+// ~parallel to the axis (no wall crossing possible).
+fn cylRoots(o: vec3<f32>, d: vec3<f32>, r2: f32) -> vec2<f32> {
+  let a = d.x * d.x + d.z * d.z;
+  if (a <= PAR) { return vec2<f32>(INF, INF); }
+  return quadRoots(a, o.x * d.x + o.z * d.z, o.x * o.x + o.z * o.z - r2);
+}
+
+// keep the closer of two candidates — the single join point every shape
+// funnels through, so every kind pays the same cost to pick its hit.
+fn tryCand(t: f32, cn: vec3<f32>, best: ptr<function, f32>, n: ptr<function, vec3<f32>>) {
+  if (t > EPS && t < *best) { *best = t; *n = cn; }
+}
+
+// one radial wall test: near root first, far root only tried if the near one
+// misses its y-range/quadrant (mx/mz: 0 disables that quadrant constraint).
+// nsign flips the outward normal (an inner cavity wall, e.g. gear's hole).
+fn wallHit(o: vec3<f32>, d: vec3<f32>, r2: f32, ylo: f32, yhi: f32, mx: f32, mz: f32, nsign: f32, best: ptr<function, f32>, n: ptr<function, vec3<f32>>) {
+  let r = cylRoots(o, d, r2);
+  if (r.x >= INF) { return; }
+  for (var i = 0; i < 2; i = i + 1) {
+    let t = select(r.y, r.x, i == 0);
+    let x = o.x + d.x * t; let y = o.y + d.y * t; let z = o.z + d.z * t;
+    if (y >= ylo && y <= yhi && (mx <= 0.0 || x >= 0.0) && (mz <= 0.0 || z >= 0.0)) {
+      tryCand(t, vec3<f32>(x * nsign, 0.0, z * nsign), best, n);
+      return;
+    }
+  }
+}
+
+// one spherical shell test (radius^2 = r2), y-clamped, near root first.
+fn sphereHit(o: vec3<f32>, d: vec3<f32>, a: f32, hb: f32, r2: f32, ylo: f32, yhi: f32, flip: f32, best: ptr<function, f32>, n: ptr<function, vec3<f32>>) {
+  let rt = quadRoots(a, hb, o.x * o.x + o.y * o.y + o.z * o.z - r2);
+  if (rt.x >= INF) { return; }
+  for (var i = 0; i < 2; i = i + 1) {
+    let t = select(rt.y, rt.x, i == 0);
+    let y = o.y + d.y * t;
+    if (y >= ylo && y <= yhi) {
+      tryCand(t, vec3<f32>((o.x + d.x * t) * flip, y * flip, (o.z + d.z * t) * flip), best, n);
+      return;
+    }
+  }
+}
+
+// axis-aligned annular cap at y=py, ri2 <= x^2+z^2 <= ro2, optional quadrant mask.
+fn capHit(o: vec3<f32>, d: vec3<f32>, py: f32, ri2: f32, ro2: f32, mx: f32, mz: f32, nsign: f32, best: ptr<function, f32>, n: ptr<function, vec3<f32>>) {
+  if (abs(d.y) <= PAR) { return; }
+  let t = (py - o.y) / d.y;
+  let x = o.x + d.x * t; let z = o.z + d.z * t; let r2 = x * x + z * z;
+  if (r2 >= ri2 && r2 <= ro2 && (mx <= 0.0 || x >= 0.0) && (mz <= 0.0 || z >= 0.0)) {
+    tryCand(t, vec3<f32>(0.0, nsign, 0.0), best, n);
+  }
+}
+
+// axis-aligned rectangular quad on plane z=pz, x in [xlo,xhi], y in [ylo,yhi].
+fn zPlaneHit(o: vec3<f32>, d: vec3<f32>, pz: f32, xlo: f32, xhi: f32, ylo: f32, yhi: f32, cn: vec3<f32>, best: ptr<function, f32>, n: ptr<function, vec3<f32>>) {
+  if (abs(d.z) <= PAR) { return; }
+  let t = (pz - o.z) / d.z;
+  let x = o.x + d.x * t; let y = o.y + d.y * t;
+  if (x >= xlo && x <= xhi && y >= ylo && y <= yhi) { tryCand(t, cn, best, n); }
+}
+
+// axis-aligned rectangular quad on plane x=px, y in [ylo,yhi], z in [zlo,zhi].
+fn xPlaneHit(o: vec3<f32>, d: vec3<f32>, px: f32, ylo: f32, yhi: f32, zlo: f32, zhi: f32, cn: vec3<f32>, best: ptr<function, f32>, n: ptr<function, vec3<f32>>) {
+  if (abs(d.x) <= PAR) { return; }
+  let t = (px - o.x) / d.x;
+  let y = o.y + d.y * t; let z = o.z + d.z * t;
+  if (y >= ylo && y <= yhi && z >= zlo && z <= zhi) { tryCand(t, cn, best, n); }
 }
 
 // nearest positive intersection with one analytic primitive in unit space
@@ -127,7 +215,7 @@ fn intersectShape(kind: i32, p0: f32, p1: f32, p2: f32, p3: f32, o: vec3<f32>, d
   var n = vec3<f32>(0.0, 1.0, 0.0);
 
   if (kind == 0) {
-    // box (sloped/curved top surface y = A + B*z + C*z*z)
+    // box (sloped/curved top surface y = A + Bc*z + Cc*z*z)
     let s = p0; let k = p1;
     let A = 0.5 - 0.5 * s + 0.25 * s * k;
     let Bc = -s; let Cc = -s * k;
@@ -135,34 +223,35 @@ fn intersectShape(kind: i32, p0: f32, p1: f32, p2: f32, p3: f32, o: vec3<f32>, d
       var t = (0.5 - o.x) / d.x;
       var y = o.y + d.y * t; var z = o.z + d.z * t;
       if (y >= -0.5 && y <= A + Bc * z + Cc * z * z && z >= -0.5 && z <= 0.5) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(1.0, 0.0, 0.0); }
+        tryCand(t, vec3<f32>(1.0, 0.0, 0.0), &best, &n);
       }
       t = (-0.5 - o.x) / d.x;
       y = o.y + d.y * t; z = o.z + d.z * t;
       if (y >= -0.5 && y <= A + Bc * z + Cc * z * z && z >= -0.5 && z <= 0.5) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(-1.0, 0.0, 0.0); }
+        tryCand(t, vec3<f32>(-1.0, 0.0, 0.0), &best, &n);
       }
     }
     if (abs(d.y) > PAR) {
       let t = (-0.5 - o.y) / d.y;
       let x = o.x + d.x * t; let z = o.z + d.z * t;
       if (x >= -0.5 && x <= 0.5 && z >= -0.5 && z <= 0.5) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
+        tryCand(t, vec3<f32>(0.0, -1.0, 0.0), &best, &n);
       }
     }
     if (abs(d.z) > PAR) {
       var t = (-0.5 - o.z) / d.z;
       var x = o.x + d.x * t; var y = o.y + d.y * t;
       if (x >= -0.5 && x <= 0.5 && y >= -0.5 && y <= A + Bc * (-0.5) + Cc * 0.25) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 0.0, -1.0); }
+        tryCand(t, vec3<f32>(0.0, 0.0, -1.0), &best, &n);
       }
       t = (0.5 - o.z) / d.z;
       x = o.x + d.x * t; y = o.y + d.y * t;
       if (x >= -0.5 && x <= 0.5 && y >= -0.5 && y <= A + Bc * 0.5 + Cc * 0.25) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 0.0, 1.0); }
+        tryCand(t, vec3<f32>(0.0, 0.0, 1.0), &best, &n);
       }
     }
-    // top quadric in z, extruded along x
+    // top quadric in z, extruded along x: Q*t^2 + P*t + R = 0 fits the shared
+    // half-b solver directly with hb = P/2
     let Q = Cc * d.z * d.z;
     let P = Bc * d.z + 2.0 * Cc * o.z * d.z - d.y;
     let R = A + Bc * o.z + Cc * o.z * o.z - o.y;
@@ -173,20 +262,20 @@ fn intersectShape(kind: i32, p0: f32, p1: f32, p2: f32, p3: f32, o: vec3<f32>, d
         if (x >= -0.5 && x <= 0.5 && z >= -0.5 && z <= 0.5 && (o.y + d.y * t) >= -0.5) {
           let nz = -(Bc + 2.0 * Cc * z);
           let il = 1.0 / length(vec2<f32>(1.0, nz));
-          if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, il, nz * il); }
+          tryCand(t, vec3<f32>(0.0, il, nz * il), &best, &n);
         }
       }
     } else {
-      let disc = P * P - 4.0 * Q * R;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
+      let rt = quadRoots(Q, P * 0.5, R);
+      if (rt.x < INF) {
         for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-P + sq) / (2.0 * Q), (-P - sq) / (2.0 * Q), i == 0);
+          let t = select(rt.y, rt.x, i == 0);
           let x = o.x + d.x * t; let z = o.z + d.z * t;
           if (x >= -0.5 && x <= 0.5 && z >= -0.5 && z <= 0.5 && (o.y + d.y * t) >= -0.5) {
             let nz = -(Bc + 2.0 * Cc * z);
             let il = 1.0 / length(vec2<f32>(1.0, nz));
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, il, nz * il); }
+            tryCand(t, vec3<f32>(0.0, il, nz * il), &best, &n);
+            break;
           }
         }
       }
@@ -195,353 +284,122 @@ fn intersectShape(kind: i32, p0: f32, p1: f32, p2: f32, p3: f32, o: vec3<f32>, d
 
   else if (kind == 1) {
     // cylinder r=1, y 0..1
-    let a = d.x * d.x + d.z * d.z;
-    if (a > PAR) {
-      let b = 2.0 * (o.x * d.x + o.z * d.z);
-      let c = o.x * o.x + o.z * o.z - 1.0;
-      let disc = b * b - 4.0 * a * c;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
-        for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-          let y = o.y + d.y * t;
-          if (y >= 0.0 && y <= 1.0) {
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(o.x + d.x * t, 0.0, o.z + d.z * t); }
-          }
-        }
-      }
-    }
-    if (abs(d.y) > PAR) {
-      var t = -o.y / d.y;
-      var x = o.x + d.x * t; var z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
-      t = (1.0 - o.y) / d.y;
-      x = o.x + d.x * t; z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
-      }
-    }
+    wallHit(o, d, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, &best, &n);
+    capHit(o, d, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, &best, &n);
+    capHit(o, d, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, &best, &n);
   }
 
   else if (kind == 2) {
     // coneCut base r=1 at y=0 -> top r=p0 at y=1 (radius = 1 + k*y, k = p0-1)
     let k = p0 - 1.0;
     let a = d.x * d.x + d.z * d.z - k * k * d.y * d.y;
-    let b = 2.0 * (o.x * d.x + o.z * d.z) - 2.0 * k * d.y * (1.0 + k * o.y);
+    let hb = (o.x * d.x + o.z * d.z) - k * d.y * (1.0 + k * o.y);
     let c = o.x * o.x + o.z * o.z - (1.0 + k * o.y) * (1.0 + k * o.y);
     if (abs(a) > PAR) {
-      let disc = b * b - 4.0 * a * c;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
+      let rt = quadRoots(a, hb, c);
+      if (rt.x < INF) {
         for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
+          let t = select(rt.y, rt.x, i == 0);
           let y = o.y + d.y * t;
           if (y >= 0.0 && y <= 1.0) {
             let nx = o.x + d.x * t; let nz = o.z + d.z * t;
             let ny = -k * (1.0 + k * y);
             let il = 1.0 / length(vec3<f32>(nx, ny, nz));
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(nx * il, ny * il, nz * il); }
+            tryCand(t, vec3<f32>(nx * il, ny * il, nz * il), &best, &n);
+            break;
           }
         }
       }
-    } else if (abs(b) > PAR) {
-      let t = -c / b;
+    } else if (abs(hb) > PAR) {
+      // a≈0: quadratic degenerates to linear (2*hb*t + c = 0)
+      let t = -c / (2.0 * hb);
       let y = o.y + d.y * t;
       if (y >= 0.0 && y <= 1.0) {
         let nx = o.x + d.x * t; let nz = o.z + d.z * t;
         let ny = -k * (1.0 + k * y);
         let il = 1.0 / length(vec3<f32>(nx, ny, nz));
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(nx * il, ny * il, nz * il); }
+        tryCand(t, vec3<f32>(nx * il, ny * il, nz * il), &best, &n);
       }
     }
-    if (abs(d.y) > PAR) {
-      var t = -o.y / d.y;
-      var x = o.x + d.x * t; var z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
-      if (p0 > 1e-6) {
-        t = (1.0 - o.y) / d.y;
-        x = o.x + d.x * t; z = o.z + d.z * t;
-        if (x * x + z * z <= p0 * p0) {
-          if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
-        }
-      }
-    }
+    capHit(o, d, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, &best, &n);
+    capHit(o, d, 1.0, 0.0, p0 * p0, 0.0, 0.0, 1.0, &best, &n);
   }
 
   else if (kind == 3) {
     // sphere r=1
     let a = d.x * d.x + d.y * d.y + d.z * d.z;
-    let b = 2.0 * (o.x * d.x + o.y * d.y + o.z * d.z);
-    let c = o.x * o.x + o.y * o.y + o.z * o.z - 1.0;
-    let disc = b * b - 4.0 * a * c;
-    if (disc >= 0.0) {
-      let sq = sqrt(disc);
-      for (var i = 0; i < 2; i = i + 1) {
-        let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-        if (t > EPS && t < best) { best = t; n = o + d * t; }
-      }
-    }
+    let hb = o.x * d.x + o.y * d.y + o.z * d.z;
+    sphereHit(o, d, a, hb, 1.0, -INF, INF, 1.0, &best, &n);
   }
 
   else if (kind == 4) {
     // hemisphere r=1, dome up (+Y)
     let a = d.x * d.x + d.y * d.y + d.z * d.z;
-    let b = 2.0 * (o.x * d.x + o.y * d.y + o.z * d.z);
-    let c = o.x * o.x + o.y * o.y + o.z * o.z - 1.0;
-    let disc = b * b - 4.0 * a * c;
-    if (disc >= 0.0) {
-      let sq = sqrt(disc);
-      for (var i = 0; i < 2; i = i + 1) {
-        let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-        if (o.y + d.y * t >= 0.0) {
-          if (t > EPS && t < best) { best = t; n = o + d * t; }
-        }
-      }
-    }
-    if (abs(d.y) > PAR) {
-      let t = -o.y / d.y;
-      let x = o.x + d.x * t; let z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
-    }
+    let hb = o.x * d.x + o.y * d.y + o.z * d.z;
+    sphereHit(o, d, a, hb, 1.0, 0.0, INF, 1.0, &best, &n);
+    capHit(o, d, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, &best, &n);
   }
 
   else if (kind == 5) {
     // cutHemisphere: hollow bowl, shell ri..1 over y 0..yc + lip + base ring
     let ri = p0; let yc = p1;
     let a = d.x * d.x + d.y * d.y + d.z * d.z;
-    let b = 2.0 * (o.x * d.x + o.y * d.y + o.z * d.z);
-    var c = o.x * o.x + o.y * o.y + o.z * o.z - 1.0;
-    var disc = b * b - 4.0 * a * c;
-    if (disc >= 0.0) {
-      let sq = sqrt(disc);
-      for (var i = 0; i < 2; i = i + 1) {
-        let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-        let y = o.y + d.y * t;
-        if (y >= 0.0 && y <= yc) {
-          if (t > EPS && t < best) { best = t; n = vec3<f32>(o.x + d.x * t, y, o.z + d.z * t); }
-        }
-      }
-    }
-    c = o.x * o.x + o.y * o.y + o.z * o.z - ri * ri;
-    disc = b * b - 4.0 * a * c;
-    if (disc >= 0.0) {
-      let sq = sqrt(disc);
-      for (var i = 0; i < 2; i = i + 1) {
-        let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-        let y = o.y + d.y * t;
-        if (y >= 0.0 && y <= yc) {
-          if (t > EPS && t < best) { best = t; n = vec3<f32>(-(o.x + d.x * t), -y, -(o.z + d.z * t)); }
-        }
-      }
-    }
-    if (abs(d.y) > PAR) {
-      // the lip is the shell's cross-section at the cut plane: each sphere's
-      // radius where it meets y=yc, not the y=0 ring radii
-      let rr = sqrt(max(0.0, ri * ri - yc * yc));  // inner shell r at yc
-      let ro = sqrt(max(0.0, 1.0 - yc * yc));      // outer shell r at yc
-      var t = (yc - o.y) / d.y;
-      var x = o.x + d.x * t; var z = o.z + d.z * t; var r2 = x * x + z * z;
-      if (r2 >= rr * rr && r2 <= ro * ro) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
-      }
-      t = -o.y / d.y;
-      x = o.x + d.x * t; z = o.z + d.z * t; r2 = x * x + z * z;
-      if (r2 >= ri * ri && r2 <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
-    }
+    let hb = o.x * d.x + o.y * d.y + o.z * d.z;
+    sphereHit(o, d, a, hb, 1.0, 0.0, yc, 1.0, &best, &n);
+    sphereHit(o, d, a, hb, ri * ri, 0.0, yc, -1.0, &best, &n);
+    // the lip is the shell's cross-section at the cut plane: each sphere's
+    // radius^2 where it meets y=yc, not the y=0 ring radii
+    let rr2 = max(0.0, ri * ri - yc * yc);
+    let ro2 = max(0.0, 1.0 - yc * yc);
+    capHit(o, d, yc, rr2, ro2, 0.0, 0.0, 1.0, &best, &n);
+    capHit(o, d, 0.0, ri * ri, 1.0, 0.0, 0.0, -1.0, &best, &n);
   }
 
   else if (kind == 6) {
     // halfCylinder r=1, y 0..1, round side +Z, flat face z=0
-    let a = d.x * d.x + d.z * d.z;
-    if (a > PAR) {
-      let b = 2.0 * (o.x * d.x + o.z * d.z);
-      let c = o.x * o.x + o.z * o.z - 1.0;
-      let disc = b * b - 4.0 * a * c;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
-        for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-          let y = o.y + d.y * t; let z = o.z + d.z * t;
-          if (y >= 0.0 && y <= 1.0 && z >= 0.0) {
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(o.x + d.x * t, 0.0, z); }
-          }
-        }
-      }
-    }
-    if (abs(d.z) > PAR) {
-      let t = -o.z / d.z;
-      let x = o.x + d.x * t; let y = o.y + d.y * t;
-      if (x >= -1.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 0.0, -1.0); }
-      }
-    }
-    if (abs(d.y) > PAR) {
-      var t = -o.y / d.y;
-      var x = o.x + d.x * t; var z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0 && z >= 0.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
-      t = (1.0 - o.y) / d.y;
-      x = o.x + d.x * t; z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0 && z >= 0.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
-      }
-    }
+    wallHit(o, d, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, &best, &n);
+    zPlaneHit(o, d, 0.0, -1.0, 1.0, 0.0, 1.0, vec3<f32>(0.0, 0.0, -1.0), &best, &n);
+    capHit(o, d, 0.0, 0.0, 1.0, 0.0, 1.0, -1.0, &best, &n);
+    capHit(o, d, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, &best, &n);
   }
 
   else if (kind == 7) {
     // halfCylinderBox: halfCylinder + box tail to z=-dp
     let dp = p0;
-    let a = d.x * d.x + d.z * d.z;
-    if (a > PAR) {
-      let b = 2.0 * (o.x * d.x + o.z * d.z);
-      let c = o.x * o.x + o.z * o.z - 1.0;
-      let disc = b * b - 4.0 * a * c;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
-        for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-          let y = o.y + d.y * t; let z = o.z + d.z * t;
-          if (y >= 0.0 && y <= 1.0 && z >= 0.0) {
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(o.x + d.x * t, 0.0, z); }
-          }
-        }
-      }
-    }
-    if (abs(d.z) > PAR) {
-      let t = (-dp - o.z) / d.z;
-      let x = o.x + d.x * t; let y = o.y + d.y * t;
-      if (x >= -1.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 0.0, -1.0); }
-      }
-    }
-    if (abs(d.x) > PAR) {
-      var t = (1.0 - o.x) / d.x;
-      var y = o.y + d.y * t; var z = o.z + d.z * t;
-      if (y >= 0.0 && y <= 1.0 && z >= -dp && z <= 0.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(1.0, 0.0, 0.0); }
-      }
-      t = (-1.0 - o.x) / d.x;
-      y = o.y + d.y * t; z = o.z + d.z * t;
-      if (y >= 0.0 && y <= 1.0 && z >= -dp && z <= 0.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(-1.0, 0.0, 0.0); }
-      }
-    }
+    wallHit(o, d, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, &best, &n);
+    zPlaneHit(o, d, -dp, -1.0, 1.0, 0.0, 1.0, vec3<f32>(0.0, 0.0, -1.0), &best, &n);
+    xPlaneHit(o, d, 1.0, 0.0, 1.0, -dp, 0.0, vec3<f32>(1.0, 0.0, 0.0), &best, &n);
+    xPlaneHit(o, d, -1.0, 0.0, 1.0, -dp, 0.0, vec3<f32>(-1.0, 0.0, 0.0), &best, &n);
+    // cap region is a union (round disk OR box strip) — doesn't fit the
+    // simple ring+quadrant mask, so it stays a bespoke pair of tests
     if (abs(d.y) > PAR) {
       var t = -o.y / d.y;
       var x = o.x + d.x * t; var z = o.z + d.z * t;
       var inD = (x * x + z * z <= 1.0 && z >= 0.0) || (x >= -1.0 && x <= 1.0 && z >= -dp && z <= 0.0);
-      if (inD) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
+      if (inD) { tryCand(t, vec3<f32>(0.0, -1.0, 0.0), &best, &n); }
       t = (1.0 - o.y) / d.y;
       x = o.x + d.x * t; z = o.z + d.z * t;
       inD = (x * x + z * z <= 1.0 && z >= 0.0) || (x >= -1.0 && x <= 1.0 && z >= -dp && z <= 0.0);
-      if (inD) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
-      }
+      if (inD) { tryCand(t, vec3<f32>(0.0, 1.0, 0.0), &best, &n); }
     }
   }
 
   else if (kind == 8) {
     // quarterCylinder r=1, y 0..1, arc +X..+Z, corner origin
-    let a = d.x * d.x + d.z * d.z;
-    if (a > PAR) {
-      let b = 2.0 * (o.x * d.x + o.z * d.z);
-      let c = o.x * o.x + o.z * o.z - 1.0;
-      let disc = b * b - 4.0 * a * c;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
-        for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-          let y = o.y + d.y * t; let x = o.x + d.x * t; let z = o.z + d.z * t;
-          if (y >= 0.0 && y <= 1.0 && x >= 0.0 && z >= 0.0) {
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(x, 0.0, z); }
-          }
-        }
-      }
-    }
-    if (abs(d.x) > PAR) {
-      let t = -o.x / d.x;
-      let y = o.y + d.y * t; let z = o.z + d.z * t;
-      if (y >= 0.0 && y <= 1.0 && z >= 0.0 && z <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(-1.0, 0.0, 0.0); }
-      }
-    }
-    if (abs(d.z) > PAR) {
-      let t = -o.z / d.z;
-      let y = o.y + d.y * t; let x = o.x + d.x * t;
-      if (y >= 0.0 && y <= 1.0 && x >= 0.0 && x <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 0.0, -1.0); }
-      }
-    }
-    if (abs(d.y) > PAR) {
-      var t = -o.y / d.y;
-      var x = o.x + d.x * t; var z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0 && x >= 0.0 && z >= 0.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
-      t = (1.0 - o.y) / d.y;
-      x = o.x + d.x * t; z = o.z + d.z * t;
-      if (x * x + z * z <= 1.0 && x >= 0.0 && z >= 0.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
-      }
-    }
+    wallHit(o, d, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, &best, &n);
+    xPlaneHit(o, d, 0.0, 0.0, 1.0, 0.0, 1.0, vec3<f32>(-1.0, 0.0, 0.0), &best, &n);
+    zPlaneHit(o, d, 0.0, 0.0, 1.0, 0.0, 1.0, vec3<f32>(0.0, 0.0, -1.0), &best, &n);
+    capHit(o, d, 0.0, 0.0, 1.0, 1.0, 1.0, -1.0, &best, &n);
+    capHit(o, d, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, &best, &n);
   }
 
   else if (kind == 9) {
     // gear: toothless annulus approximation (outer r=1, hole r=0.55)
     let ri = 0.55;
-    let a = d.x * d.x + d.z * d.z;
-    if (a > PAR) {
-      let b = 2.0 * (o.x * d.x + o.z * d.z);
-      var c = o.x * o.x + o.z * o.z - 1.0;
-      var disc = b * b - 4.0 * a * c;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
-        for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-          let y = o.y + d.y * t;
-          if (y >= 0.0 && y <= 1.0) {
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(o.x + d.x * t, 0.0, o.z + d.z * t); }
-          }
-        }
-      }
-      c = o.x * o.x + o.z * o.z - ri * ri;
-      disc = b * b - 4.0 * a * c;
-      if (disc >= 0.0) {
-        let sq = sqrt(disc);
-        for (var i = 0; i < 2; i = i + 1) {
-          let t = select((-b + sq) / (2.0 * a), (-b - sq) / (2.0 * a), i == 0);
-          let y = o.y + d.y * t;
-          if (y >= 0.0 && y <= 1.0) {
-            if (t > EPS && t < best) { best = t; n = vec3<f32>(-(o.x + d.x * t), 0.0, -(o.z + d.z * t)); }
-          }
-        }
-      }
-    }
-    if (abs(d.y) > PAR) {
-      var t = -o.y / d.y;
-      var x = o.x + d.x * t; var z = o.z + d.z * t;
-      var r2 = x * x + z * z;
-      if (r2 >= ri * ri && r2 <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, -1.0, 0.0); }
-      }
-      t = (1.0 - o.y) / d.y;
-      x = o.x + d.x * t; z = o.z + d.z * t;
-      r2 = x * x + z * z;
-      if (r2 >= ri * ri && r2 <= 1.0) {
-        if (t > EPS && t < best) { best = t; n = vec3<f32>(0.0, 1.0, 0.0); }
-      }
-    }
+    wallHit(o, d, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, &best, &n);
+    wallHit(o, d, ri * ri, 0.0, 1.0, 0.0, 0.0, -1.0, &best, &n);
+    capHit(o, d, 0.0, ri * ri, 1.0, 0.0, 0.0, -1.0, &best, &n);
+    capHit(o, d, 1.0, ri * ri, 1.0, 0.0, 0.0, 1.0, &best, &n);
   }
 
   return Hit(best, n);
@@ -600,16 +458,19 @@ fn tracePrimary(o: vec3<f32>, d: vec3<f32>) -> TraceResult {
       let i = l;
       let t0 = instT(i, 0);
       let t1 = instT(i, 1);
+      let t2 = instT(i, 2);
+      let t3 = instT(i, 3);
+      let t4 = instT(i, 4);
       let t5 = instT(i, 5);
       let t6 = instT(i, 6);
       let kkind = i32(t0.x);
       let p0 = t0.y; let p1 = t0.z; let p2 = t0.w; let p3 = t1.x;
-      let lo = matMulVAt(i, o) + vec3<f32>(t5.w, t6.x, t6.y);
-      let ld = matMulVAt(i, d);
+      let lo = matMulV(t1, t2, t3, o) + vec3<f32>(t5.w, t6.x, t6.y);
+      let ld = matMulV(t1, t2, t3, d);
       let h = intersectShape(kkind, p0, p1, p2, p3, lo, ld);
       if (h.t < best) {
         best = h.t; kind = i;
-        n = normalize(matMulNormalAt(i, h.n));
+        n = normalize(matMulNormal(t3, t4, t5, h.n));
       }
     } else {
       let mnl = vec3<f32>(n0.z, n0.w, n1.x);
@@ -660,12 +521,14 @@ fn shadowed(o: vec3<f32>, d: vec3<f32>) -> f32 {
       let i = l;
       let t0 = instT(i, 0);
       let t1 = instT(i, 1);
+      let t2 = instT(i, 2);
+      let t3 = instT(i, 3);
       let t5 = instT(i, 5);
       let t6 = instT(i, 6);
       let kkind = i32(t0.x);
       let p0 = t0.y; let p1 = t0.z; let p2 = t0.w; let p3 = t1.x;
-      let lo = matMulVAt(i, o) + vec3<f32>(t5.w, t6.x, t6.y);
-      let ld = matMulVAt(i, d);
+      let lo = matMulV(t1, t2, t3, o) + vec3<f32>(t5.w, t6.x, t6.y);
+      let ld = matMulV(t1, t2, t3, d);
       let h = intersectShape(kkind, p0, p1, p2, p3, lo, ld);
       if (h.t < INF) { return 0.0; }
     } else {
