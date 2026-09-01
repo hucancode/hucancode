@@ -213,7 +213,7 @@ const PART_CTL = {
 };
   import { rad, deg } from "$lib/math/scalar.js";
   import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
-  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES, CHOREO_CTL } from "$lib/mech/choreo.js";
+  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
   import {
     createMusic, MUSIC_DEFAULTS, MUSIC_STYLE_NAMES, MUSIC_ROOT_NAMES, MUSIC_SCALE_NAMES, styleOf,
   } from "$lib/audio/music.js";
@@ -330,6 +330,15 @@ const PART_CTL = {
     ["swing", "swing", 0, 0.6, 0.01],
   ];
   const MOVE_CTL = [["beats", "move every (beats)", 1, 4, 1]];
+  // the slider surface over CHOREO_TIMING (seconds / ratios, no unit conversion)
+  const CHOREO_CTL = [
+    ["anticRatio", "anticipation", 0, 0.4, 0.01],
+    ["restRatio", "rest", 0, 0.4, 0.01],
+    ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
+    ["bouncePower", "bounce power", 0, 1, 0.01],
+    ["styleBeats", "style hold", 1, 30, 1],
+    ["pulseChance", "hip pulse", 0, 1, 0.05],
+  ];
   const LAYERS = [
     ["kick", "kick"], ["snare", "snare"], ["hats", "hats"],
     ["bass", "bass"], ["lead", "lead"], ["chord", "chord"],
