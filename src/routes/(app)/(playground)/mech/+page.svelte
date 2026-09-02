@@ -48,6 +48,7 @@ const PART_CTL = {
   let render = $state({
     spin: 0.3, light: 0.6, wire: 0,
     raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0, raycount: 1,
+    timeOfDay: 12,
   });
 
   const RENDER_CTL = [
@@ -56,6 +57,8 @@ const PART_CTL = {
     ["wire", "wireframe", 0, 1],
   ];
   const RT_CTL = [
+    ["spin", "spin", 0, 3, 0.1],
+    ["timeOfDay", "time of day", 0, 24, 0.25],
     ["light", "light angle", 0, 6.28, 0.05],
     ["exposure", "exposure", 0.2, 3, 0.05],
     ["softness", "shadow softness", 0, 0.3, 0.005],
@@ -64,6 +67,13 @@ const PART_CTL = {
   ];
   const renderCtl = $derived(render.raytrace ? RT_CTL : RENDER_CTL);
   const engine = $derived(render.raytrace ? rt : mech);
+  // time-of-day slider shows HH:MM rather than a bare decimal
+  const timeLabel = (h) => {
+    let hh = Math.floor(h) % 24;
+    let mm = Math.round((h - Math.floor(h)) * 60);
+    if (mm === 60) { mm = 0; hh = (hh + 1) % 24; }
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
 
   // raytracer material slots — the dragon's links fold onto one picker entry each
   const MATERIAL_TYPES = ["lambertian", "metal", "dielectric"];
@@ -114,10 +124,11 @@ const PART_CTL = {
 
   const DRAGON_PARTS = DRAGON_KIT.names;
 
-  let view = $state("dragon");             // "joints" | "blocks" | "dragon"
+  let tab = $state("dragon");              // aside panel: "render" | "blocks" | "dragon"
+  let view = $state("dragon");             // scene target: "blocks" | "dragon"
   let dsel = $state("rig");                // "rig" = the whole dragon, else a part
-  let cmodel = $state(null);               // catalog tabs bind their model out
-  let csel = $state("");                   // ...and their selection, for framing
+  let cmodel = $state(null);               // catalog binds its model out
+  let csel = $state("");                   // ...and its selection, for framing
   let dparams = $state(structuredClone(DRAGON_KIT.params));
   let drig = $state(structuredClone(DRAGON_POSE));   // dragon rig pose
   let autoplay = $state(true);                       // fly the loop automatically
@@ -172,6 +183,11 @@ const PART_CTL = {
 
   const rigShown = $derived(view === "dragon" && dsel === "rig");
 
+  // the render tab only swaps the panel; the scene stays on the last non-render tab
+  $effect(() => {
+    if (tab !== "render") view = tab;
+  });
+
   const model = $derived.by(() => {
     if (view !== "dragon") return cmodel;
     if (dsel !== "rig") return DRAGON_KIT.partModel(dsel, seed, $state.snapshot(dparams)[dsel]);
@@ -189,6 +205,7 @@ const PART_CTL = {
       model,
       ...(render.raytrace ? {
         light: render.light,
+        timeOfDay: render.timeOfDay,
         exposure: render.exposure,
         softness: render.softness,
         quality: render.quality,
@@ -259,119 +276,117 @@ const PART_CTL = {
 
 <aside>
   <fieldset>
-    <legend>view</legend>
+    <legend>panel</legend>
     <menu role="group">
-      <li><label><input type="radio" name="mech-view" value="joints" bind:group={view} />joints</label></li>
-      <li><label><input type="radio" name="mech-view" value="blocks" bind:group={view} />blocks</label></li>
-      <li><label><input type="radio" name="mech-view" value="dragon" bind:group={view} />dragon</label></li>
+      <li><label><input type="radio" name="mech-tab" value="render" bind:group={tab} />render</label></li>
+      <li><label><input type="radio" name="mech-tab" value="blocks" bind:group={tab} />blocks</label></li>
+      <li><label><input type="radio" name="mech-tab" value="dragon" bind:group={tab} />dragon</label></li>
     </menu>
   </fieldset>
 
-  <fieldset>
-    <legend>render</legend>
-    <label><input type="checkbox" checked={render.raytrace}
-      onchange={(e) => (render.raytrace = e.currentTarget.checked)} /><span>ray tracing</span></label>
-    {#each renderCtl as [key, label, min, max, step]}
-      {#if min === 0 && max === 1 && step === 1}
-        <label><input type="checkbox" checked={!!render[key]}
-          onchange={(e) => (render[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
-      {:else}
-        <label><span>{label}</span>
-          <input type="range" {min} {max} step={step ?? 0.01} value={render[key]}
-            oninput={(e) => (render[key] = +e.currentTarget.value)} />
-          <output>{render[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
-      {/if}
-    {/each}
-    <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
-  </fieldset>
-  {#if render.raytrace}
-    {#if view === "dragon" && dsel === "rig"}
-      <fieldset>
-        <legend>materials</legend>
-        <ul class="mats">
-          {#each RT_PARTS as [key, label]}
-            <li class="mat-row">
-              <span class="mat-name">{label}</span>
-              <select value={materials[key].type} onchange={(e) => setMatType(key, e.currentTarget.value)}>
-                {#each MATERIAL_TYPES as mt}<option value={mt}>{mt}</option>{/each}
-              </select>
-              {#if materials[key].type === "metal"}
-                <input type="range" min="0" max="0.5" step="0.01" value={materials[key].fuzz}
-                  oninput={(e) => setMatParam(key, "fuzz", +e.currentTarget.value)} title="fuzz" />
-              {:else if materials[key].type === "dielectric"}
-                <input type="range" min="1" max="2.5" step="0.01" value={materials[key].ior}
-                  oninput={(e) => setMatParam(key, "ior", +e.currentTarget.value)} title="ior" />
-              {:else}
-                <input type="range" min="0" max="1" step="0.01" value={materials[key].roughness}
-                  oninput={(e) => setMatParam(key, "roughness", +e.currentTarget.value)} title="roughness" />
-              {/if}
-            </li>
-          {/each}
-        </ul>
-      </fieldset>
-    {/if}
+  {#if tab === "render"}
     <fieldset>
-      <legend>stats</legend>
-      <dl>
-        <dt>primitives</dt><dd>{stats.instances}</dd>
-        <dt>bvh nodes</dt><dd>{stats.nodes}</dd>
-        <dt>bvh build</dt><dd>{stats.buildMs.toFixed(2)} ms</dd>
-        <dt>trace</dt><dd>{stats.traceMs.toFixed(1)} ms</dd>
-        <dt>samples</dt><dd>{stats.samples}</dd>
-        <dt>fps</dt><dd>{stats.fps || 0}</dd>
-      </dl>
+      <legend>render</legend>
+      <label><input type="checkbox" checked={render.raytrace}
+        onchange={(e) => (render.raytrace = e.currentTarget.checked)} /><span>ray tracing</span></label>
+      {#each renderCtl as [key, label, min, max, step]}
+        {#if min === 0 && max === 1 && step === 1}
+          <label><input type="checkbox" checked={!!render[key]}
+            onchange={(e) => (render[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+        {:else}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step={step ?? 0.01} value={render[key]}
+              oninput={(e) => (render[key] = +e.currentTarget.value)} />
+            <output>{key === "timeOfDay" ? timeLabel(render[key]) : render[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+        {/if}
+      {/each}
+      <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>
     </fieldset>
-  {/if}
-
-  {#if view === "dragon"}
-    {#if dsel === "rig"}
+    {#if render.raytrace}
+      {#if view === "dragon" && dsel === "rig"}
+        <fieldset>
+          <legend>materials</legend>
+          <ul class="mats">
+            {#each RT_PARTS as [key, label]}
+              <li class="mat-row">
+                <span class="mat-name">{label}</span>
+                <select value={materials[key].type} onchange={(e) => setMatType(key, e.currentTarget.value)}>
+                  {#each MATERIAL_TYPES as mt}<option value={mt}>{mt}</option>{/each}
+                </select>
+                {#if materials[key].type === "metal"}
+                  <input type="range" min="0" max="0.5" step="0.01" value={materials[key].fuzz}
+                    oninput={(e) => setMatParam(key, "fuzz", +e.currentTarget.value)} title="fuzz" />
+                {:else if materials[key].type === "dielectric"}
+                  <input type="range" min="1" max="2.5" step="0.01" value={materials[key].ior}
+                    oninput={(e) => setMatParam(key, "ior", +e.currentTarget.value)} title="ior" />
+                {:else}
+                  <input type="range" min="0" max="1" step="0.01" value={materials[key].roughness}
+                    oninput={(e) => setMatParam(key, "roughness", +e.currentTarget.value)} title="roughness" />
+                {/if}
+              </li>
+            {/each}
+          </ul>
+        </fieldset>
+      {/if}
       <fieldset>
-        <legend>choreo</legend>
-        <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
-        {#each CHOREO_CTL as [key, label, min, max, step]}
-          {#if min === 0 && max === 1 && step === 1}
-            <label><input type="checkbox" checked={!!drig[key]}
-              onchange={(e) => (drig[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
-          {:else}
-            <label><span>{label}</span>
-              <input type="range" {min} {max} step={step ?? 0.01} value={drig[key]}
-                oninput={(e) => (drig[key] = +e.currentTarget.value)} />
-              <output>{drig[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
-          {/if}
-        {/each}
-      </fieldset>
-      <fieldset>
-        <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
-        {#each rigRows as [key, label, min, max, step]}
-          {#if min === 0 && max === 1 && step === 1}
-            <label><input type="checkbox" checked={!!drig[key]}
-              onchange={(e) => (drig[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
-          {:else}
-            <label><span>{label}</span>
-              <input type="range" {min} {max} step={step ?? 0.01} value={rigVal(key)}
-                oninput={(e) => rigSet(key, e.currentTarget.value)} />
-              <output>{rigVal(key).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
-          {/if}
-        {/each}
-      </fieldset>
-    {:else}
-      <fieldset>
-        <legend>params<button type="button" onclick={resetPart}>reset</button></legend>
-        {#each PART_CTL[dsel] as [key, label, min, max, step]}
-          {#if min === 0 && max === 1 && step === 1}
-            <label><input type="checkbox" checked={!!dparams[dsel][key]}
-              onchange={(e) => (dparams[dsel][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
-          {:else}
-            <label><span>{label}</span>
-              <input type="range" {min} {max} step={step ?? 0.01} value={dparams[dsel][key]}
-                oninput={(e) => (dparams[dsel][key] = +e.currentTarget.value)} />
-              <output>{dparams[dsel][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
-          {/if}
-        {/each}
+        <legend>stats</legend>
+        <dl>
+          <dt>primitives</dt><dd>{stats.instances}</dd>
+          <dt>bvh nodes</dt><dd>{stats.nodes}</dd>
+          <dt>bvh build</dt><dd>{stats.buildMs.toFixed(2)} ms</dd>
+          <dt>trace</dt><dd>{stats.traceMs.toFixed(1)} ms</dd>
+          <dt>samples</dt><dd>{stats.samples}</dd>
+          <dt>fps</dt><dd>{stats.fps || 0}</dd>
+        </dl>
       </fieldset>
     {/if}
+  {:else if tab === "blocks"}
+    <Catalog {seed} bind:model={cmodel} bind:sel={csel} />
+  {:else if dsel === "rig"}
+    <fieldset>
+      <legend>choreo</legend>
+      <label><input type="checkbox" bind:checked={autoplay} /><span>autoplay</span></label>
+      {#each CHOREO_CTL as [key, label, min, max, step]}
+        {#if min === 0 && max === 1 && step === 1}
+          <label><input type="checkbox" checked={!!drig[key]}
+            onchange={(e) => (drig[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+        {:else}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step={step ?? 0.01} value={drig[key]}
+              oninput={(e) => (drig[key] = +e.currentTarget.value)} />
+            <output>{drig[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+        {/if}
+      {/each}
+    </fieldset>
+    <fieldset>
+      <legend>rig<button type="button" onclick={resetDragon}>reset</button></legend>
+      {#each rigRows as [key, label, min, max, step]}
+        {#if min === 0 && max === 1 && step === 1}
+          <label><input type="checkbox" checked={!!drig[key]}
+            onchange={(e) => (drig[key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+        {:else}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step={step ?? 0.01} value={rigVal(key)}
+              oninput={(e) => rigSet(key, e.currentTarget.value)} />
+            <output>{rigVal(key).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+        {/if}
+      {/each}
+    </fieldset>
   {:else}
-    <Catalog {view} {seed} bind:model={cmodel} bind:sel={csel} />
+    <fieldset>
+      <legend>params<button type="button" onclick={resetPart}>reset</button></legend>
+      {#each PART_CTL[dsel] as [key, label, min, max, step]}
+        {#if min === 0 && max === 1 && step === 1}
+          <label><input type="checkbox" checked={!!dparams[dsel][key]}
+            onchange={(e) => (dparams[dsel][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+        {:else}
+          <label><span>{label}</span>
+            <input type="range" {min} {max} step={step ?? 0.01} value={dparams[dsel][key]}
+              oninput={(e) => (dparams[dsel][key] = +e.currentTarget.value)} />
+            <output>{dparams[dsel][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+        {/if}
+      {/each}
+    </fieldset>
   {/if}
 </aside>
 

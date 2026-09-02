@@ -33,10 +33,11 @@ export const NORMAL = new Float32Array(3);
 export function localAabb(kind, p) {
   switch (kind) {
     case SHAPE.box: return [-0.5, -0.5, -0.5, 0.5, 0.5, 0.5];
+    case SHAPE.sphere: return [-1, -1, -1, 1, 1, 1]; // centred, unlike the y>=0 shapes below
     case SHAPE.halfCylinder: return [-1, 0, 0, 1, 1, 1];
     case SHAPE.halfCylinderBox: return [-1, 0, -p[0], 1, 1, 1];
     case SHAPE.quarterCylinder: return [0, 0, 0, 1, 1, 1];
-    default: return [-1, 0, -1, 1, 1, 1]; // cylinder/cone/sphere/hemi/cutHemi/gear
+    default: return [-1, 0, -1, 1, 1, 1]; // cylinder/cone/hemi/cutHemi/gear
   }
 }
 
@@ -231,8 +232,12 @@ export function intersectShape(kind, p, ox, oy, oz, dx, dy, dz) {
         }
       }
       if (Math.abs(dy) > PAR) {
+        // the lip is the shell's cross-section at the cut plane, so it sits at
+        // the radii where each sphere meets y=yc — NOT the y=0 ring radii
+        const rr = Math.sqrt(Math.max(0, ri * ri - yc * yc));  // inner shell r at yc
+        const ro = Math.sqrt(Math.max(0, 1 - yc * yc));        // outer shell r at yc
         let t = (yc - oy) / dy; let x = ox + dx * t, z = oz + dz * t, r2 = x * x + z * z;
-        if (r2 >= ri * ri && r2 <= 1) cand(t, 0, 1, 0);        // lip
+        if (r2 >= rr * rr && r2 <= ro * ro) cand(t, 0, 1, 0);  // lip
         t = -oy / dy; x = ox + dx * t; z = oz + dz * t; r2 = x * x + z * z;
         if (r2 >= ri * ri && r2 <= 1) cand(t, 0, -1, 0);       // base ring
       }

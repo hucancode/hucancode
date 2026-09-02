@@ -93,27 +93,17 @@ const WAVE = (lead, level, n) => [
   { hold: 0.15, pose: { curl: 0 } },
 ];
 
-const VERT_WAVE = (lead, level, n) => [
-  { hold: 0.12, pose: { curl: fist(n) } },
-  { hold: 0.12, pose: { wristBend: n, curl: 0 } },
-  { hold: 0.12, pose: { elbow: n, wristBend: -2 * n, curl: fist(n) } },
-  { hold: 0.12, pose: { [lead]: level - n, elbow: -2 * n, wristBend: n, curl: 0 } },
-  { hold: 0.12, pose: { [lead]: level, elbow: 0, wristBend: 0, curl: 0 } },
-];
-
 const P2 = Math.PI / 2;   // 90°
 const STYLE = {
   sideOut: { raise: { armOut: P2, armTwist: -P2 }, keys: WAVE("armOut", P2, 35 * DEG), loops: 2 },
   front: { raise: { shoulder: P2 }, keys: WAVE("shoulder", P2, 35 * DEG), loops: 2 },
   back: { raise: { shoulder: -P2 }, keys: WAVE("shoulder", -P2, -35 * DEG), loops: 2 },
-  overhead: { raise: { armOut: Math.PI, armTwist: 0 }, keys: VERT_WAVE("shoulder", 0, 20 * DEG), loops: 2 },
 };
 
 const ROUTINES = {
   armWave: { L: STYLE.sideOut, R: STYLE.sideOut },
   frontWave: { L: STYLE.front, R: STYLE.front },
   frontWaveOpposed: { L: STYLE.front, R: STYLE.back },
-  verticalWave: { L: STYLE.overhead, R: STYLE.overhead },
 };
 
 const onSide = (pose, S) =>
@@ -133,7 +123,7 @@ const atlasMontages = (mirror = false) =>
       }]),
   );
 
-const MONTAGE_LABELS = { armWave: "arm wave", frontWave: "front wave", verticalWave: "vertical wave" };
+const MONTAGE_LABELS = { armWave: "arm wave", frontWave: "front wave" };
 const montageLabel = (name) => {
   const base = name.replace(/Opposed$/, "");
   return (MONTAGE_LABELS[base] ?? base) + (base === name ? "" : " opposed");
@@ -213,7 +203,7 @@ const PART_CTL = {
 };
   import { rad, deg } from "$lib/math/scalar.js";
   import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
-  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES, CHOREO_CTL } from "$lib/mech/choreo.js";
+  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
   import {
     createMusic, MUSIC_DEFAULTS, MUSIC_STYLE_NAMES, MUSIC_ROOT_NAMES, MUSIC_SCALE_NAMES, styleOf,
   } from "$lib/audio/music.js";
@@ -253,6 +243,7 @@ const PART_CTL = {
   let render = $state({
     spin: 0.3, light: 0.6, wire: 0,
     raytrace: false, exposure: 1.1, softness: 0.08, quality: 1.0, raycount: 1,
+    timeOfDay: 12,
   });
 
   const RENDER_CTL = [
@@ -261,6 +252,8 @@ const PART_CTL = {
     ["wire", "wireframe", 0, 1],
   ];
   const RT_CTL = [
+    ["spin", "spin", 0, 3, 0.1],
+    ["timeOfDay", "time of day", 0, 24, 0.25],
     ["light", "light angle", 0, 6.28, 0.05],
     ["exposure", "exposure", 0.2, 3, 0.05],
     ["softness", "shadow softness", 0, 0.3, 0.005],
@@ -269,6 +262,13 @@ const PART_CTL = {
   ];
   const renderCtl = $derived(render.raytrace ? RT_CTL : RENDER_CTL);
   const engine = $derived(render.raytrace ? rt : mech);
+  // time-of-day slider shows HH:MM rather than a bare decimal
+  const timeLabel = (h) => {
+    let hh = Math.floor(h) % 24;
+    let mm = Math.round((h - Math.floor(h)) * 60);
+    if (mm === 60) { mm = 0; hh = (hh + 1) % 24; }
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
 
   // pose channels arrive from the rig in RADIANS; sliders speak DEGREES. A few
   // channels are ratios (curl 0..1, hipLevel a rate) and pass through untouched.
@@ -330,6 +330,15 @@ const PART_CTL = {
     ["swing", "swing", 0, 0.6, 0.01],
   ];
   const MOVE_CTL = [["beats", "move every (beats)", 1, 4, 1]];
+  // the slider surface over CHOREO_TIMING (seconds / ratios, no unit conversion)
+  const CHOREO_CTL = [
+    ["anticRatio", "anticipation", 0, 0.4, 0.01],
+    ["restRatio", "rest", 0, 0.4, 0.01],
+    ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
+    ["bouncePower", "bounce power", 0, 1, 0.01],
+    ["styleBeats", "style hold", 1, 30, 1],
+    ["pulseChance", "hip pulse", 0, 1, 0.05],
+  ];
   const LAYERS = [
     ["kick", "kick"], ["snare", "snare"], ["hats", "hats"],
     ["bass", "bass"], ["lead", "lead"], ["chord", "chord"],
@@ -383,6 +392,7 @@ const PART_CTL = {
       model,
       ...(render.raytrace ? {
         light: render.light,
+        timeOfDay: render.timeOfDay,
         exposure: render.exposure,
         softness: render.softness,
         quality: render.quality,
@@ -526,7 +536,7 @@ const PART_CTL = {
             <label><span>{label}</span>
               <input type="range" {min} {max} step={step ?? 0.01} value={render[key]}
                 oninput={(e) => (render[key] = +e.currentTarget.value)} />
-              <output>{render[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+              <output>{key === "timeOfDay" ? timeLabel(render[key]) : render[key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
           {/if}
         {/each}
         <menu><li><button type="button" onclick={shuffle}>new color</button></li></menu>

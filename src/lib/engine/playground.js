@@ -69,7 +69,7 @@ export function createPlayground({
       }
       device.resize(canvas.width, canvas.height);
       if (camSpec) {
-        const { fov = 45, near = 1, far = 2000 } = camSpec;
+        const { fov = Math.PI / 4, near = 1, far = 2000 } = camSpec;
         camera = new Camera(
           fov,
           canvas.clientWidth / canvas.clientHeight,

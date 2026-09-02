@@ -446,7 +446,7 @@ function setConfig({ size, ...patch }) {
 }
 
 const { init, render, destroy } = createPlayground({
-  camera: { fov: 45, near: 1, far: 2000 },
+  camera: { fov: (45 * Math.PI) / 180, near: 1, far: 2000 },
   init(ctx) {
     device = ctx.device;
     shader = device.program(RUBIK, { depth: true, topology: "tri" });

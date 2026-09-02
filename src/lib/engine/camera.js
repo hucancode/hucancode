@@ -1,15 +1,13 @@
 import { Vec3 } from "../math/vec3.js";
 import * as mat4 from "../math/mat4.js";
 
-// Default projection (WebGL clip convention, z in [-1,1]). The engine passes
-// device.perspective instead, which bakes in WebGPU's [0,1] clip-z, so Camera
-// never tracks the convention itself.
-const glProject = (out, fovDeg, aspect, near, far) =>
-  mat4.perspective(out, (fovDeg * Math.PI) / 180, aspect, near, far);
+// Default projection (WebGL clip convention, z in [-1,1])
+const glProject = (out, fov, aspect, near, far) =>
+  mat4.perspective(out, fov, aspect, near, far);
 
 export class Camera {
-  constructor(fovDeg = 45, aspect = 1, near = 1, far = 2000, project = glProject) {
-    this.fov = fovDeg;
+  constructor(fov = Math.PI / 4, aspect = 1, near = 1, far = 2000, project = glProject) {
+    this.fov = fov;
     this.aspect = aspect;
     this.near = near;
     this.far = far;
