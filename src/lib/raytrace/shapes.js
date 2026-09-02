@@ -33,10 +33,11 @@ export const NORMAL = new Float32Array(3);
 export function localAabb(kind, p) {
   switch (kind) {
     case SHAPE.box: return [-0.5, -0.5, -0.5, 0.5, 0.5, 0.5];
+    case SHAPE.sphere: return [-1, -1, -1, 1, 1, 1]; // centred, unlike the y>=0 shapes below
     case SHAPE.halfCylinder: return [-1, 0, 0, 1, 1, 1];
     case SHAPE.halfCylinderBox: return [-1, 0, -p[0], 1, 1, 1];
     case SHAPE.quarterCylinder: return [0, 0, 0, 1, 1, 1];
-    default: return [-1, 0, -1, 1, 1, 1]; // cylinder/cone/sphere/hemi/cutHemi/gear
+    default: return [-1, 0, -1, 1, 1, 1]; // cylinder/cone/hemi/cutHemi/gear
   }
 }
 

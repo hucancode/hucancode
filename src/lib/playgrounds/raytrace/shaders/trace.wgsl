@@ -1,6 +1,8 @@
 // GPU RAY TRACER (raster fullscreen pass). The BVH and per-instance records are
-// packed into rgba32f DATA TEXTURES so the tracer runs on WebGPU and WebGL2 alike
-// (no compute, no storage buffers/textures).
+// packed into DATA TEXTURES so the tracer runs on WebGPU and WebGL2 alike (no
+// compute, no storage buffers/textures). BVH node refs stay rgba32f (indices
+// must be exact); node child boxes are rgba16f (see scene.js for the layout
+// and why both children's boxes live in the parent).
 
 struct Params {
   camOrigin: vec3<f32>,
@@ -21,9 +23,10 @@ struct Params {
 };
 
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var bvhTex: texture_2d<f32>;
-@group(0) @binding(2) var instTex: texture_2d<f32>;
-@group(0) @binding(3) var accPrev: texture_2d<f32>;
+@group(0) @binding(1) var bvhTex: texture_2d<f32>;      // node refs, 1 texel/node (rgba32f, exact ints)
+@group(0) @binding(2) var bvhBoxTex: texture_2d<f32>;   // node child boxes, 3 texels/node (rgba16f)
+@group(0) @binding(3) var instTex: texture_2d<f32>;
+@group(0) @binding(4) var accPrev: texture_2d<f32>;
 
 const EPS = 1e-5;      // world-distance epsilon for a hit
 const PAR = 1e-9;      // near-parallel guard for planar faces
@@ -446,16 +449,13 @@ fn tracePrimary(o: vec3<f32>, d: vec3<f32>) -> TraceResult {
 
   var stack = array<i32, 128>();
   var sp = 0;
-  if (params.root >= 0) { stack[0] = params.root; sp = 1; }
+  if (params.root != -1) { stack[0] = params.root; sp = 1; }
   while (sp > 0) {
     sp = sp - 1;
-    let node = stack[sp];
-    let n0 = textureLoad(bvhTex, vec2<i32>(0, node), 0);
-    let n1 = textureLoad(bvhTex, vec2<i32>(1, node), 0);
-    let l = i32(n0.x);
-    let r = i32(n0.y);
-    if (r < 0) {
-      let i = l;
+    let nref = stack[sp];
+    if (nref < 0) {
+      // leaf, encoded inline in the parent — no bvhTex fetch needed
+      let i = -nref - 2;
       let t0 = instT(i, 0);
       let t1 = instT(i, 1);
       let t2 = instT(i, 2);
@@ -473,20 +473,27 @@ fn tracePrimary(o: vec3<f32>, d: vec3<f32>) -> TraceResult {
         n = normalize(matMulNormal(t3, t4, t5, h.n));
       }
     } else {
-      let mnl = vec3<f32>(n0.z, n0.w, n1.x);
-      let mxl = vec3<f32>(n1.y, n1.z, n1.w);
-      let rn0 = textureLoad(bvhTex, vec2<i32>(0, r), 0);
-      let rn1 = textureLoad(bvhTex, vec2<i32>(1, r), 0);
-      let mnr = vec3<f32>(rn0.z, rn0.w, rn1.x);
-      let mxr = vec3<f32>(rn1.y, rn1.z, rn1.w);
-      let tl = slabEntry(o, d, invD, mnl, mxl);
-      let tr = slabEntry(o, d, invD, mnr, mxr);
+      // internal node: both children's refs + boxes live right here, in one
+      // non-dependent fetch — no follow-up load to learn either child's box
+      let node = nref;
+      let rf = textureLoad(bvhTex, vec2<i32>(0, node), 0);
+      let b0 = textureLoad(bvhBoxTex, vec2<i32>(0, node), 0);
+      let b1 = textureLoad(bvhBoxTex, vec2<i32>(1, node), 0);
+      let b2 = textureLoad(bvhBoxTex, vec2<i32>(2, node), 0);
+      let leftRef = i32(rf.x);
+      let rightRef = i32(rf.y);
+      let lmn = vec3<f32>(b0.x, b0.y, b0.z);
+      let lmx = vec3<f32>(b0.w, b1.x, b1.y);
+      let rmn = vec3<f32>(b1.z, b1.w, b2.x);
+      let rmx = vec3<f32>(b2.y, b2.z, b2.w);
+      let tl = slabEntry(o, d, invD, lmn, lmx);
+      let tr = slabEntry(o, d, invD, rmn, rmx);
       if (tl <= tr) {
-        if (tr < best) { stack[sp] = r; sp = sp + 1; }
-        if (tl < best) { stack[sp] = l; sp = sp + 1; }
+        if (tr < best) { stack[sp] = rightRef; sp = sp + 1; }
+        if (tl < best) { stack[sp] = leftRef; sp = sp + 1; }
       } else {
-        if (tl < best) { stack[sp] = l; sp = sp + 1; }
-        if (tr < best) { stack[sp] = r; sp = sp + 1; }
+        if (tl < best) { stack[sp] = leftRef; sp = sp + 1; }
+        if (tr < best) { stack[sp] = rightRef; sp = sp + 1; }
       }
     }
   }
@@ -509,16 +516,12 @@ fn shadowed(o: vec3<f32>, d: vec3<f32>) -> f32 {
   );
   var stack = array<i32, 128>();
   var sp = 0;
-  if (params.root >= 0) { stack[0] = params.root; sp = 1; }
+  if (params.root != -1) { stack[0] = params.root; sp = 1; }
   while (sp > 0) {
     sp = sp - 1;
-    let node = stack[sp];
-    let n0 = textureLoad(bvhTex, vec2<i32>(0, node), 0);
-    let n1 = textureLoad(bvhTex, vec2<i32>(1, node), 0);
-    let l = i32(n0.x);
-    let r = i32(n0.y);
-    if (r < 0) {
-      let i = l;
+    let nref = stack[sp];
+    if (nref < 0) {
+      let i = -nref - 2;
       let t0 = instT(i, 0);
       let t1 = instT(i, 1);
       let t2 = instT(i, 2);
@@ -532,20 +535,25 @@ fn shadowed(o: vec3<f32>, d: vec3<f32>) -> f32 {
       let h = intersectShape(kkind, p0, p1, p2, p3, lo, ld);
       if (h.t < INF) { return 0.0; }
     } else {
-      let mnl = vec3<f32>(n0.z, n0.w, n1.x);
-      let mxl = vec3<f32>(n1.y, n1.z, n1.w);
-      let rn0 = textureLoad(bvhTex, vec2<i32>(0, r), 0);
-      let rn1 = textureLoad(bvhTex, vec2<i32>(1, r), 0);
-      let mnr = vec3<f32>(rn0.z, rn0.w, rn1.x);
-      let mxr = vec3<f32>(rn1.y, rn1.z, rn1.w);
-      let tl = slabEntry(o, d, invD, mnl, mxl);
-      let tr = slabEntry(o, d, invD, mnr, mxr);
+      let node = nref;
+      let rf = textureLoad(bvhTex, vec2<i32>(0, node), 0);
+      let b0 = textureLoad(bvhBoxTex, vec2<i32>(0, node), 0);
+      let b1 = textureLoad(bvhBoxTex, vec2<i32>(1, node), 0);
+      let b2 = textureLoad(bvhBoxTex, vec2<i32>(2, node), 0);
+      let leftRef = i32(rf.x);
+      let rightRef = i32(rf.y);
+      let lmn = vec3<f32>(b0.x, b0.y, b0.z);
+      let lmx = vec3<f32>(b0.w, b1.x, b1.y);
+      let rmn = vec3<f32>(b1.z, b1.w, b2.x);
+      let rmx = vec3<f32>(b2.y, b2.z, b2.w);
+      let tl = slabEntry(o, d, invD, lmn, lmx);
+      let tr = slabEntry(o, d, invD, rmn, rmx);
       if (tl <= tr) {
-        if (tr < INF) { stack[sp] = r; sp = sp + 1; }
-        if (tl < INF) { stack[sp] = l; sp = sp + 1; }
+        if (tr < INF) { stack[sp] = rightRef; sp = sp + 1; }
+        if (tl < INF) { stack[sp] = leftRef; sp = sp + 1; }
       } else {
-        if (tl < INF) { stack[sp] = l; sp = sp + 1; }
-        if (tr < INF) { stack[sp] = r; sp = sp + 1; }
+        if (tl < INF) { stack[sp] = leftRef; sp = sp + 1; }
+        if (tr < INF) { stack[sp] = rightRef; sp = sp + 1; }
       }
     }
   }

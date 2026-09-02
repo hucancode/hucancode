@@ -2,8 +2,9 @@
 //
 // Same mech model ({ items, shapes }) as the instanced raster playground, but
 // rendered with a raster fullscreen tracer that works on WebGPU and WebGL2:
-// analytic primitive intersection + a per-frame BVH, uploaded as rgba32f DATA
-// TEXTURES, traced `raycount` jittered rays per pixel per frame and accumulated
+// analytic primitive intersection + a per-frame BVH, uploaded as DATA TEXTURES
+// (rgba32f node refs/instances, rgba16f node boxes), traced `raycount`
+// jittered rays per pixel per frame and accumulated
 // into a ping-pong rgba16f render target (alpha = sample count; rgba16f keeps
 // WebGL2 working with only EXT_color_buffer_half_float). A fullscreen
 // composite pass divides by the sample count and applies exposure + filmic tone
@@ -42,6 +43,7 @@ let device = null,
 let traceShader = null,
   compositeShader = null;
 let bvhTex = null,
+  bvhBoxTex = null,
   instTex = null;
 let acc0 = null,
   acc1 = null,
@@ -120,11 +122,18 @@ const { init, render, destroy } = createPlayground({
       topology: "tri",
     });
 
-    // BVH = 2 texels/node, instances = 8 texels/prim (rgba32f data textures)
+    // BVH refs = 1 texel/node (rgba32f, exact ints), BVH boxes = 3 texels/node
+    // (rgba16f, both children's bounds), instances = 8 texels/prim (rgba32f)
     bvhTex = device.texture({
-      width: 2,
+      width: 1,
       height: 1,
       format: "rgba32f",
+      filter: "nearest",
+    });
+    bvhBoxTex = device.texture({
+      width: 3,
+      height: 1,
+      format: "rgba16f",
       filter: "nearest",
     });
     instTex = device.texture({
@@ -156,7 +165,8 @@ const { init, render, destroy } = createPlayground({
     gpu = buildGpuScene(null, { materials, partKey });
     lastSceneModel = null;
     lastMaterials = materials;
-    bvhTex.write(gpu.bvhData, 2, Math.max(1, gpu.nodeCount));
+    bvhTex.write(gpu.bvhRefData, 1, Math.max(1, gpu.nodeCount));
+    bvhBoxTex.write(gpu.bvhBoxData, 3, Math.max(1, gpu.nodeCount));
     instTex.write(gpu.instData, 8, Math.max(1, gpu.n));
 
     lastFpsAt = performance.now();
@@ -291,7 +301,7 @@ const { init, render, destroy } = createPlayground({
               height: H,
               root: gpu.root,
             },
-            bindings: { bvhTex, instTex, accPrev: readTex },
+            bindings: { bvhTex, bvhBoxTex, instTex, accPrev: readTex },
           });
         },
       );
@@ -326,6 +336,8 @@ const { init, render, destroy } = createPlayground({
     orbit = null;
     bvhTex?.destroy();
     bvhTex = null;
+    bvhBoxTex?.destroy();
+    bvhBoxTex = null;
     instTex?.destroy();
     instTex = null;
     acc0?.destroy();
