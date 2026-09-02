@@ -1,4 +1,4 @@
-import { m3Inv, m3InvT, m3MulV } from "../math/mat3.js";
+import { m3Inv, m3MulV, m3T } from "../math/mat3.js";
 import { SHAPE, localAabb } from "./shapes.js";
 
 export const MAT = { LAMBERTIAN: 0, METAL: 1, DIELECTRIC: 2 };
@@ -49,7 +49,7 @@ export function buildScene(model, opts = {}) {
 
     const inv = m3Inv(it.m);
     for (let j = 0; j < 9; j++) IM[9 * ci + j] = inv[j];
-    const invT = m3InvT(it.m);
+    const invT = m3T(inv);
     for (let j = 0; j < 9; j++) IMT[9 * ci + j] = invT[j];
     const itv = m3MulV(inv, [-it.t[0], -it.t[1], -it.t[2]]);
     IinvT[3 * ci] = itv[0]; IinvT[3 * ci + 1] = itv[1]; IinvT[3 * ci + 2] = itv[2];
@@ -64,27 +64,26 @@ export function buildScene(model, opts = {}) {
     IMat[ci] = mat.type;
     IMatP[ci] = mat.param;
 
-    // world AABB = the 8 corners of the unit AABB through m,t
+    // world AABB via Arvo's affine-transform formula: for an affine map the
+    // transformed box's half-extent along each world axis is the |M| row
+    // dotted with the local half-extent — exactly the same tight AABB as
+    // transforming all 8 corners and taking min/max, for one matrix-vector
+    // multiply instead of eight.
     const la = localAabb(kind, [IP0[ci], IP1[ci], IP2[ci], IP3[ci]]);
     const m = it.m, t = it.t;
-    let mnx = Infinity, mny = Infinity, mnz = Infinity;
-    let mxx = -Infinity, mxy = -Infinity, mxz = -Infinity;
-    for (let ci8 = 0; ci8 < 8; ci8++) {
-      const cx = ci8 & 1 ? la[3] : la[0];
-      const cy = ci8 & 2 ? la[4] : la[1];
-      const cz = ci8 & 4 ? la[5] : la[2];
-      const wx = m[0] * cx + m[1] * cy + m[2] * cz + t[0];
-      const wy = m[3] * cx + m[4] * cy + m[5] * cz + t[1];
-      const wz = m[6] * cx + m[7] * cy + m[8] * cz + t[2];
-      if (wx < mnx) mnx = wx; if (wx > mxx) mxx = wx;
-      if (wy < mny) mny = wy; if (wy > mxy) mxy = wy;
-      if (wz < mnz) mnz = wz; if (wz > mxz) mxz = wz;
-    }
-    aabb[6 * ci] = mnx; aabb[6 * ci + 1] = mny; aabb[6 * ci + 2] = mnz;
-    aabb[6 * ci + 3] = mxx; aabb[6 * ci + 4] = mxy; aabb[6 * ci + 5] = mxz;
-    centroid[3 * ci] = (mnx + mxx) / 2;
-    centroid[3 * ci + 1] = (mny + mxy) / 2;
-    centroid[3 * ci + 2] = (mnz + mxz) / 2;
+    const lcx = (la[0] + la[3]) * 0.5, lcy = (la[1] + la[4]) * 0.5, lcz = (la[2] + la[5]) * 0.5;
+    const lex = (la[3] - la[0]) * 0.5, ley = (la[4] - la[1]) * 0.5, lez = (la[5] - la[2]) * 0.5;
+    const wcx = m[0] * lcx + m[1] * lcy + m[2] * lcz + t[0];
+    const wcy = m[3] * lcx + m[4] * lcy + m[5] * lcz + t[1];
+    const wcz = m[6] * lcx + m[7] * lcy + m[8] * lcz + t[2];
+    const wex = Math.abs(m[0]) * lex + Math.abs(m[1]) * ley + Math.abs(m[2]) * lez;
+    const wey = Math.abs(m[3]) * lex + Math.abs(m[4]) * ley + Math.abs(m[5]) * lez;
+    const wez = Math.abs(m[6]) * lex + Math.abs(m[7]) * ley + Math.abs(m[8]) * lez;
+    aabb[6 * ci] = wcx - wex; aabb[6 * ci + 1] = wcy - wey; aabb[6 * ci + 2] = wcz - wez;
+    aabb[6 * ci + 3] = wcx + wex; aabb[6 * ci + 4] = wcy + wey; aabb[6 * ci + 5] = wcz + wez;
+    centroid[3 * ci] = wcx;
+    centroid[3 * ci + 1] = wcy;
+    centroid[3 * ci + 2] = wcz;
   }
 
   const bvh = buildBVH(n, aabb, centroid);
