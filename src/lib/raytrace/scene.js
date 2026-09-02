@@ -184,6 +184,40 @@ export function buildGpuScene(model, opts = {}) {
 // GPU traversal step never needs a second, data-dependent texture fetch just
 // to learn a child's box or discover that it's a leaf.
 
+function swap(a, i, j) { const t = a[i]; a[i] = a[j]; a[j] = t; }
+
+// Hoare partition of order[lo,hi) by centroid[3*idx+axis], pivot = median of
+// the first/mid/last elements (guards against the common sorted / reverse-
+// sorted inputs that make a fixed-index pivot go quadratic). Returns j such
+// that centroid(order[i]) <= pivot for i in [lo,j] and >= pivot for i in [j+1,hi).
+function partitionByCentroid(order, lo, hi, centroid, axis) {
+  const key = (idx) => centroid[3 * idx + axis];
+  const mid = (lo + hi - 1) >> 1;
+  if (key(order[mid]) < key(order[lo])) swap(order, lo, mid);
+  if (key(order[hi - 1]) < key(order[lo])) swap(order, lo, hi - 1);
+  if (key(order[hi - 1]) < key(order[mid])) swap(order, mid, hi - 1);
+  const pivot = key(order[mid]);
+  let i = lo - 1, j = hi;
+  for (;;) {
+    do { i++; } while (key(order[i]) < pivot);
+    do { j--; } while (key(order[j]) > pivot);
+    if (i >= j) return j;
+    swap(order, i, j);
+  }
+}
+
+// partitions order[lo,hi) in place so order[k] holds the element a full sort
+// by centroid[axis] would put there (median for our even split) — O(n)
+// average instead of the O(n log n) a full sort costs, which is all a
+// median-split BVH build ever needed order for in the first place.
+function selectMedian(order, lo, hi, k, centroid, axis) {
+  while (hi - lo > 1) {
+    const j = partitionByCentroid(order, lo, hi, centroid, axis);
+    if (k <= j) hi = j + 1;
+    else lo = j + 1;
+  }
+}
+
 function buildBVH(n, aabb, centroid) {
   if (n === 0) {
     const empty = new Float32Array(0);
@@ -230,7 +264,7 @@ function buildBVH(n, aabb, centroid) {
     else if (ez > ex) axis = 2;
 
     const mid = (lo + hi) >> 1;
-    order.subarray(lo, hi).sort((a, b) => centroid[3 * a + axis] - centroid[3 * b + axis]);
+    selectMedian(order, lo, hi, mid, centroid, axis);
     const L = build(lo, mid);
     const R = build(mid, hi);
 
