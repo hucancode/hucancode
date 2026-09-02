@@ -10,6 +10,12 @@ struct Params {
   camRight: vec3<f32>,
   camUp: vec3<f32>,
   lightDir: vec3<f32>,
+  lightColor: vec3<f32>,
+  zenith: vec3<f32>,
+  horizon: vec3<f32>,
+  sunGlow: vec3<f32>,
+  ambSky: vec3<f32>,
+  ambGround: vec3<f32>,
   tanHalf: f32,
   aspect: f32,
   softness: f32,
@@ -32,13 +38,9 @@ const EPS = 1e-5;      // world-distance epsilon for a hit
 const PAR = 1e-9;      // near-parallel guard for planar faces
 const INF = 1e30;
 
-// lighting / sky palette (linear)
-const LIGHT_COLOR = vec3<f32>(1.35, 1.25, 1.05);
-const AMB_SKY = vec3<f32>(0.55, 0.60, 0.72);
-const AMB_GROUND = vec3<f32>(0.28, 0.26, 0.24);
-const SUN_GLOW = vec3<f32>(1.5, 1.15, 0.7);
-const ZENITH = vec3<f32>(0.14, 0.20, 0.33);
-const HORIZON = vec3<f32>(0.52, 0.56, 0.66);
+// lighting / sky palette now arrive as uniforms — the time-of-day slider on the
+// host drives the sun elevation and this whole palette (see skyPalette in
+// playgrounds/raytrace/index.js).
 const SHADOW_EPS = 1e-3;
 
 // material types (must match MAT in src/lib/raytrace/scene.js)
@@ -562,10 +564,10 @@ fn shadowed(o: vec3<f32>, d: vec3<f32>) -> f32 {
 
 fn skyColor(rd: vec3<f32>) -> vec3<f32> {
   let t = rd.y * 0.5 + 0.5;
-  var col = ZENITH * t + HORIZON * (1.0 - t);
+  var col = params.zenith * t + params.horizon * (1.0 - t);
   let dd = max(0.0, dot(rd, params.lightDir));
   let glow = pow(dd, 24.0) * 0.9;
-  col = col + SUN_GLOW * glow;
+  col = col + params.sunGlow * glow;
   return col;
 }
 
@@ -663,12 +665,12 @@ fn shadeHit(tr0: TraceResult, ro: vec3<f32>, rd: vec3<f32>, px: i32, py: i32) ->
       let on = A + B * max(cosAz, 0.0) * sinAlphaTanBeta;
 
       let hemi = nf.y * 0.5 + 0.5;
-      let amb = AMB_GROUND + (AMB_SKY - AMB_GROUND) * hemi;
+      let amb = params.ambGround + (params.ambSky - params.ambGround) * hemi;
       let diff = on * nl * shadow;
-      var c = albedo * (amb + LIGHT_COLOR * diff);
+      var c = albedo * (amb + params.lightColor * diff);
       if (tr.kind == -1) {
         let fog = 1.0 - exp(-tr.t * 0.018);
-        c = c + (HORIZON - c) * fog;
+        c = c + (params.horizon - c) * fog;
       }
       col = col + through * c;
       break;

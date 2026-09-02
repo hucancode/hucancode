@@ -30,7 +30,9 @@ const MAX_SAMPLES = 128; // freeze the progressive refine once converged
 const VIEW0 = { yaw: 0.7, pitch: 0.25, dist: 12 };
 
 const config = {
+  spin: 0.3, // auto-rotate yaw while not dragging (rad/s)
   light: 0.6, // light azimuth
+  timeOfDay: 12, // 0..24 h — sun elevation + sky palette
   exposure: 1.4,
   quality: 0.6, // internal resolution scale (client pixels, dpr-independent)
   softness: 0.08, // area-light angular radius (rad) — width of the penumbra
@@ -53,7 +55,7 @@ let acc0 = null,
 let model = null;
 let materials = {};
 let partKey = (group) => (group ? group.slice(0, group.indexOf(":")) : "");
-let gpu = null; // { scene, bvhData, instData, root, nodeCount, n }
+let gpu = null; // { scene, bvhRefData, bvhBoxData, instData, root, nodeCount, n }
 let lastSceneModel = null;
 let lastMaterials = null;
 let lookY = 0;
@@ -74,7 +76,9 @@ let buildMs = 0,
   traceMs = 0;
 
 function setConfig(patch) {
+  if ("spin" in patch) config.spin = patch.spin;
   if ("light" in patch) config.light = patch.light;
+  if ("timeOfDay" in patch) config.timeOfDay = patch.timeOfDay;
   if ("exposure" in patch) config.exposure = patch.exposure;
   if ("quality" in patch) config.quality = patch.quality;
   if ("softness" in patch) config.softness = patch.softness;
@@ -107,6 +111,58 @@ function getStats() {
     samples,
     raycount: config.raycount,
   };
+}
+
+// ---- time-of-day sky --------------------------------------------------------
+// `timeOfDay` (0..24 h) drives the sun's elevation and the whole sky palette:
+// cool moonlit navy at night, warm orange at dawn/dusk, neutral blue at noon.
+// Keyframes interpolate linearly; the sun rides a solar arc capped at 70° and,
+// below the horizon, the light hands off to a moon on the opposite side.
+const DEG = Math.PI / 180;
+const SUN_MAX_ELEV = 70 * DEG;
+
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+
+const SKY_KEY = [
+  { t: 0,  zenith: [0.02, 0.03, 0.08], horizon: [0.09, 0.10, 0.17], glow: [0.55, 0.58, 0.75], ambSky: [0.05, 0.055, 0.11], ambGround: [0.04, 0.04, 0.055], light: [0.30, 0.33, 0.45] },
+  { t: 6,  zenith: [0.30, 0.24, 0.40], horizon: [1.05, 0.55, 0.25], glow: [2.20, 1.00, 0.40], ambSky: [0.60, 0.45, 0.42], ambGround: [0.28, 0.21, 0.15], light: [1.80, 1.05, 0.50] },
+  { t: 12, zenith: [0.14, 0.20, 0.33], horizon: [0.52, 0.56, 0.66], glow: [1.50, 1.15, 0.70], ambSky: [0.55, 0.60, 0.72], ambGround: [0.28, 0.26, 0.24], light: [1.35, 1.25, 1.05] },
+  { t: 18, zenith: [0.30, 0.24, 0.40], horizon: [1.05, 0.55, 0.25], glow: [2.20, 1.00, 0.40], ambSky: [0.60, 0.45, 0.42], ambGround: [0.28, 0.21, 0.15], light: [1.80, 1.05, 0.50] },
+  { t: 24, zenith: [0.02, 0.03, 0.08], horizon: [0.09, 0.10, 0.17], glow: [0.55, 0.58, 0.75], ambSky: [0.05, 0.055, 0.11], ambGround: [0.04, 0.04, 0.055], light: [0.30, 0.33, 0.45] },
+];
+
+function skyPalette(tod) {
+  const t = ((tod % 24) + 24) % 24;
+  let a = SKY_KEY[0];
+  let b = SKY_KEY[SKY_KEY.length - 1];
+  for (let i = 0; i < SKY_KEY.length - 1; i++) {
+    if (t >= SKY_KEY[i].t && t <= SKY_KEY[i + 1].t) {
+      a = SKY_KEY[i];
+      b = SKY_KEY[i + 1];
+      break;
+    }
+  }
+  const f = (t - a.t) / (b.t - a.t || 1);
+  return {
+    zenith: lerp3(a.zenith, b.zenith, f),
+    horizon: lerp3(a.horizon, b.horizon, f),
+    glow: lerp3(a.glow, b.glow, f),
+    ambSky: lerp3(a.ambSky, b.ambSky, f),
+    ambGround: lerp3(a.ambGround, b.ambGround, f),
+    light: lerp3(a.light, b.light, f),
+  };
+}
+
+// unit light direction at `tod` hours, `azimuth` rad. Below the horizon the sun
+// hands off to a moon: same mirrored elevation, opposite azimuth.
+function lightDirection(tod, azimuth) {
+  const el = Math.sin(((tod - 6) / 12) * Math.PI) * SUN_MAX_ELEV;
+  const y = Math.sin(el);
+  const h = Math.cos(el);
+  if (y >= 0) return [Math.cos(azimuth) * h, y, Math.sin(azimuth) * h];
+  const maz = azimuth + Math.PI;
+  return [Math.cos(maz) * h, -y, Math.sin(maz) * h];
 }
 
 const { init, render, destroy } = createPlayground({
@@ -172,6 +228,8 @@ const { init, render, destroy } = createPlayground({
     lastFpsAt = performance.now();
   },
   frame(dt) {
+    // turntable spin while the pointer is up (matches the raster renderer)
+    if (!orbit.dragging) orbit.yaw += config.spin * dt * 0.5;
     // camera basis (pinhole), from the orbit state
     const cp = Math.cos(orbit.pitch);
     const ox = orbit.dist * cp * Math.sin(orbit.yaw);
@@ -199,11 +257,9 @@ const { init, render, destroy } = createPlayground({
     const chh = canvas.clientHeight || canvas.height;
     const aspect = cw / chh;
 
-    // light: directional sun with an angular radius (area light)
-    const la = config.light;
-    const lx = Math.cos(la),
-      ly = 1.3,
-      lz = Math.sin(la);
+    // light: time-of-day sun/moon direction + sky palette keyed off the slider
+    const pal = skyPalette(config.timeOfDay);
+    const [lx, ly, lz] = lightDirection(config.timeOfDay, config.light);
     const ll = 1 / Math.hypot(lx, ly, lz);
 
     // rebuild the BVH only when the model actually changed (i.e. every frame
@@ -216,7 +272,8 @@ const { init, render, destroy } = createPlayground({
       buildMs = performance.now() - t0;
       lastSceneModel = model;
       lastMaterials = materials;
-      bvhTex.write(gpu.bvhData, 2, Math.max(1, gpu.nodeCount));
+      bvhTex.write(gpu.bvhRefData, 1, Math.max(1, gpu.nodeCount));
+      bvhBoxTex.write(gpu.bvhBoxData, 3, Math.max(1, gpu.nodeCount));
       instTex.write(gpu.instData, 8, Math.max(1, gpu.n));
     }
 
@@ -263,6 +320,8 @@ const { init, render, destroy } = createPlayground({
       "|" +
       config.light.toFixed(3) +
       "|" +
+      config.timeOfDay.toFixed(3) +
+      "|" +
       config.softness.toFixed(4) +
       "|" +
       config.quality.toFixed(3);
@@ -290,6 +349,12 @@ const { init, render, destroy } = createPlayground({
               camRight: [rx, ry, rz],
               camUp: [ux, uy, uz],
               lightDir: [lx * ll, ly * ll, lz * ll],
+              lightColor: pal.light,
+              zenith: pal.zenith,
+              horizon: pal.horizon,
+              sunGlow: pal.glow,
+              ambSky: pal.ambSky,
+              ambGround: pal.ambGround,
               tanHalf: TAN_HALF,
               aspect,
               softness: config.softness,

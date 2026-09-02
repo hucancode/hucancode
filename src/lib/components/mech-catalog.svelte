@@ -1,9 +1,9 @@
 <script>
-  // The catalog panels both mech playgrounds share: the JOINT blocks and the
-  // PRIMITIVE blocks they are built from. Neither depends on a rig, so the
-  // dragon and atlas pages mount the same component and only differ in their
-  // own rig tab. `view` picks which panel shows; `model` and `sel` bind back
-  // out so the page can frame the scene.
+  // The merged catalog panel the mech playground's "blocks" tab mounts: the
+  // JOINT blocks and the PRIMITIVE blocks they are built from, stacked in one
+  // panel. Neither depends on a rig, so it stays self-contained; the active
+  // list is whichever one the user last picked from, and that drives `model`
+  // and `sel` so the page can frame the scene.
   import {
     JOINT_NAMES, JOINT_PARAMS, JOINT_POSE, jointCatalogModel,
   } from "$lib/mech/joint-catalog.js";
@@ -84,7 +84,7 @@ const PRIM_CTL = {
 };
   import { rad, deg } from "$lib/math/scalar.js";
 
-  let { view, seed = 1, model = $bindable(null), sel = $bindable("") } = $props();
+  let { seed = 1, model = $bindable(null), sel = $bindable("") } = $props();
 
   const JOINTS = JOINT_NAMES;
 
@@ -94,7 +94,8 @@ const PRIM_CTL = {
   let jpose = $state(structuredClone(JOINT_POSE));      // DOF channels, radians
   let pparams = $state(structuredClone(PRIM_PARAMS));
 
-
+  // which catalog list is driving the scene: the one the user picked from last
+  let active = $state("joints");
 
   function resetJoint() {
     jparams[selJoint] = structuredClone(JOINT_PARAMS[selJoint]);
@@ -112,70 +113,70 @@ const PRIM_CTL = {
   const poseOut = (key) => (poseIsDeg ? deg(jpose[selJoint][key]) : jpose[selJoint][key]);
   const poseIn = (key, v) => { jpose[selJoint][key] = poseIsDeg ? rad(+v) : +v; };
 
-  $effect(() => { sel = view === "blocks" ? selPrim : selJoint; });
+  $effect(() => { sel = active === "blocks" ? selPrim : selJoint; });
   $effect(() => {
-    model = view === "blocks"
+    model = active === "blocks"
       ? primitiveModel(selPrim, $state.snapshot(pparams)[selPrim], seed)
       : jointCatalogModel(selJoint, seed, $state.snapshot(jparams)[selJoint], $state.snapshot(jpose)[selJoint]);
   });
 </script>
 
-{#if view === "blocks"}
-  <fieldset>
-    <legend>primitives</legend>
-    <ul>
-      {#each PRIM_NAMES as pn}
-        <li><label><input type="radio" name="mech-prim" value={pn} bind:group={selPrim} />{PRIM_LABELS[pn] ?? pn}</label></li>
-      {/each}
-    </ul>
-  </fieldset>
-  <fieldset>
-    <legend>{PRIM_LABELS[selPrim] ?? selPrim} params <button type="button" onclick={resetPrim}>reset</button></legend>
-    {#each PRIM_CTL[selPrim] as [key, label, min, max, step]}
-      {#if min === 0 && max === 1 && step === 1}
-        <label><input type="checkbox" checked={!!pparams[selPrim][key]}
-          onchange={(e) => (pparams[selPrim][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
-      {:else}
-        <label><span>{label}</span>
-          <input type="range" {min} {max} step={step ?? 0.01} value={pparams[selPrim][key]}
-            oninput={(e) => (pparams[selPrim][key] = +e.currentTarget.value)} />
-          <output>{pparams[selPrim][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
-      {/if}
+<fieldset>
+  <legend>joints</legend>
+  <ul>
+    {#each JOINTS as jn}
+      <li><label><input type="radio" name="mech-joint" value={jn} bind:group={selJoint}
+        onchange={() => (active = "joints")} />{JOINT_LABELS[jn] ?? jn}</label></li>
     {/each}
-  </fieldset>
-{:else}
-  <fieldset>
-    <legend>joints</legend>
-    <ul>
-      {#each JOINTS as jn}
-        <li><label><input type="radio" name="mech-joint" value={jn} bind:group={selJoint} />{JOINT_LABELS[jn] ?? jn}</label></li>
-      {/each}
-    </ul>
-  </fieldset>
-  <fieldset>
-    <legend>params<button type="button" onclick={resetJoint}>reset</button></legend>
-    {#each JOINT_CTL[selJoint] as [key, label, min, max, step]}
-      {#if min === 0 && max === 1 && step === 1}
-        <label><input type="checkbox" checked={!!jparams[selJoint][key]}
-          onchange={(e) => (jparams[selJoint][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
-      {:else}
-        <label><span>{label}</span>
-          <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selJoint][key]}
-            oninput={(e) => (jparams[selJoint][key] = +e.currentTarget.value)} />
-          <output>{jparams[selJoint][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
-      {/if}
+  </ul>
+</fieldset>
+<fieldset>
+  <legend>params<button type="button" onclick={resetJoint}>reset</button></legend>
+  {#each JOINT_CTL[selJoint] as [key, label, min, max, step]}
+    {#if min === 0 && max === 1 && step === 1}
+      <label><input type="checkbox" checked={!!jparams[selJoint][key]}
+        onchange={(e) => (jparams[selJoint][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+    {:else}
+      <label><span>{label}</span>
+        <input type="range" {min} {max} step={step ?? 0.01} value={jparams[selJoint][key]}
+          oninput={(e) => (jparams[selJoint][key] = +e.currentTarget.value)} />
+        <output>{jparams[selJoint][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+    {/if}
+  {/each}
+  <hr />
+  {#each poseRows as [key, label, min, max, step]}
+    {#if min === 0 && max === 1 && step === 1}
+      <label><input type="checkbox" checked={!!jpose[selJoint][key]}
+        onchange={(e) => (jpose[selJoint][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+    {:else}
+      <label><span>{label}</span>
+        <input type="range" {min} {max} step={step ?? 0.01} value={poseOut(key)}
+          oninput={(e) => poseIn(key, e.currentTarget.value)} />
+        <output>{poseOut(key).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+    {/if}
+  {/each}
+</fieldset>
+
+<fieldset>
+  <legend>primitives</legend>
+  <ul>
+    {#each PRIM_NAMES as pn}
+      <li><label><input type="radio" name="mech-prim" value={pn} bind:group={selPrim}
+        onchange={() => (active = "blocks")} />{PRIM_LABELS[pn] ?? pn}</label></li>
     {/each}
-    <hr />
-    {#each poseRows as [key, label, min, max, step]}
-      {#if min === 0 && max === 1 && step === 1}
-        <label><input type="checkbox" checked={!!jpose[selJoint][key]}
-          onchange={(e) => (jpose[selJoint][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
-      {:else}
-        <label><span>{label}</span>
-          <input type="range" {min} {max} step={step ?? 0.01} value={poseOut(key)}
-            oninput={(e) => poseIn(key, e.currentTarget.value)} />
-          <output>{poseOut(key).toFixed(step && step >= 1 ? 0 : 2)}</output></label>
-      {/if}
-    {/each}
-  </fieldset>
-{/if}
+  </ul>
+</fieldset>
+<fieldset>
+  <legend>params<button type="button" onclick={resetPrim}>reset</button></legend>
+  {#each PRIM_CTL[selPrim] as [key, label, min, max, step]}
+    {#if min === 0 && max === 1 && step === 1}
+      <label><input type="checkbox" checked={!!pparams[selPrim][key]}
+        onchange={(e) => (pparams[selPrim][key] = e.currentTarget.checked ? 1 : 0)} /><span>{label}</span></label>
+    {:else}
+      <label><span>{label}</span>
+        <input type="range" {min} {max} step={step ?? 0.01} value={pparams[selPrim][key]}
+          oninput={(e) => (pparams[selPrim][key] = +e.currentTarget.value)} />
+        <output>{pparams[selPrim][key].toFixed(step && step >= 1 ? 0 : 2)}</output></label>
+    {/if}
+  {/each}
+</fieldset>
