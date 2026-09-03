@@ -94,12 +94,14 @@
       </p>
       <FTCPlayground />
     </div>
-  </section>
-
-  <footer class="closing">
     <p>
       The derivative measures change, the differential predicts locally, and the integral accumulates — and the
       Fundamental Theorem ties the two ends together: <Tex tex="F'(x) = f(x)" />.
     </p>
+  </section>
+
+  <footer class="closing">
+    That was my humble introduction to calculus. I know school can make it looks daunting, I believe getting back to
+    the very basic and see the tool as something works for us will give us some motivation to learn it better. Happy learning!
   </footer>
 </article>

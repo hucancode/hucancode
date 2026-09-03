@@ -14,10 +14,8 @@
 
   const W = 720;
   const H = 520;
-  const STRIP_H = 118;
-  const MAIN_H = H - STRIP_H;
   const WORLD_Y = 3.4;
-  const SCALE = MAIN_H / (2 * WORLD_Y);
+  const SCALE = H / (2 * WORLD_Y);
 
   let posA = $state([-1.5, 0.3]);
   let posB = $state([1.0, -0.2]);
@@ -47,8 +45,8 @@
 
   const worldXHalf = (W / 2) / SCALE;
   const mainToX = (wx) => W / 2 + wx * SCALE;
-  const mainToY = (wy) => MAIN_H / 2 - wy * SCALE;
-  const toWorld = (sx, sy) => [(sx - W / 2) / SCALE, (MAIN_H / 2 - sy) / SCALE];
+  const mainToY = (wy) => H / 2 - wy * SCALE;
+  const toWorld = (sx, sy) => [(sx - W / 2) / SCALE, (H / 2 - sy) / SCALE];
 
   const fmt = (n) => (Math.abs(n) < 1e-9 ? "0" : n.toFixed(3));
 
@@ -112,68 +110,6 @@
     }
   }
 
-  function drawStrip() {
-    const ink = themeInk();
-    const left = 26;
-    const right = W - 26;
-    const top = MAIN_H;
-    const axisY = top + 62;
-
-    // divider
-    ctx.strokeStyle = "rgba(128,128,150,0.25)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, top);
-    ctx.lineTo(W, top);
-    ctx.stroke();
-
-    const pa = sel.pa;
-    const pb = sel.pb;
-    const lo = Math.min(pa.min, pb.min);
-    const hi = Math.max(pa.max, pb.max);
-    const pad = Math.max((hi - lo) * 0.18, 0.4);
-    const d0 = lo - pad;
-    const d1 = hi + pad;
-    const px = (s) => left + ((s - d0) / (d1 - d0)) * (right - left);
-
-    // number line
-    ctx.strokeStyle = "rgba(128,128,150,0.5)";
-    ctx.lineWidth = 1.25;
-    ctx.beginPath();
-    ctx.moveTo(left, axisY);
-    ctx.lineTo(right, axisY);
-    ctx.stroke();
-
-    // interval bars
-    const bar = (x0, x1, y, color) => {
-      ctx.fillStyle = color;
-      roundRect(x0, y, x1 - x0, 13, 3);
-      ctx.fill();
-    };
-    bar(px(pa.min), px(pa.max), axisY - 21, "rgba(37,99,235,0.85)");
-    bar(px(pb.min), px(pb.max), axisY + 4, "rgba(245,158,11,0.85)");
-
-    // overlap (green) or gap (red)
-    const o0 = Math.max(pa.min, pb.min);
-    const o1 = Math.min(pa.max, pb.max);
-    ctx.fillStyle = o1 >= o0 ? "rgba(22,163,74,0.95)" : "rgba(220,38,38,0.9)";
-    const ox0 = px(Math.min(o0, o1));
-    const ox1 = px(Math.max(o0, o1));
-    roundRect(ox0, axisY - 4, ox1 - ox0, 8, 2);
-    ctx.fill();
-
-    // tick labels
-    ctx.fillStyle = ink;
-    ctx.font = "11px ui-monospace, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(fmt(pa.min), px(pa.min), axisY + 16);
-    ctx.fillText(fmt(pa.max), px(pa.max), axisY + 16);
-    ctx.textAlign = "left";
-    ctx.fillText("A", px(pa.max) + 6, axisY - 19);
-    ctx.fillText("B", px(pb.max) + 6, axisY + 6);
-    ctx.textAlign = "start";
-  }
-
   function roundRect(x, y, w, h, r) {
     const rr = Math.max(0, Math.min(r, Math.abs(w) / 2, h / 2));
     ctx.beginPath();
@@ -201,7 +137,7 @@
     for (let x = Math.ceil(-6); x <= 6; x++) {
       ctx.beginPath();
       ctx.moveTo(mainToX(x), 0);
-      ctx.lineTo(mainToX(x), MAIN_H);
+      ctx.lineTo(mainToX(x), H);
       ctx.stroke();
     }
     for (let y = -3; y <= 3; y++) {
@@ -311,7 +247,7 @@
     ctx.fillText("B", mainToX(fb.center[0]), mainToY(fb.center[1]) - 16);
     ctx.textAlign = "start";
 
-    drawStrip();
+    //drawStrip();
   }
 
   function hitTest(wx, wy) {
@@ -335,7 +271,7 @@
     const rect = canvas.getBoundingClientRect();
     const sx = ((e.clientX - rect.left) / rect.width) * W;
     const sy = ((e.clientY - rect.top) / rect.height) * H;
-    if (sy > MAIN_H) return; // projection strip is not draggable
+    if (sy > H) return; // projection strip is not draggable
     const [wx, wy] = toWorld(sx, sy);
     drag = hitTest(wx, wy);
     if (drag) canvas.setPointerCapture(e.pointerId);

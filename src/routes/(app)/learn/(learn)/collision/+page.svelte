@@ -54,22 +54,30 @@
       <li><b>box</b> — half extents and an orientation.</li>
       <li><b>cylinder</b> — a radius, a height, and an axis orientation.</li>
     </ul>
+
+    <p class="concept">
+      I will use some common notation through out the article. A point is <Tex tex="p" /> (or
+      <Tex tex="c" /> for center), radius is <Tex tex="r" />, distance is <Tex tex="d" />, penetration depth
+      is <Tex tex="\delta" />, the contact normal is <Tex tex="\hat n" />, half extents are
+      <Tex tex="h = (h_x, h_y)" />, and a box orientation is <Tex tex="R" />.
+    </p>
   </section>
 
   <section id="sphere-sphere" class="chapter">
     <h2><span class="num">1</span> Sphere vs sphere</h2>
     <p class="concept">
-      Two spheres overlap exactly when the distance
-      between their centers is no more than the sum of their radii. The contact normal is the unit vector
-      between the centers, and the penetration is how much the two radii overlap along that line:
+      Given two spheres <Tex tex="A" /> and <Tex tex="B" /> with centers
+      <Tex tex="p_a" />,<Tex tex="p_b" /> and radii <Tex tex="r_a" />, <Tex tex="r_b" />, they overlap exactly when the
+      distance between their centers is no more than the sum of their radii. The contact normal is the unit
+      vector between the centers, and the penetration depth <Tex tex="\delta" /> is how much the two radii
+      overlap along that line:
     </p>
-    <Tex display tex={"d = \\lVert p_b - p_a \\rVert, \\qquad \\text{overlap} = (r_a + r_b) - d, \\qquad \\hat n = \\frac{p_b - p_a}{d}"} />
+    <Tex display tex={"\\begin{align*}\n    d &= \\lVert p_b - p_a \\rVert \\\\\n    \\delta &= (r_a + r_b) - d \\\\\n    \\hat n &= \\frac{p_b - p_a}{d}\n\\end{align*}"} />
 
     <div class="playground-wrap">
       <h3>a. The distance test</h3>
       <p class="intro">
-        Drag the circles and change the radii. The dashed line is center-to-center distance; when it drops below
-        the radius sum the green dot is the contact point and the green arrow is the contact normal.
+        You can drag the circles.
       </p>
       <SphereSpherePlayground />
     </div>
@@ -83,17 +91,17 @@
   <section id="sphere-box" class="chapter">
     <h2><span class="num">2</span> Sphere vs box</h2>
     <p class="concept">
-      A sphere hits a box when the <em>closest point on the box</em> to the sphere's center is within the
-      sphere's radius. For an axis-aligned box that closest point is a componentwise clamp; for an oriented box
-      it is the same clamp done in the box's local frame:
+      Given a sphere with center <Tex tex="p" /> and radius <Tex tex="r" />, and a box with center
+      <Tex tex="c" />, half extents <Tex tex="h = (h_x, h_y)" />, and orientation
+      <Tex tex="R" /> (whose columns are the box's face axes), the sphere hits the box when the closest point on
+      the box is within <Tex tex="r" />. In the box's local frame that closest point is a componentwise clamp:
     </p>
-    <Tex display tex={"\\text{local} = R^{-1}(p - c), \\qquad \\text{closest} = c + R\\,\\mathrm{clamp}(\\text{local}, -h, h)"} />
+    <Tex display tex={"\\begin{align*}\n    p_{local} &= R^{-1}(p - c) \\\\\n    p_{clamped} &= \\operatorname{clamp}(p_{local},\\, -h,\\, h) \\\\\n    p_{closest} &= c + R\\,p_{clamped}\n\\end{align*}"} />
 
     <div class="playground-wrap">
       <h3>a. Closest point on a box</h3>
       <p class="intro">
-        Drag the sphere or the box and rotate the box. The green dot is the closest point on the box to the
-        sphere center, and the dashed line is the distance that gets compared against the radius.
+        You can drag the sphere or the box.
       </p>
       <SphereBoxPlayground />
     </div>
@@ -109,15 +117,23 @@
     <p class="concept">
       Seen from the side a cylinder is a <em>capsule</em>: an axis segment inflated by the radius. The test
       finds the closest point on that axis, then asks which <em>region</em> the sphere center falls in — past an
-      end cap, or alongside the curved wall. The region decides the surface normal:
+      end cap, or alongside the curved wall. The region decides the surface normal. Given a sphere with center
+      <Tex tex="p" /> and radius <Tex tex="r_s" />, and a cylinder with axis endpoints
+      <Tex tex="a" />, <Tex tex="b" /> and radius <Tex tex="r_c" />, the closest point on the segment is a
+      clamped projection:
+    </p>
+    <Tex display tex={"\\begin{align*}\n    w &= b - a \\\\\n    t &= \\operatorname{clamp}\\!\\left(\\frac{(p - a)\\cdot w}{w\\cdot w},\\; 0,\\; 1\\right) \\\\\n    q &= a + t\\,w \\\\[4pt]\n    d &= \\lVert p - q \\rVert \\\\\n    \\delta &= (r_s + r_c) - d\n\\end{align*}"} />
+    <p class="concept">
+      The parameter <Tex tex="t" /> is the region classifier: <Tex tex={"t = 0"} /> or <Tex tex={"t = 1"} /> puts
+      the closest point on an end cap, while <Tex tex={"0 < t < 1"} /> puts it on the curved wall. Either way,
+      the sphere overlaps the cylinder when the distance <Tex tex="d" /> is no more than the radius sum
+      <Tex tex="r_s + r_c" />.
     </p>
 
     <div class="playground-wrap">
       <h3>a. Caps, rims, and walls</h3>
       <p class="intro">
-        Drag the sphere or the cylinder and tilt the cylinder. The green dot is the closest point on the axis
-        (the readout shows whether it is a <em>cap</em> or <em>side</em> region), and the amber dot is the
-        closest point on the surface.
+        You can drag the sphere or the cylinder.
       </p>
       <SphereCylinderPlayground />
     </div>
@@ -135,23 +151,35 @@
       both shapes onto that line's direction: their projections are two intervals, and if those intervals don't
       touch, the line is a <em>separating axis</em>. For two boxes the only directions that can separate them
       are their <em>face normals</em> (in 2D, four of them; in 3D, six faces plus nine edge cross-products). So
-      the infinite question collapses to a handful of dot products.
+      the infinite question collapses to a handful of dot products. Given a box with center
+      <Tex tex="c" />, half extents <Tex tex="h_x,\ h_y" />, and unit face axes
+      <Tex tex="a_x,\ a_y" />, projecting it onto a unit axis <Tex tex="\hat n" /> gives an interval
+      <Tex tex="I" /> centered at <Tex tex="c\cdot\hat n" /> whose half-width is the projection radius
+      <Tex tex="r" />:
     </p>
-    <Tex display tex={"r = h_x\\,|\\hat n\\cdot a_x| + h_y\\,|\\hat n\\cdot a_y|, \\qquad [c\\cdot\\hat n - r,\\; c\\cdot\\hat n + r]"} />
+    <Tex display tex={"\\begin{align*}\n    r &= h_x\\,|\\hat n\\cdot a_x| + h_y\\,|\\hat n\\cdot a_y| \\\\\n    I &= [c\\cdot\\hat n - r,\\; c\\cdot\\hat n + r]\n\\end{align*}"} />
 
     <div class="playground-wrap">
       <h3>a. Casting a shadow</h3>
       <p class="intro">
-        Turn the axis and reshape the box. The green bar is the box's projection — the interval SAT will later
-        compare against another shape's shadow.
+        Turn the axis and reshape the box. The green bar is the box's projection.
       </p>
       <ProjectionPlayground />
     </div>
 
     <div class="playground-wrap">
       <h3>b. Watch it run</h3>
+      <p class="concept">
+        For two boxes <Tex tex="A" /> and <Tex tex="B" /> with centers
+        <Tex tex="c_A,\ c_B" /> and projection radii <Tex tex="r_A,\ r_B" /> (from part <em>a</em>), each
+        candidate axis <Tex tex="\hat n" /> turns both into intervals on that line. The gap between the two
+        interval centers is <Tex tex="d = |(c_B-c_A)\cdot\hat n|" />, so the intervals overlap by
+        <Tex tex="\delta = (r_A + r_B) - d" />. A negative <Tex tex="\delta" /> means the two shadows have a gap —
+        a separating line:
+      </p>
+      <Tex display tex={"\\begin{align*}\n d &= |(c_B - c_A) \\cdot \\hat n| \\\\\n    \\delta &= (r_A + r_B) - d\n\\end{align*}"} />
       <p class="intro">
-        Drag and rotate the boxes. Every candidate axis is listed with its overlap. When the boxes overlap, the
+        You can drag and rotate the boxes. When the boxes overlap, the
         green edge is the <em>reference face</em>, the purple edge is the opposing <em>incident face</em>, the
         green dots are the contact points, and the green arrow is the minimum translation that separates them.
       </p>
@@ -176,17 +204,24 @@
     <h2><span class="num">5</span> Cylinder vs cylinder</h2>
     <p class="concept">
       In side view a cylinder is a capsule, so two cylinders are two capsule cores: the closest points between
-      their axis segments, compared against the radius sum. When the axes are parallel the segment query
-      degenerates, so the test falls back to a circle-versus-circle check in the plane across the axis plus an
-      axial-overlap check.
+      their axis segments, compared against the radius sum. Given cylinder <Tex tex="A" /> with axis
+      <Tex tex="P(s)=p_0+s\,d_1" /> and radius <Tex tex="r_A" />, and cylinder <Tex tex="B" /> with axis
+      <Tex tex="Q(t)=q_0+t\,d_2" /> and radius <Tex tex="r_B" />, the test is just the distance between the two
+      segments:
     </p>
+    <Tex display tex={"\\begin{align*}\n    d &= \\min_{s,t \\in [0,1]} \\lVert P(s) - Q(t) \\rVert \\\\\n    \\delta &= (r_A + r_B) - d\n\\end{align*}"} />
+    <p class="concept">
+      The minimizer <Tex tex="(s,t)" /> is the standard segment-to-segment closest-point solve (see the JS
+      below). When the axes are nearly parallel that solve degenerates, so the test switches to a circle check:
+      confirm the two axis intervals overlap along <Tex tex="\hat u" />, then compare the perpendicular distance
+      between the axes:
+    </p>
+    <Tex display tex={"\\begin{align*}\n    \\hat u &= \\frac{d_1}{\\lVert d_1 \\rVert} \\\\\n    s &= q_0 - p_0 \\\\\n    s_\\perp &= s - (s\\cdot\\hat u)\\,\\hat u \\\\\n    d &= \\lVert s_\\perp \\rVert \\\\\n    \\hat n &= \\frac{s_\\perp}{d} \\\\\n    \\delta &= (r_A + r_B) - d\n\\end{align*}"} />
 
     <div class="playground-wrap">
       <h3>a. Closest points between axes</h3>
       <p class="intro">
-        Drag and tilt the cylinders. When the axes are parallel the test uses the circle-versus-circle fallback;
-        when they cross, the green dots are the closest points between the two axis segments and the dashed line
-        is the distance compared against the radius sum.
+        You can play drag and tilt the cylinders
       </p>
       <CylinderCylinderPlayground />
     </div>
@@ -202,7 +237,15 @@
     <p class="concept">
       A box and a cylinder meet through the cylinder's axis. The distance from a convex box to that axis is the
       minimum of four segment-to-edge distances, so the test takes the closest points between the axis and each
-      box edge and keeps the nearest pair. That distance is compared against the cylinder radius.
+      box edge and keeps the nearest pair. That distance is compared against the cylinder radius. With the axis
+      segment <Tex tex="[a,b]" /> and box corners <Tex tex="c_0..c_3" />:
+    </p>
+    <Tex display tex={"\\begin{align*}\n    d &= \\min_{i=0,\\dots,3}\\; d_i \\\\\n    \\delta &= r_c - d\n\\end{align*}"} />
+    <p class="concept">
+      Each <Tex tex="d_i" /> is the segment-to-segment distance from chapter 5. With
+      <Tex tex="r_c" /> the cylinder radius, the winning pair also gives the contact normal
+      <Tex tex={"\\hat n = (p_{axis} - p_{box})/d"} />, pointing from the box
+      toward the axis.
     </p>
 
     <div class="playground-wrap">
@@ -234,8 +277,7 @@
     <div class="playground-wrap">
       <h3>a. A box around every shape</h3>
       <p class="intro">
-        Drag the boxes. Each box's bounding volume is the box itself, and any pair whose boxes overlap survives
-        to be tested by the exact tests in chapters 1–6.
+        You can drag the boxes.
       </p>
       <BvhBoundsPlayground />
     </div>
@@ -248,8 +290,7 @@
     <div class="playground-wrap">
       <h3>b. Group and merge</h3>
       <p class="intro">
-        Step through the tree levels. Level 0 is one box per object; each level up merges pairs into a parent
-        box (split the widest axis at the median), until one box encloses the whole scene.
+        You can step through the tree levels.
       </p>
       <BvhBuildPlayground />
     </div>
@@ -262,8 +303,7 @@
     <div class="playground-wrap">
       <h3>c. Query the tree</h3>
       <p class="intro">
-        Drag the query box and resize it. A node whose box misses the query prunes its whole subtree in one
-        check; the green boxes are the candidates that actually get tested against each other.
+        You can drag the query box and resize it. See how the tree answer your query.
       </p>
       <BvhQueryPlayground />
     </div>
@@ -284,7 +324,7 @@
 
   <footer class="closing">
     <p>
-      And that's was an introduction to collision detection. Hope you find this interesting as I do!
+      And that was an introduction to collision detection. Hope you find this interesting as I do! Happy learning.
     </p>
   </footer>
 </article>
