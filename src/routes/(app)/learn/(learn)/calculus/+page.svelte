@@ -1,6 +1,5 @@
 <script>
   import "katex/dist/katex.css";
-  import "$styles/calculus.css";
   import Tex from "$lib/components/calculus/Tex.svelte";
   import TangentPlayground from "$lib/components/calculus/TangentPlayground.svelte";
   import DerivativePlayground from "$lib/components/calculus/DerivativePlayground.svelte";
@@ -13,7 +12,7 @@
   <title>Intro to Calculus</title>
 </svelte:head>
 
-<article class="calculus">
+<article>
   <header class="hero">
     <h1>Intro to Calculus</h1>
     <p class="lede">
@@ -105,3 +104,198 @@
     the very basic and see the tool as something works for us will give us some motivation to learn it better. Happy learning!
   </footer>
 </article>
+
+<style>
+  @media (min-width: 880px) {
+    article :global(.playground) {
+      grid-template-columns: minmax(0, 1.65fr) minmax(16rem, 0.85fr);
+      align-items: start;
+    }
+  }
+
+  article :global(.readout output[data-mood="rising"]) {
+    color: #16a34a;
+  }
+  article :global(.readout output[data-mood="falling"]) {
+    color: #dc2626;
+  }
+
+  /* ---- graph (SVG) ------------------------------------------------------ */
+
+  article :global(.graph) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.4rem;
+  }
+  article :global(.graph .bg) {
+    fill: transparent;
+  }
+  article :global(.graph .grid line) {
+    stroke: color-mix(in srgb, var(--ink) 12%, transparent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph .axes line) {
+    stroke: color-mix(in srgb, var(--ink) 60%, transparent);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph .ticks text) {
+    fill: color-mix(in srgb, var(--ink) 70%, transparent);
+    font-size: 10px;
+    text-anchor: middle;
+    font-family: ui-monospace, monospace;
+  }
+  article :global(.graph .ticks text.ytick) {
+    text-anchor: end;
+  }
+  article :global(.graph .overlay) {
+    cursor: grab;
+    touch-action: none;
+    fill: transparent;
+  }
+  article :global(.graph .overlay:active) {
+    cursor: grabbing;
+  }
+
+  article :global(.graph :is(.curve, .tangent, .secant, .deriv, .accum, .guide, .guide-dx, .guide-dy, .guide-actual)) {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph .curve) {
+    stroke: #2563eb;
+    stroke-width: 2.5;
+  }
+  article :global(.graph .tangent) {
+    stroke: #dc2626;
+    stroke-width: 2;
+    opacity: 0.9;
+  }
+  article :global(.graph .secant) {
+    stroke: #f59e0b;
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+    opacity: 0.9;
+  }
+  article :global(.graph .deriv) {
+    stroke: #16a34a;
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+  }
+  article :global(.graph .accum) {
+    stroke: #16a34a;
+    stroke-width: 2.5;
+  }
+  article :global(.graph .guide) {
+    stroke: color-mix(in srgb, var(--ink) 55%, transparent);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 3;
+  }
+  article :global(.graph .guide-dx) {
+    stroke: #0ea5e9;
+    stroke-width: 2;
+  }
+  article :global(.graph .guide-dy) {
+    stroke: #dc2626;
+    stroke-width: 2;
+  }
+  article :global(.graph .guide-actual) {
+    stroke: #f59e0b;
+    stroke-width: 2;
+    stroke-dasharray: 4 3;
+  }
+  article :global(.graph .link) {
+    stroke: color-mix(in srgb, var(--ink) 40%, transparent);
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph .bound) {
+    stroke: color-mix(in srgb, var(--ink) 45%, transparent);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph .area) {
+    fill: color-mix(in srgb, #2563eb 22%, transparent);
+    stroke: none;
+  }
+  article :global(.graph .rect-pos) {
+    fill: color-mix(in srgb, #2563eb 30%, transparent);
+    stroke: #2563eb;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph .rect-neg) {
+    fill: color-mix(in srgb, #dc2626 30%, transparent);
+    stroke: #dc2626;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph :is(.point, .point-b, .point-d)) {
+    stroke: var(--paper);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph .point) {
+    fill: #2563eb;
+  }
+  article :global(.graph .point-b) {
+    fill: #f59e0b;
+  }
+  article :global(.graph .point-d) {
+    fill: #16a34a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    article :global(.graph .curve) {
+      stroke: #60a5fa;
+    }
+    article :global(.graph .tangent) {
+      stroke: #f87171;
+    }
+    article :global(.graph .secant) {
+      stroke: #fbbf24;
+    }
+    article :global(.graph .deriv),
+    article :global(.graph .accum) {
+      stroke: #4ade80;
+    }
+    article :global(.graph .guide-dx) {
+      stroke: #38bdf8;
+    }
+    article :global(.graph .guide-dy) {
+      stroke: #f87171;
+    }
+    article :global(.graph .guide-actual) {
+      stroke: #fbbf24;
+    }
+    article :global(.graph .area) {
+      fill: color-mix(in srgb, #60a5fa 20%, transparent);
+    }
+    article :global(.graph .rect-pos) {
+      fill: color-mix(in srgb, #60a5fa 30%, transparent);
+      stroke: #60a5fa;
+    }
+    article :global(.graph .rect-neg) {
+      fill: color-mix(in srgb, #f87171 30%, transparent);
+      stroke: #f87171;
+    }
+    article :global(.graph .point) {
+      fill: #60a5fa;
+    }
+    article :global(.graph .point-b) {
+      fill: #fbbf24;
+    }
+    article :global(.graph .point-d) {
+      fill: #4ade80;
+    }
+    article :global(.readout output[data-mood="rising"]) {
+      color: #4ade80;
+    }
+    article :global(.readout output[data-mood="falling"]) {
+      color: #f87171;
+    }
+  }
+</style>

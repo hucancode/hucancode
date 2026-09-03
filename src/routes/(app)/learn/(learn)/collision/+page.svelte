@@ -1,6 +1,5 @@
 <script>
   import "katex/dist/katex.css";
-  import "$styles/collision.css";
   import Tex from "$lib/components/calculus/Tex.svelte";
   import SphereSpherePlayground from "$lib/components/collision/SphereSpherePlayground.svelte";
   import SphereBoxPlayground from "$lib/components/collision/SphereBoxPlayground.svelte";
@@ -29,7 +28,7 @@
   <title>Primitive Collision Detection</title>
 </svelte:head>
 
-<article class="collision">
+<article>
   <header class="hero">
     <h1>Collision Detection</h1>
     <p class="lede">
@@ -330,7 +329,189 @@
 </article>
 
 <style>
-  .collision .steps {
+  @media (min-width: 880px) {
+    article :global(.playground) {
+      grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 0.8fr);
+      align-items: start;
+    }
+  }
+
+  /* ---- plot -------------------------------------------------------------- */
+
+  article :global(.plot) {
+    position: relative;
+    border-radius: 0.4rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--paper) 92%, var(--ink));
+  }
+  article :global(.plot canvas) {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: grab;
+    touch-action: none;
+  }
+  article :global(.plot canvas:active) {
+    cursor: grabbing;
+  }
+  article :global(.plot .hint) {
+    position: absolute;
+    left: 0.6rem;
+    top: 0.5rem;
+    font-size: 0.72rem;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  /* ---- readout ----------------------------------------------------------- */
+
+  article :global(.readout output) {
+    font-variant-numeric: tabular-nums;
+  }
+  article :global(.readout output[data-mood="hit"]) {
+    color: #16a34a;
+  }
+  article :global(.readout output[data-mood="miss"]) {
+    color: #dc2626;
+  }
+
+  /* ---- axis inspector ---------------------------------------------------- */
+
+  article :global(.axis-list) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+  article :global(.axis-list li) {
+    display: contents;
+  }
+  article :global(.axis-list button) {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    border-radius: 0.35rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    width: 100%;
+  }
+  article :global(.axis-list button:hover) {
+    background: color-mix(in srgb, currentColor 6%, transparent);
+  }
+  article :global(.axis-list button[aria-current="true"]) {
+    outline: 2px solid color-mix(in srgb, var(--link) 60%, transparent);
+    font-weight: 600;
+  }
+  article :global(.axis-list .swatch) {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 0.2rem;
+    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  }
+  article :global(.axis-list output) {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  article :global(.axis-list button.is-min .swatch) {
+    box-shadow: 0 0 0 2px color-mix(in srgb, #16a34a 70%, transparent);
+  }
+  article :global(.axis-list button.is-sep .swatch) {
+    box-shadow: 0 0 0 2px color-mix(in srgb, #dc2626 70%, transparent);
+  }
+
+  /* ---- legend ------------------------------------------------------------ */
+
+  article :global(.legend) {
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+  }
+  article :global(.legend span) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  article :global(.legend i) {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 0.2rem;
+    flex: none;
+    display: inline-block;
+  }
+
+  article :global(.controls menu button) {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+    border-radius: 0.35rem;
+    background: var(--paper);
+    color: var(--link);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  article :global(.controls menu button:hover) {
+    background: color-mix(in srgb, var(--link) 12%, var(--paper));
+    border-color: color-mix(in srgb, var(--link) 45%, transparent);
+  }
+  article :global(.controls menu button:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  /* ---- code -------------------------------------------------------------- */
+
+  details.code {
+    border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--paper) 40%, transparent);
+  }
+  details.code > summary {
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    list-style: none;
+    user-select: none;
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+  details.code > summary::-webkit-details-marker {
+    display: none;
+  }
+  details.code > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 0.5rem;
+    transition: transform 120ms ease;
+    color: var(--link);
+  }
+  details.code[open] > summary::before {
+    transform: rotate(90deg);
+  }
+  details.code > summary:hover {
+    background: color-mix(in srgb, var(--link) 10%, transparent);
+  }
+  details.code pre {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+  details.code code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+
+  /* ---- closing lists ----------------------------------------------------- */
+
+  .steps {
     margin: 0;
     padding-left: 1.4rem;
     max-width: 52rem;
@@ -338,11 +519,20 @@
     gap: 0.4rem;
   }
 
-  .collision .primitives {
+  .primitives {
     margin: 0;
     padding-left: 1.4rem;
     max-width: 52rem;
     display: grid;
     gap: 0.3rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    article :global(.readout output[data-mood="hit"]) {
+      color: #4ade80;
+    }
+    article :global(.readout output[data-mood="miss"]) {
+      color: #f87171;
+    }
   }
 </style>
