@@ -1,5 +1,6 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as dragon from "$lib/playgrounds/dragon";
 
   const PRESETS = [
@@ -9,6 +10,7 @@
     { id: "random", label: "Random" },
   ];
   let scene = $state(null);
+  let controlsOpen = $state(true);
   let preset = $state("circle");
   let points = $state(20);
   let spread = $state(1);
@@ -39,9 +41,10 @@
 
 <section>
   <Scene bind:this={scene} scene={dragon} id="dragon" />
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>flight path</legend>
     <menu role="group">

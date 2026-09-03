@@ -7,6 +7,12 @@ main {
     &:has(> aside) > section {
       flex: 3 1 0;
     }
+    /* pages that cap their stage (enso, caligraphy) must let it expand once
+       the controls are hidden */
+    &:has(> aside[data-collapsed="true"]) > section {
+      flex: 3 1 0;
+      max-width: none;
+    }
     &:has(> aside) > aside { flex: 1 1 0; min-width: 16rem; }
   }
 
@@ -16,6 +22,20 @@ main {
     width: 100%;
     aspect-ratio: 4 / 3;
     overflow: hidden;
+  }
+
+  .controls-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    border: 0;
+    background: color-mix(in srgb, var(--paper) 99%, var(--ink));
+    color: var(--ink);
+    cursor: pointer;
+    &:hover {
+      background: color-mix(in srgb, var(--paper) 96%, var(--ink));
+    }
   }
 
   /* square ink stage (pages still cap their own max-width) */
@@ -51,6 +71,9 @@ main {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+  > aside[data-collapsed="true"] {
+    display: none;
   }
 
   /* ---- control panel ---------------------------------------------------- */
@@ -252,7 +275,7 @@ main {
   > section > footer {
     position: absolute;
     left: 0;
-    right: 0;
+    right: 1.5rem;
     bottom: 0;
     display: flex;
     flex-direction: column;

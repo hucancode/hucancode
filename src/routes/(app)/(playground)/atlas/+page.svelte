@@ -1,5 +1,6 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as mech from "$lib/playgrounds/mech";
   import * as rt from "$lib/playgrounds/raytrace";
   import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
@@ -212,6 +213,7 @@ const PART_CTL = {
   import Bot from "$icons/carbon/bot.svg?raw";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
 
   const ATLAS_PARTS = ATLAS_KIT.names;
 
@@ -511,9 +513,10 @@ const PART_CTL = {
         </menu>
       </footer>
     {/if}
+    <ControlToggle bind:open={controlsOpen} />
   </section>
 
-  <aside>
+  <aside data-collapsed={!controlsOpen}>
     <fieldset>
       <legend>panel</legend>
       <menu role="group">

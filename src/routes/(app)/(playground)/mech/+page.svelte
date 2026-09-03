@@ -1,5 +1,6 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import Catalog from "$lib/components/mech-catalog.svelte";
   import * as mech from "$lib/playgrounds/mech";
   import * as rt from "$lib/playgrounds/raytrace";
@@ -120,6 +121,7 @@ const PART_CTL = {
   let stats = $state({ instances: 0, nodes: 0, buildMs: 0, traceMs: 0, fps: 0, samples: 0 });
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
   let partsOpen = $state(false); // stage part picker, shut by default
 
   const DRAGON_PARTS = DRAGON_KIT.names;
@@ -272,9 +274,10 @@ const PART_CTL = {
       </menu>
     </footer>
   {/if}
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>panel</legend>
     <menu role="group">
@@ -392,9 +395,7 @@ const PART_CTL = {
 
 <style>
   section > menu { top: 0.5rem; left: 0.5rem; }
-  /* part names ride in the same pill menu as the toggle icon: as wide as their label */
   section > menu button { width: auto; padding: 0 0.5rem; }
-  /* the icon comes in through {@html}, so the scoping attribute never lands on it */
   section > menu button :global(svg) { width: 20px; height: 20px; display: block; }
 
   dl { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.75rem; margin: 0; font-size: 0.85rem; }

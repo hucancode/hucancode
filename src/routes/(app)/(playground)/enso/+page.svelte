@@ -1,8 +1,10 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as enso from "$lib/playgrounds/enso";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
   let radius = $state(0.55);
   let angleStart = $state(0.0);
   let lineWidth = $state(0.28);
@@ -52,8 +54,9 @@
 
 <section data-stage="square">
   <Scene bind:this={scene} scene={enso} id="enso" />
+  <ControlToggle bind:open={controlsOpen} />
 </section>
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>circle</legend>
     <label>

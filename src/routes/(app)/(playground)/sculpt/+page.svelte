@@ -1,5 +1,6 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as mech from "$lib/playgrounds/mech";
   import { SHAPE_NAMES, SHAPE_PARAMS, sculptModel } from "$lib/mech/sculpt-catalog.js";
   import { SCULPT_DEFAULTS } from "$lib/mech/sculpt.js";
@@ -62,6 +63,7 @@ a-z plate cut IN
 A-Z plate raised OUT`;
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
 
   const RENDER_CTL = [
     ["spin", "spin", 0, 3, 0.1],
@@ -103,9 +105,10 @@ A-Z plate raised OUT`;
 
 <section>
   <Scene bind:this={scene} scene={mech} id="sculpt" />
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>shape</legend>
     <ul>

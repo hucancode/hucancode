@@ -1,8 +1,13 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as radiance from "$lib/playgrounds/radiance";
+  import Wall from "$icons/memory/wall.svg?raw";
+  import Light from "$icons/google-material/light.svg?raw";
+  import Fire from "$icons/remix/fire.svg?raw";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
 
   // brush / scene
   let color = $state("#ff6633");
@@ -75,6 +80,41 @@
 
 <section data-stage="square" class="stage">
   <Scene bind:this={scene} scene={radiance} id="radiance" onFrame={frame} />
+  <menu class="brush" aria-label="brush type">
+    <li>
+      <button
+        type="button"
+        aria-pressed={brush === "wall"}
+        title="wall"
+        aria-label="wall"
+        onclick={() => (brush = "wall")}
+      >
+        {@html Wall}
+      </button>
+    </li>
+    <li>
+      <button
+        type="button"
+        aria-pressed={brush === "light"}
+        title="light"
+        aria-label="light"
+        onclick={() => (brush = "light")}
+      >
+        {@html Light}
+      </button>
+    </li>
+    <li>
+      <button
+        type="button"
+        aria-pressed={brush === "moving-light"}
+        title="ember"
+        aria-label="ember"
+        onclick={() => (brush = "moving-light")}
+      >
+        {@html Fire}
+      </button>
+    </li>
+  </menu>
   <footer>
     <menu>
       <li>
@@ -88,9 +128,10 @@
       </li>
     </menu>
   </footer>
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>brush</legend>
     <label>
@@ -194,5 +235,14 @@
   .stage {
     cursor: crosshair;
     touch-action: none;
+  }
+  section > menu.brush {
+    top: 0.5rem;
+    left: 0.5rem;
+  }
+  section > menu.brush button :global(svg) {
+    width: 20px;
+    height: 20px;
+    display: block;
   }
 </style>

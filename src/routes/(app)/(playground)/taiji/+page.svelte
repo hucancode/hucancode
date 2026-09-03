@@ -1,8 +1,10 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as taiji from "$lib/playgrounds/taiji";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
   let taijiSpin = $state(1);
   let cloudSpeed = $state(4);
   let bitCount = $state(3);
@@ -30,9 +32,10 @@
 
 <section>
   <Scene bind:this={scene} scene={taiji} id="taiji" />
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>motion</legend>
     <label>
