@@ -28,7 +28,7 @@
       just touches the curve at <Tex tex="x" />. To find it, connect two nearby points with a secant line and let
       their gap <Tex tex="h" /> shrink to nothing:
     </p>
-    <Tex display tex="f'(x) = \lim&#123;h\to 0&#125; \frac&#123;f(x+h)-f(x)&#125;&#123;h&#125;" />
+    <Tex display tex="f'(x) = \lim_&#123;h\to 0&#125; \frac&#123;f(x+h)-f(x)&#125;&#123;h&#125;" />
 
     <div class="playground-wrap">
       <h3>a. From secant to tangent</h3>
@@ -75,7 +75,7 @@
       <Tex tex="n" /> thin rectangles (a Riemann sum); as <Tex tex="n\to\infty" /> the sum converges to the exact
       area:
     </p>
-    <Tex display tex="\int_a^b f(x)\,dx = \lim&#123;n\to\infty&#125; \sum&#123;i=1&#125;^&#123;n&#125; f(x_i)\,\Delta x" />
+    <Tex display tex="\int_a^b f(x)\,dx = \lim_&#123;n\to\infty&#125; \sum_&#123;i=1&#125;^&#123;n&#125; f(x_i)\,\Delta x" />
 
     <div class="playground-wrap">
       <h3>a. Riemann sums</h3>
