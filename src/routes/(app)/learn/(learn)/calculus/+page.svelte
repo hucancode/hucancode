@@ -35,8 +35,7 @@
     <div class="playground-wrap">
       <h3>a. From secant to tangent</h3>
       <p class="intro">
-        Drag the point on the curve, then slide <Tex tex="h" /> toward zero. Watch the secant line become the
-        tangent line.
+        You can drag the point on the curve.
       </p>
       <TangentPlayground />
     </div>
@@ -44,8 +43,7 @@
     <div class="playground-wrap">
       <h3>b. The derivative is a function</h3>
       <p class="intro">
-        The slope has a value at <em>every</em> point, so it forms its own curve — <Tex tex="f'(x)" /> (dashed).
-        Drag and read the slope.
+        You can drag the point on the curve.
       </p>
       <DerivativePlayground />
     </div>
@@ -63,8 +61,7 @@
     <div class="playground-wrap">
       <h3>The best linear approximation</h3>
       <p class="intro">
-        Slide <Tex tex="dx" /> and watch the gap between the tangent's rise (<Tex tex="dy" />) and the curve's rise
-        (<Tex tex="\Delta y" />). Then zoom in.
+        You can drag the point on the curve.
       </p>
       <DifferentialPlayground />
     </div>

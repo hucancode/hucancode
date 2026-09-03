@@ -151,9 +151,5 @@
         <output>{Math.abs(error).toFixed(4)}</output>
       </label>
     </fieldset>
-    <p class="note">
-      More slices (larger <Tex tex="n" />) shrink the difference. Area below the axis counts negative — that is
-      why the sum can shrink even when the shaded region looks big.
-    </p>
   </aside>
 </div>
