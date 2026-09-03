@@ -11,7 +11,7 @@
   let { children } = $props();
 </script>
 
-<Nav current="/learn" />
+<Nav current="/playgrounds" />
 <main>
   {@render children?.()}
 </main>

@@ -1,6 +1,11 @@
 <script>
   import Nav from "$lib/components/nav.svelte";
 
+  const lessons = [
+    { href: "/learn/calculus", name: "Intro to Calculus", thumb: "/assets/thumb/calculus.png" },
+    { href: "/learn/collision", name: "Collision Detection", thumb: "/assets/thumb/collision.svg" },
+  ];
+
   const playgrounds = [
     { href: "/dragon", name: "Dragon", thumb: "/assets/thumb/dragon.png" },
     { href: "/rubik", name: "Rubik", thumb: "/assets/thumb/rubik.png" },
@@ -21,24 +26,52 @@
 
 <Nav />
 <main>
-  <ul>
-    {#each playgrounds as p}
-      <li>
-        <a href={p.href}>
-          <figure>
-            <img src={p.thumb} alt={p.name} loading="lazy" />
-          </figure>
-          <span>{p.name}</span>
-        </a>
-      </li>
-    {/each}
-  </ul>
+  <section aria-labelledby="learn-heading">
+    <h2 id="learn-heading">Learn</h2>
+    <ul>
+      {#each lessons as l}
+        <li>
+          <a href={l.href}>
+            <figure>
+              <img src={l.thumb} alt={l.name} loading="lazy" />
+            </figure>
+            <span>{l.name}</span>
+          </a>
+        </li>
+      {/each}
+    </ul>
+  </section>
+
+  <section aria-labelledby="practice-heading">
+    <h2 id="practice-heading">Practice</h2>
+    <ul>
+      {#each playgrounds as p}
+        <li>
+          <a href={p.href}>
+            <figure>
+              <img src={p.thumb} alt={p.name} loading="lazy" />
+            </figure>
+            <span>{p.name}</span>
+          </a>
+        </li>
+      {/each}
+    </ul>
+  </section>
 </main>
 
 <style>
   main {
     max-width: 1280px;
     padding: 1rem 1.5rem 4rem;
+    gap: 2.5rem;
+  }
+  section {
+    display: grid;
+    gap: 1rem;
+  }
+  h2 {
+    margin: 0;
+    font-size: 1.75rem;
   }
   ul {
     list-style: none;

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Separating axis theorem thumbnail">
+  <rect width="640" height="360" fill="#f2ecbc"/>
+  <g stroke="#16161d" stroke-opacity="0.08" stroke-width="1">
+    <path d="M0 60 H640 M0 120 H640 M0 180 H640 M0 240 H640 M0 300 H640"/>
+    <path d="M80 0 V360 M160 0 V360 M240 0 V360 M320 0 V360 M400 0 V360 M480 0 V360 M560 0 V360"/>
+  </g>
+  <g transform="translate(320 180)">
+    <line x1="-230" y1="30" x2="230" y2="-30" stroke="#16a34a" stroke-width="2" stroke-dasharray="7 6" opacity="0.7"/>
+    <g transform="translate(-118 -6) rotate(18)">
+      <rect x="-95" y="-58" width="190" height="116" rx="4" fill="#2563eb" fill-opacity="0.18" stroke="#2563eb" stroke-width="5"/>
+    </g>
+    <g transform="translate(96 8) rotate(-32)">
+      <rect x="-88" y="-54" width="176" height="108" rx="4" fill="#f59e0b" fill-opacity="0.20" stroke="#f59e0b" stroke-width="5"/>
+    </g>
+    <g stroke="#16a34a" stroke-width="5" fill="none" stroke-linecap="round">
+      <line x1="10" y1="4" x2="52" y2="-8"/>
+    </g>
+    <path d="M52 -8 l-12 7 m12 -7 l-12 -7" stroke="#16a34a" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
