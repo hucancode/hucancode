@@ -395,9 +395,7 @@ const PART_CTL = {
 
 <style>
   section > menu { top: 0.5rem; left: 0.5rem; }
-  /* part names ride in the same pill menu as the toggle icon: as wide as their label */
   section > menu button { width: auto; padding: 0 0.5rem; }
-  /* the icon comes in through {@html}, so the scoping attribute never lands on it */
   section > menu button :global(svg) { width: 20px; height: 20px; display: block; }
 
   dl { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.75rem; margin: 0; font-size: 0.85rem; }
