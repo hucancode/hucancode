@@ -47,7 +47,7 @@ export async function createObjDragon(device) {
     p.draw(shader, {
       buffers: { aPos: pos, aNormal: norm },
       count,
-      bindings: { uFrames: framesT },
+      bindings: { framesTex: framesT },
       uniforms: {
         uViewProj: vp,
         uN: d3.frameCount,

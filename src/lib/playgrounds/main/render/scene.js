@@ -269,7 +269,7 @@ export function makeSceneRenderer(device, canvas) {
       if (nSeg > 0 && state.opacity.glyph > 0)
         p.draw(sh.glyph, {
           count: 4,
-          bindings: { uSegTex: segTex },
+          bindings: { segTex: segTex },
           uniforms: {
             uViewProj: vp,
             uOpacity: state.opacity.glyph,
