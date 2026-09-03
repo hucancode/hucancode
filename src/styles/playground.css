@@ -7,6 +7,12 @@ main {
     &:has(> aside) > section {
       flex: 3 1 0;
     }
+    /* pages that cap their stage (enso, caligraphy) must let it expand once
+       the controls are hidden */
+    &:has(> aside[data-collapsed="true"]) > section {
+      flex: 3 1 0;
+      max-width: none;
+    }
     &:has(> aside) > aside { flex: 1 1 0; min-width: 16rem; }
   }
 

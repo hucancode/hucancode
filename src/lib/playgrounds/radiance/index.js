@@ -411,18 +411,65 @@ function compositeParams(cascadeCnt) {
 
 // scene resources: the painted emission/occlusion layer and the moving-light
 // accumulation buffer. These only depend on screen size.
+// nearest-neighbour resample of the painted scene buffer so a canvas resize
+// (e.g. collapsing the control panel) keeps the artwork instead of going black.
+function resampleScene(src, sw, sh, dw, dh) {
+  const dst = new Uint8ClampedArray(dw * dh * 4);
+  if (sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) return dst;
+  for (let y = 0; y < dh; y++) {
+    const sy = Math.min(sh - 1, ((y * sh) / dh) | 0);
+    for (let x = 0; x < dw; x++) {
+      const sx = Math.min(sw - 1, ((x * sw) / dw) | 0);
+      const si = (sy * sw + sx) * 4;
+      const di = (y * dw + x) * 4;
+      dst[di] = src[si];
+      dst[di + 1] = src[si + 1];
+      dst[di + 2] = src[si + 2];
+      dst[di + 3] = src[si + 3];
+    }
+  }
+  return dst;
+}
+
 function rebuildScene(w, h) {
-  W = w;
-  H = h;
+  const pw = W,
+    ph = H;
+  const prev = sceneMirror;
+  const scaleX = pw > 0 ? w / pw : 1;
+  const scaleY = ph > 0 ? h / ph : 1;
+
   sceneTex?.destroy();
   sceneTex = null;
   lightTex?.destroy();
   lightTex = null;
 
-  sceneMirror = new Uint8ClampedArray(W * H * 4);
-  bouncingLights.length = 0;
-  paintCount = 0;
+  W = w;
+  H = h;
+  sceneMirror =
+    prev && pw > 0 && ph > 0
+      ? resampleScene(prev, pw, ph, w, h)
+      : new Uint8ClampedArray(w * h * 4);
+
+  // keep bouncing embers in the same relative spots after a resize
+  if (pw > 0 && ph > 0) {
+    const s = Math.min(scaleX, scaleY);
+    for (const l of bouncingLights) {
+      l.x *= scaleX;
+      l.y *= scaleY;
+      l.radius = Math.max(1, l.radius * s);
+    }
+  }
+
   isDrawing = false;
+  // recompute the emissive-pixel stat from the resampled buffer
+  paintCount = 0;
+  for (let i = 0; i < sceneMirror.length; i += 4) {
+    if (
+      sceneMirror[i + 3] === 0 &&
+      (sceneMirror[i] || sceneMirror[i + 1] || sceneMirror[i + 2])
+    )
+      paintCount++;
+  }
 
   sceneTex = device.texture({
     width: W,
