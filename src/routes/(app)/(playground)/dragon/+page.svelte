@@ -39,7 +39,7 @@
   <title>Dragon</title>
 </svelte:head>
 
-<section>
+<section data-stage="square">
   <Scene bind:this={scene} scene={dragon} id="dragon" />
   <ControlToggle bind:open={controlsOpen} />
 </section>

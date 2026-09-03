@@ -246,7 +246,7 @@ const PART_CTL = {
 
 <svelte:head><title>Mech</title></svelte:head>
 
-<section>
+<section data-stage="square">
   <Scene bind:this={scene} scene={engine} id="mech" onFrame={frame}
     onError={() => (render.raytrace = false)} />
   {#if view === "dragon"}

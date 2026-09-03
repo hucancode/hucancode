@@ -97,10 +97,5 @@
         <output>{fmt(fb)}</output>
       </label>
     </fieldset>
-    <p class="note">
-      The green curve is the running area <Tex tex="F(x)=\int_a^x f(t)\,dt" />. Slide <Tex tex="b" /> — the
-      slope of <Tex tex="F" /> at <Tex tex="b" /> equals <Tex tex="f(b)" />. Integration and differentiation
-      undo each other.
-    </p>
   </aside>
 </div>

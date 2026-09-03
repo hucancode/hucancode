@@ -103,7 +103,7 @@
       </label>
     </fieldset>
     <p class="note">
-      Drag the dot on the curve, then slide <Tex tex="h" /> down toward zero. The secant line turns into the
+      Slide <Tex tex="h" /> down toward zero. The secant line turns into the
       tangent line — the derivative is the limit of average slopes.
     </p>
   </aside>

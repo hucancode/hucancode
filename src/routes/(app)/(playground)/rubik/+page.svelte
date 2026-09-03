@@ -41,7 +41,7 @@
   <title>Rubik</title>
 </svelte:head>
 
-<section>
+<section data-stage="square">
   <Scene bind:this={scene} scene={rubik} id="rubik" />
   <ControlToggle bind:open={controlsOpen} />
 </section>
