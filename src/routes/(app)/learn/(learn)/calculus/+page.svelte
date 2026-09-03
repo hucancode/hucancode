@@ -6,6 +6,9 @@
   import DifferentialPlayground from "$lib/components/calculus/DifferentialPlayground.svelte";
   import RiemannPlayground from "$lib/components/calculus/RiemannPlayground.svelte";
   import FTCPlayground from "$lib/components/calculus/FTCPlayground.svelte";
+  import PartialDerivativePlayground from "$lib/components/calculus/PartialDerivativePlayground.svelte";
+  import GradientPlayground from "$lib/components/calculus/GradientPlayground.svelte";
+  import GradientDescentPlayground from "$lib/components/calculus/GradientDescentPlayground.svelte";
 </script>
 
 <svelte:head>
@@ -16,7 +19,7 @@
   <header class="hero">
     <h1>Intro to Calculus</h1>
     <p class="lede">
-      I was struggling with calculus when I was a student. I hope this little playground helps you get started on your math journey
+      Calculus is the study of change. It will help us reason about change and motion and everything that is smooth. I was struggling with calculus when I was a student. I hope this little playground helps you get started on your math journey
     </p>
   </header>
 
@@ -98,6 +101,90 @@
       Fundamental Theorem ties the two ends together: <Tex tex="F'(x) = f(x)" />.
     </p>
   </section>
+  <section id="partial" class="chapter">
+      <h2><span class="num">4</span> Multivariable & Partial Derivatives</h2>
+      <div class="bridge-intro">
+        <p class="concept">
+          So far, every function had one input: <Tex tex="y = f(x)" /> drew a curve on a flat page.
+          In the real world, outcomes depend on multiple factors — temperature depends on position <Tex tex="(x,y)" />,
+          or profit depends on price and quantity.
+        </p>
+        <p>
+          A function with two inputs, <Tex tex="z = f(x,y)" />, takes a coordinate on the floor <Tex tex="(x,y)" />
+          and assigns it a height <Tex tex="z" /> — creating a <strong>3D surface or terrain</strong>.
+        </p>
+      </div>
+      <div class="concept-breakdown">
+        <h3>The Infinite Directions Problem</h3>
+        <p>
+          On a 1D curve, you can only step left or right. On a 3D hill, you can step in <em>any</em> direction.
+          How do we measure slope when there are infinite paths?
+        </p>
+        <p>
+          <strong>The trick</strong> is to hold one variable constant! If you freeze <Tex tex="y" />, you slice the 3D surface
+          with a vertical plane parallel to the <Tex tex="x\\ axis" />. That slice is just a standard 1D curve, and its slope
+          is the <strong>partial derivative</strong> <Tex tex="\partial f/\partial x" />.
+        </p>
+      </div>
+      <Tex display tex="\frac&#123;\partial f&#125;&#123;\partial x&#125; = \lim_&#123;h\to 0&#125; \frac&#123;f(x+h,y)-f(x,y)&#125;&#123;h&#125;" />
+      <p class="note">
+        <em>Note on notation:</em> We use <Tex tex="\partial" /> (curly <em>d</em>) instead of <Tex tex="d" />
+        to signal that <Tex tex="f" /> has other variables being held temporarily still.
+      </p>
+
+      <div class="playground-wrap">
+        <h3>Slope along each axis</h3>
+        <p class="intro">
+          Slide <Tex tex="x" /> and <Tex tex="y" /> to move across the hill. Blue shows the east-west
+          slope (<Tex tex="\partial f/\partial x" />) holding <Tex tex="y" /> constant. Red shows the north-south
+          slope (<Tex tex="\partial f/\partial y" />) holding <Tex tex="x" /> constant.
+        </p>
+        <PartialDerivativePlayground />
+      </div>
+    </section>
+
+  <section id="gradient" class="chapter">
+    <h2><span class="num">5</span> Gradient</h2>
+    <p class="concept">
+      Stack both partials into one vector and you get the gradient — it points in the direction of
+      steepest ascent, and its length tells you how steep that is:
+    </p>
+    <Tex display tex="\nabla f = \left(\frac&#123;\partial f&#125;&#123;\partial x&#125;,\ \frac&#123;\partial f&#125;&#123;\partial y&#125;\right)" />
+
+    <div class="playground-wrap">
+      <h3>Steepest ascent</h3>
+      <p class="intro">
+        Slide <Tex tex="x" /> and <Tex tex="y" /> to move the point. The gradient (red) points straight uphill
+        in the ground plane.
+      </p>
+      <GradientPlayground />
+    </div>
+  </section>
+
+  <section id="descent" class="chapter">
+    <h2><span class="num">6</span> Gradient Descent</h2>
+    <p class="concept">
+      Flip the gradient around and you get the direction of steepest <em>descent</em>. Take small steps
+      that way, over and over, and you walk downhill toward a minimum:
+    </p>
+    <Tex display tex="x_&#123;n+1&#125; = x_n - \eta\,\nabla f(x_n)" />
+
+    <div class="playground-wrap">
+      <h3>Rolling downhill</h3>
+      <p class="intro">
+        This loop — compute the gradient, take a step, repeat — is how every neural network is
+        trained. Tune the learning rate <Tex tex="\eta" /> and watch the ball roll down a lopsided
+        3D bowl.
+      </p>
+      <GradientDescentPlayground />
+    </div>
+
+    <p>
+      Partial derivatives measure slope along one axis, the gradient combines them into "which way is
+      up," and gradient descent uses that to automatically find the bottom of a surface — whether that
+      surface is terrain, a rendered scene, or the error of a machine learning model.
+    </p>
+  </section>
 
   <footer class="closing">
     That was my humble introduction to calculus. I know school can make it looks daunting, I believe getting back to
@@ -166,6 +253,12 @@
   article :global(.graph .curve) {
     stroke: #2563eb;
     stroke-width: 2.5;
+  }
+  article :global(.graph .contour) {
+    fill: none;
+    stroke: #2563eb;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
   }
   article :global(.graph .tangent) {
     stroke: #dc2626;
@@ -248,8 +341,53 @@
     fill: #16a34a;
   }
 
+  /* ---- 3D surface (SVG, orbit-only) ------------------------------------ */
+
+  article :global(.graph.surface3d) {
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  article :global(.graph.surface3d:active) {
+    cursor: grabbing;
+  }
+  article :global(.graph.surface3d .ground .boundary) {
+    fill: none;
+    stroke: color-mix(in srgb, var(--ink) 28%, transparent);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 4;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph.surface3d .ground .axis) {
+    stroke: color-mix(in srgb, var(--ink) 42%, transparent);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  article :global(.graph.surface3d .net .wire) {
+    fill: none;
+    stroke: #2563eb;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    opacity: 0.85;
+  }
+  article :global(.graph .contour3d) {
+    fill: none;
+    stroke: #2563eb;
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+    vector-effect: non-scaling-stroke;
+    opacity: 0.6;
+  }
+  article :global(.graph .grad-head) {
+    fill: #dc2626;
+  }
+
   @media (prefers-color-scheme: dark) {
     article :global(.graph .curve) {
+      stroke: #60a5fa;
+    }
+    article :global(.graph .contour) {
       stroke: #60a5fa;
     }
     article :global(.graph .tangent) {
@@ -290,6 +428,15 @@
     }
     article :global(.graph .point-d) {
       fill: #4ade80;
+    }
+    article :global(.graph.surface3d .net .wire) {
+      stroke: #60a5fa;
+    }
+    article :global(.graph .contour3d) {
+      stroke: #60a5fa;
+    }
+    article :global(.graph .grad-head) {
+      fill: #f87171;
     }
     article :global(.readout output[data-mood="rising"]) {
       color: #4ade80;
