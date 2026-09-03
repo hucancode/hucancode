@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import { resolveControl } from "$lib/brush/engine";
   import { bakeGLSL, bakeSegs } from "$lib/brush/bake";
   import * as caligraphy from "$lib/playgrounds/caligraphy";
@@ -29,6 +30,7 @@
   import * as store from "$lib/playgrounds/caligraphy/persist.js";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
   let stageEl = $state();
   let stageW = $state(600), stageH = $state(600);
 
@@ -387,9 +389,10 @@
       {/each}
     </svg>
   {/if}
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>symbol</legend>
     <label>
@@ -625,7 +628,7 @@
   }
   section > menu:first-of-type {
     top: 0.5rem;
-    right: 0.5rem;
+    right: calc(0.5rem + 1.5rem);
     flex-direction: column;
   }
   section > menu:last-of-type {

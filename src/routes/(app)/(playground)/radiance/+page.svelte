@@ -1,8 +1,10 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as radiance from "$lib/playgrounds/radiance";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
 
   // brush / scene
   let color = $state("#ff6633");
@@ -88,9 +90,10 @@
       </li>
     </menu>
   </footer>
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>brush</legend>
     <label>

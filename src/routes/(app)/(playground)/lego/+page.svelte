@@ -1,5 +1,6 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as lego from "$lib/playgrounds/lego";
   import { PALETTE, TEMPLATES, DEFAULT } from "$lib/playgrounds/lego/templates.js";
   import { serializeModel } from "$lib/playgrounds/lego/serialize.js";
@@ -20,6 +21,7 @@
   } from "$lib/playgrounds/lego/model-ops.js";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
   let view = $state("assemble"); // "assemble" | "inspect"
   let template = $state(DEFAULT.id); // active template in the picker
 
@@ -532,9 +534,10 @@
       </li>
     </menu>
   </footer>
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>mode</legend>
     <menu role="group">

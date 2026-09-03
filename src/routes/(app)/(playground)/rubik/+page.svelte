@@ -1,8 +1,10 @@
 <script>
   import Scene from "$lib/components/playground-canvas.svelte";
+  import ControlToggle from "$lib/components/controls-toggle.svelte";
   import * as rubik from "$lib/playgrounds/rubik";
 
   let scene = $state(null);
+  let controlsOpen = $state(true);
   let size = $state(3);
   let speed = $state(1);
   let autoplay = $state(true);
@@ -41,9 +43,10 @@
 
 <section>
   <Scene bind:this={scene} scene={rubik} id="rubik" />
+  <ControlToggle bind:open={controlsOpen} />
 </section>
 
-<aside>
+<aside data-collapsed={!controlsOpen}>
   <fieldset>
     <legend>parameters</legend>
     <label>

@@ -18,6 +18,20 @@ main {
     overflow: hidden;
   }
 
+  .controls-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    border: 0;
+    background: color-mix(in srgb, var(--paper) 99%, var(--ink));
+    color: var(--ink);
+    cursor: pointer;
+    &:hover {
+      background: color-mix(in srgb, var(--paper) 96%, var(--ink));
+    }
+  }
+
   /* square ink stage (pages still cap their own max-width) */
   > section[data-stage~="square"] {
     aspect-ratio: 1 / 1;
@@ -51,6 +65,9 @@ main {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+  > aside[data-collapsed="true"] {
+    display: none;
   }
 
   /* ---- control panel ---------------------------------------------------- */
@@ -252,7 +269,7 @@ main {
   > section > footer {
     position: absolute;
     left: 0;
-    right: 0;
+    right: 1.5rem;
     bottom: 0;
     display: flex;
     flex-direction: column;
