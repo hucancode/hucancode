@@ -6,6 +6,7 @@
     { href: "/", label: "Home" },
     { href: "/notes", label: "Notes" },
     { href: "/playgrounds", label: "Playgrounds" },
+    { href: "/learn", label: "Learn" },
   ];
 
   const active = (href) => {

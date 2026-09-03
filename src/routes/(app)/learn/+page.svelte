@@ -1,34 +1,25 @@
 <script>
   import Nav from "$lib/components/nav.svelte";
 
-  const playgrounds = [
-    { href: "/dragon", name: "Dragon", thumb: "/assets/thumb/dragon.png" },
-    { href: "/rubik", name: "Rubik", thumb: "/assets/thumb/rubik.png" },
-    { href: "/taiji", name: "Taiji", thumb: "/assets/thumb/taiji.png" },
-    { href: "/enso", name: "Ensō", thumb: "/assets/thumb/enso.png" },
-    { href: "/ink-dragon", name: "Ink Dragon", thumb: "/assets/thumb/ink-dragon.png" },
-    { href: "/caligraphy", name: "Caligraphy", thumb: "/assets/thumb/caligraphy.png" },
-    { href: "/mech", name: "Mech", thumb: "/assets/thumb/mech.png" },
-    { href: "/atlas", name: "Atlas", thumb: "/assets/thumb/atlas.png" },
-    { href: "/poker", name: "Poker", thumb: "/assets/thumb/poker.png" },
-    { href: "/radiance", name: "Radiance Cascades", thumb: "/assets/thumb/radiance.png" },
+  const lessons = [
+    { href: "/learn/calculus", name: "Intro to Calculus", thumb: "/assets/thumb/calculus.png" },
   ];
 </script>
 
 <svelte:head>
-  <title>Playgrounds</title>
+  <title>Learn</title>
 </svelte:head>
 
 <Nav />
 <main>
   <ul>
-    {#each playgrounds as p}
+    {#each lessons as l}
       <li>
-        <a href={p.href}>
+        <a href={l.href}>
           <figure>
-            <img src={p.thumb} alt={p.name} loading="lazy" />
+            <img src={l.thumb} alt={l.name} loading="lazy" />
           </figure>
-          <span>{p.name}</span>
+          <span>{l.name}</span>
         </a>
       </li>
     {/each}
