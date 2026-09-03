@@ -480,7 +480,7 @@ const PART_CTL = {
 
 <svelte:head><title>Atlas</title></svelte:head>
 
-  <section>
+  <section data-stage="square">
     <Scene bind:this={scene} scene={engine} id="atlas" onFrame={frame}
       onError={() => (render.raytrace = false)} />
     <menu>

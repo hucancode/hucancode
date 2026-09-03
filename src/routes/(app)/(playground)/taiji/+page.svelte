@@ -30,7 +30,7 @@
   <title>Taiji</title>
 </svelte:head>
 
-<section>
+<section data-stage="square">
   <Scene bind:this={scene} scene={taiji} id="taiji" />
   <ControlToggle bind:open={controlsOpen} />
 </section>
