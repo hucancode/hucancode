@@ -174,7 +174,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -234,4 +234,4 @@
       <span><i style="background:#16a34a"></i> hit candidate</span>
     </div>
   </aside>
-</div>
+</figure>

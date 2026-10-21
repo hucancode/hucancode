@@ -32,21 +32,21 @@
     </p>
     <Tex display tex="f'(x) = \lim_&#123;h\to 0&#125; \frac&#123;f(x+h)-f(x)&#125;&#123;h&#125;" />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. From secant to tangent</h3>
       <p class="intro">
         You can drag the point on the curve.
       </p>
       <TangentPlayground />
-    </div>
+    </section>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>b. The derivative is a function</h3>
       <p class="intro">
         You can drag the point on the curve.
       </p>
       <DerivativePlayground />
-    </div>
+    </section>
   </section>
 
   <section id="differential" class="chapter">
@@ -58,13 +58,13 @@
     </p>
     <Tex display tex="dy = f'(x)\,dx, \qquad \Delta y \approx dy" />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>The best linear approximation</h3>
       <p class="intro">
         You can drag the point on the curve.
       </p>
       <DifferentialPlayground />
-    </div>
+    </section>
   </section>
 
   <section id="integral" class="chapter">
@@ -76,23 +76,23 @@
     </p>
     <Tex display tex="\int_a^b f(x)\,dx = \lim_&#123;n\to\infty&#125; \sum_&#123;i=1&#125;^&#123;n&#125; f(x_i)\,\Delta x" />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. Riemann sums</h3>
       <p class="intro">
         Change <Tex tex="n" />, the limits <Tex tex="a,b" />, and how each rectangle samples the curve. Watch the
         sum settle onto the true area.
       </p>
       <RiemannPlayground />
-    </div>
+    </section>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>b. The Fundamental Theorem</h3>
       <p class="intro">
         The running area <Tex tex="F(x)=\int_a^x f" /> is drawn in green. Slide <Tex tex="b" /> and notice its
         slope at <Tex tex="b" /> equals <Tex tex="f(b)" />.
       </p>
       <FTCPlayground />
-    </div>
+    </section>
     <p>
       The derivative measures change, the differential predicts locally, and the integral accumulates — and the
       Fundamental Theorem ties the two ends together: <Tex tex="F'(x) = f(x)" />.
@@ -100,7 +100,7 @@
   </section>
   <section id="partial" class="chapter">
       <h2><span class="num">4</span> Multivariable & Partial Derivatives</h2>
-      <div class="bridge-intro">
+      <section class="bridge-intro">
         <p class="concept">
           So far, every function had one input: <Tex tex="y = f(x)" /> drew a curve on a flat page.
           In the real world, outcomes depend on multiple factors — temperature depends on position <Tex tex="(x,y)" />,
@@ -110,8 +110,8 @@
           A function with two inputs, <Tex tex="z = f(x,y)" />, takes a coordinate on the floor <Tex tex="(x,y)" />
           and assigns it a height <Tex tex="z" /> — creating a <strong>3D surface or terrain</strong>.
         </p>
-      </div>
-      <div class="concept-breakdown">
+      </section>
+      <section class="concept-breakdown">
         <h3>The Infinite Directions Problem</h3>
         <p>
           On a 1D curve, you can only step left or right. On a 3D hill, you can step in <em>any</em> direction.
@@ -122,14 +122,14 @@
           with a vertical plane parallel to the <Tex tex="x\\ axis" />. That slice is just a standard 1D curve, and its slope
           is the <strong>partial derivative</strong> <Tex tex="\partial f/\partial x" />.
         </p>
-      </div>
+      </section>
       <Tex display tex="\frac&#123;\partial f&#125;&#123;\partial x&#125; = \lim_&#123;h\to 0&#125; \frac&#123;f(x+h,y)-f(x,y)&#125;&#123;h&#125;" />
       <p class="note">
         <em>Note on notation:</em> We use <Tex tex="\partial" /> (curly <em>d</em>) instead of <Tex tex="d" />
         to signal that <Tex tex="f" /> has other variables being held temporarily still.
       </p>
 
-      <div class="playground-wrap">
+      <section class="playground-wrap">
         <h3>Slope along each axis</h3>
         <p class="intro">
           Slide <Tex tex="x" /> and <Tex tex="y" /> to move across the hill. Blue shows the east-west
@@ -137,7 +137,7 @@
           slope (<Tex tex="\partial f/\partial y" />) holding <Tex tex="x" /> constant.
         </p>
         <PartialDerivativePlayground />
-      </div>
+      </section>
     </section>
 
   <section id="gradient" class="chapter">
@@ -148,14 +148,14 @@
     </p>
     <Tex display tex="\nabla f = \left(\frac&#123;\partial f&#125;&#123;\partial x&#125;,\ \frac&#123;\partial f&#125;&#123;\partial y&#125;\right)" />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>Steepest ascent</h3>
       <p class="intro">
         Slide <Tex tex="x" /> and <Tex tex="y" /> to move the point. The gradient (red) points straight uphill
         in the ground plane.
       </p>
       <GradientPlayground />
-    </div>
+    </section>
   </section>
 
   <section id="descent" class="chapter">
@@ -166,7 +166,7 @@
     </p>
     <Tex display tex="x_&#123;n+1&#125; = x_n - \eta\,\nabla f(x_n)" />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>Rolling downhill</h3>
       <p class="intro">
         This loop — compute the gradient, take a step, repeat — is how every neural network is
@@ -174,7 +174,7 @@
         3D bowl.
       </p>
       <GradientDescentPlayground />
-    </div>
+    </section>
 
     <p>
       Partial derivatives measure slope along one axis, the gradient combines them into "which way is

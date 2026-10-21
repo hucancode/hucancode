@@ -242,7 +242,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -329,4 +329,4 @@
       axis segments and compares that distance to the radius sum.
     </p>
   </aside>
-</div>
+</figure>

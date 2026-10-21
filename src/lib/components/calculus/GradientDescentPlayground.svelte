@@ -73,7 +73,7 @@
   }
 </script>
 
-<div class="playground">
+<figure class="playground">
   <Surface3D fn={f} domain={DOM} resolution={32} zScale={ZSCALE} scale={20} ariaLabel="3D bowl: gradient descent">
     {#snippet children({ project })}
       {@const ball = project(current[0], current[1], f(current[0], current[1]))}
@@ -113,4 +113,4 @@
       <button onclick={reset}>reset</button>
     </div>
   </aside>
-</div>
+</figure>

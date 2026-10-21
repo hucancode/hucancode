@@ -49,13 +49,13 @@
 {#if inline}
   <code class="inline-code">{content}</code>
 {:else}
-  <div class="code-block">
+  <figure class="code-block">
     {#if filename}
-      <div class="code-filename">{filename}</div>
+      <figcaption class="code-filename"><code>{filename}</code></figcaption>
     {/if}
     <pre class="language-{language}" class:line-numbers={showLineNumbers}><code bind:this={codeElement} class="language-{language}">{#if showLineNumbers}{#each content.split('\n') as line, i}<span class="line" class:highlighted={highlightedLines.has(i + 1)}>{line}
 </span>{/each}{:else}{content}{/if}</code></pre>
-  </div>
+  </figure>
 {/if}
 
 <style>
@@ -64,6 +64,10 @@
     border-radius: 0.5rem;
     overflow: hidden;
     background: var(--color-code-bg, #1e1e1e);
+  }
+
+  .code-filename code {
+    font: inherit;
   }
 
   .code-filename {

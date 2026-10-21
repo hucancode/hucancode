@@ -55,7 +55,7 @@
   }
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <Graph
       xMin={view.xMin}
@@ -123,4 +123,4 @@
       linear approximation.
     </p>
   </aside>
-</div>
+</figure>

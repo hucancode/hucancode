@@ -110,6 +110,7 @@
 </svelte:head>
 <svelte:window onscroll={onScroll} />
 
+<header>
 <nav>
   <a
     href="https://github.com/hucancode"
@@ -124,7 +125,7 @@
   <a href="/notes" aria-label="Notes" bind:this={iconEls[2]}
     ><RoughIcon svg={PersonRaiseHand} /></a
   >
-  <div bind:this={controlsEl}>
+  <fieldset bind:this={controlsEl} aria-label="Animation playback">
     <button
       onclick={toggle}
       aria-label={atEnd ? "restart" : playing ? "pause" : "play"}
@@ -136,8 +137,9 @@
       <label><input type="checkbox" bind:checked={debugPath2d} /> path 2d</label>
       <label><input type="checkbox" bind:checked={debugPath3d} /> path 3d</label>
     {/if}
-  </div>
+  </fieldset>
 </nav>
+</header>
 
 <!-- empty-state coach marks: one per icon, each centered under its own icon -->
 {#each ICON_HINTS as h, i}
@@ -184,9 +186,9 @@
 </CoachMark>
 
 <main style:height={`calc(100vh + ${SCROLL_LEN}px)`}>
-  <div>
+  <figure>
     <PlaygroundCanvas {scene} onFrame={advance} />
-  </div>
+  </figure>
 </main>
 
 <button
@@ -203,6 +205,9 @@
 </footer>
 
 <style>
+  header {
+    display: contents;
+  }
   nav {
     position: fixed;
     top: 0;
@@ -231,7 +236,10 @@
     fill: currentColor;
   }
   /* playback controls: fill all space left of the icons -> long seek bar */
-  nav > div {
+  nav > fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
@@ -272,7 +280,8 @@
     max-width: none;
     padding: 0;
   }
-  main > div {
+  main > figure {
+    margin: 0;
     position: sticky;
     top: 0;
     height: 100vh;

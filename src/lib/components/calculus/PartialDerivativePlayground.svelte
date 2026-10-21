@@ -31,7 +31,7 @@
   }
 </script>
 
-<div class="playground">
+<figure class="playground">
   <Surface3D
     fn={f}
     domain={DOM}
@@ -91,4 +91,4 @@
       </label>
     </fieldset>
   </aside>
-</div>
+</figure>

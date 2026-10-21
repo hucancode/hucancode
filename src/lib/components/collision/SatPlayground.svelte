@@ -316,7 +316,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -414,4 +414,4 @@
       </label>
     </fieldset>
   </aside>
-</div>
+</figure>

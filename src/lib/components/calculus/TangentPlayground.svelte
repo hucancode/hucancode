@@ -43,7 +43,7 @@
   }
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <Graph
       xMin={XMIN}
@@ -107,4 +107,4 @@
       tangent line — the derivative is the limit of average slopes.
     </p>
   </aside>
-</div>
+</figure>

@@ -573,12 +573,12 @@ const PART_CTL = {
         <fieldset>
           <legend>stats</legend>
           <dl>
-            <dt>primitives</dt><dd>{stats.instances}</dd>
-            <dt>bvh nodes</dt><dd>{stats.nodes}</dd>
-            <dt>bvh build</dt><dd>{stats.buildMs.toFixed(2)} ms</dd>
-            <dt>trace</dt><dd>{stats.traceMs.toFixed(1)} ms</dd>
-            <dt>samples</dt><dd>{stats.samples}</dd>
-            <dt>fps</dt><dd>{stats.fps || 0}</dd>
+            <dt>primitives</dt><dd><data value={stats.instances}>{stats.instances}</data></dd>
+            <dt>bvh nodes</dt><dd><data value={stats.nodes}>{stats.nodes}</data></dd>
+            <dt>bvh build</dt><dd><data value={stats.buildMs}>{stats.buildMs.toFixed(2)} ms</data></dd>
+            <dt>trace</dt><dd><data value={stats.traceMs}>{stats.traceMs.toFixed(1)} ms</data></dd>
+            <dt>samples</dt><dd><data value={stats.samples}>{stats.samples}</data></dd>
+            <dt>fps</dt><dd><data value={stats.fps || 0}>{stats.fps || 0}</data></dd>
           </dl>
         </fieldset>
       {/if}
@@ -737,7 +737,8 @@ const PART_CTL = {
     font-size: 0.85rem;
   }
   dt { opacity: 0.6; }
-  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; }
+  dd meter { width: 4rem; height: 0.6rem; }
 
   ul.mats { display: grid; gap: 0.4rem; }
   li.mat-row { display: flex; align-items: center; gap: 0.4rem; }

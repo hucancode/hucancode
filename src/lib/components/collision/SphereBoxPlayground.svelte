@@ -194,7 +194,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -267,4 +267,4 @@
       clamp each coordinate to the half extents, and transform back.
     </p>
   </aside>
-</div>
+</figure>

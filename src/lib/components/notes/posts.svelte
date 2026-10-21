@@ -46,7 +46,7 @@
   {#each posts as post}
     <li>
       <a href="{base}/post/{post.slug}">
-        <span>
+        <span aria-hidden="true">
           {#each getIcons(post) as icon}
             {@html icon}
           {/each}

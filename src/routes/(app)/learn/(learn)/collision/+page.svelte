@@ -49,9 +49,9 @@
       of scope on this page.
     </p>
     <ul class="primitives">
-      <li><b>sphere</b> — a center point and a radius.</li>
-      <li><b>box</b> — half extents and an orientation.</li>
-      <li><b>cylinder</b> — a radius, a height, and an axis orientation.</li>
+      <li><dfn>sphere</dfn> — a center point and a radius.</li>
+      <li><dfn>box</dfn> — half extents and an orientation.</li>
+      <li><dfn>cylinder</dfn> — a radius, a height, and an axis orientation.</li>
     </ul>
 
     <p class="concept">
@@ -73,13 +73,13 @@
     </p>
     <Tex display tex={"\\begin{align*}\n    d &= \\lVert p_b - p_a \\rVert \\\\\n    \\delta &= (r_a + r_b) - d \\\\\n    \\hat n &= \\frac{p_b - p_a}{d}\n\\end{align*}"} />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. The distance test</h3>
       <p class="intro">
         You can drag the circles.
       </p>
       <SphereSpherePlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>
@@ -97,13 +97,13 @@
     </p>
     <Tex display tex={"\\begin{align*}\n    p_{local} &= R^{-1}(p - c) \\\\\n    p_{clamped} &= \\operatorname{clamp}(p_{local},\\, -h,\\, h) \\\\\n    p_{closest} &= c + R\\,p_{clamped}\n\\end{align*}"} />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. Closest point on a box</h3>
       <p class="intro">
         You can drag the sphere or the box.
       </p>
       <SphereBoxPlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>
@@ -129,13 +129,13 @@
       <Tex tex="r_s + r_c" />.
     </p>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. Caps, rims, and walls</h3>
       <p class="intro">
         You can drag the sphere or the cylinder.
       </p>
       <SphereCylinderPlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>
@@ -158,15 +158,15 @@
     </p>
     <Tex display tex={"\\begin{align*}\n    r &= h_x\\,|\\hat n\\cdot a_x| + h_y\\,|\\hat n\\cdot a_y| \\\\\n    I &= [c\\cdot\\hat n - r,\\; c\\cdot\\hat n + r]\n\\end{align*}"} />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. Casting a shadow</h3>
       <p class="intro">
         Turn the axis and reshape the box. The green bar is the box's projection.
       </p>
       <ProjectionPlayground />
-    </div>
+    </section>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>b. Watch it run</h3>
       <p class="concept">
         For two boxes <Tex tex="A" /> and <Tex tex="B" /> with centers
@@ -183,7 +183,7 @@
         green dots are the contact points, and the green arrow is the minimum translation that separates them.
       </p>
       <SatPlayground />
-    </div>
+    </section>
 
     <ol class="steps">
       <li>For each face normal, project both boxes and compute the overlap of the two intervals.</li>
@@ -217,13 +217,13 @@
     </p>
     <Tex display tex={"\\begin{align*}\n    \\hat u &= \\frac{d_1}{\\lVert d_1 \\rVert} \\\\\n    s &= q_0 - p_0 \\\\\n    s_\\perp &= s - (s\\cdot\\hat u)\\,\\hat u \\\\\n    d &= \\lVert s_\\perp \\rVert \\\\\n    \\hat n &= \\frac{s_\\perp}{d} \\\\\n    \\delta &= (r_A + r_B) - d\n\\end{align*}"} />
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. Closest points between axes</h3>
       <p class="intro">
         You can play drag and tilt the cylinders
       </p>
       <CylinderCylinderPlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>
@@ -247,7 +247,7 @@
       toward the axis.
     </p>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. Axis against box edges</h3>
       <p class="intro">
         Drag the box or the cylinder. The green dot is the closest point on the box, the amber dot is the closest
@@ -255,7 +255,7 @@
         cylinder radius.
       </p>
       <BoxCylinderPlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>
@@ -273,39 +273,39 @@
       (AABB) — it is the cheapest volume to build, merge, and test.
     </p>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>a. A box around every shape</h3>
       <p class="intro">
         You can drag the boxes.
       </p>
       <BvhBoundsPlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>
       <pre><code>{jsAabb}</code></pre>
     </details>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>b. Group and merge</h3>
       <p class="intro">
         You can step through the tree levels.
       </p>
       <BvhBuildPlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>
       <pre><code>{jsBuildBVH}</code></pre>
     </details>
 
-    <div class="playground-wrap">
+    <section class="playground-wrap">
       <h3>c. Query the tree</h3>
       <p class="intro">
         You can drag the query box and resize it. See how the tree answer your query.
       </p>
       <BvhQueryPlayground />
-    </div>
+    </section>
 
     <details class="code">
       <summary>JS</summary>

@@ -24,7 +24,7 @@
   <title>Playgrounds</title>
 </svelte:head>
 
-<Nav />
+<header><Nav /></header>
 <main>
   <section aria-labelledby="learn-heading">
     <h2 id="learn-heading">Learn</h2>
@@ -33,9 +33,9 @@
         <li>
           <a href={l.href}>
             <figure>
-              <img src={l.thumb} alt={l.name} loading="lazy" />
+              <img src={l.thumb} alt="" loading="lazy" />
+              <figcaption>{l.name}</figcaption>
             </figure>
-            <span>{l.name}</span>
           </a>
         </li>
       {/each}
@@ -49,9 +49,9 @@
         <li>
           <a href={p.href}>
             <figure>
-              <img src={p.thumb} alt={p.name} loading="lazy" />
+              <img src={p.thumb} alt="" loading="lazy" />
+              <figcaption>{p.name}</figcaption>
             </figure>
-            <span>{p.name}</span>
           </a>
         </li>
       {/each}
@@ -60,6 +60,9 @@
 </main>
 
 <style>
+  header {
+    display: contents;
+  }
   main {
     max-width: 1280px;
     padding: 1rem 1.5rem 4rem;
@@ -85,24 +88,24 @@
     border: 1px dashed var(--color-neutral-500);
   }
   li > a {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
+    display: block;
     padding: 0.75rem;
     color: var(--ink);
     background: color-mix(in srgb, var(--paper) 70%, transparent);
   }
   figure {
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  figure img {
     aspect-ratio: 16/9;
-    display: grid;
-    place-items: center;
     overflow: hidden;
     background: linear-gradient(135deg, color-mix(in srgb, var(--paper) 90%, var(--ink)), color-mix(in srgb, var(--paper) 80%, var(--ink)));
   }
   figure img {
     width: 100%;
-    height: 100%;
     object-fit: cover;
   }
 </style>

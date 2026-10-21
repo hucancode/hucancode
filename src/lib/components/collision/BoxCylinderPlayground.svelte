@@ -246,7 +246,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -332,4 +332,4 @@
       edge are compared; the nearest pair gives the distance that is checked against the cylinder radius.
     </p>
   </aside>
-</div>
+</figure>

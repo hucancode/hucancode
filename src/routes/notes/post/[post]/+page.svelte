@@ -26,6 +26,7 @@
 </svelte:head>
 
 <article>
+  <header>
   {#if categories}
     <ul>
       {#each categories as category}
@@ -38,9 +39,12 @@
     </ul>
   {/if}
   <h1>{title}</h1>
+  </header>
   <hr />
   {#if cover}
-    <img src={cover} alt="cover" />
+    <figure>
+      <img src={cover} alt="cover" />
+    </figure>
   {/if}
   <div>
     {#if Content}
@@ -62,10 +66,12 @@
   li a:before {
     content: "#";
   }
+  figure {
+    margin: 0 0 2rem;
+  }
   img {
     aspect-ratio: 16/9;
     width: 100%;
     border-radius: 0.5rem;
-    margin-bottom: 2rem;
   }
 </style>
