@@ -65,7 +65,7 @@
   date: "2025/01 - Present",
   [Built a rendering engine using Vulkan featuring: PBR, Post Processing, Skinned Animation, Deferred Rendering, Bindless Rendering, 2D Sprite, UI System. ],
   [Extensive support for procedural animation. Including technique that mimics Snake, Spider, Tail, Chain animations],
-  [Featuring a fast physics engine, support sphere, cylinder, box. Performance are similar to Box3D (as of October 2026)],
+  [Featuring a fast physics engine, support sphere, cylinder, box. Performance are similar to Box3D (as of Oct 2026)],
   [Data-oriented, allowing scene graph with 60K objects to update in 2ms, allowing 30K physics objects to stay 60FPS (measured on Ryzen 7900X3D)],
   [Utilized XCode and RenderDoc to analyze and optimize render calls],
   [Utilized compute shader to build occlusion culling and particle simulation engine],
