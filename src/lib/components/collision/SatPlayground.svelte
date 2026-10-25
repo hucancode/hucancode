@@ -1,5 +1,5 @@
 <script>
-  import Tex from "$lib/components/calculus/Tex.svelte";
+  import Tex from "#lib/components/calculus/Tex.svelte";
   import {
     boxFrame,
     boxCorners,
@@ -10,7 +10,7 @@
     vadd,
     vscale,
     clamp,
-  } from "$lib/playgrounds/collision/sat.js";
+  } from "#lib/playgrounds/collision/sat.js";
 
   const W = 720;
   const H = 520;

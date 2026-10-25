@@ -1,7 +1,7 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as ink from "$lib/playgrounds/ink-dragon";
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as ink from "#lib/playgrounds/ink-dragon";
 
   let scene = $state(null);
   let controlsOpen = $state(true);

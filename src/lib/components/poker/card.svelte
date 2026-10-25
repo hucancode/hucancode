@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import * as poker from "$lib/playgrounds/poker/cards.js";
+  import * as poker from "#lib/playgrounds/poker/cards.js";
 
   /** 0..51 card id, or -1 for an empty slot */
   export let card = 0;

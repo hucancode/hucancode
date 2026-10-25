@@ -1,11 +1,11 @@
 // Everything on ONE ground plane (x/y); camera looks straight DOWN during glyph
 // trace, then tilts to 45deg as 2D hands off to 3D.
 
-import { createPlayground } from "$lib/engine/index.js";
-import { profile, mark, stamp } from "$lib/engine/profile.js";
-import { clamp, lerp, smooth } from "$lib/math/scalar.js";
-import { mulberry32 } from "$lib/math/random.js";
-import { buildOpenSpline, arcLengthCurve } from "$lib/math/curve.js";
+import { createPlayground } from "#lib/engine/index.js";
+import { profile, mark, stamp } from "#lib/engine/profile.js";
+import { clamp, lerp, smooth } from "#lib/math/scalar.js";
+import { mulberry32 } from "#lib/math/random.js";
+import { buildOpenSpline, arcLengthCurve } from "#lib/math/curve.js";
 import { makeSceneRenderer } from "./render/scene.js";
 import { makeTimeline, createCameraTrack } from "./stage/index.js";
 import {

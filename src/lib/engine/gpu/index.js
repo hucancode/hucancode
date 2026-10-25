@@ -1,6 +1,6 @@
 import { createWebGLDevice } from "./webgl.js";
 import { createWebGPUDevice } from "./webgpu.js";
-import { trackBackend } from "$lib/ga.js";
+import { trackBackend } from "#lib/ga.js";
 
 const ORDER = (prefer) => [...new Set([prefer, "webgpu", "webgl"])];
 

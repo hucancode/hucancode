@@ -1,5 +1,5 @@
 <script>
-  import { sampleScene, buildBVH, nodesAtDepth, maxDepth, countNodes } from "$lib/playgrounds/collision/bvh.js";
+  import { sampleScene, buildBVH, nodesAtDepth, maxDepth, countNodes } from "#lib/playgrounds/collision/bvh.js";
 
   const W = 640;
   const H = 360;

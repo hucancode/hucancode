@@ -26,7 +26,10 @@ export const vnorm = (a) => {
   const l = vlen(a);
   return l < EPS ? [0, 1] : [a[0] / l, a[1] / l];
 };
-export const vlerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+export const vlerp = (a, b, t) => [
+  a[0] + (b[0] - a[0]) * t,
+  a[1] + (b[1] - a[1]) * t,
+];
 
 export const clamp = (x, lo, hi) => Math.min(Math.max(x, lo), hi);
 
@@ -75,7 +78,8 @@ export function boxEdges(f) {
 /** Project a box onto a unit axis; returns the interval [min, max] and extent. */
 export function projectBox(f, n) {
   const ext =
-    f.half[0] * Math.abs(vdot(f.axes[0], n)) + f.half[1] * Math.abs(vdot(f.axes[1], n));
+    f.half[0] * Math.abs(vdot(f.axes[0], n)) +
+    f.half[1] * Math.abs(vdot(f.axes[1], n));
   const c = vdot(f.center, n);
   return { min: c - ext, max: c + ext, ext };
 }

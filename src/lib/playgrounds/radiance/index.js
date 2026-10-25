@@ -7,7 +7,7 @@
 //   sceneTex   rgba8   painted emission (rgb) + occlusion (a), uploaded on paint
 //   lightTex   rgba8   moving-light accumulation buffer, cleared each frame
 //   cascadeTex rgba16f one target per cascade level, coarse -> fine
-import { createPlayground } from "$lib/engine/index.js";
+import { createPlayground } from "#lib/engine/index.js";
 import CASCADE from "./shaders/cascade.wgsl?shader";
 import COMPOSITE from "./shaders/composite.wgsl?shader";
 import LIGHTS from "./shaders/lights.wgsl?shader";

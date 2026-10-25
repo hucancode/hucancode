@@ -11,7 +11,7 @@
     valueAt,
     linePath,
     fitY,
-  } from "$lib/playgrounds/calculus/plot.js";
+  } from "#lib/playgrounds/calculus/plot.js";
 
   const options = ["x2", "x3", "sin", "exp"];
   const XMIN = -4;

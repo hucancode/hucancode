@@ -4,10 +4,10 @@
   import {
     handTextToArray,
     handArrayToText,
-  } from "$lib/playgrounds/poker/cards.js";
-  import { expandNotationToCombos } from "$lib/playgrounds/poker/range.js";
-  import Card from "$lib/components/poker/card.svelte";
-  import RangeMatrix from "$lib/components/poker/range-matrix.svelte";
+  } from "#lib/playgrounds/poker/cards.js";
+  import { expandNotationToCombos } from "#lib/playgrounds/poker/range.js";
+  import Card from "#lib/components/poker/card.svelte";
+  import RangeMatrix from "#lib/components/poker/range-matrix.svelte";
 
   export let disabled = false;
 

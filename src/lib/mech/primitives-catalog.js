@@ -2,8 +2,17 @@
 // with its parameters exposed. Purely a viewer; the geometry lives in
 // primitives.js and every kit builds out of the same functions.
 import {
-  box, cylinder, cone, coneCut, sphere, hemisphere, cutHemisphere, halfCylinder,
-  halfCylinderBox, quarterCylinder, gear,
+  box,
+  cylinder,
+  cone,
+  coneCut,
+  sphere,
+  hemisphere,
+  cutHemisphere,
+  halfCylinder,
+  halfCylinderBox,
+  quarterCylinder,
+  gear,
 } from "./primitives.js";
 import { collect } from "./kit.js";
 

@@ -1,14 +1,14 @@
 <script>
   import "katex/dist/katex.css";
-  import Tex from "$lib/components/calculus/Tex.svelte";
-  import TangentPlayground from "$lib/components/calculus/TangentPlayground.svelte";
-  import DerivativePlayground from "$lib/components/calculus/DerivativePlayground.svelte";
-  import DifferentialPlayground from "$lib/components/calculus/DifferentialPlayground.svelte";
-  import RiemannPlayground from "$lib/components/calculus/RiemannPlayground.svelte";
-  import FTCPlayground from "$lib/components/calculus/FTCPlayground.svelte";
-  import PartialDerivativePlayground from "$lib/components/calculus/PartialDerivativePlayground.svelte";
-  import GradientPlayground from "$lib/components/calculus/GradientPlayground.svelte";
-  import GradientDescentPlayground from "$lib/components/calculus/GradientDescentPlayground.svelte";
+  import Tex from "#lib/components/calculus/Tex.svelte";
+  import TangentPlayground from "#lib/components/calculus/TangentPlayground.svelte";
+  import DerivativePlayground from "#lib/components/calculus/DerivativePlayground.svelte";
+  import DifferentialPlayground from "#lib/components/calculus/DifferentialPlayground.svelte";
+  import RiemannPlayground from "#lib/components/calculus/RiemannPlayground.svelte";
+  import FTCPlayground from "#lib/components/calculus/FTCPlayground.svelte";
+  import PartialDerivativePlayground from "#lib/components/calculus/PartialDerivativePlayground.svelte";
+  import GradientPlayground from "#lib/components/calculus/GradientPlayground.svelte";
+  import GradientDescentPlayground from "#lib/components/calculus/GradientDescentPlayground.svelte";
 </script>
 
 <svelte:head>

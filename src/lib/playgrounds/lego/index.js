@@ -6,8 +6,8 @@ import {
   animate,
   utils,
   eases,
-} from "$lib/engine/index.js";
-import { hexToRGB } from "$lib/math/color.js";
+} from "#lib/engine/index.js";
+import { hexToRGB } from "#lib/math/color.js";
 import { makeSolid } from "./solid.js";
 import { resolveAssembly } from "./assembly.js";
 import { MODEL, PALETTE, VIEW } from "./templates.js";

@@ -21,8 +21,15 @@
 //           base and of the male base. A part puts its slot on its own plain
 //           face and never computes how deep the joint reaches.
 import {
-  box, cylinder, sphere, cutHemisphere, halfCylinderBox,
-  rotX, rotY, rotZ, translate,
+  box,
+  cylinder,
+  sphere,
+  cutHemisphere,
+  halfCylinderBox,
+  rotX,
+  rotY,
+  rotZ,
+  translate,
 } from "./primitives.js";
 
 export const HPI = Math.PI / 2;
@@ -30,28 +37,62 @@ export const HPI = Math.PI / 2;
 const JOINT_DEFAULTS = {
   // pinOut = how far the pin pokes past the outer clevis's outboard lug faces;
   // 0 keeps it inside the clevis (clamped to PIN_OUT_MIN, not truly flush)
-  hinge: { jaw: 0.24, lugT: 0.12, lugL: 0.45, lugD: 0.55, pinR: 0.14, clr: 0.03, pinOut: 0.05, flangeT: 0.16 },
-  pivot: { barrelR: 0.3, barrelLen: 0.8, flangeR: 0.44, neckR: 0.17, neckLen: 0.16, capR: 0.32 },
-  ball: { ballR: 0.3, socketT: 0.1, cut: 0.75, studR: 0.11, studLen: 0.3, flangeW: 0.95, flangeT: 0.14 },
-  prismatic: { sleeveW: 0.5, sleeveLen: 0.7, sleeveD: 0.5, ramW: 0.3, ramLen: 0.7 },
+  hinge: {
+    jaw: 0.24,
+    lugT: 0.12,
+    lugL: 0.45,
+    lugD: 0.55,
+    pinR: 0.14,
+    clr: 0.03,
+    pinOut: 0.05,
+    flangeT: 0.16,
+  },
+  pivot: {
+    barrelR: 0.3,
+    barrelLen: 0.8,
+    flangeR: 0.44,
+    neckR: 0.17,
+    neckLen: 0.16,
+    capR: 0.32,
+  },
+  ball: {
+    ballR: 0.3,
+    socketT: 0.1,
+    cut: 0.75,
+    studR: 0.11,
+    studLen: 0.3,
+    flangeW: 0.95,
+    flangeT: 0.14,
+  },
+  prismatic: {
+    sleeveW: 0.5,
+    sleeveLen: 0.7,
+    sleeveD: 0.5,
+    ramW: 0.3,
+    ramLen: 0.7,
+  },
 };
 
 // ---- DIMS ------------------------------------------------------------------
 // ONE dims function per joint family, consumed by BOTH the pieces and the mount
 // frames, so a mount can never drift from the geometry it seats on.
 
-const PIN_OUT_MIN = 0.005;   // smallest pin overhang past the outboard lug faces
+const PIN_OUT_MIN = 0.005; // smallest pin overhang past the outboard lug faces
 
 export function hingeDims(p = {}) {
   const q = { ...JOINT_DEFAULTS.hinge, ...p };
   const flangeT = q.flangeT || Math.max(0.12, q.lugT * 1.3);
-  const tip = Math.min(0.2, q.lugL * 0.4);        // square lug reach past the pin
-  const shank = Math.max(0.05, q.lugL - tip);     // pin -> lug root (where the base seats)
-  const jawW = q.jaw + 2 * q.lugT + 2 * q.clr;    // the FEMALE jaw: male half + slack
+  const tip = Math.min(0.2, q.lugL * 0.4); // square lug reach past the pin
+  const shank = Math.max(0.05, q.lugL - tip); // pin -> lug root (where the base seats)
+  const jawW = q.jaw + 2 * q.lugT + 2 * q.clr; // the FEMALE jaw: male half + slack
   return {
-    ...q, flangeT, tip, shank, jawW,
+    ...q,
+    flangeT,
+    tip,
+    shank,
+    jawW,
     knuckleR: q.lugD / 2,
-    reach: shank + flangeT,                       // pin -> base outer face
+    reach: shank + flangeT, // pin -> base outer face
     // pin half-length: the outboard lug faces plus the pinOut overhang, clamped
     // so the pin's end cap never lands coplanar with a lug face (z-fighting)
     pinHalf: jawW / 2 + q.lugT + Math.max(PIN_OUT_MIN, q.pinOut ?? 0),
@@ -62,22 +103,36 @@ function ballDims(p = {}) {
   const q = { ...JOINT_DEFAULTS.ball, ...p };
   return {
     ...q,
-    drop: q.ballR * 0.55,                         // socket base plane below the ball centre
-    top: q.ballR + q.studLen,                     // ball centre -> stud base underside
+    drop: q.ballR * 0.55, // socket base plane below the ball centre
+    top: q.ballR + q.studLen, // ball centre -> stud base underside
   };
 }
 
 function pivotDims(p = {}) {
   const q = { ...JOINT_DEFAULTS.pivot, ...p };
-  const flangeT = 0.1, capT = 0.1, half = q.barrelLen / 2;
-  return { ...q, flangeT, capT, half, reach: half + flangeT + q.neckLen + capT };
+  const flangeT = 0.1,
+    capT = 0.1,
+    half = q.barrelLen / 2;
+  return {
+    ...q,
+    flangeT,
+    capT,
+    half,
+    reach: half + flangeT + q.neckLen + capT,
+  };
 }
 
 function prismaticDims(p = {}) {
   const q = { ...JOINT_DEFAULTS.prismatic, ...p };
   const halfL = q.sleeveLen / 2;
-  const engage = q.sleeveLen * 0.25;   // ram length that must stay engaged in the sleeve
-  return { ...q, halfL, engage, travel: Math.max(0, halfL - engage), reach: halfL + q.ramLen };
+  const engage = q.sleeveLen * 0.25; // ram length that must stay engaged in the sleeve
+  return {
+    ...q,
+    halfL,
+    engage,
+    travel: Math.max(0, halfL - engage),
+    reach: halfL + q.ramLen,
+  };
 }
 
 // ---- HINGE PIECES ----------------------------------------------------------
@@ -91,15 +146,18 @@ function prismaticDims(p = {}) {
 // thickness along X. `up` runs the shank +Y (female), else -Y (male).
 function lug(d, thickness, xc, up) {
   const g = halfCylinderBox(d.knuckleR, thickness, d.shank, 16);
-  rotX(g, -HPI);          // axis -> -Z, knuckle bulge -> +Y, shank -> -Y
-  rotY(g, HPI);           // axis (thickness) -> -X
+  rotX(g, -HPI); // axis -> -Z, knuckle bulge -> +Y, shank -> -Y
+  rotY(g, HPI); // axis (thickness) -> -X
   if (up) rotZ(g, Math.PI);
   return translate(g, xc + (up ? -thickness / 2 : thickness / 2), 0, 0);
 }
 
 // the fork: two lugs straddling `jaw`, or one solid tang filling it
 function fork(add, d, jaw, up, tang) {
-  if (tang) { add(lug(d, jaw + 2 * d.lugT, 0, up)); return; }
+  if (tang) {
+    add(lug(d, jaw + 2 * d.lugT, 0, up));
+    return;
+  }
   const x = jaw / 2 + d.lugT / 2;
   add(lug(d, d.lugT, -x, up));
   add(lug(d, d.lugT, x, up));
@@ -113,10 +171,17 @@ function hingeBase(add, p, { female = false, disc = false, w } = {}) {
   const d = hingeDims(p);
   const width = w ?? (female ? d.jawW + 2 * d.lugT : d.jaw + 2 * d.lugT);
   const yc = (female ? 1 : -1) * (d.shank + d.flangeT / 2);
-  if (disc)                                        // cylinder is base-anchored: shift it
-    add(translate(cylinder(Math.hypot(width, d.lugD) / 2, d.flangeT, 24), 0, yc - d.flangeT / 2, 0));
-  else
-    add(translate(box(width, d.flangeT, d.lugD), 0, yc, 0));
+  if (disc)
+    // cylinder is base-anchored: shift it
+    add(
+      translate(
+        cylinder(Math.hypot(width, d.lugD) / 2, d.flangeT, 24),
+        0,
+        yc - d.flangeT / 2,
+        0,
+      ),
+    );
+  else add(translate(box(width, d.flangeT, d.lugD), 0, yc, 0));
 }
 
 // the radius of a female base DISC — what a part blends its body into when it
@@ -129,7 +194,14 @@ export const hingeDiscR = (p) => {
 // HINGE PIN — one bare shaft (no end caps) through every knuckle bore
 function hingePin(add, p) {
   const d = hingeDims(p);
-  add(translate(rotZ(cylinder(d.pinR, 2 * d.pinHalf, 20), -HPI), -d.pinHalf, 0, 0));
+  add(
+    translate(
+      rotZ(cylinder(d.pinR, 2 * d.pinHalf, 20), -HPI),
+      -d.pinHalf,
+      0,
+      0,
+    ),
+  );
 }
 
 // HINGE FEMALE — outer fork (wide jaw) + its base + the pin.
@@ -154,7 +226,9 @@ function hingeMale(add, p, { base = true, disc = false, tang = false } = {}) {
 // to its own base (bolting UP into the child).
 
 const ballFlange = (d, w) =>
-  d.base === "disc" || d.disc ? cylinder(w / 2, d.flangeT, 24) : box(w, d.flangeT, w);
+  d.base === "disc" || d.disc
+    ? cylinder(w / 2, d.flangeT, 24)
+    : box(w, d.flangeT, w);
 
 // BALL BASE — the flange under the socket (female) or on top of the stud (male)
 function ballBase(add, p, { female = false, w } = {}) {
@@ -167,17 +241,24 @@ function ballBase(add, p, { female = false, w } = {}) {
 // BALL FEMALE — the cut-hemisphere socket cupping the ball, plus its base
 function ballFemale(add, p, { base = true } = {}) {
   const d = ballDims(p);
-  const rOut = d.ballR + 0.02 + d.socketT;         // ball + clearance + wall
+  const rOut = d.ballR + 0.02 + d.socketT; // ball + clearance + wall
   if (base) ballBase(add, p, { female: true });
   // cutHemisphere's wall t and cut are FRACTIONS of r
-  add(translate(cutHemisphere(rOut, d.socketT / rOut, d.cut, 28, 8), 0, -d.drop, 0));
+  add(
+    translate(
+      cutHemisphere(rOut, d.socketT / rOut, d.cut, 28, 8),
+      0,
+      -d.drop,
+      0,
+    ),
+  );
 }
 
 // BALL MALE — the stud: the sphere, the shank out of the socket mouth, its base
 function ballMale(add, p, { base = true } = {}) {
   const d = ballDims(p);
   add(sphere(d.ballR, 20, 14));
-  add(cylinder(d.studR, d.top, 18));               // stud shank
+  add(cylinder(d.studR, d.top, 18)); // stud shank
   if (base) ballBase(add, p, { female: false });
 }
 
@@ -185,14 +266,15 @@ function ballMale(add, p, { base = true } = {}) {
 // PIVOT — a turntable: spin axis = Y through the origin, symmetric barrel with
 // a flange ring, neck and end cap on each end. Female = barrel + lower stack.
 const pivotStack = (add, d, s) => {
-  const at = (g, y) => add(translate(rotX(g, s > 0 ? 0 : Math.PI), 0, s * y, 0));
-  at(cylinder(d.flangeR, d.flangeT, 28), d.half);                       // flange disc
-  at(cylinder(d.neckR, d.neckLen, 20), d.half + d.flangeT);             // neck
-  at(cylinder(d.capR, d.capT, 24), d.half + d.flangeT + d.neckLen);     // end cap
+  const at = (g, y) =>
+    add(translate(rotX(g, s > 0 ? 0 : Math.PI), 0, s * y, 0));
+  at(cylinder(d.flangeR, d.flangeT, 28), d.half); // flange disc
+  at(cylinder(d.neckR, d.neckLen, 20), d.half + d.flangeT); // neck
+  at(cylinder(d.capR, d.capT, 24), d.half + d.flangeT + d.neckLen); // end cap
 };
 function pivotFemale(add, p) {
   const d = pivotDims(p);
-  add(translate(cylinder(d.barrelR, d.barrelLen, 28), 0, -d.half, 0));  // barrel
+  add(translate(cylinder(d.barrelR, d.barrelLen, 28), 0, -d.half, 0)); // barrel
   pivotStack(add, d, -1);
 }
 const pivotMale = (add, p) => pivotStack(add, pivotDims(p), 1);
@@ -206,10 +288,11 @@ const ram = (add, d, s, slide) => {
 };
 function prismaticFemale(add, p) {
   const d = prismaticDims(p);
-  add(box(d.sleeveW, d.sleeveLen, d.sleeveD));     // sleeve housing
-  ram(add, d, -1, 0);                              // the ram that stays with the sleeve
+  add(box(d.sleeveW, d.sleeveLen, d.sleeveD)); // sleeve housing
+  ram(add, d, -1, 0); // the ram that stays with the sleeve
 }
-const prismaticMale = (add, p, slide = 0) => ram(add, prismaticDims(p), 1, slide);
+const prismaticMale = (add, p, slide = 0) =>
+  ram(add, prismaticDims(p), 1, slide);
 
 // ---- JOINT SPECS -----------------------------------------------------------
 // What the assemble engine reads. Per kind:
@@ -227,7 +310,8 @@ const prismaticMale = (add, p, slide = 0) => ram(add, prismaticDims(p), 1, slide
 //           lands (joint space), `b` where the CHILD's does (LAST bone's frame).
 
 const O = [0, 0, 0];
-const X = [1, 0, 0], Z = [0, 0, 1];
+const X = [1, 0, 0],
+  Z = [0, 0, 1];
 
 // Every joint bolts the same way: the two base faces sit `ra` / `rb` out along
 // the joint axis, back to back, pointing away from each other. `up` = which way
@@ -243,15 +327,17 @@ const faces = (ra, rb, f, up = 1) => ({
 // the child's turntable (hinge+twist), OFF where it is a plain flange.
 const femaleP = {
   bone: -1,
-  build: (add, p) => hingeFemale(add, p, { base: p.baseF !== false, disc: !!p.discF }),
+  build: (add, p) =>
+    hingeFemale(add, p, { base: p.baseF !== false, disc: !!p.discF }),
 };
 const maleP = (bone, discDflt = false) => ({
   bone,
-  build: (add, p) => hingeMale(add, p, {
-    base: p.baseM !== false,
-    disc: discDflt ? p.discM !== false : !!p.discM,
-    tang: !!p.tang,
-  }),
+  build: (add, p) =>
+    hingeMale(add, p, {
+      base: p.baseM !== false,
+      disc: discDflt ? p.discM !== false : !!p.discM,
+      tang: !!p.tang,
+    }),
 });
 const clevisMounts = (p) => {
   const r = hingeDims(p).reach;
@@ -271,7 +357,10 @@ const hinge = {
 // which the male half rides), then twist about Y (bone 1, bare: only the child
 // turns). The elbow of an arm whose forearm can roll.
 const hingeTwist = {
-  dof: [{ axis: "x", at: () => O }, { axis: "y", at: () => O }],
+  dof: [
+    { axis: "x", at: () => O },
+    { axis: "y", at: () => O },
+  ],
   pose: ["swing", "twist"],
   pieces: [femaleP, maleP(0, true)],
   mounts: clevisMounts,
@@ -297,13 +386,16 @@ const pin = {
 const discHinge = {
   dof: [
     { axis: "y", at: () => O },
-    { axis: "x", at: () => O, rest: ["x", HPI] },          // the L: swing the tang down
+    { axis: "x", at: () => O, rest: ["x", HPI] }, // the L: swing the tang down
     { axis: "y", at: () => O },
   ],
   pose: ["spinF", "swing", "spinM"],
   pieces: [
     { bone: 0, build: (add, p) => hingeFemale(add, p, { disc: true }) },
-    { bone: 1, build: (add, p) => hingeMale(add, p, { disc: true, tang: true }) },
+    {
+      bone: 1,
+      build: (add, p) => hingeMale(add, p, { disc: true, tang: true }),
+    },
   ],
   mounts: clevisMounts,
 };
@@ -315,7 +407,8 @@ const discHinge = {
 // bolt to. Stage B is the whole hinge turned a quarter turn — which is what
 // crosses its pin with stage A's — and that turn lives on the BONE's rest, so the
 // tang and the child both ride it.
-const wristDrop = (p) => {                                 // stage-B pin, below stage A's
+const wristDrop = (p) => {
+  // stage-B pin, below stage A's
   const d = hingeDims(p);
   return -(2 * d.shank + d.flangeT);
 };
@@ -331,15 +424,19 @@ const wrist = {
     {
       bone: 0,
       build: (add, p) => {
-        hingeMale(add, p, { base: false, tang: true });                 // yoke top: stage-A male
+        hingeMale(add, p, { base: false, tang: true }); // yoke top: stage-A male
         // stage-B's female is part of the YOKE, so it rides this bone too, and
         // carries stage B's quarter turn explicitly (bone 1's rest only turns
         // what hangs BELOW the stage-B pin)
         const at = (g) => add(translate(rotY(g, -HPI), 0, wristDrop(p), 0));
-        hingeFemale(at, p, { disc: p.discMid !== false });              // its base = THE middle plate
+        hingeFemale(at, p, { disc: p.discMid !== false }); // its base = THE middle plate
       },
     },
-    { bone: 1, build: (add, p) => hingeMale(add, p, { disc: p.discM !== false, tang: true }) },
+    {
+      bone: 1,
+      build: (add, p) =>
+        hingeMale(add, p, { disc: p.discM !== false, tang: true }),
+    },
   ],
   mounts: clevisMounts,
 };
@@ -347,10 +444,16 @@ const wrist = {
 // BALL — ball-and-socket: ONE bone, all three axes (a "free" bone).
 const ball = {
   dof: [{ axis: "free", at: () => O }],
-  pose: ["rx", "ry", "rz"],                                  // euler channels of the one bone
+  pose: ["rx", "ry", "rz"], // euler channels of the one bone
   pieces: [
-    { bone: -1, build: (add, p) => ballFemale(add, p, { base: p.baseF !== false }) },
-    { bone: 0, build: (add, p) => ballMale(add, p, { base: p.baseM !== false }) },
+    {
+      bone: -1,
+      build: (add, p) => ballFemale(add, p, { base: p.baseF !== false }),
+    },
+    {
+      bone: 0,
+      build: (add, p) => ballMale(add, p, { base: p.baseM !== false }),
+    },
   ],
   mounts: (p) => {
     const d = ballDims(p);
@@ -362,7 +465,10 @@ const ball = {
 const pivot = {
   dof: [{ axis: "y", at: () => O }],
   pose: ["spin"],
-  pieces: [{ bone: -1, build: pivotFemale }, { bone: 0, build: pivotMale }],
+  pieces: [
+    { bone: -1, build: pivotFemale },
+    { bone: 0, build: pivotMale },
+  ],
   mounts: (p) => faces(pivotDims(p).reach, pivotDims(p).reach, Z, -1),
 };
 
@@ -373,12 +479,21 @@ const prismatic = {
   pose: ["slide"],
   pieces: [
     { bone: -1, build: prismaticFemale },
-    { bone: 0, build: (add, p) => prismaticMale(add, p, 0) },   // the bone does the sliding
+    { bone: 0, build: (add, p) => prismaticMale(add, p, 0) }, // the bone does the sliding
   ],
   mounts: (p) => faces(prismaticDims(p).reach, prismaticDims(p).reach, X, -1),
 };
 
-export const JOINTS = { hinge, hingeTwist, pin, discHinge, wrist, ball, pivot, prismatic };
+export const JOINTS = {
+  hinge,
+  hingeTwist,
+  pin,
+  discHinge,
+  wrist,
+  ball,
+  pivot,
+  prismatic,
+};
 
 export const jointSpec = (kind) => {
   const J = JOINTS[kind];
@@ -401,18 +516,22 @@ export function jointModel(kind, add, p = {}, pose = {}) {
     const { axis, at, rest } = J.dof[i];
     const [ox, oy, oz] = at(p);
     const prev = ride;
-    const seat = rest ? (g) => prev(translate(ROT[rest[0]](g, rest[1]), ox, oy, oz))
+    const seat = rest
+      ? (g) => prev(translate(ROT[rest[0]](g, rest[1]), ox, oy, oz))
       : (g) => prev(translate(g, ox, oy, oz));
     if (axis === "free") {
       const [rx, ry, rz] = J.pose.map((k) => pose[k] || 0);
       ride = (g) => seat(rotZ(rotY(rotX(g, rx), ry), rz));
-    } else if (axis[0] === "t") {                            // slide
-      const v = pose[J.pose[i]] || 0, k = "xyz".indexOf(axis[1]);
+    } else if (axis[0] === "t") {
+      // slide
+      const v = pose[J.pose[i]] || 0,
+        k = "xyz".indexOf(axis[1]);
       const d = [0, 0, 0];
       d[k] = v;
       ride = (g) => seat(translate(g, d[0], d[1], d[2]));
     } else {
-      const a = pose[J.pose[i]] || 0, rot = ROT[axis];
+      const a = pose[J.pose[i]] || 0,
+        rot = ROT[axis];
       ride = (g) => seat(rot(g, a));
     }
     frames.push(ride);

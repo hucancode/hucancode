@@ -1,16 +1,16 @@
 <script>
   import "katex/dist/katex.css";
-  import Tex from "$lib/components/calculus/Tex.svelte";
-  import SphereSpherePlayground from "$lib/components/collision/SphereSpherePlayground.svelte";
-  import SphereBoxPlayground from "$lib/components/collision/SphereBoxPlayground.svelte";
-  import SphereCylinderPlayground from "$lib/components/collision/SphereCylinderPlayground.svelte";
-  import ProjectionPlayground from "$lib/components/collision/ProjectionPlayground.svelte";
-  import SatPlayground from "$lib/components/collision/SatPlayground.svelte";
-  import CylinderCylinderPlayground from "$lib/components/collision/CylinderCylinderPlayground.svelte";
-  import BoxCylinderPlayground from "$lib/components/collision/BoxCylinderPlayground.svelte";
-  import BvhBoundsPlayground from "$lib/components/collision/BvhBoundsPlayground.svelte";
-  import BvhBuildPlayground from "$lib/components/collision/BvhBuildPlayground.svelte";
-  import BvhQueryPlayground from "$lib/components/collision/BvhQueryPlayground.svelte";
+  import Tex from "#lib/components/calculus/Tex.svelte";
+  import SphereSpherePlayground from "#lib/components/collision/SphereSpherePlayground.svelte";
+  import SphereBoxPlayground from "#lib/components/collision/SphereBoxPlayground.svelte";
+  import SphereCylinderPlayground from "#lib/components/collision/SphereCylinderPlayground.svelte";
+  import ProjectionPlayground from "#lib/components/collision/ProjectionPlayground.svelte";
+  import SatPlayground from "#lib/components/collision/SatPlayground.svelte";
+  import CylinderCylinderPlayground from "#lib/components/collision/CylinderCylinderPlayground.svelte";
+  import BoxCylinderPlayground from "#lib/components/collision/BoxCylinderPlayground.svelte";
+  import BvhBoundsPlayground from "#lib/components/collision/BvhBoundsPlayground.svelte";
+  import BvhBuildPlayground from "#lib/components/collision/BvhBuildPlayground.svelte";
+  import BvhQueryPlayground from "#lib/components/collision/BvhQueryPlayground.svelte";
   import {
     jsSphereSphere,
     jsSphereBox,
@@ -21,7 +21,7 @@
     jsAabb,
     jsBuildBVH,
     jsQueryBVH,
-  } from "$lib/playgrounds/collision/snippets.js";
+  } from "#lib/playgrounds/collision/snippets.js";
 </script>
 
 <svelte:head>

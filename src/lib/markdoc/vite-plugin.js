@@ -1,43 +1,45 @@
-import fs from 'fs/promises';
-import path from 'path';
-import Markdoc from '@markdoc/markdoc';
-import { config } from './config.js';
+import fs from "fs/promises";
+import path from "path";
+import Markdoc from "@markdoc/markdoc";
+import { config } from "./config.js";
 
 function extractFrontmatter(content) {
   const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/;
   const match = content.match(frontmatterRegex);
-  
+
   if (!match) {
     return { frontmatter: {}, content };
   }
-  
+
   const frontmatterString = match[1];
   const contentWithoutFrontmatter = content.slice(match[0].length);
-  
+
   const frontmatter = {};
-  frontmatterString.split('\n').forEach(line => {
-    const colonIndex = line.indexOf(':');
+  frontmatterString.split("\n").forEach((line) => {
+    const colonIndex = line.indexOf(":");
     if (colonIndex > 0) {
       const key = line.slice(0, colonIndex).trim();
       let value = line.slice(colonIndex + 1).trim();
-      
-      if (value.startsWith('[') || line.trim() === `${key}:`) {
+
+      if (value.startsWith("[") || line.trim() === `${key}:`) {
         const lines = [line];
-        const arrayMatch = frontmatterString.match(new RegExp(`${key}:\\s*\\n((?:\\s+-\\s+.*\\n?)+)`));
+        const arrayMatch = frontmatterString.match(
+          new RegExp(`${key}:\\s*\\n((?:\\s+-\\s+.*\\n?)+)`),
+        );
         if (arrayMatch) {
           value = arrayMatch[1]
-            .split('\n')
-            .filter(l => l.trim())
-            .map(l => l.replace(/^\s*-\s*/, '').trim());
+            .split("\n")
+            .filter((l) => l.trim())
+            .map((l) => l.replace(/^\s*-\s*/, "").trim());
         }
       } else {
-        value = value.replace(/^["']|["']$/g, '');
+        value = value.replace(/^["']|["']$/g, "");
       }
-      
+
       frontmatter[key] = value;
     }
   });
-  
+
   return { frontmatter, content: contentWithoutFrontmatter };
 }
 
@@ -48,7 +50,7 @@ function transformMarkdocToJS(content, frontmatter, filename) {
   const renderable = Markdoc.transform(ast, config);
 
   return `
-import MarkdocRenderer from '$lib/markdoc/renderer.svelte';
+import MarkdocRenderer from '#lib/markdoc/renderer.svelte';
 
 export const metadata = ${JSON.stringify(frontmatter)};
 
@@ -66,41 +68,48 @@ function transformMathExpressions(content) {
     return `{% math type="block" %}${math.trim()}{% /math %}`;
   });
 
-  content = content.replace(/(?<!\\)\$(?!\$)(.*?)(?<!\\)\$(?!\$)/g, (match, math) => {
-    return `{% math type="inline" %}${math.trim()}{% /math %}`;
-  });
-  
+  content = content.replace(
+    /(?<!\\)\$(?!\$)(.*?)(?<!\\)\$(?!\$)/g,
+    (match, math) => {
+      return `{% math type="inline" %}${math.trim()}{% /math %}`;
+    },
+  );
+
   return content;
 }
 
 export function markdocPlugin() {
   return {
-    name: 'vite-plugin-markdoc',
-    
+    name: "vite-plugin-markdoc",
+
     async transform(src, id) {
-      if (!id.endsWith('.md')) return null;
-      
+      if (!id.endsWith(".md")) return null;
+
       try {
         const { frontmatter, content } = extractFrontmatter(src);
-        const filename = path.basename(id, '.md');
-        const transformed = transformMarkdocToJS(content, frontmatter, filename);
-        
+        const filename = path.basename(id, ".md");
+        const transformed = transformMarkdocToJS(
+          content,
+          frontmatter,
+          filename,
+        );
+
         return {
           code: transformed,
-          map: null
+          map: null,
         };
       } catch (error) {
         this.error(`Error processing Markdoc file ${id}: ${error.message}`);
       }
     },
-    
+
     handleHotUpdate({ file, server }) {
-      if (file.endsWith('.md')) {
+      if (file.endsWith(".md")) {
         server.ws.send({
-          type: 'full-reload',
-          path: '*'
+          type: "full-reload",
+          path: "*",
         });
       }
-    }
+    },
   };
 }

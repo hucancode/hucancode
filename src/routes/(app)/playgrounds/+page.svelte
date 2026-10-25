@@ -1,5 +1,5 @@
 <script>
-  import Nav from "$lib/components/nav.svelte";
+  import Nav from "#lib/components/nav.svelte";
 
   const lessons = [
     { href: "/learn/calculus", name: "Intro to Calculus", thumb: "/assets/thumb/calculus.png" },

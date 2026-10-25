@@ -27,7 +27,9 @@ function jsNode(node, ind) {
     .map(([k, v]) => `${k}: ${js(v)}`)
     .join(", ");
   if (children?.length) {
-    const kids = children.map((c) => `${pad2}${jsNode(c, ind + 1)}`).join(",\n");
+    const kids = children
+      .map((c) => `${pad2}${jsNode(c, ind + 1)}`)
+      .join(",\n");
     body += `, children: [\n${kids}\n${pad}]`;
   }
   return `{ ${body} }`;

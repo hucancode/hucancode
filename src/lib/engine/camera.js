@@ -6,7 +6,13 @@ const glProject = (out, fov, aspect, near, far) =>
   mat4.perspective(out, fov, aspect, near, far);
 
 export class Camera {
-  constructor(fov = Math.PI / 4, aspect = 1, near = 1, far = 2000, project = glProject) {
+  constructor(
+    fov = Math.PI / 4,
+    aspect = 1,
+    near = 1,
+    far = 2000,
+    project = glProject,
+  ) {
     this.fov = fov;
     this.aspect = aspect;
     this.near = near;
@@ -25,7 +31,13 @@ export class Camera {
     return this;
   }
   updateProjectionMatrix() {
-    this.project(this.projectionMatrix, this.fov, this.aspect, this.near, this.far);
+    this.project(
+      this.projectionMatrix,
+      this.fov,
+      this.aspect,
+      this.near,
+      this.far,
+    );
     return this;
   }
   update() {

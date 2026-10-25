@@ -20,7 +20,10 @@ export function screenToWorld(x, y, w, h, view) {
 // wheel zoom anchored at the cursor: the world point under (sx,sy) stays put.
 export function zoomAt(view, sx, sy, deltaY, w, h) {
   const before = screenToWorld(sx, sy, w, h, view);
-  view.zoom = Math.max(0.2, Math.min(20, view.zoom * Math.exp(-deltaY * 0.0015)));
+  view.zoom = Math.max(
+    0.2,
+    Math.min(20, view.zoom * Math.exp(-deltaY * 0.0015)),
+  );
   const after = screenToWorld(sx, sy, w, h, view);
   view.panX += before.x - after.x;
   view.panY += before.y - after.y;

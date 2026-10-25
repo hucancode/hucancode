@@ -3,7 +3,9 @@
 
 let _id = 0;
 export const uid = () => ++_id;
-export const setUidFloor = (n) => { if (n > _id) _id = n; };
+export const setUidFloor = (n) => {
+  if (n > _id) _id = n;
+};
 
 const DEFAULT_PATH = () => ({ ctrl: null, pctrl: null });
 
@@ -23,22 +25,28 @@ export function resolveControl(stroke, segIdx) {
 // auto quad control at intersection of Catmull-rom endpoint tangent lines
 // degenerate/overshoot -> averaged Catmull handles.
 function autoControl(p0, p1, p2, p3) {
-  const t1x = p2.x - p0.x, t1y = p2.y - p0.y;
-  const t2x = p3.x - p1.x, t2y = p3.y - p1.y;
-  const wx = p2.x - p1.x, wy = p2.y - p1.y;
+  const t1x = p2.x - p0.x,
+    t1y = p2.y - p0.y;
+  const t2x = p3.x - p1.x,
+    t2y = p3.y - p1.y;
+  const wx = p2.x - p1.x,
+    wy = p2.y - p1.y;
   const det = t1x * t2y - t1y * t2x;
   if (Math.abs(det) > 1e-9) {
-    const a = (wx * t2y - wy * t2x) / det;   // dist along t1 from p1
-    const b = (t1x * wy - t1y * wx) / det;   // dist along t2 back from p2
+    const a = (wx * t2y - wy * t2x) / det; // dist along t1 from p1
+    const b = (t1x * wy - t1y * wx) / det; // dist along t2 back from p2
     const chord = Math.hypot(wx, wy) || 1e-6;
-    const m1 = Math.hypot(t1x, t1y), m2 = Math.hypot(t2x, t2y);
+    const m1 = Math.hypot(t1x, t1y),
+      m2 = Math.hypot(t2x, t2y);
     if (a > 0 && b > 0 && a * m1 < 4 * chord && b * m2 < 4 * chord) {
       return { x: p1.x + t1x * a, y: p1.y + t1y * a };
     }
   }
   const k = (1 - AUTO_TENSION) / 6;
-  const h1x = p1.x + (p2.x - p0.x) * k, h1y = p1.y + (p2.y - p0.y) * k;
-  const h2x = p2.x - (p3.x - p1.x) * k, h2y = p2.y - (p3.y - p1.y) * k;
+  const h1x = p1.x + (p2.x - p0.x) * k,
+    h1y = p1.y + (p2.y - p0.y) * k;
+  const h2x = p2.x - (p3.x - p1.x) * k,
+    h2y = p2.y - (p3.y - p1.y) * k;
   return { x: (h1x + h2x) / 2, y: (h1y + h2y) / 2 };
 }
 
@@ -47,7 +55,9 @@ export function makePoint(x, y, pressure = 0.5) {
 }
 
 export function makeStrokeRaw(points) {
-  const paths = new Array(Math.max(0, points.length - 1)).fill(0).map(DEFAULT_PATH);
+  const paths = new Array(Math.max(0, points.length - 1))
+    .fill(0)
+    .map(DEFAULT_PATH);
   return { id: uid(), points: [...points], paths };
 }
 
@@ -80,29 +90,39 @@ function bez(p1, c, p2, t) {
 function mirror(a, b) {
   return { x: 2 * b.x - a.x, y: 2 * b.y - a.y };
 }
-function clampN(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+function clampN(v, lo, hi) {
+  return v < lo ? lo : v > hi ? hi : v;
+}
 
 export const DEFAULT_TIMING = () => ({ speed: 1.0 });
 
 const MIN_SPEED = 0.05;
 const THIN_GAIN = 2.0;
 const CORNER = 0.7;
-const THIN   = 0.6;
+const THIN = 0.6;
 
 // dense-sample seg once: arc = curve length, bellyX = arc fraction of the
 // curve point nearest the control ("belly" of the bow)
 export function sampleSeg(stroke, segIdx) {
   const pts = stroke.points;
   const c = resolveControl(stroke, segIdx);
-  const p1 = pts[segIdx], p2 = pts[segIdx + 1];
+  const p1 = pts[segIdx],
+    p2 = pts[segIdx + 1];
   const dense = 96;
-  let prev = p1, arc = 0, bellyArc = 0, bestD = Infinity;
+  let prev = p1,
+    arc = 0,
+    bellyArc = 0,
+    bestD = Infinity;
   for (let i = 0; i <= dense; i++) {
     const cur = i === 0 ? p1 : bez(p1, c, p2, i / dense);
     if (i > 0) arc += Math.hypot(cur.x - prev.x, cur.y - prev.y);
-    const dx = cur.x - c.x, dy = cur.y - c.y;
+    const dx = cur.x - c.x,
+      dy = cur.y - c.y;
     const d = dx * dx + dy * dy;
-    if (d < bestD) { bestD = d; bellyArc = arc; }
+    if (d < bestD) {
+      bestD = d;
+      bellyArc = arc;
+    }
     prev = cur;
   }
   arc = arc || 1e-6;
@@ -113,10 +133,15 @@ export function sampleSeg(stroke, segIdx) {
 function turnSharp(stroke, i) {
   const pts = stroke.points;
   if (i <= 0 || i >= pts.length - 1) return 0;
-  const a = pts[i - 1], b = pts[i], c = pts[i + 1];
-  const ix = b.x - a.x, iy = b.y - a.y;
-  const ox = c.x - b.x, oy = c.y - b.y;
-  const mi = Math.hypot(ix, iy) || 1, mo = Math.hypot(ox, oy) || 1;
+  const a = pts[i - 1],
+    b = pts[i],
+    c = pts[i + 1];
+  const ix = b.x - a.x,
+    iy = b.y - a.y;
+  const ox = c.x - b.x,
+    oy = c.y - b.y;
+  const mi = Math.hypot(ix, iy) || 1,
+    mo = Math.hypot(ox, oy) || 1;
   const dot = clampN((ix * ox + iy * oy) / (mi * mo), -1, 1);
   return (1 - dot) / 2;
 }
@@ -147,7 +172,8 @@ function tangentOut(stroke) {
   const end = pts[n - 1];
   const seg = stroke.paths[n - 2];
   const c = seg && seg.ctrl ? seg.ctrl : resolveControl(stroke, n - 2);
-  const dx = end.x - c.x, dy = end.y - c.y;
+  const dx = end.x - c.x,
+    dy = end.y - c.y;
   const m = Math.hypot(dx, dy) || 1;
   return { x: dx / m, y: dy / m };
 }
@@ -159,18 +185,22 @@ function tangentIn(stroke) {
   const start = pts[0];
   const seg = stroke.paths[0];
   const c = seg && seg.ctrl ? seg.ctrl : resolveControl(stroke, 0);
-  const dx = c.x - start.x, dy = c.y - start.y;
+  const dx = c.x - start.x,
+    dy = c.y - start.y;
   const m = Math.hypot(dx, dy) || 1;
   return { x: dx / m, y: dy / m };
 }
 
 // connector control: intersection of A's exit tangent and B's entry tangent; degenerate -> midpoint bow.
 function connectorControl(A, u, B, v, g) {
-  const wx = B.x - A.x, wy = B.y - A.y;
+  const wx = B.x - A.x,
+    wy = B.y - A.y;
   const det = u.x * v.y - u.y * v.x;
   if (Math.abs(det) < 1e-6) {
-    return { x: (A.x + B.x) / 2 - u.y * g * 0.15,
-             y: (A.y + B.y) / 2 + u.x * g * 0.15 };
+    return {
+      x: (A.x + B.x) / 2 - u.y * g * 0.15,
+      y: (A.y + B.y) / 2 + u.x * g * 0.15,
+    };
   }
   let a = (wx * v.y - wy * v.x) / det;
   a = Math.max(0.05 * g, Math.min(0.95 * g, a));
@@ -219,8 +249,12 @@ export function expandStrokes(symbol, connect) {
 
 export function step(state, dt, duration) {
   let t = state.t + dt;
-  if (t <= 0) { t = 0; }
-  else if (t >= duration) { t = duration; state.playing = false; }
+  if (t <= 0) {
+    t = 0;
+  } else if (t >= duration) {
+    t = duration;
+    state.playing = false;
+  }
   state.t = t;
   return state;
 }

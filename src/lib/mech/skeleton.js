@@ -14,7 +14,10 @@
 import { I3, vAdd, m3Mul, m3MulV, m3Rot } from "../math/mat3.js";
 
 // a transform is { r: mat3, t: vec3 }; compose applies b in a's frame
-const compose = (a, b) => ({ r: m3Mul(a.r, b.r), t: vAdd(a.t, m3MulV(a.r, b.t)) });
+const compose = (a, b) => ({
+  r: m3Mul(a.r, b.r),
+  t: vAdd(a.t, m3MulV(a.r, b.t)),
+});
 
 const SLIDE = { tx: 0, ty: 1, tz: 2 };
 
@@ -32,11 +35,13 @@ export function createSkeleton() {
     resolve() {
       const out = [];
       for (const b of bones) {
-        let R = I3, t = [0, 0, 0];
+        let R = I3,
+          t = [0, 0, 0];
         if (b.axis === "free") R = b.rot ?? I3;
         else if (b.axis in SLIDE) t[SLIDE[b.axis]] = b.angle;
         else R = m3Rot(b.axis, b.angle);
-        if (b.rest) {                                  // REST ∘ M(bone)
+        if (b.rest) {
+          // REST ∘ M(bone)
           R = m3Mul(b.rest, R);
           if (t[0] || t[1] || t[2]) t = m3MulV(b.rest, t);
         }

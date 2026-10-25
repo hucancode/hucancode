@@ -1,7 +1,7 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as enso from "$lib/playgrounds/enso";
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as enso from "#lib/playgrounds/enso";
 
   let scene = $state(null);
   let controlsOpen = $state(true);

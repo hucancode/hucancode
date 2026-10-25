@@ -1,7 +1,7 @@
 // Orbit camera (perspective; column-major mat4). camY slides look-at down world
 // +/-Y; world translated by -camY so descending camera sees corridor scroll up.
 
-import * as mat4 from "$lib/math/mat4.js";
+import * as mat4 from "#lib/math/mat4.js";
 import { CAM } from "./config.js";
 
 const _vpProj = mat4.create();
@@ -17,12 +17,12 @@ export function sceneViewProj(aspect, yaw, pitch, camY = 0, device) {
   // elevation. rotZ first so yaw stays true heading once tilted.
   mat4.rotationZ(_vpRot, yaw);
   mat4.rotationX(_vpTmp, pitch);
-  mat4.multiply(_vpRot, _vpTmp, _vpRot);          // rotX(pitch) * rotZ(yaw)
+  mat4.multiply(_vpRot, _vpTmp, _vpRot); // rotX(pitch) * rotZ(yaw)
   mat4.translation(_vpTmp, 0, 0, -CAM.dist);
-  mat4.multiply(_vpRot, _vpTmp, _vpRot);          // pull camera back along +z
+  mat4.multiply(_vpRot, _vpTmp, _vpRot); // pull camera back along +z
   if (camY) {
-    mat4.translation(_vpTmp, 0, -camY, 0);        // pan look-at down corridor
-    mat4.multiply(_vpRot, _vpRot, _vpTmp);        // world translate (right side)
+    mat4.translation(_vpTmp, 0, -camY, 0); // pan look-at down corridor
+    mat4.multiply(_vpRot, _vpRot, _vpTmp); // world translate (right side)
   }
   return mat4.multiply(_vpResult, _vpProj, _vpRot);
 }

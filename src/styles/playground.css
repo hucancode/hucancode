@@ -13,7 +13,10 @@ main {
       flex: 3 1 0;
       max-width: none;
     }
-    &:has(> aside) > aside { flex: 1 1 0; min-width: 16rem; }
+    &:has(> aside) > aside {
+      flex: 1 1 0;
+      min-width: 16rem;
+    }
   }
 
   > section {
@@ -48,7 +51,9 @@ main {
     overscroll-behavior: contain;
     cursor: grab;
   }
-  > section[data-stage~="grab"]:active { cursor: grabbing; }
+  > section[data-stage~="grab"]:active {
+    cursor: grabbing;
+  }
 
   > section canvas {
     display: block;
@@ -78,7 +83,7 @@ main {
   /* ---- control panel ---------------------------------------------------- */
 
   fieldset {
-    border: 1px solid rgba(128,128,128,0.3);
+    border: 1px solid rgba(128, 128, 128, 0.3);
     border-radius: 0.35rem;
     padding: 0.5rem 0.75rem 0.6rem;
     margin: 0;
@@ -134,7 +139,9 @@ main {
     margin: 0;
     padding: 0;
   }
-  menu li { display: contents; }
+  menu li {
+    display: contents;
+  }
 
   aside small {
     font-size: 0.8rem;
@@ -171,8 +178,12 @@ main {
     border-radius: 0.2rem;
     border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
   }
-  :is(ul, ol) li > label ~ button { opacity: 0.6; }
-  :is(ul, ol) li > label ~ button:disabled { opacity: 0.25; }
+  :is(ul, ol) li > label ~ button {
+    opacity: 0.6;
+  }
+  :is(ul, ol) li > label ~ button:disabled {
+    opacity: 0.25;
+  }
   li > label em {
     font-style: normal;
     font-size: 0.7rem;
@@ -205,15 +216,25 @@ main {
     border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   }
   /* the native radio dot is redundant once the segment fills */
-  [role="group"] input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
-  [role="group"] label:hover { background: color-mix(in srgb, currentColor 10%, transparent); opacity: 1; }
+  [role="group"] input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  [role="group"] label:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    opacity: 1;
+  }
   [role="group"] label:has(:checked) {
     opacity: 1;
     font-weight: 600;
     background: var(--accent, #2850dc);
     color: #fff;
   }
-  [role="group"] label:has(:focus-visible) { outline: 2px solid var(--accent, #2850dc); outline-offset: -2px; }
+  [role="group"] label:has(:focus-visible) {
+    outline: 2px solid var(--accent, #2850dc);
+    outline-offset: -2px;
+  }
   [role="group"] em {
     font-style: normal;
     font-size: 0.55rem;
@@ -280,7 +301,11 @@ main {
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.6rem 0.8rem 0.7rem;
-    background: linear-gradient(to top, color-mix(in srgb, var(--paper) 70%, transparent), transparent);
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--paper) 70%, transparent),
+      transparent
+    );
     color: var(--ink);
     font-size: 0.75rem;
     pointer-events: none;
@@ -299,8 +324,12 @@ main {
     gap: 0.35rem;
     flex: 1 1 8rem;
   }
-  > section > footer label span { opacity: 0.8; }
-  > section > footer input[type="range"] { flex: 1; }
+  > section > footer label span {
+    opacity: 0.8;
+  }
+  > section > footer input[type="range"] {
+    flex: 1;
+  }
   > section > footer output {
     min-width: 2.6rem;
     text-align: right;

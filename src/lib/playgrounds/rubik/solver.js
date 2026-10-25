@@ -33,9 +33,11 @@ export function applyMove(move, state) {
     for (let i = 0; i < 8; i++) {
       const isCorner = i > 3 ? 1 : 0;
       const target = AFFECTED[face][i] + isCorner * 12;
-      const killer = AFFECTED[face][(i & 3) === 3 ? i - 3 : i + 1] + isCorner * 12;
+      const killer =
+        AFFECTED[face][(i & 3) === 3 ? i - 3 : i + 1] + isCorner * 12;
       // F/B quarters flip edges; corner twist alternates 2,1 except on U/D
-      const delta = i < 4 ? (face === 2 || face === 3 ? 1 : 0) : face < 2 ? 0 : 2 - (i & 1);
+      const delta =
+        i < 4 ? (face === 2 || face === 3 ? 1 : 0) : face < 2 ? 0 : 2 - (i & 1);
       state[target] = old[killer];
       state[target + 20] = (old[killer + 20] + delta) % (2 + isCorner);
     }
@@ -77,12 +79,16 @@ export function solve(state) {
 
     // bidirectional BFS, frontiers keyed by phase id
     const queue = [cur, SOLVED];
-    const dir = new Map([[curId, 1], [goalId, 2]]);
+    const dir = new Map([
+      [curId, 1],
+      [goalId, 2],
+    ]);
     const pred = new Map();
     const lastMove = new Map();
     let algo = null;
     for (let head = 0; !algo; head++) {
-      if (head >= queue.length) throw new Error("rubik solver: unreachable state");
+      if (head >= queue.length)
+        throw new Error("rubik solver: unreachable state");
       const oldState = queue[head];
       const oldId = phaseId(oldState, phase);
       const oldDir = dir.get(oldId);
@@ -93,11 +99,19 @@ export function solve(state) {
         const newDir = dir.get(newId);
         if (newDir !== undefined && newDir !== oldDir) {
           // frontiers met; stitch forward path + reversed backward path
-          let a = oldId, b = newId, mid = m;
+          let a = oldId,
+            b = newId,
+            mid = m;
           if (oldDir === 2) [a, b, mid] = [newId, oldId, inverse(m)];
           algo = [mid];
-          while (a !== curId) { algo.unshift(lastMove.get(a)); a = pred.get(a); }
-          while (b !== goalId) { algo.push(inverse(lastMove.get(b))); b = pred.get(b); }
+          while (a !== curId) {
+            algo.unshift(lastMove.get(a));
+            a = pred.get(a);
+          }
+          while (b !== goalId) {
+            algo.push(inverse(lastMove.get(b)));
+            b = pred.get(b);
+          }
         } else if (newDir === undefined) {
           dir.set(newId, oldDir);
           pred.set(newId, oldId);
@@ -120,19 +134,43 @@ export function solve(state) {
 // mapping home space -> world space }.
 
 // world dir of each solver face: U +Y, D -Y, F +Z, B -Z, L -X, R +X
-const DIRS = [[0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1], [-1, 0, 0], [1, 0, 0]];
+const DIRS = [
+  [0, 1, 0],
+  [0, -1, 0],
+  [0, 0, 1],
+  [0, 0, -1],
+  [-1, 0, 0],
+  [1, 0, 0],
+];
 // slot faces per position, primary (U/D, else F/B) first
 const EDGE_SLOTS = [
-  [0, 2], [0, 5], [0, 3], [0, 4], [1, 2], [1, 5], [1, 3], [1, 4],
-  [2, 5], [2, 4], [3, 5], [3, 4],
+  [0, 2],
+  [0, 5],
+  [0, 3],
+  [0, 4],
+  [1, 2],
+  [1, 5],
+  [1, 3],
+  [1, 4],
+  [2, 5],
+  [2, 4],
+  [3, 5],
+  [3, 4],
 ];
 // slot faces per position, counter-clockwise from U/D (matches twist deltas above)
 const CORNER_SLOTS = [
-  [0, 2, 5], [0, 5, 3], [0, 3, 4], [0, 4, 2],
-  [1, 5, 2], [1, 2, 4], [1, 4, 3], [1, 3, 5],
+  [0, 2, 5],
+  [0, 5, 3],
+  [0, 3, 4],
+  [0, 4, 2],
+  [1, 5, 2],
+  [1, 2, 4],
+  [1, 4, 3],
+  [1, 3, 5],
 ];
 
-const dirIdx = (v) => DIRS.findIndex((d) => d[0] === v[0] && d[1] === v[1] && d[2] === v[2]);
+const dirIdx = (v) =>
+  DIRS.findIndex((d) => d[0] === v[0] && d[1] === v[1] && d[2] === v[2]);
 const rotW = (r, v) => [
   r[0] * v[0] + r[3] * v[1] + r[6] * v[2],
   r[1] * v[0] + r[4] * v[1] + r[7] * v[2],
@@ -162,7 +200,8 @@ export function extractState(cubelets) {
       n[axis] = h[axis];
       stickers.push({ color: dirIdx(n), slot: dirIdx(rotW(r, n)) });
     }
-    if (stickers.length === 1) solverFaceOfColor[stickers[0].color] = stickers[0].slot;
+    if (stickers.length === 1)
+      solverFaceOfColor[stickers[0].color] = stickers[0].slot;
     else if (stickers.length) pieces.push({ p, stickers });
   }
 
@@ -198,7 +237,11 @@ export function toPlaygroundMoves(moves) {
     const f = (m / 3) | 0;
     const t = (m % 3) + 1;
     const cw = ON_POSITIVE_AXIS[f] ? -1 : 1;
-    return { face: SOLVER_TO_PG_FACE[f], depth: 1, magnitude: t === 2 ? 2 : t === 1 ? cw : -cw };
+    return {
+      face: SOLVER_TO_PG_FACE[f],
+      depth: 1,
+      magnitude: t === 2 ? 2 : t === 1 ? cw : -cw,
+    };
   });
 }
 
@@ -211,7 +254,12 @@ export function moveToNotation({ face, depth, magnitude }) {
   // clockwise quarter turns looking at the face
   const cw = (((PG_POSITIVE[face] ? -magnitude : magnitude) % 4) + 4) % 4;
   const suffix = cw === 2 ? "2" : cw === 3 ? "'" : "";
-  return (depth > 2 ? depth : "") + FACE_LETTER[face] + (depth > 1 ? "w" : "") + suffix;
+  return (
+    (depth > 2 ? depth : "") +
+    FACE_LETTER[face] +
+    (depth > 1 ? "w" : "") +
+    suffix
+  );
 }
 
 // -> playground move list, or null on any bad token
@@ -225,7 +273,8 @@ export function parseNotation(text, maxDepth = 3) {
     const wide = !!m[3] || m[2] !== m[2].toUpperCase(); // lowercase face = wide
     const depth = Math.min(maxDepth, m[1] ? +m[1] : wide ? 2 : 1);
     const turns = m[4] === "2" ? 2 : m[4] === "'" ? 3 : 1;
-    const magnitude = turns === 2 ? 2 : (PG_POSITIVE[face] ? -1 : 1) * (turns === 1 ? 1 : -1);
+    const magnitude =
+      turns === 2 ? 2 : (PG_POSITIVE[face] ? -1 : 1) * (turns === 1 ? 1 : -1);
     moves.push({ face, depth, magnitude, quick: true });
   }
   return moves.length ? moves : null;

@@ -2,8 +2,8 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import { init, solveMulti } from "$lib/playgrounds/poker/solver.js";
-  import GameBoard from "$lib/components/poker/board-overview.svelte";
+  import { init, solveMulti } from "#lib/playgrounds/poker/solver.js";
+  import GameBoard from "#lib/components/poker/board-overview.svelte";
   import "$styles/poker.css";
 
   const UNKNOWN_RESULT = {

@@ -48,7 +48,8 @@ export function findParent(root, target) {
 }
 export const isDescendant = (node, maybe) => {
   if (maybe === node) return true;
-  for (const ch of node.children ?? []) if (isDescendant(ch, maybe)) return true;
+  for (const ch of node.children ?? [])
+    if (isDescendant(ch, maybe)) return true;
   return false;
 };
 export function addChild(parent, part) {

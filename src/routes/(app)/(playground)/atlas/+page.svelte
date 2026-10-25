@@ -1,11 +1,11 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as mech from "$lib/playgrounds/mech";
-  import * as rt from "$lib/playgrounds/raytrace";
-  import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
-  import { atlasModel, atlasHeight, atlasPose, SIDES, ATLAS_DEF, chan, forSides, SIDED, SIDE_CHANNELS, CURL_SEG } from "$lib/mech/atlas/rig.js";
-  // ---- atlas UI surface (inlined from $lib/ui/atlas.js) ----
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as mech from "#lib/playgrounds/mech";
+  import * as rt from "#lib/playgrounds/raytrace";
+  import { ATLAS_KIT } from "#lib/mech/atlas/parts.js";
+  import { atlasModel, atlasHeight, atlasPose, SIDES, ATLAS_DEF, chan, forSides, SIDED, SIDE_CHANNELS, CURL_SEG } from "#lib/mech/atlas/rig.js";
+  // ---- atlas UI surface (inlined from #lib/ui/atlas.js) ----
 // ATLAS UI SURFACE — the slider rows, mirror helpers, montages and choreographer
 // config the atlas playground renders and drives. Everything here is presentation
 // and control; the rig itself (links, solve, model) lives in lib/mech/atlas/rig.js,
@@ -208,12 +208,12 @@ const PART_CTL = {
   shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
   foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
 };
-  import { rad, deg } from "$lib/math/scalar.js";
-  import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
-  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
+  import { rad, deg } from "#lib/math/scalar.js";
+  import { assembleModel, BUILD_SECONDS } from "#lib/mech/build-anim.js";
+  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "#lib/mech/choreo.js";
   import {
     createMusic, MUSIC_DEFAULTS, MUSIC_STYLE_NAMES, MUSIC_ROOT_NAMES, MUSIC_SCALE_NAMES, styleOf,
-  } from "$lib/audio/music.js";
+  } from "#lib/audio/music.js";
   import VolumeUp from "$icons/google-material/volume-up.svg?raw";
   import VolumeOff from "$icons/google-material/volume-off.svg?raw";
   import Bot from "$icons/carbon/bot.svg?raw";

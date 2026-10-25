@@ -7,9 +7,14 @@ const MITER_LIMIT = 4.0;
 // standard 6-index quad layout for a ribbon of quadCount quads
 export function writeQuadIndices(indices, quadCount) {
   for (let i = 0; i < quadCount; i++) {
-    const v = i * 2, o = i * 6;
-    indices[o + 0] = v; indices[o + 1] = v + 1; indices[o + 2] = v + 2;
-    indices[o + 3] = v + 2; indices[o + 4] = v + 1; indices[o + 5] = v + 3;
+    const v = i * 2,
+      o = i * 6;
+    indices[o + 0] = v;
+    indices[o + 1] = v + 1;
+    indices[o + 2] = v + 2;
+    indices[o + 3] = v + 2;
+    indices[o + 4] = v + 1;
+    indices[o + 5] = v + 3;
   }
 }
 
@@ -36,37 +41,60 @@ export function buildRibbonGeometry(points, nPoly, lineWidth, out) {
 
   let arcs = out.arcs;
   if (!arcs || arcs.length < nPoly) {
-    if (!_arcsScratch || _arcsScratch.length < nPoly) _arcsScratch = new Float32Array(nPoly);
+    if (!_arcsScratch || _arcsScratch.length < nPoly)
+      _arcsScratch = new Float32Array(nPoly);
     arcs = _arcsScratch;
   }
   arcs[0] = 0;
   for (let i = 1; i < nPoly; i++) {
-    arcs[i] = arcs[i - 1] + Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+    arcs[i] =
+      arcs[i - 1] +
+      Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
   }
   const totalArc = Math.max(arcs[nPoly - 1], 1e-6);
 
-  let prevTx = 0, prevTy = 0;
+  let prevTx = 0,
+    prevTy = 0;
   for (let i = 0; i < nPoly; i++) {
     const cur = points[i];
-    let fx = 0, fy = 0, fL = 0;
-    if (i < nPoly - 1) { fx = points[i + 1].x - cur.x; fy = points[i + 1].y - cur.y; fL = Math.hypot(fx, fy); }
+    let fx = 0,
+      fy = 0,
+      fL = 0;
+    if (i < nPoly - 1) {
+      fx = points[i + 1].x - cur.x;
+      fy = points[i + 1].y - cur.y;
+      fL = Math.hypot(fx, fy);
+    }
 
     // averaged-tangent joint normal
     let tx, ty;
-    if (i === 0) { tx = fL > 1e-9 ? fx / fL : 1; ty = fL > 1e-9 ? fy / fL : 0; }
-    else if (i === nPoly - 1) { tx = prevTx; ty = prevTy; }
-    else {
+    if (i === 0) {
+      tx = fL > 1e-9 ? fx / fL : 1;
+      ty = fL > 1e-9 ? fy / fL : 0;
+    } else if (i === nPoly - 1) {
+      tx = prevTx;
+      ty = prevTy;
+    } else {
       const ftx = fL > 1e-9 ? fx / fL : prevTx;
       const fty = fL > 1e-9 ? fy / fL : prevTy;
-      const sx = prevTx + ftx, sy = prevTy + fty;
+      const sx = prevTx + ftx,
+        sy = prevTy + fty;
       const sL = Math.hypot(sx, sy);
-      if (sL > 1e-6) { tx = sx / sL; ty = sy / sL; } else { tx = ftx; ty = fty; }
+      if (sL > 1e-6) {
+        tx = sx / sL;
+        ty = sy / sL;
+      } else {
+        tx = ftx;
+        ty = fty;
+      }
     }
-    const nx = -ty, ny = tx;
+    const nx = -ty,
+      ny = tx;
 
     let miterScale = 1;
     if (i > 0 && i < nPoly - 1) {
-      const segNx = -prevTy, segNy = prevTx;
+      const segNx = -prevTy,
+        segNy = prevTx;
       const cosHalf = nx * segNx + ny * segNy;
       miterScale = 1 / Math.max(Math.abs(cosHalf), 1 / MITER_LIMIT);
     }
@@ -86,10 +114,15 @@ export function buildRibbonGeometry(points, nPoly, lineWidth, out) {
     }
 
     const o2 = i * 4;
-    uvs[o2 + 0] = 0.0; uvs[o2 + 1] = arcT;
-    uvs[o2 + 2] = 1.0; uvs[o2 + 3] = arcT;
+    uvs[o2 + 0] = 0.0;
+    uvs[o2 + 1] = arcT;
+    uvs[o2 + 2] = 1.0;
+    uvs[o2 + 3] = arcT;
 
-    if (i < nPoly - 1 && fL > 1e-9) { prevTx = fx / fL; prevTy = fy / fL; }
+    if (i < nPoly - 1 && fL > 1e-9) {
+      prevTx = fx / fL;
+      prevTy = fy / fL;
+    }
   }
 
   if (indices) writeQuadIndices(indices, nPoly - 1);

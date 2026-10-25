@@ -1,5 +1,5 @@
 import { track } from "../stage/index.js";
-import { clamp } from "$lib/math/scalar.js";
+import { clamp } from "#lib/math/scalar.js";
 import { ENSO_DUR, ENSO_FADE_TARGET } from "../config.js";
 import { ensoHeadProgress } from "../frame-path.js";
 
@@ -10,7 +10,10 @@ export function createEnsoBlock({ timing }) {
     name: "enso",
     at: timing.ensoStart,
     outputs: ["ensoAlpha", "ensoSweep"],
-    defaults(ctx) { ctx.ensoAlpha = 0; ctx.ensoSweep = 0; },
+    defaults(ctx) {
+      ctx.ensoAlpha = 0;
+      ctx.ensoSweep = 0;
+    },
     tracks: {
       // head IS leading edge of stroke, so sweep == head progress (same
       // decelerating curve). stroke drawn right up to dragon.

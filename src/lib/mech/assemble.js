@@ -30,20 +30,33 @@ import { colorMemo } from "./color.js";
 import { jointSpec } from "./joints.js";
 import { createSkeleton } from "./skeleton.js";
 import {
-  I3, vAdd, vSub, vScale, vNorm, vCross, vLen, m3Mul, m3MulV, m3T, m3Rot,
+  I3,
+  vAdd,
+  vSub,
+  vScale,
+  vNorm,
+  vCross,
+  vLen,
+  m3Mul,
+  m3MulV,
+  m3T,
+  m3Rot,
 } from "../math/mat3.js";
 
 // ---- SLOT MATCHING ---------------------------------------------------------
 // a slot { pos, n, f } is a full coordinate system: columns [f, n×f, n]
 const slotFrame = (s) => {
-  const f = vNorm(s.f), n = vNorm(s.n), b = vCross(n, f);
+  const f = vNorm(s.f),
+    n = vNorm(s.n),
+    b = vCross(n, f);
   return [f[0], b[0], n[0], f[1], b[1], n[1], f[2], b[2], n[2]];
 };
 
 // the rotation seating a child slot against a parent slot: positions coincide
 // (the caller supplies the offset), forwards ALIGN, normals OPPOSE
 const matchRot = (parent, child) => {
-  const f = vNorm(parent.f), n = vScale(vNorm(parent.n), -1);
+  const f = vNorm(parent.f),
+    n = vScale(vNorm(parent.n), -1);
   const b = vCross(n, f);
   const target = [f[0], b[0], n[0], f[1], b[1], n[1], f[2], b[2], n[2]];
   return m3Mul(target, m3T(slotFrame(child)));
@@ -59,10 +72,11 @@ const EULER = ["x", "y", "z"];
 // deep a joint reaches) or the joint's AXIS itself (`anchor: "axis"`, for a part
 // modeled around a bare pin: the dragon's jaw, a finger knuckle).
 function seatJoint(slot, mountA, ownerR, ownerT) {
-  const R0 = matchRot(slot, mountA);                        // joint frame -> owner PART frame
-  const org0 = slot.anchor === "axis"
-    ? [...slot.pos]
-    : vSub(slot.pos, m3MulV(R0, mountA.pos));
+  const R0 = matchRot(slot, mountA); // joint frame -> owner PART frame
+  const org0 =
+    slot.anchor === "axis"
+      ? [...slot.pos]
+      : vSub(slot.pos, m3MulV(R0, mountA.pos));
   return { r: m3Mul(ownerR, R0), t: vAdd(m3MulV(ownerR, org0), ownerT) };
 }
 
@@ -75,19 +89,22 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
   const byName = {};
   for (const d of L) {
     const par = d.parent ? byName[d.parent] : null;
-    if (d.parent && !par) throw new Error(`${d.name}: parent "${d.parent}" not declared before it`);
+    if (d.parent && !par)
+      throw new Error(`${d.name}: parent "${d.parent}" not declared before it`);
     d.par = par;
     d.depth = par ? par.depth + 1 : 0;
     d.slots = kit.partSlots(d.part, d.params ?? null);
     // the part's own bolting face: what it hangs from (a root names it `pivot`)
-    d.slot0 = d.slots[par ? (d.slot ?? "mount") : (d.pivot ?? d.slot ?? "mount")];
-    if (!d.slot0) throw new Error(`${d.name}: no mount slot on part "${d.part}"`);
+    d.slot0 =
+      d.slots[par ? (d.slot ?? "mount") : (d.pivot ?? d.slot ?? "mount")];
+    if (!d.slot0)
+      throw new Error(`${d.name}: no mount slot on part "${d.part}"`);
     byName[d.name] = d;
   }
 
   // --- bones + geometry, both baked ONCE. `chunks` = the finished figure:
   // every primitive, the bone it rides and the local transform it rides with ---
-  const chunks = [];                                 // { bone, group, prims: [{key,m,t,color}] }
+  const chunks = []; // { bone, group, prims: [{key,m,t,color}] }
   const emitTo = (bone, group, build) => {
     const prims = [];
     build((g) => {
@@ -117,13 +134,17 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       d.mountB = null;
     } else {
       const pslot = par.slots[d.at];
-      if (!pslot) throw new Error(`${d.name}: parent "${par.name}" has no slot "${d.at}"`);
+      if (!pslot)
+        throw new Error(
+          `${d.name}: parent "${par.name}" has no slot "${d.at}"`,
+        );
       // the joint comes off the PARENT's slot (the part owns that half, and it
       // is modeled whether or not a child ever plugs in) — or off the LINK, for
       // a mounting pad that only grows a joint where one is actually used (the
       // dragon's spare flanks stay bare planks)
       const spec = d.joint ?? pslot.joint;
-      if (!spec) throw new Error(`${d.name}: parent slot "${d.at}" offers no joint`);
+      if (!spec)
+        throw new Error(`${d.name}: parent slot "${d.at}" offers no joint`);
       const { kind, p: jp = {} } = spec;
       const J = jointSpec(kind);
       const M = J.mounts(jp);
@@ -143,14 +164,20 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
         const { axis, at, rest } = J.dof[i];
         const off = at(jp);
         const rot = rest ? m3Rot(rest[0], rest[1]) : null;
-        const id = i === 0
-          ? sk.add(`${d.name}.${axis}`, parentBone, vAdd(org, m3MulV(R, off)), axis,
-            rot ? m3Mul(R, rot) : R)
-          : sk.add(`${d.name}.${axis}`, parentBone, [...off], axis, rot);
+        const id =
+          i === 0
+            ? sk.add(
+                `${d.name}.${axis}`,
+                parentBone,
+                vAdd(org, m3MulV(R, off)),
+                axis,
+                rot ? m3Mul(R, rot) : R,
+              )
+            : sk.add(`${d.name}.${axis}`, parentBone, [...off], axis, rot);
         d.ids.push(id);
         parentBone = id;
       }
-      d.bone = parentBone;                                   // the child part rides the last DOF
+      d.bone = parentBone; // the child part rides the last DOF
 
       // JOINT GEOMETRY — every piece on the bone it rides. bone -1 = the
       // parent's (the female half is rigid with the parent part); pieces on a
@@ -158,8 +185,11 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       const jg = `${d.name}:joint`;
       for (const piece of J.pieces) {
         const onParent = piece.bone < 0;
-        const prims = emitTo(onParent ? par.bone : d.ids[piece.bone], jg,
-          (add) => piece.build(add, jp));
+        const prims = emitTo(
+          onParent ? par.bone : d.ids[piece.bone],
+          jg,
+          (add) => piece.build(add, jp),
+        );
         if (onParent) seat(prims, R, org);
       }
     }
@@ -182,8 +212,13 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
     const t = b ? vSub(bp, m3MulV(r, d.slot0.pos)) : vScale(d.slot0.pos, -1);
     d.seatR = r;
     d.seatT = t;
-    seat(emitTo(d.bone, `${d.name}:body`,
-      (add) => kit.buildPart(d.part, add, d.params ?? null)), r, t);
+    seat(
+      emitTo(d.bone, `${d.name}:body`, (add) =>
+        kit.buildPart(d.part, add, d.params ?? null),
+      ),
+      r,
+      t,
+    );
 
     // ORPHAN FEMALE HALVES — a slot offering a joint no child took (an empty
     // socket on a spare flank). Real hardware, so it gets modeled: the part
@@ -194,8 +229,12 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       const J = jointSpec(kind);
       const { r: R, t: org } = seatJoint(s, J.mounts(jp).a, d.seatR, d.seatT);
       for (const piece of J.pieces) {
-        if (piece.bone >= 0) continue;                 // no child, no DOF bones to ride
-        seat(emitTo(d.bone, `${d.name}:body`, (add) => piece.build(add, jp)), R, org);
+        if (piece.bone >= 0) continue; // no child, no DOF bones to ride
+        seat(
+          emitTo(d.bone, `${d.name}:body`, (add) => piece.build(add, jp)),
+          R,
+          org,
+        );
       }
     }
   }
@@ -211,9 +250,10 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
         if (!bind) return;
         const bone = sk.bones[d.ids[i]];
         if (bone.axis === "free") {
-          let R = I3;                                  // Rx · Ry · Rz
+          let R = I3; // Rx · Ry · Rz
           bind.forEach((b, k) => {
-            if (b?.[0]) R = m3Mul(R, m3Rot(EULER[k], (b[1] ?? 1) * (pose[b[0]] ?? 0)));
+            if (b?.[0])
+              R = m3Mul(R, m3Rot(EULER[k], (b[1] ?? 1) * (pose[b[0]] ?? 0)));
           });
           bone.rot = R;
         } else {
@@ -252,7 +292,9 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
           let g = groups.get(c.group);
           if (!g) groups.set(c.group, (g = { items: [], sum: [0, 0, 0] }));
           g.items.push(it);
-          g.sum[0] += it.t[0]; g.sum[1] += it.t[1]; g.sum[2] += it.t[2];
+          g.sum[0] += it.t[0];
+          g.sum[1] += it.t[1];
+          g.sum[2] += it.t[2];
         }
       }
     }
@@ -274,7 +316,14 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
         const [link, kind] = id.split(":");
         const d = byName[link];
         const c = vScale(g.sum, 1 / g.items.length);
-        const x = group(id, { id, link, kind, depth: d.depth, n: d.an, centroid: c });
+        const x = group(id, {
+          id,
+          link,
+          kind,
+          depth: d.depth,
+          n: d.an,
+          centroid: c,
+        });
         if (!x) continue;
         for (const it of g.items) {
           if (x.r) {
@@ -300,23 +349,36 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
   const rootD = L.find((d) => !d.par);
   const rootBone = sk.bones[rootD.ids[0]];
   const publicLinks = L.map((d) => ({
-    name: d.name, part: d.part, parent: d.parent, at: d.at, depth: d.depth,
-    spine: d.spine, limb: d.limb, sign: d.sign, phase: d.phase,
+    name: d.name,
+    part: d.part,
+    parent: d.parent,
+    at: d.at,
+    depth: d.depth,
+    spine: d.spine,
+    limb: d.limb,
+    sign: d.sign,
+    phase: d.phase,
   }));
   const boneAt = (name, i = 0) => sk.bones[byName[name].ids[i]];
   const driver = {
     links: publicLinks,
     root: {
       offset: () => [...rootBone.offset],
-      setOffset: (o) => { rootBone.offset = [...o]; },
-      setRot: (r) => { rootBone.rot = r; },
+      setOffset: (o) => {
+        rootBone.offset = [...o];
+      },
+      setRot: (r) => {
+        rootBone.rot = r;
+      },
       set: ({ offset, rot } = {}) => {
         if (offset) rootBone.offset = [...offset];
         if (rot) rootBone.rot = rot;
       },
     },
     // one DOF's angle (a hinge swing, a disc spin, a prismatic slide, ...)
-    setDOF(name, i, angle) { boneAt(name, i).angle = angle; },
+    setDOF(name, i, angle) {
+      boneAt(name, i).angle = angle;
+    },
     // place a part by its WORLD orientation: the bone carrying it reaches
     // partWorld · seatRᵀ, and the bone's own rest rotation is accounted for,
     // so the solver only reasons about part frames
@@ -328,9 +390,13 @@ export function createAssembly({ kit, links, seed = 1, root = [0, 0, 0] }) {
       b.rot = m3Mul(m3T(b.rest ?? I3), m3Mul(m3T(pw), W));
     },
     // world position of a link's joint (its first DOF bone)
-    jointPos(name) { return [...sk.resolve()[byName[name].ids[0]].t]; },
+    jointPos(name) {
+      return [...sk.resolve()[byName[name].ids[0]].t];
+    },
     // |first bone offset| — the chord a link spans between its two pivots
-    reach(name) { return vLen(boneAt(name).offset); },
+    reach(name) {
+      return vLen(boneAt(name).offset);
+    },
   };
 
   return { driver, setPose, emit };

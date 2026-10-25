@@ -1,7 +1,7 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as dragon from "$lib/playgrounds/dragon";
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as dragon from "#lib/playgrounds/dragon";
 
   const PRESETS = [
     { id: "circle", label: "Circle" },

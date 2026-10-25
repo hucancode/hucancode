@@ -19,12 +19,27 @@ export function packUniforms(layout, values, view) {
     if (v == null) continue;
     const o = f.offset;
     switch (f.type) {
-      case "f32": view.setFloat32(o, v, true); break;
-      case "i32": view.setInt32(o, v | 0, true); break;
-      case "vec2": view.setFloat32(o, v[0], true); view.setFloat32(o + 4, v[1], true); break;
-      case "vec3": view.setFloat32(o, v[0], true); view.setFloat32(o + 4, v[1], true); view.setFloat32(o + 8, v[2], true); break;
-      case "vec4": for (let i = 0; i < 4; i++) view.setFloat32(o + i * 4, v[i], true); break;
-      case "mat4": for (let i = 0; i < 16; i++) view.setFloat32(o + i * 4, v[i], true); break;
+      case "f32":
+        view.setFloat32(o, v, true);
+        break;
+      case "i32":
+        view.setInt32(o, v | 0, true);
+        break;
+      case "vec2":
+        view.setFloat32(o, v[0], true);
+        view.setFloat32(o + 4, v[1], true);
+        break;
+      case "vec3":
+        view.setFloat32(o, v[0], true);
+        view.setFloat32(o + 4, v[1], true);
+        view.setFloat32(o + 8, v[2], true);
+        break;
+      case "vec4":
+        for (let i = 0; i < 4; i++) view.setFloat32(o + i * 4, v[i], true);
+        break;
+      case "mat4":
+        for (let i = 0; i < 16; i++) view.setFloat32(o + i * 4, v[i], true);
+        break;
     }
   }
 }

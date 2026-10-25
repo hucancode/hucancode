@@ -1,4 +1,4 @@
-import { createPlayground } from "$lib/engine/index.js";
+import { createPlayground } from "#lib/engine/index.js";
 import CALI from "./shaders/caligraphy-playground.wgsl?shader";
 
 const TEXELS_PER_SEG = 5;

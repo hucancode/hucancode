@@ -1,7 +1,7 @@
 // Stroke-reveal playback. pb.anim = render partially up to pb.t; false = full
 // edit view. The clock is the host canvas's frame callback (tick), so playback
 // pauses offscreen with the render loop instead of running its own RAF.
-import { step } from "$lib/brush/engine";
+import { step } from "#lib/brush/engine";
 
 export const makePlayback = () => ({ t: 0, playing: false, anim: false });
 
@@ -14,7 +14,8 @@ export function play(pb, total) {
 
 export const pause = (pb) => (pb.playing = false);
 
-export const togglePlay = (pb, total) => (pb.playing ? pause(pb) : play(pb, total));
+export const togglePlay = (pb, total) =>
+  pb.playing ? pause(pb) : play(pb, total);
 
 export function seek(pb, total, v) {
   pb.playing = false;

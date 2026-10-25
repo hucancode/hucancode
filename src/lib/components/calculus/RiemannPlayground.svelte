@@ -10,7 +10,7 @@
     riemannRects,
     integrate,
     fitY,
-  } from "$lib/playgrounds/calculus/plot.js";
+  } from "#lib/playgrounds/calculus/plot.js";
 
   const options = ["x2", "x3", "sin", "exp", "sqrt"];
   const DOMAIN = {

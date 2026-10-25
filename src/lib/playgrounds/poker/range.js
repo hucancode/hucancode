@@ -227,7 +227,8 @@ export const PRESETS = {
     return s;
   },
   premium: () => cellsFromNotation("QQ+,AKs,AKo"),
-  broadway: () => cellsFromNotation("TT+,ATs+,KTs+,QTs+,JTs,ATo+,KTo+,QTo+,JTo"),
+  broadway: () =>
+    cellsFromNotation("TT+,ATs+,KTs+,QTs+,JTs,ATo+,KTo+,QTo+,JTo"),
   pairs: () => cellsFromNotation("22+"),
   suited_connectors: () =>
     cellsFromNotation("54s,65s,76s,87s,98s,T9s,JTs,QJs,KQs"),

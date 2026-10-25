@@ -1,7 +1,7 @@
 <script>
-  import Tex from "$lib/components/calculus/Tex.svelte";
-  import Surface3D from "$lib/components/calculus/Surface3D.svelte";
-  import { arrowHeadPath, projectPath } from "$lib/playgrounds/calculus/surface.js";
+  import Tex from "#lib/components/calculus/Tex.svelte";
+  import Surface3D from "#lib/components/calculus/Surface3D.svelte";
+  import { arrowHeadPath, projectPath } from "#lib/playgrounds/calculus/surface.js";
 
   const A = 3;
   const S = 8;

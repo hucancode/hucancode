@@ -6,7 +6,7 @@
     notationFromCells,
     cellsFromNotation,
     PRESETS,
-  } from "$lib/playgrounds/poker/range.js";
+  } from "#lib/playgrounds/poker/range.js";
 
   export let notation = "";
 

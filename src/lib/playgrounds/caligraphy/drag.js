@@ -16,14 +16,25 @@ const PAN_SLOP = 3; // px of movement before a bg drag stops counting as a click
 
 export function makeDrag(getStage, doc) {
   // mode: "pan" | "point" | "edge" | "ctrl" | "frame-move" | "frame-scale"
-  let mode = null, strokeId = null, idx = null;
-  let lastWorld = null, anchor = null; // anchor = pivot (world) for frame-scale
-  let lastScreen = null, downScreen = null, moved = false;
+  let mode = null,
+    strokeId = null,
+    idx = null;
+  let lastWorld = null,
+    anchor = null; // anchor = pivot (world) for frame-scale
+  let lastScreen = null,
+    downScreen = null,
+    moved = false;
 
   const rect = () => getStage().getBoundingClientRect();
   function world(e) {
     const r = rect();
-    return screenToWorld(e.clientX - r.left, e.clientY - r.top, r.width, r.height, doc.view);
+    return screenToWorld(
+      e.clientX - r.left,
+      e.clientY - r.top,
+      r.width,
+      r.height,
+      doc.view,
+    );
   }
   function begin(e, m) {
     e.preventDefault();
@@ -47,7 +58,14 @@ export function makeDrag(getStage, doc) {
     wheel(e) {
       e.preventDefault();
       const r = rect();
-      zoomAt(doc.view, e.clientX - r.left, e.clientY - r.top, e.deltaY, r.width, r.height);
+      zoomAt(
+        doc.view,
+        e.clientX - r.left,
+        e.clientY - r.top,
+        e.deltaY,
+        r.width,
+        r.height,
+      );
     },
     point(e, sid, i) {
       begin(e, "point");
@@ -80,9 +98,14 @@ export function makeDrag(getStage, doc) {
       if (!mode) return;
       if (mode === "pan") {
         const r = rect();
-        const dx = e.clientX - lastScreen.x, dy = e.clientY - lastScreen.y;
+        const dx = e.clientX - lastScreen.x,
+          dy = e.clientY - lastScreen.y;
         lastScreen = { x: e.clientX, y: e.clientY };
-        if (Math.hypot(e.clientX - downScreen.x, e.clientY - downScreen.y) > PAN_SLOP) moved = true;
+        if (
+          Math.hypot(e.clientX - downScreen.x, e.clientY - downScreen.y) >
+          PAN_SLOP
+        )
+          moved = true;
         panBy(doc.view, dx, dy, r.width, r.height);
         return;
       }
@@ -90,9 +113,13 @@ export function makeDrag(getStage, doc) {
       if (mode === "frame-move") {
         translateGlyph(doc.symbol, w.x - lastWorld.x, w.y - lastWorld.y);
       } else if (mode === "frame-scale") {
-        const dPrev = Math.hypot(lastWorld.x - anchor.x, lastWorld.y - anchor.y);
+        const dPrev = Math.hypot(
+          lastWorld.x - anchor.x,
+          lastWorld.y - anchor.y,
+        );
         const dNow = Math.hypot(w.x - anchor.x, w.y - anchor.y);
-        if (dPrev > 1e-4) scaleGlyph(doc.symbol, dNow / dPrev, anchor.x, anchor.y);
+        if (dPrev > 1e-4)
+          scaleGlyph(doc.symbol, dNow / dPrev, anchor.x, anchor.y);
       } else {
         const s = findStroke(doc.symbol, strokeId);
         if (!s) return;
@@ -100,7 +127,8 @@ export function makeDrag(getStage, doc) {
           s.points[idx].x = w.x;
           s.points[idx].y = w.y;
         } else if (mode === "edge") {
-          const dx = w.x - lastWorld.x, dy = w.y - lastWorld.y;
+          const dx = w.x - lastWorld.x,
+            dy = w.y - lastWorld.y;
           for (const p of [s.points[idx], s.points[idx + 1]]) {
             p.x += dx;
             p.y += dy;
@@ -118,7 +146,14 @@ export function makeDrag(getStage, doc) {
     },
     up() {
       const wasClick = mode === "pan" && !moved; // click on empty stage = deselect
-      mode = strokeId = idx = lastWorld = anchor = lastScreen = downScreen = null;
+      mode =
+        strokeId =
+        idx =
+        lastWorld =
+        anchor =
+        lastScreen =
+        downScreen =
+          null;
       moved = false;
       if (wasClick) deselect(doc.sel);
     },

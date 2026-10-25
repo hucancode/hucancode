@@ -26,7 +26,7 @@ import { geo, tri, triS, quad, merge } from "./geo.js";
 
 export const q4 = (v) => +(+v).toFixed(4);
 
-const REGISTRY = new Map();          // key -> { positions: F32, normals: F32, shape }
+const REGISTRY = new Map(); // key -> { positions: F32, normals: F32, shape }
 
 function meshOf(key) {
   return REGISTRY.get(key);
@@ -73,19 +73,25 @@ export function handle(key, gen, sx, sy, sz, shape = null) {
 }
 
 export function translate(g, x, y, z) {
-  g.t[0] += x; g.t[1] += y; g.t[2] += z;
+  g.t[0] += x;
+  g.t[1] += y;
+  g.t[2] += z;
   return g;
 }
 
 function rotAxis(g, i, j, rad) {
-  const c = Math.cos(rad), s = Math.sin(rad);
-  const m = g.m, t = g.t;
+  const c = Math.cos(rad),
+    s = Math.sin(rad);
+  const m = g.m,
+    t = g.t;
   for (let col = 0; col < 3; col++) {
-    const a = m[i * 3 + col], b = m[j * 3 + col];
+    const a = m[i * 3 + col],
+      b = m[j * 3 + col];
     m[i * 3 + col] = c * a - s * b;
     m[j * 3 + col] = s * a + c * b;
   }
-  const a = t[i], b = t[j];
+  const a = t[i],
+    b = t[j];
   t[i] = c * a - s * b;
   t[j] = s * a + c * b;
   return g;
@@ -106,19 +112,25 @@ export function bake(g) {
 // straight, +1 convex) and only acts when slope > 0.
 function genBox(slope, curve) {
   const g = geo();
-  const x = 0.5, y = 0.5, z = 0.5, d = 1;
+  const x = 0.5,
+    y = 0.5,
+    z = 0.5,
+    d = 1;
   const s = Math.max(0, Math.min(slope, 1 - 1e-4));
   const k = Math.max(-1, Math.min(1, curve));
-  const N = s > 0 && k !== 0 ? 12 : 1;               // subdivide only when curved
-  const yAt = (u) => y - s * (u - k * u * (1 - u));  // top profile, back -> front
+  const N = s > 0 && k !== 0 ? 12 : 1; // subdivide only when curved
+  const yAt = (u) => y - s * (u - k * u * (1 - u)); // top profile, back -> front
   for (let i = 0; i < N; i++) {
-    const u0 = i / N, u1 = (i + 1) / N;
-    const z0 = -z + d * u0, z1 = -z + d * u1;
-    const y0 = yAt(u0), y1 = yAt(u1);
+    const u0 = i / N,
+      u1 = (i + 1) / N;
+    const z0 = -z + d * u0,
+      z1 = -z + d * u1;
+    const y0 = yAt(u0),
+      y1 = yAt(u1);
     const l = Math.hypot(d / N, y1 - y0);
-    const nt = [0, (z1 - z0) / l, -(y1 - y0) / l];   // strip normal, up + tilt
-    quad(g, [-x, y1, z1], [x, y1, z1], [x, y0, z0], [-x, y0, z0], nt);           // top strip
-    quad(g, [x, -y, z1], [x, -y, z0], [x, y0, z0], [x, y1, z1], [1, 0, 0]);      // +X wall strip
+    const nt = [0, (z1 - z0) / l, -(y1 - y0) / l]; // strip normal, up + tilt
+    quad(g, [-x, y1, z1], [x, y1, z1], [x, y0, z0], [-x, y0, z0], nt); // top strip
+    quad(g, [x, -y, z1], [x, -y, z0], [x, y0, z0], [x, y1, z1], [1, 0, 0]); // +X wall strip
     quad(g, [-x, -y, z0], [-x, -y, z1], [-x, y1, z1], [-x, y0, z0], [-1, 0, 0]); // -X wall strip
   }
   quad(g, [-x, -y, -z], [x, -y, -z], [x, -y, z], [-x, -y, z], [0, -1, 0]);
@@ -134,16 +146,21 @@ function cylBody(r, h, seg, a0, a1, caps = true) {
   for (let i = 0; i < seg; i++) {
     const t0 = a0 + ((a1 - a0) * i) / seg;
     const t1 = a0 + ((a1 - a0) * (i + 1)) / seg;
-    const c0 = Math.cos(t0), s0 = Math.sin(t0);
-    const c1 = Math.cos(t1), s1 = Math.sin(t1);
-    const p00 = [r * c0, 0, r * s0], p01 = [r * c1, 0, r * s1];
-    const p10 = [r * c0, h, r * s0], p11 = [r * c1, h, r * s1];
-    const n0 = [c0, 0, s0], n1 = [c1, 0, s1];
+    const c0 = Math.cos(t0),
+      s0 = Math.sin(t0);
+    const c1 = Math.cos(t1),
+      s1 = Math.sin(t1);
+    const p00 = [r * c0, 0, r * s0],
+      p01 = [r * c1, 0, r * s1];
+    const p10 = [r * c0, h, r * s0],
+      p11 = [r * c1, h, r * s1];
+    const n0 = [c0, 0, s0],
+      n1 = [c1, 0, s1];
     triS(g, p00, p11, p01, n0, n1, n1);
     triS(g, p00, p10, p11, n0, n0, n1);
     if (caps) {
-      tri(g, [0, h, 0], p11, p10, [0, 1, 0]);          // top fan
-      tri(g, [0, 0, 0], p00, p01, [0, -1, 0]);         // bottom fan
+      tri(g, [0, h, 0], p11, p10, [0, 1, 0]); // top fan
+      tri(g, [0, 0, 0], p00, p01, [0, -1, 0]); // bottom fan
     }
   }
   return g;
@@ -152,23 +169,30 @@ function cylBody(r, h, seg, a0, a1, caps = true) {
 // unit truncated cone: base r=1 at y=0 to top r=q at y=1. q=0 -> true cone.
 function genConeCut(q, seg) {
   const g = geo();
-  const ny = 1 - q;                          // slope -> normal tilt (r0=1, h=1)
+  const ny = 1 - q; // slope -> normal tilt (r0=1, h=1)
   const il = 1 / Math.hypot(1, ny);
   const nrm = (c, s) => [c * il, ny * il, s * il];
   for (let i = 0; i < seg; i++) {
-    const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
-    const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
-    const n0 = nrm(c0, s0), n1 = nrm(c1, s1);
-    const p00 = [c0, 0, s0], p01 = [c1, 0, s1];
+    const t0 = (i / seg) * TAU,
+      t1 = ((i + 1) / seg) * TAU;
+    const c0 = Math.cos(t0),
+      s0 = Math.sin(t0),
+      c1 = Math.cos(t1),
+      s1 = Math.sin(t1);
+    const n0 = nrm(c0, s0),
+      n1 = nrm(c1, s1);
+    const p00 = [c0, 0, s0],
+      p01 = [c1, 0, s1];
     if (q > 1e-6) {
-      const p10 = [q * c0, 1, q * s0], p11 = [q * c1, 1, q * s1];
+      const p10 = [q * c0, 1, q * s0],
+        p11 = [q * c1, 1, q * s1];
       triS(g, p00, p11, p01, n0, n1, n1);
       triS(g, p00, p10, p11, n0, n0, n1);
-      tri(g, [0, 1, 0], p11, p10, [0, 1, 0]);            // top cap
+      tri(g, [0, 1, 0], p11, p10, [0, 1, 0]); // top cap
     } else {
       triS(g, p00, [0, 1, 0], p01, n0, nrm((c0 + c1) / 2, (s0 + s1) / 2), n1);
     }
-    tri(g, [0, 0, 0], p00, p01, [0, -1, 0]);             // base cap
+    tri(g, [0, 0, 0], p00, p01, [0, -1, 0]); // base cap
   }
   return g;
 }
@@ -178,22 +202,33 @@ function genConeCut(q, seg) {
 function genLathe(seg, rings, phiMax, base) {
   const g = geo();
   const pt = (u, v) => {
-    const th = u * TAU, ph = v * phiMax;
+    const th = u * TAU,
+      ph = v * phiMax;
     const sp = Math.sin(ph);
     return [Math.cos(th) * sp, Math.cos(ph), Math.sin(th) * sp];
   };
   for (let j = 0; j < rings; j++) {
     for (let i = 0; i < seg; i++) {
-      const n00 = pt(i / seg, j / rings), n01 = pt((i + 1) / seg, j / rings);
-      const n10 = pt(i / seg, (j + 1) / rings), n11 = pt((i + 1) / seg, (j + 1) / rings);
+      const n00 = pt(i / seg, j / rings),
+        n01 = pt((i + 1) / seg, j / rings);
+      const n10 = pt(i / seg, (j + 1) / rings),
+        n11 = pt((i + 1) / seg, (j + 1) / rings);
       triS(g, n00, n11, n10, n00, n11, n10);
       triS(g, n00, n01, n11, n00, n01, n11);
     }
   }
   if (base)
-    for (let i = 0; i < seg; i++) {         // base disc, facing down
-      const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
-      tri(g, [0, 0, 0], [Math.cos(t0), 0, Math.sin(t0)], [Math.cos(t1), 0, Math.sin(t1)], [0, -1, 0]);
+    for (let i = 0; i < seg; i++) {
+      // base disc, facing down
+      const t0 = (i / seg) * TAU,
+        t1 = ((i + 1) / seg) * TAU;
+      tri(
+        g,
+        [0, 0, 0],
+        [Math.cos(t0), 0, Math.sin(t0)],
+        [Math.cos(t1), 0, Math.sin(t1)],
+        [0, -1, 0],
+      );
     }
   return g;
 }
@@ -202,38 +237,66 @@ function genLathe(seg, rings, phiMax, base) {
 function genCutHemisphere(t, cut, seg, rings) {
   const g = geo();
   const ri = Math.max(0.05, 1 - t);
-  const yc = Math.min(cut, ri - 1e-3);       // cut plane height (same for both surfaces)
+  const yc = Math.min(cut, ri - 1e-3); // cut plane height (same for both surfaces)
   const band = (rad, out) => {
     const ph0 = Math.acos(Math.min(1, yc / rad));
     for (let j = 0; j < rings; j++) {
       const a = ph0 + ((Math.PI / 2 - ph0) * j) / rings;
       const b = ph0 + ((Math.PI / 2 - ph0) * (j + 1)) / rings;
       for (let i = 0; i < seg; i++) {
-        const u0 = (i / seg) * TAU, u1 = ((i + 1) / seg) * TAU;
-        const pt = (th, ph) => [Math.cos(th) * Math.sin(ph), Math.cos(ph), Math.sin(th) * Math.sin(ph)];
-        const n00 = pt(u0, a), n01 = pt(u1, a), n10 = pt(u0, b), n11 = pt(u1, b);
+        const u0 = (i / seg) * TAU,
+          u1 = ((i + 1) / seg) * TAU;
+        const pt = (th, ph) => [
+          Math.cos(th) * Math.sin(ph),
+          Math.cos(ph),
+          Math.sin(th) * Math.sin(ph),
+        ];
+        const n00 = pt(u0, a),
+          n01 = pt(u1, a),
+          n10 = pt(u0, b),
+          n11 = pt(u1, b);
         const s = (n) => [n[0] * rad, n[1] * rad, n[2] * rad];
         const f = (n) => (out ? n : [-n[0], -n[1], -n[2]]);
-        if (out) { // outer shell: front faces point outward
+        if (out) {
+          // outer shell: front faces point outward
           triS(g, s(n00), s(n11), s(n10), f(n00), f(n11), f(n10));
           triS(g, s(n00), s(n01), s(n11), f(n00), f(n01), f(n11));
-        } else {   // cavity: front faces point into the bowl
+        } else {
+          // cavity: front faces point into the bowl
           triS(g, s(n00), s(n10), s(n11), f(n00), f(n10), f(n11));
           triS(g, s(n00), s(n11), s(n01), f(n00), f(n11), f(n01));
         }
       }
     }
   };
-  band(1, true);                             // outer surface
-  band(ri, false);                           // cavity surface, normals inward
+  band(1, true); // outer surface
+  band(ri, false); // cavity surface, normals inward
   const ro = Math.sqrt(Math.max(0, 1 - yc * yc));
   const rr = Math.sqrt(Math.max(0, ri * ri - yc * yc));
   for (let i = 0; i < seg; i++) {
-    const t0 = (i / seg) * TAU, t1 = ((i + 1) / seg) * TAU;
-    const c0 = Math.cos(t0), s0 = Math.sin(t0), c1 = Math.cos(t1), s1 = Math.sin(t1);
+    const t0 = (i / seg) * TAU,
+      t1 = ((i + 1) / seg) * TAU;
+    const c0 = Math.cos(t0),
+      s0 = Math.sin(t0),
+      c1 = Math.cos(t1),
+      s1 = Math.sin(t1);
     // lip ring at the opening (up) + base ring at y=0 (down)
-    quad(g, [rr * c0, yc, rr * s0], [rr * c1, yc, rr * s1], [ro * c1, yc, ro * s1], [ro * c0, yc, ro * s0], [0, 1, 0]);
-    quad(g, [ri * c1, 0, ri * s1], [ri * c0, 0, ri * s0], [c0, 0, s0], [c1, 0, s1], [0, -1, 0]);
+    quad(
+      g,
+      [rr * c0, yc, rr * s0],
+      [rr * c1, yc, rr * s1],
+      [ro * c1, yc, ro * s1],
+      [ro * c0, yc, ro * s0],
+      [0, 1, 0],
+    );
+    quad(
+      g,
+      [ri * c1, 0, ri * s1],
+      [ri * c0, 0, ri * s0],
+      [c0, 0, s0],
+      [c1, 0, s1],
+      [0, -1, 0],
+    );
   }
   return g;
 }
@@ -252,7 +315,10 @@ function genHalfCylinder(seg, flat) {
 function genHalfCylinderBox(dp, seg) {
   const hc = genHalfCylinder(seg, false);
   const b = geo();
-  const x = 1, z0 = -dp, z1 = 0, h = 1;
+  const x = 1,
+    z0 = -dp,
+    z1 = 0,
+    h = 1;
   quad(b, [x, 0, z1], [x, 0, z0], [x, h, z0], [x, h, z1], [1, 0, 0]);
   quad(b, [-x, 0, z0], [-x, 0, z1], [-x, h, z1], [-x, h, z0], [-1, 0, 0]);
   quad(b, [-x, h, z1], [x, h, z1], [x, h, z0], [-x, h, z0], [0, 1, 0]);
@@ -266,8 +332,8 @@ function genHalfCylinderBox(dp, seg) {
 // edge walls remain to emit here.
 function genQuarterCylinder(seg) {
   const g = cylBody(1, 1, seg, 0, Math.PI / 2);
-  quad(g, [0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1]);  // edge along +X
-  quad(g, [0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0], [-1, 0, 0]);  // edge along +Z
+  quad(g, [0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1]); // edge along +X
+  quad(g, [0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0], [-1, 0, 0]); // edge along +Z
   return g;
 }
 
@@ -279,12 +345,13 @@ function genQuarterCylinder(seg) {
 // Per tooth the pitch splits root gap / rising flank / tip flat / falling
 // flank; both rims are sampled at the UNION of their profile breakpoints so
 // the caps pair 1:1 across the ring.
-const GEAR_DEPTH = 0.22;   // tooth depth, fraction of r
-const GEAR_HOLE = 0.55;    // hole radius, fraction of r
+const GEAR_DEPTH = 0.22; // tooth depth, fraction of r
+const GEAR_HOLE = 0.55; // hole radius, fraction of r
 
 function genGear(To, Ti) {
   const g = geo();
-  const dp = GEAR_DEPTH, ri = GEAR_HOLE;
+  const dp = GEAR_DEPTH,
+    ri = GEAR_HOLE;
   // trapezoid rim radius at angle a: root over the gap, linear flanks, flat tip
   const trap = (a, T, root, tip) => {
     const u = ((a * T) / TAU) % 1;
@@ -305,24 +372,45 @@ function genGear(To, Ti) {
   const ang = [...set].sort((a, b) => a - b).map((f) => f * TAU);
   // wall strip along one rim segment; out=false flips the normal for the hole
   const wall = (p0, p1, out) => {
-    const ex = p1[0] - p0[0], ez = p1[1] - p0[1], l = Math.hypot(ex, ez);
+    const ex = p1[0] - p0[0],
+      ez = p1[1] - p0[1],
+      l = Math.hypot(ex, ez);
     if (l < 1e-9) return;
     const f = out ? 1 : -1;
     const n = [(f * ez) / l, 0, (-f * ex) / l];
-    const b0 = [p0[0], 0, p0[1]], b1 = [p1[0], 0, p1[1]];
-    const t0 = [p0[0], 1, p0[1]], t1 = [p1[0], 1, p1[1]];
+    const b0 = [p0[0], 0, p0[1]],
+      b1 = [p1[0], 0, p1[1]];
+    const t0 = [p0[0], 1, p0[1]],
+      t1 = [p1[0], 1, p1[1]];
     if (out) quad(g, b0, t0, t1, b1, n);
     else quad(g, b0, b1, t1, t0, n);
   };
   const P = (r, a) => [r * Math.cos(a), r * Math.sin(a)];
   for (let j = 0; j < ang.length; j++) {
-    const a0 = ang[j], a1 = ang[(j + 1) % ang.length];
-    const o0 = P(rOut(a0), a0), o1 = P(rOut(a1), a1);
-    const i0 = P(rIn(a0), a0), i1 = P(rIn(a1), a1);
+    const a0 = ang[j],
+      a1 = ang[(j + 1) % ang.length];
+    const o0 = P(rOut(a0), a0),
+      o1 = P(rOut(a1), a1);
+    const i0 = P(rIn(a0), a0),
+      i1 = P(rIn(a1), a1);
     wall(o0, o1, true);
     wall(i0, i1, false);
-    quad(g, [i0[0], 1, i0[1]], [i1[0], 1, i1[1]], [o1[0], 1, o1[1]], [o0[0], 1, o0[1]], [0, 1, 0]);   // top ring
-    quad(g, [o0[0], 0, o0[1]], [o1[0], 0, o1[1]], [i1[0], 0, i1[1]], [i0[0], 0, i0[1]], [0, -1, 0]);  // bottom ring
+    quad(
+      g,
+      [i0[0], 1, i0[1]],
+      [i1[0], 1, i1[1]],
+      [o1[0], 1, o1[1]],
+      [o0[0], 1, o0[1]],
+      [0, 1, 0],
+    ); // top ring
+    quad(
+      g,
+      [o0[0], 0, o0[1]],
+      [o1[0], 0, o1[1]],
+      [i1[0], 0, i1[1]],
+      [i0[0], 0, i0[1]],
+      [0, -1, 0],
+    ); // bottom ring
   }
   return g;
 }
@@ -332,17 +420,26 @@ function genGear(To, Ti) {
 export function box(w = 1, h = 1, d = 1, slope = 0, curve = 0) {
   const sp = q4(Math.max(0, Math.min(slope, 0.9999)));
   const k = q4(Math.max(-1, Math.min(1, curve)));
-  return handle(`box:${sp}:${k}`, () => genBox(sp, k), w, h, d, { kind: "box", p: [sp, k] });
+  return handle(`box:${sp}:${k}`, () => genBox(sp, k), w, h, d, {
+    kind: "box",
+    p: [sp, k],
+  });
 }
 
 export function cylinder(r = 0.5, h = 1, seg = 24) {
-  return handle(`cyl:${seg}`, () => cylBody(1, 1, seg, 0, TAU), r, h, r, { kind: "cylinder", p: [] });
+  return handle(`cyl:${seg}`, () => cylBody(1, 1, seg, 0, TAU), r, h, r, {
+    kind: "cylinder",
+    p: [],
+  });
 }
 
 // truncated cone: only the taper RATIO r1/r0 shapes the mesh
 export function coneCut(r0 = 0.5, r1 = 0.25, h = 1, seg = 24) {
   const q = q4(Math.max(0, r1 / r0));
-  return handle(`coneCut:${q}:${seg}`, () => genConeCut(q, seg), r0, h, r0, { kind: "coneCut", p: [q] });
+  return handle(`coneCut:${q}:${seg}`, () => genConeCut(q, seg), r0, h, r0, {
+    kind: "coneCut",
+    p: [q],
+  });
 }
 
 // a cone IS coneCut(r, 0, ...)
@@ -351,35 +448,75 @@ export function cone(r = 0.5, h = 1, seg = 24) {
 }
 
 export function sphere(r = 0.5, seg = 24, rings = 16) {
-  return handle(`sph:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI, false), r, r, r, { kind: "sphere", p: [] });
+  return handle(
+    `sph:${seg}:${rings}`,
+    () => genLathe(seg, rings, Math.PI, false),
+    r,
+    r,
+    r,
+    { kind: "sphere", p: [] },
+  );
 }
 
 export function hemisphere(r = 0.5, seg = 24, rings = 8) {
-  return handle(`hemi:${seg}:${rings}`, () => genLathe(seg, rings, Math.PI / 2, true), r, r, r, { kind: "hemisphere", p: [] });
+  return handle(
+    `hemi:${seg}:${rings}`,
+    () => genLathe(seg, rings, Math.PI / 2, true),
+    r,
+    r,
+    r,
+    { kind: "hemisphere", p: [] },
+  );
 }
 
 // socket shell — wall t and cut height are FRACTIONS of r
-export function cutHemisphere(r = 0.5, t = 0.25, cut = 0.7, seg = 24, rings = 6) {
+export function cutHemisphere(
+  r = 0.5,
+  t = 0.25,
+  cut = 0.7,
+  seg = 24,
+  rings = 6,
+) {
   const tp = q4(Math.max(0.02, Math.min(t, 0.95)));
   const cp = q4(Math.max(0, Math.min(cut, 0.98)));
   const ri = Math.max(0.05, 1 - tp);
   const yc = Math.min(cp, ri - 1e-3);
-  return handle(`cutHemi:${tp}:${cp}:${seg}:${rings}`, () => genCutHemisphere(tp, cp, seg, rings), r, r, r, { kind: "cutHemisphere", p: [ri, yc] });
+  return handle(
+    `cutHemi:${tp}:${cp}:${seg}:${rings}`,
+    () => genCutHemisphere(tp, cp, seg, rings),
+    r,
+    r,
+    r,
+    { kind: "cutHemisphere", p: [ri, yc] },
+  );
 }
 
 export function halfCylinder(r = 0.5, h = 1, seg = 12) {
-  return handle(`halfCyl:${seg}`, () => genHalfCylinder(seg, true), r, h, r, { kind: "halfCylinder", p: [] });
+  return handle(`halfCyl:${seg}`, () => genHalfCylinder(seg, true), r, h, r, {
+    kind: "halfCylinder",
+    p: [],
+  });
 }
 
 // arch box — the box depth enters the KEY as a FRACTION of r; height is a
 // free scale axis, so all arch boxes with one depth ratio share a mesh
 export function halfCylinderBox(r = 0.5, h = 1, depth = 0.5, seg = 12) {
   const dp = q4(depth / r);
-  return handle(`archBox:${dp}:${seg}`, () => genHalfCylinderBox(dp, seg), r, h, r, { kind: "halfCylinderBox", p: [dp] });
+  return handle(
+    `archBox:${dp}:${seg}`,
+    () => genHalfCylinderBox(dp, seg),
+    r,
+    h,
+    r,
+    { kind: "halfCylinderBox", p: [dp] },
+  );
 }
 
 export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
-  return handle(`qCyl:${seg}`, () => genQuarterCylinder(seg), r, h, r, { kind: "quarterCylinder", p: [] });
+  return handle(`qCyl:${seg}`, () => genQuarterCylinder(seg), r, h, r, {
+    kind: "quarterCylinder",
+    p: [],
+  });
 }
 
 // gear ring — teethOut / teethIn put teeth on the outer / inner rim; a count
@@ -388,7 +525,14 @@ export function quarterCylinder(r = 0.5, h = 0.3, seg = 8) {
 // key is JUST the two counts: gears with identical teeth counts and sides
 // share one mesh and draw as one instanced call. r/h are free scale axes.
 export function gear(r = 0.5, h = 0.2, teethOut = 12, teethIn = 0) {
-  const q = (t) => { const n = Math.round(t); return n >= 3 ? n : 0; };
-  const To = q(teethOut), Ti = q(teethIn);
-  return handle(`gear:${To}:${Ti}`, () => genGear(To, Ti), r, h, r, { kind: "gear", p: [To, Ti] });
+  const q = (t) => {
+    const n = Math.round(t);
+    return n >= 3 ? n : 0;
+  };
+  const To = q(teethOut),
+    Ti = q(teethIn);
+  return handle(`gear:${To}:${Ti}`, () => genGear(To, Ti), r, h, r, {
+    kind: "gear",
+    p: [To, Ti],
+  });
 }

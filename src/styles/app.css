@@ -173,7 +173,10 @@ h3 {
   min-height: 1.5em;
 }
 
-h1, h2, h3, p {
+h1,
+h2,
+h3,
+p {
   margin: 0;
 }
 
@@ -206,7 +209,9 @@ div[role="group"] {
   & :is(button, a[role="button"]) {
     color: var(--link);
     background-color: var(--paper);
-    & svg { font-size: larger; }
+    & svg {
+      font-size: larger;
+    }
   }
   & label:has(input[type="radio"]:checked) {
     background-color: color-mix(in srgb, var(--link) 10%, var(--paper));

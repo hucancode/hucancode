@@ -1,11 +1,11 @@
 <script>
-  import { browser } from "$app/environment";
-  import PlaygroundCanvas from "$lib/components/playground-canvas.svelte";
-  import CoachMark from "$lib/components/coach-mark.svelte";
-  import Timeline from "$lib/components/timeline.svelte";
-  import RoughIcon from "$lib/components/rough-icon.svelte";
-  import { TIMELINE_END, createScene } from "$lib/playgrounds/main";
-  import { D3_STYLE } from "$lib/playgrounds/main/config.js";
+  import { browser } from "$app/env";
+  import PlaygroundCanvas from "#lib/components/playground-canvas.svelte";
+  import CoachMark from "#lib/components/coach-mark.svelte";
+  import Timeline from "#lib/components/timeline.svelte";
+  import RoughIcon from "#lib/components/rough-icon.svelte";
+  import { TIMELINE_END, createScene } from "#lib/playgrounds/main";
+  import { D3_STYLE } from "#lib/playgrounds/main/config.js";
   import Github from "$icons/simple-icons/github.svg?raw";
   import Profile from "$icons/google-material/profile.svg?raw";
   import PersonRaiseHand from "$icons/google-material/person-raise-hand.svg?raw";
@@ -14,8 +14,8 @@
   import Restart from "$icons/google-material/restart.svg?raw";
   import ChevronDown from "$icons/google-material/chevron-down.svg?raw";
   import { onMount } from "svelte";
-  import { stamp } from "$lib/engine/profile.js";
-  import { trackMilestone } from "$lib/ga.js";
+  import { stamp } from "#lib/engine/profile.js";
+  import { trackMilestone } from "#lib/ga.js";
 
   stamp("+page.svelte script init (hydration)");
   onMount(() => stamp("+page.svelte onMount (DOM ready)"));

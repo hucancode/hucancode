@@ -3,7 +3,12 @@
 // `revive` validates/migrates a stored payload on read; return null/undefined
 // to treat the slot as empty (corrupt or legacy data). SSR-safe: every call
 // no-ops to "empty" when localStorage is unavailable.
-export function makeSlots({ prefix, count, field = "data", revive = (p) => p }) {
+export function makeSlots({
+  prefix,
+  count,
+  field = "data",
+  revive = (p) => p,
+}) {
   const key = (i) => `${prefix}${i}`;
   const ok = () => typeof localStorage !== "undefined";
 
@@ -13,7 +18,9 @@ export function makeSlots({ prefix, count, field = "data", revive = (p) => p }) 
       const e = JSON.parse(localStorage.getItem(key(i)));
       const payload = e ? revive(e[field]) : null;
       if (payload != null) return { payload, at: e.at ?? null };
-    } catch { /* corrupt slot -> empty */ }
+    } catch {
+      /* corrupt slot -> empty */
+    }
     return null;
   }
 
@@ -26,8 +33,13 @@ export function makeSlots({ prefix, count, field = "data", revive = (p) => p }) 
   function save(i, payload) {
     if (ok()) {
       try {
-        localStorage.setItem(key(i), JSON.stringify({ [field]: payload, at: new Date().toISOString() }));
-      } catch { /* quota/private mode */ }
+        localStorage.setItem(
+          key(i),
+          JSON.stringify({ [field]: payload, at: new Date().toISOString() }),
+        );
+      } catch {
+        /* quota/private mode */
+      }
     }
     return meta();
   }

@@ -7,8 +7,8 @@ import {
   stagger,
   utils,
   eases,
-} from "$lib/engine/index.js";
-import { hexToRGB } from "$lib/math/color.js";
+} from "#lib/engine/index.js";
+import { hexToRGB } from "#lib/math/color.js";
 import RUBIK from "./shaders/rubik.wgsl?shader";
 import {
   solve,
