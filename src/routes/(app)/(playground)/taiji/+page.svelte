@@ -1,7 +1,7 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as taiji from "$lib/playgrounds/taiji";
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as taiji from "#lib/playgrounds/taiji";
 
   let scene = $state(null);
   let controlsOpen = $state(true);

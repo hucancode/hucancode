@@ -1,6 +1,6 @@
 <script>
   import "$styles/markdown.css";
-  import Nav from "$lib/components/notes/nav-bottom.svelte";
+  import Nav from "#lib/components/notes/nav-bottom.svelte";
 
   /**
    * @typedef {Object} Props

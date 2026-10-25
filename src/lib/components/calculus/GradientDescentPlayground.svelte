@@ -1,7 +1,7 @@
 <script>
-  import Tex from "$lib/components/calculus/Tex.svelte";
-  import Surface3D from "$lib/components/calculus/Surface3D.svelte";
-  import { projectPath } from "$lib/playgrounds/calculus/surface.js";
+  import Tex from "#lib/components/calculus/Tex.svelte";
+  import Surface3D from "#lib/components/calculus/Surface3D.svelte";
+  import { projectPath } from "#lib/playgrounds/calculus/surface.js";
 
   // Elongated bowl: f(x,y) = Ax*x^2 + By*y^2, By > Ax so it is steep in y and
   // shallow in x — a lopsided loss surface.

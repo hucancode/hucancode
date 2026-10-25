@@ -62,7 +62,13 @@ export function segmentPath(x1, y1, x2, y2, scale) {
 
 /** A line of slope m through (x0, y0), spanning the full x range (clipped later). */
 export function linePath(x0, y0, m, xMin, xMax, scale) {
-  return segmentPath(xMin, y0 + m * (xMin - x0), xMax, y0 + m * (xMax - x0), scale);
+  return segmentPath(
+    xMin,
+    y0 + m * (xMin - x0),
+    xMax,
+    y0 + m * (xMax - x0),
+    scale,
+  );
 }
 
 /** Filled region under a curve between x0 and x1, closed along a baseline. */
@@ -75,7 +81,8 @@ export function areaPath(pts, x0, x1, baseline, scale) {
   if (seg.length === 0) return "";
   const base = scale.y(baseline).toFixed(2);
   let d = `M${scale.x(x0).toFixed(2)} ${base}`;
-  for (const [x, y] of seg) d += `L${scale.x(x).toFixed(2)} ${scale.y(y).toFixed(2)}`;
+  for (const [x, y] of seg)
+    d += `L${scale.x(x).toFixed(2)} ${scale.y(y).toFixed(2)}`;
   d += `L${scale.x(x1).toFixed(2)} ${base}Z`;
   return d;
 }

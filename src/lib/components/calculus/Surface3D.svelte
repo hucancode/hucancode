@@ -1,5 +1,5 @@
 <script>
-  import { clamp } from "$lib/playgrounds/calculus/plot.js";
+  import { clamp } from "#lib/playgrounds/calculus/plot.js";
 
   let {
     fn,

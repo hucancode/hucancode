@@ -1,7 +1,7 @@
 <script>
-  import Tex from "$lib/components/calculus/Tex.svelte";
-  import { boxFrame, boxCorners } from "$lib/playgrounds/collision/sat.js";
-  import { circleBox } from "$lib/playgrounds/collision/primitives.js";
+  import Tex from "#lib/components/calculus/Tex.svelte";
+  import { boxFrame, boxCorners } from "#lib/playgrounds/collision/sat.js";
+  import { circleBox } from "#lib/playgrounds/collision/primitives.js";
 
   const W = 720;
   const H = 440;

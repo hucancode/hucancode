@@ -2,9 +2,9 @@
 // save slots holding explicit snapshots. Storage shape is frozen - keep the
 // legacy `selection.selKind/selStrokeId/selIdx` field names on disk.
 // SSR-safe: every call no-ops when localStorage is unavailable.
-import { setUidFloor } from "$lib/brush/engine";
-import { maxSymbolId } from "$lib/brush/glyphs";
-import { makeSlots } from "$lib/save-slots.js";
+import { setUidFloor } from "#lib/brush/engine";
+import { maxSymbolId } from "#lib/brush/glyphs";
+import { makeSlots } from "#lib/save-slots.js";
 
 const LS_KEY = "brush:state:v1";
 const SLOT_PREFIX = "brush:slot:";
@@ -23,7 +23,11 @@ export const snapshot = (doc) => ({
   connect: { enabled: doc.connect.enabled, thread: doc.connect.thread },
   timing: { speed: doc.timing.speed },
   view: { zoom: doc.view.zoom, panX: doc.view.panX, panY: doc.view.panY },
-  selection: { selKind: doc.sel.kind, selStrokeId: doc.sel.strokeId, selIdx: doc.sel.idx },
+  selection: {
+    selKind: doc.sel.kind,
+    selStrokeId: doc.sel.strokeId,
+    selIdx: doc.sel.idx,
+  },
 });
 
 // restore state from a snapshot object (scratch autosave or a slot).
@@ -44,7 +48,8 @@ export function restore(doc, data) {
     if (typeof c.enabled === "boolean") doc.connect.enabled = c.enabled;
     if (typeof c.thread === "number") doc.connect.thread = c.thread;
   }
-  if (data.timing && typeof data.timing.speed === "number") doc.timing.speed = data.timing.speed;
+  if (data.timing && typeof data.timing.speed === "number")
+    doc.timing.speed = data.timing.speed;
   if (data.view && typeof data.view.zoom === "number") {
     doc.view.zoom = data.view.zoom;
     doc.view.panX = data.view.panX || 0;
@@ -86,7 +91,8 @@ function saveScratch(doc) {
 // Debounced: an un-debounced save is a synchronous stringify + localStorage
 // write per pointermove. First schedule() (the post-load effect run) is a no-op.
 export function makeAutosave(doc, delay = 300) {
-  let timer = null, ready = false;
+  let timer = null,
+    ready = false;
   return {
     schedule() {
       if (!ready) {

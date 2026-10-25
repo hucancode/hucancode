@@ -12,7 +12,10 @@ export const TEMPLATES = [
 ];
 
 // merged palette: later entries win on key collisions (all share the same hex)
-export const PALETTE = Object.assign({}, ...TEMPLATES.map((t) => t.PALETTE ?? {}));
+export const PALETTE = Object.assign(
+  {},
+  ...TEMPLATES.map((t) => t.PALETTE ?? {}),
+);
 
 export const DEFAULT = TEMPLATES[0];
 export const MODEL = DEFAULT.MODEL;

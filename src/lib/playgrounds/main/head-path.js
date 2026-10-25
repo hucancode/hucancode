@@ -5,8 +5,8 @@
 //   enso    : CRUISE_SP   -> SP3           (decel; ensoHeadProgress)
 //   roam2   : SP3 (constant; == 3D loop speed)
 
-import { clamp, lerp } from "$lib/math/scalar.js";
-import { hermiteG } from "$lib/math/curve.js";
+import { clamp, lerp } from "#lib/math/scalar.js";
+import { hermiteG } from "#lib/math/curve.js";
 import { BLOCK_DUR, ENSO_REVS, CRUISE_SP } from "./config.js";
 import { ensoPos, ensoHeadProgress } from "./frame-path.js";
 
@@ -28,18 +28,23 @@ export function createHeadPath({ timing, paths }) {
 
   // sample curve by cubic-eased progress with prescribed endpoint speeds
   const cruise = (curve, t, t0, dur, s0, s1) => {
-    const hs = curve.headStart || 0, he = curve.headEnd ?? curve.total, L = (he - hs) || 1e-6;
+    const hs = curve.headStart || 0,
+      he = curve.headEnd ?? curve.total,
+      L = he - hs || 1e-6;
     const x = clamp((t - t0) / dur, 0, 1);
     const g = clamp(hermiteG(x, (s0 * dur) / L, (s1 * dur) / L), 0, 1);
     return curve.pos(hs + g * L);
   };
   const frac = (t, t0, dur) => clamp((t - t0) / dur, 0, 1);
 
-  const flyinHead = (t) => cruise(flyin, t, flyinStart, BLOCK_DUR.flyin, 0, descentStart);
-  const descentHead = (t) => cruise(descentCurve, t, roam1Start, descentDur, descentStart, CRUISE_SP);
+  const flyinHead = (t) =>
+    cruise(flyin, t, flyinStart, BLOCK_DUR.flyin, 0, descentStart);
+  const descentHead = (t) =>
+    cruise(descentCurve, t, roam1Start, descentDur, descentStart, CRUISE_SP);
   const ensoHead = (a) => ensoPos(ENSO_REVS * a, ensoCenter);
   const roam2Head = (a) => {
-    const hs = roam2.curve.headStart || 0, he = roam2.curve.headEnd ?? roam2.curve.total;
+    const hs = roam2.curve.headStart || 0,
+      he = roam2.curve.headEnd ?? roam2.curve.total;
     return roam2.curve.pos(hs + a * (he - hs));
   };
   const roam2Dur = loop3Start - ensoExit; // SP3 by construction (headEnd = hs + SP3*roam2Dur)
@@ -48,11 +53,15 @@ export function createHeadPath({ timing, paths }) {
   // descent ends at enso top with circle tangent + speed CRUISE_SP, so body
   // keeps trailing onto enso (which decelerates to SP3).
   const PHASES = [
-    { end: roam1Start, pos: (t) => flyinHead(t) },                                          // flyin
-    { end: ensoStart, pos: (t) => descentHead(t) },                                         // descent
-    { end: ensoExit, pos: (t) => ensoHead(ensoHeadProgress(frac(t, ensoStart, BLOCK_DUR.enso))) }, // enso
-    { end: loop3Start, pos: (t) => roam2Head(frac(t, ensoExit, roam2Dur)) },                // roam2
-    { end: Infinity, pos: () => roam2Head(1) },                                             // loop3
+    { end: roam1Start, pos: (t) => flyinHead(t) }, // flyin
+    { end: ensoStart, pos: (t) => descentHead(t) }, // descent
+    {
+      end: ensoExit,
+      pos: (t) =>
+        ensoHead(ensoHeadProgress(frac(t, ensoStart, BLOCK_DUR.enso))),
+    }, // enso
+    { end: loop3Start, pos: (t) => roam2Head(frac(t, ensoExit, roam2Dur)) }, // roam2
+    { end: Infinity, pos: () => roam2Head(1) }, // loop3
   ];
 
   function phaseOf(t) {
@@ -64,8 +73,10 @@ export function createHeadPath({ timing, paths }) {
     return PHASES[phaseOf(t)].pos(t);
   }
   function tipAt(t) {
-    const p = posAt(t), p2 = posAt(t + 1e-3);
-    let dx = p2.x - p.x, dy = p2.y - p.y;
+    const p = posAt(t),
+      p2 = posAt(t + 1e-3);
+    let dx = p2.x - p.x,
+      dy = p2.y - p.y;
     const m = Math.hypot(dx, dy) || 1;
     return { x: p.x, y: p.y, dir: { x: dx / m, y: dy / m } };
   }

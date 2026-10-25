@@ -1,11 +1,11 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as mech from "$lib/playgrounds/mech";
-  import * as rt from "$lib/playgrounds/raytrace";
-  import { ATLAS_KIT } from "$lib/mech/atlas/parts.js";
-  import { atlasModel, atlasHeight, atlasPose, SIDES, ATLAS_DEF, chan, forSides, SIDED, SIDE_CHANNELS, CURL_SEG } from "$lib/mech/atlas/rig.js";
-  // ---- atlas UI surface (inlined from $lib/ui/atlas.js) ----
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as mech from "#lib/playgrounds/mech";
+  import * as rt from "#lib/playgrounds/raytrace";
+  import { ATLAS_KIT } from "#lib/mech/atlas/parts.js";
+  import { atlasModel, atlasHeight, atlasPose, SIDES, ATLAS_DEF, chan, forSides, SIDED, SIDE_CHANNELS, CURL_SEG } from "#lib/mech/atlas/rig.js";
+  // ---- atlas UI surface (inlined from #lib/ui/atlas.js) ----
 // ATLAS UI SURFACE — the slider rows, mirror helpers, montages and choreographer
 // config the atlas playground renders and drives. Everything here is presentation
 // and control; the rig itself (links, solve, model) lives in lib/mech/atlas/rig.js,
@@ -163,11 +163,17 @@ const CHOREO_GROUNDED = [SIDES.map((S) => LEG_CHANNELS.map((key) => key + S))];
 const RATIO = ATLAS_RATIO;
 // mirrored, the legs move as ONE and the figure would hop: take them out of the beat
 // and park them (a leg left in the air by the flip still has to walk home)
+// how far a channel travels in one beat: 0 core (slow), 1 limb, 2 tip (a beat to cross)
+const CHOREO_TIER = {
+  hipLevel: 0, twist: 0, waistBend: 0, waistTilt: 0, hip: 0,
+  shoulder: 1, armOut: 1, armTwist: 1, elbow: 1, foreTwist: 1, knee: 1,
+};   // everything else is a tip
 const choreoSliders = (mirror) => {
   const skip = new Set(mirror ? LEG_CHANNELS : []);
   return sided([...LEVEL_CTL, ...ATLAS_CTL].filter(([key]) => !skip.has(key)), mirror)
     .map(([key, , min, max]) => ({
       key, min, max,
+      tier: CHOREO_TIER[baseChan(key)] ?? 2,
       big: key === "hipLevel" || ATLAS_POSE_DEPTH[key] <= BIG_DEPTH,
       grid: RATIO.has(baseChan(key)) ? 0 : undefined,
     }));
@@ -202,12 +208,12 @@ const PART_CTL = {
   shin: [["len", "length", 0.3, 1.0], ["w", "width", 0.15, 0.5]],
   foot: [["len", "length", 0.3, 1.0], ["w", "width", 0.2, 0.5], ["heelD", "heel depth", 0.08, 0.4], ["heelCapD", "heel taper depth", 0.06, 0.35]],
 };
-  import { rad, deg } from "$lib/math/scalar.js";
-  import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
-  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "$lib/mech/choreo.js";
+  import { rad, deg } from "#lib/math/scalar.js";
+  import { assembleModel, BUILD_SECONDS } from "#lib/mech/build-anim.js";
+  import { createChoreographer, beatClock, CHOREO_TIMING, CHOREO_STYLES } from "#lib/mech/choreo.js";
   import {
     createMusic, MUSIC_DEFAULTS, MUSIC_STYLE_NAMES, MUSIC_ROOT_NAMES, MUSIC_SCALE_NAMES, styleOf,
-  } from "$lib/audio/music.js";
+  } from "#lib/audio/music.js";
   import VolumeUp from "$icons/google-material/volume-up.svg?raw";
   import VolumeOff from "$icons/google-material/volume-off.svg?raw";
   import Bot from "$icons/carbon/bot.svg?raw";
@@ -241,6 +247,9 @@ const PART_CTL = {
   let asm = $state(1);
   let asmPlay = $state(false);
   let seed = $state(1);                    // color shuffle seed
+  // the dance's own seed, drawn fresh per visit: sharing the color seed's constant 1 made
+  // every load dance the same routine
+  const danceSeed = (Math.random() * 2 ** 31) | 0;
 
   let render = $state({
     spin: 0.3, light: 0.6, wire: 0,
@@ -338,6 +347,7 @@ const PART_CTL = {
     ["restRatio", "rest", 0, 0.4, 0.01],
     ["bounceTime", "bounce time", 0.05, 0.6, 0.01],
     ["bouncePower", "bounce power", 0, 1, 0.01],
+    ["maxSpeed", "max joint speed", 0.1, 3, 0.05],
     ["styleBeats", "style hold", 1, 30, 1],
     ["pulseChance", "hip pulse", 0, 1, 0.05],
   ];
@@ -434,7 +444,7 @@ const PART_CTL = {
   // its count over
   const beat = $derived({ cho: createChoreographer(rig.sliders, {
     ...rig,
-    seed: (seed + rewires) | 0,
+    seed: (danceSeed + rewires) | 0,
     style: cstyle === RANDOM ? null : cstyle,
     onSwitch: toggleMirror,
     ...$state.snapshot(ctiming),

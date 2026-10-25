@@ -92,7 +92,9 @@ main:has(> form) {
     font: inherit;
     color: inherit;
     cursor: pointer;
-    transition: border-color 100ms, opacity 100ms;
+    transition:
+      border-color 100ms,
+      opacity 100ms;
   }
   /* slot label sits on its own line above the cards */
   > form > fieldset b {
@@ -360,7 +362,9 @@ main:has(> form) {
     border: 1px solid #d1d5db;
     background-color: #f3f4f6;
     color: #1f2937;
-    transition: background-color 150ms, transform 150ms;
+    transition:
+      background-color 150ms,
+      transform 150ms;
   }
   label[data-card]:has(:checked) > span {
     background-color: #fed7aa;
@@ -428,11 +432,17 @@ main:has(> form) {
     width: 200%;
     height: 200%;
     background-repeat: no-repeat;
-    background-size: 50% 50%, 50% 50%;
-    background-position: 0 0, 100% 0, 100% 100%, 0 100%;
-    background-image: linear-gradient(#399953, #399953),
-      linear-gradient(#fbb300, #fbb300), linear-gradient(#d53e33, #d53e33),
-      linear-gradient(#377af5, #377af5);
+    background-size:
+      50% 50%,
+      50% 50%;
+    background-position:
+      0 0,
+      100% 0,
+      100% 100%,
+      0 100%;
+    background-image:
+      linear-gradient(#399953, #399953), linear-gradient(#fbb300, #fbb300),
+      linear-gradient(#d53e33, #d53e33), linear-gradient(#377af5, #377af5);
   }
 
   /* ---- result readout ---------------------------------------------------- */
@@ -567,21 +577,43 @@ main:has(> form) {
 }
 
 @keyframes waving-hand {
-  0% { transform: rotate(0deg); }
-  10% { transform: rotate(20deg); }
-  20% { transform: rotate(-10deg); }
-  30% { transform: rotate(10deg); }
-  40% { transform: rotate(-10deg); }
-  50% { transform: rotate(0deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(20deg);
+  }
+  20% {
+    transform: rotate(-10deg);
+  }
+  30% {
+    transform: rotate(10deg);
+  }
+  40% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
 }
 @keyframes rotate {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @keyframes pingpong {
-  from { left: -25%; }
-  to { left: 100%; }
+  from {
+    left: -25%;
+  }
+  to {
+    left: 100%;
+  }
 }
 @keyframes pingpong-absolute {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(400%); }
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
 }

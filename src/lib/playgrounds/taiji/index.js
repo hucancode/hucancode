@@ -1,5 +1,5 @@
-import { createPlayground, animate, utils, eases } from "$lib/engine/index.js";
-import { hexToRGB } from "$lib/math/color.js";
+import { createPlayground, animate, utils, eases } from "#lib/engine/index.js";
+import { hexToRGB } from "#lib/math/color.js";
 import CLOUD from "./shaders/cloud.wgsl?shader";
 import BAGUA from "./shaders/bagua.wgsl?shader";
 import TAIJI from "./shaders/taiji.wgsl?shader";

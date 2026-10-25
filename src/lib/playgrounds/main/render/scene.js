@@ -1,7 +1,7 @@
 // Scene renderer for /main (paint). One screen pass; consumes the plain-data
 // FrameState from index.js buildState() — no GPU handles cross that boundary.
 import { buildRibbon } from "./stroke-gl.js";
-import { createInstancedDrawer } from "$lib/mech/instancing.js";
+import { createInstancedDrawer } from "#lib/mech/instancing.js";
 import { D3_STYLE } from "../config.js";
 import { PROGRAMS } from "./programs.js";
 

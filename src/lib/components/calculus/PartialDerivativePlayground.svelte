@@ -1,6 +1,6 @@
 <script>
-  import Tex from "$lib/components/calculus/Tex.svelte";
-  import Surface3D from "$lib/components/calculus/Surface3D.svelte";
+  import Tex from "#lib/components/calculus/Tex.svelte";
+  import Surface3D from "#lib/components/calculus/Surface3D.svelte";
 
   // Hill f(x,y) = A * exp(-(x^2+y^2)/S) — radially symmetric, so contours are
   // circles and the tangent slopes have a closed form.

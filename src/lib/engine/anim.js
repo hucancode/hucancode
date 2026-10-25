@@ -49,14 +49,17 @@ class Animation {
     }
 
     this.tracks = this.targets.map((tg, i) => {
-      const delay = typeof this.delaySpec === "function"
-        ? this.delaySpec(tg, i, this.targets.length)
-        : this.delaySpec;
+      const delay =
+        typeof this.delaySpec === "function"
+          ? this.delaySpec(tg, i, this.targets.length)
+          : this.delaySpec;
       const ps = this.props.map((p) => {
-        let to = typeof p.to === "function" ? p.to(tg, i, this.targets.length) : p.to;
+        let to =
+          typeof p.to === "function" ? p.to(tg, i, this.targets.length) : p.to;
         let from = p.from;
         if (from === undefined) from = tg[p.name] ?? 0;
-        else if (typeof from === "function") from = from(tg, i, this.targets.length);
+        else if (typeof from === "function")
+          from = from(tg, i, this.targets.length);
         return { name: p.name, from, to, ease: p.ease };
       });
       return { tg, delay, ps, done: false };
@@ -70,7 +73,10 @@ class Animation {
     let allDone = true;
     for (const tr of this.tracks) {
       const e = t - this._start - tr.delay;
-      if (e < 0) { allDone = false; continue; }
+      if (e < 0) {
+        allDone = false;
+        continue;
+      }
       const localT = Math.min(e / this.duration, 1);
       tr.done = e >= this.duration;
       for (const p of tr.ps) {

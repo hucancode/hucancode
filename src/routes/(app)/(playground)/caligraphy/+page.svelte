@@ -1,10 +1,10 @@
 <script>
   import { onMount } from "svelte";
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import { resolveControl } from "$lib/brush/engine";
-  import { bakeGLSL, bakeSegs } from "$lib/brush/bake";
-  import * as caligraphy from "$lib/playgrounds/caligraphy";
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import { resolveControl } from "#lib/brush/engine";
+  import { bakeGLSL, bakeSegs } from "#lib/brush/bake";
+  import * as caligraphy from "#lib/playgrounds/caligraphy";
   import {
     SAMPLES,
     makeDoc,
@@ -23,11 +23,11 @@
     resetControl,
     setPctrlK,
     resetPressure,
-  } from "$lib/playgrounds/caligraphy/model.js";
-  import { worldToScreen, resetView } from "$lib/playgrounds/caligraphy/view.js";
-  import { makeDrag } from "$lib/playgrounds/caligraphy/drag.js";
-  import { makePlayback, togglePlay, seek, exitAnim, tick } from "$lib/playgrounds/caligraphy/playback.js";
-  import * as store from "$lib/playgrounds/caligraphy/persist.js";
+  } from "#lib/playgrounds/caligraphy/model.js";
+  import { worldToScreen, resetView } from "#lib/playgrounds/caligraphy/view.js";
+  import { makeDrag } from "#lib/playgrounds/caligraphy/drag.js";
+  import { makePlayback, togglePlay, seek, exitAnim, tick } from "#lib/playgrounds/caligraphy/playback.js";
+  import * as store from "#lib/playgrounds/caligraphy/persist.js";
 
   let scene = $state(null);
   let controlsOpen = $state(true);

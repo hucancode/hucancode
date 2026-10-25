@@ -9,7 +9,7 @@
   // onFrame(dt) fires once per rendered frame with the engine's clamped dt. Pages
   // with their own clocks (autoplay, build scrub, scroll scrubbing) hook it rather
   // than starting a second RAF, so those clocks pause offscreen too.
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onMount, onDestroy } from "svelte";
 
   let { scene, id = undefined, onFrame = undefined, onError = undefined } = $props();

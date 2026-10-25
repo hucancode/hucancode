@@ -18,8 +18,8 @@
 //   accumulate in acc0/acc1 -> ping-pong rgba16f render targets
 //   composite             -> upsamples the internal-res trace buffer to screen
 
-import { createPlayground, createOrbit } from "$lib/engine/index.js";
-import { buildGpuScene } from "$lib/raytrace/scene.js";
+import { createPlayground, createOrbit } from "#lib/engine/index.js";
+import { buildGpuScene } from "#lib/raytrace/scene.js";
 import TRACE from "./shaders/trace.wgsl?shader";
 import COMPOSITE from "./shaders/composite.wgsl?shader";
 
@@ -122,14 +122,58 @@ const DEG = Math.PI / 180;
 const SUN_MAX_ELEV = 70 * DEG;
 
 const lerp = (a, b, t) => a + (b - a) * t;
-const lerp3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+const lerp3 = (a, b, t) => [
+  lerp(a[0], b[0], t),
+  lerp(a[1], b[1], t),
+  lerp(a[2], b[2], t),
+];
 
 const SKY_KEY = [
-  { t: 0,  zenith: [0.02, 0.03, 0.08], horizon: [0.09, 0.10, 0.17], glow: [0.55, 0.58, 0.75], ambSky: [0.05, 0.055, 0.11], ambGround: [0.04, 0.04, 0.055], light: [0.30, 0.33, 0.45] },
-  { t: 6,  zenith: [0.30, 0.24, 0.40], horizon: [1.05, 0.55, 0.25], glow: [2.20, 1.00, 0.40], ambSky: [0.60, 0.45, 0.42], ambGround: [0.28, 0.21, 0.15], light: [1.80, 1.05, 0.50] },
-  { t: 12, zenith: [0.14, 0.20, 0.33], horizon: [0.52, 0.56, 0.66], glow: [1.50, 1.15, 0.70], ambSky: [0.55, 0.60, 0.72], ambGround: [0.28, 0.26, 0.24], light: [1.35, 1.25, 1.05] },
-  { t: 18, zenith: [0.30, 0.24, 0.40], horizon: [1.05, 0.55, 0.25], glow: [2.20, 1.00, 0.40], ambSky: [0.60, 0.45, 0.42], ambGround: [0.28, 0.21, 0.15], light: [1.80, 1.05, 0.50] },
-  { t: 24, zenith: [0.02, 0.03, 0.08], horizon: [0.09, 0.10, 0.17], glow: [0.55, 0.58, 0.75], ambSky: [0.05, 0.055, 0.11], ambGround: [0.04, 0.04, 0.055], light: [0.30, 0.33, 0.45] },
+  {
+    t: 0,
+    zenith: [0.02, 0.03, 0.08],
+    horizon: [0.09, 0.1, 0.17],
+    glow: [0.55, 0.58, 0.75],
+    ambSky: [0.05, 0.055, 0.11],
+    ambGround: [0.04, 0.04, 0.055],
+    light: [0.3, 0.33, 0.45],
+  },
+  {
+    t: 6,
+    zenith: [0.3, 0.24, 0.4],
+    horizon: [1.05, 0.55, 0.25],
+    glow: [2.2, 1.0, 0.4],
+    ambSky: [0.6, 0.45, 0.42],
+    ambGround: [0.28, 0.21, 0.15],
+    light: [1.8, 1.05, 0.5],
+  },
+  {
+    t: 12,
+    zenith: [0.14, 0.2, 0.33],
+    horizon: [0.52, 0.56, 0.66],
+    glow: [1.5, 1.15, 0.7],
+    ambSky: [0.55, 0.6, 0.72],
+    ambGround: [0.28, 0.26, 0.24],
+    light: [1.35, 1.25, 1.05],
+  },
+  {
+    t: 18,
+    zenith: [0.3, 0.24, 0.4],
+    horizon: [1.05, 0.55, 0.25],
+    glow: [2.2, 1.0, 0.4],
+    ambSky: [0.6, 0.45, 0.42],
+    ambGround: [0.28, 0.21, 0.15],
+    light: [1.8, 1.05, 0.5],
+  },
+  {
+    t: 24,
+    zenith: [0.02, 0.03, 0.08],
+    horizon: [0.09, 0.1, 0.17],
+    glow: [0.55, 0.58, 0.75],
+    ambSky: [0.05, 0.055, 0.11],
+    ambGround: [0.04, 0.04, 0.055],
+    light: [0.3, 0.33, 0.45],
+  },
 ];
 
 function skyPalette(tod) {

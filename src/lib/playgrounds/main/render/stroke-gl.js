@@ -2,11 +2,14 @@
 // Exact-width mesh (no bleed margins): the fragment shader is a flat fill, so
 // the taper lives in the MESH via widthAt.
 
-import { buildRibbonGeometry } from "$lib/brush/ribbon.js";
+import { buildRibbonGeometry } from "#lib/brush/ribbon.js";
 
 // persistent scratch reused across frames; caller uploads synchronously before the next buildRibbon, so sharing is safe
 let _capacity = 0;
-let _positions = null, _uvs = null, _indices = null, _arcs = null;
+let _positions = null,
+  _uvs = null,
+  _indices = null,
+  _arcs = null;
 function ensureScratch(nRibbon) {
   if (_capacity === nRibbon) return;
   _capacity = nRibbon;
@@ -30,5 +33,10 @@ export function buildRibbon(points, lineWidth, widthAt = null) {
     widthAt,
   });
 
-  return { positions: _positions, uvs: _uvs, indices: _indices, indexCount: built.indexCount };
+  return {
+    positions: _positions,
+    uvs: _uvs,
+    indices: _indices,
+    indexCount: built.indexCount,
+  };
 }

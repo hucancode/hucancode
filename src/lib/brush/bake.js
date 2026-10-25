@@ -17,9 +17,11 @@ export function bakeSegs(symbol, opts = {}) {
     const stroke = e.stroke;
     for (let i = 0; i < stroke.paths.length; i++) {
       const path = stroke.paths[i];
-      const p1 = stroke.points[i], p2 = stroke.points[i + 1];
+      const p1 = stroke.points[i],
+        p2 = stroke.points[i + 1];
       const c = resolveControl(stroke, i);
-      const v0 = pointSpeed(stroke, i, speed), v1 = pointSpeed(stroke, i + 1, speed);
+      const v0 = pointSpeed(stroke, i, speed),
+        v1 = pointSpeed(stroke, i + 1, speed);
       const { arc: L, bellyX } = sampleSeg(stroke, i);
       const dur = travelTime(L, v0, v1);
       // no pctrl -> belly 0.5 with k = mid-pressure: the pressure quad then
@@ -27,9 +29,19 @@ export function bakeSegs(symbol, opts = {}) {
       const k = path.pctrl ? path.pctrl.k : (p1.pressure + p2.pressure) / 2;
       const belly = path.pctrl ? bellyX : 0.5;
       segs.push({
-        p1: { x: p1.x, y: p1.y }, p2: { x: p2.x, y: p2.y }, ctrl: c,
-        pr1: p1.pressure, pr2: p2.pressure, k, belly,
-        t0: cursor, dur, v0, v1, connector: e.connector ? 1 : 0, stroke: e.si,
+        p1: { x: p1.x, y: p1.y },
+        p2: { x: p2.x, y: p2.y },
+        ctrl: c,
+        pr1: p1.pressure,
+        pr2: p2.pressure,
+        k,
+        belly,
+        t0: cursor,
+        dur,
+        v0,
+        v1,
+        connector: e.connector ? 1 : 0,
+        stroke: e.si,
       });
       cursor += dur;
     }
@@ -41,11 +53,11 @@ export function bakeGLSL(symbol, opts = {}) {
   const glyph = opts.glyph || "?";
   const { segs, strokeCount: expandedCount, total } = bakeSegs(symbol, opts);
 
-  const f = n => {
+  const f = (n) => {
     const s = Number(n).toFixed(5);
     return s.replace(/0+$/, "").replace(/\.$/, ".0");
   };
-  const v2 = p => `vec2(${f(p.x)}, ${f(p.y)})`;
+  const v2 = (p) => `vec2(${f(p.x)}, ${f(p.y)})`;
   const N = segs.length;
   let out = "";
   out += `// ===== BAKED by src/lib/brush/bake.js - DO NOT HAND-EDIT =====\n`;
@@ -64,11 +76,14 @@ export function bakeGLSL(symbol, opts = {}) {
   out += `const int NSEG = ${N};\n`;
   out += `const float TOTAL_TIME = ${f(total)};\n`;
   out += `const Seg SEGS[NSEG] = Seg[NSEG](\n`;
-  out += segs.map(s =>
-    `    Seg(${v2(s.p1)}, ${v2(s.p2)}, ${v2(s.ctrl)}, ` +
-    `${f(s.pr1)}, ${f(s.pr2)}, ${f(s.k)}, ${f(s.belly)}, ` +
-    `${f(s.t0)}, ${f(s.dur)}, ${f(s.v0)}, ${f(s.v1)})`
-  ).join(",\n");
+  out += segs
+    .map(
+      (s) =>
+        `    Seg(${v2(s.p1)}, ${v2(s.p2)}, ${v2(s.ctrl)}, ` +
+        `${f(s.pr1)}, ${f(s.pr2)}, ${f(s.k)}, ${f(s.belly)}, ` +
+        `${f(s.t0)}, ${f(s.dur)}, ${f(s.v0)}, ${f(s.v1)})`,
+    )
+    .join(",\n");
   out += `\n);\n`;
 
   return { glsl: out, segCount: N, strokeCount: expandedCount, total };

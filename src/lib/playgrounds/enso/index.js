@@ -1,5 +1,5 @@
-import { createPlayground } from "$lib/engine/index.js";
-import { hexToRGB } from "$lib/math/color.js";
+import { createPlayground } from "#lib/engine/index.js";
+import { hexToRGB } from "#lib/math/color.js";
 import ENSO from "./shaders/enso.wgsl?shader";
 
 const rgba = (hex) => [...hexToRGB(hex), 1];

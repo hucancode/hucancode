@@ -11,18 +11,21 @@
   },
   "dependencies": {
     "@markdoc/markdoc": "^0.5.2",
-    "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.20.5",
-    "katex": "^0.16.22",
+    "@sveltejs/adapter-static": "^4.0.0",
+    "@sveltejs/kit": "^3.1.0",
+    "katex": "^0.19.1",
     "prismjs": "^1.30.0",
     "roughjs": "^4.6.6",
     "svelte": "^5.25.12",
-    "vite": "^5.4.18"
+    "vite": "^8.3.5"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "prettier": "^3.5.3",
-    "prettier-plugin-svelte": "^3.3.3",
-    "@sveltejs/vite-plugin-svelte": "^4.0.4"
+    "prettier-plugin-svelte": "^3.3.3"
   },
-  "type": "module"
+  "type": "module",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  }
 }

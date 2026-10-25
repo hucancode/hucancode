@@ -1,134 +1,133 @@
-import Markdoc from '@markdoc/markdoc';
-
 export const config = {
   nodes: {
     fence: {
-      render: 'Code',
+      render: "Code",
       attributes: {
         content: { type: String },
         language: { type: String },
       },
       transform(node, config) {
-        const info = node.attributes.language || '';
-        const parts = info.split(' ');
-        const language = parts[0] || 'text';
-        let filename = '';
-        let highlightLines = '';
+        const info = node.attributes.language || "";
+        const parts = info.split(" ");
+        const language = parts[0] || "text";
+        let filename = "";
+        let highlightLines = "";
         let showLineNumbers = false;
-        
-        parts.slice(1).forEach(part => {
-          if (part.startsWith('filename=')) {
-            filename = part.substring(9).replace(/["']/g, '');
+
+        parts.slice(1).forEach((part) => {
+          if (part.startsWith("filename=")) {
+            filename = part.substring(9).replace(/["']/g, "");
           } else if (part.match(/^\{[\d,-]+\}$/)) {
             highlightLines = part.slice(1, -1);
-          } else if (part === 'showLineNumbers') {
+          } else if (part === "showLineNumbers") {
             showLineNumbers = true;
           }
         });
-        
+
         return {
-          name: 'Code',
+          name: "Code",
           attributes: {
-            content: node.attributes.content || '',
+            content: node.attributes.content || "",
             language,
             filename,
             highlightLines,
-            showLineNumbers
-          }
+            showLineNumbers,
+          },
         };
-      }
+      },
     },
     code: {
-      render: 'Code',
+      render: "Code",
       attributes: {
-        content: { type: String }
+        content: { type: String },
       },
       transform(node, config) {
-        const content = node.attributes.content || '';
-        
+        const content = node.attributes.content || "";
+
         return {
-          name: 'Code',
+          name: "Code",
           attributes: {
             content,
-            inline: true
-          }
+            inline: true,
+          },
         };
-      }
+      },
     },
     heading: {
       render: true,
-      children: ['inline'],
+      children: ["inline"],
       attributes: {
         id: { type: String },
-        level: { type: Number, required: true, default: 1 }
+        level: { type: Number, required: true, default: 1 },
       },
       transform(node, config) {
         const attributes = node.transformAttributes(config);
         const children = node.transformChildren(config);
-        
+
         if (!attributes.id && node.children) {
           const text = node.children
-            .map(child => typeof child === 'string' ? child : '')
-            .join('');
+            .map((child) => (typeof child === "string" ? child : ""))
+            .join("");
           attributes.id = text
             .toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
+            .replace(/[^\w\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
             .trim();
         }
-        
+
         return {
           name: `h${attributes.level}`,
           attributes: { id: attributes.id },
-          children
+          children,
         };
-      }
-    }
+      },
+    },
   },
   tags: {
     math: {
-      render: 'Math',
-      children: ['text', 'softbreak', 'hardbreak', 'inline'],
+      render: "Math",
+      children: ["text", "softbreak", "hardbreak", "inline"],
       attributes: {
         type: {
           type: String,
-          default: 'inline',
-          matches: ['inline', 'block']
-        }
+          default: "inline",
+          matches: ["inline", "block"],
+        },
       },
       transform(node, config) {
         const attributes = node.transformAttributes(config);
-        
-        let content = '';
+
+        let content = "";
         if (node.children && Array.isArray(node.children)) {
           content = extractTextFromNode(node.children);
         }
-        
+
         function extractTextFromNode(children) {
-          return children.map(child => {
-            if (typeof child === 'string') return child;
-            if (child.type === 'text' && child.attributes?.content) {
-              return child.attributes.content;
-            }
-            if (child.type === 'softbreak') return '\n';
-            if (child.type === 'hardbreak') return '\n';
-            if (child.children) {
-              return extractTextFromNode(child.children);
-            }
-            return '';
-          }).join('');
+          return children
+            .map((child) => {
+              if (typeof child === "string") return child;
+              if (child.type === "text" && child.attributes?.content) {
+                return child.attributes.content;
+              }
+              if (child.type === "softbreak") return "\n";
+              if (child.type === "hardbreak") return "\n";
+              if (child.children) {
+                return extractTextFromNode(child.children);
+              }
+              return "";
+            })
+            .join("");
         }
-        
-        
+
         return {
-          name: 'Math',
+          name: "Math",
           attributes: {
             ...attributes,
-            content: content
-          }
+            content: content,
+          },
         };
-      }
+      },
     },
-  }
+  },
 };

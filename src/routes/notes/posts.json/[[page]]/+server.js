@@ -1,4 +1,7 @@
-import fetchPosts, { fetchPageCount, fetchAllCategories } from "$lib/notes/fetch";
+import fetchPosts, {
+  fetchPageCount,
+  fetchAllCategories,
+} from "#lib/notes/fetch";
 import { json } from "@sveltejs/kit";
 
 export async function GET({ params }) {

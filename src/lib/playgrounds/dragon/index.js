@@ -1,6 +1,6 @@
-import { createPlayground } from "$lib/engine/index.js";
-import { loadDragonMesh } from "$lib/mesh/obj.js";
-import { buildSpline } from "$lib/math/curve.js";
+import { createPlayground } from "#lib/engine/index.js";
+import { loadDragonMesh } from "#lib/mesh/obj.js";
+import { buildSpline } from "#lib/math/curve.js";
 import DRAGON from "./shaders/dragon.wgsl?shader";
 import PATH from "./shaders/path.wgsl?shader";
 

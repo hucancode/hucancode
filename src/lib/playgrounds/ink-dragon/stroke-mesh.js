@@ -1,14 +1,19 @@
-import { Geometry } from "$lib/engine/index.js";
-import { buildRibbonGeometry, writeQuadIndices } from "$lib/brush/ribbon.js";
+import { Geometry } from "#lib/engine/index.js";
+import { buildRibbonGeometry, writeQuadIndices } from "#lib/brush/ribbon.js";
 
 // Exact-width ribbon record (no bleed margins): the fragment shaders are flat
 // fills, so all width shaping lives in the MESH via widthAt.
-export function makePolylineStroke({ maxPoints, lineWidth, brushColor, widthAt }) {
+export function makePolylineStroke({
+  maxPoints,
+  lineWidth,
+  brushColor,
+  widthAt,
+}) {
   const ribbonCap = maxPoints;
-  const maxVerts  = ribbonCap * 2;
+  const maxVerts = ribbonCap * 2;
   const positions = new Float32Array(maxVerts * 3);
-  const lineUVs   = new Float32Array(maxVerts * 2);
-  const indices   = new Uint16Array((ribbonCap - 1) * 6);
+  const lineUVs = new Float32Array(maxVerts * 2);
+  const indices = new Uint16Array((ribbonCap - 1) * 6);
   writeQuadIndices(indices, ribbonCap - 1);
 
   const geom = new Geometry();
@@ -18,8 +23,12 @@ export function makePolylineStroke({ maxPoints, lineWidth, brushColor, widthAt }
   geom.setDrawRange(0, 0);
 
   return {
-    geom, positions, lineUVs,
-    maxPoints, ribbonCap, n: 0,
+    geom,
+    positions,
+    lineUVs,
+    maxPoints,
+    ribbonCap,
+    n: 0,
     lineWidth,
     lastPts: null,
     brushColor,

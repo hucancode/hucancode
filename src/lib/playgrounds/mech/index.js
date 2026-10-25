@@ -3,12 +3,12 @@
 // (parts.js/rig.js emit instance handles — a unit-mesh key + affine transform).
 // The shared drawer (lib/mech/instancing.js) groups items by key and issues
 // ONE instanced draw per key, reusing GPU buffers across model patches.
-import { createPlayground, createOrbit } from "$lib/engine/index.js";
+import { createPlayground, createOrbit } from "#lib/engine/index.js";
 import {
   INSTANCED_MODULE,
   INSTANCED_OPTS,
   createInstancedDrawer,
-} from "$lib/mech/instancing.js";
+} from "#lib/mech/instancing.js";
 import GRID from "./shaders/grid.wgsl?shader";
 
 const BG = [0.07, 0.09, 0.13, 1];

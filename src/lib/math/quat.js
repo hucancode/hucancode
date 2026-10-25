@@ -30,28 +30,53 @@ export function qFromM3(m) {
 
 export function qToM3(q) {
   const [x, y, z, w] = q;
-  const x2 = x + x, y2 = y + y, z2 = z + z;
-  const xx = x * x2, yy = y * y2, zz = z * z2;
-  const xy = x * y2, xz = x * z2, yz = y * z2;
-  const wx = w * x2, wy = w * y2, wz = w * z2;
+  const x2 = x + x,
+    y2 = y + y,
+    z2 = z + z;
+  const xx = x * x2,
+    yy = y * y2,
+    zz = z * z2;
+  const xy = x * y2,
+    xz = x * z2,
+    yz = y * z2;
+  const wx = w * x2,
+    wy = w * y2,
+    wz = w * z2;
   return [
-    1 - yy - zz, xy - wz, xz + wy,
-    xy + wz, 1 - xx - zz, yz - wx,
-    xz - wy, yz + wx, 1 - xx - yy,
+    1 - yy - zz,
+    xy - wz,
+    xz + wy,
+    xy + wz,
+    1 - xx - zz,
+    yz - wx,
+    xz - wy,
+    yz + wx,
+    1 - xx - yy,
   ];
 }
 
 // shortest-arc spherical interpolation; falls back to a normalized lerp
 // when the arc is tiny
 export function qSlerp(a, b, t) {
-  let bx = b[0], by = b[1], bz = b[2], bw = b[3];
+  let bx = b[0],
+    by = b[1],
+    bz = b[2],
+    bw = b[3];
   let d = a[0] * bx + a[1] * by + a[2] * bz + a[3] * bw;
-  if (d < 0) { d = -d; bx = -bx; by = -by; bz = -bz; bw = -bw; }
+  if (d < 0) {
+    d = -d;
+    bx = -bx;
+    by = -by;
+    bz = -bz;
+    bw = -bw;
+  }
   let ka, kb;
   if (d > 0.9995) {
-    ka = 1 - t; kb = t;
+    ka = 1 - t;
+    kb = t;
   } else {
-    const th = Math.acos(Math.min(1, d)), s = Math.sin(th);
+    const th = Math.acos(Math.min(1, d)),
+      s = Math.sin(th);
     ka = Math.sin((1 - t) * th) / s;
     kb = Math.sin(t * th) / s;
   }

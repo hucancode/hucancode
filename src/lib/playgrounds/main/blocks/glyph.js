@@ -13,9 +13,15 @@ export function createGlyphBlock({ timing, glyph }) {
     name: "glyph",
     at: timing.approachStart,
     outputs: ["playhead", "glyphAlpha"],
-    defaults(ctx) { ctx.playhead = 0; ctx.glyphAlpha = 0; },
+    defaults(ctx) {
+      ctx.playhead = 0;
+      ctx.glyphAlpha = 0;
+    },
     tracks: {
-      playhead: track.tween(0, glyph.total, { dur: traceDur, lead: -GLYPH_RISE_DELAY }),
+      playhead: track.tween(0, glyph.total, {
+        dur: traceDur,
+        lead: -GLYPH_RISE_DELAY,
+      }),
       glyphAlpha: track.keyframes([
         { at: GLYPH_RISE_DELAY - 1.0, v: 0 },
         { at: GLYPH_RISE_DELAY, v: 1, ease: "smooth" },

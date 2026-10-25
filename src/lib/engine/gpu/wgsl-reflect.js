@@ -121,9 +121,7 @@ function parseVertexInputs(src) {
 export function reflectWGSL(src) {
   const clean = stripComments(src);
   if (/@compute\b/.test(clean))
-    throw new Error(
-      "compute shaders are not supported",
-    );
+    throw new Error("compute shaders are not supported");
 
   const vertexEntry = clean.match(/@vertex\s+fn\s+(\w+)/)?.[1] || null;
   const fragmentEntry = clean.match(/@fragment\s+fn\s+(\w+)/)?.[1] || null;

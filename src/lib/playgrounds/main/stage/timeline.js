@@ -20,19 +20,25 @@ export function makeTimeline(blocks) {
 
   function frame(ctx, t) {
     for (const b of blocks) b.defaults && b.defaults(ctx);
-    const seeked = lastFrameT == null || t < lastFrameT || t - lastFrameT > SEEK_GAP;
+    const seeked =
+      lastFrameT == null || t < lastFrameT || t - lastFrameT > SEEK_GAP;
     for (const b of blocks) {
       const s = startCache.get(b.name);
       const e = b.duration == null ? Infinity : s + b.duration;
       const isActive = t >= s && t < e;
       const was = active.has(b.name);
       const local = t - s;
-      if (isActive && !was) { b.setup && b.setup(ctx); active.add(b.name); }
-      else if (isActive && seeked) b.seek && b.seek(ctx, local);
+      if (isActive && !was) {
+        b.setup && b.setup(ctx);
+        active.add(b.name);
+      } else if (isActive && seeked) b.seek && b.seek(ctx, local);
       if (isActive) {
         applyTracks(b, ctx, local);
         b.update && b.update(ctx, local);
-      } else if (was) { b.teardown && b.teardown(ctx); active.delete(b.name); }
+      } else if (was) {
+        b.teardown && b.teardown(ctx);
+        active.delete(b.name);
+      }
     }
     lastFrameT = t;
   }

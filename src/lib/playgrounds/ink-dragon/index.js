@@ -1,6 +1,6 @@
-import { createPlayground, mat4, planeGeometry } from "$lib/engine/index.js";
-import { catmullOpen } from "$lib/math/curve.js";
-import { clamp, smooth } from "$lib/math/scalar.js";
+import { createPlayground, mat4, planeGeometry } from "#lib/engine/index.js";
+import { catmullOpen } from "#lib/math/curve.js";
+import { clamp, smooth } from "#lib/math/scalar.js";
 import PAPER from "./shaders/paper.wgsl?shader";
 import STROKE from "./shaders/stroke.wgsl?shader";
 import WHISKER from "./shaders/whisker.wgsl?shader";

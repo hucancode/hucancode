@@ -1,6 +1,6 @@
 <script>
   import { afterNavigate } from "$app/navigation";
-  import { initGA, gtag, GA_MEASUREMENT_ID } from "$lib/ga";
+  import { initGA, gtag, GA_MEASUREMENT_ID } from "#lib/ga";
   import "$styles/app.css";
   import { onMount } from "svelte";
   /**

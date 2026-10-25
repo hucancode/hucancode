@@ -1,12 +1,12 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import Catalog from "$lib/components/mech-catalog.svelte";
-  import * as mech from "$lib/playgrounds/mech";
-  import * as rt from "$lib/playgrounds/raytrace";
-  import { DRAGON_KIT } from "$lib/mech/dragon/parts.js";
-  import { dragonModel, DRAGON_POSE } from "$lib/mech/dragon/rig.js";
-  // ---- dragon UI surface (inlined from $lib/ui/dragon.js) ----
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import Catalog from "#lib/components/mech-catalog.svelte";
+  import * as mech from "#lib/playgrounds/mech";
+  import * as rt from "#lib/playgrounds/raytrace";
+  import { DRAGON_KIT } from "#lib/mech/dragon/parts.js";
+  import { dragonModel, DRAGON_POSE } from "#lib/mech/dragon/rig.js";
+  // ---- dragon UI surface (inlined from #lib/ui/dragon.js) ----
 // DRAGON UI SURFACE — the slider rows for the dragon playground's rig and part
 // picker. The rig itself (links, spine solve, model) lives in lib/mech/dragon/rig.js
 // and the part geometry in lib/mech/dragon/parts.js.
@@ -42,8 +42,8 @@ const PART_CTL = {
   tail: [["coreLen", "core length", 0.6, 2.5], ["bodyR", "body radius", 0.2, 0.7], ["tipLen", "tip length", 0.4, 2.2]],
 };
   const CHOREO_CTL = LOOP_CTL;
-  import { rad, deg } from "$lib/math/scalar.js";
-  import { assembleModel, BUILD_SECONDS } from "$lib/mech/build-anim.js";
+  import { rad, deg } from "#lib/math/scalar.js";
+  import { assembleModel, BUILD_SECONDS } from "#lib/mech/build-anim.js";
   import Dragon from "$icons/simple-icons/dragon.svg?raw";
 
   let render = $state({

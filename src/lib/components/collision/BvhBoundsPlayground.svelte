@@ -1,7 +1,7 @@
 <script>
-  import Tex from "$lib/components/calculus/Tex.svelte";
-  import { clamp } from "$lib/playgrounds/collision/sat.js";
-  import { sampleScene, aabbOfShape, aabbOverlap } from "$lib/playgrounds/collision/bvh.js";
+  import Tex from "#lib/components/calculus/Tex.svelte";
+  import { clamp } from "#lib/playgrounds/collision/sat.js";
+  import { sampleScene, aabbOfShape, aabbOverlap } from "#lib/playgrounds/collision/bvh.js";
 
   const W = 640;
   const H = 360;

@@ -1,4 +1,4 @@
-import fetchPosts, { fetchPageCount } from "$lib/notes/fetch";
+import fetchPosts, { fetchPageCount } from "#lib/notes/fetch";
 import { json } from "@sveltejs/kit";
 
 export const prerender = true;

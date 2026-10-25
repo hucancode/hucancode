@@ -1,10 +1,10 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as mech from "$lib/playgrounds/mech";
-  import { SHAPE_NAMES, SHAPE_PARAMS, sculptModel } from "$lib/mech/sculpt-catalog.js";
-  import { SCULPT_DEFAULTS } from "$lib/mech/sculpt.js";
-  // ---- sculpt UI surface (inlined from $lib/ui/sculpt.js) ----
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as mech from "#lib/playgrounds/mech";
+  import { SHAPE_NAMES, SHAPE_PARAMS, sculptModel } from "#lib/mech/sculpt-catalog.js";
+  import { SCULPT_DEFAULTS } from "#lib/mech/sculpt.js";
+  // ---- sculpt UI surface (inlined from #lib/ui/sculpt.js) ----
 // SCULPT UI SURFACE — slider rows, labels and the design-editor notation for the
 // sculpt playground. The geometry (surfaces, params, sculptKey) lives in
 // lib/mech/sculpt.js; the catalog model builder in lib/mech/sculpt-catalog.js.

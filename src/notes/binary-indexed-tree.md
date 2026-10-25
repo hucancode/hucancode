@@ -71,7 +71,7 @@ It means $B_{11}$ will be covering $A[8,11]$
 $$
 \\begin{aligned}
 g(12) &= g(1100_2) = 1100_2 = 12 \\cr
-g(14) &= g(1110_2) = 1110_2 = 14 
+g(14) &= g(1110_2) = 1110_2 = 14
 \\end{aligned}
 $$
 

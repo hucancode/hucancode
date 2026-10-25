@@ -1,5 +1,5 @@
 // Persistence for the lego editor: schema check, legacy migration, save slots.
-import { makeSlots, slotLabel } from "$lib/save-slots.js";
+import { makeSlots, slotLabel } from "#lib/save-slots.js";
 import { defaultModel } from "./model-ops.js";
 
 export { slotLabel };

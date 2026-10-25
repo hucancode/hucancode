@@ -45,7 +45,14 @@ export function circleCircle(a, b) {
   const dist = vlen(delta);
   const radiusSum = a.radius + b.radius;
   if (dist > radiusSum) {
-    return { hit: false, dist, radiusSum, penetration: 0, normal: null, point: null };
+    return {
+      hit: false,
+      dist,
+      radiusSum,
+      penetration: 0,
+      normal: null,
+      point: null,
+    };
   }
   const normal = dist > EPS ? vscale(delta, 1 / dist) : [0, 1];
   const penetration = radiusSum - dist;
@@ -62,7 +69,10 @@ export function closestPointOnBox(box, p) {
   const d = vsub(p, box.center);
   const lx = clamp(vdot(d, box.axes[0]), -box.half[0], box.half[0]);
   const ly = clamp(vdot(d, box.axes[1]), -box.half[1], box.half[1]);
-  return vadd(vadd(box.center, vscale(box.axes[0], lx)), vscale(box.axes[1], ly));
+  return vadd(
+    vadd(box.center, vscale(box.axes[0], lx)),
+    vscale(box.axes[1], ly),
+  );
 }
 
 /**
@@ -75,7 +85,14 @@ export function circleBox(circle, box) {
   const delta = vsub(circle.center, closest);
   const dist = vlen(delta);
   if (dist > circle.radius) {
-    return { hit: false, closest, dist, penetration: 0, normal: null, point: null };
+    return {
+      hit: false,
+      closest,
+      dist,
+      penetration: 0,
+      normal: null,
+      point: null,
+    };
   }
   const normal = dist > EPS ? vscale(delta, -1 / dist) : [0, 1];
   const penetration = circle.radius - dist;
@@ -209,12 +226,32 @@ export function capsuleCapsule(A, B) {
     const delta = vsub(centerB, centerA);
     const dist = vlen(delta);
     if (dist > radiusSum) {
-      return { hit: false, parallel: true, cpA: centerA, cpB: centerB, dist, radiusSum, normal: null, penetration: 0, point: null };
+      return {
+        hit: false,
+        parallel: true,
+        cpA: centerA,
+        cpB: centerB,
+        dist,
+        radiusSum,
+        normal: null,
+        penetration: 0,
+        point: null,
+      };
     }
     const normal = dist > EPS ? vscale(delta, 1 / dist) : [0, 1];
     const penetration = radiusSum - dist;
     const point = vadd(centerA, vscale(normal, A.radius - penetration * 0.5));
-    return { hit: true, parallel: true, cpA: centerA, cpB: centerB, dist, radiusSum, normal, penetration, point };
+    return {
+      hit: true,
+      parallel: true,
+      cpA: centerA,
+      cpB: centerB,
+      dist,
+      radiusSum,
+      normal,
+      penetration,
+      point,
+    };
   }
 
   const uA = vscale(dirA, 1 / lenA);
@@ -234,7 +271,17 @@ export function capsuleCapsule(A, B) {
     const lo = Math.max(Math.min(a0, a1), Math.min(b0, b1));
     const hi = Math.min(Math.max(a0, a1), Math.max(b0, b1));
     if (hi < lo) {
-      return { hit: false, parallel: true, cpA: null, cpB: null, dist: radialDist, radiusSum, normal: null, penetration: 0, point: null };
+      return {
+        hit: false,
+        parallel: true,
+        cpA: null,
+        cpB: null,
+        dist: radialDist,
+        radiusSum,
+        normal: null,
+        penetration: 0,
+        point: null,
+      };
     }
 
     const mid = (lo + hi) / 2;
@@ -242,12 +289,32 @@ export function capsuleCapsule(A, B) {
     const normal = signedRadial >= 0 ? n : [-n[0], -n[1]];
     const cpB = vadd(cpA, vscale(normal, radialDist));
     if (radialDist > radiusSum) {
-      return { hit: false, parallel: true, cpA, cpB, dist: radialDist, radiusSum, normal, penetration: 0, point: null };
+      return {
+        hit: false,
+        parallel: true,
+        cpA,
+        cpB,
+        dist: radialDist,
+        radiusSum,
+        normal,
+        penetration: 0,
+        point: null,
+      };
     }
 
     const penetration = radiusSum - radialDist;
     const point = vadd(cpA, vscale(normal, A.radius - penetration * 0.5));
-    return { hit: true, parallel: true, cpA, cpB, dist: radialDist, radiusSum, normal, penetration, point };
+    return {
+      hit: true,
+      parallel: true,
+      cpA,
+      cpB,
+      dist: radialDist,
+      radiusSum,
+      normal,
+      penetration,
+      point,
+    };
   }
 
   // Non-parallel: closest points between the two axis segments.
@@ -257,12 +324,32 @@ export function capsuleCapsule(A, B) {
   const delta = vsub(cpB, cpA);
   const dist = vlen(delta);
   if (dist > radiusSum) {
-    return { hit: false, parallel: false, cpA, cpB, dist, radiusSum, normal: null, penetration: 0, point: null };
+    return {
+      hit: false,
+      parallel: false,
+      cpA,
+      cpB,
+      dist,
+      radiusSum,
+      normal: null,
+      penetration: 0,
+      point: null,
+    };
   }
   const normal = dist > EPS ? vscale(delta, 1 / dist) : [-uA[1], uA[0]];
   const penetration = radiusSum - dist;
   const point = vadd(cpA, vscale(normal, A.radius - penetration * 0.5));
-  return { hit: true, parallel: false, cpA, cpB, dist, radiusSum, normal, penetration, point };
+  return {
+    hit: true,
+    parallel: false,
+    cpA,
+    cpB,
+    dist,
+    radiusSum,
+    normal,
+    penetration,
+    point,
+  };
 }
 
 /**
@@ -288,8 +375,24 @@ export function boxCapsule(box, cap) {
   const delta = vsub(best.axis, best.boxPoint);
   const dist = vlen(delta);
   if (dist > cap.radius) {
-    return { hit: false, axis: best.axis, boxPoint: best.boxPoint, dist, normal: null, penetration: 0, point: null };
+    return {
+      hit: false,
+      axis: best.axis,
+      boxPoint: best.boxPoint,
+      dist,
+      normal: null,
+      penetration: 0,
+      point: null,
+    };
   }
   const normal = dist > EPS ? vscale(delta, 1 / dist) : [0, 1];
-  return { hit: true, axis: best.axis, boxPoint: best.boxPoint, dist, normal, penetration: cap.radius - dist, point: best.boxPoint };
+  return {
+    hit: true,
+    axis: best.axis,
+    boxPoint: best.boxPoint,
+    dist,
+    normal,
+    penetration: cap.radius - dist,
+    point: best.boxPoint,
+  };
 }

@@ -1,5 +1,5 @@
-import { clamp, lerp, smooth } from "$lib/math/scalar.js";
-import { eases } from "$lib/math/ease.js";
+import { clamp, lerp, smooth } from "#lib/math/scalar.js";
+import { eases } from "#lib/math/ease.js";
 
 // easing registry: name -> (x in [0,1]) -> eased x in [0,1]
 const EASES = {
@@ -8,7 +8,8 @@ const EASES = {
   easeIn: eases.inQuad,
   easeOut: eases.outQuad,
 };
-const ease = (name) => (typeof name === "function" ? name : EASES[name] || EASES.linear);
+const ease = (name) =>
+  typeof name === "function" ? name : EASES[name] || EASES.linear;
 
 export function hold(v) {
   return () => v;
@@ -17,7 +18,11 @@ export function hold(v) {
 // tween from->to over `dur` sec (block-local), eased. `lead` shifts start
 // earlier: value ramps `lead` sec before local 0 -> ink LEADs reveal. dur
 // omitted -> hold `to` immediately.
-export function tween(from, to, { dur = 0, ease: easing = "linear", lead = 0 } = {}) {
+export function tween(
+  from,
+  to,
+  { dur = 0, ease: easing = "linear", lead = 0 } = {},
+) {
   const ez = ease(easing);
   return (local) => {
     if (dur <= 0) return to;
@@ -38,7 +43,8 @@ export function keyframes(keys) {
     if (local >= last.at) return last.v;
     let i = 0;
     while (i < ks.length - 1 && local >= ks[i + 1].at) i++;
-    const a = ks[i], b = ks[i + 1];
+    const a = ks[i],
+      b = ks[i + 1];
     const span = b.at - a.at || 1e-6;
     const x = clamp((local - a.at) / span, 0, 1);
     return lerp(a.v, b.v, ease(b.ease)(x));

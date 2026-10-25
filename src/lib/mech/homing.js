@@ -1,4 +1,13 @@
-import { m3MulV, m3AxisAngle, vAdd, vSub, vScale, vNorm, vLen, vCross } from "../math/mat3.js";
+import {
+  m3MulV,
+  m3AxisAngle,
+  vAdd,
+  vSub,
+  vScale,
+  vNorm,
+  vLen,
+  vCross,
+} from "../math/mat3.js";
 import { clamp, smooth } from "../math/scalar.js";
 import { eases } from "../math/ease.js";
 
@@ -56,7 +65,7 @@ export function homingParams(gi, far, A) {
   };
 }
 
-const SPEED_RAMP = 0.4;   // fraction of the approach spent throttling up
+const SPEED_RAMP = 0.4; // fraction of the approach spent throttling up
 
 // simulated approach state at tau (0..1 of the travel window): a fixed-step
 // seek integration re-run from launch every call (scrub-safe). `tau` is a
@@ -70,31 +79,44 @@ export function simulateHoming(from, n0, tauEnd, P, aimAt) {
   const pos = [from[0], from[1], from[2]];
   // launch kick: hashed lateral/outward mix — groups pop out of their parked
   // spot instead of diving straight at the seat
-  let head = vNorm(vAdd(
-    vScale(lateralDir(n0, P.kickAz), P.kickMix),
-    vScale(n0, 1 - P.kickMix),
-  ));
+  let head = vNorm(
+    vAdd(
+      vScale(lateralDir(n0, P.kickAz), P.kickMix),
+      vScale(n0, 1 - P.kickMix),
+    ),
+  );
   const kEnd = Math.max(0, Math.min(1, tauEnd / P.approach)) * P.steps;
   for (let k = 0; k < kEnd; k++) {
-    const h = Math.min(1, kEnd - k) / P.steps;       // tau-length (partial last step)
-    const tk = k / P.steps;                          // approach-window fraction
+    const h = Math.min(1, kEnd - k) / P.steps; // tau-length (partial last step)
+    const tk = k / P.steps; // approach-window fraction
     const { seat, n } = aimAt(tk * P.approach);
     // aim at the gate on the normal — the snap-in phase owns the descent to
     // the seat, so the approach never dives below the gate
-    const aim = [seat[0] + n[0] * P.dock, seat[1] + n[1] * P.dock, seat[2] + n[2] * P.dock];
-    const to = vSub(aim, pos), d = vLen(to);
+    const aim = [
+      seat[0] + n[0] * P.dock,
+      seat[1] + n[1] * P.dock,
+      seat[2] + n[2] * P.dock,
+    ];
+    const to = vSub(aim, pos),
+      d = vLen(to);
     if (d > 1e-6) {
       const want = vScale(to, 1 / d);
-      const dot = Math.max(-1, Math.min(1, head[0] * want[0] + head[1] * want[1] + head[2] * want[2]));
+      const dot = Math.max(
+        -1,
+        Math.min(1, head[0] * want[0] + head[1] * want[1] + head[2] * want[2]),
+      );
       const ang = Math.acos(dot);
       if (ang > 1e-6) {
-        const ax = vCross(head, want), sl = vLen(ax);
+        const ax = vCross(head, want),
+          sl = vLen(ax);
         // anti-parallel: no cross axis — pick the deterministic lateral basis
         const axis = sl > 1e-6 ? vScale(ax, 1 / sl) : lateralDir(head, 0);
-        head = vNorm(m3MulV(
-          m3AxisAngle(axis[0], axis[1], axis[2], Math.min(ang, P.turn * h)),
-          head,
-        ));
+        head = vNorm(
+          m3MulV(
+            m3AxisAngle(axis[0], axis[1], axis[2], Math.min(ang, P.turn * h)),
+            head,
+          ),
+        );
       }
     }
     // arrival damping: throttle down near the aim so the group settles onto

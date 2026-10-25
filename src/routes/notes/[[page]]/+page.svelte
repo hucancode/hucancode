@@ -1,7 +1,7 @@
 <script>
-  import PostsList from "$lib/components/notes/posts.svelte";
-  import Pagination from "$lib/components/notes/pagination.svelte";
-  import Tags from "$lib/components/notes/tags.svelte";
+  import PostsList from "#lib/components/notes/posts.svelte";
+  import Pagination from "#lib/components/notes/pagination.svelte";
+  import Tags from "#lib/components/notes/tags.svelte";
 
   /**
    * @typedef {Object} Props

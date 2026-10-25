@@ -1,14 +1,14 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as lego from "$lib/playgrounds/lego";
-  import { PALETTE, TEMPLATES, DEFAULT } from "$lib/playgrounds/lego/templates.js";
-  import { serializeModel } from "$lib/playgrounds/lego/serialize.js";
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as lego from "#lib/playgrounds/lego";
+  import { PALETTE, TEMPLATES, DEFAULT } from "#lib/playgrounds/lego/templates.js";
+  import { serializeModel } from "#lib/playgrounds/lego/serialize.js";
   import {
     slots as slotStore,
     slotLabel,
     loadModel,
-  } from "$lib/playgrounds/lego/store.js";
+  } from "#lib/playgrounds/lego/store.js";
   import {
     ATTACH, COLORS, FACES, FREE_JOINTS, MOUNTS,
     addChild, addPart, addStick, attachOf, canHinge, connMode, connRot,
@@ -18,7 +18,7 @@
     reparent, setAttach, setConnRot, setHingeCell, setHingeFace, setJoint,
     setJrot, setLocal, setOff, setStickLen, setStudRegion, setTips, studRegion,
     templateOf, tipSel, walkNodes,
-  } from "$lib/playgrounds/lego/model-ops.js";
+  } from "#lib/playgrounds/lego/model-ops.js";
 
   let scene = $state(null);
   let controlsOpen = $state(true);

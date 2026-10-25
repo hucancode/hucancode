@@ -45,10 +45,16 @@ export function aabbCenter(a) {
 /** AABB of a shape: circle, axis-aligned box, or capsule (cylinder side view). */
 export function aabbOfShape(s) {
   if (s.type === "circle") {
-    return { min: [s.c[0] - s.r, s.c[1] - s.r], max: [s.c[0] + s.r, s.c[1] + s.r] };
+    return {
+      min: [s.c[0] - s.r, s.c[1] - s.r],
+      max: [s.c[0] + s.r, s.c[1] + s.r],
+    };
   }
   if (s.type === "box") {
-    return { min: [s.c[0] - s.h[0], s.c[1] - s.h[1]], max: [s.c[0] + s.h[0], s.c[1] + s.h[1]] };
+    return {
+      min: [s.c[0] - s.h[0], s.c[1] - s.h[1]],
+      max: [s.c[0] + s.h[0], s.c[1] + s.h[1]],
+    };
   }
   // capsule: axis segment [a, b] inflated by r
   const pts = [

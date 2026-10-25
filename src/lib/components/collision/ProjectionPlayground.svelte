@@ -1,12 +1,12 @@
 <script>
-  import Tex from "$lib/components/calculus/Tex.svelte";
+  import Tex from "#lib/components/calculus/Tex.svelte";
   import {
     boxFrame,
     boxCorners,
     projectBox,
     vdot,
     vnorm,
-  } from "$lib/playgrounds/collision/sat.js";
+  } from "#lib/playgrounds/collision/sat.js";
 
   // Fixed internal resolution; CSS scales it responsively.
   const W = 640;

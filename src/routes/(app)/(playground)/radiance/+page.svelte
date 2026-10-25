@@ -1,7 +1,7 @@
 <script>
-  import Scene from "$lib/components/playground-canvas.svelte";
-  import ControlToggle from "$lib/components/controls-toggle.svelte";
-  import * as radiance from "$lib/playgrounds/radiance";
+  import Scene from "#lib/components/playground-canvas.svelte";
+  import ControlToggle from "#lib/components/controls-toggle.svelte";
+  import * as radiance from "#lib/playgrounds/radiance";
   import Wall from "$icons/memory/wall.svg?raw";
   import Light from "$icons/google-material/light.svg?raw";
   import Fire from "$icons/remix/fire.svg?raw";

@@ -1,4 +1,4 @@
-import { clamp, lerp, smooth, ramp } from "$lib/math/scalar.js";
+import { clamp, lerp, smooth, ramp } from "#lib/math/scalar.js";
 import { CAM_PITCH_ANGLE } from "../config.js";
 
 export function createCameraTrack({ descent, pitch, yaw }) {
@@ -16,7 +16,10 @@ export function createCameraTrack({ descent, pitch, yaw }) {
   // final tilt: 0 until anchorT, smoothstep to CAM_PITCH_ANGLE over `dur`
   function camPitch(t) {
     if (p.anchorT == null) return 0;
-    return smooth(clamp((t - p.anchorT) / Math.max(1e-6, p.dur), 0, 1)) * CAM_PITCH_ANGLE;
+    return (
+      smooth(clamp((t - p.anchorT) / Math.max(1e-6, p.dur), 0, 1)) *
+      CAM_PITCH_ANGLE
+    );
   }
 
   // user yaw gate: 0 before gateStart, ramps raw yaw in over [gateStart,gateEnd]

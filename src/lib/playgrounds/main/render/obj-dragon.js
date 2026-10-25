@@ -2,7 +2,7 @@
 // spine-deformed along the path frame texture. Loaded via dynamic import ONLY
 // when the style is active, so the default mech style pays neither bundle nor
 // runtime cost for it.
-import { loadDragonMesh } from "$lib/mesh/obj.js";
+import { loadDragonMesh } from "#lib/mesh/obj.js";
 import DRAGON3D from "./shaders/dragon3d.wgsl?shader";
 
 const DRAGON_OBJ = "/assets/obj/dragon-low.obj";

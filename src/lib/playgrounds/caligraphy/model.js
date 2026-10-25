@@ -13,10 +13,10 @@ import {
   uid,
   DEFAULT_CONNECT,
   DEFAULT_TIMING,
-} from "$lib/brush/engine";
-import { yong } from "$lib/brush/yong";
-import { long } from "$lib/brush/long";
-import { fu } from "$lib/brush/fu";
+} from "#lib/brush/engine";
+import { yong } from "#lib/brush/yong";
+import { long } from "#lib/brush/long";
+import { fu } from "#lib/brush/fu";
 
 // seed samples: the dropdown picks one to load fresh.
 export const SAMPLES = {
@@ -52,7 +52,8 @@ export function loadSample(doc, key) {
 }
 
 // --- selection ---------------------------------------------------------------
-export const findStroke = (symbol, id) => symbol.strokes.find((s) => s.id === id);
+export const findStroke = (symbol, id) =>
+  symbol.strokes.find((s) => s.id === id);
 export const selStroke = (doc) => findStroke(doc.symbol, doc.sel.strokeId);
 
 export function selectStroke(sel, id) {
@@ -125,7 +126,11 @@ export function spawnPoint(doc) {
     selectPoint(sel, s.id, sel.idx + 1);
   } else {
     const s = makeStrokeRaw([
-      makePoint((Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 1.4, randPressure()),
+      makePoint(
+        (Math.random() - 0.5) * 1.4,
+        (Math.random() - 0.5) * 1.4,
+        randPressure(),
+      ),
     ]);
     symbol.strokes.push(s);
     selectPoint(sel, s.id, 0);
@@ -159,7 +164,12 @@ export function moveStroke(symbol, idx, dir) {
 
 export function canSplit(doc) {
   const s = selStroke(doc);
-  return doc.sel.kind === "point" && !!s && doc.sel.idx > 0 && doc.sel.idx < s.points.length - 1;
+  return (
+    doc.sel.kind === "point" &&
+    !!s &&
+    doc.sel.idx > 0 &&
+    doc.sel.idx < s.points.length - 1
+  );
 }
 
 // Split the selected stroke at the selected (interior) point, dropping that
@@ -173,8 +183,16 @@ export function splitStroke(doc) {
   const i = sel.idx;
   if (i <= 0 || i >= s.points.length - 1) return;
   const idx = symbol.strokes.findIndex((x) => x.id === s.id);
-  const a = { id: s.id, points: s.points.slice(0, i), paths: s.paths.slice(0, i - 1) };
-  const b = { id: uid(), points: s.points.slice(i + 1), paths: s.paths.slice(i + 1) };
+  const a = {
+    id: s.id,
+    points: s.points.slice(0, i),
+    paths: s.paths.slice(0, i - 1),
+  };
+  const b = {
+    id: uid(),
+    points: s.points.slice(i + 1),
+    paths: s.paths.slice(i + 1),
+  };
   symbol.strokes.splice(idx, 1, a, b);
   doc.connect.enabled = true;
   selectStroke(sel, b.id);
@@ -183,7 +201,10 @@ export function splitStroke(doc) {
 // --- frame mode: transform whole glyph ---------------------------------------
 // world-space bounding box over every point of every stroke.
 export function glyphBBox(symbol) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const s of symbol.strokes) {
     for (const p of s.points) {
       if (p.x < minX) minX = p.x;

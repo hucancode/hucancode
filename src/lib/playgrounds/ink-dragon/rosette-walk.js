@@ -22,20 +22,30 @@ function buildRosette() {
   const ir = 0.5 * R;
   const axis = Math.PI / 8; // vesica axis offset off the ring spokes
   for (const s of [1, -1]) {
-    circles.push({ cx: s * ir * Math.cos(axis), cy: s * ir * Math.sin(axis), r: ir });
+    circles.push({
+      cx: s * ir * Math.cos(axis),
+      cy: s * ir * Math.sin(axis),
+      r: ir,
+    });
   }
   const N = 8;
   const s = Math.sin(Math.PI / N);
   const rmed = Math.min(0.7 * R, (R * s) / (1 - s)); // clamp: ring neighbours touch, never overlap
   for (let k = 0; k < N; k++) {
     const a = k * (TAU / N);
-    circles.push({ cx: (R + rmed) * Math.cos(a), cy: (R + rmed) * Math.sin(a), r: rmed });
+    circles.push({
+      cx: (R + rmed) * Math.cos(a),
+      cy: (R + rmed) * Math.sin(a),
+      r: rmed,
+    });
   }
   for (const c of circles) c.tan = [];
   for (let i = 0; i < circles.length; i++) {
     for (let j = i + 1; j < circles.length; j++) {
-      const a = circles[i], b = circles[j];
-      const dx = b.cx - a.cx, dy = b.cy - a.cy;
+      const a = circles[i],
+        b = circles[j];
+      const dx = b.cx - a.cx,
+        dy = b.cy - a.cy;
       const d = Math.hypot(dx, dy) || 1e-9;
       const ext = Math.abs(d - (a.r + b.r)) < TAN_EPS;
       const int = Math.abs(d - Math.abs(a.r - b.r)) < TAN_EPS;
@@ -46,7 +56,8 @@ function buildRosette() {
         py = a.cy + (dy / d) * a.r;
       } else {
         const aBig = a.r >= b.r;
-        const big = aBig ? a : b, sgn = aBig ? 1 : -1;
+        const big = aBig ? a : b,
+          sgn = aBig ? 1 : -1;
         px = big.cx + ((sgn * dx) / d) * big.r;
         py = big.cy + ((sgn * dy) / d) * big.r;
       }
@@ -70,10 +81,18 @@ export function createWalker() {
   }
 
   return {
-    get circles() { return (circles ??= buildRosette()); },
-    get tip() { return tip; },
-    get seeded() { return rs !== null; },
-    reset() { rs = null; },
+    get circles() {
+      return (circles ??= buildRosette());
+    },
+    get tip() {
+      return tip;
+    },
+    get seeded() {
+      return rs !== null;
+    },
+    reset() {
+      rs = null;
+    },
 
     // head = { pos, dir }: on seed, enter the grand circle at the angle nearest
     // the head, riding the direction whose tangent best matches its heading.
@@ -81,7 +100,10 @@ export function createWalker() {
       const cs = this.circles;
       if (!rs) {
         const ang = Math.atan2(head.pos.y, head.pos.x);
-        const dir = -Math.sin(ang) * head.dir.x + Math.cos(ang) * head.dir.y >= 0 ? 1 : -1;
+        const dir =
+          -Math.sin(ang) * head.dir.x + Math.cos(ang) * head.dir.y >= 0
+            ? 1
+            : -1;
         rs = { ci: 0, ang, dir, swept: 0 };
         setTip(cs[0], ang);
       }
@@ -89,11 +111,15 @@ export function createWalker() {
       for (let hop = 0; hop < MAX_HOPS && remaining > 1e-6; hop++) {
         const c = cs[rs.ci];
         // nearest tangency ahead in travel direction
-        let best = null, bestSweep = Infinity;
+        let best = null,
+          bestSweep = Infinity;
         for (const tp of c.tan) {
           let sweep = (((rs.dir * (tp.a - rs.ang)) % TAU) + TAU) % TAU;
           if (sweep < TAN_EPS) sweep += TAU; // skip point we're sitting on
-          if (sweep < bestSweep) { bestSweep = sweep; best = tp; }
+          if (sweep < bestSweep) {
+            bestSweep = sweep;
+            best = tp;
+          }
         }
         const arcToTan = c.r * bestSweep;
         if (!best || remaining < arcToTan) {
@@ -107,8 +133,10 @@ export function createWalker() {
         // commit to at least half a circle before peeling off (no quick in/out);
         // branch preserves the tangent -> derive partner's travel direction
         if (rs.swept >= Math.PI - TAN_EPS && Math.random() < BRANCH_P) {
-          const tx = rs.dir * -Math.sin(rs.ang), ty = rs.dir * Math.cos(rs.ang);
-          const ndir = tx * -Math.sin(best.aj) + ty * Math.cos(best.aj) >= 0 ? 1 : -1;
+          const tx = rs.dir * -Math.sin(rs.ang),
+            ty = rs.dir * Math.cos(rs.ang);
+          const ndir =
+            tx * -Math.sin(best.aj) + ty * Math.cos(best.aj) >= 0 ? 1 : -1;
           rs.ci = best.j;
           rs.ang = best.aj;
           rs.dir = ndir;

@@ -14,26 +14,36 @@ import { buildSpline } from "../../math/curve.js";
 import { vSub, vLen, vNorm, vCross } from "../../math/mat3.js";
 
 // angles are RADIANS end to end here; degrees live only in the UI pages.
-const DEG = Math.PI / 180;   // radian value of one degree, for writing constants
+const DEG = Math.PI / 180; // radian value of one degree, for writing constants
 
 // runtime rig controls (radians, except offset = 0..1 along the loop)
 export const DRAGON_POSE = {
-  offset: 0, jaw: 12 * DEG, armSwing: Math.PI / 6, elbow: Math.PI / 4,
-  legSwing: -25 * DEG, knee: 35 * DEG,
+  offset: 0,
+  jaw: 12 * DEG,
+  armSwing: Math.PI / 6,
+  elbow: Math.PI / 4,
+  legSwing: -25 * DEG,
+  knee: 35 * DEG,
 };
 
 const SEG_P = { bodyR: 0.5, segLen: 1.35, discs: 3, finR: 0.38 };
-const SEG7_P = { rFront: 0.5, rRear: 0.42, segLen: 1.15, finR: 0.34 };  // first taper stage
+const SEG7_P = { rFront: 0.5, rRear: 0.42, segLen: 1.15, finR: 0.34 }; // first taper stage
 const TAPER_P = { rFront: 0.42, rRear: 0.34, segLen: 1.15, finR: 0.3 }; // tapers into the tail
-const TAIL_P = { coreLen: 1.3, bodyR: 0.34, tipLen: 1.4 };              // bodyR matches the taper's rRear
+const TAIL_P = { coreLen: 1.3, bodyR: 0.34, tipLen: 1.4 }; // bodyR matches the taper's rRear
 
 // THE RIG DEFINITION — every link: a part, the parent slot it bolts to, and
 // (for a limb) the pose channels its joint's DOFs listen to. `spine` links get
 // their bone rotations solved from the ride curve instead. The limb joints are
 // declared on the LINK, not the segment's slot: a flank pad only grows a
 // shoulder where a limb actually hangs.
-const segment = (name, parent, params = SEG_P, part = "bodySegment") =>
-  ({ name, part, params, parent, at: "rear", spine: true });
+const segment = (name, parent, params = SEG_P, part = "bodySegment") => ({
+  name,
+  part,
+  params,
+  parent,
+  at: "rear",
+  spine: true,
+});
 
 // one limb: an upper piece on a flank's disc hinge, a lower piece on its hinge.
 // `sign` flips the channels on the right flank, `phase` offsets the swim stroke.
@@ -42,18 +52,44 @@ const limb = (S, seg, kind, sign, phase) => {
   const lo = kind === "arm" ? "forearm" : "shin";
   const joint = kind === "arm" ? DRAGON_JOINTS.shoulder : DRAGON_JOINTS.hip;
   return [
-    { name: `${kind}${S}`, part: up, parent: seg, at: `flank${S}`, joint, limb: kind, sign, phase },
-    { name: `${lo}${S}`, part: lo, parent: `${kind}${S}`, at: kind === "arm" ? "elbow" : "knee",
-      limb: lo, sign, phase },
+    {
+      name: `${kind}${S}`,
+      part: up,
+      parent: seg,
+      at: `flank${S}`,
+      joint,
+      limb: kind,
+      sign,
+      phase,
+    },
+    {
+      name: `${lo}${S}`,
+      part: lo,
+      parent: `${kind}${S}`,
+      at: kind === "arm" ? "elbow" : "knee",
+      limb: lo,
+      sign,
+      phase,
+    },
   ];
 };
 
 const DRAGON_DEF = [
-  { name: "head", part: "head", pivot: "neck" },                  // root
+  { name: "head", part: "head", pivot: "neck" }, // root
   { name: "jaw", part: "jaw", parent: "head", at: "jaw", angles: [["jaw", 1]] },
-  { name: "seg1", part: "bodySegment", params: SEG_P, parent: "head", at: "neck", spine: true },
-  segment("seg2", "seg1"), segment("seg3", "seg2"), segment("seg4", "seg3"),
-  segment("seg5", "seg4"), segment("seg6", "seg5"),
+  {
+    name: "seg1",
+    part: "bodySegment",
+    params: SEG_P,
+    parent: "head",
+    at: "neck",
+    spine: true,
+  },
+  segment("seg2", "seg1"),
+  segment("seg3", "seg2"),
+  segment("seg4", "seg3"),
+  segment("seg5", "seg4"),
+  segment("seg6", "seg5"),
   segment("seg7", "seg6", SEG7_P, "bodySegment2"),
   segment("taper1", "seg7", TAPER_P, "bodySegment2"),
   segment("taper2", "taper1", TAPER_P, "bodySegment2"),
@@ -64,8 +100,10 @@ const DRAGON_DEF = [
   // right flank seats the SAME joint with its pin reversed (a joint can only be
   // seated by a rotation, never a reflection — see the flank slots), so that
   // side's channels take the opposite `sign` and the pair strokes together.
-  ...limb("L", "seg2", "arm", 1, 0), ...limb("R", "seg2", "arm", -1, 0.5),
-  ...limb("L", "seg5", "leg", 1, 0.5), ...limb("R", "seg5", "leg", -1, 0),
+  ...limb("L", "seg2", "arm", 1, 0),
+  ...limb("R", "seg2", "arm", -1, 0.5),
+  ...limb("L", "seg5", "leg", 1, 0.5),
+  ...limb("R", "seg5", "leg", -1, 0),
 ];
 
 // which slider each limb link's driven bone reads, and where in its joint's DOF
@@ -89,8 +127,14 @@ const SWIM = { strokes: 4, swing: 22 * DEG, bend: 20 * DEG };
 // closed flight loop the spine rides (roughly a ring, strongly undulating in Y
 // — alternating crests and troughs so the dragon visibly swims up and down)
 const LOOP_PTS = [
-  [7.8, 5.5, 0], [5.5, 2.7, 5.5], [0, 5.2, 7.7], [-5.5, 2.5, 5.5],
-  [-7.8, 5.6, 0], [-5.5, 2.6, -5.5], [0, 5.0, -7.7], [5.5, 2.8, -5.5],
+  [7.8, 5.5, 0],
+  [5.5, 2.7, 5.5],
+  [0, 5.2, 7.7],
+  [-5.5, 2.5, 5.5],
+  [-7.8, 5.6, 0],
+  [-5.5, 2.6, -5.5],
+  [0, 5.0, -7.7],
+  [5.5, 2.8, -5.5],
 ];
 
 // buildSpline (math/curve.js) speaks {x,y,z}; the rig speaks [x,y,z] arrays —
@@ -100,8 +144,14 @@ function makeLoop(pts) {
   const c = buildSpline(pts.map(([x, y, z]) => ({ x, y, z })));
   return {
     total: c.total,
-    posAt: (s) => { const p = c.pos(s); return [p.x, p.y, p.z]; },
-    tangentAt: (s) => { const t = c.tan(s); return [t.x, t.y, t.z]; },
+    posAt: (s) => {
+      const p = c.pos(s);
+      return [p.x, p.y, p.z];
+    },
+    tangentAt: (s) => {
+      const t = c.tan(s);
+      return [t.x, t.y, t.z];
+    },
   };
 }
 
@@ -117,9 +167,10 @@ function marchBack(loop, s, dist) {
   const anchor = loop.posAt(s);
   const chord = (k) => vLen(vSub(loop.posAt(s - k), anchor));
   let lo = dist;
-  if (chord(lo) >= dist - 1e-9) return s - lo;     // straight run: chord == arc
+  if (chord(lo) >= dist - 1e-9) return s - lo; // straight run: chord == arc
   const cap = loop.total * 0.5;
-  let hi = lo, step = Math.max(dist * 0.25, loop.total / 1500);
+  let hi = lo,
+    step = Math.max(dist * 0.25, loop.total / 1500);
   while (hi < cap) {
     hi = Math.min(cap, hi + step);
     if (chord(hi) >= dist) break;
@@ -127,7 +178,8 @@ function marchBack(loop, s, dist) {
   }
   for (let i = 0; i < 24; i++) {
     const m = (lo + hi) / 2;
-    if (chord(m) < dist) lo = m; else hi = m;
+    if (chord(m) < dist) lo = m;
+    else hi = m;
   }
   return s - (lo + hi) / 2;
 }
@@ -137,7 +189,7 @@ function marchBack(loop, s, dist) {
 function frameFromZ(z) {
   const Z = vNorm(z);
   let X = vCross([0, 1, 0], Z);
-  if (vLen(X) < 1e-4) X = vCross([1, 0, 0], Z);   // tangent went vertical
+  if (vLen(X) < 1e-4) X = vCross([1, 0, 0], Z); // tangent went vertical
   X = vNorm(X);
   const Y = vCross(Z, X);
   return [X[0], Y[0], Z[0], X[1], Y[1], Z[1], X[2], Y[2], Z[2]];
@@ -156,7 +208,7 @@ export function createDragonRig(seed = 1) {
       const spine = d.links.filter((x) => x.spine);
       for (const x of spine) x.pitch = d.reach(x.name);
       const pitch = spine.reduce((a, x) => a + x.pitch, 0);
-      const tailChord = TAIL_P.coreLen;                 // orients the last link
+      const tailChord = TAIL_P.coreLen; // orients the last link
       return { spine, pitch, tailChord };
     },
     solve(o, d, c, path) {
@@ -173,34 +225,43 @@ export function createDragonRig(seed = 1) {
 
       // world frame per chain link: +Z = the forward chord from its own pivot to
       // the NEXT pivot down the chain (piv[i] -> piv[i+1] runs tailward)
-      const frames = [frameFromZ(loop.tangentAt(sList[0]))];              // head
-      for (let i = 1; i < piv.length - 1; i++) frames.push(frameFromZ(vSub(piv[i], piv[i + 1])));
-      frames.push(frameFromZ(vSub(piv.at(-1), qTail)));                   // tail
+      const frames = [frameFromZ(loop.tangentAt(sList[0]))]; // head
+      for (let i = 1; i < piv.length - 1; i++)
+        frames.push(frameFromZ(vSub(piv[i], piv[i + 1])));
+      frames.push(frameFromZ(vSub(piv.at(-1), qTail))); // tail
 
       // SPINE — one free bone per ball. setPartWorld takes the PART frame the
       // curve wants and handles the seating (seatRᵀ) and the bone's own rest
       // rotation, so the solver only thinks about part frames.
-      d.root.set({ offset: piv[0], rot: frames[0] });   // the root part sits square on its bone
+      d.root.set({ offset: piv[0], rot: frames[0] }); // the root part sits square on its bone
       spine.forEach((x, i) => d.setPartWorld(x.name, 0, frames[i + 1]));
 
       // LIMBS — the sliders, plus the swim stroke layered on top. One driven bone
       // each: the shoulder / hip disc, the elbow / knee pin.
-      const swimLap = o.swim ?? o.offset;             // one timeline drives ride and gait
+      const swimLap = o.swim ?? o.offset; // one timeline drives ride and gait
       for (const x of d.links) {
         if (!x.limb) continue;
         const m = LIMB[x.limb];
-        const ph = ((((swimLap % 1) + 1) % 1) * SWIM.strokes + (x.phase || 0)) * 2 * Math.PI;
+        const ph =
+          ((((swimLap % 1) + 1) % 1) * SWIM.strokes + (x.phase || 0)) *
+          2 *
+          Math.PI;
         // the disc channels read the flank's sign (its pin is reversed); the pin
         // channels (elbow, knee) bend the same way on both sides
         const s = m.mirror ? x.sign : 1;
-        d.setDOF(x.name, m.dof, s * (o[m.key] + SWIM[m.amp] * Math.sin(ph + m.lag)));
+        d.setDOF(
+          x.name,
+          m.dof,
+          s * (o[m.key] + SWIM[m.amp] * Math.sin(ph + m.lag)),
+        );
       }
     },
   });
 
   // the dragon's public model keeps its (pose, path, opts) signature; the
   // ride path flows through as the solve argument to the generic solve
-  const rigModel = (pose = {}, path = null, opts = {}) => model(pose, opts, path);
+  const rigModel = (pose = {}, path = null, opts = {}) =>
+    model(pose, opts, path);
   return { model: rigModel, pitch: ctx.pitch, rig };
 }
 

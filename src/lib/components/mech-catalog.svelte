@@ -6,9 +6,9 @@
   // and `sel` so the page can frame the scene.
   import {
     JOINT_NAMES, JOINT_PARAMS, JOINT_POSE, jointCatalogModel,
-  } from "$lib/mech/joint-catalog.js";
-  import { primitiveModel, PRIM_PARAMS, PRIM_NAMES } from "$lib/mech/primitives-catalog.js";
-  // ---- catalog UI surface (inlined from $lib/ui/catalog.js) ----
+  } from "#lib/mech/joint-catalog.js";
+  import { primitiveModel, PRIM_PARAMS, PRIM_NAMES } from "#lib/mech/primitives-catalog.js";
+  // ---- catalog UI surface (inlined from #lib/ui/catalog.js) ----
 // CATALOG UI SURFACE — the slider rows and labels for the joint / primitive
 // catalog panels shared by the mech playgrounds. The geometry they control lives
 // in lib/mech (joints.js, primitives.js); the catalog model builders live in
@@ -82,7 +82,7 @@ const PRIM_CTL = {
   // teeth counts are integers; a side under 3 teeth is flat (0 = plain ring)
   gear: [["r", "radius", 0.1, 1.2], ["h", "thickness", 0.05, 1.5], ["teethOut", "outer teeth", 0, 32, 1], ["teethIn", "inner teeth", 0, 32, 1]],
 };
-  import { rad, deg } from "$lib/math/scalar.js";
+  import { rad, deg } from "#lib/math/scalar.js";
 
   let { seed = 1, model = $bindable(null), sel = $bindable("") } = $props();
 

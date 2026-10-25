@@ -1,4 +1,4 @@
-import { INSTANCED_MODULE, INSTANCED_OPTS } from "$lib/mech/instancing.js";
+import { INSTANCED_MODULE, INSTANCED_OPTS } from "#lib/mech/instancing.js";
 import GLYPH from "./shaders/glyph.wgsl?shader";
 import ENSO from "./shaders/enso.wgsl?shader";
 import STROKE from "./shaders/stroke.wgsl?shader";

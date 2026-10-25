@@ -1,5 +1,8 @@
-import { browser } from "$app/environment";
-import { PUBLIC_GA_MEASUREMENT_ID as GA_MEASUREMENT_ID } from "$env/static/public";
+import { browser } from "$app/env";
+import * as env from "$app/env/public";
+
+// a dummy id keeps dev and unconfigured builds working
+const GA_MEASUREMENT_ID = env.PUBLIC_GA_MEASUREMENT_ID || "xxxx";
 
 function gtag() {
   if (!browser || !GA_MEASUREMENT_ID) return;

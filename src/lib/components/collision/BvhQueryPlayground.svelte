@@ -1,6 +1,6 @@
 <script>
-  import { clamp } from "$lib/playgrounds/collision/sat.js";
-  import { sampleScene, buildBVH, queryBVH } from "$lib/playgrounds/collision/bvh.js";
+  import { clamp } from "#lib/playgrounds/collision/sat.js";
+  import { sampleScene, buildBVH, queryBVH } from "#lib/playgrounds/collision/bvh.js";
 
   const W = 640;
   const H = 360;
