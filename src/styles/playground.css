@@ -373,12 +373,17 @@ main {
     flex-direction: column;
     gap: 0.5rem;
   }
+  article dfn {
+    font-weight: 700;
+    font-style: normal;
+  }
   article .playground-wrap .intro {
     font-size: 0.9rem;
     opacity: 0.5;
   }
 
   article .playground {
+    margin: 0;
     display: grid;
     gap: 1rem;
     grid-template-columns: 1fr;

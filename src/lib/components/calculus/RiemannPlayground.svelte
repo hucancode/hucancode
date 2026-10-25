@@ -59,7 +59,7 @@
   let error = $derived(approx.sum - exact);
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <Graph
       xMin={ctx.x0}
@@ -152,4 +152,4 @@
       </label>
     </fieldset>
   </aside>
-</div>
+</figure>

@@ -3,6 +3,7 @@
   import BuyMeACoffee from "$icons/line-md/buy-me-a-coffee.svg?raw";
 </script>
 
+<footer>
 <nav>
   <a href="/notes"
     ><h2>
@@ -17,6 +18,7 @@
     </h2></a
   >
 </nav>
+</footer>
 
 <style>
   nav {

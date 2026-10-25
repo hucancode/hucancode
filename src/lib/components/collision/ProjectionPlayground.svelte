@@ -204,7 +204,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -264,4 +264,4 @@
       that axis exactly when their intervals overlap — that one fact is all of SAT.
     </p>
   </aside>
-</div>
+</figure>

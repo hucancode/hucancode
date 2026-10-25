@@ -111,7 +111,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas bind:this={canvas} aria-label="Hierarchy levels of a BVH built from bounding boxes"></canvas>
   </div>
@@ -144,4 +144,4 @@
       </label>
     </fieldset>
   </aside>
-</div>
+</figure>

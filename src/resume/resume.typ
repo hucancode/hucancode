@@ -12,11 +12,11 @@
 #resume_heading("Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Go, Odin, WebGPU, Vulkan, OpenGL"
+  skills: "C, C++, Rust, Go, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "Tools & OS",
-  skills: "Unreal Engine, RenderDoc, perf, Linux, AWS"
+  skills: "Unreal Engine, RenderDoc, Linux, AWS, GCP"
 )
 
 #resume_heading[Experience]
@@ -40,6 +40,7 @@
   location: "Kagawa",
   date: "2020/07 - 2022/07",
   [Communicated with end clients to build responsive feature-rich EC websites, cross platform mobile applications],
+  [In charge of engineering productivity. Conducted various training activity],
 )
 #exp_item(
   role: "C++ Programmer",
@@ -60,29 +61,21 @@
 #resume_heading("Notable Projects")
 #project_item(
   name: "Mjolnir",
-  skills: "Vulkan, PBR, Bindless, IK, Physics, Procedural Animation, SIMD, perf",
+  skills: "Odin, Vulkan, WebGPU",
   date: "2025/01 - Present",
-  [Built a game engine from scratch using Vulkan featuring: PBR, Post Processing, Skinned Animation, IK/FK, Deferred Rendering, Bindless Rendering, Occlusion Culling, 2D Sprite, UI System, Physics Simulation, Procedural Animation. See more: github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
-  [Utilized XCode/RenderDoc to analyze and optimize render calls, perf to analyze and optimize physics engine],
+  [Built a rendering engine using Vulkan featuring: PBR, Post Processing, Skinned Animation, Deferred Rendering, Bindless Rendering, 2D Sprite, UI System. ],
+  [Extensive support for procedural animation. Including technique that mimics Snake, Spider, Tail, Chain animations],
+  [Featuring a fast physics engine, support sphere, cylinder, box. Performance are similar to Box3D (as of October 2026)],
+  [Data-oriented, allowing scene graph with 60K objects to update in 2ms, allowing 30K physics objects to stay 60FPS (measured on Ryzen 7900X3D)],
+  [Utilized XCode and RenderDoc to analyze and optimize render calls],
   [Utilized compute shader to build occlusion culling and particle simulation engine],
+  [See more: #link("https://mjolnir3d.dev")[mjolnir3d.dev]],
 )
 #project_item(
   name: "Raytracer",
   skills: "Rust, WebGPU",
   date: "2024/02 - 2024/05",
   [Built a Raytracer with BVH that can handle 100K triangles in realtime. See more: github/hucancode/#link("https://github.com/hucancode/raytracer")[raytracer]],
-)
-#project_item(
-  name: "Dragon",
-  skills: "Rust, WebGPU",
-  date: "2023/11 - 2024/02",
-  [Built a procedurally animated dragon flying scene using WebGPU. See more: github/hucancode/#link("https://github.com/hucancode/flying-dragon")[dragon]],
-)
-#project_item(
-  name: "Poker Simulator",
-  skills: "Rust, WASM, Svelte",
-  date: "2023/11 - 2023/12",
-  [Built a winning odds calculator for poker game (0.25M game per second). Try it #link("https://poker.lamsaoquenem.day")[live]],
 )
 #project_item(
   name: "SDA",

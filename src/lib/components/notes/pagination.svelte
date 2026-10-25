@@ -62,14 +62,15 @@
 <!-- For some reason, the pagination wasn't re-rendering properly during navigation without the #key block -->
 {#key page}
   {#if lastPage > 1}
+    <nav aria-label="Pagination">
     <div role="group">
       {#each pages as p}
         {#if p === '...'}
-          <span>...</span>
+          <span aria-hidden="true">…</span>
         {:else}
           <a
             role="button"
-            disabled={page && p == page}
+            aria-disabled={page && p == page ? "true" : undefined}
             data-sveltekit-noscroll
             href="{path}/{p}"
             aria-label="Page {p}"
@@ -80,12 +81,15 @@
         {/if}
       {/each}
     </div>
+    </nav>
   {/if}
 {/key}
 
 <style>
-  div[role="group"] {
+  nav {
     margin-bottom: 10vh;
+  }
+  div[role="group"] {
     display: flex;
     gap: 0.25rem;
     justify-content: center;
@@ -96,12 +100,12 @@
     transition: all 0.2s ease;
   }
   
-  a[role="button"]:not([disabled]):hover {
+  a[role="button"]:not([aria-current="page"]):hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
   
-  a[role="button"][disabled] {
+  a[role="button"][aria-current="page"] {
     background-color: var(--link);
     color: var(--paper);
     cursor: default;

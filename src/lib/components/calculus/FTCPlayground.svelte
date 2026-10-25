@@ -44,7 +44,7 @@
   }
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <Graph
       xMin={XMIN}
@@ -98,4 +98,4 @@
       </label>
     </fieldset>
   </aside>
-</div>
+</figure>

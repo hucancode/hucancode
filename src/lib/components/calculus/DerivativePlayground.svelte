@@ -50,7 +50,7 @@
   }
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <Graph
       xMin={XMIN}
@@ -99,4 +99,4 @@
       climbing, negative means falling, zero means a flat spot. Drag and watch the slope point trace <Tex tex="f'" />.
     </p>
   </aside>
-</div>
+</figure>

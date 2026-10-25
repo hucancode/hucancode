@@ -51,7 +51,7 @@
   }
 </script>
 
-<div class="playground">
+<figure class="playground">
   <Surface3D fn={f} domain={DOM} resolution={32} zScale={1.6} ariaLabel="3D hill: gradient">
     {#snippet children({ project })}
       {@const foot = project(px, py, 0)}
@@ -110,4 +110,4 @@
       </label>
     </fieldset>
   </aside>
-</div>
+</figure>

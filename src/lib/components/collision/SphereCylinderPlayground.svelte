@@ -235,7 +235,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -312,4 +312,4 @@
       alongside the curved wall — and that region decides the surface normal.
     </p>
   </aside>
-</div>
+</figure>

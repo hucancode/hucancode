@@ -12,19 +12,26 @@
 #resume_heading("スキル")
 #skill_item(
   category: "言語",
-  skills: "C, C++, Rust, Go, Odin, WebGPU, Vulkan, OpenGL"
+  skills: "C, C++, Rust, Go, WebGPU, Vulkan, OpenGL"
 )
 #skill_item(
   category: "ツール・OS",
-  skills: "Unreal Engine, RenderDoc, perf, Linux, AWS"
+  skills: "Unreal Engine, RenderDoc, Linux, AWS, GCP"
 )
 
 #resume_heading("職務経歴")
 #exp_item(
+  role: "ソフトウェアエンジニア",
+  name: "FPT Japan",
+  location: "東京",
+  date: "2025/09 - 現在",
+  [複雑で高性能な組込み・Webアプリ開発チームを統括],
+)
+#exp_item(
   role: "技術リーダー",
   name: "NTQ Japan",
   location: "岐阜 / 東京",
-  date: "2022/08 - 現在",
+  date: "2022/08 - 2025/09",
   [複雑で高性能な組込み・Webアプリ開発チームを統括],
 )
 #exp_item(
@@ -33,6 +40,7 @@
   location: "香川",
   date: "2020/07 - 2022/07",
   [顧客折衝を通じECサイトとクロスプラットフォームアプリを構築],
+  [エンジニアリング生産性を担当。各種トレーニングを実施],
 )
 #exp_item(
   role: "C++開発者",
@@ -53,29 +61,21 @@
 #resume_heading("主なプロジェクト")
 #project_item(
   name: "Mjolnir",
-  skills: "Odin, Vulkan",
+  skills: "Odin, Vulkan, WebGPU",
   date: "2025/01 - 現在",
-  [Vulkan を使用してゲームエンジンをスクラッチから設計・実装。 PBR、ポストプロセス処理、スキニングアニメーション、IK/FK、遅延レンダリング、 バインドレスレンダリング、オクルージョンカリング、2D スプライト、UI システム、 物理シミュレーション、プロシージャルアニメーションを実装。 詳細：github/hucancode/#link("https://github.com/hucancode/mjolnir")[mjolnir]],
-  [RenderDoc/Xcodeで描画コールを解析・最適化、perfで物理エンジンを最適化],
+  [Vulkanを使用してレンダリングエンジンを設計・実装。PBR、ポストプロセス、スキニングアニメーション、遅延レンダリング、バインドレスレンダリング、2Dスプライト、UIシステムを実装],
+  [プロシージャルアニメーションを幅広くサポート。ヘビ、クモ、尻尾、鎖のような動きを再現する技術を含む],
+  [高速な物理エンジンを搭載し、球・円柱・ボックスに対応。性能はBox3Dに匹敵（2026年10月時点）],
+  [データ指向設計により、6万オブジェクトのシーングラフを2msで更新、3万物理オブジェクトを60FPSで維持（Ryzen 7900X3Dで計測）],
+  [XcodeとRenderDocで描画コールを解析・最適化],
   [Compute Shaderでオクルージョンカリングとパーティクルシミュレーションを実現],
+  [詳細: #link("https://mjolnir3d.dev")[mjolnir3d.dev]],
 )
 #project_item(
   name: "Raytracer",
   skills: "Rust, WebGPU",
   date: "2024/02 - 2024/05",
   [BVHを使ってレイトレーサーをWebGPUで実装し10万ポリゴンをリアルタイムに描画。github/hucancode/#link("https://github.com/hucancode/raytracer")[raytracer]],
-)
-#project_item(
-  name: "Dragon",
-  skills: "Rust, WebGPU",
-  date: "2023/11 - 2024/02",
-  [WebGPUでプロシージャルアニメーションによるドラゴンの飛行シーンを制作。 github/hucancode/#link("https://github.com/hucancode/flying-dragon")[dragon]],
-)
-#project_item(
-  name: "Poker Simulator",
-  skills: "Rust, WASM, Svelte",
-  date: "2023/11 - 2023/12",
-  [Rust/WASMで0.25M件/秒のポーカー勝率シミュレータを構築。お試しは #link("https://poker.lamsaoquenem.day")[こちら]],
 )
 #project_item(
   name: "SDA",

@@ -139,7 +139,7 @@
   });
 </script>
 
-<div class="playground">
+<figure class="playground">
   <div class="plot">
     <canvas
       bind:this={canvas}
@@ -168,4 +168,4 @@
       <span><i style="background:#dc2626"></i> overlapping</span>
     </div>
   </aside>
-</div>
+</figure>

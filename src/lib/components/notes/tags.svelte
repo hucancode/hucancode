@@ -12,14 +12,14 @@
 </script>
 
 {#if categories.length > 0}
-  <section>
-    <h2>Popular Topics</h2>
+  <section aria-labelledby="topics-heading">
+    <h2 id="topics-heading">Popular Topics</h2>
     <ul>
       {#each displayedCategories as category}
         <li>
           <a href="{base}/category/{category.name}">
             {category.name}
-            <span>{category.count}</span>
+            <data value={category.count}>{category.count}</data>
           </a>
         </li>
       {/each}
@@ -80,7 +80,7 @@
     transition: all 0.2s ease;
   }
 
-  a span {
+  a data {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -100,7 +100,7 @@
     opacity: 1;
   }
 
-  a:hover span {
+  a:hover data {
     background: color-mix(in srgb, var(--link) 20%, transparent);
     color: var(--link);
   }

@@ -14,12 +14,12 @@
 <svelte:head>
   <title>Notes - {data.category}</title>
 </svelte:head>
-<div>
+<header>
   <small>Category</small>
   <h1>
     {data.category}
   </h1>
-</div>
+</header>
 <PostsList posts={data.posts} base="/notes" />
 
 <Pagination
